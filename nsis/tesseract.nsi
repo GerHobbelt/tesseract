@@ -258,7 +258,6 @@ Section "Shortcuts creation" SecCS
   ;CreateShortCut "$DESKTOP\Tesseract-OCR.lnk" "$INSTDIR\tesseract.exe" "" "$INSTDIR\tesseract.exe" 0
   ;CreateShortCut "$QUICKLAUNCH\.lnk" "$INSTDIR\tesseract.exe" "" "$INSTDIR\tesseract.exe" 0
 SectionEnd
-
 ; Language files
 SectionGroup "Language data" SecGrp_LD
     Section "English" SecLang_eng
