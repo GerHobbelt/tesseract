@@ -110,8 +110,8 @@ endif()
 
 find_package(OpenCL QUIET)
 
-option(BUILD_TRAINING_TOOLS "Build training tools" ON)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TRAINING_TOOLS "Build training tools" OFF)
+option(BUILD_TESTS "Build tests" OFF)
 
 ###############################################################################
 #
@@ -321,9 +321,11 @@ configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc @ONLY
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc DESTINATION lib/pkgconfig)
 if (BUILD_EXE)
     install(TARGETS tesseract RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+    install(EXPORT TesseractTargets DESTINATION cmake)
+else()
+    install(TARGETS libtesseract DESTINATION lib)
 endif()
-install(TARGETS libtesseract EXPORT TesseractTargets RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-install(EXPORT TesseractTargets DESTINATION cmake)
+
 install(FILES
     ${CMAKE_BINARY_DIR}/TesseractConfig.cmake
     ${CMAKE_BINARY_DIR}/TesseractConfig-version.cmake
