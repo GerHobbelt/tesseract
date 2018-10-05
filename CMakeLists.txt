@@ -292,13 +292,15 @@ endif()
 # EXECUTABLE tesseractmain
 ########################################
 
-set(tesseractmain_src src/api/tesseractmain.cpp)
-if (MSVC)
-    set(tesseractmain_rsc ${CMAKE_BINARY_DIR}/vs2010/tesseract/tesseract.rc)
-endif()
+if (BUILD_EXE)
+    set(tesseractmain_src src/api/tesseractmain.cpp)
+    if (MSVC)
+        set(tesseractmain_rsc ${CMAKE_BINARY_DIR}/vs2010/tesseract/tesseract.rc)
+    endif()
 
-add_executable                  (tesseract ${tesseractmain_src} ${tesseractmain_rsc})
-target_link_libraries           (tesseract libtesseract)
+    add_executable                  (tesseract ${tesseractmain_src} ${tesseractmain_rsc})
+    target_link_libraries           (tesseract libtesseract)
+endif()
 
 ########################################
 
