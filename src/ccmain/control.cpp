@@ -438,11 +438,7 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
   // bounding boxes and style information.
 
   #ifndef DISABLED_LEGACY_ENGINE
-  // changed by jetsoft
-  // needed for dll to output memory structure
-  if ((dopasses == 0 || dopasses == 2) && (monitor || tessedit_write_unlv))
-    output_pass(page_res_it, target_word_box);
-  // end jetsoft
+  
   #endif  //ndef DISABLED_LEGACY_ENGINE
 
   const PageSegMode pageseg_mode = static_cast<PageSegMode>(
@@ -461,7 +457,11 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
       page_res_it.DeleteCurrentWord();
     }
   }
-
+  // changed by jetsoft
+  // needed for dll to output memory structure
+  if ((dopasses == 0 || dopasses == 2) && (monitor || tessedit_write_unlv))
+    output_pass(page_res_it, target_word_box);
+  // end jetsoft
   if (monitor != nullptr) {
     monitor->progress = 100;
   }
