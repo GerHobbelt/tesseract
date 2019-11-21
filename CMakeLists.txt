@@ -298,6 +298,8 @@ add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} $
     ${tesseract_rsc}
     )
 
+set_target_properties(libtesseract PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
 if (BUILD_SHARED_LIBS)
 target_compile_definitions      (libtesseract
     PRIVATE -DTESS_EXPORTS
