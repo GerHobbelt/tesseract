@@ -293,13 +293,12 @@ else()
                 PROPERTIES COMPILE_FLAGS "-mavx2")
     endif()
 endif()
-
+cmake_policy(SET CMP0063 NEW)
+set(CMAKE_CXX_VISIBILITY_PRESET default)
 add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr}
     ${tesseract_rsc}
     )
-
-set_target_properties(libtesseract PROPERTIES CXX_VISIBILITY_PRESET hidden)
-
+    
 if (BUILD_SHARED_LIBS)
 target_compile_definitions      (libtesseract
     PRIVATE -DTESS_EXPORTS
