@@ -54,6 +54,10 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake Targets")
 
 project(tesseract C CXX)
 
+cmake_policy(SET CMP0063 NEW)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+
 # Get version with components from VERSION file.
 file(STRINGS "VERSION" VERSION_PLAIN)
 string(REGEX REPLACE "^([^.]*)\\..*" "\\1" VERSION_MAJOR ${VERSION_PLAIN})
@@ -294,7 +298,8 @@ else()
     endif()
 endif()
 cmake_policy(SET CMP0063 NEW)
-set(CMAKE_CXX_VISIBILITY_PRESET default)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr}
     ${tesseract_rsc}
     )
