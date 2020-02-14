@@ -23,7 +23,7 @@ VALID_LANGUAGE_CODES="afr amh ara asm aze aze_cyrl bel ben bih bod bos bul cat
                       ell eng enm epo est eus fas fil fin fra frk frm gle glg
                       grc guj hat heb hin hrv hun hye iast iku ind isl ita ita_old
                       jav jav_java jpn kan kat kat_old kaz khm kir kmr kor kur_ara lao lat
-                      lat_lid lav lit mal mar mkd mlt msa mya nep nld nor ori
+                      lat_lid lav lit mal mar mkd mlt mon msa mya nep nld nor ori
                       pan pol por pus ron rus san sin slk slv snd spa spa_old
                       sqi srp srp_latn swa swe syr tam tel tgk tgl tha tir tur
                       uig ukr urd uzb uzb_cyrl vie yid gle_uncial"
@@ -1007,6 +1007,11 @@ set_lang_specific_parameters() {
     # Cyrillic script-based languages. It is bad to mix Latin with Cyrillic.
     rus ) test -z "$FONTS" && FONTS=( "${RUSSIAN_FONTS[@]}" )
           MIX_LANG="rus"
+          NUMBER_DAWG_FACTOR=0.05
+          WORD_DAWG_SIZE=1000000 ;;
+    # Mongolian script. It is bad to mix Latin with Cyrillic.
+    mon ) test -z "$FONTS" && FONTS=( "${RUSSIAN_FONTS[@]}" )
+          MIX_LANG="mon"
           NUMBER_DAWG_FACTOR=0.05
           WORD_DAWG_SIZE=1000000 ;;
     aze_cyrl | bel | bul | kaz | mkd | srp | tgk | ukr | uzb_cyrl )
