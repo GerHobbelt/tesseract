@@ -423,7 +423,7 @@ AC_HEADER_STDBOOL
 AC_CHECK_PROG([have_asciidoc], asciidoc, true, false)
 AC_CHECK_PROG([have_xsltproc], xsltproc, true, false)
 if $have_asciidoc && $have_xsltproc; then
-  AM_CONDITIONAL([ASCIIDOC], true)
+  AM_CONDITIONAL([ASCIIDOC], false)
 else
   AM_CONDITIONAL([ASCIIDOC], false)
 fi
