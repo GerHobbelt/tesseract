@@ -107,6 +107,7 @@ else()
     endif()
     add_subdirectory(.cppan)
 endif()
+include_directories(/usr/local/include/leptonica)
 
 find_package(OpenCL QUIET)
 
