@@ -15,6 +15,11 @@
  ** limitations under the License.
  *
  **********************************************************************/
+#include <chrono>
+#include <thread>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 
 #define _USE_MATH_DEFINES // for M_PI
 
@@ -2072,12 +2077,52 @@ bool TessBaseAPI::Threshold(Pix** pix) {
   return true;
 }
 
+Pix *mat8ToPix(cv::Mat *mat8)
+{
+    Pix *pixd = pixCreate(mat8->size().width, mat8->size().height, 8);
+    for(int y=0; y<mat8->rows; y++) {
+        for(int x=0; x<mat8->cols; x++) {
+            pixSetPixel(pixd, x, y, (l_uint32) mat8->at<uchar>(y,x));
+        }
+    }
+    return pixd;
+}
+
+cv::Mat* pix8ToMat(Pix *pix8)
+{
+    Pix* old_pix = pix8;
+    pix8 = pixConvert1To8(NULL, old_pix, 255, 0);
+    pixDestroy(&old_pix);
+    cv::Mat* mat = new cv::Mat(cv::Size(pix8->w, pix8->h), CV_8UC1);
+    uint32_t *line = pix8->data;
+    for (uint32_t y = 0; y < pix8->h; ++y) {
+        for (uint32_t x = 0; x < pix8->w; ++x) {
+            mat->at<uchar>(y, x) = GET_DATA_BYTE(line, x);
+        }
+        line += pix8->wpl;
+    }
+    return mat;
+}
+
+/* Adjust input image for better segmentation results */
+void TessBaseAPI::PrepareImageForPageSegmentation() {
+  Pix* cur_pix = GetThresholdedImage();
+  cv::Mat* m = pix8ToMat(cur_pix);
+  cv::rotate(*m, *m, cv::ROTATE_90_CLOCKWISE);
+  SetImage(mat8ToPix(m));
+  //SetImage(pixRotate(cur_pix, 0.15, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, cur_pix->w, cur_pix->h));
+  delete m;
+}
+
 /** Find lines from the image making the BLOCK_LIST. */
 int TessBaseAPI::FindLines() {
   if (thresholder_ == nullptr || thresholder_->IsEmpty()) {
     tprintf("Please call SetImage before attempting recognition.\n");
     return -1;
   }
+
+  PrepareImageForPageSegmentation();
+
   if (recognition_done_)
     ClearResults();
   if (!block_list_->empty()) {

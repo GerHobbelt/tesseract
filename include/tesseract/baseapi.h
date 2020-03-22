@@ -107,6 +107,8 @@ class TESS_API TessBaseAPI {
   TessBaseAPI(TessBaseAPI const&) = delete;
   TessBaseAPI& operator=(TessBaseAPI const&) = delete;
 
+  void PrepareImageForPageSegmentation();
+
   /**
    * Returns the version identifier as a static string. Do not delete.
    */
