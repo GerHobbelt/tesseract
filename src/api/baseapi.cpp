@@ -19,6 +19,9 @@
 #include <thread>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc.hpp"
+#include "opencv2/imgproc/types_c.h"
+#include <opencv2/imgproc/imgproc_c.h>
 
 
 #define _USE_MATH_DEFINES // for M_PI
@@ -2103,13 +2106,116 @@ cv::Mat* pix8ToMat(Pix *pix8)
     }
     return mat;
 }
+  
+  
+void rotateImage(cv::Mat& img, cv::Mat& rotated, int angle) {
+    cv::Point2f center22(img.cols / 2.0, img.rows / 2.0);
+    cv::Mat rot = getRotationMatrix2D(center22, angle, 1.0);
+    warpAffine(img, rotated, rot, img.size());
+}
+
+void showProjections(cv::Mat &img, std::vector<int> &projections) {
+    cv::Size s = img.size();
+    cv::Mat proj_image(s.height, s.width, CV_8UC1, cv::Scalar(0));
+
+
+    for (int i = 0; i < proj_image.rows; i++)
+    {
+        for (int j = 0; j < projections.at(i); j++)
+        {
+            cv::Vec3b& color = proj_image.at<cv::Vec3b>(i, j);
+            color[0] = 255;
+            color[1] = 255;
+            color[2] = 255;
+        }
+    }
+
+    cv::imshow("Projections ", proj_image);
+    cv::waitKey(0);
+}
+
+int calculateRotationEnergy(cv::Mat &img, int rotation_value) {
+    cv::Mat rotated;
+    rotateImage(img, rotated, rotation_value);
+
+    // Calculate horizontal projections
+    std::vector<int> projections;
+    int sum;
+    for (int i = 0; i < rotated.rows; i++)
+    {
+        sum = 0;
+
+        for (int j = 0; j < rotated.cols; j++)
+        {
+            // Get pixel value at (i, j) coordinates
+            int val = (int)rotated.at<uchar>(i, j);
+            if (val == 255) {
+                sum += 1;
+            }
+        }
+
+        projections.push_back(sum);
+    }
+
+
+    // Energy function: energy = projection_sum[0]^2 + projection_sum[1]^2 + projection_sum[2]^2 ...
+    int energy = 0;
+    for (auto& proj : projections) {
+        energy += proj * proj;
+    }
+
+    return energy;
+}
 
 /* Adjust input image for better segmentation results */
 void TessBaseAPI::PrepareImageForPageSegmentation() {
   Pix* cur_pix = GetThresholdedImage();
-  cv::Mat* m = pix8ToMat(cur_pix);
-  cv::rotate(*m, *m, cv::ROTATE_90_CLOCKWISE);
-  SetImage(mat8ToPix(m));
+  cv::Mat* img = pix8ToMat(cur_pix);
+
+    cv::Mat thresholded;
+
+    // Convert image to black and white
+    cv::threshold(img, thresholded, 150, 255, cv::THRESH_BINARY);
+    //cv::threshold(img, thresholded, 100, 255, cv::THRESH_OTSU);
+
+    // Invert colors
+    cv::bitwise_not(thresholded, img);
+
+    int max_energy_rotation = -1;
+    int max_energy_value = 0;
+    int energy_value;
+
+    std::cout << "Calculating skew angle..." << std::endl;
+    
+    // At every image rotation angle calculate energy function. If it's a new maximum, then save it
+    for (int rotation_value = 1; rotation_value < 45; rotation_value++) {
+        energy_value = calculateRotationEnergy(img, rotation_value);
+
+        if (max_energy_rotation == -1 || max_energy_value < energy_value) {
+            max_energy_rotation = rotation_value;
+            max_energy_value = energy_value;
+        }
+
+        energy_value = calculateRotationEnergy(img, -rotation_value);
+
+        if (max_energy_value < energy_value) {
+            max_energy_rotation = -rotation_value;
+            max_energy_value = energy_value;
+        }
+    }
+
+
+    // Rotate image with the angle that had the maximum energy value
+    cv::Mat rotated;
+    rotateImage(img, rotated, max_energy_rotation);
+    
+    std::cout << "Skew angle: " << max_energy_rotation << ", Energy value: " << max_energy_value << std::endl;
+
+    cv::imshow("Finished ", rotated);
+    cv::waitKey(0);
+  
+  //cv::rotate(*m, *m, cv::ROTATE_90_CLOCKWISE);
+  //SetImage(mat8ToPix(m));
   //SetImage(pixRotate(cur_pix, 0.15, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, cur_pix->w, cur_pix->h));
   delete m;
 }
