@@ -2167,36 +2167,21 @@ int calculateRotationEnergy(cv::Mat &img, int rotation_value) {
     return energy;
 }
 
-/* Adjust input image for better segmentation results */
-void TessBaseAPI::PrepareImageForPageSegmentation() {
-  Pix* cur_pix = GetThresholdedImage();
-  cv::Mat* img = pix8ToMat(cur_pix);
-
-    cv::Mat thresholded;
-
-    // Convert image to black and white
-    cv::threshold(img, thresholded, 150, 255, cv::THRESH_BINARY);
-    //cv::threshold(img, thresholded, 100, 255, cv::THRESH_OTSU);
-
-    // Invert colors
-    cv::bitwise_not(thresholded, img);
-
-    int max_energy_rotation = -1;
+int skewAngle(cv::Mat* img) {
+    int max_energy_rotation = -999;
     int max_energy_value = 0;
     int energy_value;
-
-    std::cout << "Calculating skew angle..." << std::endl;
     
     // At every image rotation angle calculate energy function. If it's a new maximum, then save it
     for (int rotation_value = 1; rotation_value < 45; rotation_value++) {
-        energy_value = calculateRotationEnergy(img, rotation_value);
+        energy_value = calculateRotationEnergy(*img, rotation_value);
 
-        if (max_energy_rotation == -1 || max_energy_value < energy_value) {
+        if (max_energy_rotation == -999 || max_energy_value < energy_value) {
             max_energy_rotation = rotation_value;
             max_energy_value = energy_value;
         }
 
-        energy_value = calculateRotationEnergy(img, -rotation_value);
+        energy_value = calculateRotationEnergy(*img, -rotation_value);
 
         if (max_energy_value < energy_value) {
             max_energy_rotation = -rotation_value;
@@ -2204,20 +2189,39 @@ void TessBaseAPI::PrepareImageForPageSegmentation() {
         }
     }
 
+    return max_energy_rotation;
+}
+
+/* Adjust input image for better segmentation results */
+void TessBaseAPI::PrepareImageForPageSegmentation() {
+    Pix* cur_pix = GetThresholdedImage();
+    cv::Mat* img = pix8ToMat(cur_pix);
+
+    // Convert image to black and white
+    cv::threshold(*img, *img, 150, 255, cv::THRESH_BINARY);
+    //cv::threshold(img, thresholded, 100, 255, cv::THRESH_OTSU);
+
+    // Invert colors
+    cv::bitwise_not(*img, *img);
+
+    // Calculate skew angle
+    std::cout << "Calculating skew angle..." << std::endl;
+    int angle = skewAngle(img);
+    std::cout << "Skew angle: " << angle << std::endl;
+
+    // Invert colors back
+    cv::bitwise_not(*img, *img);
 
     // Rotate image with the angle that had the maximum energy value
     cv::Mat rotated;
-    rotateImage(img, rotated, max_energy_rotation);
-    
-    std::cout << "Skew angle: " << max_energy_rotation << ", Energy value: " << max_energy_value << std::endl;
+    rotateImage(*img, rotated, angle);
 
+    // Show rotated image
     cv::imshow("Finished ", rotated);
     cv::waitKey(0);
   
-  //cv::rotate(*m, *m, cv::ROTATE_90_CLOCKWISE);
-  //SetImage(mat8ToPix(m));
-  //SetImage(pixRotate(cur_pix, 0.15, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, cur_pix->w, cur_pix->h));
-  delete m;
+    SetImage(mat8ToPix(&rotated));
+    delete img;
 }
 
 /** Find lines from the image making the BLOCK_LIST. */
