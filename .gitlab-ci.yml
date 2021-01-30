@@ -13,8 +13,8 @@ build:
     - mkdir -p "$APT_CACHE"
     - $APT update
     - $APT install -y dpkg-dev
-    - cd debian
-    - ls
+    - mv debian/debian/* debian/ # Fix this later
+    - rmdir debian/debian # Fix this later
     - apt-get build-dep
     - dpkg-buildpackage -b -uc
     - cp -v ../*.deb .
