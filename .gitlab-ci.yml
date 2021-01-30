@@ -15,7 +15,7 @@ build:
     - $APT install -y dpkg-dev
     - mv debian/debian/* debian/ # Fix this later
     - rmdir debian/debian # Fix this later
-    - apt-get build-dep .
+    - apt-get -y build-dep .
     - dpkg-buildpackage -b -uc
     - cp -v ../*.deb .
 
