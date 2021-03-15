@@ -175,9 +175,11 @@ char* TessBaseAPI::GetHOCRText(ETEXT_DESC* monitor, int page_number) {
   } else {
     hocr_str << "unknown";
   }
-  hocr_str << "\"; bbox " << rect_left_ << " " << rect_top_ << " "
-           << rect_width_ << " " << rect_height_ << "; ppageno " << page_number
-           << "'>\n";
+
+  hocr_str << "\"; bbox " << rect_left_ << " " << rect_top_ << " " << rect_width_ << " "
+           << rect_height_ << "; ppageno " << page_number
+           << "; scan_res " << thresholder_->GetSourceYResolution() << " "
+           << thresholder_->GetSourceYResolution() << "'>\n";
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
