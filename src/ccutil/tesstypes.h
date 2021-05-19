@@ -17,12 +17,16 @@
 #ifndef TESSERACT_TESSTYPES_H
 #define TESSERACT_TESSTYPES_H
 
-#include <cstdint> // for int16_t
+#include <cstdint> // for int16_t, int32_t
 
 namespace tesseract {
 
 // Image dimensions (width and height, coordinates).
+#if defined(LARGE_IMAGES)
+using TDimension = int32_t;
+#else
 using TDimension = int16_t;
+#endif
 
 // Floating point data type used for LSTM calculations.
 #if defined(FAST_FLOAT)
