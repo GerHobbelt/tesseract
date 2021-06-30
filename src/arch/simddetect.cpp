@@ -93,17 +93,21 @@ bool SIMDDetect::sse_available_;
 #endif
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
-static double DotProductAccelerate(const double* u, const double* v, int n) {
-  double total = 0.0;
+static TFloat DotProductAccelerate(const TFloat* u, const TFloat* v, int n) {
+  TFloat total = 0;
   const int stride = 1;
+#if defined(FAST_FLOAT)
+  vDSP_dotpr(u, stride, v, stride, &total, n);
+#else
   vDSP_dotprD(u, stride, v, stride, &total, n);
+#endif
   return total;
 }
 #endif
 
 // Computes and returns the dot product of the two n-vectors u and v.
-static double DotProductGeneric(const double *u, const double *v, int n) {
-  double total = 0.0;
+static TFloat DotProductGeneric(const TFloat *u, const TFloat *v, int n) {
+  TFloat total = 0.0;
   for (int k = 0; k < n; ++k) {
     total += u[k] * v[k];
   }
@@ -111,8 +115,8 @@ static double DotProductGeneric(const double *u, const double *v, int n) {
 }
 
 // Compute dot product using std::inner_product.
-static double DotProductStdInnerProduct(const double *u, const double *v, int n) {
-  return std::inner_product(u, u + n, v, 0.0);
+static TFloat DotProductStdInnerProduct(const TFloat *u, const TFloat *v, int n) {
+  return std::inner_product(u, u + n, v, static_cast<TFloat>(0));
 }
 
 static void SetDotProduct(DotProductFunction f, const IntSimdMatrix *m = nullptr) {
