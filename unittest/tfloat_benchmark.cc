@@ -206,7 +206,7 @@ TFloat DotProductGeneric(const TFloat *u, const TFloat *v, int n) {
 }
 
 
-bool approx_eq(double a, double b) {
+static bool approx_eq(double a, double b) {
   auto diff = a - b;
   if (diff == 0.0)
     return true;
