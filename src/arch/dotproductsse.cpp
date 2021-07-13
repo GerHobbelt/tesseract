@@ -28,9 +28,10 @@
 
 namespace tesseract {
 
+// ---------------------------- FAST FLOAT section ------------------------
+
 // Computes and returns the dot product of the n-vectors u and v.
 // Uses Intel SSE intrinsics to access the SIMD instruction set.
-#if defined(FAST_FLOAT)
 float DotProductSSE(const float *u, const float *v, int n) {
   int max_offset = n - 4;
   int offset = 0;
@@ -89,7 +90,9 @@ float DotProductSSE(const float *u, const float *v, int n) {
   }
   return result;
 }
-#else
+
+// ---------------------------- HIGH-PRECISION DOUBLE section ------------------------
+
 double DotProductSSE(const double *u, const double *v, int n) {
   int max_offset = n - 2;
   int offset = 0;
@@ -139,7 +142,8 @@ double DotProductSSE(const double *u, const double *v, int n) {
   }
   return result;
 }
-#endif
+
+// ---------------------------- END section ------------------------
 
 } // namespace tesseract.
 

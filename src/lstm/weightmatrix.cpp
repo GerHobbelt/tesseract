@@ -22,6 +22,7 @@
 #include "simddetect.h" // for DotProduct
 #include "statistc.h"
 #include "tprintf.h"    // forTFloat
+#include "tfloat.h"
 
 namespace tesseract {
 
@@ -37,7 +38,6 @@ const int kAdamCorrectionIterations = 200000;
 const TFloat kAdamEpsilon = 1e-8;
 
 // Utility functions convert between double and float arrays.
-#ifdef FAST_FLOAT
 static void DoubleToFloat(const GENERIC_2D_ARRAY<double> &src, GENERIC_2D_ARRAY<float> &dst) {
   const auto dim1 = src.dim1();
   const auto dim2 = src.dim2();
@@ -50,7 +50,6 @@ static void DoubleToFloat(const GENERIC_2D_ARRAY<double> &src, GENERIC_2D_ARRAY<
     }
   }
 }
-#endif
 
 static void FloatToDouble(const GENERIC_2D_ARRAY<float> &src, GENERIC_2D_ARRAY<double> &dst) {
   const auto dim1 = src.dim1();
@@ -66,27 +65,13 @@ static void FloatToDouble(const GENERIC_2D_ARRAY<float> &src, GENERIC_2D_ARRAY<d
 }
 
 static bool DeSerialize(TFile *fp, GENERIC_2D_ARRAY<TFloat> &tfloat_array) {
-#ifdef FAST_FLOAT
-  GENERIC_2D_ARRAY<double> double_array;
-  if (!double_array.DeSerialize(fp)) {
-    return false;
-  }
-  DoubleToFloat(double_array, tfloat_array);
-  return true;
-#else
-  return tfloat_array.DeSerialize(fp);
-#endif
+  return tfloat_array.DeSerialize<double>(fp);
 }
 
 static bool Serialize(TFile *fp, const GENERIC_2D_ARRAY<TFloat> &tfloat_array) {
-#ifdef FAST_FLOAT
-  GENERIC_2D_ARRAY<double> double_array;
-  FloatToDouble(tfloat_array, double_array);
-  return double_array.Serialize(fp);
-#else
-  return tfloat_array.Serialize(fp);
-#endif
+  return tfloat_array.Serialize<double>(fp);
 }
+
 
 // Computes matrix.vector v = Wu.
 // u is of size W.dim2() - add_bias_fwd and the output v is of size
@@ -243,7 +228,7 @@ bool WeightMatrix::Serialize(bool training, TFile *fp) const {
     return false;
   }
   if (int_mode_) {
-    if (!wi_.Serialize(fp)) {
+    if (!wi_.Serialize<int8_t>(fp)) {
       return false;
     }
     // The scales stored in memory have an extra factor applied to them
@@ -257,14 +242,9 @@ bool WeightMatrix::Serialize(bool training, TFile *fp) const {
     if (!fp->Serialize(&size)) {
       return false;
     }
-#ifdef FAST_FLOAT
-    assert(!"not implemented");
-    return false;
-#else
-    if (!fp->Serialize(&scales[0], size)) {
+    if (!fp->Serialize<TFloat, double>(&scales[0], size)) {
       return false;
     }
-#endif
   } else {
     if (!tesseract::Serialize(fp, wf_)) {
       return false;
@@ -294,31 +274,20 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
     return DeSerializeOld(training, fp);
   }
   if (int_mode_) {
-    if (!wi_.DeSerialize(fp)) {
+    if (!wi_.DeSerialize<int8_t>(fp)) {
       return false;
     }
     uint32_t size;
     if (!fp->DeSerialize(&size)) {
       return false;
     }
-#ifdef FAST_FLOAT
-    scales_.reserve(size);
-    for (auto n = size; n > 0; n--) {
-      double val;
-      if (!fp->DeSerialize(&val)) {
-        return false;
-      }
-      scales_.push_back(val / INT8_MAX);
-    }
-#else
     scales_.resize(size);
-    if (!fp->DeSerialize(&scales_[0], size)) {
+    if (!fp->DeSerialize<TFloat, double>(&scales_[0], size)) {
       return false;
     }
     for (auto &scale : scales_) {
       scale /= INT8_MAX;
     }
-#endif
     if (IntSimdMatrix::intSimdMatrix) {
       int32_t rounded_num_out;
       IntSimdMatrix::intSimdMatrix->Init(wi_, shaped_w_, rounded_num_out);
@@ -346,44 +315,30 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
 // As DeSerialize, but reads an old (float) format WeightMatrix for
 // backward compatibility.
 bool WeightMatrix::DeSerializeOld(bool training, TFile *fp) {
-#ifdef FAST_FLOAT
-  // Not implemented.
-  assert(!"not implemented");
-  return false;
-#else
   if (int_mode_) {
-    if (!wi_.DeSerialize(fp)) {
+    if (!wi_.DeSerialize<int8_t>(fp)) {
       return false;
     }
-    std::vector<float> old_scales;
-    if (!fp->DeSerialize(old_scales)) {
+    if (!fp->DeSerialize<TFloat, float>(scales_)) {
       return false;
-    }
-    scales_.reserve(old_scales.size());
-    for (float old_scale : old_scales) {
-      scales_.push_back(old_scale);
     }
   } else {
-    GENERIC_2D_ARRAY<float> float_array;
-    if (!float_array.DeSerialize(fp)) {
+    if (!wf_.DeSerialize<float>(fp)) {
       return false;
     }
-    FloatToDouble(float_array, wf_);
   }
   if (training) {
     InitBackward();
-    GENERIC_2D_ARRAY<float> float_array;
-    if (!float_array.DeSerialize(fp)) {
+    if (!updates_.DeSerialize<float>(fp)) {
       return false;
     }
-    FloatToDouble(float_array, updates_);
     // Errs was only used in int training, which is now dead.
-    if (!float_array.DeSerialize(fp)) {
+	GENERIC_2D_ARRAY<float> float_array;
+	if (!float_array.DeSerialize<float>(fp)) {
       return false;
     }
   }
   return true;
-#endif
 }
 
 // Computes matrix.vector v = Wu.

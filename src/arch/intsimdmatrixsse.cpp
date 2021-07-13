@@ -21,10 +21,6 @@
 #  if defined(__i686__) || defined(__x86_64__)
 #    error Implementation only for SSE 4.1 capable architectures
 #  endif
-#elif defined(FAST_FLOAT)
-namespace tesseract {
-const IntSimdMatrix *IntSimdMatrix::intSimdMatrixSSE = nullptr;
-}
 #else
 
 #  include <emmintrin.h>
@@ -73,15 +69,17 @@ static int32_t IntDotProductSSE(const int8_t *u, const int8_t *v, int n) {
 }
 
 // Computes part of matrix.vector v = Wu. Computes 1 result.
-static void PartialMatrixDotVector1(const int8_t *wi, const double *scales, const int8_t *u,
-                                    int num_in, double *v) {
-  double total = IntDotProductSSE(u, wi, num_in);
+template <class TFloat>
+static void PartialMatrixDotVector1(const int8_t *wi, const TFloat *scales, const int8_t *u,
+                                    int num_in, TFloat *v) {
+  TFloat total = IntDotProductSSE(u, wi, num_in);
   // Add in the bias and correct for integer values.
   *v = (total + wi[num_in] * INT8_MAX) * *scales;
 }
 
-static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const double *scales,
-                            const int8_t *u, double *v) {
+template <class TFloat>
+static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *scales,
+                            const int8_t *u, TFloat *v) {
   const int num_out = dim1;
   const int num_in = dim2 - 1;
   int output = 0;
