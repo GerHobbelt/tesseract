@@ -16,8 +16,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#  include "intsimdmatrix.h"
-#  include "tfloat.h"
+#include "intsimdmatrix.h"
+#include "tfloat.h"
 
 #if defined(HAVE_NEON)
 
