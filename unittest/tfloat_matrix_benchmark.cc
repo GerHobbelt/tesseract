@@ -38,14 +38,25 @@ namespace tesseract {
 			return true;
 		// take the log of both, as we know all incoming values will be positive,
 		// so we can check the precision easily, i.e. at which significant digit
-		// did the difference occur? ::
-		a = log(a);
-		b = log(b);
-		diff = a - b;
-		return (diff >= -1e-4 && diff <= 1e-4);
+		// did the difference occur?
+		//
+		// However, when one or both are negative, we need to act slightly different
+		// as we are primarily interested in their relative *distance*.
+		// The log() of their distance will tell us the first different significant
+		// digit in there, so instead of comparing log(a) and log(b) we can
+		// compare log(abs(a)) and log(abs(distance(a, b))), i.e. log(abs(a - b))!
+		auto aa = log(fabs(a) + 1e-25);  // makes sure the value going into the log() is never zero
+		auto ld = log(fabs(a - b) + 1e-25);  // makes sure the value going into the log() is never zero
+		// now we're close enough, when the diff is ~6 digits below the most significant digit of a (= power of a).
+		diff = aa - ld;
+		return (diff >= 13);
 	}
 
-	const int DIM_MAX = 200;    // maximum 1-dimensional size of the matrices tested. --> biggest matrix will be 200x200 cells.
+
+
+	const int DIM_MAX = 400;    // maximum 1-dimensional size of the matrices tested. --> biggest matrix will be DIMxDIM cells.
+
+
 
 	// Note: as the initial benchmark runs indicated that the InitRandom() call plus setup was eating over 50% of the total
 	// CPU time, most of it spent in the random generator, we 'fix' that by collecting a big ream of semi-random data
@@ -79,14 +90,14 @@ namespace tesseract {
 	static auto get_random_sample() {
 		random_data_cache_index++;
 		if (random_data_cache_index >= countof(random_data_cache)) {
-			random_data_cache_index = -1;
+			random_data_cache_index = 0;
 		}
 		return random_data_cache[random_data_cache_index];
 	}
 	static auto get_frandom_sample() {
 		frandom_data_cache_index++;
 		if (frandom_data_cache_index >= countof(frandom_data_cache)) {
-			frandom_data_cache_index = -1;
+			frandom_data_cache_index = 0;
 		}
 		return frandom_data_cache[frandom_data_cache_index];
 	}
@@ -141,12 +152,18 @@ namespace tesseract {
 			//const int DIM_MAX = 200;
 
 			TFloat total = 0.0;
-			for (int num_out = 1; num_out < DIM_MAX; ++num_out) {
-				for (int num_in = 1; num_in < DIM_MAX; ++num_in) {
+			for (int num_out = DIM_MAX * 126 / 128; num_out < DIM_MAX; ++num_out) {
+				for (int num_in = DIM_MAX * 126 / 128; num_in < DIM_MAX; ++num_in) {
 					GENERIC_2D_ARRAY<int8_t> w = InitRandom(num_out, num_in + 1);
 					std::vector<int8_t> u = RandomVector(num_in, matrix);
 					std::vector<TFloat> scales = RandomScales(num_out);
-					int ro = num_out;
+					for (int iter = 0; iter < 300; ++iter) {
+						// slowly mutate the shaped matrix so it's not a regurgitation of same ol' same ol' while we run the calculations:
+						int8_t x = abs(get_random_sample());
+						x = x % w.dim1();
+						w(x, 0) = get_random_sample();
+
+						int ro = num_out;
 					if (IntSimdMatrix::intSimdMatrix) {
 						ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
 					}
@@ -157,21 +174,23 @@ namespace tesseract {
 					int32_t rounded_num_out;
 					matrix.Init(w, shaped_wi, rounded_num_out);
 					scales.resize(rounded_num_out);
-					if (matrix.matrixDotVectorFunction) {
-						matrix.matrixDotVectorFunction(w.dim1(), w.dim2(), &shaped_wi[0], &scales[0], &u[0],
-							&test_result[0]);
-					}
-					else {
-						IntSimdMatrix::MatrixDotVector(w, scales, u.data(), test_result.data());
-					}
-					for (int i = 0; i < num_out; ++i) {
-						EXPECT_FLOAT_EQ(base_result[i], test_result[i]) << "i=" << i;
-						total += base_result[i];
+
+						if (matrix.matrixDotVectorFunction) {
+							matrix.matrixDotVectorFunction(w.dim1(), w.dim2(), &shaped_wi[0], &scales[0], &u[0],
+								&test_result[0]);
+						}
+						else {
+							IntSimdMatrix::MatrixDotVector(w, scales, u.data(), test_result.data());
+						}
+						for (int i = 0; i < num_out; ++i) {
+							EXPECT_FLOAT_EQ(base_result[i], test_result[i]) << "i=" << i;
+							total += base_result[i];
+						}
 					}
 				}
 			}
 			// Compare sum of all results with expected value.
-			const double sollwert = 2271616.50;
+			const double sollwert = -3115826.00;
 
 			if (!approx_eq(total, sollwert)) {
 				fprintf(stderr, "FAIL: matrix: %lf\n", total);

@@ -207,17 +207,25 @@ TFloat DotProductGeneric(const TFloat *u, const TFloat *v, int n) {
 
 
 static bool approx_eq(double a, double b) {
-  auto diff = a - b;
-  if (diff == 0.0)
-    return true;
-  // take the log of both, as we know all incoming values will be positive,
-  // so we can check the precision easily, i.e. at which significant digit
-  // did the difference occur? ::
-  a = log(a);
-  b = log(b);
-  diff = a - b;
-  return (diff >= -1e-5 && diff <= 1e-5);
+	auto diff = a - b;
+	if (diff == 0.0)
+		return true;
+	// take the log of both, as we know all incoming values will be positive,
+	// so we can check the precision easily, i.e. at which significant digit
+	// did the difference occur?
+	//
+	// However, when one or both are negative, we need to act slightly different
+	// as we are primarily interested in their relative *distance*.
+	// The log() of their distance will tell us the first different significant
+	// digit in there, so instead of comparing log(a) and log(b) we can
+	// compare log(abs(a)) and log(abs(distance(a, b))), i.e. log(abs(a - b))!
+	auto aa = log(fabs(a) + 1e-25);  // makes sure the value going into the log() is never zero
+	auto ld = log(fabs(a - b) + 1e-25);  // makes sure the value going into the log() is never zero
+	// now we're close enough, when the diff is ~6 digits below the most significant digit of a (= power of a).
+	diff = aa - ld;
+	return (diff >= 13);
 }
+
 
 template <class T>
 void run_tfloat_benchmark(void) {
