@@ -45,12 +45,62 @@ namespace tesseract {
 		return (diff >= -1e-4 && diff <= 1e-4);
 	}
 
+	const int DIM_MAX = 200;    // maximum 1-dimensional size of the matrices tested. --> biggest matrix will be 200x200 cells.
+
+	// Note: as the initial benchmark runs indicated that the InitRandom() call plus setup was eating over 50% of the total
+	// CPU time, most of it spent in the random generator, we 'fix' that by collecting a big ream of semi-random data
+	// ONCE and then cycling through it from then on.
+	// As long as we collect enough random samples up front, we still would be using good quality random data in every run.
+	//
+	// Total amount needed: one round takes DIM*(DIM+1) samples. We've got DIM*DIM rounds, but we don't mind re-using
+	// random samples, just as long as there's a reasonable guarantee that the matrixes will not be just scaled up copies.
+	// To accomplish that, we make sure the number of samples in the cache is mutual prime to DIM*(DIM+1): adding a prime (51)
+	// other than 1 does not exactly *guarantee* this under all mathematical conditions, but it's good enough for a
+	// table-top benchmark.
+	// When you don't agree, tweak this to your heart's content. <wink/>
+	//
+	static int8_t random_data_cache[DIM_MAX * (DIM_MAX + 1) + 51];
+	static TFloat frandom_data_cache[DIM_MAX + 43]; // same story for the scales: DIM per round, mutual prime cache size
+	static int random_data_cache_index = -1;
+	static int frandom_data_cache_index = -1;
+
+	static void InitRandomCache(void) {
+		TRand random_;
+		random_.set_seed("tesseract performance testing");
+		for (int i = 0; i < countof(random_data_cache); i++) {
+			random_data_cache[i] = static_cast<int8_t>(random_.SignedRand(INT8_MAX));
+		}
+		for (int i = 0; i < countof(frandom_data_cache); i++) {
+			frandom_data_cache[i] = (1.0 + random_.SignedRand(1.0)) / INT8_MAX;
+		}
+	}
+
+	// cycle through the random pool while we fetch one random value on each call.
+	static auto get_random_sample() {
+		random_data_cache_index++;
+		if (random_data_cache_index >= countof(random_data_cache)) {
+			random_data_cache_index = -1;
+		}
+		return random_data_cache[random_data_cache_index];
+	}
+	static auto get_frandom_sample() {
+		frandom_data_cache_index++;
+		if (frandom_data_cache_index >= countof(frandom_data_cache)) {
+			frandom_data_cache_index = -1;
+		}
+		return frandom_data_cache[frandom_data_cache_index];
+	}
+	static auto reset_random_pool_index() {
+		random_data_cache_index = -1;
+		frandom_data_cache_index = -1;
+	}
 
 
 	class MatrixChecker {
 	public:
 		void SetUp() {
 			std::locale::global(std::locale(""));
+			InitRandomCache();
 		}
 
 		// Makes a random weights matrix of the given size.
@@ -58,7 +108,7 @@ namespace tesseract {
 			GENERIC_2D_ARRAY<int8_t> a(no, ni, 0);
 			for (int i = 0; i < no; ++i) {
 				for (int j = 0; j < ni; ++j) {
-					a(i, j) = static_cast<int8_t>(random_.SignedRand(INT8_MAX));
+					a(i, j) = get_random_sample();
 				}
 			}
 			return a;
@@ -69,7 +119,7 @@ namespace tesseract {
 			int rounded_size = matrix.RoundInputs(size);
 			std::vector<int8_t> v(rounded_size, 0);
 			for (int i = 0; i < size; ++i) {
-				v[i] = static_cast<int8_t>(random_.SignedRand(INT8_MAX));
+				v[i] = get_random_sample();
 			}
 			return v;
 		}
@@ -78,7 +128,7 @@ namespace tesseract {
 		std::vector<TFloat> RandomScales(int size) {
 			std::vector<TFloat> v(size);
 			for (int i = 0; i < size; ++i) {
-				v[i] = (1.0 + random_.SignedRand(1.0)) / INT8_MAX;
+				v[i] = get_frandom_sample();
 			}
 			return v;
 		}
@@ -86,8 +136,9 @@ namespace tesseract {
 		// Tests a range of sizes and compares the results against the generic version.
 		void ExpectEqualResults(const IntSimdMatrix& matrix) {
 			// reset random generator as well, so we can be assured we'll get the same semi-random data for this test!
-			random_.set_seed("tesseract performance testing");
-			const int DIM_MAX = 200;
+			//random_.set_seed("tesseract performance testing");
+			reset_random_pool_index();
+			//const int DIM_MAX = 200;
 
 			TFloat total = 0.0;
 			for (int num_out = 1; num_out < DIM_MAX; ++num_out) {
@@ -120,15 +171,12 @@ namespace tesseract {
 				}
 			}
 			// Compare sum of all results with expected value.
-			const double sollwert = 675095.938;
+			const double sollwert = 2271616.50;
 
 			if (!approx_eq(total, sollwert)) {
 				fprintf(stderr, "FAIL: matrix: %lf\n", total);
 			}
 		}
-
-	protected:
-		TRand random_;
 	};
 
 

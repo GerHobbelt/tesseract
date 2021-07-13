@@ -254,14 +254,14 @@ public:
   }
   // Returns the number of elements in the array.
   // Banded/triangular matrices may override.
-  virtual int num_elements() const {
+  virtual int num_elements() const final {
     return dim1_ * dim2_;
   }
 
   // Expression to select a specific location in the matrix. The matrix is
   // stored COLUMN-major, so the left-most index is the most significant.
   // This allows [][] access to use indices in the same order as (,).
-  virtual int index(int column, int row) const {
+  virtual int index(int column, int row) const final {
     return (column * dim2_ + row);
   }
 
