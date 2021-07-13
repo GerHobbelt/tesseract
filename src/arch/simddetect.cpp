@@ -256,10 +256,10 @@ SIMDDetect::SIMDDetect() {
     // This is a dummy to support conditional compilation.
   } else if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 detected.
-    SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixAVX2);
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
   } else if (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX detected.
-    SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixSSE);
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixSSE);
   } else if (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // FMA detected.
     SetDotProduct(DotProductFMA, IntSimdMatrix::intSimdMatrixSSE);
@@ -293,7 +293,7 @@ void SIMDDetect::Update() {
 #endif
   } else if (!strcmp(dotproduct.c_str(), "avx2") && avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 selected by config variable.
-    SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixAVX2);
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx2";
   } else if (!strcmp(dotproduct.c_str(), "avx-1") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX2 (Alternative Implementation) selected by config variable.
@@ -301,7 +301,7 @@ void SIMDDetect::Update() {
     dotproduct_method = "avx-1";
   } else if (!strcmp(dotproduct.c_str(), "avx") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX selected by config variable.
-    SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixSSE);
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixSSE);
     dotproduct_method = "avx";
   } else if (!strcmp(dotproduct.c_str(), "fma") && fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // FMA selected by config variable.
