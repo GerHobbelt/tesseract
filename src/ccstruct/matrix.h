@@ -254,14 +254,14 @@ public:
   }
   // Returns the number of elements in the array.
   // Banded/triangular matrices may override.
-  virtual int num_elements() const final {
+  /* virtual */ int num_elements() const /* final */ {
     return dim1_ * dim2_;
   }
 
   // Expression to select a specific location in the matrix. The matrix is
   // stored COLUMN-major, so the left-most index is the most significant.
   // This allows [][] access to use indices in the same order as (,).
-  virtual int index(int column, int row) const final {
+  /* virtual */ int index(int column, int row) const /* final */ {
     return (column * dim2_ + row);
   }
 
@@ -626,14 +626,16 @@ public:
     return this->dim2_;
   }
 
+#if 0
   // Expression to select a specific location in the matrix. The matrix is
   // stored COLUMN-major, so the left-most index is the most significant.
   // This allows [][] access to use indices in the same order as (,).
-  int index(int column, int row) const override {
+  int index(int column, int row) const /* override */ {
     ASSERT_HOST(row >= column);
     ASSERT_HOST(row - column < this->dim2_);
     return column * this->dim2_ + row - column;
   }
+#endif
 
   // Appends array2 corner-to-corner to *this, making an array of dimension
   // equal to the sum of the individual dimensions.
