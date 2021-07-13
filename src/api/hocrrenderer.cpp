@@ -21,6 +21,9 @@
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
 #include <sstream>             // for std::stringstream
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for MultiByteToWideChar, ...
 #endif
@@ -423,7 +426,11 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   hocr_str << "  </div>\n";
 
   const std::string &text = hocr_str.str();
-  char *result = new char[text.length() + 1];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
+#else
+  char* result = new char[text.length() + 1];
+#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }

@@ -32,6 +32,10 @@
 #include <locale>    // for std::locale::classic
 #include <memory>    // std::unique_ptr
 #include <sstream>   // for std::stringstream
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
+
 #include "helpers.h" // for Swap
 
 /*
@@ -475,7 +479,11 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
     }
   }
   const std::string &text = pdf_str.str();
-  char *result = new char[text.length() + 1];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
+#else
+  char* result = new char[text.length() + 1];
+#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }
@@ -788,7 +796,11 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
   size_t colorspace_len = colorspace.str().size();
 
   *pdf_object_size = b1_len + colorspace_len + b2_len + cid->nbytescomp + b3_len;
-  *pdf_object = new char[*pdf_object_size];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  *pdf_object = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[*pdf_object_size];
+#else
+  * pdf_object = new char[*pdf_object_size];
+#endif  // _DEBUG
 
   char *p = *pdf_object;
   memcpy(p, b1.str().c_str(), b1_len);
