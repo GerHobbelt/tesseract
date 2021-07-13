@@ -18,7 +18,6 @@
 #include "intsimdmatrix.h"
 
 #if defined(__AVX2__)
-
 #  include <immintrin.h>
 #  include <algorithm>
 #  include <cstdint>
