@@ -168,6 +168,7 @@ namespace tesseract {
 			cls.ExpectEqualResults(*IntSimdMatrix::intSimdMatrixNEON);
 			cls.ExpectEqualResults(*IntSimdMatrix::intSimdMatrixNEON);
 		}
+#if 0
 		if (IntSimdMatrix::intSimdMatrix != nullptr) {
 			cls.ExpectEqualResults(*IntSimdMatrix::intSimdMatrix);
 
@@ -175,6 +176,7 @@ namespace tesseract {
 			cls.ExpectEqualResults(*IntSimdMatrix::intSimdMatrix);
 			cls.ExpectEqualResults(*IntSimdMatrix::intSimdMatrix);
 		}
+#endif
 	}
 
 } // namespace tesseract
