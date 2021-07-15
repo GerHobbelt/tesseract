@@ -311,7 +311,6 @@ void BlamerBundle::SetChopperBlame(const WERD_RES *word, bool debug) {
   if (NoTruth() || !truth_has_char_boxes_ || word->chopped_word->blobs.empty()) {
     return;
   }
-  std::string debug_str;
   bool missing_chop = false;
   int num_blobs = word->chopped_word->blobs.size();
   int box_index = 0;
@@ -331,6 +330,7 @@ void BlamerBundle::SetChopperBlame(const WERD_RES *word, bool debug) {
     }
   }
   if (missing_chop || box_index < norm_truth_word_.length()) {
+    std::string debug_str;
     if (missing_chop) {
       debug_str += "Detected missing chop (tolerance=" + std::to_string(norm_box_tolerance_);
       debug_str += ") at Bounding Box=";
