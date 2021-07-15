@@ -109,16 +109,21 @@ bool SIMDDetect::fma_available_ = false;
 bool SIMDDetect::sse_available_ = false;
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
-TFloat DotProductAccelerate(const TFloat* u, const TFloat* v, int n) {
-  TFloat total = 0;
+
+float DotProductAccelerate(const float* u, const float* v, int n) {
+  float total = 0;
   const int stride = 1;
-#if defined(FAST_FLOAT)
   vDSP_dotpr(u, stride, v, stride, &total, n);
-#else
-  vDSP_dotprD(u, stride, v, stride, &total, n);
-#endif
   return total;
 }
+
+double DotProductAccelerate(const double* u, const double* v, int n) {
+  double total = 0;
+  const int stride = 1;
+  vDSP_dotprD(u, stride, v, stride, &total, n);
+  return total;
+}
+
 #endif
 
 // Computes and returns the dot product of the two n-vectors u and v.
