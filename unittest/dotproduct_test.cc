@@ -49,7 +49,7 @@ void DotProductTest::RunTest(TFloat (*f)(const TFloat *u, const TFloat *v, int n
   }
 }
 
-TFloat DotProductGeneric(const TFloat *u, const TFloat *v, int n) {
+static TFloat DotProductGeneric(const TFloat *u, const TFloat *v, int n) {
   TFloat total = 0;
 #pragma omp simd reduction(+:total)
   for (int k = 0; k < n; ++k) {
