@@ -41,7 +41,7 @@ enum ParamType { VT_INTEGER, VT_BOOLEAN, VT_STRING, VT_DOUBLE };
 
 // A rather hackish helper structure which can take any kind of parameter input
 // (defined by ParamType) and do a couple of common operations on them, like
-// comparisond or getting its value. It is used in the context of the
+// comparison or getting its value. It is used in the context of the
 // ParamsEditor as a bridge from the internal tesseract parameters to the
 // ones displayed by the ScrollView server.
 class ParamContent : public ELIST_LINK {

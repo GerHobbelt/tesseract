@@ -26,6 +26,7 @@
 
 #include <tesseract/baseapi.h>
 #include "helpers.h"
+#include "tprintf.h"
 
 #include "tesseract/capi_training_tools.h"
 
@@ -42,10 +43,10 @@ extern "C" int tesseract_ambiguous_words_main(int argc, const char **argv)
 
   // Parse input arguments.
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    tprintf("%s\n", tesseract::TessBaseAPI::Version());
+    tesseract::tprintf("%s\n", tesseract::TessBaseAPI::Version());
     return 0;
   } else if (argc != 4 && (argc != 6 || strcmp(argv[1], "-l") != 0)) {
-    tprintf(
+    tesseract::tprintf(
         "Usage: %s -v | --version | %s [-l lang] tessdata_dir wordlist_file"
         " output_ambiguous_wordlist_file\n",
         argv[0], argv[0]);
@@ -75,7 +76,7 @@ extern "C" int tesseract_ambiguous_words_main(int argc, const char **argv)
   FILE *input_file = fopen(input_file_str, "rb");
   if (input_file == nullptr) {
     tesseract::tprintf("ERROR: Failed to open input wordlist file %s\n", input_file_str);
-    exit(1);
+    return 1;
   }
   char str[CHARS_PER_LINE];
 
@@ -88,6 +89,7 @@ extern "C" int tesseract_ambiguous_words_main(int argc, const char **argv)
   }
   // Clean up.
   fclose(input_file);
+  return 0;
 }
 
 #endif

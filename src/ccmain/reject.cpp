@@ -89,7 +89,7 @@ void Tesseract::set_done(WERD_RES *word, int16_t pass) {
 /*************************************************************************
  * make_reject_map()
  *
- * Sets the done flag to indicate whether the resylt is acceptable.
+ * Sets the done flag to indicate whether the result is acceptable.
  *
  * Sets a reject map for the word.
  *************************************************************************/

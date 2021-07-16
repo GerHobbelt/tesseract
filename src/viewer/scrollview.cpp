@@ -80,6 +80,7 @@ SVEvent *SVEvent::copy() {
 SVEventHandler::~SVEventHandler() = default;
 
 #ifndef GRAPHICS_DISABLED
+
 /// This is the main loop which handles the ScrollView-logic from the server
 /// to the client. It basically loops through messages, parses them to events
 /// and distributes it to the waiting handlers.
@@ -454,7 +455,7 @@ SVEvent *ScrollView::AwaitEvent(SVEventType type) {
   // Wait on it, but first flush.
   stream_->Flush();
   sem->Wait();
-  // Process the event we got woken up for (its in waiting_for_events pair).
+  // Process the event we got woken up for (it's in waiting_for_events pair).
   waiting_for_events_mu->lock();
   SVEvent *ret = waiting_for_events[ea].second;
   waiting_for_events.erase(ea);
@@ -475,7 +476,7 @@ SVEvent *ScrollView::AwaitEventAnyWindow() {
   // Wait on it.
   stream_->Flush();
   sem->Wait();
-  // Process the event we got woken up for (its in waiting_for_events pair).
+  // Process the event we got woken up for (it's in waiting_for_events pair).
   waiting_for_events_mu->lock();
   SVEvent *ret = waiting_for_events[ea].second;
   waiting_for_events.erase(ea);
