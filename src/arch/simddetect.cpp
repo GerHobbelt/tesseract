@@ -237,12 +237,6 @@ SIMDDetect::SIMDDetect() {
     if (family == ANDROID_CPU_FAMILY_ARM)
       neon_available_ = (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
   }
-#  elif defined(HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION)
-#    if defined(NEON_ALWAYS_AVAILABLE)
-  neon_available_ = 1;
-#    else
-  neon_available_ = getauxval(AT_HWCAP) & HWCAP_NEON;
-#    endif
 #  else
   /* Assume linux */
   neon_available_ = getauxval(AT_HWCAP) & HWCAP_NEON;
@@ -250,24 +244,36 @@ SIMDDetect::SIMDDetect() {
 #endif
 
   // Select code for calculation of dot product based on autodetection.
-  if (false) {
-    // This is a dummy to support conditional compilation.
-  } else if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  const char *dotproduct_method = "generic";
+
+  if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 detected.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "avx2";
   } else if (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX detected.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "avx";
   } else if (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // FMA detected.
     SetDotProduct(DotProductFMA, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "fma";
   } else if (sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // SSE detected.
     SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "sse";
   } else if (neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
     // NEON detected.
     SetDotProduct(DotProductNative, IntSimdMatrix::intSimdMatrixNEON);
+    dotproduct_method = "neon";
+#if defined(HAVE_FRAMEWORK_ACCELERATE)
+  } else {
+    SetDotProduct(DotProductAccelerate);
+    dotproduct_method = "accelerate";
+#endif
   }
+
+  dotproduct.set_value(dotproduct_method);
 }
 
 void SIMDDetect::Update() {
