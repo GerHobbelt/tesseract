@@ -223,28 +223,32 @@ SIMDDetect::SIMDDetect() {
 #endif
 
   // Select code for calculation of dot product based on autodetection.
-  if (false) {
-    // This is a dummy to support conditional compilation.
-#if defined(HAVE_AVX2)
-  } else if (avx2_available_) {
+  const char *dotproduct_method = nullptr;
+  if (avx2_available_) {
     // AVX2 detected.
     SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixAVX2);
-#endif
-#if defined(HAVE_AVX)
+    dotproduct_method = "avx2";
   } else if (avx_available_) {
     // AVX detected.
     SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixSSE);
-#endif
-#if defined(HAVE_SSE4_1)
+    dotproduct_method = "avx";
   } else if (sse_available_) {
     // SSE detected.
     SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
-#endif
-#if defined(HAVE_NEON) || defined(__aarch64__)
+    dotproduct_method = "sse";
   } else if (neon_available_) {
     // NEON detected.
     SetDotProduct(DotProductNative, IntSimdMatrix::intSimdMatrixNEON);
+    dotproduct_method = "neon";
+#if defined(HAVE_FRAMEWORK_ACCELERATE)
+  } else {
+    SetDotProduct(DotProductAccelerate);
+    dotproduct_method = "accelerate";
 #endif
+  }
+
+  if (dotproduct_method != nullptr) {
+    dotproduct.set_value(dotproduct_method);
   }
 }
 
@@ -268,6 +272,7 @@ void SIMDDetect::Update() {
     SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx2";
   } else if (dotproduct == "avx-1") {
+    // AVX2 (Alternative Implementation) selected by config variable.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx-1";
 #endif
@@ -292,6 +297,7 @@ void SIMDDetect::Update() {
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
   } else if (dotproduct == "accelerate") {
     SetDotProduct(DotProductAccelerate);
+    dotproduct_method = "accelerate";
 #endif
 #if defined(HAVE_NEON) || defined(__aarch64__)
   } else if (dotproduct == "neon" && neon_available_) {
