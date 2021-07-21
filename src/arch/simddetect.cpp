@@ -157,13 +157,6 @@ SIMDDetect::SIMDDetect() {
   if (dotproduct_env != nullptr) {
     dotproduct = dotproduct_env;
     Update();
-    if (strcmp(dotproduct_env, "native") == 0) {
-      SetDotProduct(DotProductNative);
-#if defined(HAVE_FRAMEWORK_ACCELERATE)
-    } else if (strcmp(dotproduct_env, "accelerate") == 0) {
-      SetDotProduct(DotProductAccelerate);
-#endif
-    }
     return;
   }
 
@@ -281,46 +274,49 @@ void SIMDDetect::Update() {
   // Select code for calculation of dot product based on the
   // value of the config variable if that value is not empty.
   const char *dotproduct_method = "generic";
-  if (!strcmp(dotproduct.c_str(), "auto")) {
+  if (dotproduct == "auto") {
     // Automatic detection. Nothing to be done.
-  } else if (!strcmp(dotproduct.c_str(), "generic")) {
+  } else if (dotproduct == "generic") {
     // Generic code selected by config variable.
     SetDotProduct(DotProductGeneric);
     dotproduct_method = "generic";
-  } else if (!strcmp(dotproduct.c_str(), "native")) {
+  } else if (dotproduct == "native") {
     // Native optimized code selected by config variable.
     SetDotProduct(DotProductNative);
     dotproduct_method = "native";
+  } else if (dotproduct == "avx2") && avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+    // AVX2 selected by config variable.
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "avx2";
+  } else if (dotproduct == "avx-1") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+    // AVX2 (Alternative Implementation) selected by config variable.
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "avx-1";
+  } else if (dotproduct == "avx") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+    // AVX selected by config variable.
+    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "avx";
+  } else if (dotproduct == "fma") && fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+    // FMA selected by config variable.
+    SetDotProduct(DotProductFMA, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "fma";
+  } else if (dotproduct == "sse") && sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+  } else if (!strcmp(dotproduct.c_str(), "sse")) {
+    // SSE selected by config variable.
+    SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "sse";
+  } else if (!strcmp(dotproduct.c_str(), "neon") && neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
   } else if (dotproduct == "accelerate") {
     SetDotProduct(DotProductAccelerate);
     dotproduct_method = "accelerate";
 #endif
-  } else if (!strcmp(dotproduct.c_str(), "avx2") && avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
-    // AVX2 selected by config variable.
-    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
-    dotproduct_method = "avx2";
-  } else if (!strcmp(dotproduct.c_str(), "avx-1") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
-    // AVX2 (Alternative Implementation) selected by config variable.
-    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
-    dotproduct_method = "avx-1";
-  } else if (!strcmp(dotproduct.c_str(), "avx") && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
-    // AVX selected by config variable.
-    SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixSSE);
-    dotproduct_method = "avx";
-  } else if (!strcmp(dotproduct.c_str(), "fma") && fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
-    // FMA selected by config variable.
-    SetDotProduct(DotProductFMA, IntSimdMatrix::intSimdMatrixSSE);
-    dotproduct_method = "fma";
-  } else if (!strcmp(dotproduct.c_str(), "sse") && sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
-    // SSE selected by config variable.
-    SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
-    dotproduct_method = "sse";
-  } else if (!strcmp(dotproduct.c_str(), "neon") && neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
+#if defined(HAVE_NEON) || defined(__aarch64__)
+  } else if (dotproduct == "neon" && neon_available_) {
     // NEON selected by config variable.
-    SetDotProduct(DotProductNative, IntSimdMatrix::intSimdMatrixNEON);
     dotproduct_method = "neon";
-  } else if (!strcmp(dotproduct.c_str(), "std::inner_product")) {
+#endif
+  } else if (dotproduct == "std::inner_product") {
     // std::inner_product selected by config variable.
     SetDotProduct(DotProductStdInnerProduct);
     dotproduct_method = "std::inner_product";
@@ -329,7 +325,7 @@ void SIMDDetect::Update() {
     tprintf("WARNING: Ignoring unsupported config variable value: dotproduct=%s\n",
             dotproduct.c_str());
     tprintf(
-        "Support values for dotproduct: auto generic native"
+        "Supported values for dotproduct: auto generic native"
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif
