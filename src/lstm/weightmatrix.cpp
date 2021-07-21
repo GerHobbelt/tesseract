@@ -38,6 +38,7 @@ const int kAdamCorrectionIterations = 200000;
 const TFloat kAdamEpsilon = 1e-8;
 
 // Utility functions convert between double and float arrays.
+#ifdef FAST_FLOAT
 static void DoubleToFloat(const GENERIC_2D_ARRAY<double> &src, GENERIC_2D_ARRAY<float> &dst) {
   const auto dim1 = src.dim1();
   const auto dim2 = src.dim2();
@@ -50,6 +51,7 @@ static void DoubleToFloat(const GENERIC_2D_ARRAY<double> &src, GENERIC_2D_ARRAY<
     }
   }
 }
+#endif
 
 static void FloatToDouble(const GENERIC_2D_ARRAY<float> &src, GENERIC_2D_ARRAY<double> &dst) {
   const auto dim1 = src.dim1();
@@ -231,19 +233,18 @@ bool WeightMatrix::Serialize(bool training, TFile *fp) const {
     if (!wi_.Serialize<int8_t>(fp)) {
       return false;
     }
-    // The scales stored in memory have an extra factor applied to them
-    // to allow faster operation. We have to remove that factor here
-    // before writing to disc.
-    auto scales = scales_;
-    for (auto &scale : scales) {
-      scale *= INT8_MAX;
-    }
-    uint32_t size = scales.size();
+    uint32_t size = scales_.size();
     if (!fp->Serialize(&size)) {
       return false;
     }
-    if (!fp->Serialize<TFloat, double>(&scales[0], size)) {
-      return false;
+    for (auto scale : scales_) {
+      // The scales stored in memory have an extra factor applied to them
+      // to allow faster operation. We have to remove that factor here
+      // before writing to disc.
+      double value = scale * INT8_MAX;
+      if (!fp->Serialize<double>(&value)) {
+        return false;
+      }
     }
   } else {
     if (!tesseract::Serialize(fp, wf_)) {

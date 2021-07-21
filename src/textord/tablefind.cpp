@@ -2068,7 +2068,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid, ColPartitionSet **all_
       table_partition->set_flow(BTFT_CHAIN);
       table_partition->SetBlobTypes();
       grid->InsertBBox(true, true, table_partition);
-   
+
 #if 0 // This code triggers an assertion.
       // Insert table columns and rows into an api accessible object
       StructuredTable* table_structure = recognizer.RecognizeTable(table_box);
