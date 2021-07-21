@@ -91,7 +91,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
     return EXIT_FAILURE;
   }
   if (FLAGS_traineddata.empty()) {
-    tprintf("ERROR: Must provide a --traineddata see training documentation\n");
+    tprintf("ERROR: Must provide a --traineddata, see training documentation\n");
     return EXIT_FAILURE;
   }
 
