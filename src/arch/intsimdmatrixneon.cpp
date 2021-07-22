@@ -28,12 +28,6 @@
 
 namespace tesseract {
 
-#if defined(FAST_FLOAT)
-
-const IntSimdMatrix *IntSimdMatrix::intSimdMatrixNEON = nullptr;
-
-#else
-
 // Number of outputs held in each register. (Actually, we use a
 // pair of 4x32 registers, so 8 x 32 bit ints).
 constexpr int kNumOutputsPerRegister = 8;
@@ -58,10 +52,11 @@ constexpr int kNumInputsPerGroup = 8;
 // bias weights, before continuing with any more weights.
 // u must be padded out with zeros to
 // kNumInputsPerGroup*ceil(num_in/kNumInputsPerGroup) elements.
+template <class TFloat>
 static inline void PartialMatrixDotVector8(const int8_t *__restrict wi,
-                                           const double *__restrict scales,
+                                           const TFloat *__restrict scales,
                                            const int8_t *__restrict u, int num_in,
-                                           double *__restrict v, int num_out) {
+                                           TFloat *__restrict v, int num_out) {
   // Initialize all the results to 0.
   int32x4_t result0123 = {0, 0, 0, 0};
   int32x4_t result4567 = {0, 0, 0, 0};
@@ -170,8 +165,9 @@ static inline void PartialMatrixDotVector8(const int8_t *__restrict wi,
   }
 }
 
-static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const double *scales,
-                            const int8_t *u, double *v) {
+template <class TFloat>
+static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *scales,
+                            const int8_t *u, TFloat *v) {
   const int num_out = dim1;
   const int num_in = dim2 - 1;
   // Each call to a partial_func_ produces group_size outputs, except the
