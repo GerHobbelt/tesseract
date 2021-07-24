@@ -540,7 +540,7 @@ PKG_CHECK_MODULES([ICU_UC], [icu-uc >= 52.1], [have_icu_uc=true], [have_icu_uc=f
 PKG_CHECK_MODULES([ICU_I18N], [icu-i18n >= 52.1], [have_icu_i18n=true], [have_icu_i18n=false])
 if !($have_icu_uc && $have_icu_i18n); then
   AC_MSG_WARN([icu 52.1 or higher is required, but was not found.])
-  AC_MSG_WARN([Training tools WILL NOT be built.])
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing icu library.])
   AC_MSG_WARN([Try to install libicu-dev package.])
   AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
@@ -549,17 +549,17 @@ fi
 PKG_CHECK_MODULES([pango], [pango >= 1.38.0], [have_pango=true], [have_pango=false])
 if !($have_pango); then
         AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
-        AC_MSG_WARN([Training tools WILL NOT be built.])
-        AC_MSG_WARN([Try to install libpango1.0-dev package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing pango1.0 library.])
+  AC_MSG_WARN([Try to install libpango1.0-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 # Check location of cairo headers
 PKG_CHECK_MODULES([cairo], [cairo], [have_cairo=true], [have_cairo=false])
 if !($have_cairo); then
-        AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
-        AC_MSG_WARN([Try to install libcairo-dev?? package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
+  AC_MSG_WARN([Try to install libcairo-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 PKG_CHECK_MODULES([pangocairo], [pangocairo], [], [false])
