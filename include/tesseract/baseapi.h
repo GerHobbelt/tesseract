@@ -32,6 +32,7 @@
 #include <tesseract/version.h>
 
 #include <cstdio>
+#include <tuple>  // for std::tuple
 #include <vector> // for std::vector
 
 struct Pix;
@@ -541,6 +542,31 @@ public:
    * as UTF8 and must be freed with the delete [] operator.
    */
   char *GetUTF8Text();
+
+  size_t GetNumberOfTables() const;
+
+  /// Return the i-th table bounding box coordinates
+  ///
+  /// Gives the (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  /// coordinates of the i-th table.
+  std::tuple<int, int, int, int> GetTableBoundingBox(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the rows of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableRows(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the cols of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableCols(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
 
   /**
    * Make a HTML-formatted string with hOCR markup from the internal
