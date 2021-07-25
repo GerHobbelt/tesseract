@@ -204,8 +204,6 @@ static const IntSimdMatrix simdMatrix = {
 
 const IntSimdMatrix *IntSimdMatrix::intSimdMatrixNEON = &simdMatrix;
 
-#endif // FAST_FLOAT
-
 } // namespace tesseract.
 
 #else
