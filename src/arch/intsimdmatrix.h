@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "tfloat.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 

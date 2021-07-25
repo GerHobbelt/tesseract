@@ -20,7 +20,7 @@
 
 #include "network.h"
 #include "networkscratch.h"
-#include "tfloat.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 

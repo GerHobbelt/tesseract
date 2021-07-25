@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 #include "intsimdmatrix.h"
-#include "tfloat.h"
+#include "tesstypes.h"
 
 #if defined(HAVE_NEON)
 

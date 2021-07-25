@@ -529,7 +529,7 @@ int NetworkIO::PositionOfBestMatch(const std::vector<int> &labels, int start, in
   int length = labels.size();
   int last_start = end - length;
   int best_start = -1;
-  double best_score = 0.0;
+  TFloat best_score = 0;
   for (int s = start; s <= last_start; ++s) {
     TFloat score = ScoreOfLabels(labels, s);
     if (score > best_score || best_start < 0) {

@@ -22,8 +22,8 @@
 #include <vector>
 #include "intsimdmatrix.h"
 #include "matrix.h"
+#include "tesstypes.h"
 #include "tprintf.h"
-#include "tfloat.h"
 
 namespace tesseract {
 

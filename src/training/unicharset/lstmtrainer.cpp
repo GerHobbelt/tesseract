@@ -689,7 +689,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     // Which way will we modify the learning rate?
     for (int ww = 0; ww < LR_COUNT; ++ww) {
       // Transfer momentum to learning rate and adjust by the ww factor.
-      float ww_factor = momentum_factor;
+      auto ww_factor = momentum_factor;
       if (ww == LR_DOWN) {
         ww_factor *= factor;
       }

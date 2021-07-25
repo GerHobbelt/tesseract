@@ -18,7 +18,7 @@
 #define TESSERACT_ARCH_SIMDDETECT_H_
 
 #include <tesseract/export.h>
-#include "tfloat.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 

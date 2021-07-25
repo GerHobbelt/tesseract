@@ -19,7 +19,7 @@
 #define TESSERACT_LSTM_FUNCTIONS_H_
 
 #include "helpers.h"
-#include "tfloat.h"
+#include "tesstypes.h"
 
 // Setting this to 1 or more causes massive dumps of debug data: weights,
 // updates, internal calculations etc, and reduces the number of test iterations

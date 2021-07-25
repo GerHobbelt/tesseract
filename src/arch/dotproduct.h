@@ -17,7 +17,7 @@
 #ifndef TESSERACT_ARCH_DOTPRODUCT_H_
 #define TESSERACT_ARCH_DOTPRODUCT_H_
 
-#include "tfloat.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 

@@ -287,7 +287,7 @@ public:
 
 protected:
   // Returns a random number in [-range, range].
-  double Random(double range);
+  TFloat Random(TFloat range);
 
 protected:
   NetworkType type_;       // Type of the derived network class.
