@@ -26,7 +26,7 @@
 #include <cstring>
 #include <type_traits>
 #include <vector> // std::vector
-#include "tfloat.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 
@@ -105,7 +105,7 @@ bool Serialize(FILE* fp, const T* data, size_t n = 1) {
 	return rv;
 }
 
-template 
+template
 bool Serialize<double, double>(FILE* fp, const double* data, size_t n);
 template
 bool Serialize<double, float>(FILE* fp, const double* data, size_t n);

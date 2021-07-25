@@ -23,7 +23,7 @@
 #include "tprintf.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
 #include "simddetect.h" // for DotProduct
-#include "tfloat.h"
+#include "tesstypes.h"
 #include "intsimdmatrix.h"
 
 // Tests various implementations of costly DotProduct and Matrix calls, using

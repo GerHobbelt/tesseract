@@ -24,7 +24,7 @@
 #include "params.h"        // for STRING_VAR
 #include "simddetect.h"
 #include "tprintf.h" // for tprintf
-#include "tfloat.h"
+#include "tesstypes.h"
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
 
