@@ -198,8 +198,8 @@ void POLY_BLOCK::rotate(FCOORD rotation) {
     pos.set_x(pt->x());
     pos.set_y(pt->y());
     pos.rotate(rotation);
-    pt->set_x(static_cast<int32_t>(floor(pos.x() + 0.5)));
-    pt->set_y(static_cast<int32_t>(floor(pos.y() + 0.5)));
+    pt->set_x(static_cast<TDimension>(floor(pos.x() + 0.5)));
+    pt->set_y(static_cast<TDimension>(floor(pos.y() + 0.5)));
     pts.forward();
   } while (!pts.at_first());
   compute_bb();
@@ -334,7 +334,7 @@ bool POLY_BLOCK::overlap(POLY_BLOCK *other) {
   return false;
 }
 
-ICOORDELT_LIST *PB_LINE_IT::get_line(int32_t y) {
+ICOORDELT_LIST *PB_LINE_IT::get_line(TDimension y) {
   ICOORDELT_IT v, r;
   ICOORDELT_LIST *result;
   ICOORDELT *x, *current, *previous;
@@ -351,7 +351,7 @@ ICOORDELT_LIST *PB_LINE_IT::get_line(int32_t y) {
       float fx =
           0.5f + previous->x() +
           (current->x() - previous->x()) * (fy - previous->y()) / (current->y() - previous->y());
-      x = new ICOORDELT(static_cast<int32_t>(fx), 0);
+      x = new ICOORDELT(static_cast<TDimension>(fx), 0);
       r.add_to_end(x);
     }
   }

@@ -39,10 +39,10 @@ public:
         bool prop,        ///< proportional
         int16_t kern,     ///< kerning
         int16_t space,    ///< spacing
-        int32_t xmin,     ///< bottom left
-        int32_t ymin,
-        int32_t xmax, ///< top right
-        int32_t ymax);
+        TDimension xmin,  ///< bottom left
+        TDimension ymin,
+        TDimension xmax,  ///< top right
+        TDimension ymax);
 
   ~BLOCK() = default;
 

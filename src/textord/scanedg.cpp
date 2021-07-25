@@ -44,11 +44,11 @@ static void free_crackedges(CRACKEDGE *start);
 static void join_edges(CRACKEDGE *edge1, CRACKEDGE *edge2, CRACKEDGE **free_cracks,
                        C_OUTLINE_IT *outline_it);
 
-static void line_edges(int32_t x, int32_t y, int32_t xext, uint8_t uppercolour, uint8_t *bwpos,
+static void line_edges(TDimension x, TDimension y, TDimension xext, uint8_t uppercolour, uint8_t *bwpos,
                        CRACKEDGE **prevline, CRACKEDGE **free_cracks, C_OUTLINE_IT *outline_it);
 
 static void make_margins(PDBLK *block, BLOCK_LINE_IT *line_it, uint8_t *pixels, uint8_t margin,
-                         int32_t left, int32_t right, int32_t y);
+                         TDimension left, TDimension right, TDimension y);
 
 static CRACKEDGE *h_edge(int sign, CRACKEDGE *join, CrackPos *pos);
 static CRACKEDGE *v_edge(int sign, CRACKEDGE *join, CrackPos *pos);
@@ -114,9 +114,9 @@ static void make_margins(   // get a line
     BLOCK_LINE_IT *line_it, // for old style
     uint8_t *pixels,        // pixels to strip
     uint8_t margin,         // white-out pixel
-    int32_t left,           // block edges
-    int32_t right,
-    int32_t y // line coord
+    TDimension left,        // block edges
+    TDimension right,
+    TDimension y            // line coord
 ) {
   ICOORDELT_IT seg_it;
 
@@ -144,7 +144,7 @@ static void make_margins(   // get a line
       }
     }
   } else {
-    int32_t xext;  // of segment
+    TDimension xext;  // of segment
     auto start = line_it->get_line(y, xext);
     for (auto xindex = left; xindex < start; xindex++) {
       pixels[xindex - left] = margin;
@@ -162,9 +162,9 @@ static void make_margins(   // get a line
  * When edges close into loops, send them for approximation.
  **********************************************************************/
 
-static void line_edges(int32_t x,            // coord of line start
-                       int32_t y,            // coord of line
-                       int32_t xext,         // width of line
+static void line_edges(TDimension x,         // coord of line start
+                       TDimension y,         // coord of line
+                       TDimension xext,      // width of line
                        uint8_t uppercolour,  // start of prev line
                        uint8_t *bwpos,       // thresholded line
                        CRACKEDGE **prevline, // edges in progress

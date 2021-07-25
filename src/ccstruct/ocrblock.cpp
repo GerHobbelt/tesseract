@@ -31,13 +31,14 @@ namespace tesseract {
  *
  * Constructor for a simple rectangular block.
  */
-BLOCK::BLOCK(const char *name,           ///< filename
-             bool prop,                  ///< proportional
-             int16_t kern,               ///< kerning
-             int16_t space,              ///< spacing
-             int32_t xmin,               ///< bottom left
-             int32_t ymin, int32_t xmax, ///< top right
-             int32_t ymax)
+BLOCK::BLOCK(const char *name, ///< filename
+             bool prop,        ///< proportional
+             int16_t kern,     ///< kerning
+             int16_t space,    ///< spacing
+             TDimension xmin,  ///< bottom left
+             TDimension ymin,
+             TDimension xmax,  ///< top right
+             TDimension ymax)
     : pdblk(xmin, ymin, xmax, ymax)
     , filename(name)
     , re_rotation_(1.0f, 0.0f)
