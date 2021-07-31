@@ -186,15 +186,15 @@ public:
    *
    * The datapath must be the name of the tessdata directory.
    * The language is (usually) an ISO 639-3 string or nullptr will default to
-   * eng. It is entirely safe (and eventually will be efficient too) to call
+   * "eng". It is entirely safe (and eventually will be efficient too) to call
    * Init multiple times on the same instance to change language, or just
    * to reset the classifier.
    * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
-   * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
+   * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
    * with one or more other languages, so the ~ sign is available to override
-   * that. Eg if hin were set to load eng by default, then hin+~eng would force
-   * loading only hin. The number of loaded languages is limited only by
+   * that. Eg if "hin" were set to load "eng" by default, then "hin+~eng" would force
+   * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
    * applicable language, and there is more chance of hallucinating incorrect
@@ -233,7 +233,7 @@ public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
-   * returned. If hin loaded eng automatically as well, then that will
+   * returned. If "hin" loaded "eng" automatically as well, then that will
    * not be included in this list. To find the languages actually
    * loaded use GetLoadedLanguagesAsVector.
    * The returned string should NOT be deleted.
@@ -349,7 +349,7 @@ public:
 
   /**
    * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
-   * Each SetRectangle clears the recogntion results so multiple rectangles
+   * Each SetRectangle clears the recognition results so multiple rectangles
    * can be recognized with the same image.
    */
   void SetRectangle(int left, int top, int width, int height);
