@@ -675,7 +675,7 @@ char *ResultIterator::GetUTF8Text(PageIteratorLevel level) const {
       if (at_beginning_of_minor_run_) {
         text += reading_direction_is_ltr ? kLRM : kRLM;
       }
-      text = it_->word()->BestUTF8(blob_index_, false);
+      text += it_->word()->BestUTF8(blob_index_, false);
       if (IsAtFinalSymbolOfWord()) {
         AppendSuffixMarks(&text);
       }
