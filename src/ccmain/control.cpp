@@ -1159,7 +1159,7 @@ bool Tesseract::SelectGoodDiacriticOutlines(int pass, float certainty_threshold,
   // we get past the threshold, have zero bits, or fail to improve.
   int best_index = 0; // To zero out.
   while (num_outlines > 1 && best_index >= 0 &&
-         (blob == nullptr || best_cert < target_cert || blob != nullptr)) {
+         (blob == nullptr || best_cert < target_cert)) {
     // Find the best bit to zero out.
     best_index = -1;
     for (unsigned i = 0; i < outlines.size(); ++i) {
