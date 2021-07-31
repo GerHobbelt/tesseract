@@ -20,7 +20,7 @@
 #ifndef TESSERACT_CCUTIL_AMBIGS_H_
 #define TESSERACT_CCUTIL_AMBIGS_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 

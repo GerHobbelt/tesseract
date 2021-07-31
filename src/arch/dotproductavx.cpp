@@ -15,13 +15,13 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include "dotproduct.h"
 #include "intsimdmatrix.h"
 
 #if defined(__AVX__)
 
 #  include <immintrin.h>
 #  include <cstdint>
-#  include "dotproduct.h"
 
 namespace tesseract {
 

@@ -374,7 +374,7 @@ endif()
 
 set(AUTOCONFIG_SRC ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h.in)
 set(AUTOCONFIG ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h)
-add_definitions(-DHAVE_CONFIG_H)
+add_definitions(-DHAVE_TESSERACT_CONFIG_H)
 
 if(GRAPHICS_DISABLED)
     message("ScrollView debugging disabled.")

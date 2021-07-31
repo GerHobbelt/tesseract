@@ -18,7 +18,7 @@
 #define _USE_MATH_DEFINES // needed to get definition of M_SQRT1_2
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 

@@ -21,7 +21,7 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 

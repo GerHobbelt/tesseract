@@ -15,12 +15,13 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include "dotproduct.h"
+
 #if defined(__SSE4_1__)
 
 #  include <emmintrin.h>
 #  include <smmintrin.h>
 #  include <cstdint>
-#  include "dotproduct.h"
 
 namespace tesseract {
 

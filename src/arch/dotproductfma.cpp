@@ -15,11 +15,12 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include "dotproduct.h"
+
 #if defined(__FMA__)
 
 #  include <immintrin.h>
 #  include <cstdint>
-#  include "dotproduct.h"
 
 namespace tesseract {
 

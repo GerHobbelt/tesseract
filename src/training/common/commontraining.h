@@ -14,7 +14,7 @@
 #ifndef TESSERACT_TRAINING_COMMONTRAINING_H_
 #define TESSERACT_TRAINING_COMMONTRAINING_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -36,7 +36,7 @@ void ParseArguments(int* argc, const char ***argv);
 // This function must be inline because otherwise it would be part of
 // the shared library, so it could not compare the versions.
 static inline void CheckSharedLibraryVersion() {
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
   if (!!strcmp(TESSERACT_VERSION_STR, TessBaseAPI::Version())) {
     tprintf(
         "ERROR: Shared library version mismatch (was %s, expected %s\n"

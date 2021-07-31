@@ -15,7 +15,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // for HAVE_AVX, ...
 #endif
 #include <numeric> // for std::inner_product
