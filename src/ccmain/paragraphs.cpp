@@ -1441,7 +1441,7 @@ void ParagraphModelSmearer::Smear() {
     if (i == 0) {
       likely_start = true;
     } else {
-      if ((left_align_open && right_align_open) || (!left_align_open && !right_align_open)) {
+      if (bool(left_align_open) == bool(right_align_open)) {
         likely_start = LikelyParagraphStart((*rows_)[i - 1], row, JUSTIFICATION_LEFT) ||
                        LikelyParagraphStart((*rows_)[i - 1], row, JUSTIFICATION_RIGHT);
       } else if (left_align_open) {
