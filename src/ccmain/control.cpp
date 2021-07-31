@@ -1743,9 +1743,9 @@ ACCEPTABLE_WERD_TYPE Tesseract::acceptable_word_string(const UNICHARSET &char_se
       goto not_a_word;
     }
     /*
-Allow a single hyphen in a lower case word
-- don't trust upper case - I've seen several cases of "H" -> "I-I"
-*/
+      Allow a single hyphen in a lower case word
+      - don't trust upper case - I've seen several cases of "H" -> "I-I"
+    */
     if (lengths[i] == 1 && s[offset] == '-') {
       hyphen_pos = i;
       offset += lengths[i++];
@@ -1776,7 +1776,7 @@ Allow a single hyphen in a lower case word
   if (lengths[i] == 1 && s[offset] != '\0' && chs_trailing_punct1.contains(s[offset])) {
     offset += lengths[i++];
   }
-  if (lengths[i] == 1 && s[offset] != '\0' && i > 0 && s[offset - lengths[i - 1]] != s[offset] &&
+  if (lengths[i] == 1 && s[offset] != '\0' && i > 0 && s[offset - lengths[i - 1]] != s[offset] && //-V781
       chs_trailing_punct2.contains(s[offset])) {
     offset += lengths[i++];
   }
