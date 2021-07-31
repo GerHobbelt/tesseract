@@ -12,8 +12,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/str_format.h" // for absl::StrFormat
-
 #include "include_gunit.h"
 
 #include "serialis.h"
@@ -139,7 +137,9 @@ TEST_F(ShapeTableTest, FullTest) {
   UNICHARSET unicharset;
   unicharset.unichar_insert(" ");
   for (int i = 1; i <= 10; ++i) {
-    std::string class_str = absl::StrFormat("class%d", i);
+	  char s[32];
+	  snprintf(s, sizeof(s), "class%d", i);
+    std::string class_str = s;
     unicharset.unichar_insert(class_str.c_str());
   }
   ShapeTable st(unicharset);
