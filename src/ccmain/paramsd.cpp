@@ -312,6 +312,8 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollView *sv) {
                      "Config file name?");
 
   svMenuRoot->BuildMenu(sv, false);
+
+  delete svMenuRoot;
 }
 
 // Write all (changed_) parameters to a config file.

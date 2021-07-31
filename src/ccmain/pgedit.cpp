@@ -378,6 +378,8 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
 
   image_win->AwaitEvent(SVET_DESTROY);
   image_win->AddEventHandler(nullptr);
+
+  delete svMenuRoot;
 }
 
 /**
