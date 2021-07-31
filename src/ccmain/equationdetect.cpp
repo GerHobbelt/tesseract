@@ -208,7 +208,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
     type = EstimateTypeForUnichar(lang_tesseract_->unicharset, lang_choice->unichar_id());
   }
 
-  if (type == BSTT_NONE &&
+  if (type == BSTT_NONE && lang_choice &&
       lang_tesseract_->get_fontinfo_table().at(lang_choice->fontinfo_id()).is_italic()) {
     // For text symbol, we still check if it is italic.
     blobnbox->set_special_text_type(BSTT_ITALIC);
