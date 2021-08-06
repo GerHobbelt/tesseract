@@ -59,6 +59,9 @@ double DotProductSSE(const double *u, const double *v, int n);
 
 double DotProductAccelerate(const double *u, const double *v, int n);
 
+// Use NEON intrinsics.
+TFloat DotProductNEON(const TFloat *u, const TFloat *v, int n);
+
 } // namespace tesseract.
 
 #endif // TESSERACT_ARCH_DOTPRODUCT_H_
