@@ -258,7 +258,7 @@ SIMDDetect::SIMDDetect() {
     dotproduct_method = "sse";
   } else if (neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
     // NEON detected.
-    SetDotProduct(DotProductNEON, &IntSimdMatrix::intSimdMatrixNEON);
+    SetDotProduct(DotProductNEON, IntSimdMatrix::intSimdMatrixNEON);
     dotproduct_method = "neon";
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
   } else {
@@ -319,7 +319,7 @@ void SIMDDetect::Update() {
 #if defined(HAVE_NEON) || defined(__aarch64__)
   } else if (dotproduct == "neon" && neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
     // NEON selected by config variable.
-    SetDotProduct(DotProductNEON, &IntSimdMatrix::intSimdMatrixNEON);
+    SetDotProduct(DotProductNEON, IntSimdMatrix::intSimdMatrixNEON);
     dotproduct_method = "neon";
 #endif
   } else if (dotproduct == "std::inner_product") {

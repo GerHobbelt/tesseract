@@ -14,8 +14,12 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#include <arm_neon.h>
 #include "dotproduct.h"
+#include "tesstypes.h"
+
+#if defined(HAVE_NEON)
+
+#include <arm_neon.h>
 
 namespace tesseract {
 
@@ -65,3 +69,17 @@ TFloat DotProductNEON(const TFloat *u, const TFloat *v, int n) {
 #endif
 
 } // namespace tesseract
+
+#else
+
+namespace tesseract {
+
+// Computes and returns the dot product of the n-vectors u and v.
+// Uses Intel FMA intrinsics to access the SIMD instruction set.
+TFloat DotProductNEON(const TFloat *u, const TFloat *v, int n) {
+  return DotProductNative(u, v, n);
+}
+
+} // namespace tesseract
+
+#endif
