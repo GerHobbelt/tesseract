@@ -69,6 +69,8 @@ void build(Solution &s)
 
         // check fma flags
         libtesseract -= "src/arch/dotproductfma.cpp";
+        // check arch (arm)
+        libtesseract -= "src/arch/dotproductneon.cpp";
 
         if (libtesseract.getBuildSettings().TargetOS.Type != OSType::Windows)
         {
@@ -222,7 +224,6 @@ void build(Solution &s)
             t += pango_training;
             t += "org.sw.demo.google.googletest.gmock.main"_dep;
             t += "org.sw.demo.google.googletest.gtest.main"_dep;
-            t += "org.sw.demo.google.abseil"_dep;
 
             if (t.getCompilerType() == CompilerType::MSVC)
                 t.CompileOptions.push_back("-utf-8");

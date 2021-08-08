@@ -137,10 +137,9 @@ TEST_F(ShapeTableTest, FullTest) {
   UNICHARSET unicharset;
   unicharset.unichar_insert(" ");
   for (int i = 1; i <= 10; ++i) {
-	  char s[32];
-	  snprintf(s, sizeof(s), "class%d", i);
-    std::string class_str = s;
-    unicharset.unichar_insert(class_str.c_str());
+    char class_str[20];
+    snprintf(class_str, sizeof(class_str), "class%d", i);
+    unicharset.unichar_insert(class_str);
   }
   ShapeTable st(unicharset);
   EXPECT_EQ(0, st.AddShape(3, 101));

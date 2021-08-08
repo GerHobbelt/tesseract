@@ -22,8 +22,6 @@
 
 #include "helpers.h"
 
-#include "absl/strings/str_format.h" // for absl::StrFormat
-
 #include "testdata.h"
 
 
@@ -165,9 +163,9 @@ protected:
       if (u_decoded.size() < truth_utf8.size()) {
         const char *str = ccutil_.unicharset.id_to_unichar(unichar_ids[u]);
         total_rating += ratings[u];
-        LOG(INFO) << absl::StrFormat("%d:u_id=%d=%s, c=%g, r=%g, r_sum=%g @%d", u, unichar_ids[u],
-                                     str, certainties[u], ratings[u], total_rating, xcoords[u])
-                  << "\n";
+        LOG(INFO) << u << ":u_id=" << unichar_ids[u] << "=" << str << ", c="
+          << certainties[u] << ", r=" << ratings[u] << "r_sum="
+          << total_rating << " @" << xcoords[u] << "\n";
         if (str[0] == ' ') {
           total_rating = 0.0f;
         }
@@ -189,11 +187,9 @@ protected:
           }
           w_decoded += word->best_choice->unichar_string().c_str();
         }
-        LOG(INFO) << absl::StrFormat("Word:%d = %s, c=%g, r=%g, perm=%d", w,
-                                     word->best_choice->unichar_string().c_str(),
-                                     word->best_choice->certainty(), word->best_choice->rating(),
-                                     word->best_choice->permuter())
-                  << "\n";
+        LOG(INFO) << "Word:" << w << " = " << word->best_choice->unichar_string()
+          << ", c=" << word->best_choice->certainty() << ", r=" << word->best_choice->rating()
+          << ", perm=" << word->best_choice->permuter() << "\n";
       }
       std::string w_trunc(w_decoded.data(), truth_utf8.size());
       if (truth_utf8 != w_trunc) {

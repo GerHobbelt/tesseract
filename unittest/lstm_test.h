@@ -18,7 +18,6 @@
 
 #include "include_gunit.h"
 
-#include "absl/strings/str_cat.h"
 #include "helpers.h"
 #include "tprintf.h"
 
