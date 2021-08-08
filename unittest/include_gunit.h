@@ -43,7 +43,7 @@ TST_DEFINE_string(test_tmpdir, "./tmp", "Dir we use for temp files");
 
 namespace tesseract {
 
-void trim(std::string &s) {
+static void trim(std::string &s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
     return !std::isspace(ch);
   }));
