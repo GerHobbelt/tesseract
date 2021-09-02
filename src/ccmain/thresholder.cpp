@@ -205,8 +205,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   l_int32 threshold_val = 0;
   
   if (method == ThresholdMethod::Sauvola) {
-    r = pixSauvolaBinarizeTiled(pix_grey, 25, 0.40f, 300, 300, pix_thresholds,
-                                pix_binary);
+    r = pixSauvolaBinarizeTiled(pix_grey, 25, 0.40f, 300, 300, (PIX**)pix_thresholds,
+                                (PIX**)pix_binary);
   } else if (method == ThresholdMethod::OtsuOnNormalizedBackground) {
     pix_binary = pixOtsuThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15, 100,
                                                50, 255, 2, 2, 0.1f,
@@ -218,7 +218,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   } else {
     // AdaptiveOtsu.
     r = pixOtsuAdaptiveThreshold(pix_grey, 300, 300, 0, 0, 0.1f,
-                                 pix_thresholds, pix_binary);
+                                 (PIX**)pix_thresholds, (PIX**)pix_binary);
   }
 
   bool ok = (r == 0) && pix_binary;

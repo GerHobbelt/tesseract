@@ -511,7 +511,6 @@ if (DISABLED_LEGACY_ENGINE)
         src/ccutil/ambigs.cpp
         src/ccutil/bitvector.cpp
         src/ccutil/indexmapbidi.cpp
-        src/ccutil/universalambigs.cpp
         src/classify/adaptive.cpp
         src/classify/adaptmatch.cpp
         src/classify/blobclass.cpp
