@@ -42,7 +42,7 @@ import "tensorflow/core/framework/graph.proto";
 // so, how.
 message TFNetworkModel {
   // The TF graph definition. Required.
-  tensorflow.GraphDef graph = 1;
+  opencv_tensorflow.GraphDef graph = 1;
   // The training index. Required to be > 0.
   int64 global_step = 2;
   // The original network definition for reference. Optional
