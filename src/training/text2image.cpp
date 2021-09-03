@@ -748,4 +748,16 @@ extern "C" int tesseract_text2image_main(int argc, const char **argv)
   return Main();
 }
 
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char **argv)
+#else
+extern "C" int tesseract_text2image_main(int argc, const char **argv)
+#endif
+{
+  fprintf(stderr, "text2image tool not supported in this non-PANGO build.\n");
+  return EXIT_FAILURE;
+}
+
 #endif

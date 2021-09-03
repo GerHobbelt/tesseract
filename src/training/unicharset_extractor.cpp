@@ -123,4 +123,16 @@ extern "C" int tesseract_unicharset_extractor_main(int argc, const char **argv)
   return tesseract::Main(argc, argv);
 }
 
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char **argv)
+#else
+extern "C" int tesseract_unicharset_extractor_main(int argc, const char **argv)
+#endif
+{
+  fprintf(stderr, "unicharset_extractor tool not supported in this non-ICU / Unicode build.\n");
+  return EXIT_FAILURE;
+}
+
 #endif

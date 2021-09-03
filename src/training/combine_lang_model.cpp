@@ -87,4 +87,18 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char **argv)
                                      /*writer*/ nullptr);
 }
 
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char **argv)
+#else
+extern "C" int tesseract_combine_lang_model_main(int argc, const char **argv)
+#endif
+{
+  fprintf(stderr,
+          "combine_lang_model tool not supported in this non-ICU / Unicode "
+          "build.\n");
+  return EXIT_FAILURE;
+}
+
 #endif
