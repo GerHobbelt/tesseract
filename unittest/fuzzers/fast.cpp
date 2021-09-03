@@ -1,5 +1,5 @@
 #include <tesseract/baseapi.h>
-#include "leptonica/allheaders.h"
+#include "../../../leptonica/src/allheaders.h"
 
 #include <libgen.h>     // for dirname
 #include <cstdio>       // for printf
@@ -61,7 +61,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     return 0;
   }
   unsigned wpl = (width * depth + 31) / 32;
-  unsigned height = size / (4 * wpl); 
+  unsigned height = size / (4 * wpl);
   if (height == 0) {
     return 0;
   }

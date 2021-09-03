@@ -32,7 +32,7 @@ protected:
     v[0] = static_cast<TFloat>(1.41421);
   }
   void RunTest(TFloat (*f)(const TFloat *u, const TFloat *v, int n));
-  static const size_t multiplications = 5000000000U;
+  static const size_t multiplications = 5000000000ULL;
   static const size_t n = 40;
   //static const size_t n = 1000000;
   TFloat u[n];
