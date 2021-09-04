@@ -44,9 +44,9 @@ static BOOL_PARAM_FLAG(pass_through_recoder, false,
                        "unicharset. Otherwise, potentially a compression of it");
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_combine_lang_model_main(int argc, const char **argv)
+extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
 #endif
 {
   // Sets properties on the input unicharset file, and writes:
@@ -90,9 +90,9 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char **argv)
 #else
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_combine_lang_model_main(int argc, const char **argv)
+extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr,

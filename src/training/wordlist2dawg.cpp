@@ -31,9 +31,9 @@
 using namespace tesseract;
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_wordlist2dawg_main(int argc, const char **argv)
+extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();

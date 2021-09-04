@@ -318,7 +318,7 @@ static void PrintHelpMessage(const char *program) {
       program, program, program);
 }
 
-static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char **argv) {
+static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char** argv) {
   bool success = true;
   char opt1[256], opt2[255];
   for (int i = 0; i < argc; i++) {
@@ -475,9 +475,9 @@ bool std::filesystem::exists(const char* filename) {
 }
 
 // NOTE: arg_i is used here to avoid ugly *i so many times in this function
-static bool ParseArgs(int argc, const char **argv, const char **lang, const char **image,
+static bool ParseArgs(int argc, const char** argv, const char **lang, const char **image,
                       const char **outputbase, const char **datapath, l_int32 *dpi,
-                      bool *list_langs, 
+                      bool *list_langs,
                       const char **visible_pdf_image_file,
                       bool *print_parameters, bool* print_fonts_table, std::vector<std::string> *vars_vec,
                       std::vector<std::string> *vars_values, l_int32 *arg_i,
@@ -758,9 +758,9 @@ static void PreloadRenderers(tesseract::TessBaseAPI &api,
  **********************************************************************/
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_main(int argc, const char **argv)
+extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 {
 #if defined(__USE_GNU)

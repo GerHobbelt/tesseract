@@ -23,9 +23,9 @@
 using namespace tesseract;
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_merge_unicharsets_main(int argc, const char **argv)
+extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
 #endif
 {
   CheckSharedLibraryVersion();

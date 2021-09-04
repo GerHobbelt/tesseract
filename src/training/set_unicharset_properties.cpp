@@ -28,9 +28,9 @@ using namespace tesseract;
 static STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_set_unicharset_properties_main(int argc, const char **argv)
+extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
@@ -54,9 +54,9 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char **a
 #else
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_set_unicharset_properties_main(int argc, const char **argv)
+extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "set_unicharset_properties tool not supported in this non-ICU / Unicode build.\n");

@@ -65,7 +65,7 @@ static void AddStringsToUnicharset(const std::vector<std::string> &strings, int 
   }
 }
 
-static int Main(int argc, const char **argv) {
+static int Main(int argc, const char** argv) {
   UNICHARSET unicharset;
   // Load input files
   for (int arg = 1; arg < argc; ++arg) {
@@ -99,9 +99,9 @@ static int Main(int argc, const char **argv) {
 } // namespace tesseract
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_unicharset_extractor_main(int argc, const char **argv)
+extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
@@ -126,9 +126,9 @@ extern "C" int tesseract_unicharset_extractor_main(int argc, const char **argv)
 #else
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
+extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_unicharset_extractor_main(int argc, const char **argv)
+extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "unicharset_extractor tool not supported in this non-ICU / Unicode build.\n");
