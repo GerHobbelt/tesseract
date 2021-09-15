@@ -100,6 +100,9 @@ endif()
 # compiler and linker
 #
 ###############################################################################
+option(MINGW_STDTHREADS_GENERATE_STDHEADERS "" ON)
+add_subdirectory(mingw-std-threads)
+target_link_libraries(${TARGET} PRIVATE mingw-std-threads)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CLANG 1)
