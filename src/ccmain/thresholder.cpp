@@ -205,7 +205,27 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   l_int32 threshold_val = 0;
   
   if (method == ThresholdMethod::Sauvola) {
-    r = pixSauvolaBinarizeTiled(pix_grey, 25, 0.40f, 300, 300, (PIX**)pix_thresholds,
+    // TODO: Convert this constant to config var
+    // window half-width for measuring local statistics
+    constexpr l_int32 whsize = 25;
+    // factor for image division into tiles; >= 1
+    l_int32 nx, ny;
+//  // tiles size will be approx. 250 x 250 pixels
+    l_int32 pix_w, pix_h;
+    pixGetDimensions(pix_grey, &pix_w, &pix_h, nullptr);
+    nx = std::max(1, (pix_w + 125) / 250);
+    ny = std::max(1, (pix_h + 125) / 250);
+    auto xrat = pix_w / nx;
+    auto yrat = pix_h / ny;
+    if (xrat < whsize + 2) {
+      nx = pix_w / (whsize + 2);
+    }
+    if (yrat < whsize + 2) {
+      ny = pix_h / (whsize + 2);
+    }
+
+    r = pixSauvolaBinarizeTiled(pix_grey, whsize, 0.40f, nx, ny,
+                               (PIX**)pix_thresholds,
                                 (PIX**)pix_binary);
   } else if (method == ThresholdMethod::OtsuOnNormalizedBackground) {
     pix_binary = pixOtsuThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15, 100,
@@ -215,8 +235,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     pix_binary = pixMaskedThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15,
                                                  100, 50, 2, 2, 0.1f,
                                                  &threshold_val);
-  } else {
-    // AdaptiveOtsu.
+  } else { // if (method == ThresholdMethod::AdaptiveOtsu)
     r = pixOtsuAdaptiveThreshold(pix_grey, 300, 300, 0, 0, 0.1f,
                                  (PIX**)pix_thresholds, (PIX**)pix_binary);
   }
