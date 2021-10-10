@@ -29,6 +29,21 @@ I've found this to be very helpful when creating searchable PDFs from scanned do
 
 
 
+Table of Contents
+=================
+
+* [Tesseract OCR](#tesseract-ocr)
+   * [About](#about)
+   * [Brief history](#brief-history)
+   * [Installing Tesseract](#installing-tesseract)
+   * [Running Tesseract](#running-tesseract)
+   * [For developers](#for-developers)
+   * [Support](#support)
+   * [License](#license)
+   * [Dependencies](#dependencies)
+   * [Latest Version of README](#latest-version-of-readme)
+
+
 ## About
 
 This package contains an **OCR engine** - `libtesseract` and a **command line program** - `tesseract`.
