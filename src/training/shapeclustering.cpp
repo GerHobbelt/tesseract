@@ -57,7 +57,7 @@ extern "C" int tesseract_shape_clustering_main(int argc, const char** argv)
   ParseArguments(&argc, &argv);
 
   std::string file_prefix;
-  auto trainer = tesseract::LoadTrainingData(argc, argv, false, nullptr, file_prefix);
+  auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
 
   if (!trainer) {
     return 1;
