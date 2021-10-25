@@ -283,9 +283,9 @@ enum OcrEngineMode {
  * Leptonica is used for thresholding
  */
 enum class ThresholdMethod {
-  Otsu,         // Legacy Tesseract's Otsu thresholding
-  AdaptiveOtsu,
-  Sauvola,
+  Otsu,          // Tesseract's legacy Otsu
+  LeptonicaOtsu, // Leptonica's Otsu
+  Sauvola,       // Leptonica's Sauvola
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
 

@@ -76,7 +76,7 @@ Tesseract::Tesseract()
                this->params())
     , INT_MEMBER(thresholding_method,
                  static_cast<int>(tesseract::ThresholdMethod::Otsu),
-                 "Thresholding method: 0 = Otsu, 1 = Adaptive Otsu, 2 = "
+                 "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
                  "Sauvola, 3 = Otsu on"
                  " adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background",

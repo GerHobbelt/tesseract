@@ -239,7 +239,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     pix_binary = pixMaskedThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15,
                                                  100, 50, 2, 2, 0.1f,
                                                  &threshold_val);
-  } else { // if (method == ThresholdMethod::AdaptiveOtsu)
+  } else { // if (method == ThresholdMethod::LeptonicaOtsu)
     int tile_size;
     api->GetIntVariable("thresholding_tile_size", &tile_size);
     int smooth_size;
