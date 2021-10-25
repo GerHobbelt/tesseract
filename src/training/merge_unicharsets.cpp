@@ -46,7 +46,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
   for (int arg = 1; arg < argc - 1; ++arg) {
     // Load the input unicharset
     if (input_unicharset.load_from_file(argv[arg])) {
-      tprintf("Loaded unicharset of size %d from file %s\n", input_unicharset.size(), argv[arg]);
+      tprintf("Loaded unicharset of size %zu from file %s\n", input_unicharset.size(), argv[arg]);
       result_unicharset.AppendOtherUnicharset(input_unicharset);
     } else {
       tprintf("ERROR: Failed to load unicharset from file %s!!\n", argv[arg]);
