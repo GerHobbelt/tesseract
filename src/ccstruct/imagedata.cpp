@@ -451,6 +451,9 @@ void DocumentData::LoadPageInBackground(int index) {
   if (thread.joinable()) {
     thread.join();
   }
+
+  // Don't run next statement asynchronously because that would
+  // create too many threads on Linux (see issue #3111).
 #if 0
   thread = std::thread(&tesseract::DocumentData::ReCachePages, this);
 #else

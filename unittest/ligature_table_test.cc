@@ -19,6 +19,7 @@
 
 namespace tesseract {
 
+#if 0 // not with NFC normalization
 const char kEngNonLigatureText[] = u8"fidelity effigy ſteep";
 // Same as above text, but with "fi" in the first word and "ffi" in the second
 // word replaced with their respective ligatures.
@@ -26,6 +27,7 @@ const char kEngLigatureText[] = u8"ﬁdelity eﬃgy ﬅeep";
 // Same as kEngLigatureText but with "fi" in both words replaced with their
 // ligature. The test Verdana font does not support the "ffi" or "ſt" ligature.
 const char kRenderableEngLigatureText[] = u8"ﬁdelity efﬁgy ſteep";
+#endif
 
 static PangoFontMap *font_map;
 
@@ -56,6 +58,7 @@ TEST_F(LigatureTableTest, DoesFillLigatureTables) {
   EXPECT_GT(lig_table_->lig_to_norm_table().size(), 0);
 }
 
+#if 0 // not with NFC normalization
 TEST_F(LigatureTableTest, DoesAddLigatures) {
   EXPECT_STREQ(kEngLigatureText, lig_table_->AddLigatures(kEngNonLigatureText, nullptr).c_str());
 }
@@ -78,6 +81,7 @@ TEST_F(LigatureTableTest, DoesNotAddLigaturesWithUnsupportedFont) {
 TEST_F(LigatureTableTest, DoesRemoveLigatures) {
   EXPECT_STREQ(kEngNonLigatureText, lig_table_->RemoveLigatures(kEngLigatureText).c_str());
 }
+#endif
 
 TEST_F(LigatureTableTest, TestCustomLigatures) {
   const char *kTestCases[] = {
@@ -91,6 +95,7 @@ TEST_F(LigatureTableTest, TestCustomLigatures) {
   }
 }
 
+#if 0 // not with NFC normalization
 TEST_F(LigatureTableTest, TestRemovesCustomLigatures) {
   const char *kTestCases[] = {
       "fiction",
@@ -102,6 +107,8 @@ TEST_F(LigatureTableTest, TestRemovesCustomLigatures) {
     EXPECT_STREQ(kTestCases[i + 2], lig_table_->RemoveCustomLigatures(kTestCases[i + 1]).c_str());
   }
 }
+#endif
+
 } // namespace tesseract
 
 #endif

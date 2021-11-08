@@ -25,6 +25,7 @@
 
 #include "params.h"
 
+#include <climits> // for INT_MAX
 #include <cstdarg>
 #include <cstdio>
 
@@ -62,6 +63,8 @@ TESS_API void tprintf(const char* format, ...) {
 #else
 
 #define MAX_MSG_LEN 2048
+
+INT_VAR(log_level, INT_MAX, "Logging level");
 
 static STRING_VAR(debug_file, "", "File to send tprintf output to");
 
