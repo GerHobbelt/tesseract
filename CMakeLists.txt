@@ -87,7 +87,7 @@ option(OPENMP_BUILD "Build with openmp support" OFF)  # see issue #1662
 option(GRAPHICS_DISABLED "Disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" ON)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
-option(FAST_FLOAT "Enable float for LSTM" OFF)
+option(FAST_FLOAT "Enable float for LSTM" ON)
 option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
