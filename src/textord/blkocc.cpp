@@ -68,21 +68,21 @@ bool test_underline(  // look for underlines
             blob->bounding_box().right(), blob->bounding_box().top(), baseline);
   }
   horizontal_cblob_projection(blob, &projection);
-  TDimension desc_occ = 0;
+  int32_t desc_occ = 0;
   for (occ = blob_box.bottom(); occ < baseline; occ++) {
     if (occ <= blob_box.top() && projection.pile_count(occ) > desc_occ) {
       // max in region
       desc_occ = projection.pile_count(occ);
     }
   }
-  TDimension x_occ = 0;
+  int32_t x_occ = 0;
   for (occ = baseline; occ <= baseline + xheight; occ++) {
     if (occ >= blob_box.bottom() && occ <= blob_box.top() && projection.pile_count(occ) > x_occ) {
       // max in region
       x_occ = projection.pile_count(occ);
     }
   }
-  TDimension asc_occ = 0;
+  int32_t asc_occ = 0;
   for (occ = baseline + xheight + 1; occ <= blob_box.top(); occ++) {
     if (occ >= blob_box.bottom() && projection.pile_count(occ) > asc_occ) {
       asc_occ = projection.pile_count(occ);
