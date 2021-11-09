@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////
 // File:        scrollview.h
 // Description: ScrollView
 // Author:      Joern Wanke
@@ -39,6 +39,10 @@
 #include <mutex>
 
 namespace tesseract {
+
+#if !defined(__GNUC__) && !defined(__attribute__)
+# define __attribute__(attr) // compiler without support for __attribute__
+#endif
 
 class ScrollView;
 class SVNetwork;
@@ -295,7 +299,7 @@ public:
 
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
-  void AddMessage(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2);
+  void AddMessage(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
 
   // Zoom the window to the rectangle given upper left corner and
   // lower right corner.
@@ -308,7 +312,7 @@ public:
   // this just for fun will likely break your application!
   // It is public so you can actually take use of the LUA functionalities, but
   // be careful!
-  void SendMsg(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2);
+  void SendMsg(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
 
   // Custom messages (manipulating java code directly) can be send through this.
   // Send a message to the server without adding the
