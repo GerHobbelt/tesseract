@@ -299,7 +299,8 @@ public:
 
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
-  void AddMessage(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
+  void AddMessage(const char *message);
+  void AddMessageF(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
 
   // Zoom the window to the rectangle given upper left corner and
   // lower right corner.
