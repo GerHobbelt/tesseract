@@ -159,7 +159,7 @@ public:
   /**
    * Print Tesseract fonts table to the given file.
    */
-  void PrintFontsTable(FILE* fp) const;
+  void PrintFontsTable(FILE *fp) const;
 
 #endif
 

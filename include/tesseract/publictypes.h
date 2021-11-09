@@ -289,7 +289,7 @@ enum class ThresholdMethod {
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
 
-  Max,        // Number of Thresholding methods
+  Max,           // Number of Thresholding methods
 };
 
 } // namespace tesseract.
