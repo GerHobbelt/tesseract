@@ -278,20 +278,6 @@ enum OcrEngineMode {
   OEM_COUNT                    // Number of OEMs
 };
 
-/**
- * Except when Otsu is chosen
- * Leptonica is used for thresholding
- */
-enum class ThresholdMethod {
-  Otsu,          // Tesseract's legacy Otsu
-  LeptonicaOtsu, // Leptonica's Otsu
-  Sauvola,       // Leptonica's Sauvola
-  OtsuOnNormalizedBackground,
-  MaskingAndOtsuOnNormalizedBackground,
-
-  Max,           // Number of Thresholding methods
-};
-
 } // namespace tesseract.
 
 #endif // TESSERACT_CCSTRUCT_PUBLICTYPES_H_

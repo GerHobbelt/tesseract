@@ -20,13 +20,26 @@
 #define TESSERACT_CCMAIN_THRESHOLDER_H_
 
 #include <tesseract/export.h>
-#include <tesseract/publictypes.h>
 
 #include <vector> // for std::vector
 
 struct Pix;
 
 namespace tesseract {
+
+/**
+ * Except when Otsu is chosen
+ * Leptonica is used for thresholding
+ */
+enum class ThresholdMethod {
+  Otsu,          // Tesseract's legacy Otsu
+  LeptonicaOtsu, // Leptonica's Otsu
+  Sauvola,       // Leptonica's Sauvola
+  OtsuOnNormalizedBackground,
+  MaskingAndOtsuOnNormalizedBackground,
+
+  Max,           // Number of Thresholding methods
+};
 
 class TessBaseAPI;
 
