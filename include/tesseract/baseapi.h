@@ -50,9 +50,7 @@ class UNICHARSET;
 
 class Dawg;
 class Dict;
-#ifndef DISABLED_LEGACY_ENGINE
 class EquationDetect;
-#endif // ndef DISABLED_LEGACY_ENGINE
 class PageIterator;
 class ImageThresholder;
 class LTRResultIterator;
@@ -798,9 +796,7 @@ protected:
 protected:
   Tesseract *tesseract_;          ///< The underlying data object.
   Tesseract *osd_tesseract_;      ///< For orientation & script detection.
-#ifndef DISABLED_LEGACY_ENGINE
   EquationDetect *equ_detect_;    ///< The equation detector.
-#endif // ndef DISABLED_LEGACY_ENGINE
   FileReader reader_;             ///< Reads files from any filesystem.
   ImageThresholder *thresholder_; ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;
