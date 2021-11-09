@@ -99,7 +99,7 @@ void ParamsEditor::GetFirstWords(const char *s, // source string
                                  char *t        // target string
 ) {
   int full_length = strlen(s);
-  int reqd_len = 0; // No. of chars requird
+  int reqd_len = 0; // No. of chars required
   const char *next_word = s;
 
   while ((n > 0) && reqd_len < full_length) {
@@ -107,8 +107,8 @@ void ParamsEditor::GetFirstWords(const char *s, // source string
     next_word += reqd_len;
     n--;
   }
-  strncpy(t, s, reqd_len);
-  t[reqd_len] = '\0'; // ensure null terminal
+  std::string rv(s, reqd_len);  // don't copy beyond s[reqd_len]
+  d = std::move(rv);
 }
 
 // Getter for the name.
@@ -178,7 +178,7 @@ void ParamContent::SetValue(const char *val) {
 }
 
 // Gets the up to the first 3 prefixes from s (split by _).
-// For example, tesseract_foo_bar will be split into tesseract,foo and bar.
+// For example, tesseract_foo_bar will be split into tesseract, foo and bar.
 void ParamsEditor::GetPrefixes(const char *s, std::string *level_one, std::string *level_two,
                                std::string *level_three) {
   std::unique_ptr<char[]> p(new char[1024]);
