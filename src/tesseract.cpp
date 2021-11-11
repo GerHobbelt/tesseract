@@ -40,6 +40,7 @@
 #include <tesseract/renderer.h>
 #include "simddetect.h"
 #include "tprintf.h" // for tprintf
+#include "tlog.h"
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -557,10 +558,10 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       };
       try {
         auto loglevel = loglevels.at(loglevel_string);
-	log_level = loglevel;
+		FLAGS_tlog_level = loglevel;
       } catch(const std::out_of_range& e) {
         // TODO: Allow numeric argument?
-	tprintf("Error, unsupported --loglevel %s\n", loglevel_string.c_str());
+        tprintf("Error, unsupported --loglevel %s\n", loglevel_string.c_str());
         return false;
       }
     } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
