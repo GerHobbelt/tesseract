@@ -1985,7 +1985,6 @@ void TessBaseAPI::End() {
   }
   delete osd_tesseract_;
   osd_tesseract_ = nullptr;
-#ifndef DISABLED_LEGACY_ENGINE
   delete equ_detect_;
   equ_detect_ = nullptr;
 #endif // ndef DISABLED_LEGACY_ENGINE
