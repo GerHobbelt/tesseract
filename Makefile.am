@@ -152,9 +152,6 @@ endif
 if HAVE_AVX
 libtesseract_native_la_CXXFLAGS += -mavx
 endif
-if MARCH_NATIVE_OPT
-libtesseract_native_la_CXXFLAGS += -march=native -mtune=native
-endif
 libtesseract_native_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
 libtesseract_native_la_SOURCES = src/arch/dotproduct.cpp
 
