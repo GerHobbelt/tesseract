@@ -140,8 +140,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
     output->Resize(input, no_);
   }
   SetupForward(input, input_transpose);
-  std::vector<NetworkScratch::FloatVec> temp_lines(kNumThreads);
-  std::vector<NetworkScratch::FloatVec> curr_input(kNumThreads);
+  std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
+  auto *curr_input = &local_scratch[0];
+  auto *temp_lines = &local_scratch[kNumThreads];
   int ro = no_;
   if (IntSimdMatrix::intSimdMatrix) {
     ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
@@ -152,14 +153,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
 #ifdef _OPENMP
 #  pragma omp parallel for num_threads(kNumThreads)
-#endif
   for (int t = 0; t < width; ++t) {
     // Thread-local pointer to temporary storage.
-#ifdef _OPENMP
     int thread_id = omp_get_thread_num();
-#else
-    int thread_id = 0;
-#endif
     TFloat *temp_line = temp_lines[thread_id];
     if (input.int_mode()) {
       ForwardTimeStep(input.i(t), t, temp_line);
@@ -172,6 +168,22 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
       acts_.CopyTimeStepFrom(t, *output, t);
     }
   }
+#else // _OPENMP
+  const unsigned thread_id = 0;
+  TFloat *temp_line = temp_lines[thread_id];
+  for (int t = 0; t < width; ++t) {
+    if (input.int_mode()) {
+      ForwardTimeStep(input.i(t), t, temp_line);
+    } else {
+      input.ReadTimeStep(t, curr_input[thread_id]);
+      ForwardTimeStep(curr_input[thread_id], t, temp_line);
+    }
+    output->WriteTimeStep(t, temp_line);
+    if (IsTraining() && type_ != NT_SOFTMAX) {
+      acts_.CopyTimeStepFrom(t, *output, t);
+    }
+  }
+#endif // _OPENMP
   // Zero all the elements that are in the padding around images that allows
   // multiple different-sized images to exist in a single array.
   // acts_ is only used if this is not a softmax op.
@@ -254,6 +266,10 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
   for (int i = 0; i < kNumThreads; ++i) {
     errors[i].Init(no_, scratch);
   }
+  int width = fwd_deltas.Width();
+  NetworkScratch::GradientStore errors_t;
+  errors_t.Init(no_, width, scratch);
+#ifdef _OPENMP
   std::vector<NetworkScratch::FloatVec> temp_backprops;
   if (needs_to_backprop_) {
     temp_backprops.resize(kNumThreads);
@@ -261,18 +277,9 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
       temp_backprops[i].Init(ni_, scratch);
     }
   }
-  int width = fwd_deltas.Width();
-  NetworkScratch::GradientStore errors_t;
-  errors_t.Init(no_, width, scratch);
-#ifdef _OPENMP
 #  pragma omp parallel for num_threads(kNumThreads)
-#endif
   for (int t = 0; t < width; ++t) {
-#ifdef _OPENMP
     int thread_id = omp_get_thread_num();
-#else
-    int thread_id = 0;
-#endif
     TFloat *backprop = nullptr;
     if (needs_to_backprop_) {
       backprop = temp_backprops[thread_id];
@@ -283,6 +290,25 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
       back_deltas->WriteTimeStep(t, backprop);
     }
   }
+#else // _OPENMP
+  int thread_id = 0;
+  TFloat *curr_errors = errors[thread_id];
+  if (needs_to_backprop_) {
+    std::vector<NetworkScratch::FloatVec> temp_backprops(kNumThreads);
+    for (int i = 0; i < kNumThreads; ++i) {
+      temp_backprops[i].Init(ni_, scratch);
+    }
+    TFloat *backprop = temp_backprops[thread_id];
+    for (int t = 0; t < width; ++t) {
+      BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), backprop);
+      back_deltas->WriteTimeStep(t, backprop);
+    }
+  } else {
+    for (int t = 0; t < width; ++t) {
+      BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), nullptr);
+    }
+  }
+#endif // _OPENMP
   FinishBackward(*errors_t.get());
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
