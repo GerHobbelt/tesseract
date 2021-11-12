@@ -39,8 +39,11 @@ const int kNumThreads = 1;
 
 namespace tesseract {
 
-FullyConnected::FullyConnected(const std::string &name, int ni, int no, NetworkType type)
-    : Network(type, name, ni, no), external_source_(nullptr), int_mode_(false) {}
+FullyConnected::FullyConnected(const std::string &name, int ni, int no,
+                               NetworkType type)
+    : Network(type, name, ni, no),
+      external_source_(nullptr),
+      int_mode_(false) {}
 
 // Returns the shape output from the network given an input shape (which may
 // be partially unknown ie zero).
@@ -83,7 +86,8 @@ void FullyConnected::SetEnableTraining(TrainingState state) {
 // scale `range` picked according to the random number generator `randomizer`.
 int FullyConnected::InitWeights(float range, TRand *randomizer) {
   Network::SetRandomizer(randomizer);
-  num_weights_ = weights_.InitWeightsFloat(no_, ni_ + 1, TestFlag(NF_ADAM), range, randomizer);
+  num_weights_ = weights_.InitWeightsFloat(no_, ni_ + 1, TestFlag(NF_ADAM),
+                                           range, randomizer);
   return num_weights_;
 }
 
@@ -127,8 +131,8 @@ bool FullyConnected::DeSerialize(TFile *fp) {
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
 void FullyConnected::Forward(bool debug, const NetworkIO &input,
-                             const TransposedArray *input_transpose, NetworkScratch *scratch,
-                             NetworkIO *output) {
+                             const TransposedArray *input_transpose,
+                             NetworkScratch *scratch, NetworkIO *output) {
   int width = input.Width();
   if (type_ == NT_SOFTMAX) {
     output->ResizeFloat(input, no_);
@@ -148,12 +152,12 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
 #ifdef _OPENMP
 #  pragma omp parallel for num_threads(kNumThreads)
+#endif
   for (int t = 0; t < width; ++t) {
     // Thread-local pointer to temporary storage.
+#ifdef _OPENMP
     int thread_id = omp_get_thread_num();
 #else
-  for (int t = 0; t < width; ++t) {
-    // Thread-local pointer to temporary storage.
     int thread_id = 0;
 #endif
     TFloat *temp_line = temp_lines[thread_id];
@@ -187,7 +191,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
 }
 
 // Components of Forward so FullyConnected can be reused inside LSTM.
-void FullyConnected::SetupForward(const NetworkIO &input, const TransposedArray *input_transpose) {
+void FullyConnected::SetupForward(const NetworkIO &input,
+                                  const TransposedArray *input_transpose) {
   // Softmax output is always float, so save the input type.
   int_mode_ = input.int_mode();
   if (IsTraining()) {
@@ -218,7 +223,8 @@ void FullyConnected::ForwardTimeStep(int t, TFloat *output_line) {
   }
 }
 
-void FullyConnected::ForwardTimeStep(const TFloat *d_input, int t, TFloat *output_line) {
+void FullyConnected::ForwardTimeStep(const TFloat *d_input, int t,
+                                     TFloat *output_line) {
   // input is copied to source_ line-by-line for cache coherency.
   if (IsTraining() && external_source_ == nullptr) {
     source_t_.WriteStrided(t, d_input);
@@ -227,7 +233,8 @@ void FullyConnected::ForwardTimeStep(const TFloat *d_input, int t, TFloat *outpu
   ForwardTimeStep(t, output_line);
 }
 
-void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t, TFloat *output_line) {
+void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t,
+                                     TFloat *output_line) {
   // input is copied to source_ line-by-line for cache coherency.
   weights_.MatrixDotVector(i_input, output_line);
   ForwardTimeStep(t, output_line);
@@ -235,8 +242,8 @@ void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t, TFloat *outpu
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
-                              NetworkIO *back_deltas) {
+bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
+                              NetworkScratch *scratch, NetworkIO *back_deltas) {
 #ifndef GRAPHICS_DISABLED
   if (debug) {
     DisplayBackward(fwd_deltas);
@@ -259,10 +266,11 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkSc
   errors_t.Init(no_, width, scratch);
 #ifdef _OPENMP
 #  pragma omp parallel for num_threads(kNumThreads)
+#endif
   for (int t = 0; t < width; ++t) {
+#ifdef _OPENMP
     int thread_id = omp_get_thread_num();
 #else
-  for (int t = 0; t < width; ++t) {
     int thread_id = 0;
 #endif
     TFloat *backprop = nullptr;
@@ -287,8 +295,10 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkSc
   return false; // No point going further back.
 }
 
-void FullyConnected::BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat *curr_errors,
-                                      TransposedArray *errors_t, TFloat *backprop) {
+void FullyConnected::BackwardTimeStep(const NetworkIO &fwd_deltas, int t,
+                                      TFloat *curr_errors,
+                                      TransposedArray *errors_t,
+                                      TFloat *backprop) {
   if (type_ == NT_TANH) {
     acts_.FuncMultiply<GPrime>(fwd_deltas, t, curr_errors);
   } else if (type_ == NT_LOGISTIC) {
@@ -299,7 +309,8 @@ void FullyConnected::BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat
     acts_.FuncMultiply<ClipGPrime>(fwd_deltas, t, curr_errors);
   } else if (type_ == NT_RELU) {
     acts_.FuncMultiply<ReluPrime>(fwd_deltas, t, curr_errors);
-  } else if (type_ == NT_SOFTMAX || type_ == NT_SOFTMAX_NO_CTC || type_ == NT_LINEAR) {
+  } else if (type_ == NT_SOFTMAX || type_ == NT_SOFTMAX_NO_CTC ||
+             type_ == NT_LINEAR) {
     fwd_deltas.ReadTimeStep(t, curr_errors); // fwd_deltas are the errors.
   } else {
     ASSERT_HOST("Invalid fully-connected type!" == nullptr);
@@ -321,14 +332,16 @@ void FullyConnected::FinishBackward(const TransposedArray &errors_t) {
 
 // Updates the weights using the given learning rate, momentum and adam_beta.
 // num_samples is used in the adam computation iff use_adam_ is true.
-void FullyConnected::Update(float learning_rate, float momentum, float adam_beta, int num_samples) {
+void FullyConnected::Update(float learning_rate, float momentum,
+                            float adam_beta, int num_samples) {
   weights_.Update(learning_rate, momentum, adam_beta, num_samples);
 }
 
 // Sums the products of weight updates in *this and other, splitting into
 // positive (same direction) in *same and negative (different direction) in
 // *changed.
-void FullyConnected::CountAlternators(const Network &other, TFloat *same, TFloat *changed) const {
+void FullyConnected::CountAlternators(const Network &other, TFloat *same,
+                                      TFloat *changed) const {
   ASSERT_HOST(other.type() == type_);
   const auto *fc = static_cast<const FullyConnected *>(&other);
   weights_.CountAlternators(fc->weights_, same, changed);
