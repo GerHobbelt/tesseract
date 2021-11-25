@@ -352,7 +352,8 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
   std::vector<std::string> languages;
   api.GetAvailableLanguagesAsVector(&languages);
-  tprintf("List of available languages (%zu):\n", languages.size());
+  tprintf("List of available languages in \"%s\" (%zu):\n",
+         api.GetDatapath(), languages.size());
   for (const auto &language : languages) {
     tprintf("%s\n", language.c_str());
   }

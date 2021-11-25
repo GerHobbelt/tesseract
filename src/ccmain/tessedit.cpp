@@ -301,6 +301,10 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   for (auto *lang : sub_langs_) {
     delete lang;
   }
+
+  // Set the basename, compute the data directory.
+  main_setup(arg0, textbase);
+
   sub_langs_.clear();
   // Find the first loadable lang and load into this.
   // Add any languages that this language requires
@@ -316,6 +320,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         tess_to_init = this;
       } else {
         tess_to_init = new Tesseract;
+        tess_to_init->main_setup(arg0, textbase);
       }
 
       int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_str, oem, configs,
@@ -396,9 +401,6 @@ int Tesseract::init_tesseract_internal(const std::string &arg0, const std::strin
                                        const std::vector<std::string> *vars_vec,
                                        const std::vector<std::string> *vars_values,
                                        bool set_only_non_debug_params, TessdataManager *mgr) {
-  // Set the basename, compute the data directory.
-  main_setup(arg0, textbase);
-
   if (!init_tesseract_lang_data(arg0, language, oem, configs, configs_size, vars_vec,
                                 vars_values, set_only_non_debug_params, mgr)) {
     return -1;

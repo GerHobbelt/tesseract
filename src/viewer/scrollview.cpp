@@ -33,6 +33,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <map>
+#include <memory> // for std::unique_ptr
 #include <mutex> // for std::mutex
 #include <string>
 #include <thread> // for std::thread
@@ -98,7 +99,7 @@ void ScrollView::MessageReceiver() {
   // the events accordingly.
   while (true) {
     // The new event we create.
-    auto *cur = new SVEvent;
+    std::unique_ptr<SVEvent> cur(new SVEvent);
     // The ID of the corresponding window.
     int window_id;
 
@@ -144,11 +145,12 @@ void ScrollView::MessageReceiver() {
 
       // In case of an SVET_EXIT event, quit the whole application.
       if (ev_type == SVET_EXIT) {
-        ScrollView::Exit();
+        SendRawMessage("svmain:exit()");
+        break;
       }
 
       // Place two copies of it in the table for the window.
-      cur->window->SetEvent(cur);
+      cur->window->SetEvent(cur.get());
 
       // Check if any of the threads currently waiting want it.
       std::pair<ScrollView *, SVEventType> awaiting_list(cur->window, cur->type);
@@ -157,17 +159,14 @@ void ScrollView::MessageReceiver() {
                                                                     SVET_ANY);
       waiting_for_events_mu->lock();
       if (waiting_for_events.count(awaiting_list) > 0) {
-        waiting_for_events[awaiting_list].second = cur;
+        waiting_for_events[awaiting_list].second = cur.get();
         waiting_for_events[awaiting_list].first->Signal();
       } else if (waiting_for_events.count(awaiting_list_any) > 0) {
-        waiting_for_events[awaiting_list_any].second = cur;
+        waiting_for_events[awaiting_list_any].second = cur.get();
         waiting_for_events[awaiting_list_any].first->Signal();
       } else if (waiting_for_events.count(awaiting_list_any_window) > 0) {
-        waiting_for_events[awaiting_list_any_window].second = cur;
+        waiting_for_events[awaiting_list_any_window].second = cur.get();
         waiting_for_events[awaiting_list_any_window].first->Signal();
-      } else {
-        // No one wanted it, so delete it.
-        delete cur;
       }
       waiting_for_events_mu->unlock();
       // Signal the corresponding semaphore twice (for both copies).
@@ -176,8 +175,6 @@ void ScrollView::MessageReceiver() {
         sv->Signal();
         sv->Signal();
       }
-    } else {
-      delete cur; // Applied to no window.
     }
     svmap_mu->unlock();
 
@@ -461,26 +458,6 @@ SVEvent *ScrollView::AwaitEvent(SVEventType type) {
   SVEvent *ret = waiting_for_events[ea].second;
   waiting_for_events.erase(ea);
   delete sem;
-  waiting_for_events_mu->unlock();
-  return ret;
-}
-
-// Block until any event on any window is received.
-// No event is returned here!
-SVEvent *ScrollView::AwaitEventAnyWindow() {
-  // Initialize the waiting semaphore.
-  auto *sem = new SVSemaphore();
-  std::pair<ScrollView *, SVEventType> ea((ScrollView *)nullptr, SVET_ANY);
-  waiting_for_events_mu->lock();
-  waiting_for_events[ea] = std::pair<SVSemaphore *, SVEvent *>(sem, (SVEvent *)nullptr);
-  waiting_for_events_mu->unlock();
-  // Wait on it.
-  stream_->Flush();
-  sem->Wait();
-  // Process the event we got woken up for (it's in waiting_for_events pair).
-  waiting_for_events_mu->lock();
-  SVEvent *ret = waiting_for_events[ea].second;
-  waiting_for_events.erase(ea);
   waiting_for_events_mu->unlock();
   return ret;
 }
