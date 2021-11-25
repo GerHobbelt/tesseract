@@ -232,6 +232,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
     tprintf("%s\n", log_str.c_str());
   } while (trainer.best_error_rate() > FLAGS_target_error_rate &&
            (trainer.training_iteration() < max_iterations));
-  tprintf("Finished! Error rate = %g\n", trainer.best_error_rate());
+  tprintf("Finished! Selected model with minimal training error rate (BCER) = %g\n",
+          trainer.best_error_rate());
   return EXIT_SUCCESS;
 } /* main */

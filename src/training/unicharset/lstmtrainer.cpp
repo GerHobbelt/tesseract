@@ -330,7 +330,7 @@ bool LSTMTrainer::MaintainCheckpoints(const TestCallback &tester,
   std::vector<char> rec_model_data;
   if (error_rate < best_error_rate_) {
     SaveRecognitionDump(&rec_model_data);
-    log_msg += " New best char error = " + std::to_string(error_rate);
+    log_msg += " New best BCER = " + std::to_string(error_rate);
     log_msg += UpdateErrorGraph(iteration, error_rate, rec_model_data, tester);
     // If sub_trainer_ is not nullptr, either *this beat it to a new best, or it
     // just overwrote *this. In either case, we have finished with it.
@@ -353,7 +353,7 @@ bool LSTMTrainer::MaintainCheckpoints(const TestCallback &tester,
     }
   } else if (error_rate > worst_error_rate_) {
     SaveRecognitionDump(&rec_model_data);
-    log_msg += " New worst char error = " + std::to_string(error_rate);
+    log_msg += " New worst BCER = " + std::to_string(error_rate);
     log_msg += UpdateErrorGraph(iteration, error_rate, rec_model_data, tester);
     if (worst_error_rate_ > best_error_rate_ + kMinDivergenceRate &&
         best_error_rate_ < kMinStartedErrorRate && !best_trainer_.empty()) {
@@ -396,8 +396,8 @@ void LSTMTrainer::PrepareLogMsg(std::string &log_msg) const {
   LogIterations("At", log_msg);
   log_msg += ", Mean rms=" + std::to_string(error_rates_[ET_RMS]);
   log_msg += "%, delta=" + std::to_string(error_rates_[ET_DELTA]);
-  log_msg += "%, char train=" + std::to_string(error_rates_[ET_CHAR_ERROR]);
-  log_msg += "%, word train=" + std::to_string(error_rates_[ET_WORD_RECERR]);
+  log_msg += "%, BCER train=" + std::to_string(error_rates_[ET_CHAR_ERROR]);
+  log_msg += "%, BWER train=" + std::to_string(error_rates_[ET_WORD_RECERR]);
   log_msg += "%, skip ratio=" + std::to_string(error_rates_[ET_SKIP_RATIO]);
   log_msg += "%, ";
 }
@@ -926,7 +926,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
     upside_down = randomizer_.SignedRand(1.0) > 0.0;
     if (upside_down) {
       // Modify the truth labels to match the rotation:
-      // Apart from space and null, increment the label. This is changes the
+      // Apart from space and null, increment the label. This changes the
       // script-id to the same script-id but upside-down.
       // The labels need to be reversed in order, as the first is now the last.
       for (auto truth_label : truth_labels) {
