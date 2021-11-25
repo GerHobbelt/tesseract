@@ -94,10 +94,10 @@ namespace tesseract {
 
 // Computes and returns the dot product of the n-vectors u and v.
 // Uses Intel FMA intrinsics to access the SIMD instruction set.
-inline float DotProductFMA(const float *u, const float *v, int n) {
+float DotProductFMA(const float *u, const float *v, int n) {
 	return DotProductSSE(u, v, n);
 }
-inline double DotProductFMA(const double *u, const double *v, int n) {
+double DotProductFMA(const double *u, const double *v, int n) {
   return DotProductSSE(u, v, n);
 }
 
