@@ -55,7 +55,7 @@ public:
       const S *format,
       Args&&... args
   ) const {
-    verror(caller, action, format, fmt::make_format_args(args...));
+    verror(caller, action, format, fmt::make_args_checked<Args...>(format, args...));
   }
 
   void error(const char *caller, TessErrorLogCode action) const;
