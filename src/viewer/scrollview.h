@@ -390,7 +390,7 @@ public:
 
   template <typename S, typename... Args>
   void SendMsg(const S &format, Args&&... args) {
-    vSendMsg(format, fmt::make_format_args(args...));
+    vSendMsg(format, fmt::make_args_checked<Args...>(format, args...));
   }
 
   /*******************************************************************************
