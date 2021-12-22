@@ -599,8 +599,7 @@ void InteractiveScrollView::AlwaysOnTop(bool b) {
 }
 
 // Adds a message entry to the message box.
-void InteractiveScrollView::vAddMessage(fmt::string_view format,
-                                        fmt::format_args args) {
+void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
