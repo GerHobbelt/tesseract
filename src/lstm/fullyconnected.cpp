@@ -34,7 +34,28 @@
 #include "networkscratch.h"
 
 // Number of threads to use for parallel calculation of Forward and Backward.
-#ifdef _OPENMP
+#define THREADPOOL
+#if defined(THREADPOOL)
+#include <atomic> // for std::atomic
+#include <thread_pool.hpp>
+// no thread pool // 22540 ms
+//const int kNumThreads = 2; // 30602 ms
+//const int kNumThreads = 4; // 26940 ms
+//const int kNumThreads = 4; // 21829 ms
+//const int kNumThreads = 4; // 23965 ms
+//const int kNumThreads = 8; // 26253 ms
+//const int kNumThreads = 8; // 22506 ms
+//const int kNumThreads = 8; // 22121 ms
+//const int kNumThreads = 16; // 25916 ms
+//const int kNumThreads = 16; // 21497 ms
+//const int kNumThreads = 16; // 21668 ms
+//const int kNumThreads = 24; // 21497 ms
+//const int kNumThreads = 24; // 20761 ms
+//const int kNumThreads = 24; // 20938 ms
+static const unsigned kNumThreads = 24; // 20640 ms
+//const int kNumThreads = 48; // 22425 ms
+static thread_pool pool(kNumThreads);
+#elif defined(_OPENMP)
 static const int kNumThreads = 4;
 #else
 static const int kNumThreads = 1;
@@ -139,6 +160,60 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
     output->Resize(input, no_);
   }
   SetupForward(input, input_transpose);
+#if defined(THREADPOOL)
+  std::vector<NetworkScratch::FloatVec> temp_lines(kNumThreads);
+  std::vector<NetworkScratch::FloatVec> curr_input(kNumThreads);
+  int ro = no_;
+  if (IntSimdMatrix::intSimdMatrix) {
+    ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
+  }
+  for (unsigned i = 0; i < kNumThreads; ++i) {
+    temp_lines[i].Init(ro, scratch);
+    curr_input[i].Init(ni_, scratch);
+  }
+  std::atomic<int> num_threads = 0;
+  if (input.int_mode()) {
+    pool.parallelize_loop(0, width,
+      [this, &input, &output, &num_threads, &temp_lines](const int &start, const int &end) {
+      // Thread-local pointer to temporary storage.
+      int thread_id = num_threads++;
+      TFloat *temp_line = temp_lines[thread_id];
+      bool needsCopyTimeStepFrom = IsTraining() && type_ != NT_SOFTMAX;
+      for (int t = start; t < end; t++) {
+        ForwardTimeStep(input.i(t), t, temp_line);
+        output->WriteTimeStep(t, temp_line);
+        if (needsCopyTimeStepFrom) {
+          acts_.CopyTimeStepFrom(t, *output, t);
+        }
+      }
+    });
+  } else if (IsTraining() && type_ != NT_SOFTMAX) {
+    pool.parallelize_loop(0, width,
+      [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
+      // Thread-local pointer to temporary storage.
+      int thread_id = num_threads++;
+      TFloat *temp_line = temp_lines[thread_id];
+      for (int t = start; t < end; t++) {
+        input.ReadTimeStep(t, curr_input[thread_id]);
+        ForwardTimeStep(curr_input[thread_id], t, temp_line);
+        output->WriteTimeStep(t, temp_line);
+        acts_.CopyTimeStepFrom(t, *output, t);
+      }
+    });
+  } else {
+    pool.parallelize_loop(0, width,
+      [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
+      // Thread-local pointer to temporary storage.
+      int thread_id = num_threads++;
+      TFloat *temp_line = temp_lines[thread_id];
+      for (int t = start; t < end; t++) {
+        input.ReadTimeStep(t, curr_input[thread_id]);
+        ForwardTimeStep(curr_input[thread_id], t, temp_line);
+        output->WriteTimeStep(t, temp_line);
+      }
+    });
+  }
+#else // THREADPOOL
   std::vector<NetworkScratch::FloatVec> temp_lines(kNumThreads);
   std::vector<NetworkScratch::FloatVec> curr_input(kNumThreads);
   int ro = no_;
@@ -171,6 +246,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
       acts_.CopyTimeStepFrom(t, *output, t);
     }
   }
+#endif // THREADPOOL
   // Zero all the elements that are in the padding around images that allows
   // multiple different-sized images to exist in a single array.
   // acts_ is only used if this is not a softmax op.
@@ -247,19 +323,45 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkSc
 #endif
   back_deltas->Resize(fwd_deltas, ni_);
   std::vector<NetworkScratch::FloatVec> errors(kNumThreads);
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (unsigned i = 0; i < kNumThreads; ++i) {
     errors[i].Init(no_, scratch);
   }
   std::vector<NetworkScratch::FloatVec> temp_backprops;
   if (needs_to_backprop_) {
     temp_backprops.resize(kNumThreads);
-    for (int i = 0; i < kNumThreads; ++i) {
+    for (unsigned i = 0; i < kNumThreads; ++i) {
       temp_backprops[i].Init(ni_, scratch);
     }
   }
   int width = fwd_deltas.Width();
   NetworkScratch::GradientStore errors_t;
   errors_t.Init(no_, width, scratch);
+#if defined(THREADPOOL)
+  std::atomic<unsigned> num_threads = 0;
+  if (needs_to_backprop_) {
+    pool.parallelize_loop(0, width,
+      [this, &back_deltas, &fwd_deltas, &temp_backprops, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
+      // Thread-local pointer to temporary storage.
+      unsigned thread_id = num_threads++;
+      TFloat *curr_errors = errors[thread_id];
+      TFloat *backprop = temp_backprops[thread_id];
+      for (unsigned t = start; t < end; t++) {
+        BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), backprop);
+        back_deltas->WriteTimeStep(t, backprop);
+      }
+    });
+  } else {
+    pool.parallelize_loop(0, width,
+      [this, &fwd_deltas, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
+      // Thread-local pointer to temporary storage.
+      unsigned thread_id = num_threads++;
+      TFloat *curr_errors = errors[thread_id];
+      for (unsigned t = start; t < end; t++) {
+        BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), nullptr);
+      }
+    });
+  }
+#else
 #ifdef _OPENMP
 #  pragma omp parallel for num_threads(kNumThreads)
   for (int t = 0; t < width; ++t) {
@@ -278,6 +380,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkSc
       back_deltas->WriteTimeStep(t, backprop);
     }
   }
+#endif // THREADPOOL
   FinishBackward(*errors_t.get());
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
