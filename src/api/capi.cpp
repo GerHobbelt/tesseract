@@ -237,7 +237,7 @@ char **TessBaseAPIGetLoadedLanguagesAsVector(const TessBaseAPI *handle) {
   handle->GetLoadedLanguagesAsVector(&languages);
   char **arr = new char *[languages.size() + 1];
   for (auto &language : languages) {
-    arr[&language - &languages[0]] = _strdup(language.c_str());
+    arr[&language - &languages[0]] = strdup(language.c_str());
   }
   arr[languages.size()] = nullptr;
   return arr;
@@ -248,7 +248,7 @@ char **TessBaseAPIGetAvailableLanguagesAsVector(const TessBaseAPI *handle) {
   handle->GetAvailableLanguagesAsVector(&languages);
   char **arr = new char *[languages.size() + 1];
   for (auto &language : languages) {
-    arr[&language - &languages[0]] = _strdup(language.c_str());
+    arr[&language - &languages[0]] = strdup(language.c_str());
   }
   arr[languages.size()] = nullptr;
   return arr;
