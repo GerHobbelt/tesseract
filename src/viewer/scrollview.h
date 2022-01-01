@@ -33,16 +33,13 @@
 
 #include "image.h"
 
-#include <tesseract/export.h>   // for TS_PRINTFLIKE and TS_FORMAT_STRING
+#include <fmt/format.h>
+#include <tesseract/export.h>
 
 #include <cstdio>
 #include <mutex>
 
 namespace tesseract {
-
-#if !defined(__GNUC__) && !defined(__attribute__)
-# define __attribute__(attr) // compiler without support for __attribute__
-#endif
 
 class ScrollView;
 class SVNetwork;
@@ -294,10 +291,14 @@ public:
   // Adds a messagebox to the SVWindow. This way, it can show the messages...
   void AddMessageBox();
 
+  void vAddMessage(fmt::string_view format, fmt::format_args args);
+
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
-  void AddMessage(const char *message);
-  void AddMessageF(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
+  template <typename S, typename... Args>
+  void AddMessage(const S &format, Args&&... args) {
+    vAddMessage(format, fmt::make_args_checked<Args...>(format, args...));
+  }
 
   // Zoom the window to the rectangle given upper left corner and
   // lower right corner.
@@ -310,7 +311,11 @@ public:
   // this just for fun will likely break your application!
   // It is public so you can actually take use of the LUA functionalities, but
   // be careful!
-  void SendMsg(TS_FORMAT_STRING(const char *fmt), ...) TS_PRINTFLIKE(1, 2) __attribute__((format(printf, 2, 3)));
+  void vSendMsg(fmt::string_view format, fmt::format_args args);
+  template <typename S, typename... Args>
+  void SendMsg(const S &format, Args&&... args) {
+    vSendMsg(format, fmt::make_args_checked<Args...>(format, args...));
+  }
 
   // Custom messages (manipulating java code directly) can be send through this.
   // Send a message to the server without adding the
