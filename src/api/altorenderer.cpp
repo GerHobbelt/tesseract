@@ -174,6 +174,39 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       continue;
     }
 
+    int left, top, right, bottom;
+    auto block_type = res_it->BlockType();
+
+    switch (block_type) {
+      case PT_FLOWING_IMAGE:
+      case PT_HEADING_IMAGE:
+      case PT_PULLOUT_IMAGE: {
+        res_it->BoundingBox(RIL_BLOCK, &left, &top, &right, &bottom);
+        alto_str << "   <div class='ocr_photo' id='block_" << 0 << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
+           << bottom << "\"></div>\n";
+        res_it->Next(RIL_BLOCK);
+        bcnt++;
+        lcnt++;
+        tcnt++;
+        wcnt++;
+        continue;
+      }
+      case PT_HORZ_LINE:
+      case PT_VERT_LINE:
+        res_it->BoundingBox(RIL_BLOCK, &left, &top, &right, &bottom);
+        alto_str << "   <div class='ocr_separator' id='block_" << 0 << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
+           << bottom << "\"></div>\n";
+        res_it->Next(RIL_BLOCK);
+        bcnt++;
+        lcnt++;
+        tcnt++;
+        wcnt++;
+	continue;
+      case PT_NOISE:
+      default:
+	break;
+    }
+
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       alto_str << "\t\t\t\t<ComposedBlock ID=\"cblock_" << bcnt << "\"";
       AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
@@ -200,7 +233,6 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
     bool last_word_in_tblock = res_it->IsAtFinalElement(RIL_PARA, RIL_WORD);
     bool last_word_in_cblock = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
 
-    int left, top, right, bottom;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
 
     do {
