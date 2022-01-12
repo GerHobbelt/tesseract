@@ -228,7 +228,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*")
   add_definitions("-DHAVE_NEON")
   set(HAVE_NEON TRUE)
 
-else()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*")
 
   set(HAVE_AVX FALSE)
   set(HAVE_AVX2 FALSE)
@@ -240,6 +240,14 @@ else()
     set(NEON_COMPILE_FLAGS "-mfpu=neon")
     add_definitions("-DHAVE_NEON")
   endif()
+
+else()
+
+  set(HAVE_AVX FALSE)
+  set(HAVE_AVX2 FALSE)
+  set(HAVE_FMA FALSE)
+  set(HAVE_NEON FALSE)
+  set(HAVE_SSE4_1 FALSE)
 
 endif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
 
@@ -366,15 +374,17 @@ else()
   include_directories(${Leptonica_INCLUDE_DIRS})
 
   # Check for optional libraries.
-  find_package(TIFF) # for tesseract
-  if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
-    # try PKG_CONFIG to find libtiff if cmake failed
-    pkg_check_modules(TIFF libtiff-4)
-  endif()
-  if(TIFF_FOUND)
-    set(HAVE_TIFFIO_H ON)
-    include_directories(${TIFF_INCLUDE_DIRS})
-  endif(TIFF_FOUND)
+  if(WIN32)
+    find_package(TIFF) # for tesseract
+    if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
+      # try PKG_CONFIG to find libtiff if cmake failed
+      pkg_check_modules(TIFF libtiff-4)
+    endif()
+    if(TIFF_FOUND)
+      set(HAVE_TIFFIO_H ON)
+      include_directories(${TIFF_INCLUDE_DIRS})
+    endif(TIFF_FOUND)
+  endif(WIN32)
   if(DISABLE_ARCHIVE)
     set(HAVE_LIBARCHIVE OFF)
   else(DISABLE_ARCHIVE)
@@ -719,6 +729,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIBTESSFILES})
 add_library(libtesseract ${LIBTESSFILES})
 target_include_directories(
   libtesseract
+  BEFORE
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
@@ -749,7 +760,7 @@ if(LibArchive_FOUND)
   target_link_libraries(libtesseract PUBLIC ${LibArchive_LIBRARIES})
 endif(LibArchive_FOUND)
 if(CURL_FOUND)
-  if(NOT "${CURL_LIBRARIES}")
+  if(NOT CURL_LIBRARIES)
     target_link_libraries(libtesseract PUBLIC CURL::libcurl)
   else()
     target_link_libraries(libtesseract PUBLIC ${CURL_LIBRARIES})

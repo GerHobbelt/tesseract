@@ -785,7 +785,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 {
-#if defined(__USE_GNU)
+#if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
   // Raise SIGFPE.
 #  if defined(__clang__)
   // clang creates code which causes some FP exceptions, so don't enable those.

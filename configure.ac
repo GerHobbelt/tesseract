@@ -28,8 +28,8 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
-PACKAGE_YEAR=2021
-PACKAGE_DATE="11/30"
+PACKAGE_YEAR=2022
+PACKAGE_DATE="01/07"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -191,6 +191,9 @@ case "${host_cpu}" in
     AC_MSG_WARN([No compiler options for $host_cpu])
 
 esac
+
+# check whether feenableexcept is supported. some C libraries (e.g. uclibc) don't.
+AC_CHECK_FUNCS([feenableexcept])
 
 AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
 AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)

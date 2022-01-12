@@ -40,7 +40,6 @@
 #include <mutex>
 
 namespace tesseract {
-
 class ScrollView;
 class SVNetwork;
 class SVSemaphore;
