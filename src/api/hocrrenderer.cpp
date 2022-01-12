@@ -194,7 +194,39 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
-    bool skipword = false;
+    int left, top, right, bottom;
+    auto block_type = res_it->BlockType();
+    switch (block_type) {
+      case PT_FLOWING_IMAGE:
+      case PT_HEADING_IMAGE:
+      case PT_PULLOUT_IMAGE: {
+        res_it.get()->BoundingBox(RIL_TEXTLINE, &left, &top, &right, &bottom);
+        hocr_str << "   <div class='ocr_photo' id='block_" << page_id << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
+           << bottom << "\"></div>\n";
+        res_it->Next(RIL_BLOCK);
+        bcnt++;
+        pcnt++;
+        lcnt++;
+        wcnt++;
+        continue;
+      }
+      case PT_HORZ_LINE:
+      case PT_VERT_LINE:
+        res_it.get()->BoundingBox(RIL_TEXTLINE, &left, &top, &right, &bottom);
+        hocr_str << "   <div class='ocr_separator' id='block_" << page_id << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
+           << bottom << "\"></div>\n";
+        res_it->Next(RIL_BLOCK);
+        bcnt++;
+        pcnt++;
+        lcnt++;
+        wcnt++;
+	continue;
+      case PT_NOISE:
+        ASSERT_HOST(false);
+      default:
+	break;
+    }
+
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
       continue;
@@ -224,7 +256,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       hocr_str << "\n     <span class='";
-      switch (res_it->BlockType()) {
+      switch (block_type) {
         case PT_HEADING_TEXT:
           hocr_str << "ocr_header";
           break;
@@ -237,24 +269,14 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-          {
-            if (hocr_images) {
-              hocr_str << "ocr_photo";
-              skipword = true;
-              break;
-            }
-          }
-          // Fall through if hocr_images is false, because we would omit ocr_line
-          // in the past.
+          ASSERT_HOST(false);
+          break;
         default:
           hocr_str << "ocr_line";
       }
       hocr_str << "' id='"
                << "line_" << page_id << "_" << lcnt << "'";
       AddBoxTohOCR(res_it.get(), RIL_TEXTLINE, hocr_str);
-      if (skipword) {
-        goto word_end;
-      }
     }
 
     // Now, process the word...
@@ -269,12 +291,10 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
     hocr_str << "\n      <span class='ocrx_word'"
              << " id='"
              << "word_" << page_id << "_" << wcnt << "'";
-    int left, top, right, bottom;
     bool bold, italic, underlined, monospace, serif, smallcaps;
     int pointsize, font_id;
-    const char *font_name;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
-    font_name =
+    const char *font_name =
         res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
                                    &serif, &smallcaps, &pointsize, &font_id);
     hocr_str << " title='bbox " << left << " " << top << " " << right << " "
