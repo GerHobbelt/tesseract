@@ -217,7 +217,7 @@ void FullyConnected::ForwardTimeStep(int t, TFloat *output_line) {
   } else if (type_ == NT_SOFTMAX || type_ == NT_SOFTMAX_NO_CTC) {
     SoftmaxInPlace(no_, output_line);
   } else if (type_ != NT_LINEAR) {
-    ASSERT_HOST("Invalid fully-connected type!" == nullptr);
+    ASSERT_HOST(!"Invalid fully-connected type!");
   }
 }
 
@@ -305,7 +305,7 @@ void FullyConnected::BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat
   } else if (type_ == NT_SOFTMAX || type_ == NT_SOFTMAX_NO_CTC || type_ == NT_LINEAR) {
     fwd_deltas.ReadTimeStep(t, curr_errors); // fwd_deltas are the errors.
   } else {
-    ASSERT_HOST("Invalid fully-connected type!" == nullptr);
+    ASSERT_HOST(!"Invalid fully-connected type!");
   }
   // Generate backprop only if needed by the lower layer.
   if (backprop != nullptr) {

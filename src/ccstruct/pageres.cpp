@@ -1214,7 +1214,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
           return 1;
         }
       }
-      ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+      ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
     }
 
     // we both point to the same block, but different rows.
@@ -1227,7 +1227,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
         return 1;
       }
     }
-    ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+    ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
   }
 
   // We point to different blocks.
@@ -1241,7 +1241,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
     }
   }
   // Shouldn't happen...
-  ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+  ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
   return 0;
 }
 

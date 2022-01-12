@@ -1119,9 +1119,7 @@ void LSTMTrainer::InitCharSet() {
   training_flags_ = TF_COMPRESS_UNICHARSET;
   // Initialize the unicharset and recoder.
   if (!LoadCharsets(&mgr_)) {
-    ASSERT_HOST(
-        "Must provide a traineddata containing lstm_unicharset and"
-        " lstm_recoder!\n" != nullptr);
+    ASSERT_HOST(!"Must provide a traineddata containing lstm_unicharset and lstm_recoder!");
   }
   SetNullChar();
 }
