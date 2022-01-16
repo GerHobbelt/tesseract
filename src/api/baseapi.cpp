@@ -1406,8 +1406,10 @@ char *TessBaseAPI::GetUTF8Text() {
       case PT_PULLOUT_IMAGE:
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
+        // Ignore images and lines for text output.
 	continue;
       case PT_NOISE:
+        tprintf("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
       default:
 	break;
