@@ -160,7 +160,7 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
     }
   } else {
     tprintf("ERROR: BAD tessedit_reject_mode\n");
-    ASSERT_HOST("Fatal error encountered!" == nullptr);
+    ASSERT_HOST(!"Fatal error encountered!");
   }
 
   if (tessedit_image_border > -1) {
