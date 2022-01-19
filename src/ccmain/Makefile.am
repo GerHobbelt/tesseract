@@ -1,16 +1,15 @@
-AM_CPPFLAGS += \
-  -I$(top_srcdir)/src/ccutil \
-  -I$(top_srcdir)/src/ccstruct \
-  -I$(top_srcdir)/src/arch \
-  -I$(top_srcdir)/src/lstm \
-  -I$(top_srcdir)/src/viewer \
-  -I$(top_srcdir)/src/classify \
-  -I$(top_srcdir)/src/dict \
-  -I$(top_srcdir)/src/wordrec \
-  -I$(top_srcdir)/src/cutil \
-  -I$(top_srcdir)/src/textord \
-  -I$(top_srcdir)/src/opencl
-
+AM_CPPFLAGS += -I$(top_builddir)/include
+AM_CPPFLAGS += -I$(top_srcdir)/src/arch
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/classify
+AM_CPPFLAGS += -I$(top_srcdir)/src/cutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/dict
+AM_CPPFLAGS += -I$(top_srcdir)/src/lstm
+AM_CPPFLAGS += -I$(top_srcdir)/src/opencl
+AM_CPPFLAGS += -I$(top_srcdir)/src/viewer
+AM_CPPFLAGS += -I$(top_srcdir)/src/wordrec
+AM_CPPFLAGS += -I$(top_srcdir)/src/textord
 AM_CPPFLAGS += $(OPENCL_CPPFLAGS)
 AM_CPPFLAGS += $(OPENMP_CXXFLAGS)
 
@@ -65,7 +64,6 @@ libtesseract_main_la_SOURCES = \
   paragraphs.cpp \
   paramsd.cpp \
   pgedit.cpp \
-  recogtraining.cpp \
   reject.cpp \
   resultiterator.cpp \
   tessedit.cpp \
@@ -75,15 +73,15 @@ libtesseract_main_la_SOURCES = \
   werdit.cpp
 
 if !DISABLED_LEGACY_ENGINE
-libtesseract_main_la_SOURCES += \
-  adaptions.cpp \
-  docqual.cpp \
-  equationdetect.cpp \
-  fixspace.cpp \
-  fixxht.cpp \
-  osdetect.cpp \
-  par_control.cpp \
-  superscript.cpp \
-  tessbox.cpp \
-  tfacepp.cpp
+libtesseract_main_la_SOURCES += adaptions.cpp
+libtesseract_main_la_SOURCES += docqual.cpp
+libtesseract_main_la_SOURCES += equationdetect.cpp
+libtesseract_main_la_SOURCES += fixspace.cpp
+libtesseract_main_la_SOURCES += fixxht.cpp
+libtesseract_main_la_SOURCES += osdetect.cpp
+libtesseract_main_la_SOURCES += par_control.cpp
+libtesseract_main_la_SOURCES += recogtraining.cpp
+libtesseract_main_la_SOURCES += superscript.cpp
+libtesseract_main_la_SOURCES += tessbox.cpp
+libtesseract_main_la_SOURCES += tfacepp.cpp
 endif

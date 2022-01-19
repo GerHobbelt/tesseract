@@ -1,13 +1,12 @@
-AM_CPPFLAGS += \
-    -I$(top_srcdir)/src/ccutil \
-    -I$(top_srcdir)/src/cutil \
-    -I$(top_srcdir)/src/ccstruct \
-    -I$(top_srcdir)/src/arch \
-    -I$(top_srcdir)/src/viewer \
-    -I$(top_srcdir)/src/classify \
-    -I$(top_srcdir)/src/dict \
-    -I$(top_srcdir)/src/lstm
-
+AM_CPPFLAGS += -I$(top_builddir)/include
+AM_CPPFLAGS += -I$(top_srcdir)/src/arch
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
+AM_CPPFLAGS += -I$(top_srcdir)/src/classify
+AM_CPPFLAGS += -I$(top_srcdir)/src/cutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/dict
+AM_CPPFLAGS += -I$(top_srcdir)/src/lstm
+AM_CPPFLAGS += -I$(top_srcdir)/src/viewer
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
 
 if TENSORFLOW
@@ -17,6 +16,10 @@ endif
 
 if !NO_TESSDATA_PREFIX
 AM_CXXFLAGS += -DTESSDATA_PREFIX=@datadir@
+endif
+
+if DISABLED_LEGACY_ENGINE
+AM_CPPFLAGS += -DDISABLED_LEGACY_ENGINE
 endif
 
 if VISIBILITY
@@ -39,7 +42,7 @@ noinst_LTLIBRARIES = libtesseract_lstm.la
 libtesseract_lstm_la_SOURCES = \
         convolve.cpp ctc.cpp fullyconnected.cpp functions.cpp input.cpp \
         lstm.cpp lstmrecognizer.cpp lstmtrainer.cpp maxpool.cpp \
-        networkbuilder.cpp network.cpp networkio.cpp \
+        network.cpp networkbuilder.cpp networkio.cpp \
         parallel.cpp plumbing.cpp recodebeam.cpp reconfig.cpp reversed.cpp \
         series.cpp stridemap.cpp tfnetwork.cpp weightmatrix.cpp
 

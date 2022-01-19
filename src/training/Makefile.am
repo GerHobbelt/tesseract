@@ -1,18 +1,18 @@
-AM_CPPFLAGS += \
-    -DPANGO_ENABLE_ENGINE \
-    -I$(top_builddir)/src/api \
-    -I$(top_srcdir)/src/api \
-    -I$(top_srcdir)/src/ccmain \
-    -I$(top_srcdir)/src/ccutil \
-    -I$(top_srcdir)/src/ccstruct \
-    -I$(top_srcdir)/src/lstm \
-    -I$(top_srcdir)/src/arch \
-    -I$(top_srcdir)/src/viewer \
-    -I$(top_srcdir)/src/textord \
-    -I$(top_srcdir)/src/dict \
-    -I$(top_srcdir)/src/classify \
-    -I$(top_srcdir)/src/wordrec \
-    -I$(top_srcdir)/src/cutil
+AM_CPPFLAGS += -DPANGO_ENABLE_ENGINE
+AM_CPPFLAGS += -I$(top_builddir)/include
+AM_CPPFLAGS += -I$(top_builddir)/src/api
+AM_CPPFLAGS += -I$(top_srcdir)/src/arch
+AM_CPPFLAGS += -I$(top_srcdir)/src/api
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccmain
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/classify
+AM_CPPFLAGS += -I$(top_srcdir)/src/cutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/dict
+AM_CPPFLAGS += -I$(top_srcdir)/src/lstm
+AM_CPPFLAGS += -I$(top_srcdir)/src/textord
+AM_CPPFLAGS += -I$(top_srcdir)/src/viewer
+AM_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 
 bin_SCRIPTS = language-specific.sh tesstrain.sh
 scripts_DATA = tesstrain_utils.sh
@@ -34,6 +34,7 @@ noinst_HEADERS = \
     commontraining.h \
     degradeimage.h \
     icuerrorcode.h \
+    fileio.h \
     lang_model_helpers.h \
     ligature_table.h \
     lstmtester.h \
@@ -52,6 +53,8 @@ noinst_HEADERS = \
     validator.h
 
 if !DISABLED_LEGACY_ENGINE
+    noinst_HEADERS += errorcounter.h
+    noinst_HEADERS += mastertrainer.h
     noinst_HEADERS += mergenf.h
 endif
 
@@ -68,6 +71,7 @@ libtesseract_training_la_SOURCES = \
     commontraining.cpp \
     degradeimage.cpp \
     icuerrorcode.cpp \
+    fileio.cpp \
     lang_model_helpers.cpp \
     ligature_table.cpp \
     lstmtester.cpp \
@@ -82,6 +86,11 @@ libtesseract_training_la_SOURCES = \
     validate_khmer.cpp \
     validate_myanmar.cpp \
     validator.cpp
+
+if !DISABLED_LEGACY_ENGINE
+libtesseract_training_la_SOURCES += errorcounter.cpp
+libtesseract_training_la_SOURCES += mastertrainer.cpp
+endif
 
 libtesseract_tessopt_la_SOURCES = \
     tessopt.cpp
@@ -211,8 +220,8 @@ text2image_LDADD = \
     $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 text2image_LDADD += \
     ../api/libtesseract.la
-text2image_LDADD += $(ICU_UC_LIBS) -lpango-1.0 -lpangocairo-1.0
-text2image_LDADD += -lgobject-2.0 -lglib-2.0 -lcairo -lpangoft2-1.0 -lfontconfig
+text2image_LDADD += $(ICU_UC_LIBS) $(cairo_LIBS)
+text2image_LDADD += $(pango_LIBS) $(pangocairo_LIBS) $(pangoft2_LIBS)
 
 unicharset_extractor_SOURCES = unicharset_extractor.cpp
 #unicharset_extractor_LDFLAGS = -static

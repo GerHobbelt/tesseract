@@ -46,6 +46,11 @@ const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
 const double kCertOffset = -0.085;
 
+LSTMRecognizer::LSTMRecognizer(const STRING language_data_path_prefix)
+    : LSTMRecognizer::LSTMRecognizer() {
+  ccutil_.language_data_path_prefix = language_data_path_prefix;
+}
+
 LSTMRecognizer::LSTMRecognizer()
     : network_(nullptr),
       training_flags_(0),
@@ -228,8 +233,6 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
                                    bool debug, bool re_invert, bool upside_down,
                                    float* scale_factor, NetworkIO* inputs,
                                    NetworkIO* outputs) {
-  // Maximum width of image to train on.
-  const int kMaxImageWidth = 2560;
   // This ensures consistent recognition results.
   SetRandomSeed();
   int min_width = network_->XScaleFactor();
@@ -239,6 +242,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
     tprintf("Line cannot be recognized!!\n");
     return false;
   }
+  // Maximum width of image to train on.
+  const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
     tprintf("Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix),
             pixGetHeight(pix));

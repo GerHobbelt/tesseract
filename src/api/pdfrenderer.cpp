@@ -529,6 +529,8 @@ bool TessPDFRenderer::BeginDocumentHandler() {
 
   // CIDFONTTYPE2
   std::stringstream stream;
+  // Use "C" locale (needed for int values larger than 999).
+  stream.imbue(std::locale::classic());
   stream <<
     "4 0 obj\n"
     "<<\n"
@@ -641,7 +643,7 @@ bool TessPDFRenderer::BeginDocumentHandler() {
     }
   }
   fseek(fp, 0, SEEK_END);
-  long int size = ftell(fp);
+  auto size = std::ftell(fp);
   if (size < 0) {
     fclose(fp);
     return false;
@@ -724,6 +726,8 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
   // It requires creating an /SMask for the alpha channel.
   // http://stackoverflow.com/questions/14220221
   std::stringstream colorspace;
+  // Use "C" locale (needed for int values larger than 999).
+  colorspace.imbue(std::locale::classic());
   if (cid->ncolors > 0) {
     colorspace
       << "  /ColorSpace [ /Indexed /DeviceRGB " << (cid->ncolors - 1)
@@ -731,7 +735,12 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
   } else {
     switch (cid->spp) {
       case 1:
-        colorspace.str("  /ColorSpace /DeviceGray\n");
+        if (cid->bps == 1 && pixGetInputFormat(pix) == IFF_PNG) {
+          colorspace.str("  /ColorSpace /DeviceGray\n"
+                         "  /Decode [1 0]\n");
+        } else {
+          colorspace.str("  /ColorSpace /DeviceGray\n");
+        }
         break;
       case 3:
         colorspace.str("  /ColorSpace /DeviceRGB\n");
@@ -746,6 +755,8 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
 
   // IMAGE
   std::stringstream b1;
+  // Use "C" locale (needed for int values larger than 999).
+  b1.imbue(std::locale::classic());
   b1 <<
     objnum << " 0 obj\n"
     "<<\n"
@@ -753,6 +764,8 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
     "  /Subtype /Image\n";
 
   std::stringstream b2;
+  // Use "C" locale (needed for int values larger than 999).
+  b2.imbue(std::locale::classic());
   b2 <<
     "  /Width " << cid->w << "\n"
     "  /Height " << cid->h << "\n"
@@ -805,6 +818,8 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
   double height = pixGetHeight(pix) * 72.0 / ppi;
 
   std::stringstream xobject;
+  // Use "C" locale (needed for int values larger than 999).
+  xobject.imbue(std::locale::classic());
   if (!textonly_) {
     xobject << "/XObject << /Im1 " << (obj_ + 2) << " 0 R >>\n";
   }
@@ -885,6 +900,8 @@ bool TessPDFRenderer::EndDocumentHandler() {
   const long int kPagesObjectNumber = 2;
   offsets_[kPagesObjectNumber] = offsets_.back();  // manipulation #1
   std::stringstream stream;
+  // Use "C" locale (needed for int values larger than 999).
+  stream.imbue(std::locale::classic());
   stream << kPagesObjectNumber << " 0 obj\n<<\n  /Type /Pages\n  /Kids [ ";
   AppendString(stream.str().c_str());
   size_t pages_objsize  = stream.str().size();

@@ -31,6 +31,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>        // for std::this_thread
 #include <vector>
 
 #ifdef _WIN32
@@ -57,6 +58,14 @@ SVMutex::SVMutex() {
   mutex_ = CreateMutex(0, FALSE, 0);
 #else
   pthread_mutex_init(&mutex_, nullptr);
+#endif
+}
+
+SVMutex::~SVMutex() {
+#ifdef _WIN32
+  CloseHandle(mutex_);
+#else
+  pthread_mutex_destroy(&mutex_);
 #endif
 }
 
@@ -175,6 +184,16 @@ SVSemaphore::SVSemaphore() {
   }
 #else
   sem_init(&semaphore_, 0, 0);
+#endif
+}
+
+SVSemaphore::~SVSemaphore() {
+#ifdef _WIN32
+  CloseHandle(semaphore_);
+#elif defined(__APPLE__)
+  sem_close(semaphore_);
+#else
+  sem_close(&semaphore_);
 #endif
 }
 
@@ -381,11 +400,7 @@ SVNetwork::SVNetwork(const char* hostname, int port) {
         Close();
 
         std::cout << "ScrollView: Waiting for server...\n";
-#ifdef _WIN32
-        Sleep(1000);
-#else
-        sleep(1);
-#endif
+        std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
   }

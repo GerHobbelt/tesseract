@@ -1,18 +1,18 @@
-AM_CPPFLAGS += -DLOCALEDIR=\"$(localedir)\" \
-    -I$(top_srcdir)/src/arch \
-    -I$(top_srcdir)/src/lstm \
-    -I$(top_srcdir)/src/ccutil \
-    -I$(top_srcdir)/src/ccstruct \
-    -I$(top_srcdir)/src/viewer \
-    -I$(top_srcdir)/src/textord \
-    -I$(top_srcdir)/src/dict \
-    -I$(top_srcdir)/src/classify \
-    -I$(top_srcdir)/src/ccmain \
-    -I$(top_srcdir)/src/wordrec \
-    -I$(top_srcdir)/src/cutil \
-    -I$(top_srcdir)/src/opencl \
-    -I$(top_builddir)/api
-
+AM_CPPFLAGS += -DLOCALEDIR=\"$(localedir)\"
+AM_CPPFLAGS += -I$(top_builddir)/include
+AM_CPPFLAGS += -I$(top_builddir)/src/api
+AM_CPPFLAGS += -I$(top_srcdir)/src/arch
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccmain
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
+AM_CPPFLAGS += -I$(top_srcdir)/src/classify
+AM_CPPFLAGS += -I$(top_srcdir)/src/cutil
+AM_CPPFLAGS += -I$(top_srcdir)/src/dict
+AM_CPPFLAGS += -I$(top_srcdir)/src/lstm
+AM_CPPFLAGS += -I$(top_srcdir)/src/opencl
+AM_CPPFLAGS += -I$(top_srcdir)/src/textord
+AM_CPPFLAGS += -I$(top_srcdir)/src/viewer
+AM_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 AM_CPPFLAGS += $(OPENCL_CPPFLAGS)
 
 if DISABLED_LEGACY_ENGINE
@@ -32,6 +32,9 @@ libtesseract_api_la_CPPFLAGS = $(AM_CPPFLAGS)
 if VISIBILITY
 libtesseract_api_la_CPPFLAGS += -DTESS_EXPORTS
 endif
+if HAVE_LIBCURL
+libtesseract_api_la_CPPFLAGS += $(libcurl_CFLAGS) -DHAVE_LIBCURL
+endif
 libtesseract_api_la_SOURCES = baseapi.cpp capi.cpp
 libtesseract_api_la_SOURCES += altorenderer.cpp
 libtesseract_api_la_SOURCES += hocrrenderer.cpp
@@ -42,6 +45,8 @@ libtesseract_api_la_SOURCES += renderer.cpp
 
 lib_LTLIBRARIES += libtesseract.la
 libtesseract_la_LDFLAGS = $(LEPTONICA_LIBS) $(OPENCL_LDFLAGS) $(libarchive_LIBS)
+libtesseract_la_LDFLAGS += $(libcurl_LIBS)
+libtesseract_la_LDFLAGS += $(TENSORFLOW_LIBS)
 libtesseract_la_SOURCES =
 # Dummy C++ source to cause C++ linking.
 # see http://www.gnu.org/s/hello/manual/automake/Libtool-Convenience-Libraries.html#Libtool-Convenience-Libraries
@@ -68,6 +73,9 @@ endif
 if AVX2_OPT
 libtesseract_la_LIBADD += ../arch/libtesseract_avx2.la
 endif
+if FMA_OPT
+libtesseract_la_LIBADD += ../arch/libtesseract_fma.la
+endif
 if SSE41_OPT
 libtesseract_la_LIBADD += ../arch/libtesseract_sse.la
 endif
@@ -90,6 +98,7 @@ tesseract_LDADD += $(LEPTONICA_LIBS)
 tesseract_LDADD += $(OPENMP_CXXFLAGS)
 tesseract_LDADD += $(TENSORFLOW_LIBS)
 tesseract_LDADD += $(libarchive_LIBS)
+tesseract_LDADD += $(libcurl_LIBS)
 
 if T_WIN
 tesseract_LDADD += -ltiff

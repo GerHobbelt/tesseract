@@ -20,6 +20,7 @@
 # include "host.h"    // windows.h for MultiByteToWideChar, ...
 #endif
 #include "renderer.h"
+#include "strngs.h" // for STRING
 
 namespace tesseract {
 
@@ -61,15 +62,20 @@ bool TessAltoRenderer::BeginDocumentHandler() {
       "xsi:schemaLocation=\"http://www.loc.gov/standards/alto/ns-v3# "
       "http://www.loc.gov/alto/v3/alto-3-0.xsd\">\n"
       "\t<Description>\n"
-      "\t\t<MeasurementUnit>pixel</MeasurementUnit>\n"
+      "\t\t<MeasurementUnit>pixel</MeasurementUnit>\n");
+
+  auto name = title();
+  if (name[0] != '\0') {
+    AppendString(
       "\t\t<sourceImageInformation>\n"
       "\t\t\t<fileName>");
-
-  AppendString(title());
+    AppendString(name);
+    AppendString(
+      "</fileName>\n"
+      "\t\t</sourceImageInformation>\n");
+  }
 
   AppendString(
-      "\t\t\t</fileName>\n"
-      "\t\t</sourceImageInformation>\n"
       "\t\t<OCRProcessing ID=\"OCR_0\">\n"
       "\t\t\t<ocrProcessingStep>\n"
       "\t\t\t\t<processingSoftware>\n"
@@ -126,7 +132,7 @@ char* TessBaseAPI::GetAltoText(ETEXT_DESC* monitor, int page_number) {
   if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(monitor) < 0))
     return nullptr;
 
-  int lcnt = 0, bcnt = 0, wcnt = 0;
+  int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
 
   if (input_file_ == nullptr) SetInputName(nullptr);
 
@@ -148,6 +154,8 @@ char* TessBaseAPI::GetAltoText(ETEXT_DESC* monitor, int page_number) {
 #endif
 
   std::stringstream alto_str;
+  // Use "C" locale (needed for int values larger than 999).
+  alto_str.imbue(std::locale::classic());
   alto_str
       << "\t\t<Page WIDTH=\"" << rect_width_ << "\" HEIGHT=\""
       << rect_height_
@@ -165,23 +173,31 @@ char* TessBaseAPI::GetAltoText(ETEXT_DESC* monitor, int page_number) {
     }
 
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
-      alto_str << "\t\t\t\t<TextBlock ID=\"block_" << bcnt << "\"";
+      alto_str << "\t\t\t\t<ComposedBlock ID=\"cblock_" << bcnt << "\"";
       AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
       alto_str << "\n";
     }
 
+    if (res_it->IsAtBeginningOf(RIL_PARA)) {
+      alto_str << "\t\t\t\t\t<TextBlock ID=\"block_" << tcnt << "\"";
+      AddBoxToAlto(res_it, RIL_PARA, alto_str);
+      alto_str << "\n";
+    }
+
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
-      alto_str << "\t\t\t\t\t<TextLine ID=\"line_" << lcnt << "\"";
+      alto_str << "\t\t\t\t\t\t<TextLine ID=\"line_" << lcnt << "\"";
       AddBoxToAlto(res_it, RIL_TEXTLINE, alto_str);
       alto_str << "\n";
     }
 
-    alto_str << "\t\t\t\t\t\t<String ID=\"string_" << wcnt << "\"";
+    alto_str << "\t\t\t\t\t\t\t<String ID=\"string_" << wcnt << "\"";
     AddBoxToAlto(res_it, RIL_WORD, alto_str);
     alto_str << " CONTENT=\"";
 
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
-    bool last_word_in_block = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
+    bool last_word_in_tblock = res_it->IsAtFinalElement(RIL_PARA, RIL_WORD);
+    bool last_word_in_cblock = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
+
 
     int left, top, right, bottom;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
@@ -200,7 +216,7 @@ char* TessBaseAPI::GetAltoText(ETEXT_DESC* monitor, int page_number) {
     wcnt++;
 
     if (last_word_in_line) {
-      alto_str << "\n\t\t\t\t\t</TextLine>\n";
+      alto_str << "\n\t\t\t\t\t\t</TextLine>\n";
       lcnt++;
     } else {
       int hpos = right;
@@ -211,8 +227,13 @@ char* TessBaseAPI::GetAltoText(ETEXT_DESC* monitor, int page_number) {
                << "\" HPOS=\"" << hpos << "\"/>\n";
     }
 
-    if (last_word_in_block) {
-      alto_str << "\t\t\t\t</TextBlock>\n";
+    if (last_word_in_tblock) {
+      alto_str << "\t\t\t\t\t</TextBlock>\n";
+      tcnt++;
+    }
+
+    if (last_word_in_cblock) {
+      alto_str << "\t\t\t\t</ComposedBlock>\n";
       bcnt++;
     }
   }

@@ -38,6 +38,8 @@ void build(Solution &s)
             "src/wordrec/.*\\.cpp"_rr,
             "src/wordrec/.*\\.h"_rr;
 
+        libtesseract += "src/training/.*\\.h"_rr;
+
         libtesseract -=
             "src/api/tesseractmain.cpp",
             "src/viewer/svpaint.cpp";
@@ -55,7 +57,8 @@ void build(Solution &s)
             "src/ccutil"_id,
             "src/lstm"_id,
             "src/classify"_id,
-            "src/arch"_id;
+            "src/arch"_id,
+            "src/training"_id;
 
         if (libtesseract.getCompilerType() == CompilerType::MSVC ||
             libtesseract.getCompilerType() == CompilerType::ClangCl)
@@ -64,18 +67,28 @@ void build(Solution &s)
             libtesseract.CompileOptions.push_back("-arch:AVX2");
         }
 
+        libtesseract -= "src/arch/dotproductfma.cpp";
+
+        if (libtesseract.getBuildSettings().TargetOS.Type != OSType::Windows)
+        {
+            libtesseract["src/arch/dotproductavx.cpp"].args.push_back("-mavx");
+            libtesseract["src/arch/dotproductsse.cpp"].args.push_back("-msse4.1");
+            libtesseract["src/arch/intsimdmatrixsse.cpp"].args.push_back("-msse4.1");
+            libtesseract["src/arch/intsimdmatrixavx2.cpp"].args.push_back("-mavx2");
+        }
+
         libtesseract.Public += "HAVE_CONFIG_H"_d;
         libtesseract.Public += "_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS=1"_d;
         libtesseract.Public += "HAVE_LIBARCHIVE"_d;
         libtesseract.Interface += sw::Shared, "TESS_IMPORTS"_d;
         libtesseract.Private += sw::Shared, "TESS_EXPORTS"_d;
 
-        libtesseract.Public += "org.sw.demo.danbloomberg.leptonica-master"_dep;
+        libtesseract.Public += "org.sw.demo.danbloomberg.leptonica"_dep;
         libtesseract.Public += "org.sw.demo.libarchive.libarchive"_dep;
 
-        if (libtesseract.getSettings().TargetOS.Type == OSType::Windows)
+        if (libtesseract.getBuildSettings().TargetOS.Type == OSType::Windows)
         {
-            libtesseract.Public += "ws2_32.lib"_l;
+            libtesseract.Public += "ws2_32.lib"_slib;
             libtesseract.Protected += "NOMINMAX"_def;
         }
 
@@ -84,6 +97,47 @@ void build(Solution &s)
         libtesseract.Variables["TESSERACT_MICRO_VERSION"] = libtesseract.Variables["PACKAGE_PATCH_VERSION"];
         libtesseract.Variables["TESSERACT_VERSION_STR"] = "master";
         libtesseract.configureFile("src/api/tess_version.h.in", "tess_version.h");
+
+        // install
+        if (!libtesseract.DryRun)
+        {
+            const Files files
+            {
+                // from api/makefile.am
+                "src/api/apitypes.h",
+                "src/api/baseapi.h",
+                "src/api/capi.h",
+                "src/api/renderer.h",
+                "tess_version.h",
+
+                //from ccmain/makefile.am
+                "src/ccmain/thresholder.h",
+                "src/ccmain/ltrresultiterator.h",
+                "src/ccmain/pageiterator.h",
+                "src/ccmain/resultiterator.h",
+                "src/ccmain/osdetect.h",
+
+                //from ccstruct/makefile.am
+                "src/ccstruct/publictypes.h",
+
+                //from ccutil/makefile.am
+                "src/ccutil/genericvector.h",
+                "src/ccutil/helpers.h",
+                "src/ccutil/ocrclass.h",
+                "src/ccutil/platform.h",
+                "src/ccutil/serialis.h",
+                "src/ccutil/strngs.h",
+                "src/ccutil/unichar.h",
+            };
+
+            auto d = libtesseract.BinaryDir / "tesseract";
+            fs::create_directories(d);
+            for (auto f : files)
+            {
+                libtesseract.check_absolute(f);
+                fs::copy_file(f, d / f.filename(), fs::copy_options::update_existing);
+            }
+        }
     }
 
     //
@@ -102,12 +156,17 @@ void build(Solution &s)
         "src/training/commandlineflags.cpp",
         "src/training/commandlineflags.h",
         "src/training/commontraining.cpp",
-        "src/training/commontraining.h";
+        "src/training/commontraining.h",
+        "src/training/errorcounter.cpp",
+        "src/training/errorcounter.h",
+        "src/training/mastertrainer.cpp",
+        "src/training/mastertrainer.h";
     common_training.Public += tessopt;
 
     //
     auto &unicharset_training = tess.addStaticLibrary("unicharset_training");
     unicharset_training +=
+        "src/training/fileio.*"_rr,
         "src/training/icuerrorcode.*"_rr,
         "src/training/icuerrorcode.h",
         "src/training/lang_model_helpers.*"_rr,
@@ -158,7 +217,7 @@ void build(Solution &s)
         "src/training/tlog.cpp",
         "src/training/tlog.h",
         "src/training/util.h";
-    text2image.Public += "org.sw.demo.gnome.pango.pangocairo-1"_dep;
+    text2image.Public += "org.sw.demo.gnome.pango.pangocairo"_dep;
 }
 
 void check(Checker &c)
