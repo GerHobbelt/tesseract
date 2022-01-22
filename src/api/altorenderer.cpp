@@ -15,8 +15,9 @@
 
 #include "errcode.h" // for ASSERT_HOST
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  include "host.h" // windows.h for MultiByteToWideChar, ...
+#  include "host.h"  // windows.h for MultiByteToWideChar, ...
 #endif
+#include "tprintf.h" // for tprintf
 
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
