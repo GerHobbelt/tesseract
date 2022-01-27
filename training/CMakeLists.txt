@@ -12,7 +12,6 @@ endif()
 
 # experimental
 if (MSVC AND NOT CPPAN_BUILD)
-
 include(CheckTypeSize)
 check_type_size("void *" SIZEOF_VOID_P)
 
@@ -38,7 +37,7 @@ endif()
 message(STATUS "Downloading latest ICU binaries")
 
 file(DOWNLOAD
-    "http://download.icu-project.org/files/icu4c/56.1/icu4c-56_1-Win${ARCH_DIR_NAME}-msvc10.zip"
+    "https://github.com/unicode-org/icu/releases/download/release-56-1/icu4c-56_1-Win${ARCH_DIR_NAME}-msvc10.zip"
     "${icu_archive}"
     SHOW_PROGRESS
     INACTIVITY_TIMEOUT 60 # seconds
@@ -53,7 +52,6 @@ if(NOT __result EQUAL 0)
 endif()
 
 set(ICU_ROOT ${icu_dir}/icu)
-
 endif()
 # experimental
 
