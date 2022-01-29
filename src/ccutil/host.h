@@ -33,6 +33,10 @@
 #  endif
 #  include <windows.h>
 #if defined(_MSC_VER)
+#ifndef _CRTDBG_MAP_ALLOC
+#define _CRTDBG_MAP_ALLOC
+#define _CRTDBG_MAP_ALLOC_NEW
+#endif
 #include <crtdbg.h>
 #endif
 #  undef min
