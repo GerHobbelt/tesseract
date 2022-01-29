@@ -41,6 +41,11 @@
 #  include <sstream> // for std::stringstream
 #  include <utility> // for pair
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 #  define VARDIR "configs/" /*parameters files */
@@ -53,6 +58,8 @@ namespace tesseract {
 static std::map<int, ParamContent *> vcMap;
 static int nrParams = 0;
 static int writeCommands[2];
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 // Constructors for the various ParamTypes.
 ParamContent::ParamContent(tesseract::StringParam *it) {

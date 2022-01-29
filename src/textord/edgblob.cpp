@@ -28,6 +28,11 @@
 
 #define BUCKETSIZE 16
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // Control parameters used in outline_complexity(), which rejects an outline
@@ -54,6 +59,8 @@ static INT_VAR(edges_patharea_ratio, 40,
 static double_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
 static double_VAR(edges_boxarea, 0.875,
                   "Min area fraction of grandchild for box");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /**
  * @name OL_BUCKETS::OL_BUCKETS

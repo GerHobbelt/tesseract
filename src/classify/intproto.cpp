@@ -142,6 +142,10 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
         Global Data Definitions and Declarations
 -----------------------------------------------------------------------------*/
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 #ifndef GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
 static ScrollView *IntMatchWindow = nullptr;
@@ -167,6 +171,8 @@ static double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight"
 static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
 static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
 static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /**
  * This routine truncates Param to lie within the range

@@ -20,6 +20,11 @@
 #include "tovars.h"
 #include "params.h"
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 BOOL_VAR(textord_show_initial_words, false, "Display separate words");
@@ -54,3 +59,5 @@ double_VAR(textord_fpiqr_ratio, 1.5, "Pitch IQR/Gap IQR threshold");
 double_VAR(textord_max_pitch_iqr, 0.20, "Xh fraction noise in pitch");
 
 } // namespace tesseract
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);

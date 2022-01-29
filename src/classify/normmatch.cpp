@@ -72,11 +72,17 @@ static double NormEvidenceOf(double NormAdj) {
         Variables
 ----------------------------------------------------------------------------*/
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 /** control knobs used to control the normalization adjustment process */
 double_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
 double_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
 /** Weight of width variance against height and vertical position. */
 const double kWidthErrorWeighting = 0.125;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /*----------------------------------------------------------------------------
               Public Code

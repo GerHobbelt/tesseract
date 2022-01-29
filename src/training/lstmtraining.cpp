@@ -29,6 +29,10 @@
 
 using namespace tesseract;
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 static INT_PARAM_FLAG(debug_interval, 0, "How often to display the alignment.");
 static STRING_PARAM_FLAG(net_spec, "", "Network specification");
 static INT_PARAM_FLAG(net_mode, 192, "Controls network behavior.");
@@ -67,6 +71,8 @@ static BOOL_PARAM_FLAG(randomly_rotate, false,
 
 // Number of training images to train between calls to MaintainCheckpoints.
 const int kNumPagesPerBatch = 100;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 // Apart from command-line flags, input is a collection of lstmf files, that
 // were previously created using tesseract with the lstm.train config file.

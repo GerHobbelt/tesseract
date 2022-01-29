@@ -31,11 +31,17 @@
 
 using namespace tesseract;
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 static INT_PARAM_FLAG(display_cloud_font, -1, "Display cloud of this font, canonical_class1");
 static INT_PARAM_FLAG(display_canonical_font, -1,
                       "Display canonical sample of this font, canonical_class2");
 static STRING_PARAM_FLAG(canonical_class1, "", "Class to show ambigs for");
 static STRING_PARAM_FLAG(canonical_class2, "", "Class to show ambigs for");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 // Loads training data, if requested displays debug information, otherwise
 // creates the master shape table by shape clustering and writes it to a file.

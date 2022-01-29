@@ -41,6 +41,11 @@
 #include <cmath>
 #include <vector> // for std::vector
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 BOOL_VAR(textord_heavy_nr, false, "Vigorously remove noise");
@@ -98,6 +103,8 @@ BOOL_VAR(textord_debug_blob, false, "Print test blob information");
 #define MAX_HEIGHT_MODES 12
 
 const int kMinLeaderCount = 5;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /**
  * @name row_y_order

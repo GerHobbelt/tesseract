@@ -40,6 +40,11 @@
 #include <utility>
 #include <vector>
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 const int kSvPort = 8461;
@@ -59,6 +64,8 @@ static std::mutex *svmap_mu;
 static std::map<std::pair<ScrollView *, SVEventType>, std::pair<SVSemaphore *, SVEvent *>>
     waiting_for_events;
 static std::mutex *waiting_for_events_mu;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 SVEvent *SVEvent::copy() const {
   auto *any = new SVEvent;

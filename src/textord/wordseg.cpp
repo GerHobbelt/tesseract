@@ -36,10 +36,17 @@
 #include "topitch.h"
 #include "tovars.h"
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 BOOL_VAR(textord_force_make_prop_words, false, "Force proportional word segmentation on all rows");
 BOOL_VAR(textord_chopper_test, false, "Chopper is being tested.");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 #define BLOCK_STATS_CLUSTERS 10
 

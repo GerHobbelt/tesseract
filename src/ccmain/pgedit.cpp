@@ -37,6 +37,11 @@
 #include <cctype>
 #include <cmath>
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 #ifndef GRAPHICS_DISABLED
 namespace tesseract {
 #  define ASC_HEIGHT (2 * kBlnBaselineOffset + kBlnXHeight)
@@ -128,6 +133,8 @@ INT_VAR(editor_word_xpos, 60, "Word window X Pos");
 INT_VAR(editor_word_ypos, 510, "Word window Y Pos");
 INT_VAR(editor_word_height, 240, "Word window height");
 INT_VAR(editor_word_width, 655, "Word window width");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /**
  * show_point()

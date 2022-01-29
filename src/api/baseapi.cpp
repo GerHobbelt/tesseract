@@ -99,6 +99,10 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
@@ -152,6 +156,8 @@ static void ExtractFontName(const char* filename, std::string* fontname) {
   }
 }
 #endif
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /* Add all available languages recursively.
  */

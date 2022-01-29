@@ -21,6 +21,10 @@
 
 using namespace tesseract;
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 static STRING_PARAM_FLAG(model, "", "Name of model file (training or recognition)");
 static STRING_PARAM_FLAG(traineddata, "",
                          "If model is a training checkpoint, then traineddata must "
@@ -28,6 +32,8 @@ static STRING_PARAM_FLAG(traineddata, "",
 static STRING_PARAM_FLAG(eval_listfile, "", "File listing sample files in lstmf training format.");
 static INT_PARAM_FLAG(max_image_MB, 2000, "Max memory to use for images.");
 static INT_PARAM_FLAG(verbosity, 1, "Amount of diagnosting information to output (0-2).");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)

@@ -24,6 +24,11 @@
 
 #include <algorithm>
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 INT_VAR(textord_debug_tabfind, 0, "Debug tab finding");
@@ -70,6 +75,8 @@ const double kMinTabGradient = 4.0;
 // by kMaxSkewFactor to get the y or x skew distance.
 // If the angle is small, the angle in degrees is roughly 60/kMaxSkewFactor.
 const int kMaxSkewFactor = 15;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 // Constructor to set the parameters for finding aligned and ragged tabs.
 // Vertical_x and vertical_y are the current estimates of the true vertical

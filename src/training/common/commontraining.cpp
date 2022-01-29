@@ -80,6 +80,11 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // Global Variables.
@@ -111,6 +116,8 @@ static DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
                          "Desired independence between dimensions");
 static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 /**
  * This routine parses the command line arguments that were

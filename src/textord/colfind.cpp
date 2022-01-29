@@ -42,6 +42,11 @@
 
 #include <algorithm>
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // When assigning columns, the max number of misfit grid rows/ColPartitionSets
@@ -65,6 +70,8 @@ static BOOL_VAR(textord_tabfind_show_columns, false, "Show column bounds (Scroll
 static BOOL_VAR(textord_tabfind_show_blocks, false, "Show final block bounds (ScrollView)");
 #endif
 static BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 #ifndef GRAPHICS_DISABLED
 ScrollView *ColumnFinder::blocks_win_ = nullptr;

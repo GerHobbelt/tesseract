@@ -30,6 +30,11 @@
 
 #include <algorithm>
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // Multiple of height used as a gutter for evaluation search.
@@ -58,6 +63,8 @@ double_VAR(textord_tabvector_vertical_gap_fraction, 0.5,
 
 double_VAR(textord_tabvector_vertical_box_ratio, 0.5,
            "Fraction of box matches required to declare a line vertical");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 // Create a constraint for the top or bottom of this TabVector.
 void TabConstraint::CreateConstraint(TabVector *vector, bool is_top) {

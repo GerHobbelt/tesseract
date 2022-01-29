@@ -79,6 +79,11 @@
 #  endif
 #endif
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // Computes and returns the dot product of the two n-vectors u and v.
@@ -113,6 +118,8 @@ bool SIMDDetect::avx512BW_available_ = false;
 bool SIMDDetect::fma_available_ = false;
 // If true, then SSE4.1 has been detected.
 bool SIMDDetect::sse_available_ = false;
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
 

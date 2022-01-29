@@ -32,6 +32,10 @@ using namespace tesseract;
 
 #if !defined(DISABLED_LEGACY_ENGINE)
 
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 static STRING_PARAM_FLAG(classifier, "", "Classifier to test");
 static STRING_PARAM_FLAG(lang, "eng", "Language to test");
 static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
@@ -39,6 +43,8 @@ static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
 enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
 static const char *names[] = {"pruner", "full"};
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 
 static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_name,
                                                         const UNICHARSET &unicharset, int argc,

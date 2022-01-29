@@ -31,6 +31,11 @@
 #include "tablerecog.h"
 #include "tabletransfer.h"
 
+
+extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
+extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
+static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
 namespace tesseract {
 
 // These numbers are used to calculate the global median stats.
@@ -150,6 +155,9 @@ static BOOL_VAR(textord_tablefind_show_stats, false,
 #endif
 static BOOL_VAR(textord_tablefind_recognize_tables, false,
                 "Enables the table recognizer for table layout and filtering.");
+
+static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+
 
 // Templated helper function used to create destructor callbacks for the
 // BBGrid::ClearGridData() method.
