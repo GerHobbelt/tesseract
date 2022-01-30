@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "makerow.h"
 
 #include "blkocc.h"
@@ -42,11 +44,9 @@
 #include <vector> // for std::vector
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(textord_heavy_nr, false, "Vigorously remove noise");
 BOOL_VAR(textord_show_initial_rows, false, "Display row accumulation");
@@ -104,7 +104,7 @@ BOOL_VAR(textord_debug_blob, false, "Print test blob information");
 
 const int kMinLeaderCount = 5;
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * @name row_y_order

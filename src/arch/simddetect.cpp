@@ -18,6 +18,7 @@
 #ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // for HAVE_AVX, ...
 #endif
+#include <tesseract/debugheap.h>
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
@@ -80,11 +81,9 @@
 #endif
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Computes and returns the dot product of the two n-vectors u and v.
 // Note: because the order of addition is different among the different dot
@@ -119,7 +118,7 @@ bool SIMDDetect::fma_available_ = false;
 // If true, then SSE4.1 has been detected.
 bool SIMDDetect::sse_available_ = false;
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
 

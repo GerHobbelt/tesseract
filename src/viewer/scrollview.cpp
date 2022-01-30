@@ -22,6 +22,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "scrollview.h"
 
 #include "svutil.h" // for SVNetwork
@@ -41,11 +43,9 @@
 #include <vector>
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 const int kSvPort = 8461;
 const int kMaxMsgSize = 4096;
@@ -65,7 +65,7 @@ static std::map<std::pair<ScrollView *, SVEventType>, std::pair<SVSemaphore *, S
     waiting_for_events;
 static std::mutex *waiting_for_events_mu;
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 SVEvent *SVEvent::copy() const {
   auto *any = new SVEvent;

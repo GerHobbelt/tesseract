@@ -26,6 +26,8 @@
 
 #ifndef GRAPHICS_DISABLED
 
+#include <tesseract/debugheap.h>
+
 #  include "params.h" // for ParamsVectors, StringParam, BoolParam
 #  include "paramsd.h"
 #  include "scrollview.h"     // for SVEvent, ScrollView, SVET_POPUP
@@ -42,11 +44,9 @@
 #  include <utility> // for pair
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 #  define VARDIR "configs/" /*parameters files */
 #  define MAX_ITEMS_IN_SUBMENU 30
@@ -59,7 +59,7 @@ static std::map<int, ParamContent *> vcMap;
 static int nrParams = 0;
 static int writeCommands[2];
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Constructors for the various ParamTypes.
 ParamContent::ParamContent(tesseract::StringParam *it) {

@@ -15,6 +15,12 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
+
 #include <cerrno>
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
@@ -29,9 +35,7 @@
 
 using namespace tesseract;
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static INT_PARAM_FLAG(debug_interval, 0, "How often to display the alignment.");
 static STRING_PARAM_FLAG(net_spec, "", "Network specification");
@@ -72,7 +76,7 @@ static BOOL_PARAM_FLAG(randomly_rotate, false,
 // Number of training images to train between calls to MaintainCheckpoints.
 const int kNumPagesPerBatch = 100;
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Apart from command-line flags, input is a collection of lstmf files, that
 // were previously created using tesseract with the lstm.train config file.

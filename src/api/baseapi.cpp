@@ -23,6 +23,7 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
 #include "boxword.h"    // for BoxWord
 #include "coutln.h"     // for C_OUTLINE_IT, C_OUTLINE_LIST
 #include "dawg_cache.h" // for DawgCache
@@ -99,11 +100,10 @@
 #  include <unistd.h>
 #endif // _WIN32
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
 
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
 static STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output)");
@@ -157,7 +157,7 @@ static void ExtractFontName(const char* filename, std::string* fontname) {
 }
 #endif
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /* Add all available languages recursively.
  */

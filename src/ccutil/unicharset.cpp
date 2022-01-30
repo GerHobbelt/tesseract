@@ -16,6 +16,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
 #include "unicharset.h"
 
 #include "params.h"
@@ -34,9 +39,6 @@
 #undef min
 #undef max
 
-
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
 
 namespace tesseract {
 

@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "oldbasel.h"
 
 #include "ccstruct.h"
@@ -38,11 +40,9 @@
 #include <algorithm>
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static BOOL_VAR(textord_really_old_xheight, false, "Use original wiseowl xheight");
 BOOL_VAR(textord_oldbl_debug, false, "Debug old baseline generation");
@@ -58,7 +58,7 @@ static INT_VAR(oldbl_holed_losscount, 10, "Max lost before fallback line used");
 static double_VAR(oldbl_dot_error_size, 1.26, "Max aspect ratio of a dot");
 static double_VAR(textord_oldbl_jumplimit, 0.15, "X fraction for new partition");
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 #define TURNLIMIT 1            /*min size for turning point */
 #define X_HEIGHT_FRACTION 0.7  /*x-height/caps height */

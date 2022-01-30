@@ -25,6 +25,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "intproto.h"
 
 #include "classify.h"
@@ -142,9 +144,7 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
         Global Data Definitions and Declarations
 -----------------------------------------------------------------------------*/
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 #ifndef GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
@@ -172,7 +172,7 @@ static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
 static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
 static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * This routine truncates Param to lie within the range

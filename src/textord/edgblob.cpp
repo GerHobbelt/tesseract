@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "edgblob.h"
 
 #include "edgloop.h"
@@ -29,11 +31,9 @@
 #define BUCKETSIZE 16
 
 
-extern "C" int fzPushHeapDbgPurpose(const char* s, int l);
-extern "C" int fzPopHeapDbgPurpose(int related_dummy, int l);
-static int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Control parameters used in outline_complexity(), which rejects an outline
 // if any one of the 3 conditions is satisfied:
@@ -60,7 +60,7 @@ static double_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
 static double_VAR(edges_boxarea, 0.875,
                   "Min area fraction of grandchild for box");
 
-static int HEAPDBG_SECTION_END = fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * @name OL_BUCKETS::OL_BUCKETS
