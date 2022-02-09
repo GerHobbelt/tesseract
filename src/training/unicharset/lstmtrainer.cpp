@@ -1237,7 +1237,7 @@ bool LSTMTrainer::ComputeTextTargets(const NetworkIO &outputs,
             DecodeLabels(truth_labels).c_str(), targets->Width());
     return false;
   }
-  size_t i = 0;
+  int i = 0;
   for (auto truth_label : truth_labels) {
     targets->SetActivations(i, truth_label, 1.0);
     ++i;
