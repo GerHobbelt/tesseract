@@ -55,15 +55,15 @@
 
 namespace tesseract {
 
-class BLOCK_LIST;
+struct BLOCK_LIST;
 class ETEXT_DESC;
 struct OSResults;
 class PAGE_RES;
-class PAGE_RES_IT;
+struct PAGE_RES_IT;
 class ROW;
 class SVMenuNode;
 class TBOX;
-class TO_BLOCK_LIST;
+struct TO_BLOCK_LIST;
 class WERD;
 class WERD_CHOICE;
 class WERD_RES;

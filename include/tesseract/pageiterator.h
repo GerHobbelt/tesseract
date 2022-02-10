@@ -27,9 +27,9 @@ struct Pta;
 namespace tesseract {
 
 struct BlamerBundle;
-class C_BLOB_IT;
+struct C_BLOB_IT;
 class PAGE_RES;
-class PAGE_RES_IT;
+struct PAGE_RES_IT;
 class WERD;
 
 class Tesseract;

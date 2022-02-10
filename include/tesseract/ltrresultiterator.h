@@ -25,7 +25,7 @@
 
 namespace tesseract {
 
-class BLOB_CHOICE_IT;
+struct BLOB_CHOICE_IT;
 class PAGE_RES;
 class WERD_RES;
 

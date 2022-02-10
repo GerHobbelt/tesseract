@@ -792,7 +792,7 @@ inline void ELIST_ITERATOR::add_to_end( // element to add
     if (this->at_first()) {
       this->add_before_stay_put(new_element);
       list->last = new_element;
-    } else { // Iteratr is elsewhere
+    } else { // Iterator is elsewhere
       new_element->next = list->last->next;
       list->last->next = new_element;
       list->last = new_element;

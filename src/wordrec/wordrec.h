@@ -84,7 +84,7 @@ public:
 
 namespace tesseract {
 
-class EDGEPT_CLIST;
+struct EDGEPT_CLIST;
 class MATRIX;
 class TBOX;
 class UNICHARSET;

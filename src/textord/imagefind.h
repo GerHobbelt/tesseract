@@ -27,7 +27,7 @@
 namespace tesseract {
 
 class ColPartitionGrid;
-class ColPartition_LIST;
+struct ColPartition_LIST;
 class TabFind;
 class TBOX;
 class FCOORD;

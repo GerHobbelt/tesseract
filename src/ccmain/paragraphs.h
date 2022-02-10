@@ -28,7 +28,7 @@ namespace tesseract {
 
 class MutableIterator;
 class ParagraphModel;
-class PARA_LIST;
+struct PARA_LIST;
 struct PARA;
 
 // This structure captures all information needed about a text line for the
