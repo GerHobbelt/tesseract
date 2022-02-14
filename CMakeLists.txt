@@ -9,6 +9,18 @@
 # ##############################################################################
 
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
+include(cmake/HunterGate.cmake)
+
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.19.7.tar.gz"
+    SHA1 "e83786da74f703099fce44a4c021b5d3e5fc3b41"
+)
+
+if (NOT APPVEYOR)
+if (WIN32 AND (CMAKE_VERSION VERSION_EQUAL 3.6 OR (CMAKE_VERSION VERSION_GREATER 3.6 AND CMAKE_VERSION VERSION_LESS 3.7)))
+    message(FATAL_ERROR "You have bugged CMake version 3.6 which is known to not work with tesseract. Please, upgrade CMake.")
+endif()
+endif()
 
 # In-source builds are disabled.
 if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -70,6 +82,22 @@ set(GENERIC_MICRO_VERSION ${VERSION_PATCH})
 
 set(MINIMUM_LEPTONICA_VERSION 1.74)
 
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.12.0")
+  cmake_policy(SET CMP0074 OLD)
+endif()
+
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/.cppan)
+    hunter_add_package(Leptonica)
+    find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED CONFIG)
+else()
+    if (STATIC)
+        set(CPPAN_BUILD_SHARED_LIBS 0)
+    else()
+        set(CPPAN_BUILD_SHARED_LIBS 1)
+    endif()
+    add_subdirectory(.cppan)
+endif()
+
 # ##############################################################################
 #
 # options
@@ -78,11 +106,7 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 
 message("Configuring tesseract version ${PACKAGE_VERSION}...")
 
-if(WIN32)
-  option(SW_BUILD "Build with sw" ON)
-else()
-  option(SW_BUILD "Build with sw" OFF)
-endif()
+option(SW_BUILD "Build with sw" OFF)
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
 option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
@@ -183,6 +207,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
   endif()
 
   if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     if(NOT HAVE_AVX)
       set(AVX_COMPILE_FLAGS "/arch:AVX")
       set(HAVE_AVX ON)
@@ -319,6 +344,7 @@ if(OPENMP_BUILD)
     string(REPLACE "/openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
     string(REPLACE "-openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
   endif()
+  set(LIB_Ws2_32 Ws2_32) # duplicated later
 endif()
 
 if(CYGWIN)
@@ -326,9 +352,16 @@ if(CYGWIN)
 elseif(UNIX)
   if(NOT ANDROID)
     set(LIB_pthread pthread)
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+
+    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+    set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+    find_package(Threads REQUIRED)
+    set(LIB_pthread Threads::Threads)
   endif()
 elseif(WIN32)
-  set(LIB_Ws2_32 Ws2_32)
+  set(LIB_Ws2_32 Ws2_32)  # done above already
 endif()
 
 add_definitions("-DCMAKE_BUILD")
@@ -340,7 +373,7 @@ add_definitions("-DCMAKE_BUILD")
 # ##############################################################################
 
 if(SW_BUILD)
-  find_package(SW REQUIRED)
+  #find_package(SW REQUIRED)
   if(BUILD_SHARED_LIBS)
     set(SW_BUILD_SHARED_LIBS 1)
   else()
@@ -370,6 +403,9 @@ else()
     message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
   endif(NOT Leptonica_FOUND)
   include_directories(${Leptonica_INCLUDE_DIRS})
+
+  string(REGEX REPLACE "/Build/Leptonica/.*" "/Install/include/leptonica" FIXED_INCLUDE_DIR ${Leptonica_INCLUDE_DIRS})
+  include_directories("${FIXED_INCLUDE_DIR}")  # there's something wrong with the leptonica build
 
   # Check for optional libraries.
   if(WIN32)
@@ -790,7 +826,9 @@ if(SW_BUILD)
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
     NAMESPACE Tesseract::)
 else()
-  target_link_libraries(libtesseract PUBLIC ${Leptonica_LIBRARIES})
+  #target_link_libraries(libtesseract PUBLIC ${Leptonica_LIBRARIES})
+  message(STATUS "~~~ libraries ${Leptonica_LIBRARIES}")
+  target_link_libraries(libtesseract PUBLIC Leptonica::leptonica)
   export(
     TARGETS libtesseract
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
