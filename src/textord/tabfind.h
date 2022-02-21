@@ -25,7 +25,7 @@
 #include "tabvector.h"
 
 class BLOBNBOX;
-class BLOBNBOX_LIST;
+struct BLOBNBOX_LIST;
 class TO_BLOCK;
 class ScrollView;
 struct Pix;

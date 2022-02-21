@@ -28,9 +28,9 @@ struct Pix;
 namespace tesseract {
 
 class Textord;
-class BLOBNBOX_LIST;
+struct BLOBNBOX_LIST;
 class TO_BLOCK;
-class TO_BLOCK_LIST;
+struct TO_BLOCK_LIST;
 class TO_ROW;
 
 // Class to compute and hold baseline data for a TO_ROW.
