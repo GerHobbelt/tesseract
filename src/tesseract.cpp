@@ -695,7 +695,7 @@ int main(int argc, char **argv) {
 
   api.SetOutputName(outputbase);
 
-  const int init_failed = api.Init(datapath, lang, enginemode, &(argv[arg_i]), argc - arg_i,
+  const int init_failed = api.InitFull(datapath, lang, enginemode, &(argv[arg_i]), argc - arg_i,
                                    &vars_vec, &vars_values, false);
 
   if (!SetVariablesFromCLArgs(api, argc, argv)) {

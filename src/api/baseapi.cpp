@@ -362,11 +362,20 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
  * be returned.
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, char **configs,
+int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, char **configs,
                       int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params) {
   return Init(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
+}
+
+int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
+}
+
+int TessBaseAPI::Init(const char *datapath, const char *language) {
+  return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
+                false);
 }
 
 // In-memory version reads the traineddata file directly from the given
