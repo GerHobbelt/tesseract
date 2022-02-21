@@ -214,7 +214,7 @@ public:
 private:  
   // In-memory version reads the traineddata file directly from the given
   // data[data_size] array, and/or reads data via a FileReader.
-  int Init(const char *data, int data_size, const char *language,
+  int InitInternal(const char *data, int data_size, const char *language,
            OcrEngineMode mode, char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,

@@ -365,7 +365,7 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
 int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, char **configs,
                       int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params) {
-  return Init(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+  return InitInternal(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
 }
 
@@ -381,7 +381,7 @@ int TessBaseAPI::Init(const char *datapath, const char *language) {
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
-int TessBaseAPI::Init(const char *data, int data_size, const char *language, OcrEngineMode oem,
+int TessBaseAPI::InitInternal(const char *data, int data_size, const char *language, OcrEngineMode oem,
                       char **configs, int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
                       FileReader reader) {
