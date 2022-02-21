@@ -225,7 +225,7 @@ int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *lang
 }
 
 int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *language) {
-  return handle->Init(datapath, language);
+  return handle->InitSimple(datapath, language);
 }
 
 const char *TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI *handle) {

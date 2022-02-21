@@ -209,7 +209,7 @@ public:
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params);
   int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
-  int Init(const char *datapath, const char *language);
+  int InitSimple(const char *datapath, const char *language);
 
 private:  
   // In-memory version reads the traineddata file directly from the given

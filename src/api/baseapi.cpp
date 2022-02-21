@@ -373,7 +373,7 @@ int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMo
   return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
 }
 
-int TessBaseAPI::Init(const char *datapath, const char *language) {
+int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
   return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
                 false);
 }
