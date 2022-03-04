@@ -238,7 +238,14 @@ SVPaint::SVPaint(const char *server_name) {
 
 // If a parameter is given, we try to connect to the given server.
 // This enables us to test the remote capabilities of ScrollView.
-int main(int argc, const char** argv) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(a, b)      tesseract_svpaint_main(a, b)
+#endif
+
+int main(int argc, const char** argv)
+{
   const char *server_name;
   if (argc > 1) {
     server_name = argv[1];
