@@ -202,7 +202,7 @@ SVPaint::SVPaint(const char *server_name) {
   drag_mode_ = 4;
   has_start_point_ = false;
 
-  // Bild our menus and add them to the window. The flag illustrates whether
+  // Build our menus and add them to the window. The flag illustrates whether
   // this is a menu bar.
   SVMenuNode *popup_menu = BuildPopupMenu();
   popup_menu->BuildMenu(window_, false);
@@ -225,7 +225,7 @@ SVPaint::SVPaint(const char *server_name) {
   window_->SetVisible(true);
 
   // Rest this thread until its window is destroyed.
-  // Note that a special eventhandling thread was created when constructing
+  // Note that a special event handling thread was created when constructing
   // the window. Due to this, the application will not deadlock here.
   window_->AwaitEvent(SVET_DESTROY);
   // We now have 3 Threads running:
@@ -253,6 +253,7 @@ int main(int argc, const char** argv)
     server_name = "localhost";
   }
   tesseract::SVPaint svp(server_name);
+  return EXIT_SUCCESS;
 }
 
 #endif // !GRAPHICS_DISABLED
