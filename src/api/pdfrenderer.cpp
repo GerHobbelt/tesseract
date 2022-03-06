@@ -802,9 +802,24 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
 }
 
 bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
-  Pix *pix = api->GetInputImage();
-  const char *filename = api->GetInputName();
+//  Pix *pix = api->GetInputImage();
+//  const char *filename = api->GetInputName();
+  Pix *pix;
+  const char *filename;
   int ppi = api->GetSourceYResolution();
+//  int destroy_pix = 0;
+
+  if (api->GetVisibleImageFilename()) {
+    filename = api->GetVisibleImageFilename();
+    pix = pixRead(filename);
+    api->SetVisibleImage(pix);
+//    destroy_pix = 1;
+  } else {
+    pix = api->GetInputImage();
+    filename = api->GetInputName();
+  }
+    
+
   if (!pix || ppi <= 0) {
     return false;
   }
@@ -884,6 +899,8 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
     AppendData(pdf_object, objsize);
     AppendPDFObjectDIY(objsize);
     delete[] pdf_object;
+//    if (destroy_pix)
+//      pixDestroy(&pix);
   }
   return true;
 }

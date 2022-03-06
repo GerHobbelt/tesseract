@@ -218,6 +218,9 @@ public:
   Image pix_original() const {
     return pix_original_;
   }
+  Image pix_visible_image() const {
+    return pix_visible_image_;
+  }
   // Takes ownership of the given original_pix.
   void set_pix_original(Image original_pix) {
     pix_original_.destroy();
@@ -225,6 +228,14 @@ public:
     // Clone to sublangs as well.
     for (auto &lang : sub_langs_) {
       lang->set_pix_original(original_pix ? original_pix.clone() : nullptr);
+    }
+  }
+  void set_pix_visible_image(Image visible_image_pix) {
+    pix_visible_image_.destroy();
+    pix_visible_image_ = visible_image_pix;
+    // Clone to sublangs as well.
+    for (auto &lang : sub_langs_) {
+      lang->set_pix_visible_image(visible_image_pix ? visible_image_pix.clone() : nullptr);
     }
   }
   // Returns a pointer to a Pix representing the best available resolution image
@@ -981,6 +992,8 @@ private:
   Image pix_grey_;
   // Original input image. Color if the input was color.
   Image pix_original_;
+  // Image to be overlayed in final output (e.g. for PDF)
+  Image pix_visible_image_;
   // Thresholds that were used to generate the thresholded image from grey.
   Image pix_thresholds_;
   // Debug images. If non-empty, will be written on destruction.

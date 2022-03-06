@@ -111,6 +111,12 @@ public:
   // Takes ownership of the input pix.
   void SetInputImage(Pix *pix);
   Pix *GetInputImage();
+
+  const char *GetVisibleImageFilename();
+  void SetVisibleImageFilename(const char *name);
+  Pix *GetVisibleImage();
+  void SetVisibleImage(Pix *pix);
+
   int GetSourceYResolution();
   const char *GetDatapath();
 
@@ -772,6 +778,7 @@ protected:
   PAGE_RES *page_res_;               ///< The page-level data.
   std::string input_file_;           ///< Name used by training code.
   std::string output_file_;          ///< Name used by debug code.
+  std::string visible_image_file_;
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.
   OcrEngineMode last_oem_requested_; ///< Last ocr language mode requested.
