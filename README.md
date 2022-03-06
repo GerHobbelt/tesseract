@@ -2,6 +2,9 @@
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
+Dependencies:
+* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
 
 To clean an image for OCR, I suggest using textcleaner from Fred's ImageMagick Scripts: http://www.fmwconcepts.com/imagemagick/textcleaner/
