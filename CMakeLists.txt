@@ -23,10 +23,12 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
       "\n cmake ..")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -84,12 +86,12 @@ else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
-option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
+option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" ON)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
 option(ENABLE_OPENCL "Enable unsupported experimental OpenCL support" OFF)
-option(BUILD_TRAINING_TOOLS "Build training tools" ON)
+option(BUILD_TRAINING_TOOLS "Build training tools" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
 option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" OFF)
@@ -153,96 +155,11 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
   set(MARCH_NATIVE_OPT ON)
 endif()
 
-message("CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
-
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
-
-  set(HAVE_NEON FALSE)
-  if(MSVC)
-    set(HAVE_AVX ON)
-    set(AVX_COMPILE_FLAGS "/arch:AVX")
-    add_definitions("-DHAVE_AVX")
-
-    set(HAVE_AVX2 ON)
-    set(AVX2_COMPILE_FLAGS "/arch:AVX2")
-    add_definitions("-DHAVE_AVX2")
-
-    set(HAVE_FMA ON)
-    set(FMA_COMPILE_FLAGS "-D__FMA__")
-    add_definitions("-DHAVE_FMA")
-
-    set(HAVE_SSE4_1 ON)
-    set(SSE4_1_COMPILE_FLAGS "-D__SSE4_1__")
-    add_definitions("-DHAVE_SSE4_1")
-    # clang with MSVC compatibility
-    if(CLANG)
-      set(CMAKE_CXX_FLAGS
-          "${CMAKE_CXX_FLAGS} -Wno-microsoft-unqualified-friend")
-      if(HAVE_FMA)
-        set(FMA_COMPILE_FLAGS "-mfma ${FMA_COMPILE_FLAGS}")
-      endif(HAVE_FMA)
-      if(HAVE_SSE4_1)
-        set(SSE4_1_COMPILE_FLAGS "-msse4.1 ${SSE4_1_COMPILE_FLAGS}")
-      endif(HAVE_SSE4_1)
-    endif(CLANG)
-  else()  # if not MSVC
-    check_cxx_compiler_flag("-mavx" HAVE_AVX)
-    if(HAVE_AVX)
-      set(AVX_COMPILE_FLAGS "-mavx")
-      add_definitions("-DHAVE_AVX")
-    endif(HAVE_AVX)
-
-    check_cxx_compiler_flag("-mavx2" HAVE_AVX2)
-    if(HAVE_AVX2)
-      set(AVX2_COMPILE_FLAGS "-mavx2")
-      add_definitions("-DHAVE_AVX2")
-    endif()
-
-    check_cxx_compiler_flag("-mfma" HAVE_FMA)
-    if(HAVE_FMA)
-      set(FMA_COMPILE_FLAGS "-mfma")
-      add_definitions("-DHAVE_FMA")
-    endif()
-
-    check_cxx_compiler_flag("-msse4.1" HAVE_SSE4_1)
-    if(HAVE_SSE4_1)
-      set(SSE4_1_COMPILE_FLAGS "-msse4.1")
-      add_definitions("-DHAVE_SSE4_1")
-    endif()
-  endif(MSVC)
-
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*")
-
-  set(HAVE_AVX FALSE)
-  set(HAVE_AVX2 FALSE)
-  set(HAVE_FMA FALSE)
-  set(HAVE_SSE4_1 FALSE)
-
-  add_definitions("-DHAVE_NEON")
-  set(HAVE_NEON TRUE)
-
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*")
-
-  set(HAVE_AVX FALSE)
-  set(HAVE_AVX2 FALSE)
-  set(HAVE_FMA FALSE)
-  set(HAVE_SSE4_1 FALSE)
-
-  check_cxx_compiler_flag("-mfpu=neon" HAVE_NEON)
-  if(HAVE_NEON)
-    set(NEON_COMPILE_FLAGS "-mfpu=neon")
-    add_definitions("-DHAVE_NEON")
-  endif()
-
-else()
-
-  set(HAVE_AVX FALSE)
-  set(HAVE_AVX2 FALSE)
-  set(HAVE_FMA FALSE)
-  set(HAVE_NEON FALSE)
-  set(HAVE_SSE4_1 FALSE)
-
-endif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
+set(HAVE_AVX FALSE)
+set(HAVE_AVX2 FALSE)
+set(HAVE_FMA FALSE)
+set(HAVE_NEON FALSE)
+set(HAVE_SSE4_1 FALSE)
 
 # Compiler specific environments
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
@@ -320,7 +237,23 @@ if(CYGWIN)
   add_definitions(-D__CYGWIN__)
 elseif(UNIX)
   if(NOT ANDROID)
-    set(LIB_pthread pthread)
+        #
+        # Check link below for detail explanation:
+        # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
+        # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+        #
+        # Use c++11 standard
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+        # Optimize code for size reduction
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
+        # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
+        # Do not emit a separate memory initialization file
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+        # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
+        # set(LIB_pthread pthread)
   endif()
 elseif(WIN32)
   set(LIB_Ws2_32 Ws2_32)
@@ -647,11 +580,15 @@ if(HAVE_FMA)
                               PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
 endif(HAVE_FMA)
 if(HAVE_SSE4_1)
-  list(APPEND arch_files_opt src/arch/dotproductsse.cpp
-       src/arch/intsimdmatrixsse.cpp)
-  set_source_files_properties(
-    src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp
-    PROPERTIES COMPILE_FLAGS ${SSE4_1_COMPILE_FLAGS})
+list(APPEND arch_files_opt src/arch/dotproductsse.cpp src/arch/simddetect.cpp src/arch/intsimdmatrix.cpp src/arch/intsimdmatrixsse.cpp src/arch/dotproduct.cpp)
+set_source_files_properties(src/arch/dotproductsse.cpp src/arch/simddetect.cpp src/arch/intsimdmatrix.cpp src/arch/intsimdmatrixsse.cpp  src/arch/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
+message("Using SSE41")
+
+  #list(APPEND arch_files_opt src/arch/dotproductsse.cpp
+  #     src/arch/intsimdmatrixsse.cpp)
+  #set_source_files_properties(
+  #  src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp
+  #  PROPERTIES COMPILE_FLAGS ${SSE4_1_COMPILE_FLAGS})
 endif(HAVE_SSE4_1)
 if(HAVE_NEON)
   list(APPEND arch_files_opt src/arch/dotproductneon.cpp
@@ -820,15 +757,88 @@ endif()
 # EXECUTABLE tesseract
 # ##############################################################################
 
-add_executable(tesseract src/tesseract.cpp)
-target_link_libraries(tesseract libtesseract)
-if(HAVE_TIFFIO_H AND WIN32)
-  target_link_libraries(tesseract ${TIFF_LIBRARIES})
-endif()
+########################################
+# Build tesseract-core.js (WASM version)
+########################################
 
-if(OPENMP_BUILD AND UNIX)
-  target_link_libraries(tesseract pthread)
-endif()
+set(tesseract_js_wrapper ../../javascript/src/wrapper.cpp)
+
+add_executable                  (tesseract-core ${tesseract_js_wrapper})
+#
+# Check link below for detail explanation
+# https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+#
+# Use double amount of memory comparing to default
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
+# Allow memory to grow
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
+# Replace default name 'Module' with 'TesseractCore'
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+# Enable for closure option
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s MODULARIZE=1")
+# Do not run main function
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
+# Remove unneeded variables
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s AGGRESSIVE_VARIABLE_ELIMINATION=1")
+# Allow stackTrace() to emit fully proper demangled c++ names
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+# Allow unused symbol
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
+#
+# This flag fix the issue of [float unrepresentable in integer range]
+# Ref: http://kripken.github.io/emscripten-site/docs/compiling/WebAssembly.html#trap-mode
+#
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s BINARYEN_TRAP_MODE='\"clamp\"'")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ASSERTIONS=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s FS_LOG=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s RUNTIME_LOGGING=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s LIBRARY_DEBUG=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SYSCALL_DEBUG=1")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_FUNCTIONS='[\"_pixDestroy\",\"_boxaDestroy\",\"_pixaDestroy\",\"_ptaDestroy\",\"_pixReadMem\",\"_pixReadHeaderMem\"]'")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_RUNTIME_METHODS='[\"FS\", \"setValue\", \"getValue\"]'")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/glue.js")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/anterior.js")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --embed-file ../tessdata/pdf.ttf@pdf.ttf")
+set_target_properties(tesseract-core PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+target_link_libraries         (libtesseract PUBLIC
+  ${CMAKE_PREFIX_PATH}/lib/libgif.a
+  ${CMAKE_PREFIX_PATH}/lib/libjpeg.a
+  ${CMAKE_PREFIX_PATH}/lib/libopenlibm.a
+  ${CMAKE_PREFIX_PATH}/lib/libpng.a
+  ${CMAKE_PREFIX_PATH}/lib/libtiff.a
+  ${CMAKE_PREFIX_PATH}/lib/libtiffxx.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebp.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebpdecoder.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebpdemux.a
+  ${CMAKE_PREFIX_PATH}/lib/libz.a
+)
+target_link_libraries           (tesseract-core libtesseract)
+
+#############################################################
+# Build tesseract-core.wasm.js (WASM Base64 embedded version)
+#############################################################
+
+add_executable                  (tesseract-core.wasm ${tesseract_js_wrapper})
+
+# # Embeds all subresources in the emitted file as base64 string literals
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SINGLE_FILE=1")
+set_target_properties(tesseract-core.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreWASM\"'")
+
+target_link_libraries           (tesseract-core.wasm libtesseract)
+
+
+###########################################
+# Build tesseract-core.asm.js (ASM version)
+###########################################
+
+#add_executable                  (tesseract-core.asm ${tesseract_js_wrapper})
+
+# Disable WASM
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s WASM=0")
+
+#set_target_properties(tesseract-core.asm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreASM\"'")
+#target_link_libraries           (tesseract-core.asm libtesseract)
+#set(tesseractmain_src src/api/tesseractmain.cpp)
 
 # ##############################################################################
 
@@ -861,7 +871,10 @@ write_basic_package_version_file(
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-install(TARGETS tesseract DESTINATION bin)
+#install(TARGETS tesseract DESTINATION bin)
+install(TARGETS tesseract-core RUNTIME DESTINATION bin)
+#install(TARGETS tesseract-core.asm RUNTIME DESTINATION bin)
+
 install(
   TARGETS libtesseract
   EXPORT TesseractTargets
