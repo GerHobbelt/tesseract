@@ -260,6 +260,7 @@ endif
 # Rules for src/ccstruct.
 
 noinst_HEADERS += src/ccstruct/blamer.h
+noinst_HEADERS += src/ccstruct/blob_bounds_calculator.h
 noinst_HEADERS += src/ccstruct/blobbox.h
 noinst_HEADERS += src/ccstruct/blobs.h
 noinst_HEADERS += src/ccstruct/blread.h
@@ -303,6 +304,7 @@ noinst_HEADERS += src/ccstruct/params_training_featdef.h
 endif
 
 libtesseract_la_SOURCES += src/ccstruct/blamer.cpp
+libtesseract_la_SOURCES += src/ccstruct/blob_bounds_calculator.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobbox.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobs.cpp
 libtesseract_la_SOURCES += src/ccstruct/blread.cpp
