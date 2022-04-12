@@ -20,6 +20,7 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
 #include "blobbox.h"
 #include "colfind.h"
 #include "colpartitionset.h"
@@ -30,7 +31,10 @@
 
 #include <algorithm>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Multiple of height used as a gutter for evaluation search.
 const int kGutterMultiple = 4;
@@ -58,6 +62,8 @@ double_VAR(textord_tabvector_vertical_gap_fraction, 0.5,
 
 double_VAR(textord_tabvector_vertical_box_ratio, 0.5,
            "Fraction of box matches required to declare a line vertical");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Create a constraint for the top or bottom of this TabVector.
 void TabConstraint::CreateConstraint(TabVector *vector, bool is_top) {

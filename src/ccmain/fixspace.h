@@ -25,7 +25,7 @@
 namespace tesseract {
 
 class WERD_RES;
-class WERD_RES_LIST;
+struct WERD_RES_LIST;
 
 void initialise_search(WERD_RES_LIST &src_list, WERD_RES_LIST &new_list);
 void transform_to_next_perm(WERD_RES_LIST &words);

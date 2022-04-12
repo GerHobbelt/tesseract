@@ -20,11 +20,16 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "alignedblob.h"
 
 #include <algorithm>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 INT_VAR(textord_debug_tabfind, 0, "Debug tab finding");
 INT_VAR(textord_debug_bugs, 0, "Turn on output related to bugs in tab finding");
@@ -70,6 +75,8 @@ const double kMinTabGradient = 4.0;
 // by kMaxSkewFactor to get the y or x skew distance.
 // If the angle is small, the angle in degrees is roughly 60/kMaxSkewFactor.
 const int kMaxSkewFactor = 15;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Constructor to set the parameters for finding aligned and ragged tabs.
 // Vertical_x and vertical_y are the current estimates of the true vertical

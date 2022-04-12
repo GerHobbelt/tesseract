@@ -24,7 +24,7 @@
 
 namespace tesseract {
 
-class BLOCK_LIST;
+struct BLOCK_LIST;
 class PAGE_RES;
 
 class Tesseract;

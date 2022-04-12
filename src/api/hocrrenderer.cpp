@@ -200,31 +200,28 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
       case PT_FLOWING_IMAGE:
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
+        // Handle all kinds of images.
         res_it.get()->BoundingBox(RIL_TEXTLINE, &left, &top, &right, &bottom);
-        hocr_str << "   <div class='ocr_photo' id='block_" << page_id << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
-           << bottom << "\"></div>\n";
+        hocr_str << "   <div class='ocr_photo' id='block_" << page_id << '_'
+                 << bcnt++ << "' title=\"bbox " << left << " " << top << " "
+                 << right << " " << bottom << "\"></div>\n";
         res_it->Next(RIL_BLOCK);
-        bcnt++;
-        pcnt++;
-        lcnt++;
-        wcnt++;
         continue;
       }
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
+        // Handle horizontal and vertical lines.
         res_it.get()->BoundingBox(RIL_TEXTLINE, &left, &top, &right, &bottom);
-        hocr_str << "   <div class='ocr_separator' id='block_" << page_id << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
-           << bottom << "\"></div>\n";
+        hocr_str << "   <div class='ocr_separator' id='block_" << page_id << '_'
+                 << bcnt++ << "' title=\"bbox " << left << " " << top << " "
+                 << right << " " << bottom << "\"></div>\n";
         res_it->Next(RIL_BLOCK);
-        bcnt++;
-        pcnt++;
-        lcnt++;
-        wcnt++;
-	continue;
+        continue;
       case PT_NOISE:
+        tprintf("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
       default:
-	break;
+        break;
     }
 
     if (res_it->Empty(RIL_WORD)) {

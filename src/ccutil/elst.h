@@ -792,7 +792,7 @@ inline void ELIST_ITERATOR::add_to_end( // element to add
     if (this->at_first()) {
       this->add_before_stay_put(new_element);
       list->last = new_element;
-    } else { // Iteratr is elsewhere
+    } else { // Iterator is elsewhere
       new_element->next = list->last->next;
       list->last->next = new_element;
       list->last = new_element;
@@ -802,13 +802,10 @@ inline void ELIST_ITERATOR::add_to_end( // element to add
 
 #define ELISTIZEH(CLASSNAME)                                                 \
   class CLASSNAME##_LIST : public X_LIST<ELIST, ELIST_ITERATOR, CLASSNAME> { \
-  public:                                                                    \
     using X_LIST<ELIST, ELIST_ITERATOR, CLASSNAME>::X_LIST;                  \
   };                                                                         \
   class CLASSNAME##_IT : public X_ITER<ELIST_ITERATOR, CLASSNAME> {          \
-  public:                                                                    \
     using X_ITER<ELIST_ITERATOR, CLASSNAME>::X_ITER;                         \
-    CLASSNAME##_IT(CLASSNAME##_LIST *list) : X_ITER(list) {}                 \
   };
 
 } // namespace tesseract

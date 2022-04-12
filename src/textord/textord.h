@@ -31,10 +31,10 @@
 namespace tesseract {
 
 class FCOORD;
-class BLOCK_LIST;
+struct BLOCK_LIST;
 class PAGE_RES;
 class TO_BLOCK;
-class TO_BLOCK_LIST;
+struct TO_BLOCK_LIST;
 class ScrollView;
 
 // A simple class that can be used by BBGrid to hold a word and an expanded

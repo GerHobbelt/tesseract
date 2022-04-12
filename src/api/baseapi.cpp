@@ -23,6 +23,7 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
 #include "boxword.h"    // for BoxWord
 #include "coutln.h"     // for C_OUTLINE_IT, C_OUTLINE_LIST
 #include "dawg_cache.h" // for DawgCache
@@ -99,7 +100,10 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
 static STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output)");
@@ -152,6 +156,8 @@ static void ExtractFontName(const char* filename, std::string* fontname) {
   }
 }
 #endif
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /* Add all available languages recursively.
  */
@@ -283,6 +289,11 @@ void TessBaseAPI::SetVisiblePdfImageFilename(const char* name) {
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
   output_file_ = name ? name : "";
+}
+
+/** Set the name of the visible image files. Needed only for PDF output. */
+void TessBaseAPI::SetVisibleImageFilename(const char *name) {
+  visible_image_file_ = name ? name : "";
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -934,8 +945,10 @@ void TessBaseAPI::SetVisiblePdfImage(Pix *pix) {
   if (visible_pdf_image_)
     pixDestroy(&visible_pdf_image_);
   visible_pdf_image_ = nullptr;
-  if (pix)
+  if (pix) {
     visible_pdf_image_ = pixCopy(NULL, pix);
+    // tesseract_->set_pix_visible_image(pix);
+  }
 }
 
 Pix *TessBaseAPI::GetInputImage() {
@@ -954,7 +967,7 @@ const char *TessBaseAPI::GetInputName() {
 }
 
 const char * TessBaseAPI::GetVisiblePdfImageFilename() {
-  if (visible_pdf_image_file_.empty()) {
+  if (!visible_pdf_image_file_.empty()) {
     return visible_pdf_image_file_.c_str();
   }
   return nullptr;
@@ -1406,11 +1419,13 @@ char *TessBaseAPI::GetUTF8Text() {
       case PT_PULLOUT_IMAGE:
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
-	continue;
+        // Ignore images and lines for text output.
+        continue;
       case PT_NOISE:
+        tprintf("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
       default:
-	break;
+        break;
     }
 
     const std::unique_ptr<const char[]> para_text(it->GetUTF8Text(RIL_PARA));

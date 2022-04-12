@@ -18,6 +18,7 @@
 #ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // for HAVE_AVX, ...
 #endif
+#include <tesseract/debugheap.h>
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
@@ -79,7 +80,10 @@
 #  endif
 #endif
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Computes and returns the dot product of the two n-vectors u and v.
 // Note: because the order of addition is different among the different dot
@@ -113,6 +117,8 @@ bool SIMDDetect::avx512BW_available_ = false;
 bool SIMDDetect::fma_available_ = false;
 // If true, then SSE4.1 has been detected.
 bool SIMDDetect::sse_available_ = false;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
 

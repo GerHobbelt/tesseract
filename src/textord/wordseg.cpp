@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "wordseg.h"
 
 #include <cmath>
@@ -36,10 +38,15 @@
 #include "topitch.h"
 #include "tovars.h"
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(textord_force_make_prop_words, false, "Force proportional word segmentation on all rows");
 BOOL_VAR(textord_chopper_test, false, "Chopper is being tested.");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 #define BLOCK_STATS_CLUSTERS 10
 

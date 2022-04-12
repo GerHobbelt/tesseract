@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "equationdetect.h"
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB
@@ -40,13 +42,18 @@
 #include <limits>
 #include <memory>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Config variables.
 static BOOL_VAR(equationdetect_save_bi_image, false, "Save input bi image");
 static BOOL_VAR(equationdetect_save_spt_image, false, "Save special character image");
 static BOOL_VAR(equationdetect_save_seed_image, false, "Save the seed image");
 static BOOL_VAR(equationdetect_save_merged_image, false, "Save the merged image");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 ///////////////////////////////////////////////////////////////////////////
 // Utility ColParition sort functions.

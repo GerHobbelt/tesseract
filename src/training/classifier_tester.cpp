@@ -16,6 +16,7 @@
 //            but doesn't have to be the same as the training data.
 //  Author:   Ray Smith
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h>
 #include <algorithm>
 #include <cstdio>
@@ -32,6 +33,8 @@ using namespace tesseract;
 
 #if !defined(DISABLED_LEGACY_ENGINE)
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
 static STRING_PARAM_FLAG(classifier, "", "Classifier to test");
 static STRING_PARAM_FLAG(lang, "eng", "Language to test");
 static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
@@ -39,6 +42,8 @@ static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
 enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
 static const char *names[] = {"pruner", "full"};
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_name,
                                                         const UNICHARSET &unicharset, int argc,

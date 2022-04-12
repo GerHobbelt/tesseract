@@ -116,7 +116,7 @@ libtesseract_la_LDFLAGS += $(libarchive_LIBS)
 libtesseract_la_LDFLAGS += $(libcurl_LIBS)
 libtesseract_la_LDFLAGS += $(TENSORFLOW_LIBS)
 if T_WIN
-libtesseract_la_LDFLAGS += -no-undefined -Wl,--as-needed -lws2_32
+libtesseract_la_LDFLAGS += -no-undefined -lws2_32
 else
 libtesseract_la_LDFLAGS += $(NOUNDEFINED)
 endif
@@ -399,7 +399,6 @@ libtesseract_ccutil_la_SOURCES += src/ccutil/clst.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/elst2.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/elst.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/errcode.cpp
-libtesseract_ccutil_la_SOURCES += src/ccutil/mainblk.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/serialis.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/scanutils.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/tessdatamanager.cpp

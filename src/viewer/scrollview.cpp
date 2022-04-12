@@ -22,6 +22,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "scrollview.h"
 
 #include "svutil.h" // for SVNetwork
@@ -40,7 +42,10 @@
 #include <utility>
 #include <vector>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 const int kSvPort = 8461;
 const int kMaxMsgSize = 4096;
@@ -59,6 +64,8 @@ static std::mutex *svmap_mu;
 static std::map<std::pair<ScrollView *, SVEventType>, std::pair<SVSemaphore *, SVEvent *>>
     waiting_for_events;
 static std::mutex *waiting_for_events_mu;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 SVEvent *SVEvent::copy() const {
   auto *any = new SVEvent;
@@ -329,7 +336,7 @@ void ScrollView::StartEventHandler() {
     int serial = -1;
     int k = -1;
     mutex_.lock();
-    // Check every table entry if he is is valid and not already processed.
+    // Check every table entry if it is valid and not already processed.
 
     for (int i = 0; i < SVET_COUNT; i++) {
       if (event_table_[i] != nullptr && (serial < 0 || event_table_[i]->counter < serial)) {
@@ -792,7 +799,7 @@ void ScrollView::Draw(Image image, int x_pos, int y_pos) {
 }
 
 // Escapes the ' character with a \, so it can be processed by LUA.
-// Note: The caller will have to make sure he deletes the newly allocated item.
+// Note: The caller will have to make sure it deletes the newly allocated item.
 char *ScrollView::AddEscapeChars(const char *input) {
   const char *nextptr = strchr(input, '\'');
   const char *lastptr = input;

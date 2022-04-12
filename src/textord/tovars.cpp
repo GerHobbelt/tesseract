@@ -17,10 +17,15 @@
  *
  **********************************************************************/
 
+#include <tesseract/debugheap.h>
+
 #include "tovars.h"
 #include "params.h"
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(textord_show_initial_words, false, "Display separate words");
 BOOL_VAR(textord_blocksall_fixed, false, "Moan about prop blocks");
@@ -52,5 +57,7 @@ double_VAR(textord_words_definite_spread, 0.30, "Non-fuzzy spacing region");
 double_VAR(textord_spacesize_ratioprop, 2.0, "Min ratio space/nonspace");
 double_VAR(textord_fpiqr_ratio, 1.5, "Pitch IQR/Gap IQR threshold");
 double_VAR(textord_max_pitch_iqr, 0.20, "Xh fraction noise in pitch");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 } // namespace tesseract

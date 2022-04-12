@@ -26,6 +26,8 @@
 
 #ifndef GRAPHICS_DISABLED
 
+#include <tesseract/debugheap.h>
+
 #  include "params.h" // for ParamsVectors, StringParam, BoolParam
 #  include "paramsd.h"
 #  include "scrollview.h"     // for SVEvent, ScrollView, SVET_POPUP
@@ -41,7 +43,10 @@
 #  include <sstream> // for std::stringstream
 #  include <utility> // for pair
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 #  define VARDIR "configs/" /*parameters files */
 #  define MAX_ITEMS_IN_SUBMENU 30
@@ -53,6 +58,8 @@ namespace tesseract {
 static std::map<int, ParamContent *> vcMap;
 static int nrParams = 0;
 static int writeCommands[2];
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Constructors for the various ParamTypes.
 ParamContent::ParamContent(tesseract::StringParam *it) {

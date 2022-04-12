@@ -39,7 +39,7 @@ class ColPartition;
 class ColPartitionSet;
 class ColPartitionGrid;
 class WorkingPartSet;
-class WorkingPartSet_LIST;
+struct WorkingPartSet_LIST;
 
 // An enum to indicate how a partition sits on the columns.
 // The order of flowing/heading/pullout must be kept consistent with

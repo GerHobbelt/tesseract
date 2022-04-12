@@ -13,6 +13,8 @@
 
 #define _USE_MATH_DEFINES // for M_PI
 
+#include <tesseract/debugheap.h>
+
 #include "commontraining.h"
 
 #ifdef DISABLED_LEGACY_ENGINE
@@ -80,7 +82,10 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Global Variables.
 
@@ -111,6 +116,8 @@ static DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
                          "Desired independence between dimensions");
 static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * This routine parses the command line arguments that were

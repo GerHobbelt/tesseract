@@ -13,9 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "errcode.h" // for ASSERT_HOST
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  include "host.h" // windows.h for MultiByteToWideChar, ...
+#  include "host.h"  // windows.h for MultiByteToWideChar, ...
 #endif
+#include "tprintf.h" // for tprintf
 
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
@@ -192,30 +194,27 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       case PT_FLOWING_IMAGE:
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
-        res_it->BoundingBox(RIL_BLOCK, &left, &top, &right, &bottom);
-        alto_str << "   <div class='ocr_photo' id='block_" << 0 << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
-           << bottom << "\"></div>\n";
+        // Handle all kinds of images.
+        // TODO: optionally add TYPE, for example TYPE="photo".
+        alto_str << "\t\t\t\t<Illustration ID=\"cblock_" << bcnt++ << "\"";
+        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        alto_str << "</Illustration>\n";
         res_it->Next(RIL_BLOCK);
-        bcnt++;
-        lcnt++;
-        tcnt++;
-        wcnt++;
         continue;
       }
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
-        res_it->BoundingBox(RIL_BLOCK, &left, &top, &right, &bottom);
-        alto_str << "   <div class='ocr_separator' id='block_" << 0 << '_' << bcnt << "' title=\"bbox " << left << " " << top << " " << right << " "
-           << bottom << "\"></div>\n";
+        // Handle horizontal and vertical lines.
+        alto_str << "\t\t\t\t<GraphicalElement ID=\"cblock_" << bcnt++ << "\"";
+        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        alto_str << "</GraphicalElement >\n";
         res_it->Next(RIL_BLOCK);
-        bcnt++;
-        lcnt++;
-        tcnt++;
-        wcnt++;
-	continue;
+        continue;
       case PT_NOISE:
+        tprintf("TODO: Please report image which triggers the noise case.\n");
+        ASSERT_HOST(false);
       default:
-	break;
+        break;
     }
 
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {

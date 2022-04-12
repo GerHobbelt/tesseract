@@ -22,6 +22,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "colfind.h"
 
 #include "ccnontextdetect.h"
@@ -42,7 +44,10 @@
 
 #include <algorithm>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // When assigning columns, the max number of misfit grid rows/ColPartitionSets
 // that can be ignored.
@@ -69,6 +74,8 @@ static BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
 #ifndef GRAPHICS_DISABLED
 ScrollView *ColumnFinder::blocks_win_ = nullptr;
 #endif
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Gridsize is an estimate of the text size in the image. A suitable value
 // is in TO_BLOCK::line_size after find_components has been used to make

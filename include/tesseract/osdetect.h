@@ -25,9 +25,9 @@
 namespace tesseract {
 
 class BLOBNBOX;
-class BLOBNBOX_CLIST;
-class BLOB_CHOICE_LIST;
-class TO_BLOCK_LIST;
+struct BLOBNBOX_CLIST;
+struct BLOB_CHOICE_LIST;
+struct TO_BLOCK_LIST;
 class UNICHARSET;
 
 class Tesseract;

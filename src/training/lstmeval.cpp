@@ -15,11 +15,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/debugheap.h>
+
 #include "common/commontraining.h"
 #include "unicharset/lstmtester.h"
 #include "tprintf.h"
 
 using namespace tesseract;
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static STRING_PARAM_FLAG(model, "", "Name of model file (training or recognition)");
 static STRING_PARAM_FLAG(traineddata, "",
@@ -28,6 +32,8 @@ static STRING_PARAM_FLAG(traineddata, "",
 static STRING_PARAM_FLAG(eval_listfile, "", "File listing sample files in lstmf training format.");
 static INT_PARAM_FLAG(max_image_MB, 2000, "Max memory to use for images.");
 static INT_PARAM_FLAG(verbosity, 1, "Amount of diagnosting information to output (0-2).");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)

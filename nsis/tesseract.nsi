@@ -18,9 +18,12 @@
 ; TODO:
 ; * Fix PreventMultipleInstances.
 ; * Add Tesseract icon and images for installer.
+; * Add support for 64 bit Tesseract.
 
 SetCompressor /FINAL /SOLID lzma
 SetCompressorDictSize 32
+
+Unicode true
 
 ; Settings which normally should be passed as command line arguments.
 ;define CROSSBUILD
@@ -40,7 +43,7 @@ SetCompressorDictSize 32
 !define PRODUCT_WEB_SITE "https://github.com/tesseract-ocr/tesseract"
 !endif
 !define GITHUB_RAW_FILE_URL \
-  "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/master"
+  "http://digi.bib.uni-mannheim.de/tesseract/tessdata_fast"
 
 !ifdef CROSSBUILD
 !addincludedir ${SRCDIR}\nsis\include
@@ -118,11 +121,17 @@ BrandingText /TRIMCENTER "(c) 2010-2019 ${PRODUCT_NAME}"
 !include MultiUser.nsh
 !include Sections.nsh
 !include MUI2.nsh
+!ifdef REGISTRY_SETTINGS
+!include EnvVarUpdate.nsh
+!endif ; REGISTRY_SETTINGS
 !include LogicLib.nsh
 !include winmessages.nsh # include for some of the windows messages defines
 
 # Variables
 Var StartMenuGroup
+!ifdef REGISTRY_SETTINGS
+Var PathKey
+!endif ; REGISTRY_SETTINGS
 ; Define user variables
 Var OLD_KEY
 
@@ -159,6 +168,57 @@ SpaceTexts
 CRCCheck on
 InstProgressFlags smooth colored
 CRCCheck On  # Do a CRC check before installing
+!ifdef W64
+InstallDir "$PROGRAMFILES64\Tesseract-OCR"
+!else
+InstallDir "$PROGRAMFILES\Tesseract-OCR"
+!endif
+# Name of program and file
+!ifdef VERSION
+OutFile tesseract-ocr-setup-${VERSION}.exe
+!else
+OutFile tesseract-ocr-setup.exe
+!endif
+
+!ifdef REGISTRY_SETTINGS
+!macro AddToPath
+  # TODO(zdenop): Check if $INSTDIR is in path. If yes, do not append it.
+  # append bin path to user PATH environment variable
+  StrCpy $PathKey "HKLM"
+  StrCmp $MultiUser.InstallMode "AllUsers" +2
+    StrCpy $PathKey "HKCU"
+  DetailPrint "Setting PATH to $INSTDIR at $PathKey"
+  ${EnvVarUpdate} $0 "PATH" "A" "$PathKey" "$INSTDIR"
+  ; make sure windows knows about the change
+  SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+!macroend
+
+!macro RemoveTessdataPrefix
+  ReadRegStr $R2 ${env_hklm} 'TESSDATA_PREFIX'
+  StrCmp $R2 "" Next1 0
+    DetailPrint "Removing $R2 from HKLM Environment..."
+    DeleteRegValue ${env_hklm} "TESSDATA_PREFIX"
+  Next1:
+  ReadRegStr $R2 ${env_hkcu} 'TESSDATA_PREFIX'
+  StrCmp $R2 "" Next2 0
+    DetailPrint "Removing $R2 from HKCU Environment..."
+    DeleteRegValue ${env_hkcu} "TESSDATA_PREFIX"
+  Next2:
+  # make sure windows knows about the change
+  SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+!macroend
+
+!macro SetTESSDATA
+  !insertmacro RemoveTessdataPrefix
+  StrCpy $PathKey "HKLM"
+  StrCmp $MultiUser.InstallMode "AllUsers" +2
+    StrCpy $PathKey "HKCU"
+  DetailPrint "Setting TESSDATA_PREFIX at $PathKey"
+  ${EnvVarUpdate} $0 "TESSDATA_PREFIX" "A" "$PathKey" "$INSTDIR\"
+  # make sure windows knows about the change
+  SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+!macroend
+!endif ; REGISTRY_SETTINGS
 
 !macro Download_Lang_Data Lang
   ; Download traineddata file.
@@ -258,6 +318,17 @@ Section "Shortcuts creation" SecCS
   ;CreateShortCut "$DESKTOP\Tesseract-OCR.lnk" "$INSTDIR\tesseract.exe" "" "$INSTDIR\tesseract.exe" 0
   ;CreateShortCut "$QUICKLAUNCH\.lnk" "$INSTDIR\tesseract.exe" "" "$INSTDIR\tesseract.exe" 0
 SectionEnd
+
+!ifdef REGISTRY_SETTINGS ; disabled because of bad behaviour with long PATH
+SectionGroup "Registry settings" SecRS
+    Section /o "Add to Path" SecRS_path
+        !insertmacro AddToPath
+    SectionEnd
+    Section /o "Set TESSDATA_PREFIX variable" SecRS_tessdata
+        !insertmacro SetTESSDATA
+    SectionEnd
+SectionGroupEnd
+!endif ; REGISTRY_SETTINGS
 
 ; Language files
 SectionGroup "Language data" SecGrp_LD
@@ -471,7 +542,7 @@ SectionGroup "Additional language data (download)" SecGrp_ALD
   SectionEnd
 
   ; The language names are documented here:
-  ; https://github.com/tesseract-ocr/tesseract/blob/master/doc/tesseract.1.asc#languages
+  ; https://github.com/tesseract-ocr/tesseract/blob/main/doc/tesseract.1.asc#languages
 
   Section /o "Afrikaans" SecLang_afr
     AddSize 2530

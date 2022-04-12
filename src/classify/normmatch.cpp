@@ -20,6 +20,8 @@
 
 #ifndef DISABLED_LEGACY_ENGINE
 
+#include <tesseract/debugheap.h>
+
 #include "normmatch.h"
 
 #include "classify.h"
@@ -72,11 +74,15 @@ static double NormEvidenceOf(double NormAdj) {
         Variables
 ----------------------------------------------------------------------------*/
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
 /** control knobs used to control the normalization adjustment process */
 double_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
 double_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
 /** Weight of width variance against height and vertical position. */
 const double kWidthErrorWeighting = 0.125;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /*----------------------------------------------------------------------------
               Public Code

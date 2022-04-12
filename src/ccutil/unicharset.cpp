@@ -16,6 +16,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
 #include "unicharset.h"
 
 #include "params.h"
@@ -33,6 +38,7 @@
 
 #undef min
 #undef max
+
 
 namespace tesseract {
 
@@ -177,12 +183,17 @@ void UNICHARSET::UNICHAR_PROPERTIES::CopyFrom(const UNICHAR_PROPERTIES &src) {
 UNICHARSET::UNICHARSET()
     : ids(), script_table(nullptr), script_table_size_used(0) {
   clear();
+
+  int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
   for (int i = 0; i < SPECIAL_UNICHAR_CODES_COUNT; ++i) {
     unichar_insert(kSpecialUnicharCodes[i]);
     if (i == UNICHAR_JOINED) {
       set_isngram(i, true);
     }
   }
+
+  (void)fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 }
 
 UNICHARSET::~UNICHARSET() {

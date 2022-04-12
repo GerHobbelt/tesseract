@@ -29,7 +29,7 @@
 
 namespace tesseract {
 
-class FPSEGPT_LIST;
+struct FPSEGPT_LIST;
 
 class FPSEGPT : public ELIST_LINK {
 public:

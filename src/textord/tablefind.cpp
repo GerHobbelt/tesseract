@@ -20,6 +20,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include <algorithm>
 #include <cmath>
 #include <utility>
@@ -31,7 +33,10 @@
 #include "tablerecog.h"
 #include "tabletransfer.h"
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // These numbers are used to calculate the global median stats.
 // They just set an upper bound on the stats objects.
@@ -150,6 +155,9 @@ static BOOL_VAR(textord_tablefind_show_stats, false,
 #endif
 static BOOL_VAR(textord_tablefind_recognize_tables, false,
                 "Enables the table recognizer for table layout and filtering.");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
 
 // Templated helper function used to create destructor callbacks for the
 // BBGrid::ClearGridData() method.

@@ -32,12 +32,6 @@ enum TessErrorLogCode {
   ABORT = 2     /*abort after error */
 };
 
-/* Explicit Error Abort codes */
-#define NO_ABORT_CODE 0
-#define LIST_ABORT 1
-#define MEMORY_ABORT 2
-#define FILE_ABORT 3
-
 class TESS_API ERRCODE { // error handler class
   const char *message;   // error message
 public:

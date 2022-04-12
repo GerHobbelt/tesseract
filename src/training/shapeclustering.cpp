@@ -20,6 +20,8 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"
 #include "params.h"
@@ -31,11 +33,15 @@
 
 using namespace tesseract;
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
 static INT_PARAM_FLAG(display_cloud_font, -1, "Display cloud of this font, canonical_class1");
 static INT_PARAM_FLAG(display_canonical_font, -1,
                       "Display canonical sample of this font, canonical_class2");
 static STRING_PARAM_FLAG(canonical_class1, "", "Class to show ambigs for");
 static STRING_PARAM_FLAG(canonical_class2, "", "Class to show ambigs for");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Loads training data, if requested displays debug information, otherwise
 // creates the master shape table by shape clustering and writes it to a file.

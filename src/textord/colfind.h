@@ -27,7 +27,7 @@
 #include "tabfind.h"
 #include "textlineprojection.h"
 
-class BLOCK_LIST;
+struct BLOCK_LIST;
 struct Boxa;
 struct Pixa;
 class DENORM;
@@ -38,12 +38,12 @@ class TO_BLOCK;
 namespace tesseract {
 
 class ColPartitionSet;
-class ColPartitionSet_LIST;
-class ColSegment_LIST;
-class ColumnGroup_LIST;
+struct ColPartitionSet_LIST;
+struct ColSegment_LIST;
+struct ColumnGroup_LIST;
 class LineSpacing;
 class StrokeWidth;
-class TempColumn_LIST;
+struct TempColumn_LIST;
 class EquationDetectBase;
 
 // The ColumnFinder class finds columns in the grid.

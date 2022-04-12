@@ -7,7 +7,7 @@
 # ----------------------------------------
 AC_PREREQ([2.69])
 AC_INIT([tesseract],
-        [m4_esyscmd_s([test -d .git && git describe --abbrev=4 || cat VERSION])],
+        [m4_esyscmd_s([git describe --abbrev=4 2>/dev/null || cat VERSION])],
         [https://github.com/tesseract-ocr/tesseract/issues],,
         [https://github.com/tesseract-ocr/tesseract/])
 
@@ -29,7 +29,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
 PACKAGE_YEAR=2022
-PACKAGE_DATE="01/07"
+PACKAGE_DATE="03/01"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -95,7 +95,7 @@ case "${host_os}" in
         AM_CONDITIONAL([T_WIN], true)
         AM_CONDITIONAL([MINGW], true)
         AM_CONDITIONAL([ADD_RT], false)
-        AC_SUBST([AM_LDFLAGS], ['-Wl,-no-undefined -Wl,--as-needed'])
+        AC_SUBST([AM_LDFLAGS], ['-no-undefined'])
         ;;
     cygwin*)
         AM_CONDITIONAL([ADD_RT], false)
@@ -568,7 +568,7 @@ fi
 # Check location of pango headers
 PKG_CHECK_MODULES([pango], [pango >= 1.38.0], [have_pango=true], [have_pango=false])
 if !($have_pango); then
-        AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
+  AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
   AC_MSG_WARN([Training tools WILL NOT be built because of missing pango1.0 library.])
   AC_MSG_WARN([Try to install libpango1.0-dev package.])
   AM_CONDITIONAL([ENABLE_TRAINING], false)

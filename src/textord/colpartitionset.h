@@ -26,8 +26,8 @@
 
 namespace tesseract {
 
-class WorkingPartSet_LIST;
-class ColSegment_LIST;
+struct WorkingPartSet_LIST;
+struct ColSegment_LIST;
 class ColPartitionSet;
 using PartSetVector = std::vector<ColPartitionSet *>;
 
