@@ -817,18 +817,21 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
 }
 
 bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
-  Pix *pix = api->GetInputImage();
-  const char *filename = api->GetInputName();
+//  Pix *pix = api->GetInputImage();
+//  const char *filename = api->GetInputName();
+  Pix *pix = nullptr;
   int ppi = api->GetSourceYResolution();
-  int destroy_pix = 0;
-
-  if (api->GetVisiblePdfImageFilename()) {
-    pix = pixRead(api->GetVisiblePdfImageFilename());
-    filename = api->GetVisiblePdfImageFilename();
+  bool destroy_pix = false;
+  const char *filename = api->GetVisiblePdfImageFilename();
+  if (filename) {
+    pix = pixRead(filename);
     api->SetVisiblePdfImage(pix);
-    destroy_pix = 1;
+    destroy_pix = true;
+  } else {
+    pix = api->GetInputImage();
+    filename = api->GetInputName();
   }
-  
+
   if (!pix || ppi <= 0) {
     return false;
   }

@@ -228,6 +228,14 @@ public:
       lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
     }
   }
+  void set_pix_visible_image(Image visible_image_pix) {
+    pix_visible_image_.destroy();
+    pix_visible_image_ = visible_image_pix;
+    // Clone to sublangs as well.
+    for (auto &lang : sub_langs_) {
+      lang->set_pix_visible_image(visible_image_pix ? visible_image_pix.clone() : nullptr);
+    }
+  }
   // Returns a pointer to a Pix representing the best available resolution image
   // of the page, with best available bit depth as second priority. Result can
   // be of any bit depth, but never color-mapped, as that has always been

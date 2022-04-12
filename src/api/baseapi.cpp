@@ -291,6 +291,11 @@ void TessBaseAPI::SetOutputName(const char *name) {
   output_file_ = name ? name : "";
 }
 
+/** Set the name of the visible image files. Needed only for PDF output. */
+void TessBaseAPI::SetVisibleImageFilename(const char *name) {
+  visible_image_file_ = name ? name : "";
+}
+
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract;
@@ -940,8 +945,10 @@ void TessBaseAPI::SetVisiblePdfImage(Pix *pix) {
   if (visible_pdf_image_)
     pixDestroy(&visible_pdf_image_);
   visible_pdf_image_ = nullptr;
-  if (pix)
+  if (pix) {
     visible_pdf_image_ = pixCopy(NULL, pix);
+    // tesseract_->set_pix_visible_image(pix);
+  }
 }
 
 Pix *TessBaseAPI::GetInputImage() {
@@ -960,7 +967,7 @@ const char *TessBaseAPI::GetInputName() {
 }
 
 const char * TessBaseAPI::GetVisiblePdfImageFilename() {
-  if (visible_pdf_image_file_.empty()) {
+  if (!visible_pdf_image_file_.empty()) {
     return visible_pdf_image_file_.c_str();
   }
   return nullptr;
