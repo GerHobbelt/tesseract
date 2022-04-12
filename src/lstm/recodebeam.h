@@ -30,11 +30,8 @@
 #include "unicharcompress.h"
 #include "genericvector.h"     // for PointerVector (ptr only)
 
-#include <deque>
-#include <set>
-#include <tuple>
-#include <unordered_set>
-#include <vector>
+#include <unordered_set> // for std::unordered_set
+#include <vector>        // for std::vector
 
 namespace tesseract {
 
