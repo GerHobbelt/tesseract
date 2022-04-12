@@ -47,7 +47,7 @@ cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables
 #
 # ##############################################################################
 
-project(tesseract C CXX)
+project(tesseract CXX)
 
 # Get version with components from VERSION file.
 file(STRINGS "VERSION" VERSION_PLAIN)
@@ -88,7 +88,7 @@ endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
 option(GRAPHICS_DISABLED "Disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" ON)
-option(ENABLE_LTO "Enable link-time optimization" OFF)
+option(ENABLE_LTO "Enable link-time optimization" ON)
 option(FAST_FLOAT "Enable float for LSTM" ON)
 option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 option(BUILD_TESTS "Build tests" ON)
@@ -159,52 +159,22 @@ message("CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
 
   set(HAVE_NEON FALSE)
-
-  check_cxx_compiler_flag("-mavx" HAVE_AVX)
-  if(HAVE_AVX)
-    set(AVX_COMPILE_FLAGS "-mavx")
-    add_definitions("-DHAVE_AVX")
-  endif(HAVE_AVX)
-
-  check_cxx_compiler_flag("-mavx2" HAVE_AVX2)
-  if(HAVE_AVX2)
-    set(AVX2_COMPILE_FLAGS "-mavx2")
-    add_definitions("-DHAVE_AVX2")
-  endif()
-
-  check_cxx_compiler_flag("-mfma" HAVE_FMA)
-  if(HAVE_FMA)
-    set(FMA_COMPILE_FLAGS "-mfma")
-    add_definitions("-DHAVE_FMA")
-  endif()
-
-  check_cxx_compiler_flag("-msse4.1" HAVE_SSE4_1)
-  if(HAVE_SSE4_1)
-    set(SSE4_1_COMPILE_FLAGS "-msse4.1")
-    add_definitions("-DHAVE_SSE4_1")
-  endif()
-
   if(MSVC)
-    if(NOT HAVE_AVX)
-      set(AVX_COMPILE_FLAGS "/arch:AVX")
-      set(HAVE_AVX ON)
-      add_definitions("-DHAVE_AVX")
-    endif()
+    set(HAVE_AVX ON)
+    set(AVX_COMPILE_FLAGS "/arch:AVX")
+    add_definitions("-DHAVE_AVX")
 
-    if(NOT HAVE_AVX2)
-      set(AVX2_COMPILE_FLAGS "/arch:AVX2")
-      set(HAVE_AVX2 ON)
-      add_definitions("-DHAVE_AVX2")
-      set(FMA_COMPILE_FLAGS "-D__FMA__")
-      set(HAVE_FMA ON)
-      add_definitions("-DHAVE_FMA")
-    endif()
+    set(HAVE_AVX2 ON)
+    set(AVX2_COMPILE_FLAGS "/arch:AVX2")
+    add_definitions("-DHAVE_AVX2")
 
-    if(NOT HAVE_SSE4_1)
-      set(SSE4_1_COMPILE_FLAGS "-D__SSE4_1__")
-      set(HAVE_SSE4_1 ON)
-      add_definitions("-DHAVE_SSE4_1")
-    endif()
+    set(HAVE_FMA ON)
+    set(FMA_COMPILE_FLAGS "-D__FMA__")
+    add_definitions("-DHAVE_FMA")
+
+    set(HAVE_SSE4_1 ON)
+    set(SSE4_1_COMPILE_FLAGS "-D__SSE4_1__")
+    add_definitions("-DHAVE_SSE4_1")
     # clang with MSVC compatibility
     if(CLANG)
       set(CMAKE_CXX_FLAGS
@@ -216,6 +186,30 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
         set(SSE4_1_COMPILE_FLAGS "-msse4.1 ${SSE4_1_COMPILE_FLAGS}")
       endif(HAVE_SSE4_1)
     endif(CLANG)
+  else()  # if not MSVC
+    check_cxx_compiler_flag("-mavx" HAVE_AVX)
+    if(HAVE_AVX)
+      set(AVX_COMPILE_FLAGS "-mavx")
+      add_definitions("-DHAVE_AVX")
+    endif(HAVE_AVX)
+
+    check_cxx_compiler_flag("-mavx2" HAVE_AVX2)
+    if(HAVE_AVX2)
+      set(AVX2_COMPILE_FLAGS "-mavx2")
+      add_definitions("-DHAVE_AVX2")
+    endif()
+
+    check_cxx_compiler_flag("-mfma" HAVE_FMA)
+    if(HAVE_FMA)
+      set(FMA_COMPILE_FLAGS "-mfma")
+      add_definitions("-DHAVE_FMA")
+    endif()
+
+    check_cxx_compiler_flag("-msse4.1" HAVE_SSE4_1)
+    if(HAVE_SSE4_1)
+      set(SSE4_1_COMPILE_FLAGS "-msse4.1")
+      add_definitions("-DHAVE_SSE4_1")
+    endif()
   endif(MSVC)
 
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*")
@@ -268,7 +262,7 @@ elseif(MSVC)
   # loss of data wd4275 non dll-interface class wd4305 ...truncation from
   # 'double' to 'float'
   set(CMAKE_CXX_FLAGS_RELEASE
-      "${CMAKE_CXX_FLAGS_RELEASE} /wd4244 /wd4305 /wd4267 /wd4251 /wd4275")
+      "${CMAKE_CXX_FLAGS_RELEASE} /wd4244 /wd4305 /wd4267 /wd4251 /wd4275 /wd4005")
   # Don't use /Wall because it generates too many warnings.
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W0 /bigobj")
   # MT flag
