@@ -735,9 +735,8 @@ static int Main() {
   }
   if (!FLAGS_find_fonts) {
     std::string filename = FLAGS_outputbase.c_str();
-    if (FLAGS_create_page && FLAGS_multipage) FLAGS_multipage = false;
-    fprintf(stderr, "FLAgs: %d, %d, %d", (bool) FLAGS_multipage, (bool) FLAGS_create_boxfiles, (bool) FLAGS_create_page);
-    render.WriteAllBoxesPagebyPage(filename,  FLAGS_multipage, FLAGS_create_boxfiles, FLAGS_create_page);
+    if (FLAGS_create_page) FLAGS_multipage = false;
+    render.WriteAllBoxesPagebyPage(filename, FLAGS_multipage, FLAGS_create_boxfiles, FLAGS_create_page);
   } else if (!FLAGS_render_per_font && !font_names.empty()) {
     std::string filename = FLAGS_outputbase.c_str();
     filename += ".fontlist.txt";

@@ -570,8 +570,6 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
   << "\t\t\t\t</TextEquiv>\n";
   page_str << "\t\t</TextRegion>"; 
   line_str.str("");
-      //<< "readingDirection {"<< WritingDirectionToStr(writing_direction_block)<<";} "
-      //<< "orientation {"<< orientation_block <<";}\">\n";
   page_str << "\t\t</Page>\n</PcGts>\n";
   File::WriteStringToFileOrDie(page_str.str(), filename);
 }
