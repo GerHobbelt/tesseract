@@ -326,6 +326,7 @@ bool PageIterator::BoundingBoxInternal(PageIteratorLevel level, int *left,
       }
     } while (other.Next(RIL_TEXTLINE));
   }
+
   box.rotate(it_->block()->block->re_rotation());
 
   // Now we have a box in tesseract coordinates relative to the image rectangle,
