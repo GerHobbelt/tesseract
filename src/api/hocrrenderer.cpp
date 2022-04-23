@@ -56,7 +56,6 @@ static void AddBaselineCoordsTohOCR(const PageIterator *it,
   tesseract::Orientation orientation = GetBlockTextOrientation(it);
   if (orientation != ORIENTATION_PAGE_UP) {
     hocr_str << "; textangle " << 360 - orientation * 90;
-    return;
   }
 
   int left, top, right, bottom;
