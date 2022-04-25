@@ -1589,6 +1589,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
 }
 
 #ifndef DISABLED_LEGACY_ENGINE
+
 /**
  * match_word_pass2
  *
@@ -1624,6 +1625,7 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
 
   ASSERT_HOST(word->raw_choice != nullptr);
 }
+
 #endif // ndef DISABLED_LEGACY_ENGINE
 
 // Helper to return the best rated BLOB_CHOICE in the whole word that matches

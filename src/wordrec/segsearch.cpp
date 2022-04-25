@@ -16,6 +16,13 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#ifndef DISABLED_LEGACY_ENGINE
+
 #include <cstdint>          // for INT32_MAX
 #include "blamer.h"         // for BlamerBundle
 #include "errcode.h"        // for ASSERT_HOST
@@ -302,3 +309,5 @@ void Wordrec::InitBlamerForSegSearch(WERD_RES *word_res, LMPainPoints *pain_poin
 }
 
 } // namespace tesseract
+
+#endif

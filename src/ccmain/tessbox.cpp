@@ -17,6 +17,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
 #ifndef DISABLED_LEGACY_ENGINE
 
 #include "mfoutline.h"
@@ -31,6 +35,7 @@
  */
 
 namespace tesseract {
+
 void Tesseract::tess_segment_pass_n(int pass_n, WERD_RES *word) {
   int saved_enable_assoc = 0;
   int saved_chop_enable = 0;

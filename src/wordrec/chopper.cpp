@@ -21,6 +21,8 @@
 #  include "config_auto.h"
 #endif
 
+#ifndef DISABLED_LEGACY_ENGINE
+
 #include "blamer.h"         // for BlamerBundle, IRR_CORRECT
 #include "blobs.h"          // for TPOINT, TBLOB, EDGEPT, TESSLINE, divisible_blob
 #include "dict.h"           // for Dict
@@ -615,3 +617,5 @@ int Wordrec::select_blob_to_split_from_fixpt(DANGERR *fixpt) {
 }
 
 } // namespace tesseract
+
+#endif

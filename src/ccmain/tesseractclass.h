@@ -653,11 +653,13 @@ public:
                               TBOX &selection_box,
                               bool (tesseract::Tesseract::*word_processor)(PAGE_RES_IT *pr_it));
   //// tessbox.cpp ///////////////////////////////////////////////////////
+#ifndef DISABLED_LEGACY_ENGINE
   void tess_add_doc_word(      // test acceptability
       WERD_CHOICE *word_choice // after context
   );
   void tess_segment_pass_n(int pass_n, WERD_RES *word);
   bool tess_acceptable_word(WERD_RES *word);
+#endif
 
   //// applybox.cpp //////////////////////////////////////////////////////
   // Applies the box file based on the image name filename, and resegments

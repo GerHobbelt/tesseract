@@ -18,16 +18,19 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
-#include "findseam.h"
-#include "outlines.h"
-#include "plotedges.h"
-#include "seam.h"
-#include "wordrec.h"
 
 // Include automatically generated configuration file if running autoconf.
 #ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#ifndef DISABLED_LEGACY_ENGINE
+
+#include "findseam.h"
+#include "outlines.h"
+#include "plotedges.h"
+#include "seam.h"
+#include "wordrec.h"
 
 /**********************************************************************
  * partial_split_priority
@@ -348,3 +351,5 @@ void Wordrec::try_vertical_splits(EDGEPT *points[MAX_NUM_POINTS], int16_t num_po
 }
 
 } // namespace tesseract
+
+#endif

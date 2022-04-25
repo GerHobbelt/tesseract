@@ -235,6 +235,7 @@ public:
   bool NoDangerousAmbig(WERD_CHOICE *BestChoice, DANGERR *fixpt, bool fix_replaceable,
                         MATRIX *ratings);
 #endif // !defined(DISABLED_LEGACY_ENGINE)
+
   // Replaces the corresponding wrong ngram in werd_choice with the correct
   // one. The whole correct n-gram is inserted into the ratings matrix and
   // the werd_choice: no more fragments!. Rating and certainty of new entries

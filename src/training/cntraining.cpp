@@ -250,4 +250,12 @@ static void WriteProtos(FILE *File, uint16_t N, LIST ProtoList, bool WriteSigPro
   }
 } // WriteProtos
 
+#else
+
+TESS_API int tesseract_cn_training_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
 #endif
