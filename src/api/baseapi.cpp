@@ -30,9 +30,7 @@
 #include "dict.h"       // for Dict
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "environ.h"    // for l_uint8
-#ifndef DISABLED_LEGACY_ENGINE
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
-#endif // ndef DISABLED_LEGACY_ENGINE
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string
 #include "host.h"    // for MAX_PATH
