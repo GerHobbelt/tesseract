@@ -20,7 +20,7 @@
 #ifndef BLKOCC_H
 #define BLKOCC_H
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "params.h"
 
 namespace tesseract {
@@ -60,7 +60,8 @@ public:
   }
 };
 
-ELISTIZEH(REGION_OCC)
+ELISTIZEH(REGION_OCC);
+
 #define RANGE_IN_BAND(band_max, band_min, range_max, range_min) \
   (((range_min) >= (band_min)) && ((range_max) < (band_max)))
 /************************************************************************

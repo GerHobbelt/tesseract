@@ -24,7 +24,7 @@
 #endif
 
 #include "clst.h"
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #ifndef DISABLED_LEGACY_ENGINE
 #  include "fontinfo.h"
 #endif // undef DISABLED_LEGACY_ENGINE
@@ -225,7 +225,7 @@ private:
 };
 
 // Make BLOB_CHOICE listable.
-ELISTIZEH(BLOB_CHOICE)
+ELISTIZEH(BLOB_CHOICE);
 
 // Return the BLOB_CHOICE in bc_list matching a given unichar_id,
 // or nullptr if there is no match.
@@ -623,7 +623,8 @@ private:
 };
 
 // Make WERD_CHOICE listable.
-ELISTIZEH(WERD_CHOICE)
+ELISTIZEH(WERD_CHOICE);
+
 using BLOB_CHOICE_LIST_VECTOR = std::vector<BLOB_CHOICE_LIST *>;
 
 // Utilities for comparing WERD_CHOICEs

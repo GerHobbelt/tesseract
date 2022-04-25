@@ -35,7 +35,7 @@ namespace tesseract {
 class C_BLOB;
 class DENORM;
 
-ELISTIZEH(C_BLOB)
+ELISTIZEH(C_BLOB);
 
 class TESS_API C_BLOB : public ELIST_LINK {
 public:

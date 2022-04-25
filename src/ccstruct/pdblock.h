@@ -19,7 +19,7 @@
 #ifndef PDBLOCK_H
 #define PDBLOCK_H
 
-#include "clst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 #include "polyblk.h"
 
 struct Pix;
@@ -28,7 +28,8 @@ namespace tesseract {
 
 class PDBLK; // forward decl
 
-CLISTIZEH(PDBLK)
+CLISTIZEH(PDBLK);
+
 /// page block
 class PDBLK {
   friend class BLOCK_RECT_IT; ///< block iterator

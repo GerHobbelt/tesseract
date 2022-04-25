@@ -26,7 +26,7 @@ struct Pix;
 
 namespace tesseract {
 
-struct C_OUTLINE_IT;
+class C_OUTLINE_IT;
 class PDBLK;
 
 void block_edges(Image t_image, // thresholded image

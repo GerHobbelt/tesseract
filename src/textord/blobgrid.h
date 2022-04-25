@@ -22,10 +22,11 @@
 
 #include "bbgrid.h"
 #include "blobbox.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 
 namespace tesseract {
 
-CLISTIZEH(BLOBNBOX)
+	CLISTIZEH(BLOBNBOX);
 
 using BlobGridSearch = GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT>;
 

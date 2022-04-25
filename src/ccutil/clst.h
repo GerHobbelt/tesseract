@@ -703,12 +703,15 @@ public:
 };
 
 #define CLISTIZEH(CLASSNAME)                                    \
+  class CLASSNAME##_CLIST;                                      \
+  struct CLASSNAME##_C_IT;                                      \
+                                                                \
   class CLASSNAME##_CLIST : public X_CLIST<CLASSNAME> {         \
     using X_CLIST<CLASSNAME>::X_CLIST;                          \
   };                                                            \
   struct CLASSNAME##_C_IT : X_ITER<CLIST_ITERATOR, CLASSNAME> { \
     using X_ITER<CLIST_ITERATOR, CLASSNAME>::X_ITER;            \
-  };
+  }
 
 } // namespace tesseract
 

@@ -88,7 +88,7 @@ private:
   };
 };
 
-ELISTIZEH(ParamContent)
+ELISTIZEH(ParamContent);
 
 // The parameters editor enables the user to edit all the parameters used within
 // tesseract. It can be invoked on its own, but is supposed to be invoked by

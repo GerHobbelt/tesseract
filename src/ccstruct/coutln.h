@@ -71,7 +71,8 @@ struct EdgeOffset {
 
 class C_OUTLINE; // forward declaration
 
-ELISTIZEH(C_OUTLINE)
+ELISTIZEH(C_OUTLINE);
+
 class C_OUTLINE : public ELIST_LINK {
 public:
   C_OUTLINE() {

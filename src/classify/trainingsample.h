@@ -16,7 +16,7 @@
 #ifndef TESSERACT_TRAINING_TRAININGSAMPLE_H_
 #define TESSERACT_TRAINING_TRAININGSAMPLE_H_
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "featdefs.h"
 #include "intfx.h"
 #include "intmatcher.h"
@@ -253,7 +253,7 @@ private:
   static const double kScaleValues[kSampleScaleSize];
 };
 
-ELISTIZEH(TrainingSample)
+ELISTIZEH(TrainingSample);
 
 } // namespace tesseract
 

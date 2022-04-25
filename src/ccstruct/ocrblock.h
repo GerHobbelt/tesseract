@@ -22,12 +22,13 @@
 #include "ocrpara.h"
 #include "ocrrow.h"
 #include "pdblock.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
 class BLOCK; // forward decl
 
-ELISTIZEH(BLOCK)
+ELISTIZEH(BLOCK);
 
 class TESS_API BLOCK : public ELIST_LINK
 // page block

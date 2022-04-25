@@ -84,7 +84,7 @@ public:
 
 namespace tesseract {
 
-struct EDGEPT_CLIST;
+class EDGEPT_CLIST;
 class MATRIX;
 class TBOX;
 class UNICHARSET;
@@ -181,7 +181,8 @@ public:
   EDGEPT *headpt; // start point
   EDGEPT *tailpt; // end point
 };
-ELISTIZEH(FRAGMENT)
+
+ELISTIZEH(FRAGMENT);
 
 class TESS_API Wordrec : public Classify {
 public:

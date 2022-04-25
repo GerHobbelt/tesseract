@@ -41,7 +41,7 @@ namespace tesseract {
 
 class PAGE_RES;
 class ParagraphModel;
-struct BLOCK_LIST;
+class BLOCK_LIST;
 class ETEXT_DESC;
 struct OSResults;
 class UNICHARSET;

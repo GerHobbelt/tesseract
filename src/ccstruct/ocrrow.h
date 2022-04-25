@@ -169,7 +169,7 @@ private:
   PARA *para_; // Paragraph of which this row is part.
 };
 
-ELISTIZEH(ROW)
+ELISTIZEH(ROW);
 
 } // namespace tesseract
 
