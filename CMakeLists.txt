@@ -78,7 +78,7 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 #
 # ##############################################################################
 
-message("Configuring tesseract version ${PACKAGE_VERSION}...")
+message(STATUS "Configuring tesseract version ${PACKAGE_VERSION}...")
 
 if(WIN32)
   option(SW_BUILD "Build with sw" OFF)
@@ -155,7 +155,7 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
   set(MARCH_NATIVE_OPT ON)
 endif()
 
-message("CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
+message(STATUS "CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
 
@@ -170,7 +170,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
     add_definitions("-DHAVE_AVX2")
 
     set(HAVE_AVX512F ON)
-    set(AVX512_COMPILE_FLAGS "/arch:AVX512")
+    set(AVX512F_COMPILE_FLAGS "/arch:AVX512")
     add_definitions("-DHAVE_AVX512F")
 
     set(HAVE_FMA ON)
@@ -481,10 +481,17 @@ elseif(${CMAKE_BUILD_TYPE} MATCHES Release)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
   endif() # LTO_SUPPORTED
 endif()
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(BUILD_ARCH "64 bits")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  set(BUILD_ARCH "32 bits")
+endif()
+
 message(STATUS)
 message(STATUS "General configuration for Tesseract ${PACKAGE_VERSION}")
 message(STATUS "--------------------------------------------------------")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE} ${BUILD_ARCH}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Used standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "CXX compiler options: ${COMPILER_FLAGS}")
