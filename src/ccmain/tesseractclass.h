@@ -204,9 +204,9 @@ public:
     return reskew_;
   }
   // Destroy any existing pix and return a pointer to the pointer.
-  Image *mutable_pix_binary() {
+  void set_pix_binary(Image pix) {
     pix_binary_.destroy();
-    return &pix_binary_;
+    pix_binary_ = pix;
   }
   Image pix_binary() const {
     return pix_binary_;

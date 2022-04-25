@@ -648,8 +648,14 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   if (tesseract_ == nullptr || thresholder_ == nullptr) {
     return nullptr;
   }
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return nullptr;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return nullptr;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
   return tesseract_->pix_binary().clone();
 }
@@ -2248,8 +2254,14 @@ int TessBaseAPI::FindLines() {
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
   }
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return -1;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return -1;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
 
   tesseract_->PrepareForPageseg();
@@ -2380,8 +2392,14 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     return false;
   }
   ClearResults();
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return false;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return false;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
 
   if (input_file_.empty()) {
