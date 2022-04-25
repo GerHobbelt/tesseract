@@ -70,9 +70,11 @@ class WERD_RES;
 
 class ColumnFinder;
 class DocumentData;
+
 #ifndef DISABLED_LEGACY_ENGINE
 class EquationDetect;
 #endif // ndef DISABLED_LEGACY_ENGINE
+
 class ImageData;
 class LSTMRecognizer;
 class Tesseract;
@@ -228,14 +230,7 @@ public:
       lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
     }
   }
-  void set_pix_visible_image(Image visible_image_pix) {
-    pix_visible_image_.destroy();
-    pix_visible_image_ = visible_image_pix;
-    // Clone to sublangs as well.
-    for (auto &lang : sub_langs_) {
-      lang->set_pix_visible_image(visible_image_pix ? visible_image_pix.clone() : nullptr);
-    }
-  }
+
   // Returns a pointer to a Pix representing the best available resolution image
   // of the page, with best available bit depth as second priority. Result can
   // be of any bit depth, but never color-mapped, as that has always been
@@ -256,6 +251,9 @@ public:
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();
     pix_thresholds_ = thresholds;
+  }
+  Image pix_thresholds() {
+	  return pix_thresholds_;
   }
   int source_resolution() const {
     return source_resolution_;
@@ -332,7 +330,7 @@ public:
   // Tesseract OCR. The current segmentation is required by this method.
   // Uses the strategy specified in the global variable
   // ocr_devanagari_split_strategy for performing splitting while preparing for
-  // Tesseract ocr.
+  // Tesseract OCR.
   void PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, OSResults *osr);
 
   int SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess, OSResults *osr);
@@ -676,7 +674,7 @@ public:
   // can still be used to correctly segment touching characters with the help
   // of the input boxes.
   // In the returned PAGE_RES, the WERD_RES are setup as they would be returned
-  // from normal classification, ie. with a word, chopped_word, rebuild_word,
+  // from normal classification, i.e. with a word, chopped_word, rebuild_word,
   // seam_array, denorm, box_word, and best_state, but NO best_choice or
   // raw_choice, as they would require a UNICHARSET, which we aim to avoid.
   // Instead, the correct_text member of WERD_RES is set, and this may be later
@@ -978,6 +976,13 @@ public:
   void recog_training_segmented(const char *filename, PAGE_RES *page_res,
                                 volatile ETEXT_DESC *monitor, FILE *output_file);
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
+
+  // debug PDF output helper methods:
+  void AddPixDebugPage(Image pix, const char *title) {
+	  if (tessedit_dump_pageseg_images) {
+		  pixa_debug_.AddPix(pix, title);
+	  }
+  }
 
 private:
   // The filename of a backup config file. If not null, then we currently

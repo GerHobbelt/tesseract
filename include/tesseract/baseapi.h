@@ -114,10 +114,10 @@ public:
   Pix *GetInputImage();
   int GetSourceYResolution();
   const char *GetDatapath();
-  void SetVisiblePdfImageFilename(const char *name);
-  const char *GetVisiblePdfImageFilename();
-  void SetVisiblePdfImage(Pix *pix);
-  Pix* GetVisiblePdfImage();
+  void SetVisibleImageFilename(const char *name);
+  const char *GetVisibleImageFilename();
+  void SetVisibleImage(Pix *pix);
+  Pix* GetVisibleImage();
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
@@ -801,8 +801,8 @@ protected:
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
   std::string input_file_;           ///< Name used by training code.
-  std::string visible_pdf_image_file_;
-  Pix* visible_pdf_image_;            ///< Image used in output PDF
+  std::string visible_image_file_;
+  Pix* pix_visible_image_;           ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.

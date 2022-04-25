@@ -909,7 +909,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   }
 
   if (visible_pdf_image_file) {
-    api.SetVisiblePdfImageFilename(visible_pdf_image_file);
+    api.SetVisibleImageFilename(visible_pdf_image_file);
   }
 
   if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
