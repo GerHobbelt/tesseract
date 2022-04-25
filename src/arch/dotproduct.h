@@ -34,6 +34,9 @@ float DotProductAVX2(const float *u, const float *v, int n);
 float DotProductAVX3(const float *u, const float *v, int n);
 float DotProductAVX4(const float *u, const float *v, int n);
 
+// Uses Intel AVX512F intrinsics to access the SIMD instruction set.
+TFloat DotProductAVX512F(const TFloat *u, const TFloat *v, int n);
+
 // Use Intel FMA.
 float DotProductFMA(const float *u, const float *v, int n);
 

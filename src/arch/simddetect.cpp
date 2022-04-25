@@ -252,7 +252,11 @@ SIMDDetect::SIMDDetect() {
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
-  if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+    // AVX512F detected.
+    SetDotProduct(DotProductAVX512F, IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "avx512";
+  } else if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 detected.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx2";
