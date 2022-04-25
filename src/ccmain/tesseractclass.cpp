@@ -80,7 +80,7 @@ Tesseract::Tesseract()
                  "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
                  "Sauvola, 3 = Otsu on"
                  " adaptive normalized background, 4 = Masking and Otsu on "
-                 "adaptive normalized background",
+                 "adaptive normalized background, 5 = Nlbin",
                  this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",

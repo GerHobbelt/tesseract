@@ -37,7 +37,7 @@ enum class ThresholdMethod {
   Sauvola,       // Leptonica's Sauvola
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
-
+  Nlbin,         // NLbin
   Max,           // Number of Thresholding methods
 };
 
