@@ -75,6 +75,18 @@ Tesseract::Tesseract()
                "11=sparse_text, 12=sparse_text+osd, 13=raw_line"
                " (Values from PageSegMode enum in tesseract/publictypes.h)",
                this->params())
+    , BOOL_MEMBER(normalize_grayscale, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image and replace it for all tasks", 
+                  this->params())
+    , BOOL_MEMBER(normalize_thresholding, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for thresholding tasks (layout analysis)", 
+                  this->params())
+    , BOOL_MEMBER(normalize_recognition, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for the character recognition task", 
+                  this->params())
     , INT_MEMBER(thresholding_method,
                  static_cast<int>(ThresholdMethod::Otsu),
                  "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
