@@ -21,6 +21,9 @@
 #include <cassert>
 #include <iostream>
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 std::ostream& operator<<(std::ostream& out, const CharBoundaryByBoxIndex& d) {
