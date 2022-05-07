@@ -1424,6 +1424,7 @@ char *TessBaseAPI::GetUTF8Text() {
       case PT_NOISE:
         tprintf("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
+		break;
       default:
         break;
     }

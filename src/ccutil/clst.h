@@ -161,6 +161,13 @@ class TESS_API CLIST_ITERATOR {
 public:
   CLIST_ITERATOR() { // constructor
     list = nullptr;
+	prev = nullptr;
+	current = nullptr;
+	next = nullptr;
+	cycle_pt = nullptr;
+	ex_current_was_last = false;
+	ex_current_was_cycle_pt = false;
+	started_cycling = false;
   } // unassigned list
 
   CLIST_ITERATOR( // constructor
