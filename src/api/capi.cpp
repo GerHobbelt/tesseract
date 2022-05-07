@@ -233,7 +233,7 @@ int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *lang
 }
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
-                     TessOcrEngineMode mode, char **configs, int configs_size, char **vars_vec,
+                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
                      char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
