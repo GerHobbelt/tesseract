@@ -184,7 +184,13 @@ protected:
   void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
 
   // Return non-linear normalized grayscale
-  Pix *pixNLNorm(Pix *pixs, int *pthresh);
+  Pix *pixNLNorm2(Pix *pixs, int *pthresh);
+
+  // Return non-linear normalized grayscale
+  Pix* pixNLNorm1(Pix* pixs, int* pthresh, int* pfgval, int* pbgval);
+
+  // Return non-linear normalized thresholded image
+  Pix* pixNLBin(Pix* pixs, bool adaptive);
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.

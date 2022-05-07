@@ -196,7 +196,7 @@ void ImageThresholder::SetImage(const Image pix) {
  *                  Non-linear contrast normalization                   *
  *----------------------------------------------------------------------*/
 /*!
- * \brief   pixNLNorm()
+ * \brief   pixNLNorm2()
  *
  * \param[in]    pixs          8 or 32 bpp
  * \param[out]   ptresh        l_int32 global threshold value
@@ -212,7 +212,7 @@ void ImageThresholder::SetImage(const Image pix) {
  */
 Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   l_int32 d, thresh, w1, h1, w2, h2, fgval, bgval;
-  l_uint32 black_val, white_val;
+  //l_uint32 black_val, white_val;
   l_float32 factor, threshpos, avefg, avebg;
   PIX *pixg, *pixd, *pixd2;
   BOX *pixbox;
@@ -290,7 +290,7 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
  *                  Non-linear contrast normalization                   *
  *----------------------------------------------------------------------*/
 /*!
- * \brief   pixNLNorm()
+ * \brief   pixNLNorm1()
  *
  * \param[in]    pixs          8 or 32 bpp
  * \param[out]   ptresh        l_int32 global threshold value
@@ -305,10 +305,7 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
  * </pre>
  */
 PIX  *
-pixNLNorm1(PIX     *pixs,
-        l_int32   *pthresh,
-        l_int32   *pfgval,
-        l_int32   *pbgval)
+ImageThresholder::pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval,int *pbgval)
 {
   l_int32   d, fgval, bgval, thresh, w1, h1, w2, h2;
   l_float32 factor;
@@ -381,18 +378,15 @@ pixNLNorm1(PIX     *pixs,
  * </pre>
  */
 PIX  *
-pixNLBin(PIX     *pixs,
-         l_int32 adaptive)
+ImageThresholder::pixNLBin(PIX *pixs, bool adaptive)
 {
-  l_int32    thresh, fgval, bgval;
+	int thresh;
+	int fgval, bgval;
   PIX        *pixb;
 
   PROCNAME("pixNLBin");
 
-  if (adaptive != 0 && adaptive != 1)
-      return (PIX *)ERROR_PTR("invalid adaptive flag", procName, NULL);
-
-  pixb = pixNLNorm(pixs, &thresh, &fgval, &bgval);
+  pixb = pixNLNorm1(pixs, &thresh, &fgval, &bgval);
   if (!pixb)
     return (PIX *)ERROR_PTR("invalid normalization result", procName, NULL);
 
@@ -509,8 +503,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
-                                 pix_thresholds,
-                                 pix_binary);
+                                 (PIX **)pix_thresholds,
+                                 (PIX **)pix_binary);
   } else if (method == ThresholdMethod::Nlbin) {
     auto pix = GetPixRect();
     pix_binary = pixNLBin(pix, false);
