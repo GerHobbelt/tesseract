@@ -23,7 +23,7 @@
 
 namespace tesseract {
 
-struct PAGE_RES_IT;
+class PAGE_RES_IT;
 class ROW;
 class WERD_RES;
 

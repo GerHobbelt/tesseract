@@ -37,7 +37,7 @@ enum class ThresholdMethod {
   Sauvola,       // Leptonica's Sauvola
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
-
+  Nlbin,         // NLbin
   Max,           // Number of Thresholding methods
 };
 
@@ -161,6 +161,12 @@ public:
   // Provided to the classifier to extract features from the greyscale image.
   virtual Image GetPixRectGrey();
 
+  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+  // and at the same resolution as the output binary.
+  // The returned Pix must be pixDestroyed.
+  // Provided to the classifier to extract features from the greyscale image.
+  virtual Image GetPixNormRectGrey();
+
 protected:
   // ----------------------------------------------------------------------
   // Utility functions that may be useful components for other thresholders.
@@ -176,6 +182,15 @@ protected:
 
   // Otsu thresholds the rectangle, taking the rectangle from *this.
   void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
+
+  // Return non-linear normalized grayscale
+  Pix *pixNLNorm2(Pix *pixs, int *pthresh);
+
+  // Return non-linear normalized grayscale
+  Pix* pixNLNorm1(Pix* pixs, int* pthresh, int* pfgval, int* pbgval);
+
+  // Return non-linear normalized thresholded image
+  Pix* pixNLBin(Pix* pixs, bool adaptive);
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.

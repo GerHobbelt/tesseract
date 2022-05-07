@@ -30,7 +30,7 @@ class TO_BLOCK;
 
 namespace tesseract {
 
-struct ColPartition_LIST;
+class ColPartition_LIST;
 class TabFind;
 class TextlineProjection;
 

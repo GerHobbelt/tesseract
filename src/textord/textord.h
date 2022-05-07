@@ -25,16 +25,17 @@
 #include "blobbox.h"
 #include "ccstruct.h"
 #include "gap_map.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 
 #include <tesseract/publictypes.h> // For PageSegMode.
 
 namespace tesseract {
 
 class FCOORD;
-struct BLOCK_LIST;
+class BLOCK_LIST;
 class PAGE_RES;
 class TO_BLOCK;
-struct TO_BLOCK_LIST;
+class TO_BLOCK_LIST;
 class ScrollView;
 
 // A simple class that can be used by BBGrid to hold a word and an expanded
@@ -69,7 +70,8 @@ private:
 };
 
 // Make it usable by BBGrid.
-CLISTIZEH(WordWithBox)
+CLISTIZEH(WordWithBox);
+
 using WordGrid = BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 using WordSearch = GridSearch<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 

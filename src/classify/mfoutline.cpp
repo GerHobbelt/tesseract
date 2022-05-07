@@ -15,13 +15,17 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #ifndef DISABLED_LEGACY_ENGINE
 
 #include "mfoutline.h"
 
 #include "blobs.h"
 #include "classify.h"
-#include "clusttool.h" //If remove you get cought in a loop somewhere
+#include "clusttool.h" //If remove you get caught in a loop somewhere
 #include "mfx.h"
 #include "params.h"
 

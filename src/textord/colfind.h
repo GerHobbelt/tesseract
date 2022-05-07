@@ -38,12 +38,12 @@ class TO_BLOCK;
 namespace tesseract {
 
 class ColPartitionSet;
-struct ColPartitionSet_LIST;
-struct ColSegment_LIST;
-struct ColumnGroup_LIST;
+class ColPartitionSet_LIST;
+class ColSegment_LIST;
+class ColumnGroup_LIST;
 class LineSpacing;
 class StrokeWidth;
-struct TempColumn_LIST;
+class TempColumn_LIST;
 class EquationDetectBase;
 
 // The ColumnFinder class finds columns in the grid.

@@ -45,7 +45,7 @@ struct Pix;
 namespace tesseract {
 
 class BLOCK;
-struct BLOCK_LIST;
+class BLOCK_LIST;
 class BLOCK_RES;
 class ROW;
 class ROW_RES;
@@ -62,14 +62,16 @@ struct FontInfo;
 
 class BLOCK_RES;
 
-ELISTIZEH(BLOCK_RES)
-CLISTIZEH(BLOCK_RES)
+ELISTIZEH(BLOCK_RES);
+CLISTIZEH(BLOCK_RES);
+
 class ROW_RES;
 
-ELISTIZEH(ROW_RES)
+ELISTIZEH(ROW_RES);
+
 class WERD_RES;
 
-ELISTIZEH(WERD_RES)
+ELISTIZEH(WERD_RES);
 
 /*************************************************************************
  * PAGE_RES - Page results
@@ -679,7 +681,7 @@ public:
  * PAGE_RES_IT - Page results iterator
  *************************************************************************/
 
-struct TESS_API PAGE_RES_IT {
+class TESS_API PAGE_RES_IT {
 public:
   PAGE_RES *page_res; // page being iterated
 

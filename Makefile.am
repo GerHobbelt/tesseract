@@ -124,6 +124,7 @@ libtesseract_la_LDFLAGS += -version-info $(GENERIC_LIBRARY_VERSION)
 
 libtesseract_la_SOURCES = src/api/baseapi.cpp
 libtesseract_la_SOURCES += src/api/altorenderer.cpp
+libtesseract_la_SOURCES += src/api/pagerenderer.cpp
 libtesseract_la_SOURCES += src/api/capi.cpp
 libtesseract_la_SOURCES += src/api/hocrrenderer.cpp
 libtesseract_la_SOURCES += src/api/lstmboxrenderer.cpp
@@ -170,6 +171,14 @@ libtesseract_avx2_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
 libtesseract_avx2_la_SOURCES = src/arch/intsimdmatrixavx2.cpp
 libtesseract_la_LIBADD += libtesseract_avx2.la
 noinst_LTLIBRARIES += libtesseract_avx2.la
+endif
+
+if HAVE_AVX512F
+libtesseract_avx512_la_CXXFLAGS = -mavx512f
+libtesseract_avx512_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
+libtesseract_avx512_la_SOURCES = src/arch/dotproductavx512.cpp
+libtesseract_la_LIBADD += libtesseract_avx512.la
+noinst_LTLIBRARIES += libtesseract_avx512.la
 endif
 
 if HAVE_FMA
@@ -268,6 +277,7 @@ endif
 # Rules for src/ccstruct.
 
 noinst_HEADERS += src/ccstruct/blamer.h
+noinst_HEADERS += src/ccstruct/blob_bounds_calculator.h
 noinst_HEADERS += src/ccstruct/blobbox.h
 noinst_HEADERS += src/ccstruct/blobs.h
 noinst_HEADERS += src/ccstruct/blread.h
@@ -312,6 +322,7 @@ noinst_HEADERS += src/ccstruct/params_training_featdef.h
 endif
 
 libtesseract_la_SOURCES += src/ccstruct/blamer.cpp
+libtesseract_la_SOURCES += src/ccstruct/blob_bounds_calculator.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobbox.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobs.cpp
 libtesseract_la_SOURCES += src/ccstruct/blread.cpp

@@ -133,6 +133,7 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=un
 
 AM_CONDITIONAL([HAVE_AVX], false)
 AM_CONDITIONAL([HAVE_AVX2], false)
+AM_CONDITIONAL([HAVE_AVX512F], false)
 AM_CONDITIONAL([HAVE_FMA], false)
 AM_CONDITIONAL([HAVE_SSE4_1], false)
 AM_CONDITIONAL([HAVE_NEON], false)
@@ -153,6 +154,12 @@ case "${host_cpu}" in
       AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
     fi
 
+    AX_CHECK_COMPILE_FLAG([-mavx512f], [avx512f=true], [avx512f=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX512F], $avx512f)
+    if $avx512f; then
+      AC_DEFINE([HAVE_AVX512F], [1], [Enable AVX512F instructions])
+    fi
+
     AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
     AM_CONDITIONAL([HAVE_FMA], $fma)
     if $fma; then
@@ -167,7 +174,7 @@ case "${host_cpu}" in
 
     ;;
 
-  aarch64)
+  aarch64|arm64)
 
     # ARMv8 always has NEON and does not need special compiler flags.
     AM_CONDITIONAL([HAVE_NEON], true)
@@ -182,6 +189,7 @@ case "${host_cpu}" in
       AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
       NEON_CXXFLAGS="-mfpu=neon"
       AC_SUBST([NEON_CXXFLAGS])
+      check_for_neon=1
     fi
 
     ;;
@@ -194,6 +202,16 @@ esac
 
 # check whether feenableexcept is supported. some C libraries (e.g. uclibc) don't.
 AC_CHECK_FUNCS([feenableexcept])
+
+# additional checks for NEON targets
+if test x$check_for_neon = x1; then
+  AC_MSG_NOTICE([checking how to detect NEON availability])
+  AC_CHECK_FUNCS([getauxval elf_aux_info android_getCpuFamily])
+
+  if test $ac_cv_func_getauxval = no && test $ac_cv_func_elf_aux_info = no && test $ac_cv_func_android_getCpuFamily = no; then
+      AC_MSG_WARN([NEON is available, but we don't know how to check for it.  Will not be able to use NEON.])
+  fi
+fi
 
 AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
 AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)

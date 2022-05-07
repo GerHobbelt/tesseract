@@ -23,6 +23,7 @@
 
 #include "blobbox.h"      // For TO_BLOCK_LIST and BLOCK_LIST.
 #include "colpartition.h" // For ColPartition_LIST.
+#include "elst.h"         // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
@@ -80,7 +81,7 @@ private:
   TO_BLOCK_LIST to_blocks_;
 };
 
-ELISTIZEH(WorkingPartSet)
+ELISTIZEH(WorkingPartSet);
 
 } // namespace tesseract.
 

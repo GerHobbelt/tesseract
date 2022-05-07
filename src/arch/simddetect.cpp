@@ -68,15 +68,17 @@
 #endif
 
 #if defined(HAVE_NEON) && !defined(__aarch64__)
-#  ifdef ANDROID
+#  if HAVE_ANDROID_GETCPUFAMILY
 #    include <cpu-features.h>
 #  elif defined(HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION)
 #    include <sys/auxv.h>
 #    include <asm/hwcap.h>
-#  else
-/* Assume linux */
+#  elif HAVE_GETAUXVAL
 #    include <asm/hwcap.h>
 #    include <sys/auxv.h>
+#  elif HAVE_ELF_AUX_INFO
+#    include <sys/auxv.h>
+#    include <sys/elf.h>
 #  endif
 #endif
 
@@ -237,22 +239,29 @@ SIMDDetect::SIMDDetect() {
 #endif
 
 #if defined(HAVE_NEON) && !defined(__aarch64__)
-#  ifdef ANDROID
+#  if HAVE_ANDROID_GETCPUFAMILY
   {
     AndroidCpuFamily family = android_getCpuFamily();
     if (family == ANDROID_CPU_FAMILY_ARM)
       neon_available_ = (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
   }
-#  else
-  /* Assume linux */
+#  elif HAVE_GETAUXVAL
   neon_available_ = getauxval(AT_HWCAP) & HWCAP_NEON;
+#  elif HAVE_ELF_AUX_INFO
+  unsigned long hwcap = 0;
+  elf_aux_info(AT_HWCAP, &hwcap, sizeof hwcap);
+  neon_available_ = hwcap & HWCAP_NEON;
 #  endif
 #endif
 
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
-  if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+    // AVX512F detected.
+    SetDotProduct(DotProductAVX512F, IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "avx512";
+  } else if (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 detected.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx2";

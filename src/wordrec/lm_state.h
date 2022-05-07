@@ -198,7 +198,7 @@ struct ViterbiStateEntry : public ELIST_LINK {
   bool updated; ///< set to true if the entry has just been created/updated
 };
 
-ELISTIZEH(ViterbiStateEntry)
+ELISTIZEH(ViterbiStateEntry);
 
 /// Struct to store information maintained by various language model components.
 struct LanguageModelState {

@@ -19,6 +19,13 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
+
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#ifndef DISABLED_LEGACY_ENGINE
+
 #include "outlines.h"
 #include "wordrec.h"
 
@@ -71,3 +78,5 @@ bool Wordrec::near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1, ED
 }
 
 } // namespace tesseract
+
+#endif

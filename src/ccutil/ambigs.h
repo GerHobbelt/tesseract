@@ -27,7 +27,7 @@
 #if !defined(DISABLED_LEGACY_ENGINE)
 
 #  include <tesseract/unichar.h>
-#  include "elst.h"
+#  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #  include "tprintf.h"
 #  include "unicharset.h"
 
@@ -133,7 +133,8 @@ public:
   AmbigType type;
   int wrong_ngram_size;
 };
-ELISTIZEH(AmbigSpec)
+
+ELISTIZEH(AmbigSpec);
 
 // AMBIG_TABLE[i] stores a set of ambiguities whose
 // wrong ngram starts with unichar id i.

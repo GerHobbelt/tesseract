@@ -21,8 +21,8 @@
 
 #include "bbgrid.h"
 #include "blobgrid.h"
-#include "clst.h"
-#include "elst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "elst2.h"
 #include "rect.h"
 
@@ -54,9 +54,9 @@ class TabFind;
 class TabVector;
 class TabConstraint;
 
-ELIST2IZEH(TabVector)
-CLISTIZEH(TabVector)
-ELISTIZEH(TabConstraint)
+ELIST2IZEH(TabVector);
+CLISTIZEH(TabVector);
+ELISTIZEH(TabConstraint);
 
 // TabConstraint is a totally self-contained class to maintain
 // a list of [min,max] constraints, each referring to a TabVector.

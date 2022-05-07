@@ -149,7 +149,7 @@ public:
   // the edge dead.
   void KillEdge(EDGE_RECORD *edge_rec) const {
     *edge_rec &= ~letter_mask_;
-    *edge_rec |= (unicharset_size_ << LETTER_START_BIT);
+    *edge_rec |= (((EDGE_RECORD)unicharset_size_) << LETTER_START_BIT);
   }
   bool DeadEdge(const EDGE_RECORD &edge_rec) const {
     return unichar_id_from_edge_rec(edge_rec) == unicharset_size_;

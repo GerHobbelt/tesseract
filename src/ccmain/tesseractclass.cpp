@@ -75,12 +75,24 @@ Tesseract::Tesseract()
                "11=sparse_text, 12=sparse_text+osd, 13=raw_line"
                " (Values from PageSegMode enum in tesseract/publictypes.h)",
                this->params())
+    , BOOL_MEMBER(normalize_grayscale, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image and replace it for all tasks", 
+                  this->params())
+    , BOOL_MEMBER(normalize_thresholding, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for thresholding tasks (layout analysis)", 
+                  this->params())
+    , BOOL_MEMBER(normalize_recognition, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for the character recognition task", 
+                  this->params())
     , INT_MEMBER(thresholding_method,
                  static_cast<int>(ThresholdMethod::Otsu),
                  "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
                  "Sauvola, 3 = Otsu on"
                  " adaptive normalized background, 4 = Masking and Otsu on "
-                 "adaptive normalized background",
+                 "adaptive normalized background, 5 = Nlbin",
                  this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",
@@ -337,6 +349,9 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file", this->params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file", this->params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file", this->params())
+    , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file", this->params())
+    , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values", this->params())
+    , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel", this->params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training",
                   this->params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file", this->params())
@@ -447,7 +462,6 @@ Tesseract::Tesseract()
     , pix_binary_(nullptr)
     , pix_grey_(nullptr)
     , pix_original_(nullptr)
-    , pix_visible_image_(nullptr)
     , pix_thresholds_(nullptr)
     , source_resolution_(0)
     , textord_(this)

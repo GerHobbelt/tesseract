@@ -21,6 +21,7 @@
 
 #include "blobbox.h"
 #include "params.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
@@ -56,7 +57,7 @@ private:
   C_OUTLINE_FRAG(const C_OUTLINE_FRAG &other) = delete;
 };
 
-ELISTIZEH(C_OUTLINE_FRAG)
+ELISTIZEH(C_OUTLINE_FRAG);
 
 extern INT_VAR_H(textord_fp_chop_error);
 

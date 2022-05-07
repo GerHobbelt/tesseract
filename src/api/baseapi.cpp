@@ -30,9 +30,7 @@
 #include "dict.h"       // for Dict
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "environ.h"    // for l_uint8
-#ifndef DISABLED_LEGACY_ENGINE
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
-#endif // ndef DISABLED_LEGACY_ENGINE
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string
 #include "host.h"    // for MAX_PATH
@@ -231,7 +229,7 @@ TessBaseAPI::TessBaseAPI()
     , paragraph_models_(nullptr)
     , block_list_(nullptr)
     , page_res_(nullptr)
-    , visible_pdf_image_(nullptr)
+    , pix_visible_image_(nullptr)
     , last_oem_requested_(OEM_DEFAULT)
     , recognition_done_(false)
     , rect_left_(0)
@@ -282,18 +280,14 @@ void TessBaseAPI::SetInputName(const char *name) {
   input_file_ = name ? name : "";
 }
 
-void TessBaseAPI::SetVisiblePdfImageFilename(const char* name) {
-  visible_pdf_image_file_ = name ? name : "";
+/** Set the name of the visible image files. Needed only for PDF output. */
+void TessBaseAPI::SetVisibleImageFilename(const char* name) {
+  visible_image_file_ = name ? name : "";
 }
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
   output_file_ = name ? name : "";
-}
-
-/** Set the name of the visible image files. Needed only for PDF output. */
-void TessBaseAPI::SetVisibleImageFilename(const char *name) {
-  visible_image_file_ = name ? name : "";
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -652,8 +646,14 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   if (tesseract_ == nullptr || thresholder_ == nullptr) {
     return nullptr;
   }
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return nullptr;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return nullptr;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
   return tesseract_->pix_binary().clone();
 }
@@ -941,12 +941,12 @@ void TessBaseAPI::SetInputImage(Pix *pix) {
   tesseract_->set_pix_original(pix);
 }
 
-void TessBaseAPI::SetVisiblePdfImage(Pix *pix) {
-  if (visible_pdf_image_)
-    pixDestroy(&visible_pdf_image_);
-  visible_pdf_image_ = nullptr;
+void TessBaseAPI::SetVisibleImage(Pix *pix) {
+  if (pix_visible_image_)
+    pixDestroy(&pix_visible_image_);
+  pix_visible_image_ = nullptr;
   if (pix) {
-    visible_pdf_image_ = pixCopy(NULL, pix);
+    pix_visible_image_ = pixCopy(NULL, pix);
     // tesseract_->set_pix_visible_image(pix);
   }
 }
@@ -955,8 +955,8 @@ Pix *TessBaseAPI::GetInputImage() {
   return tesseract_->pix_original();
 }
 
-Pix* TessBaseAPI::GetVisiblePdfImage() {
-  return visible_pdf_image_;
+Pix* TessBaseAPI::GetVisibleImage() {
+  return pix_visible_image_;
 }
 
 const char *TessBaseAPI::GetInputName() {
@@ -966,9 +966,9 @@ const char *TessBaseAPI::GetInputName() {
   return nullptr;
 }
 
-const char * TessBaseAPI::GetVisiblePdfImageFilename() {
-  if (!visible_pdf_image_file_.empty()) {
-    return visible_pdf_image_file_.c_str();
+const char * TessBaseAPI::GetVisibleImageFilename() {
+  if (!visible_image_file_.empty()) {
+    return visible_image_file_.c_str();
   }
   return nullptr;
 }
@@ -1294,8 +1294,40 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
+
   SetInputName(filename);
+
   SetImage(pix);
+
+  // Image preprocessing
+
+  // Process input image to a normalized grayscale
+  // atm it uses a non-linear algorithm
+  bool nlnorm, nlth, nlrec;
+  GetBoolVariable("normalize_grayscale", &nlnorm);
+  GetBoolVariable("normalize_thresholding", &nlth);
+  GetBoolVariable("normalize_recognition", &nlrec);
+  if (nlnorm || nlth || nlrec) {
+    if (nlnorm || (nlth && nlrec)) {
+      SetInputImage(thresholder_->GetPixNormRectGrey());
+      thresholder_->SetImage(GetInputImage());
+    } else if (nlth) {
+      thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
+    } else if (nlrec) {
+      SetInputImage(thresholder_->GetPixNormRectGrey());
+    }
+    if (tesseract_->tessedit_write_images) {
+      std::string output_filename = output_file_ + ".norm_gray";
+      if (page_index > 0) {
+        output_filename += std::to_string(page_index);
+      }
+      output_filename += ".tif";
+      pixWrite(output_filename.c_str(), GetInputImage(), IFF_TIFF_G4);
+    }
+  }
+
+  // Recognition
+
   bool failed = false;
 
   if (tesseract_->tessedit_pageseg_mode == PSM_AUTO_ONLY) {
@@ -1342,6 +1374,19 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     // Switch to alternate mode for retry.
     ReadConfigFile(retry_config);
     SetImage(pix);
+    
+    // Apply image preprocessing
+    if (nlnorm || nlth || nlrec) {
+      if (nlnorm || (nlth && nlrec)) {
+        SetInputImage(thresholder_->GetPixNormRectGrey());
+        thresholder_->SetImage(GetInputImage());
+      } else if (nlth) {
+        thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
+      } else if (nlrec) {
+        SetInputImage(thresholder_->GetPixNormRectGrey());
+      }
+    }
+    //if (normalize_grayscale) thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
     Recognize(nullptr);
     // Restore saved config variables.
     ReadConfigFile(kOldVarsFile);
@@ -1350,7 +1395,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   if (renderer && !failed) {
     failed = !renderer->AddImage(this);
   }
-
+  //pixDestroy(&pixs);
   return !failed;
 }
 
@@ -1424,6 +1469,7 @@ char *TessBaseAPI::GetUTF8Text() {
       case PT_NOISE:
         tprintf("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
+		break;
       default:
         break;
     }
@@ -2044,9 +2090,9 @@ void TessBaseAPI::End() {
   delete tesseract_;
   tesseract_ = nullptr;
   input_file_.clear();
-  pixDestroy(&visible_pdf_image_);
-  visible_pdf_image_ = nullptr;
-  visible_pdf_image_file_.clear();
+  pixDestroy(&pix_visible_image_);
+  pix_visible_image_ = nullptr;
+  visible_image_file_.clear();
   output_file_.clear();
   datapath_.clear();
   language_.clear();
@@ -2197,6 +2243,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
       tesseract_->set_pix_thresholds(nullptr);
       tesseract_->set_pix_grey(nullptr);
     }
+
+	tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "OtsuGrey");
+	tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "OtsuThresholds");
   } else {
     auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(this, thresholding_method);
 
@@ -2207,6 +2256,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 
     tesseract_->set_pix_thresholds(pix_thresholds);
     tesseract_->set_pix_grey(pix_grey);
+
+	tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "NonOtsuGrey");
+	tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "NonOtsuThresholds");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -2246,8 +2298,14 @@ int TessBaseAPI::FindLines() {
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
   }
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return -1;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return -1;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
 
   tesseract_->PrepareForPageseg();
@@ -2378,8 +2436,14 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     return false;
   }
   ClearResults();
-  if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
-    return false;
+  if (tesseract_->pix_binary() == nullptr) {
+	  Image pix = Image();
+	  if (!Threshold(&pix.pix_)) {
+		  return false;
+	  }
+	  tesseract_->set_pix_binary(pix);
+
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
 
   if (input_file_.empty()) {

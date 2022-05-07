@@ -25,7 +25,7 @@
 
 namespace tesseract {
 
-struct FPSEGPT_LIST;
+class FPSEGPT_LIST;
 
 class FPCUTPT {
 public:

@@ -24,7 +24,7 @@
 
 namespace tesseract {
 
-struct BLOCK_LIST;
+class BLOCK_LIST;
 
 bool read_unlv_file(   // print list of sides
     std::string &name, // basename of file

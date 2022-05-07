@@ -822,10 +822,10 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
   Pix *pix = nullptr;
   int ppi = api->GetSourceYResolution();
   bool destroy_pix = false;
-  const char *filename = api->GetVisiblePdfImageFilename();
+  const char *filename = api->GetVisibleImageFilename();
   if (filename) {
     pix = pixRead(filename);
-    api->SetVisiblePdfImage(pix);
+    api->SetVisibleImage(pix);
     destroy_pix = true;
   } else {
     pix = api->GetInputImage();

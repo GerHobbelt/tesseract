@@ -22,7 +22,7 @@
 
 namespace tesseract {
 
-struct TabVector_LIST;
+class TabVector_LIST;
 
 /**
  * The LineFinder class is a simple static function wrapper class that mainly

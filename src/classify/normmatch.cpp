@@ -18,6 +18,10 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #ifndef DISABLED_LEGACY_ENGINE
 
 #include <tesseract/debugheap.h>

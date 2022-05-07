@@ -54,6 +54,10 @@ TessResultRenderer *TessAltoRendererCreate(const char *outputbase) {
   return new tesseract::TessAltoRenderer(outputbase);
 }
 
+TessResultRenderer *TessPAGERendererCreate(const char *outputbase) {
+  return new tesseract::TessPAGERenderer(outputbase);
+}
+
 TessResultRenderer *TessTsvRendererCreate(const char *outputbase) {
   return new tesseract::TessTsvRenderer(outputbase);
 }
@@ -226,6 +230,22 @@ int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *lang
 
 int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *language) {
   return handle->Init(datapath, language);
+}
+
+int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
+                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
+                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+  std::vector<std::string> varNames;
+  std::vector<std::string> varValues;
+  if (vars_vec != nullptr && vars_values != nullptr) {
+    for (size_t i = 0; i < vars_vec_size; i++) {
+      varNames.emplace_back(vars_vec[i]);
+      varValues.emplace_back(vars_values[i]);
+    }
+  }
+
+  return handle->Init(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
+                      set_only_non_debug_params != 0, nullptr);
 }
 
 const char *TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI *handle) {
@@ -402,6 +422,10 @@ char *TessBaseAPIGetHOCRText(TessBaseAPI *handle, int page_number) {
 
 char *TessBaseAPIGetAltoText(TessBaseAPI *handle, int page_number) {
   return handle->GetAltoText(page_number);
+}
+
+char *TessBaseAPIGetPAGEText(TessBaseAPI *handle, int page_number) {
+  return handle->GetPAGEText(page_number);
 }
 
 char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number) {

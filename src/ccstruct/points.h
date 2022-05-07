@@ -19,7 +19,7 @@
 #ifndef POINTS_H
 #define POINTS_H
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "errcode.h" // for ASSERT_HOST
 #include "tesstypes.h" // for TDimension
 
@@ -184,7 +184,7 @@ public:
   }
 };
 
-ELISTIZEH(ICOORDELT)
+ELISTIZEH(ICOORDELT);
 
 class TESS_API FCOORD {
 public:

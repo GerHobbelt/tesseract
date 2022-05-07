@@ -243,6 +243,8 @@ protected:
   void UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_points, WERD_RES *word_res,
                         BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle);
 
+#if !defined(DISABLED_LEGACY_ENGINE)
+
   // Constructs a WERD_CHOICE by tracing parent pointers starting with
   // the given LanguageModelStateEntry. Returns the constructed word.
   // Updates best_char_choices, certainties and state if they are not
@@ -252,6 +254,8 @@ protected:
   // returned WERD_CHOICE.
   WERD_CHOICE *ConstructWord(ViterbiStateEntry *vse, WERD_RES *word_res, DANGERR *fixpt,
                              BlamerBundle *blamer_bundle, bool *truth_path);
+
+#endif
 
   // Wrapper around AssociateUtils::ComputeStats().
   inline void ComputeAssociateStats(int col, int row, float max_char_wh_ratio,
