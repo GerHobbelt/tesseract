@@ -70,6 +70,15 @@ static STRING_PARAM_FLAG(text, "", "File name of text input to process");
 // The text output file.
 static STRING_PARAM_FLAG(outputbase, "", "Basename for output image/box file");
 
+// Rotate the rendered image to have more realistic glyph borders
+static BOOL_PARAM_FLAG(create_boxfiles, true, "Create box files.");
+
+// Rotate the rendered image to have more realistic glyph borders
+static BOOL_PARAM_FLAG(create_page, false, "Create Page XML files (automatically deactivates multipage).");
+
+// Create multipage outputformats 
+static BOOL_PARAM_FLAG(multipage, true, "Creates multipage output.");
+
 // Degrade the rendered image to mimic scanner quality.
 static BOOL_PARAM_FLAG(degrade_image, true,
                        "Degrade rendered image with speckle noise, dilation/erosion "
@@ -95,6 +104,12 @@ static BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
 
 // Distortion to apply to the image.
 static BOOL_PARAM_FLAG(blur, true, "Blur the image");
+
+// Render PNG instead of TIF.
+static BOOL_PARAM_FLAG(output_png, false, "Render PNG instead of TIF");
+
+// Render grayscale instead of binarized image.
+static BOOL_PARAM_FLAG(grayscale, false, "Render grayscale instead of binarized image");
 
 #if 0
 
@@ -663,29 +678,57 @@ static int Main() {
         Image gray_pix = pixConvertTo8(pix, false);
         pix.destroy();
         Image binary = pixThresholdToBinary(gray_pix, 128);
-        gray_pix.destroy();
-        char tiff_name[1024];
+        char img_name[1024];
         if (FLAGS_find_fonts) {
           if (FLAGS_render_per_font) {
             std::string fontname_for_file = tesseract::StringReplace(font_used, " ", "_");
-            snprintf(tiff_name, 1024, "%s.%s.tif", FLAGS_outputbase.c_str(),
-                     fontname_for_file.c_str());
-            pixWriteTiff(tiff_name, binary, IFF_TIFF_G4, "w");
-            tprintf("Rendered page %d to file %s\n", im, tiff_name);
+            if (!FLAGS_output_png){
+              snprintf(img_name, 1024, "%s.%s.tif", FLAGS_outputbase.c_str(),
+                                 fontname_for_file.c_str());
+              if (!FLAGS_grayscale) {
+                  pixWriteTiff(img_name, binary, IFF_TIFF_G4, "w");
+              } else {
+                  pixWriteTiff(img_name, gray_pix, IFF_TIFF, "w");
+                }
+            } else {
+              snprintf(img_name, 1024, "%s.%s.%d.png", FLAGS_outputbase.c_str(),
+                                 fontname_for_file.c_str(), pass+page_num);
+                if (!FLAGS_grayscale){
+                  pixWritePng(img_name, binary, 0);
+                } else {
+                  pixWritePng(img_name, gray_pix, 0);
+                }
+            }
+            tprintf("Rendered page %d to file %s\n", im, img_name);
           } else {
             font_names.push_back(font_used);
           }
         } else {
-          snprintf(tiff_name, 1024, "%s.tif", FLAGS_outputbase.c_str());
-          pixWriteTiff(tiff_name, binary, IFF_TIFF_G4, im == 0 ? "w" : "a");
-          tprintf("Rendered page %d to file %s\n", im, tiff_name);
+          if (!FLAGS_output_png){
+            snprintf(img_name, 1024, "%s.tif", FLAGS_outputbase.c_str());
+            if (!FLAGS_grayscale) {
+                pixWriteTiff(img_name, binary, IFF_TIFF_G4, im == 0 ? "w" : "a");
+            } else {
+                pixWriteTiff(img_name, gray_pix, IFF_TIFF, im == 0 ? "w" : "a");
+              }
+          } else {
+            snprintf(img_name, 1024, "%s.%d.png", FLAGS_outputbase.c_str(),
+                               pass+page_num);
+              if (!FLAGS_grayscale){
+                pixWritePng(img_name, binary, 0);
+              } else {
+                pixWritePng(img_name, gray_pix, 0);
+              }
+          }
+          tprintf("Rendered page %d to file %s\n", im, img_name);
         }
         // Make individual glyphs
         if (FLAGS_output_individual_glyph_images) {
-          if (!MakeIndividualGlyphs(binary, render.GetBoxes(), im)) {
+          if (!MakeIndividualGlyphs(gray_pix, render.GetBoxes(), im)) {
             tprintf("ERROR: Individual glyphs not saved\n");
           }
         }
+        gray_pix.destroy();
         binary.destroy();
       }
       if (FLAGS_find_fonts && offset != 0) {
@@ -696,9 +739,9 @@ static int Main() {
     }
   }
   if (!FLAGS_find_fonts) {
-    std::string box_name = FLAGS_outputbase.c_str();
-    box_name += ".box";
-    render.WriteAllBoxes(box_name);
+    std::string filename = FLAGS_outputbase.c_str();
+    if (FLAGS_create_page) FLAGS_multipage = false;
+    render.WriteAllBoxesPagebyPage(filename, FLAGS_multipage, FLAGS_create_boxfiles, FLAGS_create_page);
   } else if (!FLAGS_render_per_font && !font_names.empty()) {
     std::string filename = FLAGS_outputbase.c_str();
     filename += ".fontlist.txt";
