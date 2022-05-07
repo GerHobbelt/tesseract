@@ -483,7 +483,8 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   float x_min_bl, y_min_bl, x_max_bl, y_max_bl;
   float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
   NUMA *bin_line, *poly_bl_delta;
-  Pta *baseline_recalc_pts, *baseline_clipped_pts;
+  Pta* baseline_recalc_pts = NULL;
+  Pta* baseline_clipped_pts;
 
   ptaGetMinMax(bottom_pts, &x_min, &y_min, &x_max, &y_max);
   num_bin =  x_max-x_min; 
