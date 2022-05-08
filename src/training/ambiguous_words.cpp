@@ -31,7 +31,7 @@
 #include "tesseract/capi_training_tools.h"
 
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
@@ -94,7 +94,6 @@ extern "C" int tesseract_ambiguous_words_main(int argc, const char** argv)
 
 #else
 
-// #if !defined(DISABLED_LEGACY_ENGINE)
 TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 {
 	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);

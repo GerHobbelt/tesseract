@@ -54,7 +54,7 @@ void InitIntegerFX();
 TESS_API
 FCOORD FeatureDirection(uint8_t theta);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Generates a TrainingSample from a TBLOB. Extracts features and sets
 // the bounding box, so classifiers that operate on the image can work.

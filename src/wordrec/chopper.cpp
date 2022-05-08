@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #include "blamer.h"         // for BlamerBundle, IRR_CORRECT
 #include "blobs.h"          // for TPOINT, TBLOB, EDGEPT, TESSLINE, divisible_blob

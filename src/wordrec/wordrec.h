@@ -23,7 +23,7 @@
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include <cstdint>    // for int16_t, int32_t
 #  include "classify.h" // for Classify

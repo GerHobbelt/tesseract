@@ -33,7 +33,7 @@
 #include "tesseractclass.h"
 #include "tessvars.h"
 #include "tprintf.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "chop.h"
 #  include "intmatcher.h"
 #  include "reject.h"
@@ -96,7 +96,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
         " to your \"tessdata\" directory.\n");
     return false;
   }
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   tessedit_ocr_engine_mode.set_value(OEM_LSTM_ONLY);
 #else
   if (oem == OEM_DEFAULT) {
@@ -110,7 +110,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_LSTM_COMBINED);
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
 
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
@@ -148,7 +148,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     }
   }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Determine which ocr engine(s) should be loaded and used for recognition.
   if (oem != OEM_DEFAULT) {
     tessedit_ocr_engine_mode.set_value(oem);
@@ -164,12 +164,12 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
 // The various OcrEngineMode settings (see tesseract/publictypes.h) determine
 // which engine-specific data files need to be loaded. If LSTM_ONLY is
 // requested, the base Tesseract files are *Not* required.
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
 #else
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY ||
       tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED) {
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
     if (mgr->IsComponentAvailable(TESSDATA_LSTM)) {
       lstm_recognizer_ = new LSTMRecognizer(language_data_path_prefix.c_str());
       ASSERT_HOST(lstm_recognizer_->Load(this->params(), lstm_use_matrix ? language : "", mgr));
@@ -185,7 +185,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     // Avoid requiring a unicharset when we aren't running base tesseract.
     unicharset.CopyFrom(lstm_recognizer_->GetUnicharset());
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset.load_from_file(&fp, false)) {
     tprintf(
         "ERROR: Tesseract (legacy) engine requested, but components are "
@@ -193,14 +193,14 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
         tessdata_path.c_str());
     return false;
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   if (unicharset.size() > MAX_NUM_CLASSES) {
     tprintf("ERROR: Size of unicharset is greater than MAX_NUM_CLASSES\n");
     return false;
   }
   right_to_left_ = unicharset.major_right_to_left();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
   // Setup initial unichar ambigs table and read universal ambigs.
   UNICHARSET encoder_unicharset;
@@ -224,7 +224,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       }
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   return true;
 }
@@ -354,7 +354,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     tprintf("ERROR: Tesseract couldn't load any languages!\n");
     return -1; // Couldn't load any language!
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (!sub_langs_.empty()) {
     // In multilingual mode word ratings have to be directly comparable,
     // so use the same language model weights for all languages:
@@ -375,7 +375,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   }
 
   SetupUniversalFontIds();
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   return 0;
 }
 
@@ -415,7 +415,7 @@ int Tesseract::init_tesseract_internal(const std::string &arg0, const std::strin
   return 0; // Normal exit
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Helper builds the all_fonts table by adding new fonts from new_fonts.
 static void CollectFonts(const UnicityTable<FontInfo> &new_fonts,
@@ -455,7 +455,7 @@ void Tesseract::SetupUniversalFontIds() {
   font_table_size_ = all_fonts.size();
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 void Tesseract::end_tesseract() {
   end_recog();

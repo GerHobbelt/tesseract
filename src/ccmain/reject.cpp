@@ -23,7 +23,7 @@
 
 #include "reject.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "tesseractclass.h"
 
@@ -774,4 +774,4 @@ bool Tesseract::non_0_digit(const UNICHARSET &ch_set, UNICHAR_ID unichar_id) {
 }
 } // namespace tesseract
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

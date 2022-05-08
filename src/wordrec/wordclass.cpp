@@ -25,7 +25,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #include "blamer.h"  // for blamer_bundle
 #include "params.h"  // for BoolParam

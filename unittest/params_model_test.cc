@@ -23,7 +23,7 @@ namespace tesseract {
 
 // Test some basic I/O of params model files (automated learning of language
 // model weights).
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static bool LoadFromFile(tesseract::ParamsModel &model, const char *lang, const char *full_path) {
   tesseract::TFile fp;
   if (!fp.Open(full_path, nullptr)) {
@@ -35,7 +35,7 @@ static bool LoadFromFile(tesseract::ParamsModel &model, const char *lang, const 
 #endif
 
 class ParamsModelTest : public testing::Test {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 protected:
   void SetUp() override {
     std::locale::global(std::locale(""));
@@ -66,7 +66,7 @@ protected:
 };
 
 TEST_F(ParamsModelTest, TestEngParamsModelIO) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because ParamsModel::LoadFromFp is missing.
   GTEST_SKIP();
 #else

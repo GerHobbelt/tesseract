@@ -24,7 +24,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "ccstruct.h"
 #  include "dict.h"

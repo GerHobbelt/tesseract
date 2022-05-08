@@ -616,7 +616,7 @@ CLUSTERER *MasterTrainer::SetupForClustering(
   return clusterer;
 }
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 // Writes the given float_classes (produced by SetupForFloat2Int) as inttemp
 // to the given inttemp_file, and the corresponding pffmtable.
@@ -749,7 +749,7 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #ifndef GRAPHICS_DISABLED
 

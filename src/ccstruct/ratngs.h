@@ -25,9 +25,9 @@
 
 #include "clst.h"
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "fontinfo.h"
-#endif // undef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 #include "matrix.h"
 #include "unicharset.h"
 #include "werd.h"
@@ -93,7 +93,7 @@ public:
   int16_t fontinfo_id2() const {
     return fontinfo_id2_;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   const std::vector<ScoredFont> &fonts() const {
     return fonts_;
   }
@@ -114,7 +114,7 @@ public:
       }
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   int script_id() const {
     return script_id_;
   }
@@ -194,10 +194,10 @@ private:
   BLOB_CHOICE &operator=(const BLOB_CHOICE &other);
 
   UNICHAR_ID unichar_id_; // unichar id
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Fonts and scores. Allowed to be empty.
   std::vector<ScoredFont> fonts_;
-#endif                   // ndef DISABLED_LEGACY_ENGINE
+#endif                   // !DISABLED_LEGACY_ENGINE
   int16_t fontinfo_id_;  // char font information
   int16_t fontinfo_id2_; // 2nd choice font information
   // Rating is the classifier distance weighted by the length of the outline

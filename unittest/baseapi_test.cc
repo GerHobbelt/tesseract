@@ -163,7 +163,7 @@ TEST_F(TesseractTest, HOCRContainsBaseline) {
 
 // Tests that Tesseract gets exactly the right answer on some page numbers.
 TEST_F(TesseractTest, AdaptToWordStrTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because TessBaseAPI::AdaptToWordStr is missing.
   GTEST_SKIP();
 #else

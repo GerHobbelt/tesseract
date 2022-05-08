@@ -152,7 +152,7 @@ public:
    */
   const char *GetStringVariable(const char *name) const;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
   /**
    * Print Tesseract fonts table to the given file.
@@ -669,7 +669,7 @@ public:
    */
   int *AllWordConfidences();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   /**
    * Applies the given word to the adaptive classifier if possible.
    * The word must be SPACE-DELIMITED UTF-8 - l i k e t h i s , so it can
@@ -681,7 +681,7 @@ public:
    * Returns false if adaption was not possible for some reason.
    */
   bool AdaptToWordStr(PageSegMode mode, const char *wordstr);
-#endif //  ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   /**
    * Free up recognition results and any stored image data, without actually

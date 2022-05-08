@@ -35,7 +35,7 @@
 #include "helpers.h" // for IntCastRounded, chomp_string
 #include "host.h"    // for MAX_PATH
 #include "imageio.h" // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "intfx.h" // for INT_FX_RESULT_STRUCT
 #endif
 #include "mutableiterator.h" // for MutableIterator
@@ -122,7 +122,7 @@ const char kUNLVSuspect = '^';
  */
 static const char *kOldVarsFile = "failed_vars.txt";
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /**
  * Filename used for input image file, from which to derive a name to search
  * for a possible UNLV zone file, if none is specified by SetInputName.
@@ -346,7 +346,7 @@ bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const 
   return ParamUtils::GetParamAsString(name, tesseract_->params(), val);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /** Print Tesseract fonts table to the given file. */
 void TessBaseAPI::PrintFontsTable(FILE *fp) const {
@@ -442,12 +442,12 @@ int TessBaseAPI::Init(const char *data, int data_size, const char *language, Ocr
   language_ = language;
   last_oem_requested_ = oem;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // For same language and datapath, just reset the adaptive classifier.
   if (reset_classifier) {
     tesseract_->ResetAdaptiveClassifier();
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   return 0;
 }
 
@@ -497,7 +497,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs)
 void TessBaseAPI::InitForAnalysePage() {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
   }
@@ -566,7 +566,7 @@ char *TessBaseAPI::TesseractRect(const unsigned char *imagedata, int bytes_per_p
   return GetUTF8Text();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /**
  * Call between pages or documents etc to free up memory and forget
  * adaptive data.
@@ -578,7 +578,7 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
   tesseract_->ResetAdaptiveClassifier();
   tesseract_->ResetDocumentDictionary();
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * Provide an image for Tesseract to recognize. Format is as
@@ -866,13 +866,13 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
     page_res_ = tesseract_->ApplyBoxes(input_file_.c_str(), true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
     page_res_ = tesseract_->ApplyBoxes(input_file_.c_str(), false, block_list_);
   } else
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   {
     page_res_ =
         new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
@@ -889,12 +889,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_make_boxes_from_boxes) {
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   int result = 0;
   if (tesseract_->interactive_display_mode) {
@@ -906,7 +906,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     delete page_res_;
     page_res_ = nullptr;
     return -1;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   } else if (tesseract_->tessedit_train_from_boxes) {
     std::string fontname;
     ExtractFontName(output_file_.c_str(), &fontname);
@@ -917,7 +917,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     tesseract_->recog_training_segmented(input_file_.c_str(), page_res_, monitor,
                                          training_output_file);
     fclose(training_output_file);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   } else {
     // Now run the main recognition.
     bool wait_for_text = true;
@@ -1112,14 +1112,14 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (result) {
     if (tesseract_->tessedit_train_from_boxes && !tesseract_->WriteTRFile(output_file_.c_str())) {
       tprintf("ERROR: Write of TR file failed: %s\n", output_file_.c_str());
       return false;
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   return result;
 }
 
@@ -1841,7 +1841,7 @@ char *TessBaseAPI::GetUNLVText() {
   return result;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * Detect the orientation of the input image and apparent script (alphabet).
@@ -1918,7 +1918,7 @@ char *TessBaseAPI::GetOsdText(int page_number) {
   return result;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /** Returns the average word confidence for Tesseract page result. */
 int TessBaseAPI::MeanTextConf() {
@@ -1968,7 +1968,7 @@ int *TessBaseAPI::AllWordConfidences() {
   return conf;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /**
  * Applies the given word to the adaptive classifier if possible.
  * The word must be SPACE-DELIMITED UTF-8 - l i k e t h i s , so it can
@@ -2039,7 +2039,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   SetPageSegMode(current_psm);
   return success;
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * Free up recognition results and any stored image data, without actually
@@ -2078,7 +2078,7 @@ void TessBaseAPI::End() {
     delete paragraph_models_;
     paragraph_models_ = nullptr;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (osd_tesseract_ == tesseract_) {
     osd_tesseract_ = nullptr;
   }
@@ -2086,7 +2086,7 @@ void TessBaseAPI::End() {
   osd_tesseract_ = nullptr;
   delete equ_detect_;
   equ_detect_ = nullptr;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   delete tesseract_;
   tesseract_ = nullptr;
   input_file_.clear();
@@ -2294,7 +2294,7 @@ int TessBaseAPI::FindLines() {
   }
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
   }
@@ -2310,7 +2310,7 @@ int TessBaseAPI::FindLines() {
 
   tesseract_->PrepareForPageseg();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (tesseract_->textord_equation_detect) {
     if (equ_detect_ == nullptr && !datapath_.empty()) {
       equ_detect_ = new EquationDetect(datapath_.c_str(), nullptr);
@@ -2321,11 +2321,11 @@ int TessBaseAPI::FindLines() {
       tesseract_->SetEquationDetect(equ_detect_);
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   Tesseract *osd_tess = osd_tesseract_;
   OSResults osr;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (PSM_OSD_ENABLED(tesseract_->tessedit_pageseg_mode) && osd_tess == nullptr) {
     if (strcmp(language_.c_str(), "osd") == 0) {
       osd_tess = tesseract_;
@@ -2351,7 +2351,7 @@ int TessBaseAPI::FindLines() {
       }
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   if (tesseract_->SegmentPage(input_file_.c_str(), block_list_, osd_tess, &osr) < 0) {
     return -1;
@@ -2426,7 +2426,7 @@ int TessBaseAPI::TextLength(int *blob_count) const {
   return total_length;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /**
  * Estimates the Orientation And Script of the image.
  * Returns true if the image was processed successfully.
@@ -2451,7 +2451,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
   }
   return orientation_and_script_detection(input_file_.c_str(), osr, tesseract_) > 0;
 }
-#endif // #ifndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 void TessBaseAPI::set_min_orientation_margin(double margin) {
   tesseract_->min_orientation_margin.set_value(margin);

@@ -31,7 +31,7 @@
 
 using namespace tesseract;
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 

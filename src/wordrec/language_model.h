@@ -243,7 +243,7 @@ protected:
   void UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_points, WERD_RES *word_res,
                         BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle);
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
   // Constructs a WERD_CHOICE by tracing parent pointers starting with
   // the given LanguageModelStateEntry. Returns the constructed word.

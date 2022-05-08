@@ -34,7 +34,7 @@
 #include "blread.h"
 #include "colfind.h"
 #include "debugpixa.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "equationdetect.h"
 #endif
 #include <tesseract/osdetect.h>
@@ -218,11 +218,11 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
       // blocks separately. For now combine with photomask_pix.
       photomask_pix |= musicmask_pix;
     }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (equ_detect_) {
       finder->SetEquationDetect(equ_detect_);
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
                                 photomask_pix, pix_thresholds_, pix_grey_, &pixa_debug_,
                                 &found_blocks, diacritic_blobs, to_blocks);
@@ -334,7 +334,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
     finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
     if (equ_detect_) {
       equ_detect_->LabelSpecialText(to_block);
@@ -405,7 +405,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     osd_blobs.shallow_clear();
     finder->CorrectOrientation(to_block, vertical_text, osd_orientation);
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   }
 
   return finder;

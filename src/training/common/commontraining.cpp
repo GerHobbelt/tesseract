@@ -17,7 +17,7 @@
 
 #include "commontraining.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "params.h"
 #  include "tprintf.h"
@@ -748,4 +748,4 @@ int NumberOfProtos(LIST ProtoList, bool CountSigProtos, bool CountInsigProtos) {
 
 } // namespace tesseract.
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

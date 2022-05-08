@@ -38,7 +38,7 @@ struct BlobData {
 };
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
   // Prepare all the blobs.

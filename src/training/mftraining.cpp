@@ -51,7 +51,7 @@
 #include "tesseract/capi_training_tools.h"
 
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 using namespace tesseract;
 

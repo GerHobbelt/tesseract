@@ -153,7 +153,7 @@ int EquationDetect::LabelSpecialText(TO_BLOCK *to_block) {
   return 0;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th) {
   ASSERT_HOST(blobnbox != nullptr);

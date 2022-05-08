@@ -171,7 +171,7 @@ const char *LTRResultIterator::WordFontAttributes(bool *is_bold, bool *is_italic
     *pointsize =
         scaled_yres_ > 0 ? static_cast<int>(row_height * kPointsPerInch / scaled_yres_ + 0.5) : 0;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     const FontInfo *font_info = it_->word()->fontinfo;
     if (font_info) {
       // Font information available.
@@ -183,7 +183,7 @@ const char *LTRResultIterator::WordFontAttributes(bool *is_bold, bool *is_italic
       *is_serif = font_info->is_serif();
       result = font_info->name;
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
     *is_smallcaps = it_->word()->small_caps;
   }
@@ -260,7 +260,7 @@ bool LTRResultIterator::HasBlamerInfo() const {
          it_->word()->blamer_bundle->HasDebugInfo();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 // Returns the pointer to ParamsTrainingBundle stored in the BlamerBundle
 // of the current word.
 const void *LTRResultIterator::GetParamsTrainingBundle() const {
@@ -268,7 +268,7 @@ const void *LTRResultIterator::GetParamsTrainingBundle() const {
              ? &(it_->word()->blamer_bundle->params_training_bundle())
              : nullptr;
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Returns the pointer to the string with blamer information for this word.
 // Assumes that the word's blamer_bundle is not nullptr.

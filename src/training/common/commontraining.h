@@ -49,7 +49,7 @@ static inline void CheckSharedLibraryVersion() {
 
 } // namespace tesseract
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #  include "cluster.h"
 #  include "featdefs.h"
@@ -182,6 +182,6 @@ void allocNormProtos();
 
 } // namespace tesseract
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
 
 #endif // TESSERACT_TRAINING_COMMONTRAINING_H_

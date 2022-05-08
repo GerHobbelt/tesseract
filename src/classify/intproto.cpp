@@ -449,7 +449,7 @@ void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS_STRUCT *Class) {
 } /* ConvertConfig */
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine converts Proto to integer format and
@@ -632,7 +632,7 @@ INT_TEMPLATES_STRUCT::~INT_TEMPLATES_STRUCT() {
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine reads a set of integer templates from
@@ -877,7 +877,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
 
 #ifndef GRAPHICS_DISABLED
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine sends the shapes in the global display
@@ -935,7 +935,7 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
 #endif    // GRAPHICS_DISABLED
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine writes Templates to File.  The format
@@ -1186,7 +1186,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 
 #ifndef GRAPHICS_DISABLED
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine prompts the user with Prompt and waits

@@ -28,7 +28,7 @@
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
 #endif
 #include "errcode.h"
@@ -59,7 +59,7 @@ public:
   std::string lang;
   std::string language_data_path_prefix;
   UNICHARSET unicharset;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   UnicharAmbigs unichar_ambigs;
 #endif
   std::string imagefile; // image file name

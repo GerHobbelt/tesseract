@@ -25,7 +25,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #define _USE_MATH_DEFINES // for M_PI
 #include "chop.h"

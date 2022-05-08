@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #include <cstdint>          // for INT32_MAX
 #include "blamer.h"         // for BlamerBundle

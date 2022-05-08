@@ -319,7 +319,7 @@ int os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX_CLIST *blo
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Processes a single blob to estimate script and orientation.
 // Return true if estimate of orientation and script satisfies stopping
@@ -464,7 +464,7 @@ ScriptDetector::ScriptDetector(const std::vector<int> *allowed_scripts, OSResult
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Score the given blob and return true if it is now sure of the script after
 // adding this blob.

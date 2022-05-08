@@ -32,7 +32,7 @@
 #include "control.h"               // for ACCEPTABLE_WERD_TYPE
 #include "debugpixa.h"             // for DebugPixa
 #include "devanagari_processing.h" // for ShiroRekhaSplitter
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h" // for GARBAGE_LEVEL
 #endif
 #include "genericvector.h"   // for PointerVector
@@ -71,9 +71,9 @@ class WERD_RES;
 class ColumnFinder;
 class DocumentData;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 class EquationDetect;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 class ImageData;
 class LSTMRecognizer;
@@ -194,10 +194,10 @@ public:
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Set the equation detector.
   void SetEquationDetect(EquationDetect *detector);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   // Simple accessors.
   const FCOORD &reskew() const {
@@ -622,7 +622,7 @@ public:
   float blob_noise_score(TBLOB *blob);
   void break_noisiest_blob_word(WERD_RES_LIST &words);
   //// docqual.cpp ////////////////////////////////////////////////////////
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   GARBAGE_LEVEL garbage_word(WERD_RES *word, bool ok_dict_word);
   bool potential_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_level, bool ok_dict_word);
   void tilde_crunch(PAGE_RES_IT &page_res_it);
@@ -631,7 +631,7 @@ public:
       PAGE_RES_IT &page_res_it);
   void doc_and_block_rejection( // reject big chunks
       PAGE_RES_IT &page_res_it, bool good_quality_doc);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   void quality_based_rejection(PAGE_RES_IT &page_res_it, bool good_quality_doc);
 #endif
   void convert_bad_unlv_chs(WERD_RES *word_res);
@@ -641,7 +641,7 @@ public:
   void unrej_good_chs(WERD_RES *word);
   int16_t count_outline_errs(char c, int16_t outline_count);
   int16_t word_outline_errs(WERD_RES *word);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   bool terrible_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_level);
 #endif
   CRUNCH_MODE word_deletable(WERD_RES *word, int16_t &delete_mode);
@@ -653,7 +653,7 @@ public:
                               TBOX &selection_box,
                               bool (tesseract::Tesseract::*word_processor)(PAGE_RES_IT *pr_it));
   //// tessbox.cpp ///////////////////////////////////////////////////////
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   void tess_add_doc_word(      // test acceptability
       WERD_CHOICE *word_choice // after context
   );
@@ -964,9 +964,9 @@ public:
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(textord_equation_detect);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(textord_tabfind_vertical_text);
   BOOL_VAR_H(textord_tabfind_force_vertical_text);
   double_VAR_H(textord_tabfind_vertical_text_ratio);
@@ -1032,10 +1032,10 @@ private:
   Tesseract *most_recently_used_;
   // The size of the font table, ie max possible font id + 1.
   int font_table_size_;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Equation detector. Note: this pointer is NOT owned by the class.
   EquationDetect *equ_detect_;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   // LSTM recognizer, if available.
   LSTMRecognizer *lstm_recognizer_;
   // Output "page" number (actually line number) using TrainLineRecognizer.

@@ -207,7 +207,7 @@ static void PrintHelpForPSM() {
       " 13    Raw line. Treat the image as a single text line,\n"
       "       bypassing hacks that are Tesseract-specific.\n";
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   const char *disabled_osd_msg = "\nNOTE: The OSD modes are currently disabled.\n";
   tprintf("%s%s", msg, disabled_osd_msg);
 #else
@@ -215,7 +215,7 @@ static void PrintHelpForPSM() {
 #endif
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static void PrintHelpForOEM() {
   const char *msg =
       "OCR Engine modes:\n"
@@ -226,7 +226,7 @@ static void PrintHelpForOEM() {
 
   tprintf("%s", msg);
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 static const char* basename(const char* path)
 {
@@ -245,14 +245,14 @@ static void PrintHelpExtra(const char *program) {
   tprintf(
       "Usage:\n"
       "  %s --help | --help-extra | --help-psm | "
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       "--help-oem | "
 #endif
       "--version\n"
       "  %s --list-langs [--tessdata-dir PATH]\n"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       "  %s --print-fonts-table [options...] [configfile...]\n"
-#endif  // ndef DISABLED_LEGACY_ENGINE
+#endif  // !DISABLED_LEGACY_ENGINE
       "  %s --print-parameters [options...] [configfile...]\n"
       "  %s imagename|imagelist|stdin outputbase|stdout [options...] "
       "[configfile...]\n"
@@ -268,19 +268,19 @@ static void PrintHelpExtra(const char *program) {
       "  -c VAR=VALUE          Set value for config variables.\n"
       "                        Multiple -c arguments are allowed.\n"
       "  --psm NUM             Specify page segmentation mode.\n"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       "  --oem NUM             Specify OCR Engine mode.\n"
 #endif
       "NOTE: These options must occur before any configfile.\n"
       "\n",
       program, program, program, program
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       , program
-#endif  // ndef DISABLED_LEGACY_ENGINE
+#endif  // !DISABLED_LEGACY_ENGINE
   );
 
   PrintHelpForPSM();
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   tprintf("\n");
   PrintHelpForOEM();
 #endif
@@ -291,14 +291,14 @@ static void PrintHelpExtra(const char *program) {
       "  -h, --help            Show minimal help message.\n"
       "  --help-extra          Show extra help for advanced users.\n"
       "  --help-psm            Show page segmentation modes.\n"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       "  --help-oem            Show OCR Engine modes.\n"
 #endif
       "  -v, --version         Show version information.\n"
       "  --list-langs          List available languages for tesseract engine.\n"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       "  --print-fonts-table   Print tesseract fonts table.\n"
-#endif  // ndef DISABLED_LEGACY_ENGINE
+#endif  // !DISABLED_LEGACY_ENGINE
       "  --print-parameters    Print tesseract parameters.\n");
 }
 
@@ -492,7 +492,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
         if (i < argc) {
           if (strcmp(argv[i], "extra") == 0) {
             PrintHelpExtra(argv[0]);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
           } else if ((strcmp(argv[i], "oem") == 0)) {
             PrintHelpForOEM();
 #endif
@@ -527,7 +527,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if ((strcmp(argv[i], "--help-psm") == 0)) {
       PrintHelpForPSM();
       noocr = true;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     } else if ((strcmp(argv[i], "--help-oem") == 0)) {
       PrintHelpForOEM();
       noocr = true;
@@ -584,7 +584,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       *pagesegmode = static_cast<tesseract::PageSegMode>(atoi(argv[i + 1]));
       ++i;
     } else if (strcmp(argv[i], "--oem") == 0 && i + 1 < argc) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
       int oem = atoi(argv[i + 1]);
       if (!checkArgValues(oem, "OEM", tesseract::OEM_COUNT)) {
         return false;
@@ -595,11 +595,11 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if (strcmp(argv[i], "--print-parameters") == 0) {
       noocr = true;
       *print_parameters = true;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     } else if (strcmp(argv[i], "--print-fonts-table") == 0) {
       noocr = true;
       *print_fonts_table = true;
-#endif  // ndef DISABLED_LEGACY_ENGINE
+#endif  // !DISABLED_LEGACY_ENGINE
     } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
       // handled properly after api init
       ++i;
@@ -648,9 +648,9 @@ static void PreloadRenderers(tesseract::TessBaseAPI &api,
                              std::vector<std::unique_ptr<TessResultRenderer>> &renderers,
                              tesseract::PageSegMode pagesegmode, const char *outputbase) {
   if (pagesegmode == tesseract::PSM_OSD_ONLY) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     renderers.push_back(std::make_unique<tesseract::TessOsdRenderer>(outputbase));
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   } else {
     bool error = false;
     bool b;
@@ -821,7 +821,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   int ret_val = EXIT_SUCCESS;
 
   tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   auto enginemode = tesseract::OEM_LSTM_ONLY;
 #else
   tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
@@ -902,7 +902,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     return EXIT_SUCCESS;
   }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (print_fonts_table) {
     FILE* fout = stdout;
     fprintf(stdout, "Tesseract fonts table:\n");
@@ -910,7 +910,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     api.End();
     return EXIT_SUCCESS;
   }
-#endif  // ndef DISABLED_LEGACY_ENGINE
+#endif  // !DISABLED_LEGACY_ENGINE
 
   FixPageSegMode(api, pagesegmode);
 
@@ -963,7 +963,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
                           (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
                           (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   auto cur_psm = api.GetPageSegMode();
   auto osd_warning = std::string("");
   if (cur_psm == tesseract::PSM_OSD_ONLY) {
@@ -985,7 +985,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         "currently disabled. "
         "Using PSM 11 (Sparse text) instead.\n\n";
   }
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;
 
@@ -996,7 +996,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   }
 
   if (!renderers.empty()) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
     if (!osd_warning.empty()) {
       tprintf("%s", osd_warning.c_str());
     }

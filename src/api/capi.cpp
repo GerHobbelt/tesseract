@@ -300,7 +300,7 @@ char *TessBaseAPIRect(TessBaseAPI *handle, const unsigned char *imagedata, int b
                                height);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI *handle) {
   handle->ClearAdaptiveClassifier();
 }
@@ -331,7 +331,7 @@ void TessBaseAPIClearPersistentCache(TessBaseAPI * /*handle*/) {
   TessBaseAPI::ClearPersistentCache();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 BOOL TessBaseAPIDetectOrientationScript(TessBaseAPI *handle, int *orient_deg, float *orient_conf,
                                         const char **script_name, float *script_conf) {
@@ -456,7 +456,7 @@ int *TessBaseAPIAllWordConfidences(TessBaseAPI *handle) {
   return handle->AllWordConfidences();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI *handle, TessPageSegMode mode, const char *wordstr) {
   return static_cast<int>(handle->AdaptToWordStr(mode, wordstr));
 }

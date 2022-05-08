@@ -17,7 +17,7 @@
 #ifndef INTMATCHER_H
 #define INTMATCHER_H
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 #include "intproto.h"
 #include "params.h"

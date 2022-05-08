@@ -168,7 +168,7 @@ public:
                                 const FEATURE_DEFS_STRUCT &feature_defs, int shape_id,
                                 int *num_samples);
 
-  #if !defined(DISABLED_LEGACY_ENGINE)
+  #if !DISABLED_LEGACY_ENGINE
 
   // Writes the given float_classes (produced by SetupForFloat2Int) as inttemp
   // to the given inttemp_file, and the corresponding pffmtable.
@@ -194,7 +194,7 @@ public:
   // two given UTF8 grapheme strings.
   void DebugCanonical(const char *unichar_str1, const char *unichar_str2);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #ifndef GRAPHICS_DISABLED
 
   // Debugging for cloud/canonical features.

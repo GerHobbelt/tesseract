@@ -29,7 +29,7 @@
 #include "ccnontextdetect.h"
 #include "colpartition.h"
 #include "colpartitionset.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "equationdetectbase.h"
 #endif
 #include "blobbox.h"
@@ -413,7 +413,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   }
 #endif
   if (!PSM_SPARSE(pageseg_mode)) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (equation_detect_) {
       equation_detect_->FindEquationParts(&part_grid_, best_columns_);
     }
@@ -510,7 +510,7 @@ void ColumnFinder::GetDeskewVectors(FCOORD *deskew, FCOORD *reskew) {
   deskew->set_y(-deskew->y());
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 void ColumnFinder::SetEquationDetect(EquationDetectBase *detect) {
   equation_detect_ = detect;
 }

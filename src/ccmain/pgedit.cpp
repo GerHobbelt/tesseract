@@ -614,11 +614,11 @@ void Tesseract::process_image_event( // action in image win
           break; // ignore up event
 
         case RECOG_WERDS:
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
           image_win->AddMessage("Recogging selected words");
           this->process_selected_words(current_page_res, selection_box,
                                        &Tesseract::recog_interactive);
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
           break;
         case RECOG_PSEUDO:
           image_win->AddMessage("Recogging selected blobs");
@@ -643,7 +643,7 @@ void Tesseract::process_image_event( // action in image win
  * Process the whole image, but load word_config_ for the selected word(s).
  */
 void Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
   ResetAdaptiveClassifier();
 #  endif
   recog_all_words(page_res, nullptr, &selection_box, word_config_.c_str(), 0);
@@ -713,7 +713,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   float shift; // from bot left
 
   if (color_mode != CM_RAINBOW && word_res->box_word != nullptr) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
     BoxWord *box_word = word_res->box_word;
     WERD_CHOICE *best_choice = word_res->best_choice;
     int length = box_word->length();
@@ -776,7 +776,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     return true;
 #  else
     return false;
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
   }
   /*
   Note the double coercions of(COLOUR)((int32_t)editor_image_word_bb_color)
@@ -916,7 +916,7 @@ bool Tesseract::word_set_display(PAGE_RES_IT *pr_it) {
 // page_res is non-const because the iterator doesn't know if you are going
 // to change the items it points to! Really a const here though.
 void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_box) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
   PAGE_RES_IT *it = make_pseudo_word(page_res, selection_box);
   if (it != nullptr) {
     WERD_RES *word_res = it->word();
@@ -949,7 +949,7 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     it->DeleteCurrentWord();
     delete it;
   }
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
 }
 
 #endif // !GRAPHICS_DISABLED

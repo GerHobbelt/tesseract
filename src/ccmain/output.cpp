@@ -21,7 +21,7 @@
 #include "control.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h"
 #  include "reject.h"
 #endif

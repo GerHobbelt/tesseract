@@ -21,7 +21,7 @@
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB
 #include "errcode.h" // for ASSERT_HOST
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 #  include "lm_pain_points.h" // for LMPainPoints
 #endif
 #include "matrix.h"     // for MATRIX
@@ -397,9 +397,9 @@ void BlamerBundle::BlameClassifierOrLangModel(const WERD_RES *word, const UNICHA
 
 // Sets up the correct_segmentation_* to mark the correct bounding boxes.
 void BlamerBundle::SetupCorrectSegmentation(const TWERD *word, bool debug) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   params_training_bundle_.StartHypothesisList();
-#endif //  ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   if (incorrect_result_reason_ != IRR_CORRECT || !truth_has_char_boxes_) {
     return; // Nothing to do here.
   }
@@ -463,7 +463,7 @@ bool BlamerBundle::GuidedSegsearchNeeded(const WERD_CHOICE *best_choice) const {
          truth_has_char_boxes_ && !ChoiceIsCorrect(best_choice);
 }
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 // Setup ready to guide the segmentation search to the correct segmentation.
 void BlamerBundle::InitForSegSearch(const WERD_CHOICE *best_choice, MATRIX *ratings,
                                     UNICHAR_ID wildcard_id, bool debug, std::string &debug_str,
@@ -492,7 +492,7 @@ void BlamerBundle::InitForSegSearch(const WERD_CHOICE *best_choice, MATRIX *rati
     }
   } // end for blamer_bundle->correct_segmentation_cols/rows
 }
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Returns true if the guided segsearch is in progress.
 bool BlamerBundle::GuidedSegsearchStillGoing() const {

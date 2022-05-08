@@ -121,7 +121,7 @@ int16_t Tesseract::count_outline_errs(char c, int16_t outline_count) {
 
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::quality_based_rejection(PAGE_RES_IT &page_res_it, bool good_quality_doc) {
   if ((tessedit_good_quality_unrej && good_quality_doc)) {
@@ -380,7 +380,7 @@ void reject_whole_page(PAGE_RES_IT &page_res_it) {
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
   WERD_RES *word;
@@ -630,7 +630,7 @@ void Tesseract::convert_bad_unlv_chs(WERD_RES *word_res) {
 }
 
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
   enum STATES {

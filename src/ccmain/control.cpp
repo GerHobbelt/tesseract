@@ -31,7 +31,7 @@
 #endif
 
 #include "control.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h"
 #  include "drawfx.h"
 #  include "fixspace.h"
@@ -40,7 +40,7 @@
 #include "lstmrecognizer.h"
 #include "output.h"
 #include "pageres.h" // for WERD_RES, PAGE_RES_IT, PAGE_RES, BLO...
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "reject.h"
 #endif
 #include "sorthelper.h"
@@ -49,11 +49,11 @@
 #include "werdit.h"
 
 const char *const kBackUpConfigFile = "tempconfigdata.config";
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
 // original x-height
 const double kMinRefitXHeightFraction = 0.5;
-#endif // ! DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * Make a word from the selected blobs and run Tess on them.
@@ -82,13 +82,13 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
   SetupWordPassN(2, &word_data);
   // LSTM doesn't run on pass2, but we want to run pass2 for tesseract.
   if (lstm_recognizer_ == nullptr) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     classify_word_and_language(2, pr_it, &word_data);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   } else {
     classify_word_and_language(1, pr_it, &word_data);
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   if (tessedit_debug_quality_metrics) {
     int16_t char_qual;
     int16_t good_char_qual;
@@ -100,7 +100,7 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
         word_res->reject_map.length(), word_blob_quality(word_res), word_outline_errs(word_res),
         char_qual, good_char_qual);
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   return true;
 }
 
@@ -251,12 +251,12 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
     }
     ASSERT_HOST(pr_it->word() != nullptr);
     bool make_next_word_fuzzy = false;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (!AnyLSTMLang() && ReassignDiacritics(pass_n, pr_it, &make_next_word_fuzzy)) {
       // Needs to be setup again to see the new outlines in the chopped_word.
       SetupWordPassN(pass_n, word);
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
@@ -306,7 +306,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     page_res_it.restart_page();
     // ****************** Pass 1 *******************
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     // If the adaptive classifier is full switch to one we prepared earlier,
     // ie on the previous page. If the current adaptive classifier is non-empty,
     // prepare a backup starting at this page, in case it fills up. Do all this
@@ -325,17 +325,17 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
       }
     }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
     // Set up all words ready for recognition, so that if parallelism is on
     // all the input and output classes are ready to run the classifier.
     std::vector<WordData> words;
     SetupAllWordsPassN(1, target_word_box, word_config, page_res, &words);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (tessedit_parallelize) {
       PrerecAllWordsPar(words);
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
     stats_.word_count = words.size();
 
@@ -376,7 +376,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     return true;
   }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
   // ****************** Pass 2 *******************
   if (tessedit_tess_adaption_mode != 0x0 && !tessedit_test_adaption && AnyTessLang()) {
@@ -423,20 +423,20 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     script_pos_pass(page_res);
   }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   // Write results pass.
   // This is now redundant, but retained commented so show how to obtain
   // bounding boxes and style information.
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // changed by jetsoft
   // needed for dll to output memory structure
   if ((dopasses == 0 || dopasses == 2) && (monitor || tessedit_write_unlv)) {
     output_pass(page_res_it, target_word_box);
   }
 // end jetsoft
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   const auto pageseg_mode = static_cast<PageSegMode>(static_cast<int>(tessedit_pageseg_mode));
   textord_.CleanupSingleRowResult(pageseg_mode, page_res);
@@ -459,7 +459,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
   return true;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
   PAGE_RES_IT word_it(page_res);
@@ -686,7 +686,7 @@ void Tesseract::rejection_passes(PAGE_RES *page_res, ETEXT_DESC *monitor,
   }
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 void Tesseract::blamer_pass(PAGE_RES *page_res) {
   if (!wordrec_run_blamer) {
@@ -914,7 +914,7 @@ static bool WordsAcceptable(const PointerVector<WERD_RES> &words) {
   return true;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Moves good-looking "noise"/diacritics from the reject list to the main
 // blob list on the current word. Returns true if anything was done, and
@@ -1297,7 +1297,7 @@ float Tesseract::ClassifyBlobAsWord(int pass_n, PAGE_RES_IT *pr_it, C_BLOB *blob
   return cert;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Generic function for classifying a word. Can be used either for pass1 or
 // pass2 according to the function passed to recognizer.
@@ -1308,12 +1308,12 @@ float Tesseract::ClassifyBlobAsWord(int pass_n, PAGE_RES_IT *pr_it, C_BLOB *blob
 // If recognition was not successful, tries all available languages until
 // it gets a successful result or runs out of languages. Keeps the best result.
 void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordData *word_data) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   WordRecognizer recognizer = &Tesseract::classify_word_pass1;
 #else
   WordRecognizer recognizer =
       pass_n == 1 ? &Tesseract::classify_word_pass1 : &Tesseract::classify_word_pass2;
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
 
   // Best result so far.
   PointerVector<WERD_RES> best_words;
@@ -1390,12 +1390,12 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
   BLOCK *block = word_data.block;
   prev_word_best_choice_ =
       word_data.prev_word != nullptr ? word_data.prev_word->word->best_choice : nullptr;
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
 #else
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY ||
       tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED) {
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
     if (!(*in_word)->odd_size || tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
       LSTMRecognizeWord(*block, row, *in_word, out_words);
       if (!out_words->empty()) {
@@ -1408,15 +1408,15 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
       return;
     }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     // Fall back to tesseract for failed words or odd words.
     (*in_word)->SetupForRecognition(unicharset, this, BestPix(), OEM_TESSERACT_ONLY, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   WERD_RES *word = *in_word;
   match_word_pass_n(1, word, row, block);
   if (!word->tess_failed && !word->word->flag(W_REP_CHAR)) {
@@ -1437,7 +1437,7 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
       tess_add_doc_word(word->best_choice);
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
 // Helper to report the result of the xheight fix.
@@ -1454,7 +1454,7 @@ void Tesseract::ReportXhtFixResult(bool accept_new_word, float new_x_ht, WERD_RE
           accept_new_word ? "ACCEPTED" : "");
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Run the x-height fix-up, based on min/max top/bottom information in
 // unicharset.
@@ -1532,7 +1532,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
   return false;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * classify_word_pass2
@@ -1546,7 +1546,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
     return;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   ROW *row = word_data.row;
   BLOCK *block = word_data.block;
   WERD_RES *word = *in_word;
@@ -1585,10 +1585,10 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
   }
 #  endif
   check_debug_pt(word, 50);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * match_word_pass2
@@ -1626,7 +1626,7 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
   ASSERT_HOST(word->raw_choice != nullptr);
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Helper to return the best rated BLOB_CHOICE in the whole word that matches
 // the given char_id, or nullptr if none can be found.
@@ -1907,7 +1907,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
  *
  * Find the modal font and remove from the stats.
  */
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static void find_modal_font( // good chars in word
     STATS *fonts,            // font stats
     int16_t *font_out,       // output font
@@ -1927,7 +1927,7 @@ static void find_modal_font( // good chars in word
     *font_count = 0;
   }
 }
-#endif // ! DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * set_word_fonts
@@ -1942,7 +1942,7 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   }
   ASSERT_HOST(word->best_choice != nullptr);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   const int fontinfo_size = fontinfo_table_.size();
   if (fontinfo_size == 0) {
     return;
@@ -2013,10 +2013,10 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
       }
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /**
  * font_recognition_pass
  *
@@ -2071,7 +2071,7 @@ void Tesseract::font_recognition_pass(PAGE_RES *page_res) {
     }
   }
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // If a word has multiple alternates check if the best choice is in the
 // dictionary. If not, replace it with an alternate that exists in the

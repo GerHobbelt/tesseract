@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 #include "language_model.h"
 #include <tesseract/unichar.h>       // for UNICHAR_ID, INVALID_UNICHAR_ID

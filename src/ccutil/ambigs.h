@@ -24,7 +24,7 @@
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 #  include <tesseract/unichar.h>
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
@@ -231,6 +231,6 @@ private:
 
 } // namespace tesseract
 
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
 
 #endif // TESSERACT_CCUTIL_AMBIGS_H_

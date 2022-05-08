@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-// #if !defined(DISABLED_LEGACY_ENGINE)
+// #if !DISABLED_LEGACY_ENGINE
 TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv);
 TESS_API int tesseract_classifier_tester_main(int argc, const char** argv);
 TESS_API int tesseract_cn_training_main(int argc, const char** argv);
