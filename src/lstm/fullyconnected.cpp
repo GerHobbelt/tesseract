@@ -351,6 +351,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
 #if defined(THREADPOOL)
   std::atomic<unsigned> num_threads = 0;
   if (needs_to_backprop_) {
+    std::vector<NetworkScratch::FloatVec> temp_backprops(kNumThreads);
     pool.parallelize_loop(0, width,
       [this, &back_deltas, &fwd_deltas, &temp_backprops, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
       // Thread-local pointer to temporary storage.
