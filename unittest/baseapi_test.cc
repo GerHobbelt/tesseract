@@ -47,7 +47,7 @@ class FriendlyTessBaseAPI : public tesseract::TessBaseAPI {
 std::string GetCleanedTextResult(tesseract::TessBaseAPI *tess, Image pix) {
   tess->SetImage(pix);
   char *result = tess->GetUTF8Text();
-  std::string ocr_result = result;
+  std::string ocr_result = result ? result : "";
   delete[] result;
   trim(ocr_result);
   return ocr_result;
@@ -328,7 +328,7 @@ TEST(TesseractInstanceTest, TestMultipleTessInstances) {
     SCOPED_TRACE(tracestring);
     std::string path = file::JoinPath(TESTING_DIR, image_files[i]);
     pix[i] = pixRead(path.c_str());
-    QCHECK(pix[i] != nullptr) << "Could not read " << path;
+    QCHECK(pix[i] != nullptr) << "Could not read " << path << "\n";
 
     tesseract::TessBaseAPI tess;
     EXPECT_EQ(0, tess.Init(kTessdataPath.c_str(), langs[i]));
