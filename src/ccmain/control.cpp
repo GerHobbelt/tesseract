@@ -407,7 +407,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     rejection_passes(page_res, monitor, target_word_box, word_config);
 
     // ****************** Pass 8 *******************
-    font_recognition_pass(page_res);
+    // font_recognition_pass(page_res);
 
     // ****************** Pass 9 *******************
     // Check the correctness of the final results.
@@ -1612,7 +1612,9 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
       make_reject_map(word, row, pass_n);
     }
   }
-  set_word_fonts(word);
+  if(pass_n == 1){
+      set_word_fonts(word);
+  }
 
   ASSERT_HOST(word->raw_choice != nullptr);
 }

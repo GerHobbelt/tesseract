@@ -482,6 +482,7 @@ private:
 
 public:
   bool EnableLearning = true;
+  bool UseLearning = true;
 };
 
 } // namespace tesseract
