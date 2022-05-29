@@ -1942,8 +1942,10 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   }
   if (tessedit_font_id > 0) {
     if (tessedit_font_id >= fontinfo_size) {
-      tprintf("Error, invalid font ID provided: must be below %d.\n"
-              "Falling back to font auto-detection.\n", fontinfo_size);
+      tprintf(
+          "Error, invalid font ID provided: must be below %d.\n"
+          "Falling back to font auto-detection.\n",
+          fontinfo_size);
     } else {
       word->fontinfo = &fontinfo_table_.at(tessedit_font_id);
       word->fontinfo2 = nullptr;
@@ -1956,19 +1958,18 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
 
   // Compute the font scores for the word
   if (tessedit_debug_fonts) {
-    tprintf("Examining fonts in %s\n", word->best_choice->debug_string().c_str());
+    tprintf("Examining fonts in %s\n",
+            word->best_choice->debug_string().c_str());
   }
   for (unsigned b = 0; b < word->best_choice->length(); ++b) {
     const BLOB_CHOICE *choice = word->GetBlobChoice(b);
-    tprintf("Unichar: %s\n", unicharset.id_to_unichar(choice->unichar_id()));
-    if (choice == nullptr || unicharset.get_chartype(choice->unichar_id()) == 'p') {
+    if (choice == nullptr) {
       continue;
     }
     auto &fonts = choice->fonts();
     for (auto &f : fonts) {
       const int fontinfo_id = f.fontinfo_id;
       if (0 <= fontinfo_id && fontinfo_id < fontinfo_size) {
-        tprintf("Font %d, score = %d\n", f.fontinfo_id, f.score);
         font_total_score[fontinfo_id] += f.score;
       }
     }
@@ -1978,7 +1979,8 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   int16_t font_id1 = -1, font_id2 = -1;
   for (int f = 0; f < fontinfo_size; ++f) {
     if (tessedit_debug_fonts && font_total_score[f] > 0) {
-      tprintf("Font %s, total score = %d\n", fontinfo_table_.at(f).name, font_total_score[f]);
+      tprintf("Font %s, total score = %d\n", fontinfo_table_.at(f).name,
+              font_total_score[f]);
     }
     if (font_total_score[f] > score1) {
       score2 = score1;
@@ -2004,7 +2006,8 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
                 word->fontinfo_id_count, fontinfo_table_.at(font_id2).name,
                 word->fontinfo_id2_count);
       } else {
-        tprintf("Word modal font=%s, score=%d. No 2nd choice\n", fi.name, word->fontinfo_id_count);
+        tprintf("Word modal font=%s, score=%d. No 2nd choice\n", fi.name,
+                word->fontinfo_id_count);
       }
     }
   }
@@ -2082,12 +2085,17 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
   word = page_res_it.word();
   word_next = page_res_it.word();
 
+  // This line has some side effect that prevents "Segmentation fault (core dumped)" in certain cases. 
+  // Do not understand why that happens. 
+  word->best_choice->debug_string().c_str();
+
   // Short words (defined here as 1-2 chars) are often misidentified as italic
   // since just 1 letter being misidentified as italic can cause the entire word
   // to be. Therefore, this loop only allows 1-2 character words to be italic if
   // the previous word or next word are also italic. Otherwise the font is
   // changed to that of the previous word, next word, or to nullptr.
   while (word_next != nullptr) {
+
     page_res_it.forward();
     word_next = page_res_it.word();
 
@@ -2105,7 +2113,7 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
                                word_next->fontinfo != nullptr &&
                                word_next->fontinfo->is_italic();
       if(!(italic_prev || italic_next)){
-        if (word_prev != nullptr && word_prev->fontinfo != nullptr){
+        if (word_prev != nullptr && word_prev->fontinfo != nullptr) {
           word->fontinfo = word_prev->fontinfo;
           word->fontinfo_id_count = 1;
         } else if (word_next != nullptr && word_next->fontinfo != nullptr) {
