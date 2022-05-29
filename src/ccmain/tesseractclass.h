@@ -457,6 +457,7 @@ public:
   // Set fonts of this word.
   void set_word_fonts(WERD_RES *word);
   void font_recognition_pass(PAGE_RES *page_res);
+  void italic_recognition_pass(PAGE_RES *page_res);
   void dictionary_correction_pass(PAGE_RES *page_res);
   bool check_debug_pt(WERD_RES *word, int location);
 

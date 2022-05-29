@@ -408,6 +408,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
 
     // ****************** Pass 8 *******************
     // font_recognition_pass(page_res);
+    italic_recognition_pass(page_res);
 
     // ****************** Pass 9 *******************
     // Check the correctness of the final results.
@@ -1959,13 +1960,15 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   }
   for (unsigned b = 0; b < word->best_choice->length(); ++b) {
     const BLOB_CHOICE *choice = word->GetBlobChoice(b);
-    if (choice == nullptr) {
+    tprintf("Unichar: %s\n", unicharset.id_to_unichar(choice->unichar_id()));
+    if (choice == nullptr || unicharset.get_chartype(choice->unichar_id()) == 'p') {
       continue;
     }
     auto &fonts = choice->fonts();
     for (auto &f : fonts) {
       const int fontinfo_id = f.fontinfo_id;
       if (0 <= fontinfo_id && fontinfo_id < fontinfo_size) {
+        tprintf("Font %d, score = %d\n", f.fontinfo_id, f.score);
         font_total_score[fontinfo_id] += f.score;
       }
     }
@@ -2063,6 +2066,63 @@ void Tesseract::font_recognition_pass(PAGE_RES *page_res) {
     }
   }
 }
+
+/**
+ * italic_recognition_pass
+ *
+ * Changes font for words that were (likely) misidentified as italic
+ */
+void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
+  PAGE_RES_IT page_res_it(page_res);
+  WERD_RES *word;                       // current word
+  WERD_RES *word_next;                       // next word
+  WERD_RES *word_prev;                       // previous word
+
+  page_res_it.restart_page();
+  word = page_res_it.word();
+  word_next = page_res_it.word();
+
+  // Short words (defined here as 1-2 chars) are often misidentified as italic
+  // since just 1 letter being misidentified as italic can cause the entire word
+  // to be. Therefore, this loop only allows 1-2 character words to be italic if
+  // the previous word or next word are also italic. Otherwise the font is
+  // changed to that of the previous word, next word, or to nullptr.
+  while (word_next != nullptr) {
+    page_res_it.forward();
+    word_next = page_res_it.word();
+
+    // TODO: This should really only consider the # of non-punctuation characters,
+    // as now those are the only chars that contribute to font identification. 
+    const int length = word->best_choice->length();
+    const bool italic = word->fontinfo && word->fontinfo->is_italic();
+    const bool whitelist = word->best_choice->unichar_string().c_str() == "Id";
+
+    if (length < 3 && italic && !whitelist) {
+      const bool italic_prev = word_prev != nullptr &&
+                               word_prev->fontinfo != nullptr &&
+                               word_prev->fontinfo->is_italic();
+      const bool italic_next = word_next != nullptr &&
+                               word_next->fontinfo != nullptr &&
+                               word_next->fontinfo->is_italic();
+      if(!(italic_prev || italic_next)){
+        if (word_prev != nullptr && word_prev->fontinfo != nullptr){
+          word->fontinfo = word_prev->fontinfo;
+          word->fontinfo_id_count = 1;
+        } else if (word_next != nullptr && word_next->fontinfo != nullptr) {
+          word->fontinfo = word_next->fontinfo;
+          word->fontinfo_id_count = 1;
+        } else {
+          word->fontinfo = nullptr;
+          word->fontinfo_id_count = 0;
+        }
+      }
+    }
+
+    word_prev = word;
+    word = word_next;
+  }
+}
+
 #endif // ndef DISABLED_LEGACY_ENGINE
 
 // If a word has multiple alternates check if the best choice is in the
