@@ -2080,20 +2080,19 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
   WERD_RES *word;                       // current word
   WERD_RES *word_next;                       // next word
   WERD_RES *word_prev;                       // previous word
+  bool italic_prev = false;
+  bool italic = false;
+  bool italic_next = false;
 
   page_res_it.restart_page();
   word = page_res_it.word();
+  italic = word != nullptr && word->fontinfo && word->fontinfo->is_italic();
   word_next = page_res_it.word();
 
   // This line has some side effect that prevents "Segmentation fault (core dumped)" in certain cases. 
   // Do not understand why that happens. 
   word->best_choice->debug_string().c_str();
 
-  // Short words (defined here as 1-2 chars) are often misidentified as italic
-  // since just 1 letter being misidentified as italic can cause the entire word
-  // to be. Therefore, this loop only allows 1-2 character words to be italic if
-  // the previous word or next word are also italic. Otherwise the font is
-  // changed to that of the previous word, next word, or to nullptr.
   while (word_next != nullptr) {
 
     page_res_it.forward();
@@ -2102,17 +2101,19 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
     // TODO: This should really only consider the # of non-punctuation characters,
     // as now those are the only chars that contribute to font identification. 
     const int length = word->best_choice->length();
-    const bool italic = word->fontinfo && word->fontinfo->is_italic();
-    const bool whitelist = word->best_choice->unichar_string().c_str() == "Id";
+    italic_next = word_next != nullptr && word_next->fontinfo &&
+                  word_next->fontinfo->is_italic();
 
-    if (length < 3 && italic && !whitelist) {
-      const bool italic_prev = word_prev != nullptr &&
-                               word_prev->fontinfo != nullptr &&
-                               word_prev->fontinfo->is_italic();
-      const bool italic_next = word_next != nullptr &&
-                               word_next->fontinfo != nullptr &&
-                               word_next->fontinfo->is_italic();
-      if(!(italic_prev || italic_next)){
+    // Short words (defined here as 1-2 chars) are often misidentified as italic
+    // since just 1 letter being misidentified as italic can cause the entire
+    // word to be misidentified. 
+    if (length < 3){
+
+      // If a short word is identified as italic but the previous and next word are not,
+      // the short word is presumed to actually be non-italic (outside of whitelist).
+      const bool whitelist =
+          word->best_choice->unichar_string().c_str() == "Id";
+      if (italic && !whitelist && (italic_prev || italic_next)) {
         if (word_prev != nullptr && word_prev->fontinfo != nullptr) {
           word->fontinfo = word_prev->fontinfo;
           word->fontinfo_id_count = 1;
@@ -2123,11 +2124,20 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
           word->fontinfo = nullptr;
           word->fontinfo_id_count = 0;
         }
+      
+      // If a short word is not identified as italic but the previous and next word are,
+      // the short word is presumed to actually be italic. 
+      } else if (!italic && italic_prev && italic_next){
+        word->fontinfo = word_prev->fontinfo;
+        word->fontinfo_id_count = 1;
       }
     }
 
+
     word_prev = word;
+    italic_prev = italic;
     word = word_next;
+    italic = italic_next;
   }
 }
 
