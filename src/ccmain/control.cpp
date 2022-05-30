@@ -2113,7 +2113,7 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
       // the short word is presumed to actually be non-italic (outside of whitelist).
       const bool whitelist =
           word->best_choice->unichar_string().c_str() == "Id";
-      if (italic && !whitelist && (italic_prev || italic_next)) {
+      if (italic && !whitelist && !italic_prev && !italic_next) {
         if (word_prev != nullptr && word_prev->fontinfo != nullptr) {
           word->fontinfo = word_prev->fontinfo;
           word->fontinfo_id_count = 1;
@@ -2126,8 +2126,8 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
         }
       
       // If a short word is not identified as italic but the previous and next word are,
-      // the short word is presumed to actually be italic. 
-      } else if (!italic && italic_prev && italic_next){
+      // the short word is presumed to actually be italic.
+      } else if (!italic && italic_prev && italic_next) {
         word->fontinfo = word_prev->fontinfo;
         word->fontinfo_id_count = 1;
       }
