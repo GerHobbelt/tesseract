@@ -1137,10 +1137,10 @@ void WERD_RES::Clear() {
 
 void WERD_RES::ClearResults() {
   done = false;
-  fontinfo = nullptr;
-  fontinfo2 = nullptr;
-  fontinfo_id_count = 0;
-  fontinfo_id2_count = 0;
+  //fontinfo = nullptr;
+  //fontinfo2 = nullptr;
+  //fontinfo_id_count = 0;
+  //fontinfo_id2_count = 0;
   delete bln_boxes;
   bln_boxes = nullptr;
   blob_row = nullptr;

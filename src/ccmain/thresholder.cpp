@@ -74,11 +74,12 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line) {
+                                int bytes_per_pixel, int bytes_per_line, const float angle) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
   }
+  // pixRotate(pixCreate(width, height, bpp == 24 ? 32 : bpp), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
   Image pix = pixCreate(width, height, bpp == 24 ? 32 : bpp);
   l_uint32 *data = pixGetData(pix);
   int wpl = pixGetWpl(pix);
@@ -128,7 +129,8 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
     default:
       tprintf("Cannot convert RAW image to Pix with bpp = %d\n", bpp);
   }
-  SetImage(pix);
+
+  SetImage(pix, angle);
   pix.destroy();
 }
 
@@ -160,11 +162,12 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix) {
+void ImageThresholder::SetImage(const Image pix, const float angle) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
-  Image src = pix;
+  Image src = pixRotate(pix, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+  //Image src = pix;
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
