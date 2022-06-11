@@ -636,8 +636,32 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   //Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
-  Pix *p1 = tesseract_->pix_binary();
-  pixWrite("/debug.png", p1, IFF_PNG);
+  // if (scribe_save_binary_rotated_image) {
+  //   Pix *p1 = tesseract_->pix_binary();
+  //   pixWrite("/binary_image.png", p1, IFF_PNG);
+  // }
+  bool scribe_save_grey_rotated_image;
+  GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
+  if (scribe_save_grey_rotated_image) {
+    tprintf("Saving grey_image.png\n");
+    Pix *p1 = tesseract_->pix_grey();
+    pixWrite("/grey_image.png", p1, IFF_PNG);
+  }
+  bool scribe_save_binary_rotated_image;
+  GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
+  if (scribe_save_binary_rotated_image) {
+    tprintf("Saving binary_image.png\n");
+    Pix *p1 = tesseract_->pix_binary();
+    pixWrite("/binary_image.png", p1, IFF_PNG);
+  }
+  bool scribe_save_original_rotated_image;
+  GetBoolVariable("scribe_save_original_rotated_image", &scribe_save_original_rotated_image);
+  if (scribe_save_original_rotated_image) {
+    tprintf("Saving original_image.png\n");
+    Pix *p1 = tesseract_->pix_original();
+    pixWrite("/original_image.png", p1, IFF_PNG);
+  }
+
   return tesseract_->pix_binary().clone();
 }
 

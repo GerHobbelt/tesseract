@@ -286,6 +286,22 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
                                  (PIX**)pix_binary);
   }
 
+  // bool scribe_save_grey_rotated_image;
+  // api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
+  // if (scribe_save_grey_rotated_image) {
+  //   tprintf("Saving grey_image.png\n");
+  //   Pix *p1 = pix_grey;
+  //   pixWrite("/grey_image.png", p1, IFF_PNG);
+  // }
+  // bool scribe_save_binary_rotated_image;
+  // api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
+  // if (scribe_save_binary_rotated_image) {
+  //   tprintf("Saving binary_image.png\n");
+  //   Pix *p1 = (PIX*)pix_binary;
+  //   pixWrite("/binary_image.png", p1, IFF_PNG);
+  // }
+
+
   bool ok = (r == 0);
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);
 }

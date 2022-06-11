@@ -961,6 +961,10 @@ public:
   INT_VAR_H(lstm_choice_iterations);
   double_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
+  double_VAR_H(max_page_gradient_recognize);
+  BOOL_VAR_H(scribe_save_binary_rotated_image);
+  BOOL_VAR_H(scribe_save_grey_rotated_image);
+  BOOL_VAR_H(scribe_save_original_rotated_image);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);

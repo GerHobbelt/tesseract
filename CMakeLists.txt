@@ -559,7 +559,7 @@ endif(DISABLED_LEGACY_ENGINE)
 if(NOT HAVE_SSE4_1)
   list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
       src/arch/intsimdmatrix.cpp)
-endif(HAVE_SSE4_1)
+endif(NOT HAVE_SSE4_1)
 
 if(MARCH_NATIVE_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
@@ -807,7 +807,7 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_FUNCTIONS='[\"_pixDestroy\",
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_RUNTIME_METHODS='[\"FS\", \"setValue\", \"getValue\"]'")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/glue.js")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/anterior.js")
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --embed-file ../tessdata/pdf.ttf@pdf.ttf")
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --embed-file ../tessdata/pdf.ttf@pdf.ttf")
 set_target_properties(${WASM_NAME} PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
 target_link_libraries         (libtesseract PUBLIC
   ${CMAKE_PREFIX_PATH}/lib/libgif.a
