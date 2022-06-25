@@ -27,6 +27,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -87,7 +88,7 @@ else()
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
 option(GRAPHICS_DISABLED "Disable graphics (ScrollView)" OFF)
-option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" ON)
+option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
 option(ENABLE_OPENCL "Enable unsupported experimental OpenCL support" OFF)

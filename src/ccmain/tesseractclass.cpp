@@ -456,9 +456,10 @@ Tesseract::Tesseract()
                     this->params())
     , BOOL_MEMBER(pageseg_apply_music_mask, false,
                   "Detect music staff and remove intersecting components", this->params())
-    ,
+    , double_MEMBER(max_page_gradient_recognize, 100,
+                  "Exit early (without running recognition) if page gradient is above this amount", this->params())
 
-    backup_config_file_(nullptr)
+    , backup_config_file_(nullptr)
     , pix_binary_(nullptr)
     , pix_grey_(nullptr)
     , pix_original_(nullptr)

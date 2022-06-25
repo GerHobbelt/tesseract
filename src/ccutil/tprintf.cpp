@@ -85,7 +85,7 @@ TESS_API void tprintf(const char *format, ...) {
 #endif
 
   if (debugfp == nullptr && debug_file_name[0] != '\0') {
-    debugfp = fopen(debug_file_name, "wb");
+    debugfp = fopen(debug_file_name, "a+b");
   } else if (debugfp != nullptr && debug_file_name[0] == '\0') {
     fclose(debugfp);
     debugfp = nullptr;

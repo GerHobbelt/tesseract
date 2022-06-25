@@ -978,6 +978,7 @@ public:
   INT_VAR_H(lstm_choice_iterations);
   double_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
+  double_VAR_H(max_page_gradient_recognize);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
