@@ -5,20 +5,20 @@ on:
   #push:
   schedule:
     - cron: 0 23 * * *
+  workflow_dispatch:
 
 jobs:
   build:
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     strategy:
-      fail-fast: false
+      fail-fast: True
       matrix:
         config:
         - {
-            name: "Windows Latest MSVC - cmake",
+            name: "Windows Latest MSVC - cmake", artifact: "Windows-MSVC",
             os: windows-latest,
-            cc: "cl",
-            cxx: "cl",
+            cc: "cl", cxx: "cl",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
 
@@ -38,9 +38,9 @@ jobs:
       - name: Build and Install zlib
         shell: cmd
         run: |
-             curl -sSL -o zlib1211.zip https://zlib.net/zlib1211.zip
-             unzip.exe zlib1211.zip
-             cd zlib-1.2.11
+             curl -sSL -o zlib1212.zip https://zlib.net/zlib1212.zip
+             unzip.exe zlib1212.zip
+             cd zlib-1.2.12
              cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=d:/a/local -DCMAKE_INSTALL_PREFIX=d:/a/local
              cmake --build build --config Release --target install
 
@@ -53,12 +53,12 @@ jobs:
              cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=d:/a/local -DCMAKE_INSTALL_PREFIX=d:/a/local
              cmake --build build --config Release --target install
 
-      - name: Build and Install webp
-        shell: cmd
-        run: |
-             git clone --depth 1 https://github.com/webmproject/libwebp.git && cd libwebp
-             cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=d:/a/local -DCMAKE_INSTALL_PREFIX=d:/a/local
-             cmake --build build --config Release --target install
+#      - name: Build and Install webp
+#        shell: cmd
+#        run: |
+#             git clone --depth 1 https://github.com/webmproject/libwebp.git && cd libwebp
+#             cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=d:/a/local -DCMAKE_INSTALL_PREFIX=d:/a/local -DWEBP_BUILD_ANIM_UTILS =OFF
+#             cmake --build build --config Release --target install
 
       - name: Build and Install giflib
         shell: cmd
@@ -140,3 +140,19 @@ jobs:
           tesseract -v
           tesseract --list-langs
           tesseract test/testing/phototest.tif -
+          
+      - name: Upload Build Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: tesseract-cmake-win64
+          path: d:/a/local
+          retention-days: 5
+          
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          # Artifact name
+          name: # optional
+          # Destination path
+          path: # optional          
+          

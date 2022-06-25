@@ -35,4 +35,6 @@ extern TESS_API void tprintf( // Trace printf
 
 } // namespace tesseract
 
+#undef __attribute__
+
 #endif // define TESSERACT_CCUTIL_TPRINTF_H
