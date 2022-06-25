@@ -98,6 +98,9 @@ std::ostream& operator<<(std::ostream& out, const CharBoundaryByBoxIndex& d);
 struct CharacterPlaceDecision {
   // Index of the placement decision of the previous character.
   unsigned prev_index;
+  // Whether the character had any boxes assigned to it. If not, then the
+  // data stored in `begin` in not defined.
+  bool has_boxes = false;
   // Placement of the start of a character in the input box list.
   CharBoundaryByBoxIndex begin;
   // Placement of the end of a character in the input box list.
@@ -119,7 +122,7 @@ struct CharacterPlaceDecisions {
   double min_cost = std::numeric_limits<double>::infinity();
 
   // Adds a character placement decision.
-  void add_place(unsigned prev_index,
+  void add_place(unsigned prev_index, bool has_boxes,
                  CharBoundaryByBoxIndex begin, CharBoundaryByBoxIndex end,
                  double prev_pos_diff, double cost, double max_cost_diff);
 };
@@ -161,6 +164,12 @@ struct BoxBoundariesCalculatorConfig
 
   // The cost of each split of two input boxes.
   double split_cost = 2;
+
+  // The cost of each box that is not attributed to any symbol
+  double box_with_no_symbol_cost = 2.2;
+
+  // The cost of each symbol that has no boxes
+  double symbol_with_no_box_cost = 2.2;
 
   // The cost of difference between the center the symbol and the center of
   // the input box. This cost is only incurred whenever subsequent character
@@ -230,6 +239,11 @@ private:
 
   std::pair<unsigned, unsigned>
     possible_boxes_for_symbol(const BoxBoundaries& symbol);
+
+
+  // Goes through the decisions and adds costs for all boxes that have not
+  // been added to a symbol.
+  void add_costs_for_remaining_boxes(CharacterPlaceDecisions& decisions);
 
   // Goes through the final decisions and picks full path of the best placement
   // decision.
