@@ -588,9 +588,9 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  * will automatically perform recognition.
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
-                           int bytes_per_pixel, int bytes_per_line) {
+                           int bytes_per_pixel, int bytes_per_line, float angle) {
   if (InternalSetImage()) {
-    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line);
+    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, angle);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -611,7 +611,7 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * Use Pix where possible. Tesseract uses Pix as its internal representation
  * and it is therefore more efficient to provide a Pix directly.
  */
-void TessBaseAPI::SetImage(Pix *pix) {
+void TessBaseAPI::SetImage(Pix *pix, float angle) {
   if (InternalSetImage()) {
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
@@ -620,7 +620,7 @@ void TessBaseAPI::SetImage(Pix *pix) {
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
-    thresholder_->SetImage(pix);
+    thresholder_->SetImage(pix, angle);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -655,6 +655,33 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 
 	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
+  //Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
+  // if (scribe_save_binary_rotated_image) {
+  //   Pix *p1 = tesseract_->pix_binary();
+  //   pixWrite("/binary_image.png", p1, IFF_PNG);
+  // }
+  bool scribe_save_grey_rotated_image;
+  GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
+  if (scribe_save_grey_rotated_image) {
+    tprintf("Saving grey_image.png\n");
+    Pix *p1 = tesseract_->pix_grey();
+    pixWrite("/grey_image.png", p1, IFF_PNG);
+  }
+  bool scribe_save_binary_rotated_image;
+  GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
+  if (scribe_save_binary_rotated_image) {
+    tprintf("Saving binary_image.png\n");
+    Pix *p1 = tesseract_->pix_binary();
+    pixWrite("/binary_image.png", p1, IFF_PNG);
+  }
+  bool scribe_save_original_rotated_image;
+  GetBoolVariable("scribe_save_original_rotated_image", &scribe_save_original_rotated_image);
+  if (scribe_save_original_rotated_image) {
+    tprintf("Saving original_image.png\n");
+    Pix *p1 = tesseract_->pix_original();
+    pixWrite("/original_image.png", p1, IFF_PNG);
+  }
+
   return tesseract_->pix_binary().clone();
 }
 

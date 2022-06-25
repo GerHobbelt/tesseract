@@ -415,7 +415,11 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     rejection_passes(page_res, monitor, target_word_box, word_config);
 
     // ****************** Pass 8 *******************
+#if 01
     font_recognition_pass(page_res);
+#else
+    italic_recognition_pass(page_res);
+#endif
 
     // ****************** Pass 9 *******************
     // Check the correctness of the final results.
@@ -553,8 +557,8 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
     }
     if (!overrides_word1.empty()) {
       // Excellent, we have some bigram matches.
-      if (EqualIgnoringCaseAndTerminalPunct(*w_prev->best_choice, *overrides_word1[best_idx]) &&
-          EqualIgnoringCaseAndTerminalPunct(*w->best_choice, *overrides_word2[best_idx])) {
+      if (EqualIgnoringCaseAndPunct(*w_prev->best_choice, *overrides_word1[best_idx]) &&
+          EqualIgnoringCaseAndPunct(*w->best_choice, *overrides_word2[best_idx])) {
         if (tessedit_bigram_debug > 1) {
           tprintf(
               "Top choice \"%s %s\" verified (sans case) by bigram "
@@ -1621,7 +1625,9 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
       make_reject_map(word, row, pass_n);
     }
   }
-  set_word_fonts(word);
+  if(pass_n == 1){
+      set_word_fonts(word);
+  }
 
   ASSERT_HOST(word->raw_choice != nullptr);
 }
@@ -2071,6 +2077,77 @@ void Tesseract::font_recognition_pass(PAGE_RES *page_res) {
     }
   }
 }
+
+/**
+ * italic_recognition_pass
+ *
+ * Changes font for words that were (likely) misidentified as italic
+ */
+void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
+  PAGE_RES_IT page_res_it(page_res);
+  WERD_RES *word;                       // current word
+  WERD_RES *word_next;                       // next word
+  WERD_RES *word_prev;                       // previous word
+  bool italic_prev = false;
+  bool italic = false;
+  bool italic_next = false;
+
+  page_res_it.restart_page();
+  word = page_res_it.word();
+  italic = word != nullptr && word->fontinfo && word->fontinfo->is_italic();
+  word_next = page_res_it.word();
+
+  // This line has some side effect that prevents "Segmentation fault (core dumped)" in certain cases. 
+  // Do not understand why that happens. 
+  word->best_choice->debug_string().c_str();
+
+  while (word_next != nullptr) {
+
+    page_res_it.forward();
+    word_next = page_res_it.word();
+
+    // TODO: This should really only consider the # of non-punctuation characters,
+    // as now those are the only chars that contribute to font identification. 
+    const int length = word->best_choice->length();
+    italic_next = word_next != nullptr && word_next->fontinfo &&
+                  word_next->fontinfo->is_italic();
+
+    // Short words (defined here as 1-2 chars) are often misidentified as italic
+    // since just 1 letter being misidentified as italic can cause the entire
+    // word to be misidentified. 
+    if (length < 3) {
+
+      // If a short word is identified as italic but the previous and next word are not,
+      // the short word is presumed to actually be non-italic (outside of whitelist).
+      bool whitelist = strcmp(word->best_choice->unichar_string().c_str(), "Id") == 0;
+      
+      if (italic && !whitelist && !italic_prev && !italic_next) {
+        if (word_prev != nullptr && word_prev->fontinfo != nullptr) {
+          word->fontinfo = word_prev->fontinfo;
+          word->fontinfo_id_count = 1;
+        } else if (word_next != nullptr && word_next->fontinfo != nullptr) {
+          word->fontinfo = word_next->fontinfo;
+          word->fontinfo_id_count = 1;
+        } else {
+          word->fontinfo = nullptr;
+          word->fontinfo_id_count = 0;
+        }
+      
+      // If a short word is not identified as italic but the previous and next word are,
+      // the short word is presumed to actually be italic.
+      } else if (!italic && italic_prev && italic_next) {
+        word->fontinfo = word_prev->fontinfo;
+        word->fontinfo_id_count = 1;
+      }
+    }
+
+    word_prev = word;
+    italic_prev = italic;
+    word = word_next;
+    italic = italic_next;
+  }
+}
+
 #endif // !DISABLED_LEGACY_ENGINE
 
 // If a word has multiple alternates check if the best choice is in the
