@@ -162,7 +162,8 @@ std::vector<CharacterBoundaries>
       continue;
     }
 
-    if (prev_farthest_decision.end.index < symbol_min_box) {
+	assert(prev_farthest_decision.end.index.has_value());
+    if (prev_farthest_decision.end.index.value() < symbol_min_box) {
       // There are boxes that can't be attributed to any of the symbols because
       // they are too far away. In this case we pick the previous decision path
       // that went farthest and force the first box to be attributed to the
@@ -173,7 +174,7 @@ std::vector<CharacterBoundaries>
       // which decision path is ultimately selected.
 
       auto boxes_with_no_symbols =
-          symbol_min_box - prev_farthest_decision.end.index;
+          symbol_min_box - prev_farthest_decision.end.index.value();
 
       auto new_cost = prev_farthest_decision.cost +
           config_.box_with_no_symbol_cost * boxes_with_no_symbols;
@@ -212,6 +213,7 @@ void BoxBoundariesCalculator::try_decisions_from_prev_decision(
 {
   if (start_bound.split_index > 0) {
     // attempt to split the start box once again
+    assert(start_bound.index.has_value());
     try_decision_from_prev_decision(next_decisions, prev_decision_index,
                                     start_bound,
                                     {start_bound.index,
@@ -225,6 +227,7 @@ void BoxBoundariesCalculator::try_decisions_from_prev_decision(
                                     prev_decision_pos_diff, prev_decision_cost,
                                     symbol);
   }
+  assert(start_bound.index.has_value());
   for (unsigned end_box = start_bound.index.value() + 1;
        end_box <= symbol_max_box; ++end_box) {
     // try one or more full boxes
@@ -270,6 +273,8 @@ void BoxBoundariesCalculator::try_decision_from_prev_decision(
     cost += config_.split_cost;
   }
 
+  assert(end_bound.index.has_value());
+  assert(start_bound.index.has_value());
   unsigned merge_count = end_bound.index.value() - start_bound.index.value();
   if (start_bound.split_index == 0) {
     merge_count--;
@@ -342,11 +347,12 @@ int BoxBoundariesCalculator::farthest_decision_index(
     for (std::size_t i = 0; i < decisions.decisions.size(); ++i) {
       const auto& decision = decisions.decisions[i];
 
+	  assert(decision.end.index.has_value());
       if (decision.end.split_index == 0) {
-        if ((decision.end.index == max_box_index &&
+        if ((decision.end.index.value() == max_box_index &&
              decision.cost < best_decision_cost) ||
-            decision.end.index < max_box_index) {
-          max_box_index = decision.end.index;
+            decision.end.index.value() < max_box_index) {
+          max_box_index = decision.end.index.value();
           best_decision_cost = decision.cost;
           best_decision = i;
         }
@@ -386,9 +392,10 @@ void BoxBoundariesCalculator::add_costs_for_remaining_boxes(
       // We don't care about decisions that don't end on a box boundary.
       continue;
     }
-    assert(decision.end.index > 0);
+	assert(decision.end.index.has_value());
+	assert(decision.end.index.value() > 0);
 
-    auto unused_boxes = bounds_.size() - decision.end.index;
+    auto unused_boxes = bounds_.size() - decision.end.index.value();
     decision.cost += unused_boxes * config_.box_with_no_symbol_cost;
   }
 }
@@ -462,6 +469,9 @@ std::vector<CharacterBoundaries> BoxBoundariesCalculator::decisions_to_results(
       results[curr_index] = CharacterBoundaries{symbol.begin, 0, symbol.end, 0};
       continue;
     }
+
+	assert(decision.begin.index.has_value());
+	assert(decision.end.index.has_value());
 
     // The result is in terms of boxes that are at least partially assigned to
     // characters. Decisions store bounds which need adjustment in case of
