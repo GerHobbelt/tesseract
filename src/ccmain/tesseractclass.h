@@ -767,7 +767,9 @@ public:
   BOOL_VAR_H(tessedit_make_boxes_from_boxes);
   BOOL_VAR_H(tessedit_train_line_recognizer);
   BOOL_VAR_H(tessedit_dump_pageseg_images);
+  // TODO: remove deprecated tessedit_do_invert in release 6.
   BOOL_VAR_H(tessedit_do_invert);
+  double_VAR_H(invert_threshold);
   BOOL_VAR_H(normalize_grayscale);
   BOOL_VAR_H(normalize_thresholding);
   BOOL_VAR_H(normalize_recognition);
