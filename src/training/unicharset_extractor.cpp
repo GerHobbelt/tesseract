@@ -22,12 +22,17 @@
 
 #include <cstdlib>
 #include "boxread.h"
-#include "commandlineflags.h"
-#include "commontraining.h" // CheckSharedLibraryVersion
-#include "lang_model_helpers.h"
-#include "normstrngs.h"
+#include "common/commandlineflags.h"
+#include "common/commontraining.h"     // CheckSharedLibraryVersion
+#include "unicharset/lang_model_helpers.h"
+#include "unicharset/normstrngs.h"
 #include "unicharset.h"
-#include "unicharset_training_utils.h"
+#include "unicharset/unicharset_training_utils.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if defined(HAS_LIBICU)
 
 using namespace tesseract;
 
@@ -55,12 +60,12 @@ static void AddStringsToUnicharset(const std::vector<std::string> &strings, int 
         unicharset->unichar_insert(normed.c_str());
       }
     } else {
-      tprintf("Normalization failed for string '%s'\n", string.c_str());
+      tprintf("ERROR: Normalization failed for string '%s'\n", string.c_str());
     }
   }
 }
 
-static int Main(int argc, char **argv) {
+static int Main(int argc, const char** argv) {
   UNICHARSET unicharset;
   // Load input files
   for (int arg = 1; arg < argc; ++arg) {
@@ -85,7 +90,7 @@ static int Main(int argc, char **argv) {
   if (unicharset.save_to_file(FLAGS_output_unicharset.c_str())) {
     tprintf("Wrote unicharset file %s\n", FLAGS_output_unicharset.c_str());
   } else {
-    tprintf("Cannot save unicharset file %s\n", FLAGS_output_unicharset.c_str());
+    tprintf("ERROR: Cannot save unicharset file %s\n", FLAGS_output_unicharset.c_str());
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
@@ -93,7 +98,12 @@ static int Main(int argc, char **argv) {
 
 } // namespace tesseract
 
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
   if (argc > 1) {
     tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
@@ -112,3 +122,17 @@ int main(int argc, char **argv) {
   }
   return tesseract::Main(argc, argv);
 }
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "unicharset_extractor tool not supported in this non-ICU / Unicode build.\n");
+  return EXIT_FAILURE;
+}
+
+#endif

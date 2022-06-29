@@ -21,7 +21,10 @@
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
 #include <sstream>             // for std::stringstream
-#ifdef _WIN32
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for MultiByteToWideChar, ...
 #endif
 #include <tesseract/renderer.h>
@@ -143,14 +146,16 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   const char *paragraph_lang = nullptr;
   bool font_info = false;
   bool hocr_boxes = false;
+  bool hocr_images = false;
   GetBoolVariable("hocr_font_info", &font_info);
   GetBoolVariable("hocr_char_boxes", &hocr_boxes);
+  GetBoolVariable("hocr_images", &hocr_images);
 
   if (input_file_.empty()) {
     SetInputName(nullptr);
   }
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // convert input name from ANSI encoding to utf-8
   int str16_len =
       MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
@@ -478,10 +483,15 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
       bcnt++;
     }
   }
+word_end:
   hocr_str << "  </div>\n";
 
   const std::string &text = hocr_str.str();
-  char *result = new char[text.length() + 1];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
+#else
+  char* result = new char[text.length() + 1];
+#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }

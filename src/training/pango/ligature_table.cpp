@@ -24,6 +24,9 @@
 #include "pango_font_info.h"
 #include "tlog.h"
 #include "unicharset.h"
+
+#if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
+
 #include "unicode/errorcode.h" // from libicu
 #include "unicode/normlzr.h"   // from libicu
 #include "unicode/unistr.h"    // from libicu
@@ -187,3 +190,5 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
 }
 
 } // namespace tesseract
+
+#endif

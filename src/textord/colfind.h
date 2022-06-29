@@ -27,7 +27,7 @@
 #include "tabfind.h"
 #include "textlineprojection.h"
 
-class BLOCK_LIST;
+struct BLOCK_LIST;
 struct Boxa;
 struct Pixa;
 class DENORM;

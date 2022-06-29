@@ -15,22 +15,20 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#if !defined(__SSE4_1__)
-#  if defined(__i686__) || defined(__x86_64__)
-#    error Implementation only for SSE 4.1 capable architectures
-#  endif
-#else
+#include "dotproduct.h"
+
+#if defined(__SSE4_1__)
 
 #  include <emmintrin.h>
 #  include <smmintrin.h>
 #  include <cstdint>
-#  include "dotproduct.h"
 
 namespace tesseract {
 
+// ---------------------------- FAST FLOAT section ------------------------
+
 // Computes and returns the dot product of the n-vectors u and v.
 // Uses Intel SSE intrinsics to access the SIMD instruction set.
-#if defined(FAST_FLOAT)
 float DotProductSSE(const float *u, const float *v, int n) {
   int max_offset = n - 4;
   int offset = 0;
@@ -89,7 +87,9 @@ float DotProductSSE(const float *u, const float *v, int n) {
   }
   return result;
 }
-#else
+
+// ---------------------------- HIGH-PRECISION DOUBLE section ------------------------
+
 double DotProductSSE(const double *u, const double *v, int n) {
   int max_offset = n - 2;
   int offset = 0;
@@ -129,6 +129,7 @@ double DotProductSSE(const double *u, const double *v, int n) {
     }
   }
   // Add the 2 sums in sum horizontally.
+  // https://www.felixcloutier.com/x86/haddpd
   sum = _mm_hadd_pd(sum, sum);
   // Extract the low result.
   double result = _mm_cvtsd_f64(sum);
@@ -139,8 +140,24 @@ double DotProductSSE(const double *u, const double *v, int n) {
   }
   return result;
 }
-#endif
+
+// ---------------------------- END section ------------------------
 
 } // namespace tesseract.
+
+#else
+
+namespace tesseract {
+
+	// Computes and returns the dot product of the n-vectors u and v.
+	// Uses Intel FMA intrinsics to access the SIMD instruction set.
+	float DotProductSSE(const float* u, const float* v, int n) {
+		return DotProductNative(u, v, n);
+	}
+	double DotProductSSE(const double* u, const double* v, int n) {
+		return DotProductNative(u, v, n);
+	}
+
+}
 
 #endif

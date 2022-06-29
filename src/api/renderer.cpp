@@ -15,7 +15,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 #include <tesseract/baseapi.h>
@@ -221,7 +221,7 @@ bool TessBoxTextRenderer::AddImageHandler(TessBaseAPI *api) {
   return true;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**********************************************************************
  * Osd Text Renderer interface implementation
@@ -239,6 +239,6 @@ bool TessOsdRenderer::AddImageHandler(TessBaseAPI *api) {
   return true;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 } // namespace tesseract

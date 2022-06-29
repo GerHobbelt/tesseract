@@ -16,6 +16,12 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "tessclassifier.h"
 
 #include "classify.h"
@@ -82,3 +88,5 @@ int TessClassifier::DisplayClassifyAs(const TrainingSample &sample, Image page_p
 }
 
 } // namespace tesseract
+
+#endif

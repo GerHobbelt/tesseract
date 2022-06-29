@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "picofeat.h"
 
 #include "classify.h"
@@ -254,3 +260,5 @@ FEATURE_SET Classify::ExtractIntGeoFeatures(const TBLOB &blob,
 } /* ExtractIntGeoFeatures */
 
 } // namespace tesseract.
+
+#endif

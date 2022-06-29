@@ -20,13 +20,17 @@
 #include "stringrenderer.h"
 
 #include <allheaders.h> // from leptonica
+#include <tesseract/baseapi.h> // for TessBaseAPI
 #include "boxchar.h"
+#include "fileio.h"
 #include "helpers.h" // for TRand
 #include "ligature_table.h"
-#include "normstrngs.h"
+#include "../unicharset/normstrngs.h"
 #include "tlog.h"
 
 #include <tesseract/unichar.h>
+
+#if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
 
 #include "pango/pango-font.h"
 #include "pango/pango-glyph-item.h"
@@ -36,7 +40,10 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <map>
+#include <regex>
+#include <sstream> // for std::stringstream
 #include <utility>
 #include <vector>
 
@@ -76,7 +83,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    printf("Unexpected surface format %d\n", cairo_image_surface_get_format(surface));
+    tprintf("ERROR: Unexpected surface format %d\n", cairo_image_surface_get_format(surface));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -115,6 +122,7 @@ StringRenderer::StringRenderer(const std::string &font_desc, int page_width, int
     , cr_(nullptr)
     , layout_(nullptr)
     , start_box_(0)
+    , start_line_box_(0)
     , page_(0)
     , box_padding_(0)
     , page_boxes_(nullptr)
@@ -329,6 +337,10 @@ const std::vector<BoxChar *> &StringRenderer::GetBoxes() const {
   return boxchars_;
 }
 
+const std::vector<BoxChar *> &StringRenderer::GetLineBoxes() const {
+  return line_boxchars_;
+}
+
 Boxa *StringRenderer::GetPageBoxes() const {
   return page_boxes_;
 }
@@ -336,12 +348,20 @@ Boxa *StringRenderer::GetPageBoxes() const {
 void StringRenderer::RotatePageBoxes(float rotation) {
   BoxChar::RotateBoxes(rotation, page_width_ / 2, page_height_ / 2, start_box_, boxchars_.size(),
                        &boxchars_);
+  BoxChar::RotateBoxes(rotation, page_width_ / 2, page_height_ / 2, start_line_box_, line_boxchars_.size(),
+                     &line_boxchars_);
+  BoxChar::RotateBaseline(rotation, page_width_ / 2, page_height_ / 2, start_line_box_, line_boxchars_.size(),
+                     &line_boxchars_);
 }
 
 void StringRenderer::ClearBoxes() {
   for (auto &boxchar : boxchars_) {
     delete boxchar;
   }
+  for (auto &boxchar : line_boxchars_) {
+    delete boxchar;
+  }
+  line_boxchars_.clear();
   boxchars_.clear();
   boxaDestroy(&page_boxes_);
 }
@@ -397,6 +417,165 @@ bool StringRenderer::GetClusterStrings(std::vector<std::string> *cluster_text) {
   }
   return !cluster_text->empty();
 }
+
+void StringRenderer::WriteAllBoxesPagebyPage(const std::string &filename, bool multipage, bool create_boxfiles, bool create_page) {
+  BoxChar::PrepareToWrite(&boxchars_);
+  if (!multipage) {
+    std::vector<BoxChar *> page_boxchars;
+    if (create_boxfiles) {
+      page_boxchars.reserve(boxchars_.size());
+      auto page_index = boxchars_[0]->page();
+      for (auto boxe : boxchars_) {
+        if (boxe->page() != page_index) {   
+          auto page_filename = filename + (std::string) "." + std::to_string(page_index);
+          BoxChar::WriteTesseractBoxFile(page_filename + (std::string) ".box" , page_height_, page_boxchars);
+          page_index = boxe->page();
+          page_boxchars.clear();
+          // Skip empty lines from predecessor page
+          if (boxe->ch() == "\t") continue;
+        }
+        page_boxchars.push_back(boxe);
+      }
+      if (!page_boxchars.empty()) {
+        auto page_filename = filename + (std::string) "." + std::to_string(page_index);
+        BoxChar::WriteTesseractBoxFile(page_filename + (std::string) ".box" , page_height_, page_boxchars);
+        page_boxchars.clear();
+      }
+    }
+    if (create_page) {
+      page_boxchars.reserve(line_boxchars_.size());
+      auto page_index = line_boxchars_[0]->page();
+      for (auto boxe : line_boxchars_) {
+        if (boxe->page() != page_index) {   
+          auto page_filename = filename + (std::string) "." + std::to_string(page_index);
+          WriteTesseractBoxAsPAGEFile(page_filename + (std::string) ".xml", page_boxchars);
+          page_index = boxe->page();
+          page_boxchars.clear();
+        }
+        page_boxchars.push_back(boxe);
+      }
+      if (!page_boxchars.empty()) {
+        auto page_filename = filename + (std::string) "." + std::to_string(page_index);
+        WriteTesseractBoxAsPAGEFile(page_filename + (std::string) ".xml", page_boxchars);
+        page_boxchars.clear();
+      }
+    }
+  } else {
+    BoxChar::WriteTesseractBoxFile(filename + (std::string) ".box", page_height_, boxchars_);
+  }
+}
+
+///
+/// Write coordinates in the form of a points to a stream
+///
+static void 
+AddPointsToPAGE(Pta *pts, std::stringstream &str) {
+  int num_pts;
+  int x, y;
+  
+  str <<"<Coords points=\"";
+    num_pts = ptaGetCount(pts);
+    for (int p = 0; p < num_pts; ++p) {
+      ptaGetIPt(pts, p, &x, &y);
+      if (p!=0) str << " ";
+      str << (l_uint32) x << "," << (l_uint32) y;
+    }
+    str << "\"/>\n";
+}
+
+///
+/// Directly write baseline information as baseline points a stream
+///
+static void 
+AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
+  int num_pts;
+  int x, y;
+  
+  str <<"<Baseline points=\"";
+    num_pts = ptaGetCount(baseline_pts);
+    for (int p = 0; p < num_pts; ++p) {
+      ptaGetIPt(baseline_pts, p, &x, &y);
+      if (p!=0) str << " ";
+      str << (l_uint32) x << "," << (l_uint32) y;
+    }
+    str << "\"/>\n";
+}
+
+void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, const std::vector<BoxChar *> &boxes){
+  float x_min, y_min, x_max, y_max, a, b;
+  std::stringstream page_str;
+  std::stringstream line_str;
+
+  page_str << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+    "<PcGts xmlns=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15\" "
+    "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+    "xsi:schemaLocation=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15/pagecontent.xsd\">\n"
+    "\t<Metadata>\n"
+    "\t\t<Creator>Tesseract - " << TESSERACT_VERSION_STR << " (Text2Image)</Creator>\n";
+  
+  // If gmtime conversion is problematic maybe l_getFormattedDate can be used here
+  //char *datestr = l_getFormattedDate();
+  std::time_t now= std::time(nullptr);
+  std::tm* now_tm= std::gmtime(&now);
+  char mbstr[100];
+  std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%dT%H:%M:%S", now_tm);
+  
+  page_str << "\t\t<Created>" << mbstr << "</Created>\n"
+      << "\t\t<LastChange>" << mbstr << "</LastChange>\n"
+      << "\t</Metadata>\n";
+
+  page_str << "\t<Page "
+           <<"imageFilename=\""<< filename;
+  page_str << "\" " 
+           << "imageWidth=\"" << page_width_ << "\" " 
+           << "imageHeight=\"" << page_height_ << "\" "
+           << "type=\"content\">\n";
+
+  page_str << "\t\t<TextRegion id=\"r_0\" "
+      << "custom=\""<< "readingOrder {index:0;}\">\n";
+  Pta* all_polygon_pts = ptaCreate(0);
+  std::string all_line_text = "";
+  for (auto boxe : boxes) {
+    Pta* line_polygon_pts = ptaCreate(0);
+    line_str << "\t\t\t<TextLine id=\"r_0_0\" readingDirection=";
+    if (boxe->rtl_index()) line_str << "\"right-to-left\" ";
+    else line_str << "\"left-to-right\" ";
+    line_str << "custom=\""<< "readingOrder {index:0;}\">\n";
+    auto bbox = boxe->box();
+    line_str << "\t\t\t\t";
+    AddBaselinePtsToPAGE(boxe->baseline(), line_str);
+    ptaAddPt(line_polygon_pts, bbox->x, bbox->y);
+    ptaAddPt(line_polygon_pts, bbox->x+bbox->w, bbox->y);
+    ptaAddPt(line_polygon_pts, bbox->x+bbox->w, bbox->y+bbox->h);
+    ptaAddPt(line_polygon_pts, bbox->x, bbox->y+bbox->h);
+    line_str << "\t\t\t\t";
+    AddPointsToPAGE(line_polygon_pts, line_str);
+    ptaJoin(all_polygon_pts, line_polygon_pts, 0, -1);
+    std::string line_text = boxe->ch();
+    all_line_text = all_line_text + line_text + "\n";
+    line_str << "\t\t\t\t<TextEquiv index=\"1\">\n"
+    << "\t\t\t\t\t<Unicode>" << line_text.c_str() << "</Unicode>\n"
+    << "\t\t\t\t</TextEquiv>\n";
+    line_str << "\t\t\t</TextLine>\n";
+    ptaDestroy(&line_polygon_pts);
+  }
+  page_str << "\t\t\t<Coords points=\"";
+  ptaGetMinMax(all_polygon_pts, &x_min, &y_min, &x_max, &y_max);
+  page_str << (l_uint32) x_min << "," << (l_uint32) y_min;
+  page_str << " " << (l_uint32) x_max << "," << (l_uint32) y_min;
+  page_str << " " << (l_uint32) x_max << "," << (l_uint32) y_max;
+  page_str << " " << (l_uint32) x_min << "," << (l_uint32) y_max;
+  page_str << "\"/>\n";
+  page_str << line_str.str();
+  page_str << "\t\t\t\t<TextEquiv index=\"1\">\n"
+  << "\t\t\t\t\t<Unicode>" << all_line_text.c_str() << "</Unicode>\n"
+  << "\t\t\t\t</TextEquiv>\n";
+  page_str << "\t\t</TextRegion>"; 
+  line_str.str("");
+  page_str << "\t\t</Page>\n</PcGts>\n";
+  File::WriteStringToFileOrDie(page_str.str(), filename);
+}
+
 
 // Merges an array of BoxChars into words based on the identification of
 // BoxChars containing the space character as inter-word separators.
@@ -485,6 +664,76 @@ void StringRenderer::ComputeClusterBoxes() {
     cluster_start_to_end_index[cluster_start_indices[i]] = cluster_start_indices[i + 1];
   }
 
+  // Iterate to get line information: text, bbox and baseline
+  PangoLayoutIter *line_iter = pango_layout_get_iter(layout_);
+  do {
+    PangoRectangle ink_rect, logical_rect;
+    PangoLayoutLine* pango_line;
+    pango_line = pango_layout_iter_get_line(line_iter);
+    
+    // Get text content
+    std::string line_text = std::string(text + pango_line->start_index, pango_line->length);
+    if (add_ligatures_) {
+      // Make sure the output box files have ligatured text in case the font
+      // decided to use an unmapped glyph.
+      line_text = LigatureTable::Get()->AddLigatures(line_text, nullptr);
+    }
+    // Trim whitespaces
+    line_text = std::regex_replace(line_text, std::regex("^[ \t]+|[ \t\n]+$"), "$1");
+
+    bool rtl = false;
+    if (line_text.size() == 0) continue;
+
+    char32 ch = UNICHAR::UTF8ToUTF32(line_text.c_str())[0];
+    UCharDirection dir = u_charDirection(ch);
+    if (dir == U_RIGHT_TO_LEFT || dir == U_RIGHT_TO_LEFT_ARABIC || dir == U_RIGHT_TO_LEFT_ISOLATE) {
+      rtl = true;
+    }
+
+    // Get bounding box 
+    pango_layout_iter_get_line_extents(line_iter, &ink_rect, &logical_rect);
+    pango_extents_to_pixels(&ink_rect, nullptr);
+    pango_extents_to_pixels(&logical_rect, nullptr);
+
+    // Get baseline
+    int baseline = (pango_layout_iter_get_baseline(line_iter)/PANGO_SCALE)+ h_margin_;
+
+
+    if (box_padding_) {
+      ink_rect.x = std::max(0, ink_rect.x + v_margin_ - box_padding_);
+      if ((ink_rect.width+ink_rect.x+2*box_padding_) < page_width_) ink_rect.width += 2 * box_padding_;
+      logical_rect.y = std::max(0, logical_rect.y + h_margin_ - box_padding_);
+      if ((ink_rect.height+ink_rect.y+2*box_padding_) < page_width_) ink_rect.height += 2 * box_padding_;
+      logical_rect.height += 2 * box_padding_;
+    } else {
+      ink_rect.x = std::max(0, ink_rect.x + v_margin_ - 6);
+      if ((ink_rect.width+ink_rect.x+2*6) < page_width_) ink_rect.width += 2*6;
+      logical_rect.y = std::max(0, logical_rect.y + h_margin_  - 2);
+      if ((ink_rect.height+ink_rect.y+2*2) < page_width_) ink_rect.height += 2*2;
+    }
+
+    //line_text = std::regex_replace(line_text, std::regex("\n+$"), "$1");
+    // Store information if text is not empty
+    auto *line_boxchar = new BoxChar(line_text.c_str(), line_text.size());
+    line_boxchar->set_page(page_);
+    line_boxchar->AddBox(ink_rect.x, logical_rect.y, ink_rect.width, logical_rect.height);
+    line_boxchar->AddBaselinePt(ink_rect.x, baseline);
+    line_boxchar->AddBaselinePt(ink_rect.x+ink_rect.width, baseline);
+    line_boxchar->set_rtl_index(rtl);
+    line_boxchars_.push_back(line_boxchar);
+  } while (pango_layout_iter_next_line(line_iter));
+  // Fix for vertical text
+  if (vertical_text_) {
+    const double rotation = -pango_gravity_to_rotation(
+    pango_context_get_base_gravity(pango_layout_get_context(layout_)));
+    BoxChar::RotateBoxes(rotation, page_width_ / 2, page_height_ / 2, start_line_box_, line_boxchars_.size(),
+                         &line_boxchars_);
+    BoxChar::RotateBaseline(rotation, page_width_ / 2, page_height_ / 2, start_line_box_, line_boxchars_.size(),
+                         &line_boxchars_);
+    BoxChar::TranslateBoxesAndBaseline((page_width_-page_height_)/2, (page_width_-page_height_)/2, start_line_box_, 
+                         line_boxchars_.size(), &line_boxchars_);
+  }
+  //CorrectBoxPositionsToLayout(&line_boxchars_);
   // Iterate again to compute cluster boxes and their text with the obtained
   // cluster extent information.
   cluster_iter = pango_layout_get_iter(layout_);
@@ -737,6 +986,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
     return 0;
   }
   start_box_ = boxchars_.size();
+  start_line_box_ = line_boxchars_.size();
 
   if (!vertical_text_) {
     // Translate by the specified margin
@@ -900,3 +1150,5 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
 }
 
 } // namespace tesseract
+
+#endif

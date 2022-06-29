@@ -31,7 +31,7 @@
 #include "tovars.h"
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -535,7 +535,7 @@ dubious breaks. */
   }
   if (tosp_debug_level > 10) {
     tprintf(
-        "row->kern_size = %3.2f, row->space_size = %3.2f, "
+        "  row->kern_size = %3.2f, row->space_size = %3.2f, "
         "row->space_threshold = %d\n",
         row->kern_size, row->space_size, row->space_threshold);
   }

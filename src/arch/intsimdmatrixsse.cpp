@@ -15,13 +15,9 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#if !defined(__SSE4_1__)
-#  if defined(__i686__) || defined(__x86_64__)
-#    error Implementation only for SSE 4.1 capable architectures
-#  endif
-#else
+#include "intsimdmatrix.h"
 
-#  include "intsimdmatrix.h"
+#if defined(__SSE4_1__)
 
 #  include <emmintrin.h>
 #  include <smmintrin.h>
@@ -69,6 +65,7 @@ static int32_t IntDotProductSSE(const int8_t *u, const int8_t *v, int n) {
 }
 
 // Computes part of matrix.vector v = Wu. Computes 1 result.
+template <class TFloat>
 static void PartialMatrixDotVector1(const int8_t *wi, const TFloat *scales, const int8_t *u,
                                     int num_in, TFloat *v) {
   TFloat total = IntDotProductSSE(u, wi, num_in);
@@ -76,6 +73,7 @@ static void PartialMatrixDotVector1(const int8_t *wi, const TFloat *scales, cons
   *v = (total + wi[num_in] * INT8_MAX) * *scales;
 }
 
+template <class TFloat>
 static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *scales,
                             const int8_t *u, TFloat *v) {
   const int num_out = dim1;
@@ -90,7 +88,7 @@ static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *
   }
 }
 
-const IntSimdMatrix IntSimdMatrix::intSimdMatrixSSE = {
+static const IntSimdMatrix simdMatrix = {
     matrixDotVector,
     // Number of 32 bit outputs held in each register.
     1,
@@ -101,6 +99,16 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixSSE = {
     // Number of inputs in each weight group.
     1
 };
+
+const IntSimdMatrix *IntSimdMatrix::intSimdMatrixSSE = &simdMatrix;
+
+} // namespace tesseract.
+
+#else
+
+namespace tesseract {
+
+	const IntSimdMatrix* IntSimdMatrix::intSimdMatrixSSE = nullptr;
 
 } // namespace tesseract.
 

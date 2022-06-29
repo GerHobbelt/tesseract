@@ -161,6 +161,13 @@ class TESS_API CLIST_ITERATOR {
 public:
   CLIST_ITERATOR() { // constructor
     list = nullptr;
+	prev = nullptr;
+	current = nullptr;
+	next = nullptr;
+	cycle_pt = nullptr;
+	ex_current_was_last = false;
+	ex_current_was_cycle_pt = false;
+	started_cycling = false;
   } // unassigned list
 
   CLIST_ITERATOR( // constructor
@@ -703,12 +710,15 @@ public:
 };
 
 #define CLISTIZEH(CLASSNAME)                                    \
+  class CLASSNAME##_CLIST;                                      \
+  struct CLASSNAME##_C_IT;                                      \
+                                                                \
   class CLASSNAME##_CLIST : public X_CLIST<CLASSNAME> {         \
     using X_CLIST<CLASSNAME>::X_CLIST;                          \
   };                                                            \
   struct CLASSNAME##_C_IT : X_ITER<CLIST_ITERATOR, CLASSNAME> { \
     using X_ITER<CLIST_ITERATOR, CLASSNAME>::X_ITER;            \
-  };
+  }
 
 } // namespace tesseract
 

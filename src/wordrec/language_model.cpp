@@ -17,6 +17,12 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "language_model.h"
 #include <tesseract/unichar.h>       // for UNICHAR_ID, INVALID_UNICHAR_ID
 #include <cassert>                   // for assert
@@ -33,6 +39,7 @@
 #include "tprintf.h"                 // for tprintf
 #include "unicharset.h"              // for UNICHARSET
 #include "unicity_table.h"           // for UnicityTable
+#include "fontinfo.h"                
 
 template <typename T>
 class UnicityTable;
@@ -40,7 +47,7 @@ class UnicityTable;
 namespace tesseract {
 
 class LMPainPoints;
-struct FontInfo;
+//struct FontInfo;
 
 #if defined(ANDROID)
 static inline double log2(double n) {
@@ -1467,3 +1474,5 @@ WERD_CHOICE *LanguageModel::ConstructWord(ViterbiStateEntry *vse, WERD_RES *word
 }
 
 } // namespace tesseract
+
+#endif

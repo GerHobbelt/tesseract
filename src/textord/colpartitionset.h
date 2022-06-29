@@ -23,6 +23,7 @@
 #include "colpartition.h" // For ColPartition_LIST.
 #include "rect.h"         // For TBOX.
 #include "tabvector.h"    // For BLOBNBOX_CLIST.
+#include "elst.h"         // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
@@ -165,7 +166,7 @@ private:
   TBOX bounding_box_;
 };
 
-ELISTIZEH(ColPartitionSet)
+ELISTIZEH(ColPartitionSet);
 
 } // namespace tesseract.
 

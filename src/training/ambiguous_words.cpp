@@ -20,22 +20,33 @@
 ///////////////////////////////////////////////////////////////////////
 //
 
-#include "commontraining.h" // CheckSharedLibraryVersion
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "dict.h"
 #include "tesseractclass.h"
 
 #include <tesseract/baseapi.h>
 #include "helpers.h"
+#include "tprintf.h"
 
-int main(int argc, char **argv) {
+#include "tesseract/capi_training_tools.h"
+
+
+#if !DISABLED_LEGACY_ENGINE
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_ambiguous_words_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   // Parse input arguments.
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
+    tesseract::tprintf("%s\n", tesseract::TessBaseAPI::Version());
     return 0;
   } else if (argc != 4 && (argc != 6 || strcmp(argv[1], "-l") != 0)) {
-    printf(
+    tesseract::tprintf(
         "Usage: %s -v | --version | %s [-l lang] tessdata_dir wordlist_file"
         " output_ambiguous_wordlist_file\n",
         argv[0], argv[0]);
@@ -64,8 +75,8 @@ int main(int argc, char **argv) {
   tesseract::Dict &dict = api.tesseract()->getDict();
   FILE *input_file = fopen(input_file_str, "rb");
   if (input_file == nullptr) {
-    tesseract::tprintf("Failed to open input wordlist file %s\n", input_file_str);
-    exit(1);
+    tesseract::tprintf("ERROR: Failed to open input wordlist file %s\n", input_file_str);
+    return 1;
   }
   char str[CHARS_PER_LINE];
 
@@ -78,4 +89,15 @@ int main(int argc, char **argv) {
   }
   // Clean up.
   fclose(input_file);
+  return 0;
 }
+
+#else
+
+TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

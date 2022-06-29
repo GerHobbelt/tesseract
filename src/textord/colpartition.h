@@ -27,6 +27,7 @@
 #include "scrollview.h"
 #include "tabfind.h"   // For WidthCallback.
 #include "tabvector.h" // For BLOBNBOX_CLIST.
+#include "clst.h"      // for CLIST_ITERATOR, CLISTIZEH
 
 #include <algorithm>
 
@@ -52,8 +53,8 @@ enum ColumnSpanningType {
   CST_COUNT    // Number of entries.
 };
 
-ELIST2IZEH(ColPartition)
-CLISTIZEH(ColPartition)
+ELIST2IZEH(ColPartition);
+CLISTIZEH(ColPartition);
 
 /**
  * ColPartition is a partition of a horizontal slice of the page.

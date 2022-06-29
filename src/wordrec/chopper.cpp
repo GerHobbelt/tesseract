@@ -17,9 +17,11 @@
  *****************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#if !DISABLED_LEGACY_ENGINE
 
 #include "blamer.h"         // for BlamerBundle, IRR_CORRECT
 #include "blobs.h"          // for TPOINT, TBLOB, EDGEPT, TESSLINE, divisible_blob
@@ -615,3 +617,5 @@ int Wordrec::select_blob_to_split_from_fixpt(DANGERR *fixpt) {
 }
 
 } // namespace tesseract
+
+#endif

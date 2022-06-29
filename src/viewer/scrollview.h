@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////
 // File:        scrollview.h
 // Description: ScrollView
 // Author:      Joern Wanke
@@ -33,16 +33,15 @@
 
 #include "image.h"
 
+#include <fmt/printf.h> 
+#include <fmt/core.h> 
+#include <fmt/format.h>       // for fmt
 #include <tesseract/export.h>
 
 #include <cstdio>
 #include <mutex>
 
 namespace tesseract {
-
-#if !defined(__GNUC__) && !defined(__attribute__)
-# define __attribute__(attr) // compiler without support for __attribute__
-#endif
 
 class ScrollView;
 class SVNetwork;
@@ -294,10 +293,14 @@ public:
   // Adds a messagebox to the SVWindow. This way, it can show the messages...
   void AddMessageBox();
 
+  void vAddMessage(fmt::string_view format, fmt::format_args args);
+
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
-  void AddMessage(const char *message);
-  void AddMessageF(const char *format, ...) __attribute__((format(printf, 2, 3)));
+  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
+  void AddMessage(const S& format, Args&&... args) {
+    vAddMessage(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+  }
 
   // Zoom the window to the rectangle given upper left corner and
   // lower right corner.
@@ -310,7 +313,12 @@ public:
   // this just for fun will likely break your application!
   // It is public so you can actually take use of the LUA functionalities, but
   // be careful!
-  void SendMsg(const char* msg, ...) __attribute__((format(printf, 2, 3)));
+  void vSendMsg(fmt::string_view format, fmt::format_args args);
+
+  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
+  void SendMsg(const S& format, Args&&... args) {
+    vSendMsg(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+  }
 
   // Custom messages (manipulating java code directly) can be send through this.
   // Send a message to the server without adding the

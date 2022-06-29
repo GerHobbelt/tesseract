@@ -25,7 +25,7 @@
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, ScrollView::Color
 
-#include <tesseract/export.h> // for DLLSYM
+#include <tesseract/export.h> // for TESS_API, DLLSYM
 
 #include <cstdint> // for int16_t, int32_t
 #include <bitset>  // for std::bitset<16>
@@ -71,7 +71,8 @@ struct EdgeOffset {
 
 class C_OUTLINE; // forward declaration
 
-ELISTIZEH(C_OUTLINE)
+ELISTIZEH(C_OUTLINE);
+
 class C_OUTLINE : public ELIST_LINK {
 public:
   C_OUTLINE() {
@@ -136,6 +137,7 @@ public:
   }
   // Return step at a given index as a DIR128.
   DIR128 step_dir(int index) const {
+    ASSERT_HOST(index >= 0);
     return DIR128(
         static_cast<int16_t>(((steps[index / 4] >> (index % 4 * 2)) & STEP_MASK) << (DIRBITS - 2)));
   }

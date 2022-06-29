@@ -45,7 +45,7 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   if (applybox_page > 0) {
     // Load existing document for the previous pages.
     if (!images.LoadDocument(lstmf_name.c_str(), 0, 0, nullptr)) {
-      tprintf("Failed to read training data from %s!\n", lstmf_name.c_str());
+      tprintf("ERROR: Failed to read training data from %s!\n", lstmf_name.c_str());
       return false;
     }
   }
@@ -54,17 +54,17 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   // Get the boxes for this page, if there are any.
   if (!ReadAllBoxes(applybox_page, false, input_imagename, &boxes, &texts, nullptr, nullptr) ||
       boxes.empty()) {
-    tprintf("Failed to read boxes from %s\n", input_imagename);
+    tprintf("ERROR: Failed to read boxes from %s\n", input_imagename);
     return false;
   }
   TrainFromBoxes(boxes, texts, block_list, &images);
   if (images.PagesSize() == 0) {
-    tprintf("Failed to read pages from %s\n", input_imagename);
+    tprintf("ERROR: Failed to read pages from %s\n", input_imagename);
     return false;
   }
   images.Shuffle();
   if (!images.SaveDocument(lstmf_name.c_str(), nullptr)) {
-    tprintf("Failed to write training data to %s!\n", lstmf_name.c_str());
+    tprintf("ERROR: Failed to write training data to %s!\n", lstmf_name.c_str());
     return false;
   }
   return true;
@@ -250,7 +250,8 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
   }
 
   bool do_invert = tessedit_do_invert;
-  lstm_recognizer_->RecognizeLine(*im_data, do_invert, classify_debug_level > 0,
+  float threshold = do_invert ? double(invert_threshold) : 0.0f;
+  lstm_recognizer_->RecognizeLine(*im_data, threshold, classify_debug_level > 0,
                                   kWorstDictCertainty / kCertaintyScale, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);
   delete im_data;

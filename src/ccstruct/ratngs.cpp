@@ -16,7 +16,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -122,9 +122,9 @@ BLOB_CHOICE::BLOB_CHOICE(const BLOB_CHOICE &other) : ELIST_LINK(other) {
   max_xheight_ = other.max_xheight_;
   yshift_ = other.yshift();
   classifier_ = other.classifier_;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   fonts_ = other.fonts_;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
 // Copy assignment operator.
@@ -141,9 +141,9 @@ BLOB_CHOICE &BLOB_CHOICE::operator=(const BLOB_CHOICE &other) {
   max_xheight_ = other.max_xheight_;
   yshift_ = other.yshift();
   classifier_ = other.classifier_;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   fonts_ = other.fonts_;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   return *this;
 }
 
@@ -536,6 +536,7 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
 
   unsigned position_counts[4] = {0, 0, 0, 0};
 
+  {
   int chunk_index = 0;
   for (unsigned blob_index = 0; blob_index < length_; ++blob_index, ++chunk_index) {
     TBLOB *tblob = word->blobs[chunk_index];
@@ -554,13 +555,14 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
     }
     position_counts[script_pos_[blob_index]]++;
   }
+  }
   // If almost everything looks like a superscript or subscript,
   // we most likely just got the baseline wrong.
   if (4 * position_counts[tesseract::SP_SUBSCRIPT] > 3 * length_ ||
       4 * position_counts[tesseract::SP_SUPERSCRIPT] > 3 * length_) {
     if (debug >= 2) {
       tprintf(
-          "Most characters of %s are subscript or superscript.\n"
+          "WARNING: Most characters of %s are subscript or superscript.\n"
           "That seems wrong, so I'll assume we got the baseline wrong\n",
           unichar_string().c_str());
     }

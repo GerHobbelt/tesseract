@@ -29,6 +29,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <functional> // for std::function
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
+
 
 namespace tesseract {
 
@@ -192,6 +196,7 @@ public:
   // to two Ts and returns negative if the first element is to appear earlier
   // in the result and positive if it is to appear later, with 0 for equal.
   void sort(int (*comparator)(const void *, const void *)) {
+    assert(data_ != nullptr);
     qsort(data_, size_used_, sizeof(*data_), comparator);
   }
 
@@ -317,7 +322,11 @@ public:
   PointerVector<T> &operator+=(const PointerVector &other) {
     this->reserve(this->size_used_ + other.size_used_);
     for (unsigned i = 0; i < other.size(); ++i) {
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+      this->push_back(new (_CLIENT_BLOCK, __FILE__, __LINE__) T(*other.data_[i]));
+#else
       this->push_back(new T(*other.data_[i]));
+#endif	  
     }
     return *this;
   }
@@ -421,7 +430,11 @@ public:
       }
       T *item = nullptr;
       if (non_null != 0) {
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+        item = new (_CLIENT_BLOCK, __FILE__, __LINE__) T;
+#else
         item = new T;
+#endif  // _DEBUG
         if (!item->DeSerialize(swap, fp)) {
           delete item;
           return false;
@@ -452,7 +465,11 @@ void GenericVector<T>::init(int size) {
     if (size < kDefaultVectorSize) {
       size = kDefaultVectorSize;
     }
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+    data_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[size];
+#else
     data_ = new T[size];
+#endif
     size_reserved_ = size;
   }
   clear_cb_ = nullptr;
@@ -473,7 +490,11 @@ void GenericVector<T>::reserve(int size) {
   if (size < kDefaultVectorSize) {
     size = kDefaultVectorSize;
   }
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  T *new_array = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[size];
+#else
   T *new_array = new T[size];
+#endif
   for (int i = 0; i < size_used_; ++i) {
     new_array[i] = data_[i];
   }

@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -32,6 +32,10 @@
 #include <locale>    // for std::locale::classic
 #include <memory>    // std::unique_ptr
 #include <sstream>   // for std::stringstream
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
+
 #include "helpers.h" // for Swap
 
 /*
@@ -303,7 +307,7 @@ static void ClipBaseline(int ppi, int x1, int y1, int x2, int y2, int *line_x1, 
 
 static bool CodepointToUtf16be(int code, char utf16[kMaxBytesPerCodepoint]) {
   if ((code > 0xD7FF && code < 0xE000) || code > 0x10FFFF) {
-    tprintf("Dropping invalid codepoint %d\n", code);
+    tprintf("ERROR: Dropping invalid codepoint %d\n", code);
     return false;
   }
   if (code < 0x10000) {
@@ -475,7 +479,11 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
     }
   }
   const std::string &text = pdf_str.str();
-  char *result = new char[text.length() + 1];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
+#else
+  char* result = new char[text.length() + 1];
+#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }
@@ -626,7 +634,7 @@ bool TessPDFRenderer::BeginDocumentHandler() {
     font = buffer.data();
   } else {
 #if !defined(NDEBUG)
-    tprintf("Cannot open file \"%s\"!\nUsing internal glyphless font.\n", stream.str().c_str());
+    tprintf("ERROR: Cannot open file \"%s\"!\nUsing internal glyphless font.\n", stream.str().c_str());
 #endif
     font = pdf_ttf;
     size = sizeof(pdf_ttf);
@@ -670,6 +678,9 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
 
   int sad = 0;
   if (pixGetInputFormat(pix) == IFF_PNG) {
+    sad = pixGenerateCIData(pix, L_FLATE_ENCODE, 0, 0, &cid);
+  }
+  else if (pixGetInputFormat(pix) == IFF_UNKNOWN) {
     sad = pixGenerateCIData(pix, L_FLATE_ENCODE, 0, 0, &cid);
   }
   if (!cid) {
@@ -785,7 +796,11 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
   size_t colorspace_len = colorspace.str().size();
 
   *pdf_object_size = b1_len + colorspace_len + b2_len + cid->nbytescomp + b3_len;
-  *pdf_object = new char[*pdf_object_size];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  *pdf_object = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[*pdf_object_size];
+#else
+  * pdf_object = new char[*pdf_object_size];
+#endif  // _DEBUG
 
   char *p = *pdf_object;
   memcpy(p, b1.str().c_str(), b1_len);
@@ -802,9 +817,21 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
 }
 
 bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
-  Pix *pix = api->GetInputImage();
-  const char *filename = api->GetInputName();
+//  Pix *pix = api->GetInputImage();
+//  const char *filename = api->GetInputName();
+  Pix *pix = nullptr;
   int ppi = api->GetSourceYResolution();
+  bool destroy_pix = false;
+  const char *filename = api->GetVisibleImageFilename();
+  if (filename) {
+    pix = pixRead(filename);
+    api->SetVisibleImage(pix);
+    destroy_pix = true;
+  } else {
+    pix = api->GetInputImage();
+    filename = api->GetInputName();
+  }
+
   if (!pix || ppi <= 0) {
     return false;
   }
@@ -879,11 +906,19 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
     int jpg_quality;
     api->GetIntVariable("jpg_quality", &jpg_quality);
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
+	  if (destroy_pix)
+	  {
+	    pixDestroy(&pix);
+	  }
       return false;
     }
     AppendData(pdf_object, objsize);
     AppendPDFObjectDIY(objsize);
     delete[] pdf_object;
+  }
+  if (destroy_pix)
+  {
+    pixDestroy(&pix);
   }
   return true;
 }

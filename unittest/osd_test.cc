@@ -27,13 +27,15 @@
 #include "include_gunit.h"
 #include "image.h"
 
+#include "testdata.h"
+
 namespace tesseract {
 
 class TestClass : public testing::Test {
 protected:
 };
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static void OSDTester(int expected_deg, const char *imgname, const char *tessdatadir) {
   // log.info() << tessdatadir << " for image: " << imgname << std::endl;
   auto api = std::make_unique<tesseract::TessBaseAPI>();
@@ -63,7 +65,7 @@ class OSDTest : public TestClass,
 };
 
 TEST_P(OSDTest, MatchOrientationDegrees) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because TessBaseAPI::DetectOrientationScript is missing.
   GTEST_SKIP();
 #else

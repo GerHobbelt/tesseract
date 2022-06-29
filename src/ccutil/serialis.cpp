@@ -21,6 +21,7 @@
 #include "errcode.h"
 
 #include "helpers.h" // for ReverseN
+#include "unicharcompress.h"  // for RecodedCharID
 
 #include <climits> // for INT_MAX
 #include <cstdio>

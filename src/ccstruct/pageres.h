@@ -62,14 +62,16 @@ struct FontInfo;
 
 class BLOCK_RES;
 
-ELISTIZEH(BLOCK_RES)
-CLISTIZEH(BLOCK_RES)
+ELISTIZEH(BLOCK_RES);
+CLISTIZEH(BLOCK_RES);
+
 class ROW_RES;
 
-ELISTIZEH(ROW_RES)
+ELISTIZEH(ROW_RES);
+
 class WERD_RES;
 
-ELISTIZEH(WERD_RES)
+ELISTIZEH(WERD_RES);
 
 /*************************************************************************
  * PAGE_RES - Page results

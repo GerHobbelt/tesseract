@@ -19,9 +19,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#if !DISABLED_LEGACY_ENGINE
 
 #include "shapeclassifier.h"
 
@@ -57,7 +59,7 @@ int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, Image p
 // Default implementation aborts.
 int ShapeClassifier::ClassifySample(const TrainingSample &sample, Image page_pix, int debug,
                                     int keep_this, std::vector<ShapeRating> *results) {
-  ASSERT_HOST("Must implement ClassifySample!" == nullptr);
+  ASSERT_HOST(!"Must implement ClassifySample!");
   return 0;
 }
 
@@ -231,3 +233,5 @@ void ShapeClassifier::FilterDuplicateUnichars(std::vector<ShapeRating> *results)
 }
 
 } // namespace tesseract.
+
+#endif

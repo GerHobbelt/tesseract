@@ -16,6 +16,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
 #include "unicharset.h"
 
 #include "params.h"
@@ -30,6 +35,10 @@
 #include <iomanip> // for std::setw
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::istringstream, std::ostringstream
+
+#undef min
+#undef max
+
 
 namespace tesseract {
 
@@ -58,26 +67,30 @@ const double kMinXHeightFraction = 0.25;
 const double kMinCapHeightFraction = 0.05;
 
 /*static */
-const char *UNICHARSET::kCustomLigatures[][2] = {
-    {"ct", "\uE003"}, // c + t -> U+E003
-    {"ſh", "\uE006"}, // long-s + h -> U+E006
-    {"ſi", "\uE007"}, // long-s + i -> U+E007
-    {"ſl", "\uE008"}, // long-s + l -> U+E008
-    {"ſſ", "\uE009"}, // long-s + long-s -> U+E009
-    {nullptr, nullptr}};
+const char* UNICHARSET::kCustomLigatures[][2] = {
+  {"ct", u8"\uE003"},  // c + t -> U+E003
+  {"ſh", u8"\uE006"},  // long-s + h -> U+E006
+  {"ſi", u8"\uE007"},  // long-s + i -> U+E007
+  {"ſl", u8"\uE008"},  // long-s + l -> U+E008
+  {"ſſ", u8"\uE009"},  // long-s + long-s -> U+E009
+  {nullptr, nullptr}
+};
 
 // List of mappings to make when ingesting strings from the outside.
 // The substitutions clean up text that should exist for rendering of
 // synthetic data, but not in the recognition set.
-const char *UNICHARSET::kCleanupMaps[][2] = {
-    {"\u0640", ""},   // TATWEEL is deleted.
-    {"\ufb01", "fi"}, // fi ligature->fi pair.
-    {"\ufb02", "fl"}, // fl ligature->fl pair.
+const char* UNICHARSET::kCleanupMaps[][2] = {
+    {u8"\u0640", ""},    // TATWEEL is deleted.
+    {u8"\ufb01", "fi"},  // fi ligature->fi pair.
+    {u8"\ufb02", "fl"},  // fl ligature->fl pair.
     {nullptr, nullptr}};
 
 // List of strings for the SpecialUnicharCodes. Keep in sync with the enum.
-const char *UNICHARSET::kSpecialUnicharCodes[SPECIAL_UNICHAR_CODES_COUNT] = {
-    " ", "Joined", "|Broken|0|1"};
+const char* UNICHARSET::kSpecialUnicharCodes[SPECIAL_UNICHAR_CODES_COUNT] = {
+    " ",
+    "Joined",
+    "|Broken|0|1"
+};
 
 const char *UNICHARSET::null_script = "NULL";
 
@@ -170,12 +183,17 @@ void UNICHARSET::UNICHAR_PROPERTIES::CopyFrom(const UNICHAR_PROPERTIES &src) {
 UNICHARSET::UNICHARSET()
     : ids(), script_table(nullptr), script_table_size_used(0) {
   clear();
+
+  int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
+
   for (int i = 0; i < SPECIAL_UNICHAR_CODES_COUNT; ++i) {
     unichar_insert(kSpecialUnicharCodes[i]);
     if (i == UNICHAR_JOINED) {
       set_isngram(i, true);
     }
   }
+
+  (void)fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 }
 
 UNICHARSET::~UNICHARSET() {
@@ -1090,14 +1108,11 @@ std::string CHAR_FRAGMENT::to_string(const char *unichar, int pos, int total,
   if (total == 1) {
     return std::string(unichar);
   }
-  std::string result;
-  result += kSeparator;
-  result += unichar;
-  char buffer[kMaxLen];
-  snprintf(buffer, kMaxLen, "%c%d%c%d", kSeparator, pos,
+  char buffer[kMaxLen + 8];
+  snprintf(buffer, kMaxLen, "%c%s%c%d%c%d", kSeparator, unichar, kSeparator, pos,
            natural ? kNaturalFlag : kSeparator, total);
-  result += buffer;
-  return result;
+  assert(strlen(buffer) < sizeof(buffer));
+  return buffer;
 }
 
 CHAR_FRAGMENT *CHAR_FRAGMENT::parse_from_string(const char *string) {

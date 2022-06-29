@@ -19,11 +19,11 @@
 #ifndef TESSERACT_WORDREC_WORDREC_H_
 #define TESSERACT_WORDREC_WORDREC_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include <cstdint>    // for int16_t, int32_t
 #  include "classify.h" // for Classify
@@ -181,7 +181,8 @@ public:
   EDGEPT *headpt; // start point
   EDGEPT *tailpt; // end point
 };
-ELISTIZEH(FRAGMENT)
+
+ELISTIZEH(FRAGMENT);
 
 class TESS_API Wordrec : public Classify {
 public:

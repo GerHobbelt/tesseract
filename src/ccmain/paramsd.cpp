@@ -20,11 +20,13 @@
 // tesseract from the ui.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #ifndef GRAPHICS_DISABLED
+
+#include <tesseract/debugheap.h>
 
 #  include "params.h" // for ParamsVectors, StringParam, BoolParam
 #  include "paramsd.h"
@@ -41,7 +43,10 @@
 #  include <sstream> // for std::stringstream
 #  include <utility> // for pair
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 #  define VARDIR "configs/" /*parameters files */
 #  define MAX_ITEMS_IN_SUBMENU 30
@@ -53,6 +58,8 @@ namespace tesseract {
 static std::map<int, ParamContent *> vcMap;
 static int nrParams = 0;
 static int writeCommands[2];
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Constructors for the various ParamTypes.
 ParamContent::ParamContent(tesseract::StringParam *it) {
@@ -94,21 +101,21 @@ ParamContent *ParamContent::GetParamContentById(int id) {
 
 // Copy the first N words from the source string to the target string.
 // Words are delimited by "_".
-void ParamsEditor::GetFirstWords(const char *s, // source string
-                                 int n,         // number of words
-                                 char *t        // target string
+static void GetFirstWords(const char *s, // source string
+                          int n,         // number of words
+                          std::string &d // target string
 ) {
   int full_length = strlen(s);
-  int reqd_len = 0; // No. of chars requird
+  int reqd_len = 0; // No. of chars required
   const char *next_word = s;
 
   while ((n > 0) && reqd_len < full_length) {
     reqd_len += strcspn(next_word, "_") + 1;
-    next_word += reqd_len;
+    next_word = s + reqd_len;
     n--;
   }
-  strncpy(t, s, reqd_len);
-  t[reqd_len] = '\0'; // ensure null terminal
+  std::string rv(s, reqd_len);  // don't copy beyond s[reqd_len]
+  d = std::move(rv);
 }
 
 // Getter for the name.
@@ -178,16 +185,12 @@ void ParamContent::SetValue(const char *val) {
 }
 
 // Gets the up to the first 3 prefixes from s (split by _).
-// For example, tesseract_foo_bar will be split into tesseract,foo and bar.
-void ParamsEditor::GetPrefixes(const char *s, std::string *level_one, std::string *level_two,
-                               std::string *level_three) {
-  std::unique_ptr<char[]> p(new char[1024]);
-  GetFirstWords(s, 1, p.get());
-  *level_one = p.get();
-  GetFirstWords(s, 2, p.get());
-  *level_two = p.get();
-  GetFirstWords(s, 3, p.get());
-  *level_three = p.get();
+// For example, tesseract_foo_bar will be split into tesseract, foo and bar.
+static void GetPrefixes(const char *s, std::string &level_one, std::string &level_two,
+                        std::string &level_three) {
+  GetFirstWords(s, 1, level_one);
+  GetFirstWords(s, 2, level_two);
+  GetFirstWords(s, 3, level_three);
 }
 
 // Compare two VC objects by their name.
@@ -233,7 +236,7 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
     std::string tag2;
     std::string tag3;
 
-    GetPrefixes(vc->GetName(), &tag, &tag2, &tag3);
+    GetPrefixes(vc->GetName(), tag, tag2, tag3);
     amount[tag.c_str()]++;
     amount[tag2.c_str()]++;
     amount[tag3.c_str()]++;
@@ -250,7 +253,7 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
     std::string tag;
     std::string tag2;
     std::string tag3;
-    GetPrefixes(vc->GetName(), &tag, &tag2, &tag3);
+    GetPrefixes(vc->GetName(), tag, tag2, tag3);
 
     if (amount[tag.c_str()] == 1) {
       other->AddChild(vc->GetName(), vc->GetId(), vc->GetValue().c_str(), vc->GetDescription());
@@ -278,7 +281,7 @@ void ParamsEditor::Notify(const SVEvent *sve) {
     } else {
       ParamContent *vc = ParamContent::GetParamContentById(sve->command_id);
       vc->SetValue(param);
-      sv_window_->AddMessageF("Setting %s to %s", vc->GetName(), vc->GetValue().c_str());
+      sv_window_->AddMessage("Setting {} to {}", vc->GetName(), vc->GetValue());
     }
   }
 }
@@ -314,6 +317,8 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollView *sv) {
                      "Config file name?");
 
   svMenuRoot->BuildMenu(sv, false);
+
+  delete svMenuRoot;
 }
 
 // Write all (changed_) parameters to a config file.
@@ -336,7 +341,7 @@ void ParamsEditor::WriteParams(char *filename, bool changes_only) {
 
   fp = fopen(filename, "wb"); // can we write to it?
   if (fp == nullptr) {
-    sv_window_->AddMessageF("Can't write to file %s", filename);
+    sv_window_->AddMessage("Can't write to file {}", filename);
     return;
   }
   for (auto &iter : vcMap) {

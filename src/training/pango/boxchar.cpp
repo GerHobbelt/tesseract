@@ -21,10 +21,13 @@
 
 #include "boxchar.h"
 
-#include "fileio.h"
-#include "normstrngs.h"
+#include "../unicharset/fileio.h"
+#include "../unicharset/normstrngs.h"
 #include "tprintf.h"
 #include "unicharset.h"
+
+#if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
+
 #include "unicode/uchar.h" // from libicu
 
 #include <algorithm>
@@ -37,14 +40,19 @@ const int kMinNewlineRatio = 5;
 namespace tesseract {
 
 BoxChar::BoxChar(const char *utf8_str, int len)
-    : ch_(utf8_str, len), box_(nullptr), page_(0), rtl_index_(-1) {}
+    : ch_(utf8_str, len), box_(nullptr), baseline_(ptaCreate(0)), page_(0), rtl_index_(-1) {}
 
 BoxChar::~BoxChar() {
   boxDestroy(&box_);
+  ptaDestroy(&baseline_);
 }
 
 void BoxChar::AddBox(int x, int y, int width, int height) {
   box_ = boxCreate(x, y, width, height);
+}
+
+void BoxChar::AddBaselinePt(int x, int y) {
+  ptaAddPt(baseline_, x, y);
 }
 
 // Increments *num_rtl and *num_ltr according to the directionality of
@@ -88,6 +96,22 @@ void BoxChar::TranslateBoxes(int xshift, int yshift, std::vector<BoxChar *> *box
       int32_t box_y;
       boxGetGeometry(box, &box_x, &box_y, nullptr, nullptr);
       boxSetGeometry(box, box_x + xshift, box_y + yshift, -1, -1);
+    }
+  }
+}
+
+/* static */
+void BoxChar::TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box,
+                            std::vector<BoxChar *> *boxes)  {
+  for (int i = start_box; i < end_box; ++i) {
+    BOX *box = (*boxes)[i]->box_;
+    if (box != nullptr) {
+      box->x += xshift;
+      box->y += yshift;
+      Pta *translated_baseline = ptaTranslate((*boxes)[i]->baseline_, xshift, yshift);
+      ptaDestroy(&(*boxes)[i]->baseline_);
+      (*boxes)[i]->baseline_ = ptaClone(translated_baseline);
+      ptaDestroy(&translated_baseline);
     }
   }
 }
@@ -347,8 +371,22 @@ void BoxChar::RotateBoxes(float rotation, int xcenter, int ycenter, int start_bo
   boxaDestroy(&rotated);
 }
 
-const int kMaxLineLength = 1024;
+// Rotate the baseline in [start_box, end_box) by the given rotation.
+// The rotation is in radians clockwise about the given center.
 /* static */
+void BoxChar::RotateBaseline(float rotation, int xcenter, int ycenter, int start_box, int end_box,
+                            std::vector<BoxChar *> *boxes) {
+  for (int i = start_box; i < end_box; ++i) {
+      if ((*boxes)[i]->baseline_->n==0) continue;
+      Pta *rotated_pts = ptaRotate((*boxes)[i]->baseline_, xcenter, ycenter, rotation);
+      ptaDestroy(&((*boxes)[i]->baseline_)); 
+      (*boxes)[i]->baseline_ = ptaClone(rotated_pts);
+      ptaDestroy(&rotated_pts);
+  }
+}
+
+const int kMaxLineLength = 1024;
+/* static */ 
 void BoxChar::WriteTesseractBoxFile(const std::string &filename, int height,
                                     const std::vector<BoxChar *> &boxes) {
   std::string output = GetTesseractBoxStr(height, boxes);
@@ -362,7 +400,7 @@ std::string BoxChar::GetTesseractBoxStr(int height, const std::vector<BoxChar *>
   for (auto boxe : boxes) {
     const Box *box = boxe->box_;
     if (box == nullptr) {
-      tprintf("Error: Call PrepareToWrite before WriteTesseractBoxFile!!\n");
+      tprintf("ERROR: Call PrepareToWrite before WriteTesseractBoxFile!!\n");
       return "";
     }
     int32_t box_x;
@@ -379,3 +417,6 @@ std::string BoxChar::GetTesseractBoxStr(int height, const std::vector<BoxChar *>
 }
 
 } // namespace tesseract
+
+#endif
+

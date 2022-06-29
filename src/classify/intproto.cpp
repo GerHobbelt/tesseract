@@ -21,9 +21,11 @@
 #define _USE_MATH_DEFINES // for M_PI
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "intproto.h"
 
@@ -142,6 +144,8 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
         Global Data Definitions and Declarations
 -----------------------------------------------------------------------------*/
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
 #ifndef GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
 static ScrollView *IntMatchWindow = nullptr;
@@ -167,6 +171,8 @@ static double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight"
 static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
 static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
 static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * This routine truncates Param to lie within the range
@@ -442,6 +448,9 @@ void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS_STRUCT *Class) {
   Class->ConfigLengths[ConfigId] = TotalLength;
 } /* ConvertConfig */
 
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine converts Proto to integer format and
  * installs it as ProtoId in Class.
@@ -528,7 +537,11 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
   return (IntTemplates);
 } /* CreateIntTemplates */
 
+#endif
+
+
 #ifndef GRAPHICS_DISABLED
+
 /**
  * This routine renders the specified feature into a
  * global display list.
@@ -563,7 +576,9 @@ void DisplayIntProto(INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, float Evidence) 
     RenderIntProto(ProtoDisplayWindow, Class, ProtoId, color);
   }
 } /* DisplayIntProto */
+
 #endif
+
 
 /// This constructor creates a new integer class data structure
 /// and returns it.  Sufficient space is allocated
@@ -615,6 +630,9 @@ INT_TEMPLATES_STRUCT::~INT_TEMPLATES_STRUCT() {
     delete ClassPruners[i];
   }
 }
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine reads a set of integer templates from
@@ -854,7 +872,13 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   return (Templates);
 } /* ReadIntTemplates */
 
+#endif
+
+
 #ifndef GRAPHICS_DISABLED
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine sends the shapes in the global display
  * lists to the match debugger window.
@@ -882,6 +906,9 @@ void Classify::ShowMatchDisplay() {
   }
 } /* ShowMatchDisplay */
 
+#endif
+
+
 /// Clears the given window and draws the featurespace guides for the
 /// appropriate normalization method.
 void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
@@ -904,7 +931,11 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
                       INT_XCENTER + INT_XRADIUS, INT_YCENTER + INT_YRADIUS);
   }
 }
-#endif
+
+#endif    // GRAPHICS_DISABLED
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine writes Templates to File.  The format
@@ -971,6 +1002,9 @@ void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES_STRUCT *Templates,
   this->fontinfo_table_.write(File, std::bind(write_spacing_info, _1, _2));
   this->fontset_table_.write(File, std::bind(write_set, _1, _2));
 } /* WriteIntTemplates */
+
+#endif
+
 
 /*-----------------------------------------------------------------------------
               Private Code
@@ -1149,7 +1183,11 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 } /* FillPPLinearBits */
 
 /*---------------------------------------------------------------------------*/
+
 #ifndef GRAPHICS_DISABLED
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine prompts the user with Prompt and waits
  * for the user to enter something in the debug window.
@@ -1220,6 +1258,9 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
 } /* GetClassToDebug */
 
 #endif
+
+#endif
+
 
 /**
  * This routine copies the appropriate global pad variables
@@ -1488,7 +1529,9 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 } /* InitTableFiller */
 
 /*---------------------------------------------------------------------------*/
+
 #ifndef GRAPHICS_DISABLED
+
 /**
  * This routine renders the specified feature into ShapeList.
  * @param window to add feature rendering to
@@ -1577,9 +1620,12 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
   window->SetCursor(X - Dx, Y - Dy);
   window->DrawTo(X + Dx, Y + Dy);
 } /* RenderIntProto */
+
 #endif
 
+
 #ifndef GRAPHICS_DISABLED
+
 /**
  * Initializes the int matcher window if it is not already
  * initialized.
@@ -1622,6 +1668,7 @@ void InitFeatureDisplayWindowIfReqd() {
 ScrollView *CreateFeatureSpaceWindow(const char *name, int xpos, int ypos) {
   return new ScrollView(name, xpos, ypos, 520, 520, 260, 260, true);
 }
+
 #endif // !GRAPHICS_DISABLED
 
 } // namespace tesseract

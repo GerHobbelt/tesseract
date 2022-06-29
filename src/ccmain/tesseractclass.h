@@ -25,14 +25,14 @@
 #ifndef TESSERACT_CCMAIN_TESSERACTCLASS_H_
 #define TESSERACT_CCMAIN_TESSERACTCLASS_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
 #include "control.h"               // for ACCEPTABLE_WERD_TYPE
 #include "debugpixa.h"             // for DebugPixa
 #include "devanagari_processing.h" // for ShiroRekhaSplitter
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h" // for GARBAGE_LEVEL
 #endif
 #include "genericvector.h"   // for PointerVector
@@ -43,6 +43,7 @@
 #include "tessdatamanager.h" // for TessdataManager
 #include "textord.h"         // for Textord
 #include "wordrec.h"         // for Wordrec
+#include "genericvector.h"     // for PointerVector (ptr only)
 
 #include <tesseract/publictypes.h> // for OcrEngineMode, PageSegMode, OEM_L...
 #include <tesseract/unichar.h>     // for UNICHAR_ID
@@ -69,9 +70,11 @@ class WERD_RES;
 
 class ColumnFinder;
 class DocumentData;
-#ifndef DISABLED_LEGACY_ENGINE
+
+#if !DISABLED_LEGACY_ENGINE
 class EquationDetect;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
+
 class ImageData;
 class LSTMRecognizer;
 class Tesseract;
@@ -191,19 +194,19 @@ public:
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Set the equation detector.
   void SetEquationDetect(EquationDetect *detector);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   // Simple accessors.
   const FCOORD &reskew() const {
     return reskew_;
   }
   // Destroy any existing pix and return a pointer to the pointer.
-  Image *mutable_pix_binary() {
+  void set_pix_binary(Image pix) {
     pix_binary_.destroy();
-    return &pix_binary_;
+    pix_binary_ = pix;
   }
   Image pix_binary() const {
     return pix_binary_;
@@ -223,10 +226,11 @@ public:
     pix_original_.destroy();
     pix_original_ = original_pix;
     // Clone to sublangs as well.
-    for (auto &lang : sub_langs_) {
-      lang->set_pix_original(original_pix ? original_pix.clone() : nullptr);
+    for (auto &lang_ref : sub_langs_) {
+      lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
     }
   }
+
   // Returns a pointer to a Pix representing the best available resolution image
   // of the page, with best available bit depth as second priority. Result can
   // be of any bit depth, but never color-mapped, as that has always been
@@ -247,6 +251,9 @@ public:
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();
     pix_thresholds_ = thresholds;
+  }
+  Image pix_thresholds() {
+	  return pix_thresholds_;
   }
   int source_resolution() const {
     return source_resolution_;
@@ -291,8 +298,8 @@ public:
     if (tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
       return true;
     }
-    for (auto &lang : sub_langs_) {
-      if (lang->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
+    for (auto &lang_ref : sub_langs_) {
+      if (lang_ref->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
         return true;
       }
     }
@@ -303,8 +310,8 @@ public:
     if (tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
       return true;
     }
-    for (auto &lang : sub_langs_) {
-      if (lang->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
+    for (auto &lang_ref : sub_langs_) {
+      if (lang_ref->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
         return true;
       }
     }
@@ -323,7 +330,7 @@ public:
   // Tesseract OCR. The current segmentation is required by this method.
   // Uses the strategy specified in the global variable
   // ocr_devanagari_split_strategy for performing splitting while preparing for
-  // Tesseract ocr.
+  // Tesseract OCR.
   void PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, OSResults *osr);
 
   int SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess, OSResults *osr);
@@ -493,7 +500,7 @@ public:
   // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem, char **configs,
+                     const std::string &language, OcrEngineMode oem, const char **configs,
                      int configs_size, const std::vector<std::string> *vars_vec,
                      const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
                      TessdataManager *mgr);
@@ -518,7 +525,7 @@ public:
   // If set_only_non_debug_params is true, only params that do not contain
   // "debug" in the name will be set.
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
-                              const std::string &language, OcrEngineMode oem, char **configs,
+                              const std::string &language, OcrEngineMode oem, const char **configs,
                               int configs_size, const std::vector<std::string> *vars_vec,
                               const std::vector<std::string> *vars_values,
                               bool set_only_non_debug_params, TessdataManager *mgr);
@@ -531,7 +538,7 @@ public:
   void end_tesseract();
 
   bool init_tesseract_lang_data(const std::string &arg0,
-                                const std::string &language, OcrEngineMode oem, char **configs,
+                                const std::string &language, OcrEngineMode oem, const char **configs,
                                 int configs_size, const std::vector<std::string> *vars_vec,
                                 const std::vector<std::string> *vars_values,
                                 bool set_only_non_debug_params, TessdataManager *mgr);
@@ -615,16 +622,18 @@ public:
   float blob_noise_score(TBLOB *blob);
   void break_noisiest_blob_word(WERD_RES_LIST &words);
   //// docqual.cpp ////////////////////////////////////////////////////////
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   GARBAGE_LEVEL garbage_word(WERD_RES *word, bool ok_dict_word);
   bool potential_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_level, bool ok_dict_word);
-#endif
   void tilde_crunch(PAGE_RES_IT &page_res_it);
+#endif
   void unrej_good_quality_words( // unreject potential
       PAGE_RES_IT &page_res_it);
   void doc_and_block_rejection( // reject big chunks
       PAGE_RES_IT &page_res_it, bool good_quality_doc);
+#if !DISABLED_LEGACY_ENGINE
   void quality_based_rejection(PAGE_RES_IT &page_res_it, bool good_quality_doc);
+#endif
   void convert_bad_unlv_chs(WERD_RES *word_res);
   void tilde_delete(PAGE_RES_IT &page_res_it);
   int16_t word_blob_quality(WERD_RES *word);
@@ -632,7 +641,7 @@ public:
   void unrej_good_chs(WERD_RES *word);
   int16_t count_outline_errs(char c, int16_t outline_count);
   int16_t word_outline_errs(WERD_RES *word);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   bool terrible_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_level);
 #endif
   CRUNCH_MODE word_deletable(WERD_RES *word, int16_t &delete_mode);
@@ -644,11 +653,13 @@ public:
                               TBOX &selection_box,
                               bool (tesseract::Tesseract::*word_processor)(PAGE_RES_IT *pr_it));
   //// tessbox.cpp ///////////////////////////////////////////////////////
+#if !DISABLED_LEGACY_ENGINE
   void tess_add_doc_word(      // test acceptability
       WERD_CHOICE *word_choice // after context
   );
   void tess_segment_pass_n(int pass_n, WERD_RES *word);
   bool tess_acceptable_word(WERD_RES *word);
+#endif
 
   //// applybox.cpp //////////////////////////////////////////////////////
   // Applies the box file based on the image name filename, and resegments
@@ -665,7 +676,7 @@ public:
   // can still be used to correctly segment touching characters with the help
   // of the input boxes.
   // In the returned PAGE_RES, the WERD_RES are setup as they would be returned
-  // from normal classification, ie. with a word, chopped_word, rebuild_word,
+  // from normal classification, i.e. with a word, chopped_word, rebuild_word,
   // seam_array, denorm, box_word, and best_state, but NO best_choice or
   // raw_choice, as they would require a UNICHARSET, which we aim to avoid.
   // Instead, the correct_text member of WERD_RES is set, and this may be later
@@ -755,7 +766,12 @@ public:
   BOOL_VAR_H(tessedit_make_boxes_from_boxes);
   BOOL_VAR_H(tessedit_train_line_recognizer);
   BOOL_VAR_H(tessedit_dump_pageseg_images);
+  // TODO: remove deprecated tessedit_do_invert in release 6.
   BOOL_VAR_H(tessedit_do_invert);
+  double_VAR_H(invert_threshold);
+  BOOL_VAR_H(normalize_grayscale);
+  BOOL_VAR_H(normalize_thresholding);
+  BOOL_VAR_H(normalize_recognition);
   INT_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(thresholding_method);
   BOOL_VAR_H(thresholding_debug);
@@ -849,6 +865,7 @@ public:
   BOOL_VAR_H(unlv_tilde_crunching);
   BOOL_VAR_H(hocr_font_info);
   BOOL_VAR_H(hocr_char_boxes);
+  BOOL_VAR_H(hocr_images);
   BOOL_VAR_H(crunch_early_merge_tess_fails);
   BOOL_VAR_H(crunch_early_convert_bad_unlv_chs);
   double_VAR_H(crunch_terrible_rating);
@@ -895,6 +912,9 @@ public:
   BOOL_VAR_H(tessedit_create_txt);
   BOOL_VAR_H(tessedit_create_hocr);
   BOOL_VAR_H(tessedit_create_alto);
+  BOOL_VAR_H(tessedit_create_page);
+  BOOL_VAR_H(tessedit_create_page_polygon);
+  BOOL_VAR_H(tessedit_create_page_wordlevel);
   BOOL_VAR_H(tessedit_create_lstmbox);
   BOOL_VAR_H(tessedit_create_tsv);
   BOOL_VAR_H(tessedit_create_wordstrbox);
@@ -946,9 +966,9 @@ public:
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(textord_equation_detect);
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(textord_tabfind_vertical_text);
   BOOL_VAR_H(textord_tabfind_force_vertical_text);
   double_VAR_H(textord_tabfind_vertical_text_ratio);
@@ -960,12 +980,20 @@ public:
   INT_VAR_H(lstm_choice_iterations);
   double_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
+  double_VAR_H(max_page_gradient_recognize);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
   void recog_training_segmented(const char *filename, PAGE_RES *page_res,
                                 volatile ETEXT_DESC *monitor, FILE *output_file);
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
+
+  // debug PDF output helper methods:
+  void AddPixDebugPage(Image pix, const char *title) {
+	  if (tessedit_dump_pageseg_images) {
+		  pixa_debug_.AddPix(pix, title);
+	  }
+  }
 
 private:
   // The filename of a backup config file. If not null, then we currently
@@ -1007,10 +1035,10 @@ private:
   Tesseract *most_recently_used_;
   // The size of the font table, ie max possible font id + 1.
   int font_table_size_;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Equation detector. Note: this pointer is NOT owned by the class.
   EquationDetect *equ_detect_;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   // LSTM recognizer, if available.
   LSTMRecognizer *lstm_recognizer_;
   // Output "page" number (actually line number) using TrainLineRecognizer.

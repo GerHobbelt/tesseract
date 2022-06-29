@@ -21,12 +21,15 @@
 #define TESSERACT_TRAINING_PANGO_FONT_INFO_H_
 
 #include "export.h"
+#include <tesseract/export.h>
 
-#include "commandlineflags.h"
+#include "../common/commandlineflags.h"
 
-#include "pango/pango-font.h"
-#include "pango/pango.h"
-#include "pango/pangocairo.h"
+#if defined(PANGO_ENABLE_ENGINE)
+
+#include "pango-font.h"
+#include "pango.h"
+#include "pangocairo.h"
 
 #include <string>
 #include <unordered_map>
@@ -206,4 +209,6 @@ private:
 };
 } // namespace tesseract
 
-#endif // TESSERACT_TRAINING_PANGO_FONT_INFO_H_
+#endif
+
+#endif  // TESSERACT_TRAINING_PANGO_FONT_INFO_H_

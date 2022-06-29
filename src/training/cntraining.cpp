@@ -25,12 +25,17 @@
 #include <cstring>
 #include "cluster.h"
 #include "clusttool.h"
-#include "commontraining.h"
+#include "common/commontraining.h"
 #include "featdefs.h"
 #include "ocrfeatures.h"
 #include "oldlist.h"
 
+#include "tesseract/capi_training_tools.h"
+
+
 #define PROGRAM_FEATURE_TYPE "cn"
+
+#if !DISABLED_LEGACY_ENGINE
 
 using namespace tesseract;
 
@@ -100,7 +105,12 @@ static const CLUSTERCONFIG CNConfig = {elliptical, 0.025, 0.05, 0.8, 1e-3, 0};
 * @param argv  array of command line arguments
 * @return 0 on success
 */
-int main(int argc, char *argv[]) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_cn_training_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   // Set the global Config parameters before parsing the command line.
@@ -118,7 +128,7 @@ int main(int argc, char *argv[]) {
   ParseArguments(&argc, &argv);
   int num_fonts = 0;
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
-    printf("Reading %s ...\n", PageName);
+    tprintf("Reading %s ...\n", PageName);
     FILE *TrainingPage = fopen(PageName, "rb");
     ASSERT_HOST(TrainingPage);
     if (TrainingPage) {
@@ -127,7 +137,7 @@ int main(int argc, char *argv[]) {
       ++num_fonts;
     }
   }
-  printf("Clustering ...\n");
+  tprintf("Clustering ...\n");
   // To allow an individual font to form a separate cluster,
   // reduce the min samples:
   // Config.MinSamples = 0.5 / num_fonts;
@@ -154,7 +164,7 @@ int main(int argc, char *argv[]) {
         break;
       } else {
         Config.MinSamples *= 0.95;
-        printf(
+        tprintf(
             "0 significant protos for %s."
             " Retrying clustering with MinSamples = %f%%\n",
             CharSample->Label.c_str(), Config.MinSamples);
@@ -172,7 +182,7 @@ int main(int argc, char *argv[]) {
   for (auto &freeable_proto : freeable_protos) {
     FreeProtoList(&freeable_proto);
   }
-  printf("\n");
+  tprintf("\n");
   return 0;
 } // main
 
@@ -201,7 +211,7 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     Filename += "/";
   }
   Filename += "normproto";
-  printf("\nWriting %s ...", Filename.c_str());
+  tprintf("\nWriting %s ...", Filename.c_str());
   File = fopen(Filename.c_str(), "wb");
   ASSERT_HOST(File);
   fprintf(File, "%0d\n", feature_desc->NumParams);
@@ -210,8 +220,8 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     LabeledProto = reinterpret_cast<LABELEDLIST>(LabeledProtoList->first_node());
     N = NumberOfProtos(LabeledProto->List, true, false);
     if (N < 1) {
-      printf(
-          "\nError! Not enough protos for %s: %d protos"
+      tprintf(
+          "\nEERROR: Not enough protos for %s: %d protos"
           " (%d significant protos"
           ", %d insignificant protos)\n",
           LabeledProto->Label.c_str(), N, NumberOfProtos(LabeledProto->List, true, false),
@@ -239,3 +249,13 @@ static void WriteProtos(FILE *File, uint16_t N, LIST ProtoList, bool WriteSigPro
     }
   }
 } // WriteProtos
+
+#else
+
+TESS_API int tesseract_cn_training_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

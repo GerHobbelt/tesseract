@@ -76,6 +76,10 @@ struct OSResults {
   // Script confidence scores for each of 4 possible orientations.
   float scripts_na[4][kMaxNumberOfScripts];
 
+  // Gradient of page.
+  // Generally arctan(gradient) gives the angle (in radians) of the median baseline.
+  float gradient;
+
   UNICHARSET *unicharset;
   OSBestResult best_result;
 };

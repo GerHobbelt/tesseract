@@ -19,20 +19,20 @@
 #ifndef TESSERACT_CCUTIL_CCUTIL_H_
 #define TESSERACT_CCUTIL_CCUTIL_H_
 
-#ifndef _WIN32
+#if !(defined(WIN32) || defined(_WIN32) || defined(_WIN64))
 #  include <pthread.h>
 #  include <semaphore.h>
 #endif
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
 #endif
 #include "errcode.h"
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for HANDLE, ...
 #endif
 #include "params.h"
@@ -59,7 +59,7 @@ public:
   std::string lang;
   std::string language_data_path_prefix;
   UNICHARSET unicharset;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   UnicharAmbigs unichar_ambigs;
 #endif
   std::string imagefile; // image file name

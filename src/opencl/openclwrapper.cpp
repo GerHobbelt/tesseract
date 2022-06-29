@@ -15,7 +15,7 @@
 
 #ifdef USE_OPENCL
 
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #    include <io.h>
 #    include <windows.h>
 #  else
@@ -34,7 +34,7 @@
 
 // platform preprocessor commands
 #  if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(__CYGWIN__) || \
-      defined(__MINGW32__)
+      defined(__MINGW32__) || defined(_WIN64)
 #    define ON_WINDOWS 1
 #    define ON_APPLE 0
 #  elif defined(__linux__)
@@ -520,7 +520,7 @@ fwrite(DS_DEVICE_NATIVE_CPU_STRING,sizeof(char),
        strlen(DS_DEVICE_NATIVE_CPU_STRING), profileFile);
 fwrite(DS_TAG_DEVICE_NAME_END, sizeof(char),
        strlen(DS_TAG_DEVICE_NAME_END), profileFile);
-*/
+		  */
         } break;
         case DS_DEVICE_OPENCL_DEVICE: {
           fwrite(DS_TAG_DEVICE_NAME, sizeof(char), strlen(DS_TAG_DEVICE_NAME), profileFile);
@@ -608,7 +608,7 @@ static void populateGPUEnvFromDevice(GPUEnv *gpuInfo, cl_device_id device) {
 }
 
 int OpenclDevice::LoadOpencl() {
-#  ifdef WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   HINSTANCE HOpenclDll = nullptr;
   void *OpenclDll = nullptr;
   // fprintf(stderr, " LoadOpenclDllxx... \n");
@@ -645,11 +645,11 @@ static Image mapOutputCLBuffer(const KernelEnv &rEnv, cl_mem clbuffer, Image pix
   if (!pixd) {
     if (memcopy) {
       if ((pixd = pixCreateTemplate(pixs)) == nullptr)
-        tprintf("pixd not made\n");
+        tprintf("ERROR: pixd not made.\n");
     } else {
       if ((pixd = pixCreateHeader(pixGetWidth(pixs), pixGetHeight(pixs), pixGetDepth(pixs))) ==
           nullptr)
-        tprintf("pixd not made\n");
+        tprintf("ERROR: pixd not made.\n");
     }
   }
   l_uint32 *pValues =
@@ -999,7 +999,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                               nullptr, nullptr);
   }
   if (clStatus != CL_SUCCESS) {
-    tprintf("BuildProgram error!\n");
+    tprintf("ERROR: BuildProgram error!\n");
     size_t length;
     if (!gpuInfo->mnIsUserCreated) {
       clStatus = clGetProgramBuildInfo(gpuInfo->mpArryPrograms[idx], gpuInfo->mpArryDevsID[0],
@@ -1009,7 +1009,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                                        CL_PROGRAM_BUILD_LOG, 0, nullptr, &length);
     }
     if (clStatus != CL_SUCCESS) {
-      tprintf("opencl create build log fail\n");
+      tprintf("ERROR: opencl create build log fail.\n");
       return 0;
     }
     std::vector<char> buildLog(length);
@@ -1021,7 +1021,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                                        CL_PROGRAM_BUILD_LOG, length, &buildLog[0], &length);
     }
     if (clStatus != CL_SUCCESS) {
-      tprintf("opencl program build info fail\n");
+      tprintf("ERROR: opencl program build info fail.\n");
       return 0;
     }
 

@@ -19,6 +19,9 @@
 #ifndef ERRCODE_H
 #define ERRCODE_H
 
+#include <fmt/printf.h> 
+#include <fmt/core.h> 
+#include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 
 namespace tesseract {
@@ -31,18 +34,22 @@ enum TessErrorLogCode {
   ABORT = 2     /*abort after error */
 };
 
-#if !defined(__GNUC__) && !defined(__attribute__)
-# define __attribute__(attr) // compiler without support for __attribute__
-#endif
-
 class TESS_API ERRCODE { // error handler class
   const char *message;   // error message
+
 public:
+  void verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const;
+
+  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
   void error(                  // error print function
       const char *caller,      // function location
       TessErrorLogCode action, // action to take
-      const char *format, ...  // fprintf format
-  ) const __attribute__((format(printf, 4, 5)));
+      const S &format,
+      Args&&... args
+  ) const {
+    verror(caller, action, fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+  }
+
   void error(const char *caller, TessErrorLogCode action) const;
   constexpr ERRCODE(const char *string) : message(string) {} // initialize with string
 };

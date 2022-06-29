@@ -17,9 +17,11 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "edgblob.h"
 
@@ -28,7 +30,10 @@
 
 #define BUCKETSIZE 16
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Control parameters used in outline_complexity(), which rejects an outline
 // if any one of the 3 conditions is satisfied:
@@ -54,6 +59,8 @@ static INT_VAR(edges_patharea_ratio, 40,
 static double_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
 static double_VAR(edges_boxarea, 0.875,
                   "Min area fraction of grandchild for box");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * @name OL_BUCKETS::OL_BUCKETS

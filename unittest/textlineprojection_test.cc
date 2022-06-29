@@ -23,6 +23,8 @@
 #include "tesseractclass.h"
 #include "textlineprojection.h"
 
+#include "testdata.h"
+
 namespace tesseract {
 
 // Minimum score for a STRONG_CHAIN textline.
@@ -77,7 +79,7 @@ protected:
                                          nullptr, 0, nullptr, nullptr, false, &mgr),
               0);
     bin_pix_ = api_.GetThresholdedImage();
-    *tesseract_->mutable_pix_binary() = bin_pix_.clone();
+    tesseract_->set_pix_binary(bin_pix_.clone());
     osd_tess->set_source_resolution(api_.tesseract()->source_resolution());
     tesseract_->set_source_resolution(api_.tesseract()->source_resolution());
     int width = pixGetWidth(bin_pix_);

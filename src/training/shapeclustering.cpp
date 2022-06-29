@@ -16,21 +16,32 @@
 //            training data of whole, partial or multiple characters.
 //  Author:   Ray Smith
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
-#include "commontraining.h"
-#include "mastertrainer.h"
+#include <tesseract/debugheap.h>
+
+#include "common/commontraining.h"
+#include "common/mastertrainer.h"
 #include "params.h"
 
+#include "tesseract/capi_training_tools.h"
+
+
+#if !DISABLED_LEGACY_ENGINE
+
 using namespace tesseract;
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static INT_PARAM_FLAG(display_cloud_font, -1, "Display cloud of this font, canonical_class1");
 static INT_PARAM_FLAG(display_canonical_font, -1,
                       "Display canonical sample of this font, canonical_class2");
 static STRING_PARAM_FLAG(canonical_class1, "", "Class to show ambigs for");
 static STRING_PARAM_FLAG(canonical_class2, "", "Class to show ambigs for");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Loads training data, if requested displays debug information, otherwise
 // creates the master shape table by shape clustering and writes it to a file.
@@ -41,7 +52,12 @@ static STRING_PARAM_FLAG(canonical_class2, "", "Class to show ambigs for");
 // NOT in the cloud.
 // Otherwise, if FLAGS_canonical_class1 is set, prints a table of font-wise
 // cluster distances between FLAGS_canonical_class1 and FLAGS_canonical_class2.
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_shape_clustering_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   ParseArguments(&argc, &argv);
@@ -68,3 +84,13 @@ int main(int argc, char **argv) {
 
   return 0;
 } /* main */
+
+#else
+
+TESS_API int tesseract_shape_clustering_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

@@ -17,12 +17,15 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "equationdetect.h"
 
+#include "blobs.h"   // for TPOINT, TWERD, TBLOB
 #include "bbgrid.h"
 #include "classify.h"
 #include "colpartition.h"
@@ -39,13 +42,18 @@
 #include <limits>
 #include <memory>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Config variables.
 static BOOL_VAR(equationdetect_save_bi_image, false, "Save input bi image");
 static BOOL_VAR(equationdetect_save_spt_image, false, "Save special character image");
 static BOOL_VAR(equationdetect_save_seed_image, false, "Save the seed image");
 static BOOL_VAR(equationdetect_save_merged_image, false, "Save the merged image");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 ///////////////////////////////////////////////////////////////////////////
 // Utility ColParition sort functions.
@@ -145,6 +153,8 @@ int EquationDetect::LabelSpecialText(TO_BLOCK *to_block) {
   return 0;
 }
 
+#if !DISABLED_LEGACY_ENGINE
+
 void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th) {
   ASSERT_HOST(blobnbox != nullptr);
   if (blobnbox->bounding_box().height() < height_th && height_th > 0) {
@@ -206,7 +216,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
     type = EstimateTypeForUnichar(lang_tesseract_->unicharset, lang_choice->unichar_id());
   }
 
-  if (type == BSTT_NONE &&
+  if (type == BSTT_NONE && lang_choice &&
       lang_tesseract_->get_fontinfo_table().at(lang_choice->fontinfo_id()).is_italic()) {
     // For text symbol, we still check if it is italic.
     blobnbox->set_special_text_type(BSTT_ITALIC);
@@ -293,6 +303,9 @@ void EquationDetect::IdentifySpecialText() {
     PaintSpecialTexts(outfile);
   }
 }
+
+#endif
+
 
 void EquationDetect::IdentifyBlobsToSkip(ColPartition *part) {
   ASSERT_HOST(part);

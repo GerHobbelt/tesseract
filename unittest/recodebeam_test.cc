@@ -22,6 +22,11 @@
 
 #include "helpers.h"
 
+#include "testdata.h"
+
+
+#if defined(HAS_LIBICU)
+
 namespace tesseract {
 
 // Number of characters to test beam search with.
@@ -484,3 +489,5 @@ TEST_F(RecodeBeamTest, DISABLED_MultiCodeSequences) {
 }
 
 } // namespace tesseract
+
+#endif

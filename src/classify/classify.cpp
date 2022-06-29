@@ -18,7 +18,7 @@
 
 #include "classify.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include <string.h>
 
@@ -195,4 +195,4 @@ bool Classify::LargeSpeckle(const TBLOB &blob) {
 
 } // namespace tesseract
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

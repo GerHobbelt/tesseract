@@ -17,13 +17,13 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "reject.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "tesseractclass.h"
 
@@ -89,7 +89,7 @@ void Tesseract::set_done(WERD_RES *word, int16_t pass) {
 /*************************************************************************
  * make_reject_map()
  *
- * Sets the done flag to indicate whether the resylt is acceptable.
+ * Sets the done flag to indicate whether the result is acceptable.
  *
  * Sets a reject map for the word.
  *************************************************************************/
@@ -159,8 +159,8 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
       /* Ambig word rejection was here once !!*/
     }
   } else {
-    tprintf("BAD tessedit_reject_mode\n");
-    ASSERT_HOST("Fatal error encountered!" == nullptr);
+    tprintf("ERROR: BAD tessedit_reject_mode\n");
+    ASSERT_HOST(!"Fatal error encountered!");
   }
 
   if (tessedit_image_border > -1) {
@@ -774,4 +774,4 @@ bool Tesseract::non_0_digit(const UNICHARSET &ch_set, UNICHAR_ID unichar_id) {
 }
 } // namespace tesseract
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

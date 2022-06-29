@@ -197,8 +197,8 @@ public:
 
   // Writes to the given file. Returns false in case of error.
   bool Serialize(TFile *fp) const;
-  // Reads from the given file. Returns false in case of error.
 
+  // Reads from the given file. Returns false in case of error.
   bool DeSerialize(TFile *fp);
 
   // Returns a string containing a text file that describes the encoding thus:

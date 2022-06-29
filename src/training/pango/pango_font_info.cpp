@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -26,17 +26,19 @@
 #  undef __STRICT_ANSI__
 #endif
 
-#include "commandlineflags.h"
-#include "fileio.h"
-#include "normstrngs.h"
+#include "../common/commandlineflags.h"
+#include "../unicharset/fileio.h"
+#include "../unicharset/normstrngs.h"
 #include "pango_font_info.h"
 #include "tlog.h"
 
 #include <tesseract/unichar.h>
 
-#include "pango/pango.h"
-#include "pango/pangocairo.h"
-#include "pango/pangofc-font.h"
+#if defined(PANGO_ENABLE_ENGINE)
+
+#include "pango.h"
+#include "pangocairo.h"
+#include "pangofc-font.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -141,7 +143,7 @@ void PangoFontInfo::HardInitFontConfig(const char *fonts_dir, const char *cache_
            fonts_dir, cache_dir);
   std::string fonts_conf_file = File::JoinPath(cache_dir, "fonts.conf");
   File::WriteStringToFileOrDie(fonts_conf_template, fonts_conf_file);
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   std::string env("FONTCONFIG_PATH=");
   env.append(cache_dir);
   _putenv(env.c_str());
@@ -429,7 +431,7 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
         continue;
       }
       if (TLOG_IS_ON(2)) {
-        printf("start_byte=%d end_byte=%d start_glyph=%d end_glyph=%d ", start_byte_index,
+        tprintf("start_byte=%d end_byte=%d start_glyph=%d end_glyph=%d ", start_byte_index,
                end_byte_index, start_glyph_index, end_glyph_index);
       }
       for (int i = start_glyph_index, step = (end_glyph_index > start_glyph_index) ? 1 : -1;
@@ -440,11 +442,11 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
             (cluster_iter.glyph_item->glyphs->glyphs[i].glyph == dotted_circle_glyph);
         bad_glyph = unknown_glyph || illegal_glyph;
         if (TLOG_IS_ON(2)) {
-          printf("(%d=%d)", cluster_iter.glyph_item->glyphs->glyphs[i].glyph, bad_glyph ? 1 : 0);
+          tprintf("(%d=%d)", cluster_iter.glyph_item->glyphs->glyphs[i].glyph, bad_glyph ? 1 : 0);
         }
       }
       if (TLOG_IS_ON(2)) {
-        printf("  '%s'\n", cluster_text.c_str());
+        tprintf("  '%s'\n", cluster_text.c_str());
       }
       if (bad_glyph)
         tlog(1, "Found illegal glyph!\n");
@@ -711,22 +713,24 @@ void FontUtils::PangoFontTypeInfo() {
   PangoFontMap *font_map = pango_cairo_font_map_get_default();
   if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
       CAIRO_FONT_TYPE_TOY) {
-    printf("Using CAIRO_FONT_TYPE_TOY.\n");
+    tprintf("Using CAIRO_FONT_TYPE_TOY.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_FT) {
-    printf("Using CAIRO_FONT_TYPE_FT.\n");
+    tprintf("Using CAIRO_FONT_TYPE_FT.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_WIN32) {
-    printf("Using CAIRO_FONT_TYPE_WIN32.\n");
+    tprintf("Using CAIRO_FONT_TYPE_WIN32.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_QUARTZ) {
-    printf("Using CAIRO_FONT_TYPE_QUARTZ.\n");
+    tprintf("Using CAIRO_FONT_TYPE_QUARTZ.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_USER) {
-    printf("Using CAIRO_FONT_TYPE_USER.\n");
+    tprintf("Using CAIRO_FONT_TYPE_USER.\n");
   } else if (!font_map) {
-    printf("Can not create pango cairo font map!\n");
+    tprintf("ERROR: Can not create pango cairo font map!\n");
   }
 }
 
 } // namespace tesseract
+
+#endif

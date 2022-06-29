@@ -2,6 +2,9 @@
 #include "errcode.h"
 #include "icuerrorcode.h"
 #include "tprintf.h"
+
+#if defined(HAS_LIBICU)
+
 #include "unicode/uchar.h"   // From libicu
 #include "unicode/uscript.h" // From libicu
 
@@ -39,7 +42,7 @@ bool ValidateMyanmar::ConsumeGraphemeIfValid() {
     }
   } else {
     if (report_errors_) {
-      tprintf("Invalid start of Myanmar syllable:0x%x\n", codes_[codes_used_].second);
+      tprintf("ERROR: Invalid start of Myanmar syllable:0x%x\n", codes_[codes_used_].second);
     }
     return false; // One of these is required.
   }
@@ -186,3 +189,5 @@ bool ValidateMyanmar::IsMyanmarOther(char32 ch) {
 }
 
 } // namespace tesseract
+
+#endif

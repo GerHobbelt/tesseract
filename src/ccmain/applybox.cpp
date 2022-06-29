@@ -16,25 +16,25 @@
  *
  **********************************************************************/
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include <allheaders.h>
 #  include <cctype>
 #  include <cerrno>
 #  include <cstring>
 #  include "boxread.h"
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 #include <tesseract/unichar.h>
 #include "pageres.h"
 #include "tesseractclass.h"
 #include "unicharset.h"
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 /** Max number of blobs to classify together in FindSegmentation. */
 const int kMaxGroupSize = 4;
 /// Max fraction of median allowed as deviation in xheight before switching
 /// to median.
 const double kMaxXHeightDeviationFraction = 0.125;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /**
  * The box file is assumed to contain box definitions, one per line, of the
@@ -73,7 +73,7 @@ const double kMaxXHeightDeviationFraction = 0.125;
 
 namespace tesseract {
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static void clear_any_old_text(BLOCK_LIST *block_list) {
   BLOCK_IT block_it(block_list);
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
@@ -400,7 +400,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
     }
   }
   if (applybox_debug > 0) {
-    tprintf("FAIL!\n");
+    tprintf("ERROR: FAIL!\n");
   }
   return false; // Failure.
 }
@@ -485,7 +485,7 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
     }
   }
   if (new_word == nullptr && applybox_debug > 0) {
-    tprintf("FAIL!\n");
+    tprintf("ERROR: FAIL!\n");
   }
   return new_word != nullptr;
 }
@@ -758,7 +758,7 @@ void Tesseract::ApplyBoxTraining(const std::string &fontname, PAGE_RES *page_res
   tprintf("Generated training data for %d words\n", word_count);
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 /** Creates a fake best_choice entry in each WERD_RES with the correct text.*/
 void Tesseract::CorrectClassifyWords(PAGE_RES *page_res) {

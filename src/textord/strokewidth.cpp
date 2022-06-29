@@ -16,7 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -125,7 +125,8 @@ StrokeWidth::~StrokeWidth() {
   if (widths_win_ != nullptr) {
     delete widths_win_->AwaitEvent(SVET_DESTROY);
     if (textord_tabfind_only_strokewidths) {
-      exit(0);
+      assert(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
+      exit(1);
     }
     delete widths_win_;
   }

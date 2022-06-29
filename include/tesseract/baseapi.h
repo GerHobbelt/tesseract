@@ -17,7 +17,7 @@
 #ifndef TESSERACT_API_BASEAPI_H_
 #define TESSERACT_API_BASEAPI_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
@@ -30,6 +30,7 @@
 #include <tesseract/version.h>
 
 #include <cstdio>
+#include <tuple>  // for std::tuple
 #include <vector> // for std::vector
 
 struct Pix;
@@ -113,6 +114,10 @@ public:
   Pix *GetInputImage();
   int GetSourceYResolution();
   const char *GetDatapath();
+  void SetVisibleImageFilename(const char *name);
+  const char *GetVisibleImageFilename();
+  void SetVisibleImage(Pix *pix);
+  Pix* GetVisibleImage();
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
@@ -147,7 +152,7 @@ public:
    */
   const char *GetStringVariable(const char *name) const;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
   /**
    * Print Tesseract fonts table to the given file.
@@ -179,15 +184,15 @@ public:
    *
    * The datapath must be the name of the tessdata directory.
    * The language is (usually) an ISO 639-3 string or nullptr will default to
-   * eng. It is entirely safe (and eventually will be efficient too) to call
+   * "eng". It is entirely safe (and eventually will be efficient too) to call
    * Init multiple times on the same instance to change language, or just
    * to reset the classifier.
    * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
-   * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
+   * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
    * with one or more other languages, so the ~ sign is available to override
-   * that. Eg if hin were set to load eng by default, then hin+~eng would force
-   * loading only hin. The number of loaded languages is limited only by
+   * that. Eg if "hin" were set to load "eng" by default, then "hin+~eng" would force
+   * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
    * applicable language, and there is more chance of hallucinating incorrect
@@ -204,7 +209,7 @@ public:
    * "debug" in the name will be set.
    */
   int Init(const char *datapath, const char *language, OcrEngineMode mode,
-           char **configs, int configs_size,
+           const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params);
@@ -218,7 +223,7 @@ public:
   // In-memory version reads the traineddata file directly from the given
   // data[data_size] array, and/or reads data via a FileReader.
   int Init(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, char **configs, int configs_size,
+           OcrEngineMode mode, const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params, FileReader reader);
@@ -226,7 +231,7 @@ public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
-   * returned. If hin loaded eng automatically as well, then that will
+   * returned. If "hin" loaded "eng" automatically as well, then that will
    * not be included in this list. To find the languages actually
    * loaded use GetLoadedLanguagesAsVector.
    * The returned string should NOT be deleted.
@@ -334,7 +339,7 @@ public:
 
   /**
    * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
-   * Each SetRectangle clears the recogntion results so multiple rectangles
+   * Each SetRectangle clears the recognition results so multiple rectangles
    * can be recognized with the same image.
    */
   void SetRectangle(int left, int top, int width, int height);
@@ -528,6 +533,31 @@ public:
    */
   char *GetUTF8Text();
 
+  size_t GetNumberOfTables() const;
+
+  /// Return the i-th table bounding box coordinates
+  ///
+  /// Gives the (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  /// coordinates of the i-th table.
+  std::tuple<int, int, int, int> GetTableBoundingBox(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the rows of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableRows(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the cols of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableCols(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
   /**
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
@@ -558,6 +588,18 @@ public:
    * data structures.
    */
   char *GetAltoText(int page_number);
+
+   /**
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   */
+  char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
+
+  /**
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   */
+  char *GetPAGEText(int page_number);
 
   /**
    * Make a TSV-formatted string from the internal data structures.
@@ -627,7 +669,7 @@ public:
    */
   int *AllWordConfidences();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   /**
    * Applies the given word to the adaptive classifier if possible.
    * The word must be SPACE-DELIMITED UTF-8 - l i k e t h i s , so it can
@@ -639,7 +681,7 @@ public:
    * Returns false if adaption was not possible for some reason.
    */
   bool AdaptToWordStr(PageSegMode mode, const char *wordstr);
-#endif //  ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   /**
    * Free up recognition results and any stored image data, without actually
@@ -771,6 +813,8 @@ protected:
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
   std::string input_file_;           ///< Name used by training code.
+  std::string visible_image_file_;
+  Pix* pix_visible_image_;           ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.

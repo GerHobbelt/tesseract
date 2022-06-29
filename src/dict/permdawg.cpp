@@ -59,7 +59,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
   bool checked_unigrams = false;
   if (getUnicharset().get_isngram(orig_uch_id)) {
     if (dawg_debug_level) {
-      tprintf("checking unigrams in an ngram %s\n", getUnicharset().debug_str(orig_uch_id).c_str());
+      tprintf("Checking unigrams in an ngram %s\n", getUnicharset().debug_str(orig_uch_id).c_str());
     }
     int num_unigrams = 0;
     word->remove_last_unichar_id();
@@ -106,14 +106,14 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
     // Add a new word choice
     if (word_ending) {
       if (dawg_debug_level) {
-        tprintf("found word = %s\n", word->debug_string().c_str());
+        tprintf("Found word = %s\n", word->debug_string().c_str());
       }
       if (strcmp(output_ambig_words_file.c_str(), "") != 0) {
         if (output_ambig_words_file_ == nullptr) {
           output_ambig_words_file_ = fopen(output_ambig_words_file.c_str(), "wb+");
           if (output_ambig_words_file_ == nullptr) {
-            tprintf("Failed to open output_ambig_words_file %s\n", output_ambig_words_file.c_str());
-            exit(1);
+            tprintf("ERROR: Failed to open output_ambig_words_file %s\n", output_ambig_words_file.c_str());
+            throw "Failed to open output_ambig_words_file";	// GHo: analyzed code flow; this entire function seems to only be used in DISABLED_LEGACY_ENGINE but better to throw than to exit() anyway!
           }
 	  std::string word_str;
           word->string_and_lengths(&word_str, nullptr);
@@ -142,7 +142,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
     }
   } else {
     if (dawg_debug_level) {
-      tprintf("last unichar not OK at index %d in %s\n", word_index, word->debug_string().c_str());
+      tprintf("Last unichar not OK at index %d in %s\n", word_index, word->debug_string().c_str());
     }
   }
 }

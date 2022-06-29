@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -36,6 +36,7 @@
 #include "scrollview.h"
 #include "statistc.h"
 #include "tprintf.h"
+#include "tlog.h"
 
 #include <unordered_set>
 #include <vector>
@@ -203,7 +204,7 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
     RecodedCharID code;
     recoder_.EncodeUnichar(UNICHAR_SPACE, &code);
     if (code(0) != UNICHAR_SPACE) {
-      tprintf("Space was garbled in recoding!!\n");
+      tprintf("ERROR: Space was garbled in recoding!!\n");
       return false;
     }
   } else {
@@ -234,9 +235,7 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
   if (dict_->FinishLoad()) {
     return true; // Success.
   }
-  if (log_level <= 0) {
-    tprintf("Failed to load any lstm-specific dictionaries for lang %s!!\n", lang.c_str());
-  }
+  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang %s!!\n", lang.c_str());
   delete dict_;
   dict_ = nullptr;
   return false;
@@ -244,14 +243,15 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
 
 // Recognizes the line image, contained within image_data, returning the
 // ratings matrix and matching box_word for each WERD_RES in the output.
-void LSTMRecognizer::RecognizeLine(const ImageData &image_data, bool invert, bool debug,
+void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
+                                   float invert_threshold, bool debug,
                                    double worst_dict_cert, const TBOX &line_box,
                                    PointerVector<WERD_RES> *words, int lstm_choice_mode,
                                    int lstm_choice_amount) {
   NetworkIO outputs;
   float scale_factor;
   NetworkIO inputs;
-  if (!RecognizeLine(image_data, invert, debug, false, false, &scale_factor, &inputs, &outputs)) {
+  if (!RecognizeLine(image_data, invert_threshold, debug, false, false, &scale_factor, &inputs, &outputs)) {
     return;
   }
   if (search_ == nullptr) {
@@ -317,7 +317,8 @@ void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, fl
 
 // Recognizes the image_data, returning the labels,
 // scores, and corresponding pairs of start, end x-coords in coords.
-bool LSTMRecognizer::RecognizeLine(const ImageData &image_data, bool invert, bool debug,
+bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
+                                   float invert_threshold, bool debug,
                                    bool re_invert, bool upside_down, float *scale_factor,
                                    NetworkIO *inputs, NetworkIO *outputs) {
   // This ensures consistent recognition results.
@@ -325,13 +326,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data, bool invert, boo
   int min_width = network_->XScaleFactor();
   Image pix = Input::PrepareLSTMInputs(image_data, network_, min_width, &randomizer_, scale_factor);
   if (pix == nullptr) {
-    tprintf("Line cannot be recognized!!\n");
+    tprintf("ERROR: Line cannot be recognized!!\n");
     return false;
   }
   // Maximum width of image to train on.
   const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
-    tprintf("Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix), pixGetHeight(pix));
+    tprintf("ERROR: Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix), pixGetHeight(pix));
     pix.destroy();
     return false;
   }
@@ -345,10 +346,10 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data, bool invert, boo
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
   network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
-  if (invert) {
+  if (invert_threshold > 0.0f) {
     float pos_min, pos_mean, pos_sd;
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
-    if (pos_mean < 0.5f) {
+    if (pos_mean < invert_threshold) {
       // Run again inverted and see if it is any better.
       NetworkIO inv_inputs, inv_outputs;
       inv_inputs.set_int_mode(IsIntMode());

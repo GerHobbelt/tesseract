@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -111,8 +111,8 @@ ROW *fixed_pitch_words( // find lines
     xstarts[0] = rep_left;
   }
   if (cell_it.empty() || row->char_cells.singleton()) {
-    tprintf("Row without enough char cells!\n");
-    tprintf("Leftmost blob is at (%d,%d)\n", box_it.data()->bounding_box().left(),
+    tprintf("WARNING: Row without enough char cells!\n"
+            "Leftmost blob is at (%d,%d)\n", box_it.data()->bounding_box().left(),
             box_it.data()->bounding_box().bottom());
     return nullptr;
   }

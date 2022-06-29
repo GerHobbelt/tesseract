@@ -22,7 +22,7 @@
 ----------------------------------------------------------------------------*/
 
 #define _USE_MATH_DEFINES // for M_PI
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -33,12 +33,12 @@
 #include "classify.h"
 #include "cluster.h"
 #include "clusttool.h"
-#include "commontraining.h"
+#include "common/commontraining.h"
 #include "featdefs.h"
 #include "fontinfo.h"
 #include "indexmapbidi.h"
 #include "intproto.h"
-#include "mastertrainer.h"
+#include "common/mastertrainer.h"
 #include "mergenf.h"
 #include "mf.h"
 #include "ocrfeatures.h"
@@ -47,6 +47,11 @@
 #include "shapetable.h"
 #include "tprintf.h"
 #include "unicity_table.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 using namespace tesseract;
 
@@ -191,7 +196,12 @@ static void SetupConfigMap(ShapeTable *shape_table, IndexMapBiDi *config_map) {
  * @param  argv  array of command line arguments
  * @return 0 if no error occurred
  */
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_mf_training_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   ParseArguments(&argc, &argv);
@@ -261,13 +271,23 @@ int main(int argc, char **argv) {
   delete[] float_classes;
   FreeLabeledClassList(mf_classes);
   delete shape_table;
-  printf("Done!\n");
+  tprintf("Done!\n");
   if (!FLAGS_test_ch.empty()) {
     // If we are displaying debug window(s), wait for the user to look at them.
-    printf("Hit return to exit...\n");
+    tprintf("Hit return to exit...\n");
     while (getchar() != '\n') {
       ;
     }
   }
   return 0;
 } /* main */
+
+#else
+
+TESS_API int tesseract_mf_training_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

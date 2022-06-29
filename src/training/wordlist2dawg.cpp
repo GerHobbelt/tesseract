@@ -20,7 +20,7 @@
 // generates the corresponding squished DAWG file.
 
 #include "classify.h"
-#include "commontraining.h" // CheckSharedLibraryVersion
+#include "common/commontraining.h"     // CheckSharedLibraryVersion
 #include "dawg.h"
 #include "dict.h"
 #include "helpers.h"
@@ -30,15 +30,20 @@
 
 using namespace tesseract;
 
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
+    tprintf("%s\n", tesseract::TessBaseAPI::Version());
     return 0;
   } else if (!(argc == 4 || (argc == 5 && strcmp(argv[1], "-t") == 0) ||
                (argc == 6 && strcmp(argv[1], "-r") == 0))) {
-    printf(
+    tprintf(
         "Usage: %s -v | --version |\n"
         "       %s [-t | -r [reverse policy] ] word_list_file"
         " dawg_file unicharset_file\n",
@@ -63,7 +68,7 @@ int main(int argc, char **argv) {
   const char *unicharset_file = argv[++argv_index];
   tprintf("Loading unicharset from '%s'\n", unicharset_file);
   if (!classify.getDict().getUnicharset().load_from_file(unicharset_file)) {
-    tprintf("Failed to load unicharset from '%s'\n", unicharset_file);
+    tprintf("ERROR: Failed to load unicharset from '%s'\n", unicharset_file);
     return 1;
   }
   const UNICHARSET &unicharset = classify.getDict().getUnicharset();
@@ -74,7 +79,7 @@ int main(int argc, char **argv) {
         classify.getDict().dawg_debug_level);
     tprintf("Reading word list from '%s'\n", wordlist_filename);
     if (!trie.read_and_add_word_list(wordlist_filename, unicharset, reverse_policy)) {
-      tprintf("Failed to add word list from '%s'\n", wordlist_filename);
+      tprintf("ERROR: Failed to add word list from '%s'\n", wordlist_filename);
       exit(1);
     }
     tprintf("Reducing Trie to SquishedDawg\n");
@@ -83,7 +88,7 @@ int main(int argc, char **argv) {
       tprintf("Writing squished DAWG to '%s'\n", dawg_filename);
       dawg->write_squished_dawg(dawg_filename);
     } else {
-      tprintf("Dawg is empty, skip producing the output file\n");
+      tprintf("WARNING: Dawg is empty, skip producing the output file\n");
     }
   } else if (argc == 5) {
     tprintf("Loading dawg DAWG from '%s'\n", dawg_filename);
@@ -94,7 +99,7 @@ int main(int argc, char **argv) {
     tprintf("Checking word list from '%s'\n", wordlist_filename);
     words.check_for_words(wordlist_filename, unicharset, true);
   } else { // should never get here
-    tprintf("Invalid command-line options\n");
+    tprintf("ERROR: Invalid command-line options.\n");
     exit(1);
   }
   return 0;

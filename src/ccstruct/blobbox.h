@@ -135,9 +135,10 @@ inline bool DominatesInMerge(BlobTextFlowType type1, BlobTextFlowType type2) {
 }
 
 class ColPartition;
-
 class BLOBNBOX;
-ELISTIZEH(BLOBNBOX)
+
+ELISTIZEH(BLOBNBOX);
+
 class BLOBNBOX : public ELIST_LINK {
 public:
   BLOBNBOX() {
@@ -805,7 +806,8 @@ private:
   TO_ROW_LIST row_list; // temporary rows
 };
 
-ELISTIZEH(TO_BLOCK)
+ELISTIZEH(TO_BLOCK);
+
 void find_cblob_limits( // get y limits
     C_BLOB *blob,       // blob to search
     float leftx,        // x limits

@@ -25,6 +25,7 @@
 #include "blobbox.h"
 #include "ccstruct.h"
 #include "gap_map.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 
 #include <tesseract/publictypes.h> // For PageSegMode.
 
@@ -69,7 +70,8 @@ private:
 };
 
 // Make it usable by BBGrid.
-CLISTIZEH(WordWithBox)
+CLISTIZEH(WordWithBox);
+
 using WordGrid = BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 using WordSearch = GridSearch<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 
@@ -89,7 +91,7 @@ public:
   // to the appropriate word(s) in case they are really diacritics.
   void TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
                    Image binary_pix, Image thresholds_pix, Image grey_pix, bool use_box_bottoms,
-                   BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks);
+                   BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks, float &gradient);
 
   // If we were supposed to return only a single textline, and there is more
   // than one, clean up and leave only the best.

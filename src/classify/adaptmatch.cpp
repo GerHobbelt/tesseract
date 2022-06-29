@@ -15,10 +15,16 @@
  ** limitations under the License.
  ******************************************************************************/
 
-/*-----------------------------------------------------------------------------
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
+ /*-----------------------------------------------------------------------------
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -2195,3 +2201,5 @@ void Classify::UpdateAmbigsGroup(CLASS_ID class_id, TBLOB *Blob) {
 }
 
 } // namespace tesseract
+
+#endif

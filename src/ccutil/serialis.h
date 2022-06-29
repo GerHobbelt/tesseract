@@ -26,6 +26,7 @@
 #include <cstring>
 #include <type_traits>
 #include <vector> // std::vector
+#include "tesstypes.h"
 
 namespace tesseract {
 
@@ -34,6 +35,11 @@ template <typename T, size_t N>
 constexpr size_t countof(T const (&)[N]) noexcept {
   return N;
 }
+
+// Function to read a std::vector<char> from a whole file.
+// Returns false on failure.
+// using FileReader = bool (*)(const char* filename, std::vector<char>* data);
+// ^-- imported from baseapi.h
 
 // Function to write a std::vector<char> to a whole file.
 // Returns false on failure.
@@ -55,6 +61,53 @@ template <typename T>
 bool Serialize(FILE *fp, const T *data, size_t n = 1) {
   return fwrite(data, sizeof(T), n, fp) == n;
 }
+
+// Deserialize data from file.
+template <typename T, typename ST>
+bool DeSerialize(FILE* fp, T* data, size_t n = 1) {
+	ST* arr = new ST[n];
+	bool rv = (fread(&arr[0], sizeof(ST), n, fp) == n);
+	if (rv) {
+		for (size_t i = 0; i < n; i++) {
+			data[i] = arr[i];
+		}
+	}
+	delete[] arr;
+	return rv;
+}
+
+template
+bool DeSerialize<double, double>(FILE* fp, double* data, size_t n);
+template
+bool DeSerialize<double, float>(FILE* fp, double* data, size_t n);
+template
+bool DeSerialize<float, float>(FILE* fp, float* data, size_t n);
+template
+bool DeSerialize<float, double>(FILE* fp, float* data, size_t n);
+
+// Serialize data to file.
+template <typename T, typename ST>
+bool Serialize(FILE* fp, const T* data, size_t n = 1) {
+	ST* arr = new ST[n];
+	for (size_t i = 0; i < n; i++) {
+		arr[i] = data[i];
+	}
+	bool rv = (fwrite(&arr[0], sizeof(ST), n, fp) == n);
+	delete[] arr;
+	return rv;
+}
+
+template
+bool Serialize<double, double>(FILE* fp, const double* data, size_t n);
+template
+bool Serialize<double, float>(FILE* fp, const double* data, size_t n);
+template
+bool Serialize<float, float>(FILE* fp, const float* data, size_t n);
+template
+bool Serialize<float, double>(FILE* fp, const float* data, size_t n);
+
+
+
 
 // Simple file class.
 // Allows for portable file input from memory and from foreign file systems.
@@ -120,9 +173,9 @@ public:
       data.resize(size);
       for (uint32_t i = 0; i < size; i++) {
         uint8_t non_null;
-	if (!DeSerialize(&non_null)) {
+        if (!DeSerialize(&non_null)) {
           return false;
-	}
+        }
         if (non_null) {
           typedef typename std::remove_pointer<T>::type ST;
           auto item = new ST;
@@ -141,13 +194,72 @@ public:
     }
     return true;
   }
+  template <typename T, typename ST>
+  bool DeSerialize(T* data, size_t count = 1)
+  {
+	  ST* arr = new ST[count];
+	  bool rv = (FReadEndian(&arr[0], sizeof(ST), count) == static_cast<int>(count));
+	  if (rv)
+	  {
+		  for (size_t i = 0; i < count; i++)
+		  {
+			  data[i] = arr[i];
+		  }
+	  }
+	  delete[] arr;
+	  return rv;
+  }
+  template <typename T, typename ST>
+  bool DeSerialize(std::vector<T>& data)
+  {
+	  std::vector<ST> arr;
+	  bool rv = DeSerialize(arr);
+	  if (rv)
+	  {
+		  size_t len = arr.size();
+		  data.resize(len);
+		  for (size_t i = 0; i < len; i++) {
+			  data[i] = arr[i];
+		  }
+	  }
+	  return rv;
+  }
+#if 0
+  template bool DeSerialize<double, double>(double* data, size_t count);
+  template bool DeSerialize<double, float>(double* data, size_t count);
+  template bool DeSerialize<float, float>(float* data, size_t count);
+  template bool DeSerialize<float, double>(float* data, size_t count);
+#endif
 
   // Serialize data.
   bool Serialize(const std::string &data);
   bool Serialize(const std::vector<char> &data);
   template <typename T>
-  bool Serialize(const T *data, size_t count = 1) {
+  bool Serialize(const T* data, size_t count = 1) {
     return FWrite(data, sizeof(T), count) == count;
+  }
+  template <typename T, typename ST>
+  bool Serialize(const T *data, size_t count = 1) {
+	  ST* arr = new ST[count];
+  	  for (size_t i = 0; i < count; i++)
+	  {
+		arr[i] = data[i];
+	  }
+	  bool rv = (FWrite(&arr[0], sizeof(ST), count) == static_cast<int>(count));
+	  delete[] arr;
+	  return rv;
+  }
+  template <typename T, typename ST>
+  bool Serialize(const std::vector<T>& data)
+  {
+	  std::vector<ST> arr;
+		size_t len = data.size();
+		arr.resize(len);
+		for (size_t i = 0; i < len; i++) {
+			arr[i] = data[i];
+		}
+		bool rv = Serialize(arr);
+		return rv;
   }
   template <typename T>
   bool Serialize(const std::vector<T> &data) {
@@ -173,14 +285,14 @@ public:
       // Serialize pointers.
       for (auto &item : data) {
         uint8_t non_null = (item != nullptr);
-	if (!Serialize(&non_null)) {
+        if (!Serialize(&non_null)) {
           return false;
-	}
+        }
         if (non_null) {
           if (!item->Serialize(this)) {
             return false;
-	  }
-	}
+          }
+        }
       }
     } else if (size > 0) {
       // Serialize a non-class.

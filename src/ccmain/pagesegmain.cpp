@@ -16,7 +16,7 @@
  *
  **********************************************************************/
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  ifndef unlink
 #    include <io.h>
 #  endif
@@ -24,8 +24,10 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+#include <cmath>
+
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -34,7 +36,7 @@
 #include "blread.h"
 #include "colfind.h"
 #include "debugpixa.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "equationdetect.h"
 #endif
 #include <tesseract/osdetect.h>
@@ -160,7 +162,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
 
   if (blocks->empty()) {
     if (textord_debug_tabfind) {
-      tprintf("Empty page\n");
+      tprintf("WARNING: Empty page\n");
     }
     return 0; // AutoPageSeg found an empty page.
   }
@@ -168,7 +170,13 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   bool cjk_mode = textord_use_cjk_fp_model;
 
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
-                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks);
+                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, osr->gradient);
+  
+  if ( max_page_gradient_recognize != 100 && abs(osr->gradient) > abs(max_page_gradient_recognize) ) {
+    tprintf("Returning early due to high page gradient.\n");
+    tprintf("Page Gradient: %.6f\n", osr->gradient);
+    return -1; 
+  }
   return auto_page_seg_ret_val;
 }
 
@@ -216,11 +224,11 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
       // blocks separately. For now combine with photomask_pix.
       photomask_pix |= musicmask_pix;
     }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (equ_detect_) {
       finder->SetEquationDetect(equ_detect_);
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
                                 photomask_pix, pix_thresholds_, pix_grey_, &pixa_debug_,
                                 &found_blocks, diacritic_blobs, to_blocks);
@@ -332,7 +340,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
     finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
     if (equ_detect_) {
       equ_detect_->LabelSpecialText(to_block);
@@ -403,7 +411,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     osd_blobs.shallow_clear();
     finder->CorrectOrientation(to_block, vertical_text, osd_orientation);
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   }
 
   return finder;

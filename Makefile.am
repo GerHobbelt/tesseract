@@ -6,6 +6,9 @@ ACLOCAL_AMFLAGS = -I m4
 CLEANFILES =
 
 SUBDIRS = . tessdata
+if MINGW
+SUBDIRS += nsis
+endif
 
 EXTRA_DIST = README.md LICENSE
 EXTRA_DIST += aclocal.m4 config configure.ac autogen.sh
@@ -49,6 +52,11 @@ doc-pack: doc
 doc-clean:
 	rm -rf $(top_builddir)/doc/html/*
 
+if MINGW
+winsetup: training ScrollView.jar
+	@cd "$(top_builddir)/nsis" && $(MAKE) winsetup
+endif
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = tesseract.pc
 
@@ -84,6 +92,7 @@ AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
 
 libtesseract_la_CPPFLAGS = $(AM_CPPFLAGS)
 libtesseract_la_CPPFLAGS += -DTESS_COMMON_TRAINING_API=
+libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/arch
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/ccmain
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
@@ -115,6 +124,7 @@ libtesseract_la_LDFLAGS += -version-info $(GENERIC_LIBRARY_VERSION)
 
 libtesseract_la_SOURCES = src/api/baseapi.cpp
 libtesseract_la_SOURCES += src/api/altorenderer.cpp
+libtesseract_la_SOURCES += src/api/pagerenderer.cpp
 libtesseract_la_SOURCES += src/api/capi.cpp
 libtesseract_la_SOURCES += src/api/hocrrenderer.cpp
 libtesseract_la_SOURCES += src/api/lstmboxrenderer.cpp
@@ -140,6 +150,9 @@ noinst_LTLIBRARIES += libtesseract_native.la
 libtesseract_native_la_CXXFLAGS = -O3 -ffast-math
 if OPENMP_SIMD
 libtesseract_native_la_CXXFLAGS += -fopenmp-simd -DOPENMP_SIMD
+endif
+if HAVE_AVX
+libtesseract_native_la_CXXFLAGS += -mavx
 endif
 libtesseract_native_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
 libtesseract_native_la_SOURCES = src/arch/dotproduct.cpp
@@ -179,6 +192,9 @@ endif
 if HAVE_SSE4_1
 libtesseract_sse_la_CXXFLAGS = -msse4.1
 libtesseract_sse_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
+if OPENMP_SIMD
+libtesseract_sse_la_CXXFLAGS += -fopenmp-simd -DOPENMP_SIMD
+endif
 libtesseract_sse_la_SOURCES = src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp
 libtesseract_la_LIBADD += libtesseract_sse.la
 noinst_LTLIBRARIES += libtesseract_sse.la
@@ -195,6 +211,9 @@ libtesseract_neon_la_SOURCES = src/arch/intsimdmatrixneon.cpp
 libtesseract_neon_la_SOURCES += src/arch/dotproductneon.cpp
 libtesseract_la_LIBADD += libtesseract_neon.la
 noinst_LTLIBRARIES += libtesseract_neon.la
+if HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION
+libtesseract_neon_la_CXXFLAGS += -DHAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION
+endif
 endif
 
 libtesseract_la_SOURCES += src/arch/intsimdmatrix.cpp
@@ -258,6 +277,7 @@ endif
 # Rules for src/ccstruct.
 
 noinst_HEADERS += src/ccstruct/blamer.h
+noinst_HEADERS += src/ccstruct/blob_bounds_calculator.h
 noinst_HEADERS += src/ccstruct/blobbox.h
 noinst_HEADERS += src/ccstruct/blobs.h
 noinst_HEADERS += src/ccstruct/blread.h
@@ -294,6 +314,7 @@ noinst_HEADERS += src/ccstruct/seam.h
 noinst_HEADERS += src/ccstruct/split.h
 noinst_HEADERS += src/ccstruct/statistc.h
 noinst_HEADERS += src/ccstruct/stepblob.h
+noinst_HEADERS += src/ccstruct/tabletransfer.h
 noinst_HEADERS += src/ccstruct/werd.h
 if !DISABLED_LEGACY_ENGINE
 noinst_HEADERS += src/ccstruct/fontinfo.h
@@ -301,6 +322,7 @@ noinst_HEADERS += src/ccstruct/params_training_featdef.h
 endif
 
 libtesseract_la_SOURCES += src/ccstruct/blamer.cpp
+libtesseract_la_SOURCES += src/ccstruct/blob_bounds_calculator.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobbox.cpp
 libtesseract_la_SOURCES += src/ccstruct/blobs.cpp
 libtesseract_la_SOURCES += src/ccstruct/blread.cpp
@@ -344,6 +366,7 @@ endif
 # Rules for src/ccutil
 
 libtesseract_ccutil_la_CPPFLAGS = $(AM_CPPFLAGS)
+libtesseract_ccutil_la_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
 libtesseract_ccutil_la_CPPFLAGS += $(libarchive_CFLAGS)
 if !NO_TESSDATA_PREFIX
 libtesseract_ccutil_la_CPPFLAGS += -DTESSDATA_PREFIX='"@datadir@"'
@@ -506,6 +529,7 @@ libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/cutil
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/dict
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/lstm
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/viewer
+libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
 if TENSORFLOW
 libtesseract_lstm_la_CPPFLAGS += -DINCLUDE_TENSORFLOW
 libtesseract_lstm_la_CPPFLAGS += -I/usr/include/tensorflow
@@ -719,6 +743,13 @@ libtesseract_la_SOURCES += src/wordrec/segsearch.cpp
 libtesseract_la_SOURCES += src/wordrec/wordclass.cpp
 endif
 
+# Rules for thirdparty software src/fmt.
+
+noinst_HEADERS += src/fmt/include/fmt/core.h
+noinst_HEADERS += src/fmt/include/fmt/format.h
+noinst_HEADERS += src/fmt/include/fmt/format-inl.h
+libtesseract_la_SOURCES += src/fmt/src/format.cc
+
 # Rules for tesseract executable.
 
 bin_PROGRAMS = tesseract
@@ -732,6 +763,7 @@ tesseract_CPPFLAGS += -I$(top_srcdir)/src/viewer
 if OPENCL
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/opencl
 endif
+tesseract_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
 tesseract_CPPFLAGS += $(AM_CPPFLAGS)
 if VISIBILITY
 tesseract_CPPFLAGS += -DTESS_IMPORTS
@@ -804,6 +836,7 @@ training_CPPFLAGS += -I$(top_srcdir)/src/dict
 training_CPPFLAGS += -I$(top_srcdir)/src/classify
 training_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 training_CPPFLAGS += -I$(top_srcdir)/src/cutil
+training_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
 training_CPPFLAGS += $(ICU_UC_CFLAGS) $(ICU_I18N_CFLAGS)
 training_CPPFLAGS += $(pango_CFLAGS)
 training_CPPFLAGS += $(cairo_CFLAGS)
@@ -1009,8 +1042,14 @@ wordlist2dawg_LDADD = $(extralib)
 # This is used by OSS-Fuzz.
 LIB_FUZZING_ENGINE ?= -fsanitize=fuzzer
 
+.PHONY: fuzzers
+fuzzers: fast fuzzer-api fuzzer-api-256x512 fuzzer-api-512x256
 fuzzer-api: libtesseract.la
-fuzzer-api: unittest/fuzzers/fuzzer-api.cpp
+fuzzer-api-256x512 \
+fuzzer-api-512x256: fuzzer-api
+	ln -sf $< $@
+
+%: $(top_srcdir)/unittest/fuzzers/%.cpp
 	$(CXX) $(CXXFLAGS) -g $(LIB_FUZZING_ENGINE) \
           -I $(top_srcdir)/include \
           -I $(builddir)/include \
@@ -1205,6 +1244,7 @@ if !DISABLED_LEGACY_ENGINE
 check_PROGRAMS += bitvector_test
 endif # !DISABLED_LEGACY_ENGINE
 endif # ENABLE_TRAINING
+check_PROGRAMS += blob_bounds_calculator_test
 check_PROGRAMS += cleanapi_test
 check_PROGRAMS += colpartition_test
 if ENABLE_TRAINING
@@ -1212,6 +1252,7 @@ check_PROGRAMS += commandlineflags_test
 check_PROGRAMS += dawg_test
 endif # ENABLE_TRAINING
 check_PROGRAMS += denorm_test
+check_PROGRAMS += dotproduct_test
 if !DISABLED_LEGACY_ENGINE
 check_PROGRAMS += equationdetect_test
 endif # !DISABLED_LEGACY_ENGINE
@@ -1317,6 +1358,10 @@ bitvector_test_CPPFLAGS = $(unittest_CPPFLAGS)
 bitvector_test_LDADD = $(TRAINING_LIBS)
 endif # !DISABLED_LEGACY_ENGINE
 
+blob_bounds_calculator_test_SOURCES = unittest/blob_bounds_calculator_test.cc
+blob_bounds_calculator_test_CPPFLAGS = $(unittest_CPPFLAGS)
+blob_bounds_calculator_test_LDADD = $(TESS_LIBS)
+
 cleanapi_test_SOURCES = unittest/cleanapi_test.cc
 cleanapi_test_CPPFLAGS = $(unittest_CPPFLAGS)
 cleanapi_test_LDADD = $(TESS_LIBS)
@@ -1336,6 +1381,16 @@ dawg_test_LDADD = $(TRAINING_LIBS)
 denorm_test_SOURCES = unittest/denorm_test.cc
 denorm_test_CPPFLAGS = $(unittest_CPPFLAGS)
 denorm_test_LDADD = $(TESS_LIBS)
+
+dotproduct_test_SOURCES = unittest/dotproduct_test.cc
+dotproduct_test_CPPFLAGS = $(unittest_CPPFLAGS)
+if HAVE_AVX2
+dotproduct_test_CPPFLAGS += -DHAVE_AVX2
+endif
+if HAVE_SSE4_1
+dotproduct_test_CPPFLAGS += -DHAVE_SSE4_1
+endif
+dotproduct_test_LDADD = $(TESS_LIBS)
 
 if !DISABLED_LEGACY_ENGINE
 equationdetect_test_SOURCES = unittest/equationdetect_test.cc

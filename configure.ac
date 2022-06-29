@@ -72,6 +72,8 @@ AC_CONFIG_HEADERS([include/config_auto.h:config/config.h.in])
 
 # default conditional
 AM_CONDITIONAL([T_WIN], false)
+AM_CONDITIONAL([MINGW], false)
+AM_CONDITIONAL([OSX], false)
 AM_CONDITIONAL([GRAPHICS_DISABLED], false)
 AC_SUBST([AM_CPPFLAGS])
 
@@ -89,7 +91,9 @@ OPENCL_LIBS="-lOpenCL"
 AC_CANONICAL_HOST
 case "${host_os}" in
     mingw*)
+        AC_DEFINE_UNQUOTED([MINGW], 1, [This is a MinGW system])
         AM_CONDITIONAL([T_WIN], true)
+        AM_CONDITIONAL([MINGW], true)
         AM_CONDITIONAL([ADD_RT], false)
         AC_SUBST([AM_LDFLAGS], ['-no-undefined'])
         ;;
@@ -262,6 +266,16 @@ AC_OPENMP
 have_tiff=false
 # Note that the first usage of AC_CHECK_HEADERS must be unconditional.
 AC_CHECK_HEADERS([tiffio.h], [have_tiff=true], [have_tiff=false])
+
+# Check whether we have the runtime neon detection headers:
+AC_MSG_CHECKING([runtime neon detection])
+have_hwcap_based_neon_runtime_detection=true
+AC_CHECK_HEADERS([sys/auxv.h], [], [have_hwcap_based_neon_runtime_detection=false])
+AC_CHECK_HEADERS([asm/hwcap.h], [], [have_hwcap_based_neon_runtime_detection=false])
+AM_CONDITIONAL([HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION], $have_hwcap_based_neon_runtime_detection)
+if $have_hwcap_based_neon_runtime_detection; then
+  AC_DEFINE([HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION], [1], [Enable runtime NEON detection using asm/hwcap.h])
+fi
 
 # check whether to build opencl version
 AC_MSG_CHECKING([--enable-opencl argument])
@@ -564,7 +578,7 @@ PKG_CHECK_MODULES([ICU_UC], [icu-uc >= 52.1], [have_icu_uc=true], [have_icu_uc=f
 PKG_CHECK_MODULES([ICU_I18N], [icu-i18n >= 52.1], [have_icu_i18n=true], [have_icu_i18n=false])
 if !($have_icu_uc && $have_icu_i18n); then
   AC_MSG_WARN([icu 52.1 or higher is required, but was not found.])
-  AC_MSG_WARN([Training tools WILL NOT be built.])
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing icu library.])
   AC_MSG_WARN([Try to install libicu-dev package.])
   AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
@@ -572,18 +586,18 @@ fi
 # Check location of pango headers
 PKG_CHECK_MODULES([pango], [pango >= 1.38.0], [have_pango=true], [have_pango=false])
 if !($have_pango); then
-        AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
-        AC_MSG_WARN([Training tools WILL NOT be built.])
-        AC_MSG_WARN([Try to install libpango1.0-dev package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing pango1.0 library.])
+  AC_MSG_WARN([Try to install libpango1.0-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 # Check location of cairo headers
 PKG_CHECK_MODULES([cairo], [cairo], [have_cairo=true], [have_cairo=false])
 if !($have_cairo); then
-        AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
-        AC_MSG_WARN([Try to install libcairo-dev?? package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
+  AC_MSG_WARN([Try to install libcairo-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 PKG_CHECK_MODULES([pangocairo], [pangocairo], [], [false])
@@ -605,6 +619,7 @@ AC_CONFIG_FILES([java/com/google/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/events/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/ui/Makefile])
+AC_CONFIG_FILES([nsis/Makefile])
 AC_OUTPUT
 
 # Final message

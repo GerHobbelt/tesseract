@@ -35,12 +35,12 @@ const char kForceReverse[] = "RRP_FORCE_REVERSE";
 
 const char *const RTLReversePolicyNames[] = {kDoNotReverse, kReverseIfHasRTL, kForceReverse};
 
-const char Trie::kAlphaPatternUnicode[] = "\u2000";
-const char Trie::kDigitPatternUnicode[] = "\u2001";
-const char Trie::kAlphanumPatternUnicode[] = "\u2002";
-const char Trie::kPuncPatternUnicode[] = "\u2003";
-const char Trie::kLowerPatternUnicode[] = "\u2004";
-const char Trie::kUpperPatternUnicode[] = "\u2005";
+const char Trie::kAlphaPatternUnicode[] = u8"\u2000";
+const char Trie::kDigitPatternUnicode[] = u8"\u2001";
+const char Trie::kAlphanumPatternUnicode[] = u8"\u2002";
+const char Trie::kPuncPatternUnicode[] = u8"\u2003";
+const char Trie::kLowerPatternUnicode[] = u8"\u2004";
+const char Trie::kUpperPatternUnicode[] = u8"\u2005";
 
 const char *Trie::get_reverse_policy_name(RTLReversePolicy reverse_policy) {
   return RTLReversePolicyNames[reverse_policy];
@@ -321,7 +321,7 @@ bool Trie::add_word_list(const std::vector<std::string> &words, const UNICHARSET
     if (!word_in_dawg(word)) {
       add_word_to_dawg(word);
       if (!word_in_dawg(word)) {
-        tprintf("Error: word '%s' not in DAWG after adding it\n", i.c_str());
+        tprintf("ERROR: Word '%s' not in DAWG after adding it\n", i.c_str());
         return false;
       }
     }
@@ -389,13 +389,13 @@ UNICHAR_ID Trie::character_class_to_pattern(char ch) {
 
 bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset) {
   if (!initialized_patterns_) {
-    tprintf("please call initialize_patterns() before read_pattern_list()\n");
+    tprintf("WARNING: Please call initialize_patterns() before read_pattern_list()\n");
     return false;
   }
 
   FILE *pattern_file = fopen(filename, "rb");
   if (pattern_file == nullptr) {
-    tprintf("Error opening pattern file %s\n", filename);
+    tprintf("ERROR: Error opening pattern file %s\n", filename);
     return false;
   }
 
@@ -420,8 +420,8 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
 #if 0 // TODO: This code should be enabled if kSaneNumConcreteChars != 0.
           if (word.length() < kSaneNumConcreteChars) {
             tprintf(
-                "Please provide at least %d concrete characters at the"
-                " beginning of the pattern\n",
+                "ERROR: Please provide at least %d concrete characters at the"
+                " beginning of the pattern.\n",
                 kSaneNumConcreteChars);
             failed = true;
             break;
@@ -449,7 +449,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
       }
     }
     if (failed) {
-      tprintf("Invalid user pattern %s\n", string);
+      tprintf("ERROR: Invalid user pattern %s\n", string);
       continue;
     }
     // Insert the pattern into the trie.
@@ -459,7 +459,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
     if (!this->word_in_dawg(word)) {
       this->add_word_to_dawg(word, &repetitions_vec);
       if (!this->word_in_dawg(word)) {
-        tprintf("Error: failed to insert pattern '%s'\n", string);
+        tprintf("ERROR: failed to insert pattern '%s'\n", string);
       }
     }
     ++pattern_count;
@@ -585,7 +585,7 @@ bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
   int next_node2_num_edges =
       (next_node2_ptr->forward_edges.size() + next_node2_ptr->backward_edges.size());
   if (debug_level_ > 1) {
-    tprintf("removed %d edges from node " REFFORMAT "\n", next_node2_num_edges, next_node2);
+    tprintf("Removed %d edges from node " REFFORMAT "\n", next_node2_num_edges, next_node2);
   }
   next_node2_ptr->forward_edges.clear();
   next_node2_ptr->backward_edges.clear();

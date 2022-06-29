@@ -36,6 +36,8 @@
 #include <utility>
 #include <vector>
 
+#include "testdata.h"
+
 using namespace tesseract;
 
 // Specs of the MockClassifier.
@@ -50,7 +52,7 @@ static const int kNumCorrect = kNumNonReject - kNumTop1Errs;
 static const int kNumAnswers = kNumNonReject + 2 * (kNumTop2Errs - kNumTopNErrs) +
                                (kNumTop1Errs - kNumTop2Errs) + (kNumTopTopErrs - kNumTop1Errs);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static bool safe_strto32(const std::string &str, int *pResult) {
   long n = strtol(str.c_str(), nullptr, 0);
   *pResult = n;
@@ -142,7 +144,9 @@ const double kMin1lDistance = 0.25;
 
 // The fixture for testing Tesseract.
 class MasterTrainerTest : public testing::Test {
-#ifndef DISABLED_LEGACY_ENGINE
+
+#if !DISABLED_LEGACY_ENGINE
+
 protected:
   void SetUp() override {
     std::locale::global(std::locale(""));
@@ -226,13 +230,15 @@ protected:
   // Objects declared here can be used by all tests in the test case for Foo.
   ShapeTable *shape_table_;
   std::unique_ptr<MasterTrainer> master_trainer_;
+
 #endif
+
 };
 
 // Tests that the MasterTrainer correctly loads its data and reaches the correct
 // conclusion over the distance between Arial I l and 1.
 TEST_F(MasterTrainerTest, Il1Test) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because LoadTrainingData is missing.
   GTEST_SKIP();
 #else
@@ -245,7 +251,7 @@ TEST_F(MasterTrainerTest, Il1Test) {
 // Tests the ErrorCounter using a MockClassifier to check that it counts
 // error categories correctly.
 TEST_F(MasterTrainerTest, ErrorCounterTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because LoadTrainingData is missing.
   GTEST_SKIP();
 #else

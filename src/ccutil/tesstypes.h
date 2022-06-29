@@ -17,7 +17,7 @@
 #ifndef TESSERACT_TESSTYPES_H
 #define TESSERACT_TESSTYPES_H
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // FAST_FLOAT
 #endif
 

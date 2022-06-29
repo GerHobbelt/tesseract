@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <cstdio>
 
 #include "classify.h"
@@ -71,3 +77,5 @@ bool Classify::WriteTRFile(const char *filename) {
 }
 
 } // namespace tesseract
+
+#endif

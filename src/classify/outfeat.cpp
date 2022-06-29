@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "outfeat.h"
 
 #include "classify.h"
@@ -158,3 +164,5 @@ void NormalizeOutlineX(FEATURE_SET FeatureSet) {
 } /* NormalizeOutlineX */
 
 } // namespace tesseract
+
+#endif

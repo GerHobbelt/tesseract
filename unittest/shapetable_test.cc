@@ -20,7 +20,7 @@
 
 namespace tesseract {
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 static std::string TmpNameToPath(const std::string &name) {
   return file::JoinPath(FLAGS_test_tmpdir, name);
@@ -60,7 +60,7 @@ protected:
 
 // Tests that a Shape works as expected for all the basic functions.
 TEST_F(ShapeTest, BasicTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because Shape is missing.
   GTEST_SKIP();
 #else
@@ -92,7 +92,7 @@ TEST_F(ShapeTest, BasicTest) {
 
 // Tests AddShape separately, as it takes quite a bit of work.
 TEST_F(ShapeTest, AddShapeTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because Shape is missing.
   GTEST_SKIP();
 #else
@@ -127,7 +127,7 @@ class ShapeTableTest : public testing::Test {};
 
 // Tests that a Shape works as expected for all the basic functions.
 TEST_F(ShapeTableTest, FullTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because Shape is missing.
   GTEST_SKIP();
 #else

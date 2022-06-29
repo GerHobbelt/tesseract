@@ -79,7 +79,7 @@ typedef int (*cl_kernel_function)(void **userdata, KernelEnv *kenv);
 
 #  define CHECK_OPENCL(status, name)                                     \
     if (status != CL_SUCCESS) {                                          \
-      tprintf("OpenCL error code is %d at   when %s .\n", status, name); \
+      tprintf("ERROR: OpenCL error code is %d at   when %s .\n", status, name); \
     }
 
 struct GPUEnv {
@@ -151,7 +151,7 @@ public:
   // *kernelName, KernelEnv *env, cl_kernel_function *function );
 
   static int LoadOpencl();
-#  ifdef WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // static int OpenclInite();
   static void FreeOpenclDll();
 #  endif

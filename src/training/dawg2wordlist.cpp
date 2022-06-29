@@ -16,7 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include "commontraining.h" // CheckSharedLibraryVersion
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "dawg.h"
 #include "trie.h"
 #include "unicharset.h"
@@ -29,14 +29,14 @@ static std::unique_ptr<tesseract::Dawg> LoadSquishedDawg(const UNICHARSET &unich
   const int kDictDebugLevel = 1;
   tesseract::TFile dawg_file;
   if (!dawg_file.Open(filename, nullptr)) {
-    tprintf("Could not open %s for reading.\n", filename);
+    tprintf("ERROR: Could not open %s for reading.\n", filename);
     return nullptr;
   }
   tprintf("Loading word list from %s\n", filename);
   auto retval = std::make_unique<tesseract::SquishedDawg>(tesseract::DAWG_TYPE_WORD, "eng",
                                                           SYSTEM_DAWG_PERM, kDictDebugLevel);
   if (!retval->Load(&dawg_file)) {
-    tprintf("Could not read %s\n", filename);
+    tprintf("ERROR: Could not read %s\n", filename);
     return nullptr;
   }
   tprintf("Word list loaded.\n");
@@ -59,7 +59,7 @@ static int WriteDawgAsWordlist(const UNICHARSET &unicharset, const tesseract::Da
                                const char *outfile_name) {
   FILE *out = fopen(outfile_name, "wb");
   if (out == nullptr) {
-    tprintf("Could not open %s for writing.\n", outfile_name);
+    tprintf("ERROR: Could not open %s for writing.\n", outfile_name);
     return 1;
   }
   WordOutputter outputter(out);
@@ -68,11 +68,16 @@ static int WriteDawgAsWordlist(const UNICHARSET &unicharset, const tesseract::Da
   return fclose(out);
 }
 
-int main(int argc, char *argv[]) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_dawg2wordlist_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
+    tprintf("%s\n", tesseract::TessBaseAPI::Version());
     return 0;
   } else if (argc != 4) {
     tprintf("Print all the words in a given dawg.\n");
@@ -87,12 +92,12 @@ int main(int argc, char *argv[]) {
   const char *wordlist_file = argv[3];
   UNICHARSET unicharset;
   if (!unicharset.load_from_file(unicharset_file)) {
-    tprintf("Error loading unicharset from %s.\n", unicharset_file);
+    tprintf("ERROR: Error loading unicharset from %s.\n", unicharset_file);
     return 1;
   }
   auto dict = LoadSquishedDawg(unicharset, dawg_file);
   if (dict == nullptr) {
-    tprintf("Error loading dictionary from %s.\n", dawg_file);
+    tprintf("ERROR: Error loading dictionary from %s.\n", dawg_file);
     return 1;
   }
   int retval = WriteDawgAsWordlist(unicharset, dict.get(), wordlist_file);

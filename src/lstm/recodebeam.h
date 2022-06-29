@@ -28,6 +28,7 @@
 #include "networkio.h"
 #include "ratngs.h"
 #include "unicharcompress.h"
+#include "genericvector.h"     // for PointerVector (ptr only)
 
 #include <unordered_set> // for std::unordered_set
 #include <vector>        // for std::vector

@@ -21,7 +21,6 @@
 
 // expects clone of tessdata_fast repo in ../../tessdata_fast
 
-//#include "log.h"
 #include <allheaders.h>
 #include <tesseract/baseapi.h>
 #include <time.h>
@@ -32,6 +31,9 @@
 #include <string>
 #include "include_gunit.h"
 #include "image.h"
+#include "log.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -59,7 +61,7 @@ protected:
 
 void OCRTester(const char *imgname, const char *groundtruth, const char *tessdatadir,
                const char *lang) {
-  // log.info() << tessdatadir << " for language: " << lang << std::endl;
+  LOG(INFO) << tessdatadir << " for language: " << lang << std::endl;
   char *outText;
   std::locale loc("C"); // You can also use "" for the default system locale
   std::ifstream file(groundtruth);

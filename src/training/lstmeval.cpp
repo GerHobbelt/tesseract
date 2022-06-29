@@ -15,11 +15,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#include "commontraining.h"
-#include "lstmtester.h"
+#include <tesseract/debugheap.h>
+
+#include "common/commontraining.h"
+#include "unicharset/lstmtester.h"
 #include "tprintf.h"
 
 using namespace tesseract;
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static STRING_PARAM_FLAG(model, "", "Name of model file (training or recognition)");
 static STRING_PARAM_FLAG(traineddata, "",
@@ -29,38 +33,45 @@ static STRING_PARAM_FLAG(eval_listfile, "", "File listing sample files in lstmf 
 static INT_PARAM_FLAG(max_image_MB, 2000, "Max memory to use for images.");
 static INT_PARAM_FLAG(verbosity, 1, "Amount of diagnosting information to output (0-2).");
 
-int main(int argc, char **argv) {
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
   ParseArguments(&argc, &argv);
   if (FLAGS_model.empty()) {
-    tprintf("Must provide a --model!\n");
+    tprintf("ERROR: Must provide a --model!\n");
     return 1;
   }
   if (FLAGS_eval_listfile.empty()) {
-    tprintf("Must provide a --eval_listfile!\n");
+    tprintf("ERROR: Must provide a --eval_listfile!\n");
     return 1;
   }
   tesseract::TessdataManager mgr;
   if (!mgr.Init(FLAGS_model.c_str())) {
     if (FLAGS_traineddata.empty()) {
-      tprintf("Must supply --traineddata to eval a training checkpoint!\n");
+      tprintf("ERROR: Must supply --traineddata to eval a training checkpoint!\n");
       return 1;
     }
-    tprintf("%s is not a recognition model, trying training checkpoint...\n", FLAGS_model.c_str());
+    tprintf("WARNING: %s is not a recognition model, trying training checkpoint...\n", FLAGS_model.c_str());
     if (!mgr.Init(FLAGS_traineddata.c_str())) {
-      tprintf("Failed to load language model from %s!\n", FLAGS_traineddata.c_str());
+      tprintf("ERROR: Failed to load language model from %s!\n", FLAGS_traineddata.c_str());
       return 1;
     }
     std::vector<char> model_data;
     if (!tesseract::LoadDataFromFile(FLAGS_model.c_str(), &model_data)) {
-      tprintf("Failed to load model from: %s\n", FLAGS_model.c_str());
+      tprintf("ERROR: Failed to load model from: %s\n", FLAGS_model.c_str());
       return 1;
     }
     mgr.OverwriteEntry(tesseract::TESSDATA_LSTM, &model_data[0], model_data.size());
   }
   tesseract::LSTMTester tester(static_cast<int64_t>(FLAGS_max_image_MB) * 1048576);
   if (!tester.LoadAllEvalData(FLAGS_eval_listfile.c_str())) {
-    tprintf("Failed to load eval data from: %s\n", FLAGS_eval_listfile.c_str());
+    tprintf("ERROR: Failed to load eval data from: %s\n", FLAGS_eval_listfile.c_str());
     return 1;
   }
   double errs = 0.0;

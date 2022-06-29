@@ -15,19 +15,27 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
+
 #include <cerrno>
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
 #endif
-#include "commontraining.h"
-#include "fileio.h" // for LoadFileLinesToStrings
-#include "lstmtester.h"
-#include "lstmtrainer.h"
+#include "common/commontraining.h"
+#include "unicharset/fileio.h"             // for LoadFileLinesToStrings
+#include "unicharset/lstmtester.h"
+#include "unicharset/lstmtrainer.h"
 #include "params.h"
 #include "tprintf.h"
-#include "unicharset_training_utils.h"
+#include "unicharset/unicharset_training_utils.h"
 
 using namespace tesseract;
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static INT_PARAM_FLAG(debug_interval, 0, "How often to display the alignment.");
 static STRING_PARAM_FLAG(net_spec, "", "Network specification");
@@ -68,11 +76,18 @@ static BOOL_PARAM_FLAG(randomly_rotate, false,
 // Number of training images to train between calls to MaintainCheckpoints.
 const int kNumPagesPerBatch = 100;
 
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
 // Apart from command-line flags, input is a collection of lstmf files, that
 // were previously created using tesseract with the lstm.train config file.
 // The program iterates over the inputs, feeding the data to the network,
 // until the error rate reaches a specified target or max_iterations is reached.
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
   ParseArguments(&argc, &argv);
 #if defined(__USE_GNU)
@@ -82,11 +97,11 @@ int main(int argc, char **argv) {
   }
 #endif
   if (FLAGS_model_output.empty()) {
-    tprintf("Must provide a --model_output!\n");
+    tprintf("ERROR: Must provide a --model_output!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_traineddata.empty()) {
-    tprintf("Must provide a --traineddata see training documentation\n");
+    tprintf("ERROR: Must provide a --traineddata, see training documentation\n");
     return EXIT_FAILURE;
   }
 
@@ -97,11 +112,11 @@ int main(int argc, char **argv) {
   if (f != nullptr) {
     fclose(f);
     if (remove(test_file.c_str()) != 0) {
-      tprintf("Error, failed to remove %s: %s\n", test_file.c_str(), strerror(errno));
+      tprintf("ERROR: Failed to remove %s: %s\n", test_file.c_str(), strerror(errno));
       return EXIT_FAILURE;
     }
   } else {
-    tprintf("Error, model output cannot be written: %s\n", strerror(errno));
+    tprintf("ERROR: Model output cannot be written: %s\n", strerror(errno));
     return EXIT_FAILURE;
   }
 
@@ -121,7 +136,7 @@ int main(int argc, char **argv) {
   // so do it now and exit.
   if (FLAGS_stop_training || FLAGS_debug_network) {
     if (!trainer.TryLoadingCheckpoint(FLAGS_continue_from.c_str(), nullptr)) {
-      tprintf("Failed to read continue from: %s\n", FLAGS_continue_from.c_str());
+      tprintf("ERROR: Failed to read continue from: %s\n", FLAGS_continue_from.c_str());
       return EXIT_FAILURE;
     }
     if (FLAGS_debug_network) {
@@ -131,7 +146,7 @@ int main(int argc, char **argv) {
         trainer.ConvertToInt();
       }
       if (!trainer.SaveTraineddata(FLAGS_model_output.c_str())) {
-        tprintf("Failed to write recognition model : %s\n", FLAGS_model_output.c_str());
+        tprintf("ERROR: Failed to write recognition model : %s\n", FLAGS_model_output.c_str());
       }
     }
     return EXIT_SUCCESS;
@@ -139,12 +154,12 @@ int main(int argc, char **argv) {
 
   // Get the list of files to process.
   if (FLAGS_train_listfile.empty()) {
-    tprintf("Must supply a list of training filenames! --train_listfile\n");
+    tprintf("ERROR: Must supply a list of training filenames! --train_listfile\n");
     return EXIT_FAILURE;
   }
   std::vector<std::string> filenames;
   if (!tesseract::LoadFileLinesToStrings(FLAGS_train_listfile.c_str(), &filenames)) {
-    tprintf("Failed to load list of training filenames from %s\n", FLAGS_train_listfile.c_str());
+    tprintf("ERROR: Failed to load list of training filenames from %s\n", FLAGS_train_listfile.c_str());
     return EXIT_FAILURE;
   }
 
@@ -158,7 +173,7 @@ int main(int argc, char **argv) {
       if (!trainer.TryLoadingCheckpoint(FLAGS_continue_from.c_str(),
                                         FLAGS_append_index >= 0 ? FLAGS_continue_from.c_str()
                                                                 : FLAGS_old_traineddata.c_str())) {
-        tprintf("Failed to continue from: %s\n", FLAGS_continue_from.c_str());
+        tprintf("ERROR: Failed to continue from: %s\n", FLAGS_continue_from.c_str());
         return EXIT_FAILURE;
       }
       tprintf("Continuing from %s\n", FLAGS_continue_from.c_str());
@@ -172,7 +187,7 @@ int main(int argc, char **argv) {
       if (FLAGS_append_index >= 0) {
         tprintf("Appending a new network to an old one!!");
         if (FLAGS_continue_from.empty()) {
-          tprintf("Must set --continue_from for appending!\n");
+          tprintf("ERROR: Must set --continue_from for appending!\n");
           return EXIT_FAILURE;
         }
       }
@@ -180,7 +195,7 @@ int main(int argc, char **argv) {
       if (!trainer.InitNetwork(FLAGS_net_spec.c_str(), FLAGS_append_index, FLAGS_net_mode,
                                FLAGS_weight_range, FLAGS_learning_rate, FLAGS_momentum,
                                FLAGS_adam_beta)) {
-        tprintf("Failed to create network from spec: %s\n", FLAGS_net_spec.c_str());
+        tprintf("ERROR: Failed to create network from spec: %s\n", FLAGS_net_spec.c_str());
         return EXIT_FAILURE;
       }
       trainer.set_perfect_delay(FLAGS_perfect_sample_delay);
@@ -190,7 +205,7 @@ int main(int argc, char **argv) {
           filenames,
           FLAGS_sequential_training ? tesseract::CS_SEQUENTIAL : tesseract::CS_ROUND_ROBIN,
           FLAGS_randomly_rotate)) {
-    tprintf("Load of images failed!!\n");
+    tprintf("ERROR: Load of images failed!!\n");
     return EXIT_FAILURE;
   }
 
@@ -199,7 +214,7 @@ int main(int argc, char **argv) {
   if (!FLAGS_eval_listfile.empty()) {
     using namespace std::placeholders; // for _1, _2, _3...
     if (!tester.LoadAllEvalData(FLAGS_eval_listfile.c_str())) {
-      tprintf("Failed to load eval data from: %s\n", FLAGS_eval_listfile.c_str());
+      tprintf("ERROR: Failed to load eval data from: %s\n", FLAGS_eval_listfile.c_str());
       return EXIT_FAILURE;
     }
     tester_callback = std::bind(&tesseract::LSTMTester::RunEvalAsync, &tester, _1, _2, _3, _4);

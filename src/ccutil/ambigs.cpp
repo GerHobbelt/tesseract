@@ -17,6 +17,12 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "ambigs.h"
 
 #include "helpers.h"
@@ -410,3 +416,5 @@ bool UnicharAmbigs::InsertIntoTable(UnicharAmbigsVector &table, int test_ambig_p
 }
 
 } // namespace tesseract
+
+#endif

@@ -41,7 +41,7 @@ enum ParamType { VT_INTEGER, VT_BOOLEAN, VT_STRING, VT_DOUBLE };
 
 // A rather hackish helper structure which can take any kind of parameter input
 // (defined by ParamType) and do a couple of common operations on them, like
-// comparisond or getting its value. It is used in the context of the
+// comparison or getting its value. It is used in the context of the
 // ParamsEditor as a bridge from the internal tesseract parameters to the
 // ones displayed by the ScrollView server.
 class ParamContent : public ELIST_LINK {
@@ -88,7 +88,7 @@ private:
   };
 };
 
-ELISTIZEH(ParamContent)
+ELISTIZEH(ParamContent);
 
 // The parameters editor enables the user to edit all the parameters used within
 // tesseract. It can be invoked on its own, but is supposed to be invoked by
@@ -104,16 +104,6 @@ public:
   void Notify(const SVEvent *sve) override;
 
 private:
-  // Gets the up to the first 3 prefixes from s (split by _).
-  // For example, tesseract_foo_bar will be split into tesseract,foo and bar.
-  void GetPrefixes(const char *s, std::string *level_one, std::string *level_two, std::string *level_three);
-
-  // Gets the first n words (split by _) and puts them in t.
-  // For example, tesseract_foo_bar with N=2 will yield tesseract_foo_.
-  void GetFirstWords(const char *s, // source string
-                     int n,         // number of words
-                     char *t);      // target string
-
   // Find all editable parameters used within tesseract and create a
   // SVMenuNode tree from it.
   SVMenuNode *BuildListOfAllLeaves(tesseract::Tesseract *tess);

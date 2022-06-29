@@ -16,16 +16,24 @@
 //            but doesn't have to be the same as the training data.
 //  Author:   Ray Smith
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h>
 #include <algorithm>
 #include <cstdio>
-#include "commontraining.h"
-#include "mastertrainer.h"
+#include "common/commontraining.h"
+#include "common/mastertrainer.h"
 #include "params.h"
 #include "tessclassifier.h"
 #include "tesseractclass.h"
 
+#include "tesseract/capi_training_tools.h"
+
+
 using namespace tesseract;
+
+#if !DISABLED_LEGACY_ENGINE
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static STRING_PARAM_FLAG(classifier, "", "Classifier to test");
 static STRING_PARAM_FLAG(lang, "eng", "Language to test");
@@ -35,9 +43,11 @@ enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
 static const char *names[] = {"pruner", "full"};
 
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
 static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_name,
                                                         const UNICHARSET &unicharset, int argc,
-                                                        char **argv, tesseract::TessBaseAPI **api) {
+                                                        const char **argv, tesseract::TessBaseAPI **api) {
   // Decode the classifier string.
   ClassifierName classifier = CN_COUNT;
   for (int c = 0; c < CN_COUNT; ++c) {
@@ -98,7 +108,12 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
 // pruner   : Tesseract class pruner only.
 // full     : Tesseract full classifier.
 //            with an input trainer.)
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
   ParseArguments(&argc, &argv);
   std::string file_prefix;
@@ -125,3 +140,13 @@ int main(int argc, char **argv) {
 
   return 0;
 } /* main */
+
+#else
+
+TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
+{
+	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

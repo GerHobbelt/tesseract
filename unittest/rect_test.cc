@@ -13,6 +13,9 @@
 
 #include "include_gunit.h"
 
+// nuke collision with MSWindows system header files' #define small
+#undef small
+
 namespace tesseract {
 
 class TBOXTest : public testing::Test {

@@ -15,9 +15,11 @@
  ******************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#  include "config_auto.h"
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
+
+#if !DISABLED_LEGACY_ENGINE
 
 #include "intmatcher.h"
 
@@ -852,6 +854,7 @@ int IntegerMatcher::UpdateTablesForFeature(INT_CLASS_STRUCT *ClassTemplate, BIT_
           }
           uint8_t *UINT8Pointer = &(tables->proto_evidence_[ActualProtoNum + proto_offset][0]);
           for (; Evidence > 0 && ProtoIndex > 0; ProtoIndex--, UINT8Pointer++) {
+            assert(UINT8Pointer < tables->proto_evidence_[ActualProtoNum + proto_offset] + MAX_PROTO_INDEX);
             if (Evidence > *UINT8Pointer) {
               uint8_t Temp = *UINT8Pointer;
               *UINT8Pointer = Evidence;
@@ -1163,3 +1166,5 @@ float IntegerMatcher::ApplyCNCorrection(float rating, int blob_length, int norma
 }
 
 } // namespace tesseract
+
+#endif

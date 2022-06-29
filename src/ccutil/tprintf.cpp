@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -31,14 +31,43 @@
 
 namespace tesseract {
 
-#define MAX_MSG_LEN 2048
+#ifdef HAVE_MUPDF
 
-INT_VAR(log_level, INT_MAX, "Logging level");
+// for fz_error():
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "mupdf/fitz/config.h"
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/version.h"
+#include "mupdf/fitz/context.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+TESS_API void tprintf(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+
+  if (!strncmp(format, "ERROR: ", 7))
+	fz_verror(NULL, format + 7, args);
+  else if (!strncmp(format, "WARNING: ", 9))
+    fz_vwarn(NULL, format + 9, args);
+  else
+    fz_vinfo(NULL, format, args);
+  va_end(args);
+}
+
+#else
+
+#define MAX_MSG_LEN 2048
 
 static STRING_VAR(debug_file, "", "File to send tprintf output to");
 
 // Trace printf
-void tprintf(const char *format, ...) {
+TESS_API void tprintf(const char *format, ...) {
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
@@ -47,7 +76,7 @@ void tprintf(const char *format, ...) {
     return;
   }
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // Replace /dev/null by nul for Windows.
   if (strcmp(debug_file_name, "/dev/null") == 0) {
     debug_file_name = "nul";
@@ -56,7 +85,7 @@ void tprintf(const char *format, ...) {
 #endif
 
   if (debugfp == nullptr && debug_file_name[0] != '\0') {
-    debugfp = fopen(debug_file_name, "wb");
+    debugfp = fopen(debug_file_name, "a+b");
   } else if (debugfp != nullptr && debug_file_name[0] == '\0') {
     fclose(debugfp);
     debugfp = nullptr;
@@ -71,5 +100,7 @@ void tprintf(const char *format, ...) {
   }
   va_end(args);
 }
+
+#endif
 
 } // namespace tesseract

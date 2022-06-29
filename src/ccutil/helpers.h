@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+#include <tesseract/export.h>   // for __attribute__
+
+
 namespace tesseract {
 
 template <class T>

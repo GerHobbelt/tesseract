@@ -20,7 +20,8 @@
 #define TESSERACT_TEXTORD_TABLEFIND_H_
 
 #include "colpartitiongrid.h"
-#include "elst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "rect.h"
 
 namespace tesseract {
@@ -33,8 +34,9 @@ class ColPartitionSet;
 // ColSegment holds rectangular blocks that represent segmentation of a page
 // into regions containing single column text/table.
 class ColSegment;
-ELISTIZEH(ColSegment)
-CLISTIZEH(ColSegment)
+
+ELISTIZEH(ColSegment);
+CLISTIZEH(ColSegment);
 
 class ColSegment : public ELIST_LINK {
 public:

@@ -68,6 +68,10 @@ TessResultRenderer *TessAltoRendererCreate(const char *outputbase) {
   return new tesseract::TessAltoRenderer(outputbase);
 }
 
+TessResultRenderer *TessPAGERendererCreate(const char *outputbase) {
+  return new tesseract::TessPAGERenderer(outputbase);
+}
+
 TessResultRenderer *TessTsvRendererCreate(const char *outputbase) {
   return new tesseract::TessTsvRenderer(outputbase);
 }
@@ -213,7 +217,7 @@ BOOL TessBaseAPIPrintVariablesToFile(const TessBaseAPI *handle, const char *file
 }
 
 int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode mode, char **configs, int configs_size, char **vars_vec,
+                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
                      char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
@@ -229,7 +233,7 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode oem, char **configs, int configs_size) {
+                     TessOcrEngineMode oem, const char **configs, int configs_size) {
   return handle->Init(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
 }
 
@@ -243,7 +247,7 @@ int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *lang
 }
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
-                     TessOcrEngineMode mode, char **configs, int configs_size, char **vars_vec,
+                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
                      char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
@@ -300,7 +304,7 @@ char *TessBaseAPIRect(TessBaseAPI *handle, const unsigned char *imagedata, int b
                                height);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI *handle) {
   handle->ClearAdaptiveClassifier();
 }
@@ -331,7 +335,7 @@ void TessBaseAPIClearPersistentCache(TessBaseAPI * /*handle*/) {
   TessBaseAPI::ClearPersistentCache();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 BOOL TessBaseAPIDetectOrientationScript(TessBaseAPI *handle, int *orient_deg, float *orient_conf,
                                         const char **script_name, float *script_conf) {
@@ -424,6 +428,10 @@ char *TessBaseAPIGetAltoText(TessBaseAPI *handle, int page_number) {
   return handle->GetAltoText(page_number);
 }
 
+char *TessBaseAPIGetPAGEText(TessBaseAPI *handle, int page_number) {
+  return handle->GetPAGEText(page_number);
+}
+
 char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number) {
   return handle->GetTSVText(page_number);
 }
@@ -452,7 +460,7 @@ int *TessBaseAPIAllWordConfidences(TessBaseAPI *handle) {
   return handle->AllWordConfidences();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI *handle, TessPageSegMode mode, const char *wordstr) {
   return static_cast<int>(handle->AdaptToWordStr(mode, wordstr));
 }

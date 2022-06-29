@@ -16,11 +16,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "commandlineflags.h"
-#include "commontraining.h" // CheckSharedLibraryVersion
-#include "lang_model_helpers.h"
+#include "common/commandlineflags.h"
+#include "common/commontraining.h" // CheckSharedLibraryVersion
+#include "unicharset/lang_model_helpers.h"
 #include "tprintf.h"
-#include "unicharset_training_utils.h"
+#include "unicharset/unicharset_training_utils.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if defined(HAS_LIBICU)
 
 using namespace tesseract;
 
@@ -38,7 +43,12 @@ static BOOL_PARAM_FLAG(pass_through_recoder, false,
                        "If true, the recoder is a simple pass-through of the "
                        "unicharset. Otherwise, potentially a compression of it");
 
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
+#endif
+{
   // Sets properties on the input unicharset file, and writes:
   //   rootdir/lang/lang.charset_size=ddd.txt
   //   rootdir/lang/lang.traineddata
@@ -57,7 +67,7 @@ int main(int argc, char **argv) {
   // Load the input unicharset
   UNICHARSET unicharset;
   if (!unicharset.load_from_file(FLAGS_input_unicharset.c_str(), false)) {
-    tprintf("Failed to load unicharset from %s\n", FLAGS_input_unicharset.c_str());
+    tprintf("ERROR: Failed to load unicharset from %s\n", FLAGS_input_unicharset.c_str());
     return 1;
   }
   tprintf("Loaded unicharset of size %zu from file %s\n", unicharset.size(),
@@ -76,3 +86,19 @@ int main(int argc, char **argv) {
                                      numbers, FLAGS_lang_is_rtl, /*reader*/ nullptr,
                                      /*writer*/ nullptr);
 }
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr,
+          "combine_lang_model tool not supported in this non-ICU / Unicode "
+          "build.\n");
+  return EXIT_FAILURE;
+}
+
+#endif

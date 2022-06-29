@@ -29,7 +29,7 @@ LSTMTester::LSTMTester(int64_t max_memory) : test_data_(max_memory) {}
 bool LSTMTester::LoadAllEvalData(const char *filenames_file) {
   std::vector<std::string> filenames;
   if (!LoadFileLinesToStrings(filenames_file, &filenames)) {
-    tprintf("Failed to load list of eval filenames from %s\n", filenames_file);
+    tprintf("ERROR: Failed to load list of eval filenames from %s\n", filenames_file);
     return false;
   }
   return LoadAllEvalData(filenames);
@@ -91,25 +91,33 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
   int error_count = 0;
   while (error_count < total_pages_) {
     const ImageData *trainingdata = test_data_.GetPageBySerial(eval_iteration);
+    std::vector<int> truth_labels;
+    if (!trainer.EncodeString(trainingdata->transcription(), &truth_labels)) {
+      eval_iteration++;
+      continue;
+    }
+    std::string truth_text = trainer.DecodeLabels(truth_labels);
     trainer.SetIteration(++eval_iteration);
     NetworkIO fwd_outputs, targets;
     Trainability result = trainer.PrepareForBackward(trainingdata, &fwd_outputs, &targets);
     if (result != UNENCODABLE) {
+      float confidence = ConfidenceFromOutputs(&fwd_outputs, trainer.null_char());
       char_error += trainer.NewSingleError(tesseract::ET_CHAR_ERROR);
       word_error += trainer.NewSingleError(tesseract::ET_WORD_RECERR);
       ++error_count;
       if (verbosity > 1 || (verbosity > 0 && result != PERFECT)) {
-        tprintf("Truth:%s\n", trainingdata->transcription().c_str());
+        tprintf("Truth:%s\n", truth_text.c_str());
         std::vector<int> ocr_labels;
         std::vector<int> xcoords;
         trainer.LabelsFromOutputs(fwd_outputs, &ocr_labels, &xcoords);
         std::string ocr_text = trainer.DecodeLabels(ocr_labels);
         tprintf("OCR  :%s\n", ocr_text.c_str());
         if (verbosity > 2 || (verbosity > 1 && result != PERFECT)) {
-          tprintf("Line BCER=%f, BWER=%f\n\n",
+          tprintf("Line Char error rate (BCER)=%f, Word error rate (BWER)=%f, Confidence=%f\n\n",
                   trainer.NewSingleError(tesseract::ET_CHAR_ERROR),
-                  trainer.NewSingleError(tesseract::ET_WORD_RECERR));
-        }
+                  trainer.NewSingleError(tesseract::ET_WORD_RECERR),
+                  confidence);
+		}
       }
     }
   }
@@ -123,6 +131,22 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
   result += "BCER eval=" + std::to_string(char_error);
   result += ", BWER eval=" + std::to_string(word_error);
   return result;
+}
+
+// Returns the confidence for all best labels over a set of outputs.
+float LSTMTester::ConfidenceFromOutputs(NetworkIO *outputs, int null_char) {
+  float total = 0.0f;
+  int num = 0;
+  for(int timestep = 0; timestep < outputs->Width(); ++timestep) {
+    float score;
+    const int label = outputs->BestLabel(timestep, &score);
+    if (label == null_char) {
+      continue;
+    }
+    total += -score;
+    num++;
+  }
+  return 1 - (total / num);
 }
 
 // Helper thread function for RunEvalAsync.

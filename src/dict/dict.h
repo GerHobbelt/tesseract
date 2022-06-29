@@ -19,11 +19,11 @@
 #ifndef TESSERACT_DICT_DICT_H_
 #define TESSERACT_DICT_DICT_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
 #endif
 #include "dawg.h"
@@ -32,9 +32,9 @@
 #include "stopper.h"
 #include "trie.h"
 #include "unicharset.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "params_training_featdef.h"
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 namespace tesseract {
 
@@ -107,7 +107,7 @@ public:
   UNICHARSET &getUnicharset() {
     return getCCUtil()->unicharset;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   const UnicharAmbigs &getUnicharAmbigs() const {
     return getCCUtil()->unichar_ambigs;
   }
@@ -231,10 +231,11 @@ public:
                            int word_ending, CHAR_FRAGMENT_INFO *char_frag_info);
 
   /* stopper.cpp *************************************************************/
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
   bool NoDangerousAmbig(WERD_CHOICE *BestChoice, DANGERR *fixpt, bool fix_replaceable,
                         MATRIX *ratings);
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
+
   // Replaces the corresponding wrong ngram in werd_choice with the correct
   // one. The whole correct n-gram is inserted into the ratings matrix and
   // the werd_choice: no more fragments!. Rating and certainty of new entries
@@ -261,9 +262,9 @@ public:
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
   bool AcceptableResult(WERD_RES *word) const;
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
   void EndDangerousAmbigs();
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
   /// Prints the current choices for this word to stdout.
   void DebugWordChoices();
   /// Sets up stopper variables in preparation for the first pass.
@@ -481,7 +482,7 @@ private:
    * Each entry i in the table stores a set of amibiguities whose
    * wrong ngram starts with unichar id i.
    */
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   UnicharAmbigs *dang_ambigs_table_ = nullptr;
   /** Same as above, but for ambiguities with replace flag set. */
   UnicharAmbigs *replace_ambigs_table_ = nullptr;

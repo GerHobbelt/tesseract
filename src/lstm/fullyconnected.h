@@ -87,18 +87,20 @@ public:
 
   // Runs forward propagation of activations on the input line.
   // See Network for a detailed discussion of the arguments.
-  void Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
-               NetworkScratch *scratch, NetworkIO *output) override;
+  void Forward(bool debug, const NetworkIO &input,
+               const TransposedArray *input_transpose, NetworkScratch *scratch,
+               NetworkIO *output) override;
   // Components of Forward so FullyConnected can be reused inside LSTM.
-  void SetupForward(const NetworkIO &input, const TransposedArray *input_transpose);
+  void SetupForward(const NetworkIO &input,
+                    const TransposedArray *input_transpose);
   void ForwardTimeStep(int t, TFloat *output_line);
   void ForwardTimeStep(const TFloat *d_input, int t, TFloat *output_line);
   void ForwardTimeStep(const int8_t *i_input, int t, TFloat *output_line);
 
   // Runs backward propagation of errors on the deltas line.
   // See Network for a detailed discussion of the arguments.
-  bool Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
-                NetworkIO *back_deltas) override;
+  bool Backward(bool debug, const NetworkIO &fwd_deltas,
+                NetworkScratch *scratch, NetworkIO *back_deltas) override;
   // Components of Backward so FullyConnected can be reused inside LSTM.
   void BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat *curr_errors,
                         TransposedArray *errors_t, TFloat *backprop);
@@ -106,11 +108,13 @@ public:
 
   // Updates the weights using the given learning rate, momentum and adam_beta.
   // num_samples is used in the adam computation iff use_adam_ is true.
-  void Update(float learning_rate, float momentum, float adam_beta, int num_samples) override;
+  void Update(float learning_rate, float momentum, float adam_beta,
+              int num_samples) override;
   // Sums the products of weight updates in *this and other, splitting into
   // positive (same direction) in *same and negative (different direction) in
   // *changed.
-  void CountAlternators(const Network &other, TFloat *same, TFloat *changed) const override;
+  void CountAlternators(const Network &other, TFloat *same,
+                        TFloat *changed) const override;
 
 protected:
   // Weight arrays of size [no, ni + 1].

@@ -205,7 +205,7 @@ public:
    * initialized. Overwrites the components specified by component_filenames.
    * Writes the updated traineddata file to new_traineddata_filename.
    */
-  bool OverwriteComponents(const char *new_traineddata_filename, char **component_filenames,
+  bool OverwriteComponents(const char *new_traineddata_filename, const char **component_filenames,
                            int num_new_components);
 
   /**

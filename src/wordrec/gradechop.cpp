@@ -20,6 +20,13 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <algorithm>
 #include <cmath>
 #include "chop.h"
@@ -81,3 +88,5 @@ PRIORITY Wordrec::grade_sharpness(SPLIT *split) {
 }
 
 } // namespace tesseract
+
+#endif

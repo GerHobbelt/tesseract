@@ -13,7 +13,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -153,7 +153,7 @@ bool TrainingSampleSet::DeSerialize(bool swap, FILE *fp) {
 void TrainingSampleSet::LoadUnicharset(const char *filename) {
   if (!unicharset_.load_from_file(filename)) {
     tprintf(
-        "Failed to load unicharset from file %s\n"
+        "ERROR: Failed to load unicharset from file %s\n"
         "Building unicharset from scratch...\n",
         filename);
     unicharset_.clear();
@@ -172,7 +172,7 @@ int TrainingSampleSet::AddSample(const char *unichar, TrainingSample *sample) {
     unicharset_.unichar_insert(unichar);
     if (unicharset_.size() > MAX_NUM_CLASSES) {
       tprintf(
-          "Error: Size of unicharset in TrainingSampleSet::AddSample is "
+          "ERROR: Size of unicharset in TrainingSampleSet::AddSample is "
           "greater than MAX_NUM_CLASSES\n");
       return -1;
     }

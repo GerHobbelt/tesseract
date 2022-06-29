@@ -13,9 +13,11 @@
 
 #define _USE_MATH_DEFINES // for M_PI
 
+#include <tesseract/debugheap.h>
+
 #include "commontraining.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "params.h"
 #  include "tprintf.h"
@@ -48,7 +50,7 @@ STRING_PARAM_FLAG(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default tempo
  * @param argv command line arguments
  * @note Exceptions: Illegal options terminate the program.
  */
-void ParseArguments(int *argc, char ***argv) {
+void ParseArguments(int* argc, const char ***argv) {
   std::string usage;
   if (*argc) {
     usage += (*argv)[0];
@@ -80,7 +82,10 @@ void ParseArguments(int *argc, char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Global Variables.
 
@@ -112,6 +117,8 @@ static DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
 static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
 
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
 /**
  * This routine parses the command line arguments that were
  * passed to the program and uses them to set relevant
@@ -122,7 +129,7 @@ static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-void ParseArguments(int *argc, char ***argv) {
+void ParseArguments(int *argc, const char ***argv) {
   std::string usage;
   if (*argc) {
     usage += (*argv)[0];
@@ -155,13 +162,13 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
     if (!shape_table->DeSerialize(&shape_fp)) {
       delete shape_table;
       shape_table = nullptr;
-      tprintf("Error: Failed to read shape table %s\n", shape_table_file.c_str());
+      tprintf("ERROR: Failed to read shape table %s\n", shape_table_file.c_str());
     } else {
       int num_shapes = shape_table->NumShapes();
       tprintf("Read shape table %s of %d shapes\n", shape_table_file.c_str(), num_shapes);
     }
   } else {
-    tprintf("Warning: No shape table file present: %s\n", shape_table_file.c_str());
+    tprintf("WARNING: No shape table file present: %s\n", shape_table_file.c_str());
   }
   return shape_table;
 }
@@ -264,7 +271,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   if (!FLAGS_output_trainer.empty()) {
     FILE *fp = fopen(FLAGS_output_trainer.c_str(), "wb");
     if (fp == nullptr) {
-      tprintf("Can't create saved trainer data!\n");
+      tprintf("ERROR: Can't create saved trainer data!\n");
     } else {
       trainer->Serialize(fp);
       fclose(fp);
@@ -272,7 +279,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   }
   trainer->PreTrainingSetup();
   if (!FLAGS_O.empty() && !trainer->unicharset().save_to_file(FLAGS_O.c_str())) {
-    fprintf(stderr, "Failed to save unicharset to file %s\n", FLAGS_O.c_str());
+    fprintf(stderr, "ERROR: Failed to save unicharset to file %s\n", FLAGS_O.c_str());
     return {};
   }
 
@@ -353,7 +360,7 @@ void ReadTrainingSamples(const FEATURE_DEFS_STRUCT &feature_definitions, const c
       unicharset->unichar_insert(unichar);
       if (unicharset->size() > MAX_NUM_CLASSES) {
         tprintf(
-            "Error: Size of unicharset in training is "
+            "ERROR: Size of unicharset in training is "
             "greater than MAX_NUM_CLASSES\n");
         exit(1);
       }
@@ -640,7 +647,7 @@ CLASS_STRUCT *SetUpForFloat2Int(const UNICHARSET &unicharset, LIST LabeledClassL
   BIT_VECTOR NewConfig;
   BIT_VECTOR OldConfig;
 
-  //  printf("Float2Int ...\n");
+  //  tprintf("Float2Int ...\n");
 
   auto *float_classes = new CLASS_STRUCT[unicharset.size()];
   iterate(LabeledClassList) {
@@ -741,4 +748,4 @@ int NumberOfProtos(LIST ProtoList, bool CountSigProtos, bool CountInsigProtos) {
 
 } // namespace tesseract.
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

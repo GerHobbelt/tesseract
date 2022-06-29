@@ -33,7 +33,7 @@
 #include "ratngs.h"
 
 #ifndef __GNUC__
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #    define NO_EDGE (int64_t)0xffffffffffffffffi64
 #  endif /*_WIN32*/
 #else
@@ -495,11 +495,11 @@ public:
     TFile file;
     file.OpenWrite(nullptr);
     if (!this->write_squished_dawg(&file)) {
-      tprintf("Error serializing %s\n", filename);
+      tprintf("ERROR: Error serializing %s\n", filename);
       return false;
     }
     if (!file.CloseWrite(filename, nullptr)) {
-      tprintf("Error writing file %s\n", filename);
+      tprintf("ERROR: Error writing file %s\n", filename);
       return false;
     }
     return true;

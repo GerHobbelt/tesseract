@@ -19,15 +19,15 @@
 #ifndef RATNGS_H
 #define RATNGS_H
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
 #include "clst.h"
-#include "elst.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
+#if !DISABLED_LEGACY_ENGINE
 #  include "fontinfo.h"
-#endif // undef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 #include "matrix.h"
 #include "unicharset.h"
 #include "werd.h"
@@ -93,7 +93,7 @@ public:
   int16_t fontinfo_id2() const {
     return fontinfo_id2_;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   const std::vector<ScoredFont> &fonts() const {
     return fonts_;
   }
@@ -114,7 +114,7 @@ public:
       }
     }
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   int script_id() const {
     return script_id_;
   }
@@ -194,10 +194,10 @@ private:
   BLOB_CHOICE &operator=(const BLOB_CHOICE &other);
 
   UNICHAR_ID unichar_id_; // unichar id
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   // Fonts and scores. Allowed to be empty.
   std::vector<ScoredFont> fonts_;
-#endif                   // ndef DISABLED_LEGACY_ENGINE
+#endif                   // !DISABLED_LEGACY_ENGINE
   int16_t fontinfo_id_;  // char font information
   int16_t fontinfo_id2_; // 2nd choice font information
   // Rating is the classifier distance weighted by the length of the outline
@@ -225,7 +225,7 @@ private:
 };
 
 // Make BLOB_CHOICE listable.
-ELISTIZEH(BLOB_CHOICE)
+ELISTIZEH(BLOB_CHOICE);
 
 // Return the BLOB_CHOICE in bc_list matching a given unichar_id,
 // or nullptr if there is no match.
@@ -623,7 +623,8 @@ private:
 };
 
 // Make WERD_CHOICE listable.
-ELISTIZEH(WERD_CHOICE)
+ELISTIZEH(WERD_CHOICE);
+
 using BLOB_CHOICE_LIST_VECTOR = std::vector<BLOB_CHOICE_LIST *>;
 
 // Utilities for comparing WERD_CHOICEs

@@ -17,6 +17,8 @@
 ///////////////////////////////////////////////////////////////////////
 
 #include "tesseractclass.h"
+#include "blobs.h"
+
 #ifdef _OPENMP
 #  include <omp.h>
 #endif // _OPENMP
@@ -34,6 +36,9 @@ struct BlobData {
   Tesseract *tesseract = nullptr;
   BLOB_CHOICE_LIST **choices = nullptr;
 };
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
   // Prepare all the blobs.
@@ -55,7 +60,8 @@ void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
 #  pragma omp parallel for num_threads(10)
 #endif // _OPENMP
     // NOLINTNEXTLINE(modernize-loop-convert)
-    for (size_t b = 0; b < blobs.size(); ++b) {
+	// Error C3016: index variable in OpenMP 'for' statement must have signed integral type
+    for (int b = 0; b < static_cast<int>(blobs.size()); ++b) {
       *blobs[b].choices =
           blobs[b].tesseract->classify_blob(blobs[b].blob, "par", ScrollView::WHITE, nullptr);
     }
@@ -66,5 +72,7 @@ void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
     }
   }
 }
+
+#endif
 
 } // namespace tesseract.

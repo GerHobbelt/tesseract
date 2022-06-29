@@ -18,16 +18,18 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "colfind.h"
 
 #include "ccnontextdetect.h"
 #include "colpartition.h"
 #include "colpartitionset.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "equationdetectbase.h"
 #endif
 #include "blobbox.h"
@@ -38,10 +40,14 @@
 #include "strokewidth.h"
 #include "tablefind.h"
 #include "workingpartset.h"
+#include "tabletransfer.h"
 
 #include <algorithm>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // When assigning columns, the max number of misfit grid rows/ColPartitionSets
 // that can be ignored.
@@ -68,6 +74,8 @@ static BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
 #ifndef GRAPHICS_DISABLED
 ScrollView *ColumnFinder::blocks_win_ = nullptr;
 #endif
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Gridsize is an estimate of the text size in the image. A suitable value
 // is in TO_BLOCK::line_size after find_components has been used to make
@@ -363,7 +371,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 
     // Make the column_sets_.
     if (!MakeColumns(false)) {
-      tprintf("Empty page!!\n");
+      tprintf("WARNING: Empty page!!\n");
       part_grid_.DeleteParts();
       return 0; // This is an empty page.
     }
@@ -405,7 +413,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   }
 #endif
   if (!PSM_SPARSE(pageseg_mode)) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     if (equation_detect_) {
       equation_detect_->FindEquationParts(&part_grid_, best_columns_);
     }
@@ -502,7 +510,7 @@ void ColumnFinder::GetDeskewVectors(FCOORD *deskew, FCOORD *reskew) {
   deskew->set_y(-deskew->y());
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 void ColumnFinder::SetEquationDetect(EquationDetectBase *detect) {
   equation_detect_ = detect;
 }
@@ -1590,6 +1598,11 @@ void ColumnFinder::RotateAndReskewBlocks(bool input_is_rtl, TO_BLOCK_LIST *block
     if (textord_debug_tabfind >= 2) {
       tprintf("Block median size = (%d, %d)\n", block->median_size().x(), block->median_size().y());
     }
+  }
+
+  auto &tables = uniqueInstance<std::vector<TessTable>>();
+  for (TessTable &mt : tables) {
+    mt.box.rotate_large(reskew_);
   }
 }
 

@@ -536,7 +536,7 @@ int NetworkIO::PositionOfBestMatch(const std::vector<int> &labels, int start, in
 // using one label per time-step.
 TFloat NetworkIO::ScoreOfLabels(const std::vector<int> &labels, int start) const {
   int length = labels.size();
-  TFloat score = 0;
+  TFloat score = 0.0;
   for (int i = 0; i < length; ++i) {
     score += f_(start + i, labels[i]);
   }

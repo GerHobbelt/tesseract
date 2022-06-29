@@ -16,6 +16,12 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <cmath>
 
 #include "blamer.h"
@@ -34,6 +40,7 @@
  * Convert the output back to editor form.
  **********************************************************************/
 namespace tesseract {
+
 void Tesseract::recog_word(WERD_RES *word) {
   if (wordrec_skip_no_truth_words &&
       (word->blamer_bundle == nullptr ||
@@ -297,3 +304,5 @@ void Tesseract::join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_b
 }
 
 } // namespace tesseract
+
+#endif

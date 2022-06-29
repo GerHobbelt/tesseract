@@ -16,41 +16,49 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include "commontraining.h" // CheckSharedLibraryVersion
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset.h"
+#include "tprintf.h"
 
-int main(int argc, char **argv) {
-  tesseract::CheckSharedLibraryVersion();
+using namespace tesseract;
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
+#endif
+{
+  CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
+    tprintf("%s\n", TessBaseAPI::Version());
     return 0;
   } else if (argc < 4) {
     // Print usage
-    printf(
+    tprintf(
         "Usage: %s -v | --version |\n"
         "       %s unicharset-in-1 ... unicharset-in-n unicharset-out\n",
         argv[0], argv[0]);
     return 1;
   }
 
-  tesseract::UNICHARSET input_unicharset, result_unicharset;
+  UNICHARSET input_unicharset, result_unicharset;
   for (int arg = 1; arg < argc - 1; ++arg) {
     // Load the input unicharset
     if (input_unicharset.load_from_file(argv[arg])) {
-      printf("Loaded unicharset of size %zu from file %s\n", input_unicharset.size(), argv[arg]);
+      tprintf("Loaded unicharset of size %zu from file %s\n", input_unicharset.size(), argv[arg]);
       result_unicharset.AppendOtherUnicharset(input_unicharset);
     } else {
-      printf("Failed to load unicharset from file %s!!\n", argv[arg]);
+      tprintf("ERROR: Failed to load unicharset from file %s!!\n", argv[arg]);
       exit(1);
     }
   }
 
   // Save the combined unicharset.
   if (result_unicharset.save_to_file(argv[argc - 1])) {
-    printf("Wrote unicharset file %s.\n", argv[argc - 1]);
+    tprintf("Wrote unicharset file %s.\n", argv[argc - 1]);
   } else {
-    printf("Cannot save unicharset file %s.\n", argv[argc - 1]);
+    tprintf("ERROR: Cannot save unicharset file %s.\n", argv[argc - 1]);
     exit(1);
   }
   return 0;

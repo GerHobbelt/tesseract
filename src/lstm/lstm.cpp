@@ -15,12 +15,14 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "lstm.h"
 
+// 24893 ms
+#undef _OPENMP
 #ifdef _OPENMP
 #  include <omp.h>
 #endif
@@ -38,7 +40,7 @@
 #include "tprintf.h"
 
 // Macros for openmp code if it is available, otherwise empty macros.
-#ifdef _OPENMP
+#if defined(_OPENMP) && 0
 #  define PARALLEL_IF_OPENMP(__num_threads)                                  \
     PRAGMA(omp parallel if (__num_threads > 1) num_threads(__num_threads)) { \
       PRAGMA(omp sections nowait) {                                          \
@@ -117,7 +119,7 @@ LSTM::LSTM(const std::string &name, int ni, int ns, int no, bool two_dimensional
     nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : ceil_log2(no_);
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
-    tprintf("%d is invalid type of LSTM!\n", type);
+    tprintf("ERROR: %d is invalid type of LSTM!\n", type);
     ASSERT_HOST(false);
   }
   na_ += nf_;

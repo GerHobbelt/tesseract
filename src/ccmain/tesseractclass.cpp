@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -42,7 +42,7 @@
 
 #include <allheaders.h>
 #include "edgblob.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "equationdetect.h"
 #endif
 #include "lstmrecognizer.h"
@@ -63,8 +63,14 @@ Tesseract::Tesseract()
                   "Break input into lines and remap boxes if present", this->params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
                   "Dump intermediate images made during page segmentation", this->params())
-    , BOOL_MEMBER(tessedit_do_invert, true, "Try inverting the image in `LSTMRecognizeWord`",
+    // TODO: remove deprecated tessedit_do_invert in release 6.
+    , BOOL_MEMBER(tessedit_do_invert, true,
+                  "Try inverted line image if necessary (deprecated, will be "
+                  "removed in release 6, use the 'invert_threshold' parameter instead)",
                   this->params())
+    , double_MEMBER(invert_threshold, 0.7,
+                    "For lines with a mean confidence below this value, OCR is also tried with an inverted image",
+                    this->params())
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
@@ -75,10 +81,24 @@ Tesseract::Tesseract()
                "11=sparse_text, 12=sparse_text+osd, 13=raw_line"
                " (Values from PageSegMode enum in tesseract/publictypes.h)",
                this->params())
+    , BOOL_MEMBER(normalize_grayscale, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image and replace it for all tasks", 
+                  this->params())
+    , BOOL_MEMBER(normalize_thresholding, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for thresholding tasks (layout analysis)", 
+                  this->params())
+    , BOOL_MEMBER(normalize_recognition, false, 
+                  "Applies non-linear normalization (nlnorm) on a grayscale version "
+                  "of the input image only for the character recognition task", 
+                  this->params())
     , INT_MEMBER(thresholding_method,
                  static_cast<int>(ThresholdMethod::Otsu),
-                 "Thresholding method: 0 = Otsu, 1 = LeptonicaOtsu, 2 = "
-                 "Sauvola",
+                 "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
+                 "Sauvola, 3 = Otsu on"
+                 " adaptive normalized background, 4 = Masking and Otsu on "
+                 "adaptive normalized background, 5 = Nlbin",
                  this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",
@@ -95,18 +115,18 @@ Tesseract::Tesseract()
                     this->params())
     , double_MEMBER(thresholding_tile_size, 0.33,
                     "Desired tile size (to be multiplied by image DPI). "
-                    "This parameter is used by the LeptonicaOtsu thresholding "
+                    "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method",
                     this->params())
     , double_MEMBER(thresholding_smooth_kernel_size, 0.0,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
-                    "This parameter is used by the LeptonicaOtsu thresholding "
+                    "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method",
                     this->params())
     , double_MEMBER(thresholding_score_fraction, 0.1,
                     "Fraction of the max Otsu score. "
-                    "This parameter is used by the LeptonicaOtsu thresholding "
+                    "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended",
                     this->params())
@@ -261,6 +281,7 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(hocr_font_info, false, "Add font info to hocr output", this->params())
     , BOOL_MEMBER(hocr_char_boxes, false, "Add coordinates for each character to hocr output",
                   this->params())
+    , BOOL_MEMBER(hocr_images, false, "Add images to hocr output", this->params())
     , BOOL_MEMBER(crunch_early_merge_tess_fails, true, "Before word crunch?", this->params())
     , BOOL_MEMBER(crunch_early_convert_bad_unlv_chs, false, "Take out ~^ early?", this->params())
     , double_MEMBER(crunch_terrible_rating, 80.0, "crunch rating lt this", this->params())
@@ -334,6 +355,9 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file", this->params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file", this->params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file", this->params())
+    , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file", this->params())
+    , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values", this->params())
+    , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel", this->params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training",
                   this->params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file", this->params())
@@ -400,9 +424,9 @@ Tesseract::Tesseract()
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",
                        this->params())
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(textord_equation_detect, false, "Turn on equation detector", this->params())
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(textord_tabfind_vertical_text, true, "Enable vertical detection", this->params())
     , BOOL_MEMBER(textord_tabfind_force_vertical_text, false, "Force using vertical text page mode",
                   this->params())
@@ -438,9 +462,10 @@ Tesseract::Tesseract()
                     this->params())
     , BOOL_MEMBER(pageseg_apply_music_mask, false,
                   "Detect music staff and remove intersecting components", this->params())
-    ,
+    , double_MEMBER(max_page_gradient_recognize, 100,
+                  "Exit early (without running recognition) if page gradient is above this amount", this->params())
 
-    backup_config_file_(nullptr)
+    , backup_config_file_(nullptr)
     , pix_binary_(nullptr)
     , pix_grey_(nullptr)
     , pix_original_(nullptr)
@@ -454,9 +479,9 @@ Tesseract::Tesseract()
     , reskew_(1.0f, 0.0f)
     , most_recently_used_(this)
     , font_table_size_(0)
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     , equ_detect_(nullptr)
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
     , train_line_page_num_(0) {}
 
@@ -496,7 +521,7 @@ void Tesseract::Clear() {
   }
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 void Tesseract::SetEquationDetect(EquationDetect *detector) {
   equ_detect_ = detector;
@@ -511,7 +536,7 @@ void Tesseract::ResetAdaptiveClassifier() {
   }
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Clear the document dictionary for this and all subclassifiers.
 void Tesseract::ResetDocumentDictionary() {

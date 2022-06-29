@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "params.h"
 
