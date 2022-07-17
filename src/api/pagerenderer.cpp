@@ -157,7 +157,7 @@ RecalcPolygonline(Pta *pts, bool upper) {
   bin_line = numaCreate(num_bin+1);
 
   for (int p = 0; p <= num_bin; ++p) {
-    bin_line->array[p] = -1.;
+	  numaReplaceNumber(bin_line, p, -1.);
   }
 
   num_pts = ptaGetCount(pts);
@@ -173,10 +173,12 @@ RecalcPolygonline(Pta *pts, bool upper) {
     ptaGetPt(pts, index+1, &x1, &y1);
     // TODO add +1?
     for (int p = x0-x_min; p <= x1-x_min; ++p) {
+	  l_float32 val;
+	  numaGetFValue(bin_line, p, &val);
       if (!upper) {
-        if ( bin_line->array[p] == -1. || y0 > bin_line->array[p]) bin_line->array[p] = y0;
+        if ( val == -1. || y0 > val) numaReplaceNumber(bin_line, p, y0);
       } else {
-        if ( bin_line->array[p] == -1. || y0 < bin_line->array[p]) bin_line->array[p] = y0;
+        if ( val == -1. || y0 < val) numaReplaceNumber(bin_line, p, y0);
       }
     }
     index += 2;
@@ -186,18 +188,22 @@ RecalcPolygonline(Pta *pts, bool upper) {
 
   for (int p = 0; p <= num_bin; ++p) {
     if (p == 0) {
-      y = bin_line->array[p];
+	  numaGetFValue(bin_line, p, &y);
       ptaAddPt(pts_recalc, x_min+p, y);
     }
     else if (p == num_bin) {
       ptaAddPt(pts_recalc, x_min+p, y);
       break;
     }
-    else if (y != bin_line->array[p]){
-      if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
-      y = bin_line->array[p];
-      if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
-    } 
+	else {
+		l_float32 val;
+		numaGetFValue(bin_line, p, &val);
+		if (y != val) {
+			if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
+			numaGetFValue(bin_line, p, &y);
+			if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
+		}
+	}
   }
   
   ptaDestroy(&pts);
@@ -265,18 +271,18 @@ UpdateBlockPoints(Pta *block_top_pts, Pta *block_bottom_pts,
 }
 
 ///
-/// Simplify polygonlines (only expanding not shrinking) (Due to recalculation currently not necessary)
+/// Simplify polygon lines (only expanding not shrinking) (Due to recalculation currently not necessary)
 ///
 static void 
 SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
   int num_pts, index=1;
   float m, b, x0, y0, x1, y1, x2, y2, x3, y3, y_min, y_max;
 
-  while (index <= polyline->n-2) {
+  while (index <= ptaGetCount(polyline)-2) {
     ptaGetPt(polyline, index-1, &x0, &y0);
     ptaGetPt(polyline, index, &x1, &y1);
     ptaGetPt(polyline, index+1, &x2, &y2);
-    if (index+2 < polyline->n) {
+    if (index+2 < ptaGetCount(polyline)) {
       // Delete two point indentations 
       ptaGetPt(polyline, index+2, &x3, &y3);
       if (abs(x3-x0) <= tolerance*2){
@@ -425,7 +431,7 @@ SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
 }
 
 ///
-/// Clip baseline to range of the exsitings polygon and simplifies the baseline linepolygon
+/// Clip baseline to range of the existing polygon and simplifies the baseline polygon
 ///
 Pta*
 ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDirection writing_direction) {
@@ -473,7 +479,7 @@ ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDir
 }
 
 ///
-/// Fit the baseline points into the existings polygon
+/// Fit the baseline points into the existing polygon
 ///
 Pta*
 FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDirection writing_direction) {
