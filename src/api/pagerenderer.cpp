@@ -31,6 +31,10 @@
 
 #include <allheaders.h>
 
+#if defined(_MSC_VER)
+#  include <crtdbg.h>
+#endif
+
 namespace tesseract {
 
 
@@ -84,7 +88,7 @@ AddPointsToPAGE(Pta *pts, std::stringstream &str) {
 static void 
 AddPointToWordPolygon(const ResultIterator *res_it, PageIteratorLevel level, 
   Pta *word_top_pts, Pta *word_bottom_pts, tesseract::WritingDirection writing_direction) {
-  int num_pts, left, top, right, bottom;
+  int left, top, right, bottom;
 
   res_it->BoundingBox(level, &left, &top, &right, &bottom); 
 
@@ -141,13 +145,13 @@ DestroyAndCreatePta(Pta *pts) {
 }
 
 ///
-/// Recalculate linepolygon
+/// Recalculate polygon
 /// Create a hull for overlapping areas
 ///
 Pta*
 RecalcPolygonline(Pta *pts, bool upper) {
-  int num_pts, num_bin, index=0, p_index, offset;
-  float m, b, x, y, x0, y0, x1, y1;
+  int num_pts, num_bin, index = 0;
+  float x, y, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   NUMA *bin_line;
   Pta *pts_recalc;
@@ -275,7 +279,7 @@ UpdateBlockPoints(Pta *block_top_pts, Pta *block_bottom_pts,
 ///
 static void 
 SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
-  int num_pts, index=1;
+  int index = 1;
   float m, b, x0, y0, x1, y1, x2, y2, x3, y3, y_min, y_max;
 
   while (index <= ptaGetCount(polyline)-2) {
@@ -317,7 +321,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_min = std::min(y0, y1);
         GetSlopeAndOffset(x0, y_min, x2, y2, &m, &b);
         if ((m*x1+b) <= y1) {
-          polyline->y[index-1] = std::min(y0, y1);
+		  ptaUpdatePtYCoord(polyline, index-1, std::min(y0, y1));
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -326,7 +330,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_max = std::max(y0, y1);
         GetSlopeAndOffset(x0, y_max, x2, y2, &m, &b);
         if ((m*x1+b) >= y1) {
-          polyline->y[index-1] = y_max;
+		  ptaUpdatePtYCoord(polyline, index-1, y_max);
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -418,7 +422,7 @@ SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
     ptaGetPt(sorted_baseline_pts, index, &x0, &y0);
     ptaGetPt(sorted_baseline_pts, index+1, &x1, &y1);
     if (x0 >= x1) {
-      sorted_baseline_pts->y[index]= std::min(y0, y1);
+	  ptaUpdatePtYCoord(sorted_baseline_pts, index, std::min(y0, y1));
       ptaRemovePt(sorted_baseline_pts, index+1);
     } else {
       index++;
@@ -497,7 +501,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   bin_line = numaCreate(num_bin+1);
 
   for (int p = 0; p < num_bin+1; ++p) {
-    bin_line->array[p] = -1.;
+	  numaReplaceNumber(bin_line, p, -1.);
   }
   
   num_pts = ptaGetCount(bottom_pts);
@@ -508,12 +512,16 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
     if (x0 >= x1) continue;
     if (y0==y1) {
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-        if (bin_line->array[p] == -1. || y0 > bin_line->array[p]) bin_line->array[p] = y0;
+		  l_float32 val;
+		  numaGetFValue(bin_line, p, &val);
+		  if (val == -1. || y0 > val) numaSetValue(bin_line, p, y0);
         }
     } else {
       GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-        if (bin_line->array[p] == -1. || ((p+x_min)*m+b) > bin_line->array[p]) bin_line->array[p] = ((p+x_min)*m+b);
+		  l_float32 val;
+		  numaGetFValue(bin_line, p, &val);
+		  if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
         }
     }
   }
@@ -543,13 +551,17 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
         y0 = int (x_max*m+b);
         x0 = x_max;
         int x_val = x0-x_min;
-        numaAddNumber(poly_bl_delta, abs(bin_line->array[x_val]-y0));
+		l_float32 val;
+		numaGetFValue(bin_line, x_val, &val);
+		numaAddNumber(poly_bl_delta, abs(val-y0));
         ptaAddPt(baseline_clipped_pts, x0, y0);
         break;
       }
     }
     int x_val = x0-x_min;
-    numaAddNumber(poly_bl_delta, abs(bin_line->array[x_val]-y0));
+	l_float32 val;
+	numaGetFValue(bin_line, x_val, &val);
+	numaAddNumber(poly_bl_delta, abs(val-y0));
     ptaAddPt(baseline_clipped_pts, x0, y0); 
   }
   
@@ -562,32 +574,34 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   delta_median_IQR = abs(delta_median_Q3 - delta_median_Q1);
 
   // Fit baseline into the polygon
-  // Todo: Needs maybe some adjustments to suppress fitting to superscript glyphs
+  // TODO: Needs maybe some adjustments to suppress fitting to superscript glyphs
   baseline_recalc_pts = ptaCreate(0);
   num_pts = ptaGetCount(baseline_clipped_pts);
   for (int p = 0; p < num_pts; ++p) {
     ptaGetPt(baseline_clipped_pts, p, &x0, &y0);
     int x_val = x0-x_min;
-    // Delete outliers with IQR
-    if (abs(y0-bin_line->array[x_val]) > 1.5*delta_median_Q3+delta_median && p != 0 && p != num_pts-1) {
+	l_float32 x_coord;
+	numaGetFValue(bin_line, p, &x_coord);
+	// Delete outliers with IQR
+    if (abs(y0-x_coord) > 1.5*delta_median_Q3+delta_median && p != 0 && p != num_pts-1) {
       // If it's the starting or end point adjust the y value in the median delta range
       if (p == 0 || p == num_pts-1) {
         if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
-          if (y0 < bin_line->array[x_val]) y0 = y0-delta_median;
-        } else if (y0 > bin_line->array[x_val]) y0 = y0+delta_median;
+          if (y0 < x_coord) y0 = y0-delta_median;
+        } else if (y0 > x_coord) y0 = y0+delta_median;
         ptaAddPt(baseline_recalc_pts, x0, y0);
       }
       continue;
     }
     if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
-      if (y0 < bin_line->array[x_val]) {
-        ptaAddPt(baseline_recalc_pts, x0, bin_line->array[x_val]);
+      if (y0 < x_coord) {
+        ptaAddPt(baseline_recalc_pts, x0, x_coord);
       } else {
         ptaAddPt(baseline_recalc_pts, x0, y0);
       }
     } else {
-      if (y0 > bin_line->array[x_val]) {
-        ptaAddPt(baseline_recalc_pts, x0, bin_line->array[x_val]);
+      if (y0 > x_coord) {
+        ptaAddPt(baseline_recalc_pts, x0, x_coord);
       } else {
         ptaAddPt(baseline_recalc_pts, x0, y0);
       }
@@ -903,7 +917,7 @@ char
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
 
     if (WORDLEVELFLAG || POLYGONFLAG) {
-      // Sort wordpolygons
+      // Sort word polygons
       word_top_pts = RecalcPolygonline(word_top_pts, 1-ttb_flag);
       word_bottom_pts = RecalcPolygonline(word_bottom_pts, 0+ttb_flag);
       
@@ -934,7 +948,7 @@ char
       << "\t\t\t\t</Word>\n";
     }
     if (WORDLEVELFLAG || POLYGONFLAG) {
-      // Add wordbaseline to linebaseline
+      // Add word baseline to line baseline
       if (ttb_flag) word_baseline_pts = TransposePolygonline(word_baseline_pts);
       ptaJoin(line_baseline_pts, word_baseline_pts, 0, -1);
      } 
@@ -962,21 +976,21 @@ char
         line_bottom_rtl_pts = DestroyAndCreatePta(line_bottom_rtl_pts);
       }
       if (POLYGONFLAG || WORDLEVELFLAG) {
-        // Recalc Polygonlines
+        // Recalc Polygon lines
         line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, 1-ttb_flag);
         line_bottom_ltr_pts = RecalcPolygonline(line_bottom_ltr_pts, 0+ttb_flag);
 
-        // Smooth the polygonline
+        // Smooth the polygon line
         SimplifyLinePolygon(line_top_ltr_pts, 5, 1-ttb_flag);
         SimplifyLinePolygon(line_bottom_ltr_pts, 5, 0+ttb_flag);
        
-        // Fit linepolygon matching the baselinepoints
+        // Fit line polygon matching the base linepoints
         line_baseline_pts = SortBaseline(line_baseline_pts, writing_direction);
         // Fitting baseline into polygon is currently deactivated
-        // it tends to push the baseline directly under superscritpts
-        // but the baseline is always inside the polygon maybe it will be usefull for something
+        // it tends to push the baseline directly under superscripts
+        // but the baseline is always inside the polygon maybe it will be useful for something
         // line_baseline_pts = FitBaselineIntoLinePolygon(line_bottom_ltr_pts, line_baseline_pts, writing_direction);
-        // and it only cut it to the length and simplies the linepolyon
+        // and it only cut it to the length and simplifies the line polygon
         line_baseline_pts = ClipAndSimplifyBaseline(line_bottom_ltr_pts, line_baseline_pts, writing_direction);
         
         // Update polygon of the block
