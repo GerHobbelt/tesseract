@@ -487,8 +487,8 @@ ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDir
 ///
 Pta*
 FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDirection writing_direction) {
-  int num_pts, num_bin, index=0, p_index, offset;
-  float m, b, x, y, x0, y0, x1, y1;
+  int num_pts, num_bin, index = 0;
+  float m, b, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   float x_min_bl, y_min_bl, x_max_bl, y_max_bl;
   float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
@@ -800,7 +800,6 @@ char
       continue;
     }
 
-    int left, top, right, bottom;
     auto block_type = res_it->BlockType();
 
     switch (block_type) {
