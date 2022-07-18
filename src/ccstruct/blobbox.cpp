@@ -527,7 +527,6 @@ void find_cblob_limits( // get y limits
     FCOORD rotation, // for landscape
     float &ymin,     // output y limits
     float &ymax) {
-  int16_t stepindex;  // current point
   ICOORD pos;         // current coords
   ICOORD vec;         // rotated step
   C_OUTLINE *outline; // current outline
@@ -540,7 +539,7 @@ void find_cblob_limits( // get y limits
     outline = out_it.data();
     pos = outline->start_pos(); // get coords
     pos.rotate(rotation);
-    for (stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
+    for (int32_t stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
       // inside
       if (pos.x() >= leftx && pos.x() <= rightx) {
         UpdateRange(pos.y(), &ymin, &ymax);
