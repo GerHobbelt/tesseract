@@ -8,6 +8,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "winutils.h"
 
 #ifdef _WIN32

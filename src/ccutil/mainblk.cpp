@@ -16,5 +16,11 @@
  *
  **********************************************************************/
 
-// main_setup() code has been moved to ccutil.cpp
+ // Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
 
+#include <tesseract/debugheap.h>
+
+// main_setup() code has been moved to ccutil.cpp

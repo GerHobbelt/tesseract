@@ -10,14 +10,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
+
+#include "ccutil.h"
+#include "winutils.h"
+
 #if defined(_WIN32)
 #  include <io.h> // for _access
 #endif
 
-#include "ccutil.h"
-
 #include <cstdlib>
 #include <cstring> // for std::strrchr
+
 
 namespace tesseract {
 
