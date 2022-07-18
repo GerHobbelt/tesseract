@@ -61,7 +61,7 @@
 #  endif
 #endif
 /* https://stackoverflow.com/questions/2354784/attribute-formatprintf-1-2-for-msvc/6849629#6849629 */
-#undef FZ_FORMAT_STRING
+#undef TS_FORMAT_STRING
 #if _MSC_VER >= 1400
 #  include <sal.h>
 #  if _MSC_VER > 1400
@@ -71,6 +71,27 @@
 #  endif
 #else
 #  define TS_FORMAT_STRING(p) p
+#endif /* _MSC_VER */
+
+/* GCC can do type checking of scanf strings */
+#ifdef __scanflike
+#  define TS_SCANFLIKE(F, V) __scanflike(F, V)
+#else
+#  if defined(__GNUC__) && \
+      !defined(__clang__) && \
+      (__GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7)
+#    define TS_SCANFLIKE(F, V) __attribute__((format(scanf, F, V)))
+#  else
+#    define TS_SCANFLIKE(F, V)
+#  endif
+#endif
+/* https://stackoverflow.com/questions/2354784/attribute-formatprintf-1-2-for-msvc/6849629#6849629 */
+#undef TS_SCANFORMAT_STRING
+#if _MSC_VER > 1400
+#  include <sal.h>
+#  define TS_SCANFORMAT_STRING(p) _Scanf_format_string_ p
+#else
+#  define TS_SCANFORMAT_STRING(p) p
 #endif /* _MSC_VER */
 
 

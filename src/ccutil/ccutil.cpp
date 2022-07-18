@@ -46,7 +46,7 @@ CCUtil::~CCUtil() = default;
 void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   imagebasename = basename; /**< name of image */
 
-  char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+  const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
 
   if (!argv0.empty()) {
     /* Use tessdata prefix from the command line. */
@@ -58,7 +58,14 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   } else if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
     char path[_MAX_PATH];
-    DWORD length = GetModuleFileName(nullptr, path, sizeof(path));
+#if defined(UNICODE)
+    wchar_t w_string[_MAX_PATH];
+    DWORD length = GetModuleFileName(nullptr, w_string, sizeof(path));
+    size_t charsConverted;
+    wcstombs_s(&charsConverted, path, _MAX_PATH, w_string, _MAX_PATH);
+#else
+    DWORD length = GetModuleFileNameA(nullptr, path, sizeof(path));
+#endif
     if (length > 0 && length < sizeof(path)) {
       char *separator = std::strrchr(path, '\\');
       if (separator != nullptr) {

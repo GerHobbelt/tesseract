@@ -27,14 +27,9 @@ namespace tesseract {
 // Note: You can disable some log messages by setting FLAGS_tlog_level > 0.
 
 // Main logging function.
-#if defined(__GNUC__) && defined(__attribute__)
-__attribute__((format(printf, 1, 2)))
-#endif
 extern TESS_API void tprintf( // Trace printf
     TS_FORMAT_STRING(const char *format), ...) TS_PRINTFLIKE(1, 2);  // Message
 
 } // namespace tesseract
-
-#undef __attribute__
 
 #endif // define TESSERACT_CCUTIL_TPRINTF_H
