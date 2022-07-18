@@ -44,7 +44,7 @@
 namespace tesseract {
 
 // A Vector representing the "vertical" direction when measuring the
-// divisiblity of blobs into multiple blobs just by separating outlines.
+// divisibility of blobs into multiple blobs just by separating outlines.
 // See divisible_blob below for the use.
 const TPOINT kDivisibleVerticalUpright(0, 1);
 // A vector representing the "vertical" direction for italic text for use
