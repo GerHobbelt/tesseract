@@ -208,26 +208,24 @@ public:
    * If set_only_non_debug_params is true, only params that do not contain
    * "debug" in the name will be set.
    */
-  int Init(const char *datapath, const char *language, OcrEngineMode mode,
+  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
            const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params);
-  int Init(const char *datapath, const char *language, OcrEngineMode oem) {
-    return Init(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
-  }
-  int Init(const char *datapath, const char *language) {
-    return Init(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
-                false);
-  }
+  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
+  int InitSimple(const char *datapath, const char *language);
+
+private:  
   // In-memory version reads the traineddata file directly from the given
   // data[data_size] array, and/or reads data via a FileReader.
-  int Init(const char *data, int data_size, const char *language,
+  int InitInternal(const char *data, int data_size, const char *language,
            OcrEngineMode mode, const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params, FileReader reader);
 
+public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
