@@ -45,6 +45,8 @@ CCUtil::~CCUtil() = default;
  */
 void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   imagebasename = basename; /**< name of image */
+  
+  datadir.clear();
 
   const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
 
@@ -57,20 +59,13 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
 #if defined(_WIN32)
   } else if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
-    char path[_MAX_PATH];
-#if defined(UNICODE)
-    wchar_t w_string[_MAX_PATH];
-    DWORD length = GetModuleFileName(nullptr, w_string, sizeof(path));
-    size_t charsConverted;
-    wcstombs_s(&charsConverted, path, _MAX_PATH, w_string, _MAX_PATH);
-#else
-    DWORD length = GetModuleFileNameA(nullptr, path, sizeof(path));
-#endif
-    if (length > 0 && length < sizeof(path)) {
-      char *separator = std::strrchr(path, '\\');
+    wchar_t path[_MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, path, _MAX_PATH);
+    if (length > 0 && length < _MAX_PATH) {
+      wchar_t *separator = std::wcsrchr(path, '\\');
       if (separator != nullptr) {
         *separator = '\0';
-        std::string subdir = path;
+        std::string subdir = winutils::Utf16ToUtf8(path);
         subdir += "/tessdata";
         if (_access(subdir.c_str(), 0) == 0) {
           datadir = subdir;
@@ -81,12 +76,17 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   }
 
   // datadir may still be empty:
-  if (datadir.empty()) {
+  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
 #if defined(TESSDATA_PREFIX)
     // Use tessdata prefix which was compiled in.
     datadir = TESSDATA_PREFIX "/tessdata";
 #else
     datadir = "./";
+    std::string subdir = datadir;
+    subdir += "/tessdata";
+    if (_access(subdir.c_str(), 0) == 0) {
+      datadir = subdir;
+    }
 #endif /* TESSDATA_PREFIX */
   }
 
