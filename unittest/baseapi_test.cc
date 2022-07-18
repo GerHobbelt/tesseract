@@ -75,7 +75,7 @@ TEST_F(TesseractTest, BasicTesseractTest) {
   tesseract::TessBaseAPI api;
   std::string truth_text;
   std::string ocr_text;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
     Image src_pix = pixRead(TestDataNameToPath("phototest.tif").c_str());
     CHECK(src_pix);
     ocr_text = GetCleanedTextResult(&api, src_pix);
@@ -94,7 +94,7 @@ TEST_F(TesseractTest, BasicTesseractTest) {
 // paragraphs even if text recognition was not run.
 TEST_F(TesseractTest, IteratesParagraphsEvenIfNotDetected) {
   tesseract::TessBaseAPI api;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
     api.SetPageSegMode(tesseract::PSM_SINGLE_BLOCK);
     api.SetVariable("paragraph_debug_level", "3");
 #if 0 // TODO: b622.png is missing
@@ -123,7 +123,7 @@ TEST_F(TesseractTest, IteratesParagraphsEvenIfNotDetected) {
 // call SetInputName().
 TEST_F(TesseractTest, HOCRWorksWithoutSetInputName) {
   tesseract::TessBaseAPI api;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
     // eng.traineddata not found.
     GTEST_SKIP();
     return;
@@ -142,7 +142,7 @@ TEST_F(TesseractTest, HOCRWorksWithoutSetInputName) {
 // hOCR output should contain baseline info for upright textlines.
 TEST_F(TesseractTest, HOCRContainsBaseline) {
   tesseract::TessBaseAPI api;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
     // eng.traineddata not found.
     GTEST_SKIP();
     return;
@@ -178,7 +178,7 @@ TEST_F(TesseractTest, AdaptToWordStrTest) {
   tesseract::TessBaseAPI api;
   std::string truth_text;
   std::string ocr_text;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) == -1) {
     // eng.traineddata not found.
     GTEST_SKIP();
     return;
@@ -214,7 +214,7 @@ TEST_F(TesseractTest, BasicLSTMTest) {
   tesseract::TessBaseAPI api;
   std::string truth_text;
   std::string ocr_text;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_LSTM_ONLY) == -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_LSTM_ONLY) == -1) {
     // eng.traineddata not found.
     GTEST_SKIP();
     return;
@@ -287,7 +287,7 @@ TEST_F(TesseractTest, InitConfigOnlyTest) {
   for (auto &lang : langs) {
     api = std::make_unique<tesseract::TessBaseAPI>();
     timer.Restart();
-    EXPECT_EQ(0, api->Init(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY));
+    EXPECT_EQ(0, api->InitOem(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY));
     timer.Stop();
     LOG(INFO) << "Lang " << lang << " took " << timer.GetInMs() << "ms in regular init";
   }
@@ -299,7 +299,7 @@ TEST_F(TesseractTest, InitConfigOnlyTest) {
   for (auto &lang : langs) {
     api = std::make_unique<tesseract::TessBaseAPI>();
     timer.Restart();
-    EXPECT_EQ(0, api->Init(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY, nullptr, 0,
+    EXPECT_EQ(0, api->InitFull(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY, nullptr, 0,
                            &vars_vec, &vars_values, false));
     timer.Stop();
     LOG(INFO) << "Lang " << lang << " took " << timer.GetInMs() << "ms in config-only init";
@@ -341,8 +341,8 @@ TEST(TesseractInstanceTest, TestMultipleTessInstances) {
   for (int i = 0; i < num_langs; ++i) {
     for (int j = i + 1; j < num_langs; ++j) {
       tesseract::TessBaseAPI tess1, tess2;
-      tess1.Init(kTessdataPath.c_str(), langs[i]);
-      tess2.Init(kTessdataPath.c_str(), langs[j]);
+      tess1.InitSimple(kTessdataPath.c_str(), langs[i]);
+      tess2.InitSimple(kTessdataPath.c_str(), langs[j]);
 
       ocr_result[0] = GetCleanedTextResult(&tess1, pix[i]);
       ocr_result[1] = GetCleanedTextResult(&tess2, pix[j]);
@@ -379,7 +379,7 @@ TEST(TesseractInstanceTest, TestMultipleTessInstanceVariables) {
   tesseract::TessBaseAPI tess1, tess2;
   for (int i = 0; i < 2; ++i) {
     tesseract::TessBaseAPI *api = (i == 0) ? &tess1 : &tess2;
-    api->Init(kTessdataPath.c_str(), langs[i].c_str());
+    api->InitSimple(kTessdataPath.c_str(), langs[i].c_str());
     api->SetVariable(illegal_name.c_str(), "none");
     api->SetVariable(int_param_name.c_str(), int_param_str[i].c_str());
     api->SetVariable(bool_param_name.c_str(), bool_param_str[i].c_str());

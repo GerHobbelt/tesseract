@@ -174,6 +174,8 @@ static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine truncates Param to lie within the range
  * of Min-Max inclusive.
@@ -194,6 +196,8 @@ static int TruncateParam(float Param, int Min, int Max) {
   }
   return result;
 }
+
+#endif
 
 /*-----------------------------------------------------------------------------
               Public Code
