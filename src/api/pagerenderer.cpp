@@ -1,3 +1,4 @@
+/**********************************************************************
 // File:        pagerenderer.cpp
 // Description: PAGE XML rendering interface
 // Author:      Jan Kamlah
@@ -12,16 +13,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+ **********************************************************************/
 
-#include "errcode.h" // for ASSERT_HOST
-#ifdef _WIN32
-#  include "host.h"  // windows.h for MultiByteToWideChar, ...
-#endif
-#include "tprintf.h" // for tprintf
+#include <tesseract/baseapi.h> // for TessBaseAPI
 
-#include <tesseract/baseapi.h>
-#include <tesseract/renderer.h>
-
+#include <locale>              // for std::locale::classic
 #include <ctime>
 #include <iomanip>
 #include <memory>
@@ -34,6 +30,12 @@
 #if defined(_MSC_VER)
 #  include <crtdbg.h>
 #endif
+
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+#  include "host.h" // windows.h for MultiByteToWideChar, ...
+#endif
+#include <tesseract/renderer.h>
+#include "tesseractclass.h" // for Tesseract
 
 namespace tesseract {
 
@@ -727,15 +729,18 @@ char
     SetInputName(nullptr);
   }
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // convert input name from ANSI encoding to utf-8
-  int str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
+  int str16_len =
+      MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
   wchar_t *uni16_str = new WCHAR[str16_len];
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str, str16_len);
-  int utf8_len =
-      WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr, 0, nullptr, nullptr);
+  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str,
+                                  str16_len);
+  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr,
+                                     0, nullptr, nullptr);
   char *utf8_str = new char[utf8_len];
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len, nullptr, nullptr);
+  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len,
+                      nullptr, nullptr);
   input_file_ = utf8_str;
   delete[] uni16_str;
   delete[] utf8_str;
@@ -793,7 +798,7 @@ char
   << "\t\t\t<OrderedGroup id=\"ro_"<< ro_id
   << "\" caption=\"Regions reading order\">\n";
 
-  ResultIterator *res_it = GetIterator();
+  std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
@@ -809,7 +814,7 @@ char
         // Handle all kinds of images.
         page_str << "\t\t<Graphic id=\"r" << bcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</Graphic>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -819,7 +824,7 @@ char
         // Handle horizontal and vertical lines.
         page_str << "\t\t<Separator id=\"r_" << bcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</Separator>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -846,7 +851,7 @@ char
       << "readingDirection {"<< WritingDirectionToStr(writing_direction_block)<<";} "
       << "orientation {"<< orientation_block <<";}\">\n";
       page_str << "\t\t\t";
-      if (!POLYGONFLAG && !WORDLEVELFLAG) AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+      if (!POLYGONFLAG && !WORDLEVELFLAG) AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
     }
 
     // Writing direction changes at a per-word granularity
@@ -874,8 +879,8 @@ char
       << "custom=\""<< "readingOrder {index:"<< lcnt <<";}\">\n";
       // If wordlevel is not set, get the line polygon and baseline
       if (!WORDLEVELFLAG && !POLYGONFLAG) {
-        AddPointToWordPolygon(res_it, RIL_TEXTLINE, line_top_ltr_pts, line_bottom_ltr_pts, writing_direction);
-        AddBaselineToPTA(res_it, RIL_TEXTLINE, line_baseline_pts);
+        AddPointToWordPolygon(res_it.get(), RIL_TEXTLINE, line_top_ltr_pts, line_bottom_ltr_pts, writing_direction);
+        AddBaselineToPTA(res_it.get(), RIL_TEXTLINE, line_baseline_pts);
         if (ttb_flag) line_baseline_pts = TransposePolygonline(line_baseline_pts); 
       }
     }
@@ -892,16 +897,16 @@ char
       << WritingDirectionToStr(writing_direction)  << "\" "
       << "custom=\""<< "readingOrder {index:"<< wcnt <<";}\">\n";
       if (!POLYGONFLAG || ttb_flag){
-        AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
+        AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
       }
     }
     
     if (POLYGONFLAG && ttb_flag && !WORDLEVELFLAG){
-      AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
+      AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
     }
 
     // Get the word baseline information
-    AddBaselineToPTA(res_it, RIL_WORD, word_baseline_pts);
+    AddBaselineToPTA(res_it.get(), RIL_WORD, word_baseline_pts);
 
     // Get the word text content and polygon 
     do {
@@ -909,7 +914,7 @@ char
       if (grapheme && grapheme[0] != 0) {
         word_content << HOcrEscape(grapheme.get()).c_str();
         if (POLYGONFLAG && !ttb_flag){
-          AddPointToWordPolygon(res_it, RIL_SYMBOL, word_top_pts, word_bottom_pts, writing_direction);
+          AddPointToWordPolygon(res_it.get(), RIL_SYMBOL, word_top_pts, word_bottom_pts, writing_direction);
         }
       }
       res_it->Next(RIL_SYMBOL);
@@ -1087,9 +1092,12 @@ char
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-  char *result = new char[text.length() + 1];
+#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
+  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
+#else
+  char* result = new char[text.length() + 1];
+#endif  // _DEBUG
   strcpy(result, text.c_str());
-  delete res_it;
   return result;
 }
 

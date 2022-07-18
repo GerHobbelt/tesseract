@@ -57,6 +57,7 @@
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
+#include "winutils.h"
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -168,26 +169,29 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
   }
   const size_t extlen = sizeof(kTrainedDataSuffix);
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  WIN32_FIND_DATA data;
-  HANDLE handle = FindFirstFile((datadir + base2 + "*").c_str(), &data);
+  const auto kTrainedDataSuffixUtf16 = winutils::Utf8ToUtf16(kTrainedDataSuffix);
+
+  WIN32_FIND_DATAW data;
+  HANDLE handle = FindFirstFileW(
+    winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
   if (handle != INVALID_HANDLE_VALUE) {
     BOOL result = TRUE;
     for (; result;) {
-      char *name = data.cFileName;
+      wchar_t *name = data.cFileName;
       // Skip '.', '..', and hidden files
       if (name[0] != '.') {
         if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) {
-          addAvailableLanguages(datadir, base2 + name, langs);
+          addAvailableLanguages(datadir, base2 + winutils::Utf16ToUtf8(name), langs);
         } else {
-          size_t len = strlen(name);
+          size_t len = wcslen(name);
           if (len > extlen && name[len - extlen] == '.' &&
-              strcmp(&name[len - extlen + 1], kTrainedDataSuffix) == 0) {
+              &name[len - extlen + 1] == kTrainedDataSuffixUtf16) {
             name[len - extlen] = '\0';
-            langs->push_back(base2 + name);
+            langs->push_back(base2 + winutils::Utf16ToUtf8(name));
           }
         }
       }
-      result = FindNextFile(handle, &data);
+      result = FindNextFileW(handle, &data);
     }
     FindClose(handle);
   }
@@ -380,17 +384,26 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
  * be returned.
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
+int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
                       int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params) {
-  return Init(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
+}
+
+int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
+}
+
+int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
+  return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
+                false);
 }
 
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
-int TessBaseAPI::Init(const char *data, int data_size, const char *language, OcrEngineMode oem,
+int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char *language, OcrEngineMode oem,
                       const char **configs, int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
                       FileReader reader) {

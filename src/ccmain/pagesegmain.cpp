@@ -250,6 +250,8 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
   return result;
 }
 
+#if !DISABLED_LEGACY_ENGINE
+
 // Helper adds all the scripts from sid_set converted to ids from osd_set to
 // allowed_ids.
 static void AddAllScriptsConverted(const UNICHARSET &sid_set, const UNICHARSET &osd_set,
@@ -261,6 +263,8 @@ static void AddAllScriptsConverted(const UNICHARSET &sid_set, const UNICHARSET &
     }
   }
 }
+
+#endif
 
 /**
  * Sets up auto page segmentation, determines the orientation, and corrects it.
