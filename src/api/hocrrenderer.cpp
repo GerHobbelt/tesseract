@@ -21,9 +21,11 @@
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
 #include <sstream>             // for std::stringstream
+
 #if defined(_MSC_VER)
 #  include <crtdbg.h>
 #endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for MultiByteToWideChar, ...
 #endif

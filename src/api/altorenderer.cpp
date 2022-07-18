@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <sstream> // for std::stringstream
+
 #if defined(_MSC_VER)
 #  include <crtdbg.h>
 #endif

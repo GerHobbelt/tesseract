@@ -276,7 +276,6 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   return pixg;
 }
 
-
 /*----------------------------------------------------------------------*
  *                  Non-linear contrast normalization                   *
  *----------------------------------------------------------------------*/
@@ -607,7 +606,6 @@ Image ImageThresholder::GetPixNormRectGrey() {
   pix.destroy();
   return result;
 }
-
 
 // Otsu thresholds the rectangle, taking the rectangle from *this.
 void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const {
