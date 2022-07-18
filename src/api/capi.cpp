@@ -232,22 +232,22 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
     }
   }
 
-  return handle->Init(datapath, language, mode, configs, configs_size, &varNames, &varValues,
+  return handle->InitFull(datapath, language, mode, configs, configs_size, &varNames, &varValues,
                       set_only_non_debug_params != 0);
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode oem, const char **configs, int configs_size) {
-  return handle->Init(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
+  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode oem) {
-  return handle->Init(datapath, language, oem);
+  return handle->InitOem(datapath, language, oem);
 }
 
 int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *language) {
-  return handle->Init(datapath, language);
+  return handle->InitSimple(datapath, language);
 }
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
@@ -262,7 +262,7 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
     }
   }
 
-  return handle->Init(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
+  return handle->InitFullWithReader(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
                       set_only_non_debug_params != 0, nullptr);
 }
 

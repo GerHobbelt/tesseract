@@ -165,8 +165,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   SetupForward(input, input_transpose);
 #if defined(THREADPOOL)
-  std::vector<NetworkScratch::FloatVec> temp_lines(kNumThreads);
-  std::vector<NetworkScratch::FloatVec> curr_input(kNumThreads);
+  std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
+  auto *curr_input = &local_scratch[0];
+  auto *temp_lines = &local_scratch[kNumThreads];
   int ro = no_;
   if (IntSimdMatrix::intSimdMatrix) {
     ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
