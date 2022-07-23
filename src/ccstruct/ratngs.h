@@ -630,6 +630,8 @@ using BLOB_CHOICE_LIST_VECTOR = std::vector<BLOB_CHOICE_LIST *>;
 
 bool EqualIgnoringCaseAndTerminalPunct(const WERD_CHOICE &word1, const WERD_CHOICE &word2);
 
+bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1, const WERD_CHOICE &word2);
+
 // Utilities for debug printing.
 void print_ratings_list(const char *msg,                     // intro message
                         BLOB_CHOICE_LIST *ratings,           // list of results

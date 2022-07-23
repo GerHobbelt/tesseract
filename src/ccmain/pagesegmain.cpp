@@ -24,6 +24,8 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+#include <cmath>
+
 // Include automatically generated configuration file if running autoconf.
 #ifdef HAVE_CONFIG_H
 #  include "config_auto.h"
@@ -170,7 +172,16 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   bool cjk_mode = textord_use_cjk_fp_model;
 
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
-                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks);
+                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, osr->gradient);
+  
+  tprintf("Gradient: %.6f\n", osr->gradient);
+  tprintf("max_page_gradient_recognize: %.6f\n", abs(max_page_gradient_recognize));
+  tprintf("%d\n", abs(osr->gradient) > abs(max_page_gradient_recognize));
+
+  if( max_page_gradient_recognize != 100 && abs(osr->gradient) > abs(max_page_gradient_recognize) ) {
+    tprintf("Page Gradient: %.6f", osr->gradient);
+    return -1; 
+  }
   return auto_page_seg_ret_val;
 }
 

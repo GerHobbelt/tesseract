@@ -359,45 +359,45 @@ if(ICU_FOUND)
     # LIBRARY pango_training
     # ##########################################################################
 
-    file(GLOB pango_training_src pango/*)
+    # file(GLOB pango_training_src pango/*)
 
-    add_library(pango_training ${pango_training_src})
-    target_link_libraries(pango_training PUBLIC unicharset_training)
-    if(SW_BUILD)
-      target_link_libraries(pango_training
-                            PUBLIC org.sw.demo.gnome.pango.pangocairo)
-    else()
-      if(PKG_CONFIG_FOUND)
-        target_include_directories(pango_training BEFORE
-                                   PUBLIC ${PANGO_INCLUDE_DIRS})
-        target_compile_definitions(pango_training PUBLIC -DPANGO_ENABLE_ENGINE)
-        if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-          target_link_libraries(pango_training PUBLIC PkgConfig::PANGO)
-        else()
-          target_link_libraries(pango_training PUBLIC ${PANGO_LINK_LIBRARIES})
-        endif()
-      endif()
-    endif()
-    target_include_directories(pango_training
-                               PUBLIC pango ${CMAKE_CURRENT_BINARY_DIR})
-    generate_export_header(pango_training EXPORT_MACRO_NAME
-                           TESS_PANGO_TRAINING_API)
-    project_group(pango_training "Training Tools")
+    # add_library(pango_training ${pango_training_src})
+    # target_link_libraries(pango_training PUBLIC unicharset_training)
+    # if(SW_BUILD)
+    #   target_link_libraries(pango_training
+    #                         PUBLIC org.sw.demo.gnome.pango.pangocairo)
+    # else()
+    #   if(PKG_CONFIG_FOUND)
+    #     target_include_directories(pango_training BEFORE
+    #                                PUBLIC ${PANGO_INCLUDE_DIRS})
+    #     target_compile_definitions(pango_training PUBLIC -DPANGO_ENABLE_ENGINE)
+    #     if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+    #       target_link_libraries(pango_training PUBLIC PkgConfig::PANGO)
+    #     else()
+    #       target_link_libraries(pango_training PUBLIC ${PANGO_LINK_LIBRARIES})
+    #     endif()
+    #   endif()
+    # endif()
+    # target_include_directories(pango_training
+    #                            PUBLIC pango ${CMAKE_CURRENT_BINARY_DIR})
+    # generate_export_header(pango_training EXPORT_MACRO_NAME
+    #                        TESS_PANGO_TRAINING_API)
+    # project_group(pango_training "Training Tools")
 
     # ##########################################################################
     # EXECUTABLE text2image
     # ##########################################################################
 
-    set(TEXT2IMAGE_SRC text2image.cpp degradeimage.cpp degradeimage.h)
+    # set(TEXT2IMAGE_SRC text2image.cpp degradeimage.cpp degradeimage.h)
 
-    add_executable(text2image ${TEXT2IMAGE_SRC})
-    target_link_libraries(text2image pango_training)
-    project_group(text2image "Training Tools")
-    install(
-      TARGETS text2image
-      RUNTIME DESTINATION bin
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib)
+    # add_executable(text2image ${TEXT2IMAGE_SRC})
+    # target_link_libraries(text2image pango_training)
+    # project_group(text2image "Training Tools")
+    # install(
+    #   TARGETS text2image
+    #   RUNTIME DESTINATION bin
+    #   LIBRARY DESTINATION lib
+    #   ARCHIVE DESTINATION lib)
 
   endif()
 endif(ICU_FOUND)
