@@ -51,7 +51,7 @@ protected:
   void SetImage(const char *filename) {
     src_pix_.destroy();
     src_pix_ = pixRead(filename);
-    api_.Init(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
     api_.SetImage(src_pix_);
   }
 

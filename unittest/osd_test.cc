@@ -39,7 +39,7 @@ protected:
 static void OSDTester(int expected_deg, const char *imgname, const char *tessdatadir) {
   // log.info() << tessdatadir << " for image: " << imgname << std::endl;
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, "osd")) << "Could not initialize tesseract.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, "osd")) << "Could not initialize tesseract.";
   Image image = pixRead(imgname);
   ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
   api->SetImage(image);
