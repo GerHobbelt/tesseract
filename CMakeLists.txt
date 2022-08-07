@@ -159,7 +159,6 @@ set(HAVE_AVX FALSE)
 set(HAVE_AVX2 FALSE)
 set(HAVE_FMA FALSE)
 set(HAVE_NEON FALSE)
-set(HAVE_SSE4_1 FALSE)
 
 # Compiler specific environments
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
@@ -556,8 +555,10 @@ set(TESSERACT_SRC_LEGACY
   list(REMOVE_ITEM TESSERACT_SRC ${TESSERACT_SRC_LEGACY})
 endif(DISABLED_LEGACY_ENGINE)
 
-list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
-     src/arch/intsimdmatrix.cpp)
+if(NOT HAVE_SSE4_1)
+  list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
+      src/arch/intsimdmatrix.cpp)
+endif(NOT HAVE_SSE4_1)
 
 if(MARCH_NATIVE_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
@@ -580,15 +581,9 @@ if(HAVE_FMA)
                               PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
 endif(HAVE_FMA)
 if(HAVE_SSE4_1)
-list(APPEND arch_files_opt src/arch/dotproductsse.cpp src/arch/simddetect.cpp src/arch/intsimdmatrix.cpp src/arch/intsimdmatrixsse.cpp src/arch/dotproduct.cpp)
-set_source_files_properties(src/arch/dotproductsse.cpp src/arch/simddetect.cpp src/arch/intsimdmatrix.cpp src/arch/intsimdmatrixsse.cpp  src/arch/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
-message("Using SSE41")
-
-  #list(APPEND arch_files_opt src/arch/dotproductsse.cpp
-  #     src/arch/intsimdmatrixsse.cpp)
-  #set_source_files_properties(
-  #  src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp
-  #  PROPERTIES COMPILE_FLAGS ${SSE4_1_COMPILE_FLAGS})
+  list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
+  set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
+  message("Using SSE41")
 endif(HAVE_SSE4_1)
 if(HAVE_NEON)
   list(APPEND arch_files_opt src/arch/dotproductneon.cpp
@@ -676,6 +671,7 @@ target_include_directories(
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch_sse>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccmain>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccstruct>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccutil>
@@ -760,10 +756,15 @@ endif()
 ########################################
 # Build tesseract-core.js (WASM version)
 ########################################
+if(HAVE_SSE4_1)
+  set(WASM_NAME tesseract-core-simd)
+else()
+  set(WASM_NAME tesseract-core)
+endif()
 
 set(tesseract_js_wrapper ../../javascript/src/wrapper.cpp)
 
-add_executable                  (tesseract-core ${tesseract_js_wrapper})
+add_executable                  (${WASM_NAME} ${tesseract_js_wrapper})
 #
 # Check link below for detail explanation
 # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
@@ -799,7 +800,8 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_RUNTIME_METHODS='[\"FS\", \"
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/glue.js")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/anterior.js")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --embed-file ../tessdata/pdf.ttf@pdf.ttf")
-set_target_properties(tesseract-core PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+
+set_target_properties(${WASM_NAME} PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
 target_link_libraries         (libtesseract PUBLIC
   ${CMAKE_PREFIX_PATH}/lib/libgif.a
   ${CMAKE_PREFIX_PATH}/lib/libjpeg.a
@@ -812,19 +814,19 @@ target_link_libraries         (libtesseract PUBLIC
   ${CMAKE_PREFIX_PATH}/lib/libwebpdemux.a
   ${CMAKE_PREFIX_PATH}/lib/libz.a
 )
-target_link_libraries           (tesseract-core libtesseract)
+target_link_libraries           (${WASM_NAME} libtesseract)
 
 #############################################################
 # Build tesseract-core.wasm.js (WASM Base64 embedded version)
 #############################################################
 
-add_executable                  (tesseract-core.wasm ${tesseract_js_wrapper})
+add_executable                  (${WASM_NAME}.wasm ${tesseract_js_wrapper})
 
 # # Embeds all subresources in the emitted file as base64 string literals
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SINGLE_FILE=1")
-set_target_properties(tesseract-core.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreWASM\"'")
+set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreWASM\"'")
 
-target_link_libraries           (tesseract-core.wasm libtesseract)
+target_link_libraries           (${WASM_NAME}.wasm libtesseract)
 
 
 ###########################################
@@ -842,74 +844,74 @@ target_link_libraries           (tesseract-core.wasm libtesseract)
 
 # ##############################################################################
 
-if(BUILD_TESTS AND EXISTS
-     ${CMAKE_CURRENT_SOURCE_DIR}/unittest/third_party/googletest/CMakeLists.txt
-)
-  add_subdirectory(unittest/third_party/googletest)
-endif()
+# if(BUILD_TESTS AND EXISTS
+#      ${CMAKE_CURRENT_SOURCE_DIR}/unittest/third_party/googletest/CMakeLists.txt
+# )
+#   add_subdirectory(unittest/third_party/googletest)
+# endif()
 
-if(BUILD_TRAINING_TOOLS)
-  add_subdirectory(src/training)
-endif()
+# if(BUILD_TRAINING_TOOLS)
+#   add_subdirectory(src/training)
+# endif()
 
-get_target_property(tesseract_NAME libtesseract NAME)
-get_target_property(tesseract_VERSION libtesseract VERSION)
-get_target_property(tesseract_OUTPUT_NAME libtesseract OUTPUT_NAME)
+# get_target_property(tesseract_NAME libtesseract NAME)
+# get_target_property(tesseract_VERSION libtesseract VERSION)
+# get_target_property(tesseract_OUTPUT_NAME libtesseract OUTPUT_NAME)
 
-configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
-               @ONLY)
+# configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
+#                @ONLY)
 
-configure_package_config_file(
-  cmake/templates/TesseractConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfig.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract
-  PATH_VARS INCLUDE_DIR LIBRARY_DIRS)
-write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfigVersion.cmake
-  VERSION ${PACKAGE_VERSION}
-  COMPATIBILITY SameMajorVersion)
+# configure_package_config_file(
+#   cmake/templates/TesseractConfig.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfig.cmake
+#   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract
+#   PATH_VARS INCLUDE_DIR LIBRARY_DIRS)
+# write_basic_package_version_file(
+#   ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfigVersion.cmake
+#   VERSION ${PACKAGE_VERSION}
+#   COMPATIBILITY SameMajorVersion)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-#install(TARGETS tesseract DESTINATION bin)
-install(TARGETS tesseract-core RUNTIME DESTINATION bin)
-#install(TARGETS tesseract-core.asm RUNTIME DESTINATION bin)
+# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+# #install(TARGETS tesseract DESTINATION bin)
+# install(TARGETS ${WASM_NAME} RUNTIME DESTINATION bin)
+# #install(TARGETS tesseract-core.asm RUNTIME DESTINATION bin)
 
-install(
-  TARGETS libtesseract
-  EXPORT TesseractTargets
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(
-  EXPORT TesseractTargets
-  NAMESPACE Tesseract::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract)
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# install(
+#   TARGETS libtesseract
+#   EXPORT TesseractTargets
+#   RUNTIME DESTINATION bin
+#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# install(
+#   EXPORT TesseractTargets
+#   NAMESPACE Tesseract::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract)
+# install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cmake
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(
-  FILES include/tesseract/baseapi.h
-        include/tesseract/capi.h
-        include/tesseract/renderer.h
-        ${CMAKE_CURRENT_BINARY_DIR}/include/tesseract/version.h
-        include/tesseract/ltrresultiterator.h
-        include/tesseract/pageiterator.h
-        include/tesseract/resultiterator.h
-        include/tesseract/osdetect.h
-        include/tesseract/publictypes.h
-        include/tesseract/ocrclass.h
-        include/tesseract/export.h
-        include/tesseract/unichar.h
-        # ${CMAKE_CURRENT_BINARY_DIR}/src/endianness.h
-  DESTINATION include/tesseract)
+# install(
+#   FILES include/tesseract/baseapi.h
+#         include/tesseract/capi.h
+#         include/tesseract/renderer.h
+#         ${CMAKE_CURRENT_BINARY_DIR}/include/tesseract/version.h
+#         include/tesseract/ltrresultiterator.h
+#         include/tesseract/pageiterator.h
+#         include/tesseract/resultiterator.h
+#         include/tesseract/osdetect.h
+#         include/tesseract/publictypes.h
+#         include/tesseract/ocrclass.h
+#         include/tesseract/export.h
+#         include/tesseract/unichar.h
+#         # ${CMAKE_CURRENT_BINARY_DIR}/src/endianness.h
+#   DESTINATION include/tesseract)
 
-if(INSTALL_CONFIGS)
-install(FILES ${TESSERACT_CONFIGS}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
-install(FILES ${TESSERACT_TESSCONFIGS}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
-endif()
+# if(INSTALL_CONFIGS)
+# install(FILES ${TESSERACT_CONFIGS}
+#         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
+# install(FILES ${TESSERACT_TESSCONFIGS}
+#         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
+# endif()
 
 # ##############################################################################
 # uninstall target
