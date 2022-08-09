@@ -238,7 +238,7 @@ TEST_F(TesseractTest, BasicLSTMTest) {
 TEST_F(TesseractTest, LSTMGeometryTest) {
   Image src_pix = pixRead(TestDataNameToPath("deslant.tif").c_str());
   FriendlyTessBaseAPI api;
-  if (api.Init(TessdataPath().c_str(), "eng", tesseract::OEM_LSTM_ONLY) == -1) {
+  if (api.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_LSTM_ONLY) == -1) {
     // eng.traineddata not found.
     GTEST_SKIP();
     return;
@@ -331,7 +331,7 @@ TEST(TesseractInstanceTest, TestMultipleTessInstances) {
     QCHECK(pix[i] != nullptr) << "Could not read " << path << "\n";
 
     tesseract::TessBaseAPI tess;
-    EXPECT_EQ(0, tess.Init(kTessdataPath.c_str(), langs[i]));
+    EXPECT_EQ(0, tess.InitSimple(kTessdataPath.c_str(), langs[i]));
     std::string ocr_result = GetCleanedTextResult(&tess, pix[i]);
     EXPECT_STREQ(gt_text[i], ocr_result.c_str());
   }

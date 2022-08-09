@@ -146,7 +146,7 @@ int BaseapiThreadTest::num_langs_;
 
 static void InitTessInstance(TessBaseAPI *tess, const std::string &lang) {
   CHECK(tess != nullptr);
-  EXPECT_EQ(0, tess->Init(TESSDATA_DIR, lang.c_str()));
+  EXPECT_EQ(0, tess->InitSimple(TESSDATA_DIR, lang.c_str()));
 }
 
 static void GetCleanedText(TessBaseAPI *tess, Image pix, std::string &ocr_text) {

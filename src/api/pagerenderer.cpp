@@ -39,21 +39,6 @@
 
 namespace tesseract {
 
-
-///
-/// Block orientation at the current iterator position.
-///
-static tesseract::Orientation 
-GetBlockTextOrientation(const PageIterator *it) {
-  tesseract::Orientation orientation;
-  tesseract::WritingDirection writing_direction;
-  tesseract::TextlineOrder textline_order;
-  float deskew_angle;
-  it->Orientation(&orientation, &writing_direction, &textline_order,
-                  &deskew_angle);
-  return orientation;
-}
-
 ///
 /// Slope and offset between two points
 ///
