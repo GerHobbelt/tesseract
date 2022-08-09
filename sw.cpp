@@ -79,7 +79,10 @@ void build(Solution &s)
         }
         if (!win_or_mingw)
         {
-            libtesseract += "pthread"_slib;
+#if SW_MODULE_ABI_VERSION > 29
+            if (!libtesseract.getBuildSettings().TargetOS.Android)
+#endif
+                libtesseract += "pthread"_slib;
         }
         if (libtesseract.getBuildSettings().TargetOS.Arch == ArchType::aarch64)
         {
