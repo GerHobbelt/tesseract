@@ -124,7 +124,7 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
       InitializeClassifier(FLAGS_classifier.c_str(), trainer->unicharset(), argc, argv, &api);
   if (shape_classifier == nullptr) {
     fprintf(stderr, "Classifier init failed!:%s\n", FLAGS_classifier.c_str());
-    return 1;
+    return EXIT_FAILURE;
   }
 
   // We want to test junk as well if it is available.
@@ -138,7 +138,7 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
   delete shape_classifier;
   delete api;
 
-  return 0;
+  return EXIT_SUCCESS;
 } /* main */
 
 #else

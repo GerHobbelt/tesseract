@@ -40,7 +40,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
     tprintf("%s\n", tesseract::TessBaseAPI::Version());
-    return 0;
+    return EXIT_SUCCESS;
   } else if (!(argc == 4 || (argc == 5 && strcmp(argv[1], "-t") == 0) ||
                (argc == 6 && strcmp(argv[1], "-r") == 0))) {
     tprintf(
@@ -48,7 +48,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
         "       %s [-t | -r [reverse policy] ] word_list_file"
         " dawg_file unicharset_file\n",
         argv[0], argv[0]);
-    return 1;
+    return EXIT_FAILURE;
   }
   tesseract::Classify classify;
   int argv_index = 0;
@@ -69,7 +69,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
   tprintf("Loading unicharset from '%s'\n", unicharset_file);
   if (!classify.getDict().getUnicharset().load_from_file(unicharset_file)) {
     tprintf("ERROR: Failed to load unicharset from '%s'\n", unicharset_file);
-    return 1;
+    return EXIT_FAILURE;
   }
   const UNICHARSET &unicharset = classify.getDict().getUnicharset();
   if (argc == 4 || argc == 6) {
@@ -80,7 +80,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
     tprintf("Reading word list from '%s'\n", wordlist_filename);
     if (!trie.read_and_add_word_list(wordlist_filename, unicharset, reverse_policy)) {
       tprintf("ERROR: Failed to add word list from '%s'\n", wordlist_filename);
-      exit(1);
+      return EXIT_FAILURE;
     }
     tprintf("Reducing Trie to SquishedDawg\n");
     std::unique_ptr<tesseract::SquishedDawg> dawg(trie.trie_to_dawg());
@@ -100,7 +100,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
     words.check_for_words(wordlist_filename, unicharset, true);
   } else { // should never get here
     tprintf("ERROR: Invalid command-line options.\n");
-    exit(1);
+    return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }

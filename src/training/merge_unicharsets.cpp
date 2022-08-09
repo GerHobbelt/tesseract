@@ -32,14 +32,14 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
     tprintf("%s\n", TessBaseAPI::Version());
-    return 0;
+    return EXIT_SUCCESS;
   } else if (argc < 4) {
     // Print usage
     tprintf(
         "Usage: %s -v | --version |\n"
         "       %s unicharset-in-1 ... unicharset-in-n unicharset-out\n",
         argv[0], argv[0]);
-    return 1;
+    return EXIT_FAILURE;
   }
 
   UNICHARSET input_unicharset, result_unicharset;
@@ -50,7 +50,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
       result_unicharset.AppendOtherUnicharset(input_unicharset);
     } else {
       tprintf("ERROR: Failed to load unicharset from file %s!!\n", argv[arg]);
-      exit(1);
+      return EXIT_FAILURE;
     }
   }
 
@@ -59,7 +59,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
     tprintf("Wrote unicharset file %s.\n", argv[argc - 1]);
   } else {
     tprintf("ERROR: Cannot save unicharset file %s.\n", argv[argc - 1]);
-    exit(1);
+    return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }
