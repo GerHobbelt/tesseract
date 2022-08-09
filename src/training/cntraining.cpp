@@ -151,7 +151,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
     Clusterer = SetUpForClustering(FeatureDefs, CharSample, PROGRAM_FEATURE_TYPE);
     if (Clusterer == nullptr) { // To avoid a SIGSEGV
       fprintf(stderr, "Error: nullptr clusterer!\n");
-      return 1;
+      return EXIT_FAILURE;
     }
     float SavedMinSamples = Config.MinSamples;
     // To disable the tendency to produce a single cluster for all fonts,
@@ -183,7 +183,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
     FreeProtoList(&freeable_proto);
   }
   tprintf("\n");
-  return 0;
+  return EXIT_SUCCESS;
 } // main
 
 /*----------------------------------------------------------------------------

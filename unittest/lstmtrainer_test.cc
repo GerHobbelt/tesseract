@@ -88,7 +88,7 @@ TEST_F(LSTMTrainerTest, ConvertModel) {
   // Now run the saved model on phototest. (See BasicTesseractTest in
   // baseapi_test.cc).
   TessBaseAPI api;
-  api.Init(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
+  api.InitOem(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
   Image src_pix = pixRead(TestingNameToPath("phototest.tif").c_str());
   CHECK(src_pix);
   api.SetImage(src_pix);
