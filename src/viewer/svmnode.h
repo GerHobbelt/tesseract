@@ -27,6 +27,8 @@
 #ifndef TESSERACT_VIEWER_SVMNODE_H_
 #define TESSERACT_VIEWER_SVMNODE_H_
 
+#include "export.h"
+
 #ifndef GRAPHICS_DISABLED
 
 #include <string>
