@@ -34,20 +34,28 @@ enum TessErrorLogCode {
   ABORT = 2     /*abort after error */
 };
 
+#if 0
+/* Explicit Error Abort codes */
+#define NO_ABORT_CODE 0
+#define LIST_ABORT 1
+#define MEMORY_ABORT 2
+#define FILE_ABORT 3
+#endif
+
 class TESS_API ERRCODE { // error handler class
   const char *message;   // error message
 
 public:
   void verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const;
 
-  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
+  template <typename S, typename... Args>
   void error(                  // error print function
       const char *caller,      // function location
       TessErrorLogCode action, // action to take
-      const S &format,
+      const S *format,
       Args&&... args
   ) const {
-    verror(caller, action, fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+    verror(caller, action, format, fmt::make_args_checked<Args...>(format, args...));
   }
 
   void error(const char *caller, TessErrorLogCode action) const;
