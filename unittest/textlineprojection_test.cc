@@ -55,7 +55,7 @@ protected:
   void SetImage(const char *filename) {
     src_pix_.destroy();
     src_pix_ = pixRead(file::JoinPath(TESTING_DIR, filename).c_str());
-    api_.Init(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
     api_.SetPageSegMode(tesseract::PSM_AUTO_OSD);
     api_.SetImage(src_pix_);
   }

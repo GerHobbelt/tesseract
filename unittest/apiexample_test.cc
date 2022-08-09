@@ -68,7 +68,7 @@ void OCRTester(const char *imgname, const char *groundtruth, const char *tessdat
   file.imbue(loc); // Use it for file input
   std::string gtText((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
   Image image = pixRead(imgname);
   ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
   api->SetImage(image);

@@ -36,7 +36,7 @@ protected:
 
   void SetImage(const char *filename) {
     src_pix_ = pixRead(TestDataNameToPath(filename).c_str());
-    api_.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY);
     //    if (!FLAGS_tess_config.empty())
     //      api_.ReadConfigFile(FLAGS_tess_config.c_str());
     api_.SetPageSegMode(tesseract::PSM_AUTO);

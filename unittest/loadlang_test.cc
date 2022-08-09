@@ -40,7 +40,7 @@ protected:
 
 void LangLoader(const char *lang, const char *tessdatadir) {
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract for $lang.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract for $lang.";
   api->End();
 }
 
