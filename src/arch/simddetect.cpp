@@ -55,7 +55,8 @@
 
 #endif
 
-#if defined(HAVE_AVX) || defined(HAVE_AVX2) || defined(HAVE_FMA) || defined(HAVE_SSE4_1)
+#if defined(HAVE_AVX) || defined(HAVE_AVX2) || defined(HAVE_FMA) || defined(HAVE_SSE4_1) || defined(_M_IX86) || defined(_M_X64)
+// See https://en.wikipedia.org/wiki/CPUID.
 #  define HAS_CPUID
 #endif
 
@@ -115,6 +116,7 @@ bool SIMDDetect::avx_available_ = false;
 bool SIMDDetect::avx2_available_ = false;
 bool SIMDDetect::avx512F_available_ = false;
 bool SIMDDetect::avx512BW_available_ = false;
+bool SIMDDetect::avx512VNNI_available_ = false;
 // If true, then FMA has been detected.
 bool SIMDDetect::fma_available_ = false;
 // If true, then SSE4.1 has been detected.
@@ -196,8 +198,12 @@ SIMDDetect::SIMDDetect() {
         // be used inside an if.
         __cpuid_count(7, 0, eax, ebx, ecx, edx);
         avx2_available_ = (ebx & 0x00000020) != 0;
-        avx512F_available_ = (ebx & 0x00010000) != 0;
-        avx512BW_available_ = (ebx & 0x40000000) != 0;
+        if ((xgetbv() & 0xe0) == 0xe0) {
+          // OS supports AVX512.
+          avx512F_available_ = (ebx & 0x00010000) != 0;
+          avx512BW_available_ = (ebx & 0x40000000) != 0;
+          avx512VNNI_available_ = (ecx & 0x00000800) != 0;
+        }
       }
 #      endif
     }
@@ -210,28 +216,32 @@ SIMDDetect::SIMDDetect() {
   max_function_id = cpuInfo[0];
   if (max_function_id >= 1) {
     __cpuid(cpuInfo, 1);
-#    if defined(HAVE_SSE4_1)
+//#    if defined(HAVE_SSE4_1)
     sse_available_ = (cpuInfo[2] & 0x00080000) != 0;
-#    endif
-#    if defined(HAVE_AVX) || defined(HAVE_AVX2) || defined(HAVE_FMA)
+//#    endif
+//#    if defined(HAVE_AVX) || defined(HAVE_AVX2) || defined(HAVE_FMA)
     if ((cpuInfo[2] & 0x08000000) && ((_xgetbv(0) & 6) == 6)) {
       // OSXSAVE bit is set, XMM state and YMM state are fine.
-#      if defined(HAVE_FMA)
+//#      if defined(HAVE_FMA)
       fma_available_ = (cpuInfo[2] & 0x00001000) != 0;
-#      endif
-#      if defined(HAVE_AVX)
+//#      endif
+//#      if defined(HAVE_AVX)
       avx_available_ = (cpuInfo[2] & 0x10000000) != 0;
-#      endif
-#      if defined(HAVE_AVX2)
+//#      endif
+//#      if defined(HAVE_AVX2)
       if (max_function_id >= 7) {
         __cpuid(cpuInfo, 7);
         avx2_available_ = (cpuInfo[1] & 0x00000020) != 0;
-        avx512F_available_ = (cpuInfo[1] & 0x00010000) != 0;
-        avx512BW_available_ = (cpuInfo[1] & 0x40000000) != 0;
+        if ((_xgetbv(0) & 0xe0) == 0xe0) {
+          // OS supports AVX512.
+          avx512F_available_ = (cpuInfo[1] & 0x00010000) != 0;
+          avx512BW_available_ = (cpuInfo[1] & 0x40000000) != 0;
+          avx512VNNI_available_ = (cpuInfo[2] & 0x00000800) != 0;
+        }
       }
-#      endif
+//#      endif
     }
-#    endif
+//#    endif
   }
 #  else
 #    error "I don't know how to test for SIMD with this compiler"
@@ -257,7 +267,10 @@ SIMDDetect::SIMDDetect() {
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
-  if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  if (avx512VNNI_available_ && IntSimdMatrix::intSimdMatrixAVX512VNNI != nullptr) {
+    SetDotProduct(DotProductAVX512F, IntSimdMatrix::intSimdMatrixAVX512VNNI);
+    dotproduct_method = "avx512vnni";
+  } else if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX512F detected.
     SetDotProduct(DotProductAVX512F, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx512";

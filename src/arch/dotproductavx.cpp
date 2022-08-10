@@ -18,7 +18,20 @@
 #include "dotproduct.h"
 #include "intsimdmatrix.h"
 
-#if defined(__AVX__)
+// General Notice:
+// 
+// This is not about whether the compiler is optimizing **the rest of your code using FMA instructions**.
+// This code should be compiled *anyway*, because tesseract will pick the best variant (this one or another one)
+// **at run-time** on the actual hardware it will be running on.
+// Hence to safely compile tesseract for multiple architectures, one should set the compiler code generation
+// options as low as possible. Meanwhile these important functions are made available, independent of that compiler
+// "optimization setting", by using the appropriate intrinsics. Then, at run-time, a CPU check is performed
+// which will help tesseract decide which actual code chunk to execute. **Irrespective of the original compiler
+// flags setting -- that one only determines the lowest capability hardware this compiled product can actually
+// run on.
+// See also the SIMDDetect::SIMDDetect() code.
+//
+#if defined(__AVX__) || defined(_M_IX86) || defined(_M_X64)
 
 #  include <immintrin.h>
 #  include <cstdint>
