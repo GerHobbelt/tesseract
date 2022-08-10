@@ -733,10 +733,12 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
     std::vector<int> textline_order;
     std::vector<StrongScriptDirection> dirs;
     CalculateTextlineOrder(current_paragraph_is_ltr_, *this, &dirs, &textline_order);
-    tprintf("Strong Script dirs     [{}/P={}]: ", static_cast<void *>(it_->row()),
+    tprintf("Strong Script dirs     [{}/P={}]: ", 
+            static_cast<void *>(it_->row()),
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     PrintScriptDirs(dirs);
-    tprintf("Logical textline order [{}/P={}]: ", static_cast<void *>(it_->row()),
+    tprintf("Logical textline order [{}/P={}]: ", 
+            static_cast<void *>(it_->row()),
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     for (int i : textline_order) {
       tprintf("{} ", i);
