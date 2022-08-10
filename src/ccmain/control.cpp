@@ -2086,7 +2086,7 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
   PAGE_RES_IT page_res_it(page_res);
   WERD_RES *word;                       // current word
   WERD_RES *word_next;                       // next word
-  WERD_RES *word_prev;                       // previous word
+  WERD_RES *word_prev = NULL;                       // previous word
   bool italic_prev = false;
   bool italic = false;
   bool italic_next = false;
