@@ -82,7 +82,6 @@ enum DawgType {
 #define WERD_END_FLAG (int64_t)4
 #define LETTER_START_BIT 0
 #define NUM_FLAG_BITS 3
-#define REFFORMAT "%" PRId64
 
 static const bool kDawgSuccessors[DAWG_TYPE_COUNT][DAWG_TYPE_COUNT] = {
     {false, true, true, false},   // for DAWG_TYPE_PUNCTUATION
@@ -389,7 +388,7 @@ public:
     }
     push_back(new_pos);
     if (debug) {
-      tprintf("%s[%d, " REFFORMAT "] [punc: " REFFORMAT "%s]\n", debug_msg,
+      tprintf("{}[{}, {}] [punc: {}{}]\n", debug_msg,
               new_pos.dawg_index, new_pos.dawg_ref, new_pos.punc_ref,
               new_pos.back_to_punc ? " returned" : "");
     }

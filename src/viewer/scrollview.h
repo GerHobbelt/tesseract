@@ -33,9 +33,7 @@
 
 #include "image.h"
 
-#include <fmt/printf.h> 
-#include <fmt/core.h> 
-#include <fmt/format.h>       // for fmt
+#include <fmt/format.h>
 #include <tesseract/export.h>
 
 #include <cstdio>
@@ -298,9 +296,9 @@ public:
 
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
-  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
-  void AddMessage(const S& format, Args&&... args) {
-    vAddMessage(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+  template <typename S, typename... Args>
+  void AddMessage(const S &format, Args&&... args) {
+    vAddMessage(format, fmt::make_format_args(args...));
   }
 
   // Zoom the window to the rectangle given upper left corner and
@@ -315,10 +313,9 @@ public:
   // It is public so you can actually take use of the LUA functionalities, but
   // be careful!
   void vSendMsg(fmt::string_view format, fmt::format_args args);
-
-  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
-  void SendMsg(const S& format, Args&&... args) {
-    vSendMsg(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+  template <typename S, typename... Args>
+  void SendMsg(const S &format, Args&&... args) {
+    vSendMsg(format, fmt::make_format_args(args...));
   }
 
   // Custom messages (manipulating java code directly) can be send through this.

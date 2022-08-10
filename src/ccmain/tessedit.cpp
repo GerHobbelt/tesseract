@@ -88,7 +88,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Initialize TessdataManager.
   std::string tessdata_path = language_data_path_prefix + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
-    tprintf("ERROR: Error opening data file %s\n", tessdata_path.c_str());
+    tprintf("ERROR: Error opening data file {}\n", tessdata_path.c_str());
     tprintf(
         "INFO: Please make sure the TESSDATA_PREFIX environment variable is set"
         " to your \"tessdata\" directory.\n");
@@ -131,7 +131,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     for (unsigned i = 0; i < vars_vec->size(); ++i) {
       if (!ParamUtils::SetParam((*vars_vec)[i].c_str(), (*vars_values)[i].c_str(),
                                 set_params_constraint, this->params())) {
-        tprintf("WARNING: The parameter '%s' was not found.\n", (*vars_vec)[i].c_str());
+        tprintf("WARNING: The parameter '{}' was not found.\n", (*vars_vec)[i].c_str());
       }
     }
   }
@@ -142,7 +142,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       ParamUtils::PrintParams(params_file, this->params());
       fclose(params_file);
     } else {
-      tprintf("ERROR: Failed to open %s for writing params.\n", tessedit_write_params_to_file.c_str());
+      tprintf("ERROR: Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
     }
   }
 
@@ -187,7 +187,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset.load_from_file(&fp, false)) {
     tprintf(
         "ERROR: Tesseract (legacy) engine requested, but components are "
-        "not present in %s!!\n",
+        "not present in {}!!\n",
         tessdata_path.c_str());
     return false;
   }
@@ -328,7 +328,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       if (!loaded_primary) {
         if (result < 0) {
-          tprintf("ERROR: Failed loading language '%s'\n", lang_str);
+          tprintf("ERROR: Failed loading language '{}'\n", lang_str);
         } else {
           ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load,
                               &langs_not_to_load);
@@ -336,7 +336,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         }
       } else {
         if (result < 0) {
-          tprintf("ERROR: Failed loading language '%s'\n", lang_str);
+          tprintf("ERROR: Failed loading language '{}'\n", lang_str);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);
