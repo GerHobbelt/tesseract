@@ -198,9 +198,12 @@ SIMDDetect::SIMDDetect() {
         // be used inside an if.
         __cpuid_count(7, 0, eax, ebx, ecx, edx);
         avx2_available_ = (ebx & 0x00000020) != 0;
-        avx512F_available_ = (ebx & 0x00010000) != 0;
-        avx512BW_available_ = (ebx & 0x40000000) != 0;
-        avx512VNNI_available_ = (ecx & 0x00000800) != 0;
+        if ((xgetbv() & 0xe0) == 0xe0) {
+          // OS supports AVX512.
+          avx512F_available_ = (ebx & 0x00010000) != 0;
+          avx512BW_available_ = (ebx & 0x40000000) != 0;
+          avx512VNNI_available_ = (ecx & 0x00000800) != 0;
+        }
       }
 #      endif
     }
@@ -229,9 +232,12 @@ SIMDDetect::SIMDDetect() {
       if (max_function_id >= 7) {
         __cpuid(cpuInfo, 7);
         avx2_available_ = (cpuInfo[1] & 0x00000020) != 0;
-        avx512F_available_ = (cpuInfo[1] & 0x00010000) != 0;
-        avx512BW_available_ = (cpuInfo[1] & 0x40000000) != 0;
-        avx512VNNI_available_ = (cpuInfo[2] & 0x00000800) != 0;
+        if ((_xgetbv(0) & 0xe0) == 0xe0) {
+          // OS supports AVX512.
+          avx512F_available_ = (cpuInfo[1] & 0x00010000) != 0;
+          avx512BW_available_ = (cpuInfo[1] & 0x40000000) != 0;
+          avx512VNNI_available_ = (cpuInfo[2] & 0x00000800) != 0;
+	}
       }
 #      endif
     }
@@ -261,7 +267,10 @@ SIMDDetect::SIMDDetect() {
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
-  if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  if (avx512VNNI_available_ && IntSimdMatrix::intSimdMatrixAVX512VNNI != nullptr) {
+    SetDotProduct(DotProductAVX512F, &IntSimdMatrix::intSimdMatrixAVX512VNNI);
+    dotproduct_method = "avx512vnni";
+  } else if (avx512F_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX512F detected.
     SetDotProduct(DotProductAVX512F, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx512";
