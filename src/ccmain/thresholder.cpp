@@ -74,7 +74,7 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line, const float angle) {
+                                int bytes_per_pixel, int bytes_per_line) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
