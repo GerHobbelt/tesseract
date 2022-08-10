@@ -63,12 +63,12 @@ public:
   // Various unicode whitespace characters are used to denote unichar patterns,
   // (character classifier would never produce these whitespace characters as a
   // valid classification).
-  static const char kAlphaPatternUnicode[];
-  static const char kDigitPatternUnicode[];
-  static const char kAlphanumPatternUnicode[];
-  static const char kPuncPatternUnicode[];
-  static const char kLowerPatternUnicode[];
-  static const char kUpperPatternUnicode[];
+  static const char* kAlphaPatternUnicode;
+  static const char* kDigitPatternUnicode;
+  static const char* kAlphanumPatternUnicode;
+  static const char* kPuncPatternUnicode;
+  static const char* kLowerPatternUnicode;
+  static const char* kUpperPatternUnicode;
 
   static const char *get_reverse_policy_name(RTLReversePolicy reverse_policy);
 
@@ -309,7 +309,7 @@ protected:
   }
   /** Prints the given EDGE_RECORD. */
   inline void print_edge_rec(const EDGE_RECORD &edge_rec) const {
-    tprintf("|" REFFORMAT "|%s%s%s|%d|", next_node_from_edge_rec(edge_rec),
+    tprintf("|{}|{}{}{}|{}|", next_node_from_edge_rec(edge_rec),
             marker_flag_from_edge_rec(edge_rec) ? "R," : "",
             (direction_from_edge_rec(edge_rec) == FORWARD_EDGE) ? "F" : "B",
             end_of_word_from_edge_rec(edge_rec) ? ",E" : "", unichar_id_from_edge_rec(edge_rec));

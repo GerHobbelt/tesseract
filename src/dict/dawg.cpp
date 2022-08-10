@@ -268,7 +268,7 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
       eow = end_of_word(edge) ? eow_string : not_eow_string;
 
       unichar_id = edge_letter(edge);
-      tprintf(REFFORMAT " : next = " REFFORMAT ", unichar_id = %d, %s %s %s\n",
+      tprintf("{} : next = {}, unichar_id = {}, {} {} {}\n",
               edge, next_node(edge), unichar_id, direction, is_last, eow);
 
       if (edge - node > max_num_edges) {
@@ -283,8 +283,7 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
         eow = end_of_word(edge) ? eow_string : not_eow_string;
 
         unichar_id = edge_letter(edge);
-        tprintf(REFFORMAT " : next = " REFFORMAT
-                          ", unichar_id = %d, %s %s %s\n",
+        tprintf("{} : next = {}, unichar_id = {}, {} {} {}\n",
                 edge, next_node(edge), unichar_id, direction, is_last, eow);
 
         if (edge - node > MAX_NODE_EDGES_DISPLAY) {
@@ -293,7 +292,7 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
       } while (!last_edge(edge++));
     }
   } else {
-    tprintf(REFFORMAT " : no edges in this node\n", node);
+    tprintf("{} : no edges in this node\n", node);
   }
   tprintf("\n");
 }
@@ -302,7 +301,7 @@ void SquishedDawg::print_edge(EDGE_REF edge) const {
   if (edge == NO_EDGE) {
     tprintf("NO_EDGE\n");
   } else {
-    tprintf(REFFORMAT " : next = " REFFORMAT ", unichar_id = '%d', %s %s %s\n",
+    tprintf("{} : next = {}, unichar_id = '{}', {} {} {}\n",
             edge, next_node(edge), edge_letter(edge),
             (forward_edge(edge) ? "FORWARD" : "       "),
             (last_edge(edge) ? "LAST" : "    "),

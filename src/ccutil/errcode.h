@@ -40,14 +40,14 @@ class TESS_API ERRCODE { // error handler class
 public:
   void verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const;
 
-  template <typename... Args, typename S, typename Char = fmt::char_t<S>>
+  template <typename S, typename... Args>
   void error(                  // error print function
       const char *caller,      // function location
       TessErrorLogCode action, // action to take
-      const S &format,
+      const S *format,
       Args&&... args
   ) const {
-    verror(caller, action, fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+    verror(caller, action, format, fmt::make_format_args(args...));
   }
 
   void error(const char *caller, TessErrorLogCode action) const;

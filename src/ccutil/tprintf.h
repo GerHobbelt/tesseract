@@ -19,16 +19,22 @@
 #ifndef TESSERACT_CCUTIL_TPRINTF_H
 #define TESSERACT_CCUTIL_TPRINTF_H
 
-#include "params.h" // for BOOL_VAR_H
+#include "params.h"           // for BOOL_VAR_H
+#include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 
 namespace tesseract {
 
 // Note: You can disable some log messages by setting FLAGS_tlog_level > 0.
 
+// Helper function for tprintf.
+extern TESS_API void vTessPrint(fmt::string_view format, fmt::format_args args);
+
 // Main logging function.
-extern TESS_API void tprintf( // Trace printf
-    TS_FORMAT_STRING(const char *format), ...) TS_PRINTFLIKE(1, 2);  // Message
+template <typename S, typename... Args>
+void tprintf(const S *format, Args &&...args) {
+  vTessPrint(format, fmt::make_format_args(args...));
+}
 
 } // namespace tesseract
 
