@@ -37,7 +37,7 @@
 
 #include <tesseract/pageiterator.h> // for PageIterator
 #include <tesseract/publictypes.h>  // for JUSTIFICATION_LEFT, JUSTIFICATION_R...
-#include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID
+#include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID, U8
 
 #include <algorithm> // for max
 #include <cctype>    // for isspace
@@ -47,8 +47,8 @@
 #include <cstring>   // for strchr, strlen
 #include <memory>    // for unique_ptr
 
-static const char * const kRLE = u8"\u202A";  // Right-to-Left Embedding
-static const char * const kPDF = u8"\u202C";  // Pop Directional Formatting
+static const char * const kRLE = U8("\u202A");  // Right-to-Left Embedding
+static const char * const kPDF = U8("\u202C");  // Pop Directional Formatting
 
 namespace tesseract {
 

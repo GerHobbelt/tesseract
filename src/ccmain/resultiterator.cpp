@@ -19,6 +19,8 @@
 ///////////////////////////////////////////////////////////////////////
 
 #include <tesseract/resultiterator.h>
+#include <tesseract/unichar.h>  // for U8 macro
+
 
 #include "pageres.h"
 #include "tesseractclass.h"
@@ -29,8 +31,8 @@
 #include <set>
 #include <vector>
 
-static const char * const kLRM = u8"\u200E"; // Left-to-Right Mark
-static const char * const kRLM = u8"\u200F"; // Right-to-Left Mark
+static const char * const kLRM = U8("\u200E"); // Left-to-Right Mark
+static const char * const kRLM = U8("\u200F"); // Right-to-Left Mark
 
 namespace tesseract {
 

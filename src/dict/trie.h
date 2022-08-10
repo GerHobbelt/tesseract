@@ -63,12 +63,12 @@ public:
   // Various unicode whitespace characters are used to denote unichar patterns,
   // (character classifier would never produce these whitespace characters as a
   // valid classification).
-  static const char kAlphaPatternUnicode[];
-  static const char kDigitPatternUnicode[];
-  static const char kAlphanumPatternUnicode[];
-  static const char kPuncPatternUnicode[];
-  static const char kLowerPatternUnicode[];
-  static const char kUpperPatternUnicode[];
+  static const char* kAlphaPatternUnicode;
+  static const char* kDigitPatternUnicode;
+  static const char* kAlphanumPatternUnicode;
+  static const char* kPuncPatternUnicode;
+  static const char* kLowerPatternUnicode;
+  static const char* kUpperPatternUnicode;
 
   static const char *get_reverse_policy_name(RTLReversePolicy reverse_policy);
 
