@@ -47,7 +47,7 @@ public:
       const S &format,
       Args&&... args
   ) const {
-    verror(caller, action, fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+    verror(caller, action, fmt::detail::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
   }
 
   void error(const char *caller, TessErrorLogCode action) const;

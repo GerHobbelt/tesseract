@@ -300,7 +300,7 @@ public:
   // This is intended as an "debug" output window.
   template <typename... Args, typename S, typename Char = fmt::char_t<S>>
   void AddMessage(const S& format, Args&&... args) {
-    vAddMessage(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+    vAddMessage(fmt::detail::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
   }
 
   // Zoom the window to the rectangle given upper left corner and
@@ -318,7 +318,7 @@ public:
 
   template <typename... Args, typename S, typename Char = fmt::char_t<S>>
   void SendMsg(const S& format, Args&&... args) {
-    vSendMsg(fmt::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
+    vSendMsg(fmt::detail::to_string_view(format), fmt::format_arg_store<fmt::buffer_context<Char>, fmt::remove_reference_t<Args>...>(args...));
   }
 
   // Custom messages (manipulating java code directly) can be send through this.
