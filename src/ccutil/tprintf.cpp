@@ -26,60 +26,54 @@
 #include "params.h"
 
 #include <climits> // for INT_MAX
-#include <cstdarg>
 #include <cstdio>
 
 namespace tesseract {
 
 #ifdef HAVE_MUPDF
 
-// for fz_error():
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "mupdf/fitz/config.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/context.h"
 
-#ifdef __cplusplus
-}
-#endif
+static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
+	auto msg = fmt::vformat(format, args);
+	const char *s = msg.c_str();
 
-TESS_API void tprintf(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-
-  if (!strncmp(format, "ERROR: ", 7))
-	fz_verror(NULL, format + 7, args);
-  else if (!strncmp(format, "WARNING: ", 9))
-    fz_vwarn(NULL, format + 9, args);
+  if (!strncmp(s, "ERROR: ", 7))
+	fz_error(NULL, "%s", s + 7);
+  else if (!strncmp(s, "WARNING: ", 9))
+    fz_warn(NULL, "%s", s + 9);
   else
-    fz_vinfo(NULL, format, args);
-  va_end(args);
+    fz_info(NULL, "%s", s);
 }
 
-#else
+#endif
 
 #define MAX_MSG_LEN 2048
 
-static STRING_VAR(debug_file, "", "File to send tprintf output to");
+static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
 
 // Trace printf
-TESS_API void tprintf(const char *format, ...) {
+void vTessPrint(fmt::string_view format, fmt::format_args args) {
+#ifdef HAVE_MUPDF
+	fz_tess_tprintf(format, args);
+#endif
+
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
+  assert(debug_file_name != nullptr);
   if (debug_file_name == nullptr) {
     // This should not happen.
     return;
   }
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  // Replace /dev/null by nul for Windows.
+  // Replace /dev/null by nil for Windows.
   if (strcmp(debug_file_name, "/dev/null") == 0) {
-    debug_file_name = "nul";
+    debug_file_name = "";
     debug_file.set_value(debug_file_name);
   }
 #endif
@@ -91,16 +85,11 @@ TESS_API void tprintf(const char *format, ...) {
     debugfp = nullptr;
   }
 
-  va_list args;           // variable args
-  va_start(args, format); // variable list
   if (debugfp != nullptr) {
-    vfprintf(debugfp, format, args);
+    fmt::vprint(debugfp, format, args);
   } else {
-    vfprintf(stderr, format, args);
+    fmt::vprint(stderr, format, args);
   }
-  va_end(args);
 }
-
-#endif
 
 } // namespace tesseract

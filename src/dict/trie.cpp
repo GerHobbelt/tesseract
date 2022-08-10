@@ -20,6 +20,8 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+#include <tesseract/unichar.h>  // for U8 macro
+
 #include "trie.h"
 
 #include "dawg.h"
@@ -35,12 +37,12 @@ const char kForceReverse[] = "RRP_FORCE_REVERSE";
 
 const char *const RTLReversePolicyNames[] = {kDoNotReverse, kReverseIfHasRTL, kForceReverse};
 
-const char Trie::kAlphaPatternUnicode[] = u8"\u2000";
-const char Trie::kDigitPatternUnicode[] = u8"\u2001";
-const char Trie::kAlphanumPatternUnicode[] = u8"\u2002";
-const char Trie::kPuncPatternUnicode[] = u8"\u2003";
-const char Trie::kLowerPatternUnicode[] = u8"\u2004";
-const char Trie::kUpperPatternUnicode[] = u8"\u2005";
+const char* Trie::kAlphaPatternUnicode = U8("\u2000");
+const char* Trie::kDigitPatternUnicode = U8("\u2001");
+const char* Trie::kAlphanumPatternUnicode = U8("\u2002");
+const char* Trie::kPuncPatternUnicode = U8("\u2003");
+const char* Trie::kLowerPatternUnicode = U8("\u2004");
+const char* Trie::kUpperPatternUnicode = U8("\u2005");
 
 const char *Trie::get_reverse_policy_name(RTLReversePolicy reverse_policy) {
   return RTLReversePolicyNames[reverse_policy];
