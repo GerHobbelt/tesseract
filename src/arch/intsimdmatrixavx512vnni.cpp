@@ -17,11 +17,21 @@
 
 #include "intsimdmatrix.h"
 
-#if !defined(__AVX512VNNI__) || !defined(__AVX512VL__)
-#  if defined(__i686__) || defined(__x86_64__)
-#    error Implementation only for AVX512VNNI capable architectures
-#  endif
-#else
+// General Notice:
+// 
+// This is not about whether the compiler is optimizing **the rest of your code using FMA instructions**.
+// This code should be compiled *anyway*, because tesseract will pick the best variant (this one or another one)
+// **at run-time** on the actual hardware it will be running on.
+// Hence to safely compile tesseract for multiple architectures, one should set the compiler code generation
+// options as low as possible. Meanwhile these important functions are made available, independent of that compiler
+// "optimization setting", by using the appropriate intrinsics. Then, at run-time, a CPU check is performed
+// which will help tesseract decide which actual code chunk to execute. **Irrespective of the original compiler
+// flags setting -- that one only determines the lowest capability hardware this compiled product can actually
+// run on.
+// See also the SIMDDetect::SIMDDetect() code.
+//
+#if defined(__AVX512VNNI__) || defined(__AVX512VL__) || defined(_M_IX86) || defined(_M_X64)
+
 #  include <immintrin.h>
 #  include <algorithm>
 #  include <cstdint>
@@ -325,7 +335,9 @@ static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const float *s
     PartialMatrixDotVector8(wi, scales, u, rounded_num_in, v);
   }
 }
+
 #else
+
 static inline void ExtractResults8(__m256i result, const int8_t *wi, const double *scales,
                                    double *v) {
   __m128i w128 = load64_to_128(wi);          // 8x8bit vals in bottom of 128bit reg
@@ -570,10 +582,11 @@ static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const double *
     PartialMatrixDotVector8(wi, scales, u, rounded_num_in, v);
   }
 }
-#endif
 
-const IntSimdMatrix IntSimdMatrix::intSimdMatrixAVX512VNNI = {
-    // Function.
+#endif // FASTFLOAT
+
+static const IntSimdMatrix simdMatrix = {
+	// Function.
     matrixDotVector,
     // Number of 32 bit outputs held in each register.
     kNumOutputsPerRegister,
@@ -584,6 +597,16 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixAVX512VNNI = {
     // Number of inputs in each weight group.
     kNumInputsPerGroup
 };
+
+const IntSimdMatrix *IntSimdMatrix::intSimdMatrixAVX512VNNI = &simdMatrix;
+
+} // namespace tesseract.
+
+#else
+
+namespace tesseract {
+
+	const IntSimdMatrix* IntSimdMatrix::intSimdMatrixAVX512VNNI = nullptr;
 
 } // namespace tesseract.
 
