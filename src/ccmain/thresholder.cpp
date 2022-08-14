@@ -168,23 +168,24 @@ void ImageThresholder::SetImage(const Image pix, int exif) {
   Image src;
 
   if (exif > 1) {
-    
-    // Mirror if specified by exif orientation value
+
+    // Rotate if specified by exif orientation value
     Image temp1;
-    if (exif == 2 || exif == 4 || exif == 6 || exif == 8) {
-      temp1 = pixFlipLR(NULL, pix);
+    if (exif == 3 || exif == 4) {
+      temp1 = pixRotateOrth(pix, 2);
+    } else if (exif == 5 || exif == 6) {
+      temp1 = pixRotateOrth(pix, 1);
+    } else if (exif == 7 || exif == 8) {
+      temp1 = pixRotateOrth(pix, 3);
     } else {
       temp1 = pix;
     }
 
-    // Rotate if specified by exif orientation value
-    Image temp2;
-    if (exif == 3 || exif == 4) {
-      src = pixRotateOrth(temp1, 2);
-    } else if (exif == 5 || exif == 6) {
-      src = pixRotateOrth(temp1, 1);
-    } else if (exif == 7 || exif == 8) {
-      src = pixRotateOrth(temp1, 3);
+    // Mirror if specified by exif orientation value
+    if (exif == 2 || exif == 4 || exif == 5 || exif == 7) {
+      src = pixFlipLR(NULL, temp1);
+    } else {
+      src = temp1.copy();
     }
     temp1.destroy();
 
