@@ -574,9 +574,9 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  * will automatically perform recognition.
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
-                           int bytes_per_pixel, int bytes_per_line) {
+                           int bytes_per_pixel, int bytes_per_line, int exif) {
   if (InternalSetImage()) {
-    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line);
+    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, exif);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -597,7 +597,7 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * Use Pix where possible. Tesseract uses Pix as its internal representation
  * and it is therefore more efficient to provide a Pix directly.
  */
-void TessBaseAPI::SetImage(Pix *pix) {
+void TessBaseAPI::SetImage(Pix *pix, int exif) {
   if (InternalSetImage()) {
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
@@ -606,7 +606,7 @@ void TessBaseAPI::SetImage(Pix *pix) {
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
-    thresholder_->SetImage(pix);
+    thresholder_->SetImage(pix, exif);
     SetInputImage(thresholder_->GetPixRect());
   }
 }

@@ -74,7 +74,7 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line) {
+                                int bytes_per_pixel, int bytes_per_line, int exif) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
@@ -128,7 +128,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
     default:
       tprintf("Cannot convert RAW image to Pix with bpp = %d\n", bpp);
   }
-  SetImage(pix);
+  SetImage(pix, exif);
   pix.destroy();
 }
 
@@ -160,11 +160,38 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix) {
+void ImageThresholder::SetImage(const Image pix, int exif) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
-  Image src = pix;
+
+  Image src;
+
+  if (exif > 1) {
+    
+    // Mirror if specified by exif orientation value
+    Image temp1;
+    if (exif == 2 || exif == 4 || exif == 6 || exif == 8) {
+      temp1 = pixFlipLR(NULL, pix);
+    } else {
+      temp1 = pix;
+    }
+
+    // Rotate if specified by exif orientation value
+    Image temp2;
+    if (exif == 3 || exif == 4) {
+      src = pixRotateOrth(temp1, 2);
+    } else if (exif == 5 || exif == 6) {
+      src = pixRotateOrth(temp1, 1);
+    } else if (exif == 7 || exif == 8) {
+      src = pixRotateOrth(temp1, 3);
+    }
+    temp1.destroy();
+
+  } else {
+    src = pix;
+  }
+
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or

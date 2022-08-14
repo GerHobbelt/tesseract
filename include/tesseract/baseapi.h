@@ -314,7 +314,7 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line);
+                int bytes_per_pixel, int bytes_per_line, int exif = 1);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -324,7 +324,7 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix);
+  void SetImage(Pix *pix, int exif = 1);
 
   /**
    * Set the resolution of the source image in pixels per inch so font size
