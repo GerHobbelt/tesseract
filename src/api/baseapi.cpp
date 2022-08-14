@@ -311,8 +311,8 @@ bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
-  auto *p = ParamUtils::FindParam<IntParam>(name, GlobalParams()->int_params,
-                                            tesseract_->params()->int_params);
+  auto *p = ParamUtils::FindParam<IntParam>(name, GlobalParams()->int_params(),
+                                            tesseract_->params()->int_params());
   if (p == nullptr) {
     return false;
   }
@@ -321,8 +321,8 @@ bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
 }
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
-  auto *p = ParamUtils::FindParam<BoolParam>(name, GlobalParams()->bool_params,
-                                             tesseract_->params()->bool_params);
+  auto *p = ParamUtils::FindParam<BoolParam>(name, GlobalParams()->bool_params(),
+                                             tesseract_->params()->bool_params());
   if (p == nullptr) {
     return false;
   }
@@ -331,14 +331,14 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 }
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
-  auto *p = ParamUtils::FindParam<StringParam>(name, GlobalParams()->string_params,
-                                               tesseract_->params()->string_params);
+  auto *p = ParamUtils::FindParam<StringParam>(name, GlobalParams()->string_params(),
+                                               tesseract_->params()->string_params());
   return (p != nullptr) ? p->c_str() : nullptr;
 }
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
-  auto *p = ParamUtils::FindParam<DoubleParam>(name, GlobalParams()->double_params,
-                                               tesseract_->params()->double_params);
+  auto *p = ParamUtils::FindParam<DoubleParam>(name, GlobalParams()->double_params(),
+                                               tesseract_->params()->double_params());
   if (p == nullptr) {
     return false;
   }

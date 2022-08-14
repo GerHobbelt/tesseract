@@ -23,7 +23,7 @@ static bool IntFlagExists(const char *flag_name, int32_t *value) {
   full_flag_name += flag_name;
   std::vector<IntParam *> empty;
   auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params, empty);
+      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params_c(), empty);
   if (p == nullptr) {
     return false;
   }
@@ -36,7 +36,7 @@ static bool DoubleFlagExists(const char *flag_name, double *value) {
   full_flag_name += flag_name;
   std::vector<DoubleParam *> empty;
   auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params, empty);
+                                               GlobalParams()->double_params_c(), empty);
   if (p == nullptr) {
     return false;
   }
@@ -49,7 +49,7 @@ static bool BoolFlagExists(const char *flag_name, bool *value) {
   full_flag_name += flag_name;
   std::vector<BoolParam *> empty;
   auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params, empty);
+      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params_c(), empty);
   if (p == nullptr) {
     return false;
   }
@@ -62,7 +62,7 @@ static bool StringFlagExists(const char *flag_name, const char **value) {
   full_flag_name += flag_name;
   std::vector<StringParam *> empty;
   auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params, empty);
+                                               GlobalParams()->string_params_c(), empty);
   *value = (p != nullptr) ? p->c_str() : nullptr;
   return p != nullptr;
 }
@@ -72,7 +72,7 @@ static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
   full_flag_name += flag_name;
   std::vector<IntParam *> empty;
   auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params, empty);
+      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params(), empty);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -82,7 +82,7 @@ static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
   full_flag_name += flag_name;
   std::vector<DoubleParam *> empty;
   auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params, empty);
+                                               GlobalParams()->double_params(), empty);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -92,7 +92,7 @@ static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
   full_flag_name += flag_name;
   std::vector<BoolParam *> empty;
   auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params, empty);
+      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params(), empty);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -102,7 +102,7 @@ static void SetStringFlagValue(const char *flag_name, const char *new_val) {
   full_flag_name += flag_name;
   std::vector<StringParam *> empty;
   auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params, empty);
+                                               GlobalParams()->string_params(), empty);
   ASSERT_HOST(p != nullptr);
   p->set_value(std::string(new_val));
 }
@@ -130,14 +130,14 @@ static bool SafeAtod(const char *str, double *val) {
 static void PrintCommandLineFlags() {
   const char *kFlagNamePrefix = "FLAGS_";
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
-  for (auto &param : GlobalParams()->int_params) {
+  for (auto &param : GlobalParams()->int_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
       tprintf("  --%s  %s  (type:int default:%d)\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(), int32_t(*param));
     }
   }
-  for (auto &param : GlobalParams()->double_params) {
+  for (auto &param : GlobalParams()->double_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
       tprintf("  --%s  %s  (type:double default:%g)\n",
@@ -146,7 +146,7 @@ static void PrintCommandLineFlags() {
              static_cast<double>(*param));
     }
   }
-  for (auto &param : GlobalParams()->bool_params) {
+  for (auto &param : GlobalParams()->bool_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
       tprintf("  --%s  %s  (type:bool default:%s)\n",
              param->name_str() + kFlagNamePrefixLen,
@@ -154,7 +154,7 @@ static void PrintCommandLineFlags() {
              bool(*param) ? "true" : "false");
     }
   }
-  for (auto &param : GlobalParams()->string_params) {
+  for (auto &param : GlobalParams()->string_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
       tprintf("  --%s  %s  (type:string default:%s)\n",
@@ -184,7 +184,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     if (current_arg[0] != '-') {
       break;
     }
-    // Position current_arg after startings hyphens. We treat a sequence of
+    // Position current_arg after starting hyphens. We treat a sequence of
     // one or two consecutive hyphens identically.
     ++current_arg;
     if (current_arg[0] == '-') {

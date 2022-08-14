@@ -32,11 +32,11 @@ namespace tesseract {
 
 CCUtil::CCUtil()
     : params_()
-      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", &params_)
+      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
       , BOOL_MEMBER(use_ambigs_for_adaption, false,
                   "Use ambigs for deciding"
                   " whether to adapt to a character",
-                  &params_) {}
+				  params()) {}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable
@@ -66,7 +66,8 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
     /* Use tessdata prefix from the environment. */
     datadir = tessdata_prefix;
 #if defined(_WIN32)
-  } else if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  } 
+  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
     wchar_t path[_MAX_PATH];
     DWORD length = GetModuleFileNameW(nullptr, path, _MAX_PATH);
