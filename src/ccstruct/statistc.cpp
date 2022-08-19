@@ -554,7 +554,7 @@ void STATS::print() const {
   int num_printed = 0;
   for (int index = min; index <= max; index++) {
     if (buckets_[index] != 0) {
-      tprintf("%4d:%-3d ", rangemin_ + index, buckets_[index]);
+      tprintf("{}:{} ", rangemin_ + index, buckets_[index]);
       if (++num_printed % 8 == 0) {
         tprintf("\n");
       }
@@ -575,15 +575,15 @@ void STATS::print_summary() const {
   }
   int32_t min = min_bucket();
   int32_t max = max_bucket();
-  tprintf("Total count=%d\n", total_count_);
-  tprintf("Min=%.2f Really=%d\n", ile(0.0), min);
-  tprintf("Lower quartile=%.2f\n", ile(0.25));
-  tprintf("Median=%.2f, ile(0.5)=%.2f\n", median(), ile(0.5));
-  tprintf("Upper quartile=%.2f\n", ile(0.75));
-  tprintf("Max=%.2f Really=%d\n", ile(1.0), max);
-  tprintf("Range=%d\n", max + 1 - min);
-  tprintf("Mean= %.2f\n", mean());
-  tprintf("SD= %.2f\n", sd());
+  tprintf("Total count={}\n", total_count_);
+  tprintf("Min={} Really={}\n", ile(0.0), min);
+  tprintf("Lower quartile={}\n", ile(0.25));
+  tprintf("Median={}, ile(0.5)={}\n", median(), ile(0.5));
+  tprintf("Upper quartile={}\n", ile(0.75));
+  tprintf("Max={} Really={}\n", ile(1.0), max);
+  tprintf("Range={}\n", max + 1 - min);
+  tprintf("Mean= {}\n", mean());
+  tprintf("SD= {}\n", sd());
 }
 
 /**********************************************************************

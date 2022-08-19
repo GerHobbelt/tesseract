@@ -123,7 +123,7 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
       if (c > 0) {
         tprintf("{}", colsep);
       }
-      tprintf(col_width_patterns[c].c_str(), row[c].c_str());
+      tprintf(col_width_patterns[c].c_str(), row[c]);
     }
     tprintf("\n");
   }
@@ -568,7 +568,7 @@ LineType RowScratchRegisters::GetLineType() const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: %c\n", hypothese.ty);
+        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }
@@ -596,7 +596,7 @@ LineType RowScratchRegisters::GetLineType(const ParagraphModel *model) const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: %c\n", hypothese.ty);
+        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }

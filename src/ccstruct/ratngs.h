@@ -170,7 +170,7 @@ public:
   bool PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool debug) const;
 
   void print(const UNICHARSET *unicharset) const {
-    tprintf("r%.2f c%.2f x[%g,%g]: %d %s",
+    tprintf("r{} c{} x[{},{}]: {} {}",
             static_cast<double>(rating_),
             static_cast<double>(certainty_),
             static_cast<double>(min_xheight_),
@@ -179,7 +179,7 @@ public:
   }
   void print_full() const {
     print(nullptr);
-    tprintf(" script=%d, font1=%d, font2=%d, yshift=%g, classifier=%d\n", script_id_, fontinfo_id_,
+    tprintf(" script={}, font1={}, font2={}, yshift={}, classifier={}\n", script_id_, fontinfo_id_,
             fontinfo_id2_, static_cast<double>(yshift_), classifier_);
   }
   // Sort function for sorting BLOB_CHOICEs in increasing order of rating.

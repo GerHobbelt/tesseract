@@ -290,7 +290,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       word_certainty *= kCertaintyScale;
       if (getDict().stopper_debug_level >= 1) {
-        tprintf("Best choice certainty=%g, space=%g, scaled=%g, final=%g\n",
+        tprintf("Best choice certainty={}, space={}, scaled={}, final={}\n",
                 word->best_choice->certainty(), word->space_certainty,
                 std::min(word->space_certainty, word->best_choice->certainty()) * kCertaintyScale,
                 word_certainty);

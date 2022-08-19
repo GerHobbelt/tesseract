@@ -147,9 +147,9 @@ PAGE_RES *Tesseract::ApplyBoxes(const char *filename, bool find_segmentation,
   }
   if (applybox_debug > 0) {
     tprintf("APPLY_BOXES:\n");
-    tprintf("   Boxes read from boxfile:  %6d\n", box_count);
+    tprintf("   Boxes read from boxfile:  {}\n", box_count);
     if (box_failures > 0) {
-      tprintf("   Boxes failed resegmentation:  %6d\n", box_failures);
+      tprintf("   Boxes failed resegmentation:  {}\n", box_failures);
     }
   }
   TidyUp(page_res);
@@ -184,7 +184,7 @@ void Tesseract::PreenXHeights(BLOCK_LIST *block_list) {
       const double diff = fabs(row->x_height() - median_xheight);
       if (diff > max_deviation) {
         if (applybox_debug) {
-          tprintf("row xheight=%g, but median xheight = %g\n", row->x_height(), median_xheight);
+          tprintf("row xheight={}, but median xheight = {}\n", row->x_height(), median_xheight);
         }
         row->set_x_height(static_cast<float>(median_xheight));
       }
@@ -340,7 +340,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
           if (applybox_debug > 2) {
             tprintf("Checking blob:");
             blob_box.print();
-            tprintf("Current miss metric = %g, next = %g\n", current_box_miss_metric,
+            tprintf("Current miss metric = {}, next = {}\n", current_box_miss_metric,
                     next_box_miss_metric);
           }
           if (current_box_miss_metric > next_box_miss_metric) {
@@ -455,7 +455,7 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
             if (applybox_debug > 2) {
               tprintf("Checking blob:");
               blob_box.print();
-              tprintf("Current miss metric = %g, next = %g\n", current_box_miss_metric,
+              tprintf("Current miss metric = {}, next = {}\n", current_box_miss_metric,
                       next_box_miss_metric);
             }
             if (current_box_miss_metric > next_box_miss_metric) {
@@ -652,7 +652,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
     if (choices_pos + length == choices_length && text_index + 1 == target_text.size()) {
       // This is a complete match. If the rating is good record a new best.
       if (applybox_debug > 2) {
-        tprintf("Complete match, rating = %g, best=%g, seglength=%zu, best=%zu\n",
+        tprintf("Complete match, rating = {}, best={}, seglength={}, best={}\n",
                 rating + choice_rating, *best_rating, segmentation->size(),
                 best_segmentation->size());
       }

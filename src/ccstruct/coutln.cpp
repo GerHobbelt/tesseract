@@ -174,12 +174,12 @@ C_OUTLINE::C_OUTLINE(C_OUTLINE *srcline, FCOORD rotation) : offsets(nullptr) {
       pos += srcline->step(stepindex);
       destpos = pos;
       destpos.rotate(rotation);
-      //  tprintf("%i %i %i %i ", destpos.x(), destpos.y(), pos.x(), pos.y());
+      //  tprintf("{} {} {} {} ", destpos.x(), destpos.y(), pos.x(), pos.y());
       while (destpos.x() != prevpos.x() || destpos.y() != prevpos.y()) {
         dir = DIR128(FCOORD(destpos - prevpos));
         dir += 64; // turn to step style
         new_step = dir.get_dir();
-        //  tprintf(" %i\n", new_step);
+        //  tprintf(" {}\n", new_step);
         if (new_step & 31) {
           set_step(destindex++, dir + round1);
           prevpos += step(destindex - 1);

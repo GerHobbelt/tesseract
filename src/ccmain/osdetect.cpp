@@ -127,7 +127,7 @@ int OSResults::get_best_script(int orientation_id) const {
 // Print the script scores for all possible orientations.
 void OSResults::print_scores(void) const {
   for (int i = 0; i < 4; ++i) {
-    tprintf("Orientation id #%d", i);
+    tprintf("Orientation id #{}", i);
     print_scores(i);
   }
 }
@@ -136,7 +136,7 @@ void OSResults::print_scores(void) const {
 void OSResults::print_scores(int orientation_id) const {
   for (int j = 0; j < kMaxNumberOfScripts; ++j) {
     if (scripts_na[orientation_id][j]) {
-      tprintf("%12s\t: %f\n", unicharset->get_script_from_script_id(j),
+      tprintf("{}\t: {}\n", unicharset->get_script_from_script_id(j),
               scripts_na[orientation_id][j]);
     }
   }
@@ -168,7 +168,7 @@ static void remove_nontext_regions(tesseract::Tesseract *tess, BLOCK_LIST *block
   int resolution;
   if (kMinCredibleResolution > pixGetXRes(pix)) {
     resolution = kMinCredibleResolution;
-    tprintf("Warning. Invalid resolution %d dpi. Using %d instead.\n", pixGetXRes(pix), resolution);
+    tprintf("Warning. Invalid resolution {} dpi. Using {} instead.\n", pixGetXRes(pix), resolution);
   } else {
     resolution = pixGetXRes(pix);
   }
@@ -287,9 +287,11 @@ int os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX_CLIST *blo
 
   BLOBNBOX_C_IT filtered_it(blob_list);
   int real_max = std::min(filtered_it.length(), maxCharactersToTry);
-  // tprintf("Total blobs found = %d\n", blobs_total);
-  // tprintf("Number of blobs post-filtering = %d\n", filtered_it.length());
-  // tprintf("Number of blobs to try = %d\n", real_max);
+#if 0
+  tprintf("Total blobs found = {}\n", blobs_total);
+  tprintf("Number of blobs post-filtering = {}\n", filtered_it.length());
+  tprintf("Number of blobs to try = {}\n", real_max);
+#endif
 
   // If there are too few characters, skip this page entirely.
   if (real_max < minCharactersToTry / 2) {

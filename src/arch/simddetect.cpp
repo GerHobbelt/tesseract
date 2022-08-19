@@ -369,7 +369,7 @@ void SIMDDetect::Update() {
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif
-		"%s%s%s%s%s%s",
+		"{}{}{}{}{}{}",
 		(avx2_available_&& IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
 		(avx_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx" : "",
 		(fma_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",

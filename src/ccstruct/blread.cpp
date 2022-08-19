@@ -61,7 +61,7 @@ bool read_unlv_file(   // print list of sides
     }
     fclose(pdfp);
   }
-  tprintf("UZN file %s loaded.\n", name.c_str());
+  tprintf("UZN file {} loaded.\n", name);
   return true;
 }
 
