@@ -63,7 +63,7 @@ bool test_underline(  // look for underlines
     //              draw2d(to_win,blob_box.right(),baseline);
     //              move2d(to_win,blob_box.left(),baseline+xheight);
     //              draw2d(to_win,blob_box.right(),baseline+xheight);
-    tprintf("Testing underline on blob at (%d,%d)->(%d,%d), base=%d\nOccs:",
+    tprintf("Testing underline on blob at ({},{})->({},{}), base={}\nOccs:",
             blob->bounding_box().left(), blob->bounding_box().bottom(),
             blob->bounding_box().right(), blob->bounding_box().top(), baseline);
   }
@@ -89,10 +89,10 @@ bool test_underline(  // look for underlines
     }
   }
   if (testing_on) {
-    tprintf("%d %d %d\n", desc_occ, x_occ, asc_occ);
+    tprintf("{} {} {}\n", desc_occ, x_occ, asc_occ);
   }
   if (desc_occ == 0 && x_occ == 0 && asc_occ == 0) {
-    tprintf("Bottom=%d, top=%d, base=%d, x=%d\n", blob_box.bottom(), blob_box.top(), baseline,
+    tprintf("Bottom={}, top={}, base={}, x={}\n", blob_box.bottom(), blob_box.top(), baseline,
             xheight);
     projection.print();
   }

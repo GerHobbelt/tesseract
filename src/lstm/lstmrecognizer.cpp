@@ -332,7 +332,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   // Maximum width of image to train on.
   const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
-    tprintf("ERROR: Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix), pixGetHeight(pix));
+    tprintf("ERROR: Image too large to learn!! Size = {}x{}\n", pixGetWidth(pix), pixGetHeight(pix));
     pix.destroy();
     return false;
   }
@@ -362,7 +362,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       if (inv_mean > pos_mean) {
         // Inverted did better. Use inverted data.
         if (debug) {
-          tprintf("Inverting image: old min=%g, mean=%g, sd=%g, inv %g,%g,%g\n", pos_min, pos_mean,
+          tprintf("Inverting image: old min={}, mean={}, sd={}, inv {},{},{}\n", pos_min, pos_mean,
                   pos_sd, inv_min, inv_mean, inv_sd);
         }
         *outputs = inv_outputs;
@@ -474,7 +474,7 @@ void LSTMRecognizer::DebugActivationPath(const NetworkIO &outputs, const std::ve
 // of positions.
 void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *label,
                                           int best_choice, int x_start, int x_end) {
-  tprintf("%s=%d On [%d, %d), scores=", label, best_choice, x_start, x_end);
+  tprintf("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
   double max_score = 0.0;
   double mean_score = 0.0;
   const int width = x_end - x_start;
@@ -493,9 +493,9 @@ void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *
         best_score = line[c];
       }
     }
-    tprintf(" %.3g(%s=%d=%.3g)", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
+    tprintf(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
   }
-  tprintf(", Mean=%g, max=%g\n", mean_score, max_score);
+  tprintf(", Mean={}, max={}\n", mean_score, max_score);
 }
 
 // Helper returns true if the null_char is the winner at t, and it beats the

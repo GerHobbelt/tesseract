@@ -715,7 +715,7 @@ bool find_best_dropout_row( // find neighbours
   TO_ROW *next_row;   // nextious row
 
   if (testing_on) {
-    tprintf("Row at %g(%g), dropout dist=%d,", row->intercept(), row->parallel_c(), distance);
+    tprintf("Row at {}({}), dropout dist={},", row->intercept(), row->parallel_c(), distance);
   }
   if (distance < 0) {
     row_inc = 1;
@@ -740,14 +740,14 @@ bool find_best_dropout_row( // find neighbours
           (distance >= 0 && next_index > line_index &&
            next_index < line_index + distance + distance)) {
         if (testing_on) {
-          tprintf(" nearer neighbour (%d) at %g\n", line_index + distance - next_index,
+          tprintf(" nearer neighbour ({}) at {}\n", line_index + distance - next_index,
                   next_row->intercept());
         }
         return true; // other is nearer
       } else if (next_index == line_index || next_index == line_index + distance + distance) {
         if (row->believability() <= next_row->believability()) {
           if (testing_on) {
-            tprintf(" equal but more believable at %g (%g/%g)\n", next_row->intercept(),
+            tprintf(" equal but more believable at {} ({}/{})\n", next_row->intercept(),
                     row->believability(), next_row->believability());
           }
           return true; // other is more believable
@@ -1034,7 +1034,7 @@ void expand_rows(       // find lines
                 (tesseract::CCStruct::kXHeightFraction + tesseract::CCStruct::kAscenderFraction);
     if (y_min > y_bottom) { // expansion allowed
       if (textord_show_expanded_rows && testing_on) {
-        tprintf("Expanding bottom of row at %f from %f to %f\n", row->intercept(), y_min, y_bottom);
+        tprintf("Expanding bottom of row at {} from {} to {}\n", row->intercept(), y_min, y_bottom);
       }
       // expandable
       swallowed_row = true;
@@ -1046,7 +1046,7 @@ void expand_rows(       // find lines
         if (test_row->max_y() > y_bottom) {
           if (test_row->min_y() > y_bottom) {
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Eating row below at %f\n", test_row->intercept());
+              tprintf("Eating row below at {}\n", test_row->intercept());
             }
             row_it.forward();
 #ifndef GRAPHICS_DISABLED
@@ -1064,13 +1064,13 @@ void expand_rows(       // find lines
             // shorter limit
             y_bottom = test_row->max_y();
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Truncating limit to %f due to touching row at %f\n", y_bottom,
+              tprintf("Truncating limit to {} due to touching row at {}\n", y_bottom,
                       test_row->intercept());
             }
           } else {
             y_bottom = y_min; // can't expand it
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Not expanding limit beyond %f due to touching row at %f\n", y_bottom,
+              tprintf("Not expanding limit beyond {} due to touching row at {}\n", y_bottom,
                       test_row->intercept());
             }
           }
@@ -1080,7 +1080,7 @@ void expand_rows(       // find lines
     }
     if (y_max < y_top) { // expansion allowed
       if (textord_show_expanded_rows && testing_on) {
-        tprintf("Expanding top of row at %f from %f to %f\n", row->intercept(), y_max, y_top);
+        tprintf("Expanding top of row at {} from {} to {}\n", row->intercept(), y_max, y_top);
       }
       swallowed_row = true;
       while (swallowed_row && !row_it.at_first()) {
@@ -1090,7 +1090,7 @@ void expand_rows(       // find lines
         if (test_row->min_y() < y_top) {
           if (test_row->max_y() < y_top) {
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Eating row above at %f\n", test_row->intercept());
+              tprintf("Eating row above at {}\n", test_row->intercept());
             }
             row_it.backward();
             blob_it.set_to_list(row->blob_list());
@@ -1108,13 +1108,13 @@ void expand_rows(       // find lines
             // shorter limit
             y_top = test_row->min_y();
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Truncating limit to %f due to touching row at %f\n", y_top,
+              tprintf("Truncating limit to {} due to touching row at {}\n", y_top,
                       test_row->intercept());
             }
           } else {
             y_top = y_max; // can't expand it
             if (textord_show_expanded_rows && testing_on) {
-              tprintf("Not expanding limit beyond %f due to touching row at %f\n", y_top,
+              tprintf("Not expanding limit beyond {} due to touching row at {}\n", y_top,
                       test_row->intercept());
             }
           }
@@ -1143,14 +1143,14 @@ void adjust_row_limits( // tidy limits
   TO_ROW_IT row_it = block->get_rows();
 
   if (textord_show_expanded_rows) {
-    tprintf("Adjusting row limits for block(%d,%d)\n", block->block->pdblk.bounding_box().left(),
+    tprintf("Adjusting row limits for block({},{})\n", block->block->pdblk.bounding_box().left(),
             block->block->pdblk.bounding_box().top());
   }
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     row = row_it.data();
     size = row->max_y() - row->min_y();
     if (textord_show_expanded_rows) {
-      tprintf("Row at %f has min %f, max %f, size %f\n", row->intercept(), row->min_y(),
+      tprintf("Row at {} has min {}, max {}, size {}\n", row->intercept(), row->min_y(),
               row->max_y(), size);
     }
     size /= tesseract::CCStruct::kXHeightFraction + tesseract::CCStruct::kAscenderFraction +
@@ -1194,7 +1194,7 @@ void compute_row_stats( // find lines
         prev_row->spacing = 0;
       }
       if (testing_on) {
-        tprintf("Row at %g yields spacing of %g\n", row->intercept(), prev_row->spacing);
+        tprintf("Row at {} yields spacing of {}\n", row->intercept(), prev_row->spacing);
       }
     }
     prev_row = row;
@@ -1203,7 +1203,7 @@ void compute_row_stats( // find lines
   block->key_row = prev_row;
   block->baseline_offset = std::fmod(prev_row->parallel_c(), block->line_spacing);
   if (testing_on) {
-    tprintf("Blob based spacing=(%g,%g), offset=%g", block->line_size, block->line_spacing,
+    tprintf("Blob based spacing=({},{}), offset={}", block->line_size, block->line_spacing,
             block->baseline_offset);
   }
   if (rowcount > 0) {
@@ -1218,7 +1218,7 @@ void compute_row_stats( // find lines
     std::nth_element(rows.begin(), rows.begin() + row_index, rows.end(), row_spacing_order);
     block->key_row = rows[row_index];
     if (testing_on) {
-      tprintf(" row based=%g(%g)", rows[row_index]->spacing, iqr);
+      tprintf(" row based={}({})", rows[row_index]->spacing, iqr);
     }
     if (rowcount > 2 && iqr < rows[row_index]->spacing * textord_linespace_iqrlimit) {
       if (!textord_new_initial_xheight) {
@@ -1248,7 +1248,7 @@ void compute_row_stats( // find lines
     block->baseline_offset = std::fmod(rows[row_index]->intercept(), block->line_spacing);
   }
   if (testing_on) {
-    tprintf("\nEstimate line size=%g, spacing=%g, offset=%g\n", block->line_size,
+    tprintf("\nEstimate line size={}, spacing={}, offset={}\n", block->line_size,
             block->line_spacing, block->baseline_offset);
   }
 }
@@ -1371,7 +1371,7 @@ void Textord::compute_block_xheight(TO_BLOCK *block, float gradient) {
   block->xheight = xheight;
 
   if (textord_debug_xheights) {
-    tprintf("Block average xheight=%.4f, ascrise=%.4f, descdrop=%.4f\n", xheight, ascrise,
+    tprintf("Block average xheight={}, ascrise={}, descdrop={}\n", xheight, ascrise,
             descdrop);
   }
   // Correct xheight, ascrise, descdrop of rows based on block averages.
@@ -1489,7 +1489,7 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
   int blob_index = heights->mode();                 // find mode
   int blob_count = heights->pile_count(blob_index); // get count of mode
   if (textord_debug_xheights) {
-    tprintf("min_height=%d, max_height=%d, mode=%d, count=%d, total=%d\n", min_height, max_height,
+    tprintf("min_height={}, max_height={}, mode={}, count={}, total={}\n", min_height, max_height,
             blob_index, blob_count, heights->get_total());
     heights->print();
     floating_heights->print();
@@ -1507,9 +1507,9 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
   }
   int x;
   if (textord_debug_xheights) {
-    tprintf("found %d modes: ", mode_count);
+    tprintf("found {} modes: ", mode_count);
     for (x = 0; x < mode_count; x++) {
-      tprintf("%d ", modes[x]);
+      tprintf("{} ", modes[x]);
     }
     tprintf("\n");
   }
@@ -1530,7 +1530,7 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
             best_count = modes_x_count;
           }
           if (textord_debug_xheights) {
-            tprintf("X=%d, asc=%d, count=%d, ratio=%g\n", modes[x], modes[asc] - modes[x],
+            tprintf("X={}, asc={}, count={}, ratio={}\n", modes[x], modes[asc] - modes[x],
                     modes_x_count, ratio);
           }
           prev_size = modes[x];
@@ -1560,10 +1560,10 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
     *ascrise = 0.0f;
     best_count = heights->pile_count(blob_index);
     if (textord_debug_xheights) {
-      tprintf("Single mode xheight set to %g\n", *xheight);
+      tprintf("Single mode xheight set to {}\n", *xheight);
     }
   } else if (textord_debug_xheights) {
-    tprintf("Multi-mode xheight set to %g, asc=%g\n", *xheight, *ascrise);
+    tprintf("Multi-mode xheight set to {}, asc={}\n", *xheight, *ascrise);
   }
   return best_count;
 }
@@ -1620,7 +1620,7 @@ int32_t compute_row_descdrop(TO_ROW *row, float gradient, int xheight_blob_count
   }
   int descdrop = blob_count > 0 ? -blob_index : 0;
   if (textord_debug_xheights) {
-    tprintf("Descdrop: %d (potential ascenders %d, descenders %d)\n", descdrop, num_potential_asc,
+    tprintf("Descdrop: {} (potential ascenders {}, descenders {})\n", descdrop, num_potential_asc,
             blob_count);
     heights.print();
   }
@@ -1698,8 +1698,8 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
   ROW_CATEGORY row_category = get_row_category(row);
   if (textord_debug_xheights) {
     tprintf(
-        "Correcting row xheight: row->xheight %.4f"
-        ", row->acrise %.4f row->descdrop %.4f\n",
+        "Correcting row xheight: row->xheight {}"
+        ", row->acrise {} row->descdrop {}\n",
         row->xheight, row->ascrise, row->descdrop);
   }
   bool normal_xheight = within_error_margin(row->xheight, xheight, textord_xheight_error_margin);
@@ -1760,8 +1760,8 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
   }
   if (textord_debug_xheights) {
     tprintf(
-        "Corrected row->xheight = %.4f, row->acrise = %.4f, row->descdrop"
-        " = %.4f\n",
+        "Corrected row->xheight = {}, row->acrise = {}, row->descdrop"
+        " = {}\n",
         row->xheight, row->ascrise, row->descdrop);
   }
 }
@@ -1834,7 +1834,7 @@ void separate_underlines(TO_BLOCK *block,   // block to do
                    textord_max_blob_overlaps) {
           large_it.add_after_then_move(blob_it.extract());
           if (testing_on && textord_show_final_rows) {
-            tprintf("Large blob overlaps %d blobs at:",
+            tprintf("Large blob overlaps {} blobs at:",
                     CountOverlaps(blob_box, min_blob_height, row->blob_list()));
             blob_box.print();
           }
@@ -1881,8 +1881,8 @@ void pre_associate_blobs( // make rough chars
       start_it = blob_it; // save start point
       //                      if (testing_on && textord_show_final_blobs)
       //                      {
-      //                              tprintf("Blob at (%d,%d)->(%d,%d),
-      //                              addr=%x, count=%d\n",
+      //                              tprintf("Blob at ({},{})->({},{}),
+      //                              addr=%x, count={}\n",
       //                                      blob_box.left(),blob_box.bottom(),
       //                                      blob_box.right(),blob_box.top(),
       //                                      (void*)blob,blob_it.length());
@@ -2113,7 +2113,7 @@ bool segment_baseline( // split baseline
   segments = 1;
   blobcount = row->blob_list()->length();
   if (textord_oldbl_debug) {
-    tprintf("Segmenting baseline of %d blobs at (%d,%d)\n", blobcount, box.left(), box.bottom());
+    tprintf("Segmenting baseline of {} blobs at ({},{})\n", blobcount, box.left(), box.bottom());
   }
   if (blobcount <= textord_spline_medianwin || blobcount < textord_spline_minblobs) {
     blob_it.move_to_last();
@@ -2151,7 +2151,7 @@ bool segment_baseline( // split baseline
     if (state != 0) {
       needs_curve = true;
     }
-    //              tprintf("State=%d, prev=%d, shift=%g\n",
+    //              tprintf("State={}, prev={}, shift={}\n",
     //                      state,last_state,yshift);
     if (state != last_state && blobcount > textord_spline_minblobs) {
       xstarts[segments++] = box.left();
@@ -2172,7 +2172,7 @@ bool segment_baseline( // split baseline
     xstarts[--segments] = new_box.right();
   }
   if (textord_oldbl_debug) {
-    tprintf("Made %d segments on row at (%d,%d)\n", segments, box.right(), box.bottom());
+    tprintf("Made {} segments on row at ({},{})\n", segments, box.right(), box.bottom());
   }
   return needs_curve;
 }
@@ -2219,8 +2219,8 @@ double *linear_spline_baseline( // split baseline
   auto *coeffs = new double[segments * 3];
   if (textord_oldbl_debug) {
     tprintf(
-        "Linear splining baseline of %d blobs at (%d,%d), into %d segments of "
-        "%d blobs\n",
+        "Linear splining baseline of {} blobs at ({},{}), into {} segments of "
+        "{} blobs\n",
         blobcount, box.left(), box.bottom(), segments, blobs_per_segment);
   }
   segment = 1;
@@ -2331,9 +2331,9 @@ void assign_blobs_to_rows( // find lines
                    *gradient / g_length * blob->bounding_box().left();
     } else if (blob->bounding_box().left() - last_x > block->line_size / 2 &&
                last_x - left_x > block->line_size * 2 && textord_interpolating_skew) {
-      //                      tprintf("Interpolating skew from %g",block_skew);
+      //                      tprintf("Interpolating skew from {}",block_skew);
       block_skew *= static_cast<float>(blob->bounding_box().left() - left_x) / (last_x - left_x);
-      //                      tprintf("to %g\n",block_skew);
+      //                      tprintf("to {}\n",block_skew);
     }
     last_x = blob->bounding_box().left();
     top = blob->bounding_box().top() - block_skew;
@@ -2416,10 +2416,10 @@ void assign_blobs_to_rows( // find lines
     }
     if (blob->bounding_box().contains(testpt) && textord_debug_blob) {
       if (overlap_result != REJECT) {
-        tprintf("Test blob assigned to row at (%g,%g) on pass %d\n", dest_row->min_y(),
+        tprintf("Test blob assigned to row at ({},{}) on pass {}\n", dest_row->min_y(),
                 dest_row->max_y(), pass);
       } else {
-        tprintf("Test blob assigned to no row on pass %d\n", pass);
+        tprintf("Test blob assigned to no row on pass {}\n", pass);
       }
     }
     if (overlap_result != REJECT) {
@@ -2483,7 +2483,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
     bestover -= row->min_y() - bottom;
   }
   if (testing_blob && textord_debug_blob) {
-    tprintf("Test blob y=(%g,%g), row=(%f,%f), size=%g, overlap=%f\n", bottom, top, row->min_y(),
+    tprintf("Test blob y=({},{}), row=({},{}), size={}, overlap={}\n", bottom, top, row->min_y(),
             row->max_y(), rowsize, bestover);
   }
   test_row = row;
@@ -2496,7 +2496,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
         merge_bottom = test_row->min_y() < row->min_y() ? test_row->min_y() : row->min_y();
         if (merge_top - merge_bottom <= rowsize) {
           if (testing_blob && textord_debug_blob) {
-            tprintf("Merging rows at (%g,%g), (%g,%g)\n", row->min_y(), row->max_y(),
+            tprintf("Merging rows at ({},{}), ({},{})\n", row->min_y(), row->max_y(),
                     test_row->min_y(), test_row->max_y());
           }
           test_row->set_limits(merge_bottom, merge_top);
@@ -2523,7 +2523,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
           row = test_row;
         }
         if (testing_blob && textord_debug_blob) {
-          tprintf("Test blob y=(%g,%g), row=(%f,%f), size=%g, overlap=%f->%f\n", bottom, top,
+          tprintf("Test blob y=({},{}), row=({},{}), size={}, overlap={}->{}\n", bottom, top,
                   test_row->min_y(), test_row->max_y(), rowsize, overlap, bestover);
         }
       }

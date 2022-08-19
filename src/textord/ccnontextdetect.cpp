@@ -172,7 +172,7 @@ IntGrid *CCNonTextDetect::ComputeNoiseDensity(bool debug, Image photo_map, BlobG
         }
       }
       if (debug && noise > max_noise_count_ && good_counts->GridCellValue(x, y) > 0) {
-        tprintf("At %d, %d, noise = %d, good=%d, orig=%d, thr=%d\n", x * gridsize(), y * gridsize(),
+        tprintf("At {}, {}, noise = {}, good={}, orig={}, thr={}\n", x * gridsize(), y * gridsize(),
                 noise_density->GridCellValue(x, y), good_counts->GridCellValue(x, y),
                 noise_counts->GridCellValue(x, y), max_noise_count_);
       }

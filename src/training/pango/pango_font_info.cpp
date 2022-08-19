@@ -82,7 +82,7 @@ PangoFontInfo::PangoFontInfo() : desc_(nullptr), resolution_(kDefaultResolution)
 PangoFontInfo::PangoFontInfo(const std::string &desc)
     : desc_(nullptr), resolution_(kDefaultResolution) {
   if (!ParseFontDescriptionName(desc)) {
-    tprintf("ERROR: Could not parse %s\n", desc.c_str());
+    tprintf("ERROR: Could not parse {}\n", desc.c_str());
     Clear();
   }
 }
@@ -174,7 +174,7 @@ bool PangoFontInfo::ParseFontDescription(const PangoFontDescription *desc) {
   const char *family = pango_font_description_get_family(desc);
   if (!family) {
     char *desc_str = pango_font_description_to_string(desc);
-    tprintf("WARNING: Could not parse family name from description: '%s'\n", desc_str);
+    tprintf("WARNING: Could not parse family name from description: '{}'\n", desc_str);
     g_free(desc_str);
     return false;
   }
@@ -431,7 +431,7 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
         continue;
       }
       if (TLOG_IS_ON(2)) {
-        tprintf("start_byte=%d end_byte=%d start_glyph=%d end_glyph=%d ", start_byte_index,
+        tprintf("start_byte={} end_byte={} start_glyph={} end_glyph={} ", start_byte_index,
                end_byte_index, start_glyph_index, end_glyph_index);
       }
       for (int i = start_glyph_index, step = (end_glyph_index > start_glyph_index) ? 1 : -1;
@@ -442,11 +442,11 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
             (cluster_iter.glyph_item->glyphs->glyphs[i].glyph == dotted_circle_glyph);
         bad_glyph = unknown_glyph || illegal_glyph;
         if (TLOG_IS_ON(2)) {
-          tprintf("(%d=%d)", cluster_iter.glyph_item->glyphs->glyphs[i].glyph, bad_glyph ? 1 : 0);
+          tprintf("({}={})", cluster_iter.glyph_item->glyphs->glyphs[i].glyph, bad_glyph ? 1 : 0);
         }
       }
       if (TLOG_IS_ON(2)) {
-        tprintf("  '%s'\n", cluster_text.c_str());
+        tprintf("  '{}'\n", cluster_text.c_str());
       }
       if (bad_glyph)
         tlog(1, "Found illegal glyph!\n");
@@ -580,7 +580,7 @@ int FontUtils::FontScore(const std::unordered_map<char32, int64_t> &ch_map,
                          const std::string &fontname, int *raw_score, std::vector<bool> *ch_flags) {
   PangoFontInfo font_info;
   if (!font_info.ParseFontDescriptionName(fontname)) {
-    tprintf("ERROR: Could not parse %s\n", fontname.c_str());
+    tprintf("ERROR: Could not parse {}\n", fontname.c_str());
   }
   PangoFont *font = font_info.ToPangoFont();
   PangoCoverage *coverage = nullptr;

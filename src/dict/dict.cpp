@@ -741,7 +741,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     }
   }
   if (debug) {
-    tprintf("%sWord: %s %4.2f%s", nonword ? "Non-" : "", word->unichar_string().c_str(),
+    tprintf("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
             word->rating(), xheight_triggered);
   }
 
@@ -793,7 +793,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     word->set_rating(new_rating);
   }
   if (debug) {
-    tprintf(" %4.2f --> %4.2f\n", adjust_factor, new_rating);
+    tprintf(" {} --> {}\n", adjust_factor, new_rating);
   }
   word->set_adjust_factor(adjust_factor);
 }

@@ -272,7 +272,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   output->ZeroInvalidElements();
 #if DEBUG_DETAIL > 0
-  tprintf("F Output:%s\n", name_.c_str());
+  tprintf("F Output:{}\n", name_.c_str());
   output->Print(10);
 #endif
 #ifndef GRAPHICS_DISABLED
@@ -421,7 +421,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
 #if DEBUG_DETAIL > 0
-    tprintf("F Backprop:%s\n", name_.c_str());
+    tprintf("F Backprop:{}\n", name_.c_str());
     back_deltas->Print(10);
 #endif
     return true;

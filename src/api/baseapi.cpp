@@ -1209,7 +1209,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     } else {
       CURLcode curlcode;
       auto error = [curl, &curlcode](const char *function) {
-        fprintf(stderr, "Error, %s failed with error %s\n", function, curl_easy_strerror(curlcode));
+        tprintf("ERROR: {} failed with error {}\n", function, curl_easy_strerror(curlcode));
         curl_easy_cleanup(curl);
         return false;
       };
@@ -1262,7 +1262,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     if (FILE *file = fopen(filename, "rb")) {
       fclose(file);
     } else {
-      fprintf(stderr, "Error, cannot read input file %s: %s\n", filename, strerror(errno));
+      tprintf("ERROR: cannot read input file {}: {}\n", filename, strerror(errno));
       return false;
     }
   }

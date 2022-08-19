@@ -83,7 +83,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    tprintf("ERROR: Unexpected surface format %d\n", cairo_image_surface_get_format(surface));
+    tprintf("ERROR: Unexpected surface format {}\n", cairo_image_surface_get_format(surface));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -880,7 +880,7 @@ int StringRenderer::StripUnrenderableWords(std::string *utf8_text) const {
   utf8_text->swap(output_text);
 
   if (num_dropped > 0) {
-    tprintf("Stripped %d unrenderable words\n", num_dropped);
+    tprintf("Stripped {} unrenderable words\n", num_dropped);
   }
   return num_dropped;
 }
@@ -1011,7 +1011,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
   if (drop_uncovered_chars_ && !font_.CoversUTF8Text(page_text.c_str(), page_text.length())) {
     int num_dropped = font_.DropUncoveredChars(&page_text);
     if (num_dropped) {
-      tprintf("WARNING: Dropped %d uncovered characters\n", num_dropped);
+      tprintf("WARNING: Dropped {} uncovered characters\n", num_dropped);
     }
   }
   if (add_ligatures_) {
@@ -1095,7 +1095,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       ++total_chars_;
       ++char_map_[*it];
     }
-    tprintf("Total chars = %d\n", total_chars_);
+    tprintf("Total chars = {}\n", total_chars_);
   }
   const std::vector<std::string> &all_fonts = FontUtils::ListAvailableFonts();
 
@@ -1111,7 +1111,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       char title[kMaxTitleLength];
       snprintf(title, kMaxTitleLength, kTitleTemplate, all_fonts[i].c_str(), ok_chars,
                100.0 * ok_chars / total_chars_, raw_score, 100.0 * raw_score / char_map_.size());
-      tprintf("%s\n", title);
+      tprintf("{}\n", title);
       // This is a good font! Store the offset to return once we've tried all
       // the fonts.
       if (offset) {
@@ -1133,7 +1133,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       // We return the real offset only after cycling through the list of fonts.
       return 0;
     } else {
-      tprintf("Font %s failed with %d hits = %.2f%%\n", all_fonts[i].c_str(), ok_chars,
+      tprintf("Font {} failed with {} hits = {}%%\n", all_fonts[i].c_str(), ok_chars,
               100.0 * ok_chars / total_chars_);
     }
   }

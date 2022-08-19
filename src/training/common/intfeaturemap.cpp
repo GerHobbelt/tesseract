@@ -145,7 +145,7 @@ int IntFeatureMap::FindNZFeatureMapping(SampleIterator *it) {
   compact_size_ = feature_map_.CompactSize();
   mapping_changed_ = true;
   FinalizeMapping(it);
-  tprintf("%d non-zero features found in %d samples\n", compact_size_, total_samples);
+  tprintf("{} non-zero features found in {} samples\n", compact_size_, total_samples);
   return compact_size_;
 }
 #endif

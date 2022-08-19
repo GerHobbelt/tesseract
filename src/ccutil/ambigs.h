@@ -96,12 +96,12 @@ public:
       tprintf("[Empty]");
     }
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("%s ", unicharset.id_to_unichar(*ptr++));
+      tprintf("{} ", unicharset.id_to_unichar(*ptr++));
     }
     tprintf("( ");
     ptr = array;
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("%d ", *ptr++);
+      tprintf("{} ", *ptr++);
     }
     tprintf(")\n");
   }

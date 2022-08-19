@@ -79,7 +79,7 @@ typedef int (*cl_kernel_function)(void **userdata, KernelEnv *kenv);
 
 #  define CHECK_OPENCL(status, name)                                     \
     if (status != CL_SUCCESS) {                                          \
-      tprintf("ERROR: OpenCL error code is %d at   when %s .\n", status, name); \
+      tprintf("ERROR: OpenCL error code is {} at   when {} .\n", status, name); \
     }
 
 struct GPUEnv {

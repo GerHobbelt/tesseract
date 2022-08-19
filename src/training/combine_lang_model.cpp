@@ -67,10 +67,10 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
   // Load the input unicharset
   UNICHARSET unicharset;
   if (!unicharset.load_from_file(FLAGS_input_unicharset.c_str(), false)) {
-    tprintf("ERROR: Failed to load unicharset from %s\n", FLAGS_input_unicharset.c_str());
+    tprintf("ERROR: Failed to load unicharset from {}\n", FLAGS_input_unicharset.c_str());
     return EXIT_FAILURE;
   }
-  tprintf("Loaded unicharset of size %zu from file %s\n", unicharset.size(),
+  tprintf("Loaded unicharset of size {} from file {}\n", unicharset.size(),
           FLAGS_input_unicharset.c_str());
 
   // Set unichar properties

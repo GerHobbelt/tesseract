@@ -78,7 +78,7 @@ int TessClassifier::DisplayClassifyAs(const TrainingSample &sample, Image page_p
     return index;
   }
   if (UnusedClassIdIn(classify_->PreTrainedTemplates, shape_id)) {
-    tprintf("No built-in templates for class/shape %d\n", shape_id);
+    tprintf("No built-in templates for class/shape {}\n", shape_id);
     return index;
   }
 #ifndef GRAPHICS_DISABLED

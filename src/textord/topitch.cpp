@@ -241,15 +241,15 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       if (block_votes == 0 && like_votes == 0 && other_votes > 0 &&
           (textord_debug_pitch_test || textord_debug_pitch_metric)) {
         tprintf(
-            "WARNING: row %d of block %d set prop with no like rows against "
+            "WARNING: row {} of block {} set prop with no like rows against "
             "trend.\n",
             row_target, block_target);
       }
     }
   }
   if (textord_debug_pitch_metric) {
-    tprintf(":b_votes=%d:l_votes=%d:o_votes=%d", block_votes, like_votes, other_votes);
-    tprintf("x=%g:asc=%g\n", bad_row->xheight, bad_row->ascrise);
+    tprintf(":b_votes={}:l_votes={}:o_votes={}", block_votes, like_votes, other_votes);
+    tprintf("x={}:asc={}\n", bad_row->xheight, bad_row->ascrise);
   }
   if (bad_row->pitch_decision == PITCH_CORR_FIXED) {
     if (bad_row->fixed_pitch < textord_min_xheight) {
@@ -258,7 +258,7 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       } else if (block_votes == 0 && like_votes > 0) {
         bad_row->fixed_pitch = like_stats.ile(0.5);
       } else {
-        tprintf("WARNING: Guessing pitch as xheight on row %d, block %d\n", row_target,
+        tprintf("WARNING: Guessing pitch as xheight on row {}, block {}\n", row_target,
                 block_target);
         bad_row->fixed_pitch = bad_row->xheight;
       }
@@ -298,7 +298,7 @@ void compute_block_pitch(TO_BLOCK *block,     // input list
 
   block_box = block->block->pdblk.bounding_box();
   if (testing_on && textord_debug_pitch_test) {
-    tprintf("Block %d at (%d,%d)->(%d,%d)\n", block_index, block_box.left(), block_box.bottom(),
+    tprintf("Block {} at ({},{})->({},{})\n", block_index, block_box.left(), block_box.bottom(),
             block_box.right(), block_box.top());
   }
   block->min_space = static_cast<int32_t>(floor(block->xheight * textord_words_default_minspace));
@@ -467,8 +467,8 @@ bool try_doc_fixed(             // determine pitch
 
   if (textord_debug_pitch_metric) {
     tprintf(
-        "try_doc:props=%d:fixed=%d:pitch=%d:final_pitch=%g:pitch_sd=%g:sp_sd=%"
-        "g:sd/trc=%g:sd/p=%g:sd/trc/p=%g\n",
+        "try_doc:props={}:fixed={}:pitch={}:final_pitch={}:pitch_sd={}:sp_sd={}"
+        ":sd/trc={}:sd/p={}:sd/trc/p={}\n",
         prop_blocks, fixed_blocks, pitch, final_pitch, pitch_sd, sp_sd, pitch_sd / total_row_count,
         pitch_sd / pitch, pitch_sd / total_row_count / pitch);
   }
@@ -587,15 +587,15 @@ void print_block_counts( // find line stats
 
   count_block_votes(block, def_fixed, def_prop, maybe_fixed, maybe_prop, corr_fixed, corr_prop,
                     dunno);
-  tprintf("Block %d has (%d,%d,%d)", block_index, def_fixed, maybe_fixed, corr_fixed);
+  tprintf("Block {} has ({},{},{})", block_index, def_fixed, maybe_fixed, corr_fixed);
   if (textord_blocksall_prop && (def_fixed || maybe_fixed || corr_fixed)) {
     tprintf(" (Wrongly)");
   }
-  tprintf(" fixed, (%d,%d,%d)", def_prop, maybe_prop, corr_prop);
+  tprintf(" fixed, ({},{},{})", def_prop, maybe_prop, corr_prop);
   if (textord_blocksall_fixed && (def_prop || maybe_prop || corr_prop)) {
     tprintf(" (Wrongly)");
   }
-  tprintf(" prop, %d dunno\n", dunno);
+  tprintf(" prop, {} dunno\n", dunno);
 }
 
 /**********************************************************************
@@ -703,9 +703,9 @@ bool row_pitch_stats( // find line stats
   }
   // get medians
   if (testing_on) {
-    tprintf("cluster_count=%d:", cluster_count);
+    tprintf("cluster_count={}:", cluster_count);
     for (gap_index = 0; gap_index < cluster_count; gap_index++) {
-      tprintf(" %g(%d)", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
+      tprintf(" {}({})", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
     }
     tprintf("\n");
   }
@@ -767,8 +767,8 @@ bool row_pitch_stats( // find line stats
   }
   if (testing_on) {
     tprintf(
-        "Initial estimates:pr_nonsp=%g, pr_space=%g, fp_nonsp=%g, "
-        "fp_space=%g\n",
+        "Initial estimates:pr_nonsp={}, pr_space={}, fp_nonsp={}, "
+        "fp_space={}\n",
         row->pr_nonsp, row->pr_space, row->fp_nonsp, row->fp_space);
   }
   return true; // computed some stats
@@ -836,8 +836,8 @@ bool find_row_pitch(     // find lines
     pitch_iqr = pitch_stats.ile(0.75) - pitch_stats.ile(0.25);
     if (testing_on) {
       tprintf(
-          "First fp iteration:initial_pitch=%g, gap_iqr=%g, pitch_iqr=%g, "
-          "pitch=%g\n",
+          "First fp iteration:initial_pitch={}, gap_iqr={}, pitch_iqr={}, "
+          "pitch={}\n",
           initial_pitch, gap_iqr, pitch_iqr, pitch_stats.ile(0.5));
     }
     initial_pitch = pitch_stats.ile(0.5);
@@ -848,19 +848,19 @@ bool find_row_pitch(     // find lines
       pitch_iqr = pitch_stats.ile(0.75) - pitch_stats.ile(0.25);
       if (testing_on) {
         tprintf(
-            "Revised fp iteration:initial_pitch=%g, gap_iqr=%g, pitch_iqr=%g, "
-            "pitch=%g\n",
+            "Revised fp iteration:initial_pitch={}, gap_iqr={}, pitch_iqr={}, "
+            "pitch={}\n",
             initial_pitch, gap_iqr, pitch_iqr, pitch_stats.ile(0.5));
       }
       initial_pitch = pitch_stats.ile(0.5);
     }
   }
   if (textord_debug_pitch_metric) {
-    tprintf("Blk=%d:Row=%d:%c:p_iqr=%g:g_iqr=%g:dm_p_iqr=%g:dm_g_iqr=%g:%c:", block_index,
+    tprintf("Blk={}:Row={}:%c:p_iqr={}:g_iqr={}:dm_p_iqr={}:dm_g_iqr={}:{}:", block_index,
             row_index, 'X', pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr,
             pitch_iqr > maxwidth && dm_pitch_iqr > maxwidth
-                ? 'D'
-                : (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr ? 'S' : 'M'));
+                ? "D"
+                : (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr ? "S" : "M"));
   }
   if (pitch_iqr > maxwidth && dm_pitch_iqr > maxwidth) {
     row->pitch_decision = PITCH_DUNNO;
@@ -872,8 +872,8 @@ bool find_row_pitch(     // find lines
   if (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr) {
     if (testing_on) {
       tprintf(
-          "Choosing non dm version:pitch_iqr=%g, gap_iqr=%g, dm_pitch_iqr=%g, "
-          "dm_gap_iqr=%g\n",
+          "Choosing non dm version:pitch_iqr={}, gap_iqr={}, dm_pitch_iqr={}, "
+          "dm_gap_iqr={}\n",
           pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr);
     }
     gap_iqr = gap_stats.ile(0.75) - gap_stats.ile(0.25);
@@ -883,8 +883,8 @@ bool find_row_pitch(     // find lines
   } else {
     if (testing_on) {
       tprintf(
-          "Choosing dm version:pitch_iqr=%g, gap_iqr=%g, dm_pitch_iqr=%g, "
-          "dm_gap_iqr=%g\n",
+          "Choosing dm version:pitch_iqr={}, gap_iqr={}, dm_pitch_iqr={}, "
+          "dm_gap_iqr={}\n",
           pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr);
     }
     gap_iqr = dm_gap_iqr;
@@ -893,13 +893,13 @@ bool find_row_pitch(     // find lines
     used_dm_model = true;
   }
   if (textord_debug_pitch_metric) {
-    tprintf("rev_p_iqr=%g:rev_g_iqr=%g:pitch=%g:", pitch_iqr, gap_iqr, pitch);
-    tprintf("p_iqr/g=%g:p_iqr/x=%g:iqr_res=%c:", pitch_iqr / gap_iqr, pitch_iqr / block->xheight,
+    tprintf("rev_p_iqr={}:rev_g_iqr={}:pitch={}:", pitch_iqr, gap_iqr, pitch);
+    tprintf("p_iqr/g={}:p_iqr/x={}:iqr_res={}:", pitch_iqr / gap_iqr, pitch_iqr / block->xheight,
             pitch_iqr < gap_iqr * textord_fpiqr_ratio &&
                     pitch_iqr < block->xheight * textord_max_pitch_iqr &&
                     pitch < block->xheight * textord_words_default_maxspace
-                ? 'F'
-                : 'P');
+                ? "F"
+                : "P");
   }
   if (pitch_iqr < gap_iqr * textord_fpiqr_ratio &&
       pitch_iqr < block->xheight * textord_max_pitch_iqr &&
@@ -992,7 +992,7 @@ bool fixed_pitch_row(TO_ROW *row, // row to do
       default:
         res_string = "??";
     }
-    tprintf(":sd/p=%g:occ=%g:init_res=%s\n", pitch_sd / row->fixed_pitch, sp_sd, res_string);
+    tprintf(":sd/p={}:occ={}:init_res={}\n", pitch_sd / row->fixed_pitch, sp_sd, res_string);
   }
   return true;
 }
@@ -1068,10 +1068,10 @@ bool count_pitch_stats(  // find lines
         if (prev_valid && width_units >= 0) {
           //                                              if (width_units>0)
           //                                              {
-          //                                                      tprintf("wu=%d,
-          //                                                      width=%d,
-          //                                                      xc=%d, adding
-          //                                                      %d\n",
+          //                                                      tprintf("wu={},
+          //                                                      width={},
+          //                                                      xc={}, adding
+          //                                                      {}\n",
           //                                                              width_units,blob_width,x_centre,x_centre-prev_centre);
           //                                              }
           gap_stats->add(joined_box.left() - prev_right, 1);
@@ -1132,14 +1132,14 @@ float tune_row_pitch(           // find fp cells
   best_sd = initial_sd;
   best_pitch = initial_pitch;
   if (testing_on) {
-    tprintf("tune_row_pitch:start pitch=%g, sd=%g\n", best_pitch, best_sd);
+    tprintf("tune_row_pitch:start pitch={}, sd={}\n", best_pitch, best_sd);
   }
   for (pitch_delta = 1; pitch_delta <= textord_pitch_range; pitch_delta++) {
     pitch_sd =
         compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
                          initial_pitch + pitch_delta, sp_sd, mid_cuts, &test_cells, testing_on);
     if (testing_on) {
-      tprintf("testing pitch at %g, sd=%g\n", initial_pitch + pitch_delta, pitch_sd);
+      tprintf("testing pitch at {}, sd={}\n", initial_pitch + pitch_delta, pitch_sd);
     }
     if (pitch_sd < best_sd) {
       best_sd = pitch_sd;
@@ -1161,7 +1161,7 @@ float tune_row_pitch(           // find fp cells
         compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
                          initial_pitch - pitch_delta, sp_sd, mid_cuts, &test_cells, testing_on);
     if (testing_on) {
-      tprintf("testing pitch at %g, sd=%g\n", initial_pitch - pitch_delta, pitch_sd);
+      tprintf("testing pitch at {}, sd={}\n", initial_pitch - pitch_delta, pitch_sd);
     }
     if (pitch_sd < best_sd) {
       best_sd = pitch_sd;
@@ -1246,7 +1246,7 @@ float tune_row_pitch2(          // find fp cells
     }
   }
   if (testing_on) {
-    tprintf("tune_row_pitch:start pitch=%g, best_delta=%d, count=%d\n", initial_pitch, best_delta,
+    tprintf("tune_row_pitch:start pitch={}, best_delta={}, count={}\n", initial_pitch, best_delta,
             best_count);
   }
   best_pitch += best_delta;
@@ -1270,7 +1270,7 @@ float tune_row_pitch2(          // find fp cells
                              initial_pitch, best_sp_sd, best_mid_cuts, best_cells, testing_on,
                              start, end);
   if (testing_on) {
-    tprintf("tune_row_pitch:output pitch=%g, sd=%g\n", initial_pitch, best_sd);
+    tprintf("tune_row_pitch:output pitch={}, sd={}\n", initial_pitch, best_sd);
   }
 
   if (textord_debug_pitch_metric) {
@@ -1371,15 +1371,15 @@ float compute_pitch_sd(        // find fp cells
                                    projection, &seg_list);
     }
     if (testing_on) {
-      tprintf("Word ending at (%d,%d), len=%d, sync rating=%g, ", prev_box.right(), prev_box.top(),
+      tprintf("Word ending at ({},{}), len={}, sync rating={}, ", prev_box.right(), prev_box.top(),
               seg_list.length() - 1, word_sync);
       seg_it.set_to_list(&seg_list);
       for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
         if (seg_it.data()->faked) {
           tprintf("(F)");
         }
-        tprintf("%d, ", seg_it.data()->position());
-        //                              tprintf("C=%g, s=%g, sq=%g\n",
+        tprintf("{}, ", seg_it.data()->position());
+        //                              tprintf("C={}, s={}, sq={}\n",
         //                                      seg_it.data()->cost_function(),
         //                                      seg_it.data()->sum(),
         //                                      seg_it.data()->squares());
@@ -1492,15 +1492,15 @@ float compute_pitch_sd2(       // find fp cells
       &blob_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
       projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, start, end);
   if (testing_on) {
-    tprintf("Row ending at (%d,%d), len=%d, sync rating=%g, ", blob_box.right(), blob_box.top(),
+    tprintf("Row ending at ({},{}), len={}, sync rating={}, ", blob_box.right(), blob_box.top(),
             seg_list.length() - 1, word_sync);
     seg_it.set_to_list(&seg_list);
     for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
       if (seg_it.data()->faked) {
         tprintf("(F)");
       }
-      tprintf("%d, ", seg_it.data()->position());
-      //                              tprintf("C=%g, s=%g, sq=%g\n",
+      tprintf("{}, ", seg_it.data()->position());
+      //                              tprintf("C={}, s={}, sq={}\n",
       //                                      seg_it.data()->cost_function(),
       //                                      seg_it.data()->sum(),
       //                                      seg_it.data()->squares());
@@ -1615,8 +1615,8 @@ void print_pitch_sd(         // find fp cells
   } while (!blob_it.cycled_list());
   sp_sd = sp_count > 0 ? sqrt(spsum / sp_count) : 0;
   word_sync = total_count > 0 ? sqrt(sqsum / total_count) : space_size * 10;
-  tprintf("new_sd=%g:sd/p=%g:new_sp_sd=%g:res=%c:", word_sync, word_sync / initial_pitch, sp_sd,
-          word_sync < textord_words_pitchsd_threshold * initial_pitch ? 'F' : 'P');
+  tprintf("new_sd={}:sd/p={}:new_sp_sd={}:res={}:", word_sync, word_sync / initial_pitch, sp_sd,
+          word_sync < textord_words_pitchsd_threshold * initial_pitch ? "F" : "P");
 
   start_it = row_start;
   blob_it = row_start;
@@ -1645,10 +1645,10 @@ void print_pitch_sd(         // find fp cells
     res2 = word_sync < textord_words_def_prop * initial_pitch ? "MP" : "DP";
   }
   tprintf(
-      "row_sd=%g:sd/p=%g:res=%c:N=%d:res2=%s,init pitch=%g, row_pitch=%g, "
-      "all_caps=%d\n",
+      "row_sd={}:sd/p={}:res={}:N={}:res2={},init pitch={}, row_pitch={}, "
+      "all_caps={}\n",
       word_sync, word_sync / initial_pitch,
-      word_sync < textord_words_pitchsd_threshold * initial_pitch ? 'F' : 'P', occupation, res2,
+      word_sync < textord_words_pitchsd_threshold * initial_pitch ? "F" : "P", occupation, res2,
       initial_pitch, row->fixed_pitch, row->all_caps);
 }
 

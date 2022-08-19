@@ -381,9 +381,9 @@ void NetworkIO::Print(int num) const {
     for (int t = 0; t < Width(); ++t) {
       if (num == 0 || t < num || t + num >= Width()) {
         if (int_mode_) {
-          tprintf(" %g", static_cast<float>(i_[t][y]) / INT8_MAX);
+          tprintf(" {}", static_cast<float>(i_[t][y]) / INT8_MAX);
         } else {
-          tprintf(" %g", f_[t][y]);
+          tprintf(" {}", f_[t][y]);
         }
       }
     }

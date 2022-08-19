@@ -86,8 +86,8 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg, DebugPixa *pixa_debug) {
   ASSERT_HOST(orig_pix_);
   if (devanagari_split_debuglevel > 0) {
     tprintf("Splitting shiro-rekha ...\n");
-    tprintf("Split strategy = %s\n", split_strategy == MINIMAL_SPLIT ? "Minimal" : "Maximal");
-    tprintf("Initial pageseg available = %s\n", segmentation_block_list_ ? "yes" : "no");
+    tprintf("Split strategy = {}\n", split_strategy == MINIMAL_SPLIT ? "Minimal" : "Maximal");
+    tprintf("Initial pageseg available = {}\n", segmentation_block_list_ ? "yes" : "no");
   }
   // Create a copy of original image to store the splitting output.
   splitted_image_.destroy();
@@ -142,7 +142,7 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg, DebugPixa *pixa_debug) {
     if (xheight == kUnspecifiedXheight || (w > xheight / 3 && h > xheight / 2)) {
       SplitWordShiroRekha(split_strategy, word_pix, xheight, x, y, regions_to_clear);
     } else if (devanagari_split_debuglevel > 0) {
-      tprintf("CC dropped from splitting: %d,%d (%d, %d)\n", x, y, w, h);
+      tprintf("CC dropped from splitting: {},{} ({}, {})\n", x, y, w, h);
     }
     word_pix.destroy();
     boxDestroy(&box);
@@ -245,7 +245,7 @@ void ShiroRekhaSplitter::SplitWordShiroRekha(SplitStrategy split_strategy, Image
   if (shirorekha_ylevel > height / 2) {
     // Shirorekha shouldn't be in the bottom half of the word.
     if (devanagari_split_debuglevel > 0) {
-      tprintf("Skipping splitting CC at (%d, %d): shirorekha in lower half..\n", word_left,
+      tprintf("Skipping splitting CC at ({}, {}): shirorekha in lower half..\n", word_left,
               word_top);
     }
     return;
@@ -253,7 +253,7 @@ void ShiroRekhaSplitter::SplitWordShiroRekha(SplitStrategy split_strategy, Image
   if (stroke_width > height / 3) {
     // Even the boldest of fonts shouldn't do this.
     if (devanagari_split_debuglevel > 0) {
-      tprintf("Skipping splitting CC at (%d, %d): stroke width too huge..\n", word_left, word_top);
+      tprintf("Skipping splitting CC at ({}, {}): stroke width too huge..\n", word_left, word_top);
     }
     return;
   }
@@ -345,7 +345,7 @@ void ShiroRekhaSplitter::RefreshSegmentationWithNewBlobs(C_BLOB_LIST *new_blobs)
   if (devanagari_split_debuglevel > 0) {
     tprintf("Before refreshing blobs:\n");
     PrintSegmentationStats(segmentation_block_list_);
-    tprintf("New Blobs found: %d\n", new_blobs->length());
+    tprintf("New Blobs found: {}\n", new_blobs->length());
   }
 
   C_BLOB_LIST not_found_blobs;

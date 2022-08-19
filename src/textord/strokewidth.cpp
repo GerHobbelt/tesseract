@@ -222,7 +222,7 @@ bool StrokeWidth::TestVerticalTextDirection(double find_vertical_text_ratio, TO_
   CollectHorizVertBlobs(&block->large_blobs, &vertical_boxes, &horizontal_boxes, &vertical_blobs,
                         &horizontal_blobs, &nondescript_blobs);
   if (textord_debug_tabfind) {
-    tprintf("TextDir hbox=%d vs vbox=%d, %dH, %dV, %dN osd blobs\n", horizontal_boxes,
+    tprintf("TextDir hbox={} vs vbox={}, {}H, {}V, {}N osd blobs\n", horizontal_boxes,
             vertical_boxes, horizontal_blobs.length(), vertical_blobs.length(),
             nondescript_blobs.length());
   }
@@ -310,7 +310,7 @@ void StrokeWidth::RemoveLineResidue(ColPartition_LIST *big_part_list) {
       }
     }
     if (debug) {
-      tprintf("Max neighbour size=%d for candidate line box at:", max_height);
+      tprintf("Max neighbour size={} for candidate line box at:", max_height);
       box.print();
     }
     if (max_height * kLineResidueSizeRatio < box.height()) {
@@ -379,7 +379,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
   PartitionFindResult r = FindInitialPartitions(pageseg_mode, rerotation, true, block,
                                                 diacritic_blobs, part_grid, big_parts, &skew);
   if (r == PFR_NOISE) {
-    tprintf("Detected %d diacritics\n", diacritic_blobs->length());
+    tprintf("Detected {} diacritics\n", diacritic_blobs->length());
     // Noise was found, and removed.
     Clear();
     InsertBlobs(block);
@@ -394,7 +394,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
 
 static void PrintBoxWidths(BLOBNBOX *neighbour) {
   const TBOX &nbox = neighbour->bounding_box();
-  tprintf("Box (%d,%d)->(%d,%d): h-width=%.1f, v-width=%.1f p-width=%1.f\n", nbox.left(),
+  tprintf("Box ({},{})->({},{}): h-width={}, v-width={} p-width={}\n", nbox.left(),
           nbox.bottom(), nbox.right(), nbox.top(), neighbour->horz_stroke_width(),
           neighbour->vert_stroke_width(),
           2.0 * neighbour->cblob()->area() / neighbour->cblob()->perimeter());
@@ -427,8 +427,8 @@ void StrokeWidth::HandleClick(int x, int y) {
       int gaps[BND_COUNT];
       neighbour->NeighbourGaps(gaps);
       tprintf(
-          "Left gap=%d, right=%d, above=%d, below=%d, horz=%d, vert=%d\n"
-          "Good=    %d        %d        %d        %d\n",
+          "Left gap={}, right={}, above={}, below={}, horz={}, vert={}\n"
+          "Good=    {}        {}        {}        {}\n",
           gaps[BND_LEFT], gaps[BND_RIGHT], gaps[BND_ABOVE], gaps[BND_BELOW],
           neighbour->horz_possible(), neighbour->vert_possible(),
           neighbour->good_stroke_neighbour(BND_LEFT), neighbour->good_stroke_neighbour(BND_RIGHT),
@@ -602,7 +602,7 @@ bool StrokeWidth::FixBrokenCJK(TO_BLOCK *block) {
     TBOX bbox = blob->bounding_box();
     bool debug = AlignedBlob::WithinTestRegion(3, bbox.left(), bbox.bottom());
     if (debug) {
-      tprintf("Checking for Broken CJK (max size=%d):", max_height);
+      tprintf("Checking for Broken CJK (max size={}):", max_height);
       bbox.print();
     }
     // Generate a list of blobs that overlap or are near enough to merge.
@@ -623,7 +623,7 @@ bool StrokeWidth::FixBrokenCJK(TO_BLOCK *block) {
       // There can't be too many blobs to merge.
       if (overlapped_blobs.length() >= kCJKMaxComponents) {
         if (debug) {
-          tprintf("Too many neighbours: %d\n", overlapped_blobs.length());
+          tprintf("Too many neighbours: {}\n", overlapped_blobs.length());
         }
         continue;
       }
@@ -693,7 +693,7 @@ static bool AcceptableCJKMerge(const TBOX &bbox, const TBOX &nbox, bool debug, i
   TBOX merged(nbox);
   merged += bbox;
   if (debug) {
-    tprintf("gaps = %d, %d, merged_box:", *x_gap, *y_gap);
+    tprintf("gaps = {}, {}, merged_box:", *x_gap, *y_gap);
     merged.print();
   }
   if (*x_gap <= max_dist && *y_gap <= max_dist && merged.width() <= max_size &&
@@ -895,7 +895,7 @@ int StrokeWidth::FindGoodNeighbour(BlobNeighbourDir dir, bool leaders, BLOBNBOX 
   TBOX blob_box = blob->bounding_box();
   bool debug = AlignedBlob::WithinTestRegion(2, blob_box.left(), blob_box.bottom());
   if (debug) {
-    tprintf("FGN in dir %d for blob:", dir);
+    tprintf("FGN in dir {} for blob:", dir);
     blob_box.print();
   }
   int top = blob_box.top();
@@ -1048,7 +1048,7 @@ int StrokeWidth::FindGoodNeighbour(BlobNeighbourDir dir, bool leaders, BLOBNBOX 
     }
     double goodness = (1.0 + is_good) * overlap / gap;
     if (debug) {
-      tprintf("goodness = %g vs best of %g, good=%d, overlap=%d, gap=%d\n", goodness, best_goodness,
+      tprintf("goodness = {} vs best of {}, good={}, overlap={}, gap={}\n", goodness, best_goodness,
               is_good, overlap, gap);
     }
     if (goodness > best_goodness) {
@@ -1109,7 +1109,7 @@ static void CountNeighbourGaps(bool debug, BLOBNBOX_CLIST *neighbours, int *pure
     int h_min, h_max, v_min, v_max;
     blob->MinMaxGapsClipped(&h_min, &h_max, &v_min, &v_max);
     if (debug) {
-      tprintf("Hgaps [%d,%d], vgaps [%d,%d]:", h_min, h_max, v_min, v_max);
+      tprintf("Hgaps [{},{}], vgaps [{},{}]:", h_min, h_max, v_min, v_max);
     }
     if (h_max < v_min || blob->leader_on_left() || blob->leader_on_right()) {
       // Horizontal gaps are clear winners. Count a pure horizontal.
@@ -1144,7 +1144,7 @@ void StrokeWidth::SetNeighbourFlows(BLOBNBOX *blob) {
   bool debug =
       AlignedBlob::WithinTestRegion(2, blob->bounding_box().left(), blob->bounding_box().bottom());
   if (debug) {
-    tprintf("SetNeighbourFlows (current flow=%d, type=%d) on:", blob->flow(), blob->region_type());
+    tprintf("SetNeighbourFlows (current flow={}, type={}) on:", blob->flow(), blob->region_type());
     blob->bounding_box().print();
   }
   BLOBNBOX_CLIST neighbours;
@@ -1155,7 +1155,7 @@ void StrokeWidth::SetNeighbourFlows(BLOBNBOX *blob) {
   CountNeighbourGaps(debug, &neighbours, &pure_h_count, &pure_v_count);
   if (debug) {
     HandleClick(blob->bounding_box().left() + 1, blob->bounding_box().bottom() + 1);
-    tprintf("SetFlows: h_count=%d, v_count=%d\n", pure_h_count, pure_v_count);
+    tprintf("SetFlows: h_count={}, v_count={}\n", pure_h_count, pure_v_count);
   }
   if (!neighbours.empty()) {
     blob->set_vert_possible(true);
@@ -1242,7 +1242,7 @@ void StrokeWidth::SmoothNeighbourTypes(PageSegMode pageseg_mode, bool reset_all,
     if (AlignedBlob::WithinTestRegion(2, blob->bounding_box().left(),
                                       blob->bounding_box().bottom())) {
       HandleClick(blob->bounding_box().left() + 1, blob->bounding_box().bottom() + 1);
-      tprintf("pure_h=%d, pure_v=%d\n", pure_h_count, pure_v_count);
+      tprintf("pure_h={}, pure_v={}\n", pure_h_count, pure_v_count);
     }
     if (pure_h_count > pure_v_count && !FindingVerticalOnly(pageseg_mode)) {
       // Horizontal gaps are clear winners. Clear vertical neighbours.
@@ -1554,7 +1554,7 @@ void StrokeWidth::TestDiacritics(ColPartitionGrid *part_grid, TO_BLOCK *block) {
     }
   }
   if (textord_tabfind_show_strokewidths) {
-    tprintf("Found %d small diacritics, %d medium\n", small_diacritics, medium_diacritics);
+    tprintf("Found {} small diacritics, {} medium\n", small_diacritics, medium_diacritics);
   }
 }
 
@@ -1631,11 +1631,11 @@ bool StrokeWidth::DiacriticBlob(BlobGrid *small_grid, BLOBNBOX *blob) {
     int y_gap = small_box.y_gap(nbox);
     int total_distance = projection_->DistanceOfBoxFromBox(small_box, nbox, true, denorm_, debug);
     if (debug) {
-      tprintf("xgap=%d, y=%d, total dist=%d\n", x_gap, y_gap, total_distance);
+      tprintf("xgap={}, y={}, total dist={}\n", x_gap, y_gap, total_distance);
     }
     if (total_distance > neighbour->owner()->median_height() * kMaxDiacriticDistanceRatio) {
       if (debug) {
-        tprintf("Neighbour with median size %d too far away:", neighbour->owner()->median_height());
+        tprintf("Neighbour with median size {} too far away:", neighbour->owner()->median_height());
         neighbour->bounding_box().print();
       }
       continue; // Diacritics must not be too distant.
@@ -1704,9 +1704,9 @@ bool StrokeWidth::DiacriticBlob(BlobGrid *small_grid, BLOBNBOX *blob) {
   if (debug) {
     tprintf("DiacriticBlob fails:");
     small_box.print();
-    tprintf("Best x+y gap = %d, y = %d\n", best_total_dist, best_y_gap);
+    tprintf("Best x+y gap = {}, y = {}\n", best_total_dist, best_y_gap);
     if (best_y_overlap != nullptr) {
-      tprintf("XGapFilled=%d, NoiseBetween=%d\n",
+      tprintf("XGapFilled={}, NoiseBetween={}\n",
               DiacriticXGapFilled(small_grid, small_box, best_y_overlap->bounding_box()),
               NoNoiseInBetween(small_box, best_y_overlap->bounding_box()));
     }

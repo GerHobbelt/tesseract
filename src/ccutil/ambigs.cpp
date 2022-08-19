@@ -106,7 +106,7 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   while (ambig_file->FGets(buffer, kBufferSize) != nullptr) {
     chomp_string(buffer);
     if (debug_level > 2) {
-      tprintf("read line %s\n", buffer);
+      tprintf("read line {}\n", buffer);
     }
     ++line_num;
     if (!ParseAmbiguityLine(line_num, version, debug_level, encoder_set, buffer,
@@ -190,8 +190,8 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
           continue;
         }
         if (!lst->empty()) {
-          tprintf("%s Ambiguities for %s:\n", (tbl == 0) ? "Replaceable" : "Dangerous",
-                  unicharset->debug_str(i).c_str());
+          tprintf("{} Ambiguities for {}:\n", (tbl == 0) ? "Replaceable" : "Dangerous",
+                  unicharset->debug_str(i));
         }
         AmbigSpec_IT lst_it(lst);
         for (lst_it.mark_cycle_pt(); !lst_it.cycled_list(); lst_it.forward()) {
@@ -210,10 +210,10 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
         for (size_t i = 0; i < vec.size(); ++i) {
           adaption_ambigs_entry = vec[i];
           if (adaption_ambigs_entry != nullptr) {
-            tprintf("%sAmbigs for adaption for %s:\n", (vec_id == 0) ? "" : "Reverse ",
-                    unicharset->debug_str(i).c_str());
+            tprintf("{}Ambigs for adaption for {}:\n", (vec_id == 0) ? "" : "Reverse ",
+                    unicharset->debug_str(i));
             for (size_t j = 0; j < adaption_ambigs_entry->size(); ++j) {
-              tprintf("%s ", unicharset->debug_str((*adaption_ambigs_entry)[j]).c_str());
+              tprintf("{} ", unicharset->debug_str((*adaption_ambigs_entry)[j]));
             }
             tprintf("\n");
           }
@@ -246,7 +246,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     *test_ambig_part_size = unichars.size();
     if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
       if (debug_level) {
-        tprintf("Too many unichars in ambiguity on line %d\n", line_num);
+        tprintf("Too many unichars in ambiguity on line {}\n", line_num);
       }
       return false;
     }
@@ -262,7 +262,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     *replacement_ambig_part_size = unichars.size();
     if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
       if (debug_level) {
-        tprintf("Too many unichars in ambiguity on line %d\n", line_num);
+        tprintf("Too many unichars in ambiguity on line {}\n", line_num);
       }
       return false;
     }
@@ -287,7 +287,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   }
   if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
     if (debug_level) {
-      tprintf("Too many unichars in ambiguity on line %d\n", line_num);
+      tprintf("Too many unichars in ambiguity on line {}\n", line_num);
     }
     return false;
   }
@@ -314,7 +314,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   }
   if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
     if (debug_level) {
-      tprintf("Too many unichars in ambiguity on line %d\n", line_num);
+      tprintf("Too many unichars in ambiguity on line {}\n", line_num);
     }
     return false;
   }

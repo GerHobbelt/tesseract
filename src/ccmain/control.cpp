@@ -596,7 +596,7 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
             choices_description += " compatible bigrams.";
           }
         }
-        tprintf("Replaced \"{} {}\" with \"{} {}\" with bigram model. %s\n", orig_w1_str,
+        tprintf("Replaced \"{} {}\" with \"{} {}\" with bigram model. {}\n", orig_w1_str,
                 orig_w2_str, new_w1_str, new_w2_str,
                 choices_description);
       }
@@ -967,7 +967,7 @@ bool Tesseract::ReassignDiacritics(int pass, PAGE_RES_IT *pr_it, bool *make_next
     }
   }
   if (debug_noise_removal) {
-    tprintf("Used %d/%d overlapped {}/{} non-overlaped diacritics on word:", num_overlapped_used,
+    tprintf("Used {}/{} overlapped {}/{} non-overlaped diacritics on word:", num_overlapped_used,
             num_overlapped, non_overlapped_used, non_overlapped);
     real_word->bounding_box().print();
   }

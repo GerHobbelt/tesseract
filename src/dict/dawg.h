@@ -494,11 +494,11 @@ public:
     TFile file;
     file.OpenWrite(nullptr);
     if (!this->write_squished_dawg(&file)) {
-      tprintf("ERROR: Error serializing %s\n", filename);
+      tprintf("ERROR: Error serializing {}\n", filename);
       return false;
     }
     if (!file.CloseWrite(filename, nullptr)) {
-      tprintf("ERROR: Error writing file %s\n", filename);
+      tprintf("ERROR: Error writing file {}\n", filename);
       return false;
     }
     return true;
@@ -553,7 +553,7 @@ private:
 
   /// Prints the contents of the SquishedDawg.
   void print_all(const char *msg) {
-    tprintf("\n__________________________\n%s\n", msg);
+    tprintf("\n__________________________\n{}\n", msg);
     for (int i = 0; i < num_edges_; ++i) {
       print_edge(i);
     }

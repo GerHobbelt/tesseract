@@ -40,10 +40,10 @@ void RecodeNode::Print(int null_char, const UNICHARSET &unicharset,
   if (code == null_char) {
     tprintf("null_char");
   } else {
-    tprintf("label=%d, uid=%d=%s", code, unichar_id,
+    tprintf("label={}, uid={}={}", code, unichar_id,
             unicharset.debug_str(unichar_id).c_str());
   }
-  tprintf(" score=%g, c=%g,%s%s%s perm=%d, hash=%" PRIx64, score, certainty,
+  tprintf(" score={}, c={},{}{}{} perm={}, hash={}", score, certainty,
           start_of_dawg ? " DawgStart" : "", start_of_word ? " Start" : "",
           end_of_word ? " End" : "", permuter, code_hash);
   if (depth > 0 && prev != nullptr) {
@@ -394,10 +394,10 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
         prevCode = " ";
       }
       if (uids) {
-        tprintf("%x(|)%f(>)%x(|)%f\n", intPrevCode, prevScore, intCode,
+        tprintf("%x(|){}(>)%x(|){}\n", intPrevCode, prevScore, intCode,
                 node->score);
       } else {
-        tprintf("%s(|)%f(>)%s(|)%f\n", prevCode, prevScore, code, node->score);
+        tprintf("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
       }
     }
     tprintf("-\n");
@@ -523,7 +523,7 @@ void RecodeBeamSearch::DebugBeams(const UNICHARSET &unicharset) const {
           continue;
         }
         // Print all the best scoring nodes for each unichar found.
-        tprintf("Position %d: %s+%s beam\n", p, d ? "Dict" : "Non-Dict",
+        tprintf("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict",
                 kNodeContNames[c]);
         DebugBeamPos(unicharset, beam_[p]->beams_[index]);
       }
@@ -766,14 +766,14 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Non-Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -837,14 +837,14 @@ void RecodeBeamSearch::DecodeSecondaryStep(
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Non-Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -1359,7 +1359,7 @@ void RecodeBeamSearch::DebugPath(
     const std::vector<const RecodeNode *> &path) const {
   for (unsigned c = 0; c < path.size(); ++c) {
     const RecodeNode &node = *path[c];
-    tprintf("%u ", c);
+    tprintf("{} ", c);
     node.Print(null_char_, *unicharset, 1);
   }
 }
@@ -1373,13 +1373,13 @@ void RecodeBeamSearch::DebugUnicharPath(
   double total_rating = 0.0;
   for (unsigned c = 0; c < num_ids; ++c) {
     int coord = xcoords[c];
-    tprintf("%d %d=%s r=%g, c=%g, s=%d, e=%d, perm=%d\n", coord, unichar_ids[c],
+    tprintf("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_ids[c],
             unicharset->debug_str(unichar_ids[c]).c_str(), ratings[c], certs[c],
             path[coord]->start_of_word, path[coord]->end_of_word,
             path[coord]->permuter);
     total_rating += ratings[c];
   }
-  tprintf("Path total rating = %g\n", total_rating);
+  tprintf("Path total rating = {}\n", total_rating);
 }
 
 } // namespace tesseract.

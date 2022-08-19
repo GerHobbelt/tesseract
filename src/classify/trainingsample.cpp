@@ -239,7 +239,7 @@ void TrainingSample::ExtractCharDesc(int int_feature_type, int micro_type, int c
   delete[] features_;
   FEATURE_SET_STRUCT *char_features = char_desc->FeatureSets[int_feature_type];
   if (char_features == nullptr) {
-    tprintf("Error: no features to train on of type %s\n", kIntFeatureType);
+    tprintf("Error: no features to train on of type {}\n", kIntFeatureType);
     num_features_ = 0;
     features_ = nullptr;
   } else {
@@ -256,7 +256,7 @@ void TrainingSample::ExtractCharDesc(int int_feature_type, int micro_type, int c
   delete[] micro_features_;
   char_features = char_desc->FeatureSets[micro_type];
   if (char_features == nullptr) {
-    tprintf("Error: no features to train on of type %s\n", kMicroFeatureType);
+    tprintf("Error: no features to train on of type {}\n", kMicroFeatureType);
     num_micro_features_ = 0;
     micro_features_ = nullptr;
   } else {

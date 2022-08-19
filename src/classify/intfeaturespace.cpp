@@ -85,11 +85,11 @@ int IntFeatureSpace::XYToFeatureIndex(int x, int y) const {
     index = Index(feature);
   }
   if (index < 0) {
-    tprintf("(%d,%d) does not exist in feature space!\n", x, y);
+    tprintf("({},{}) does not exist in feature space!\n", x, y);
     return -1;
   }
   feature = PositionFromIndex(index);
-  tprintf("Click at (%d, %d) ->(%d, %d), ->(%d, %d)\n", x, y, feature.X, feature.Y, x - feature.X,
+  tprintf("Click at ({}, {}) ->({}, {}), ->({}, {})\n", x, y, feature.X, feature.Y, x - feature.X,
           y - feature.Y);
   // Get the relative position of x,y from the rounded feature.
   x -= feature.X;

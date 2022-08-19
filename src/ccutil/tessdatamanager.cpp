@@ -211,11 +211,11 @@ void TessdataManager::Clear() {
 
 // Prints a directory of contents.
 void TessdataManager::Directory() const {
-  tprintf("Version:%s\n", VersionString().c_str());
+  tprintf("Version:{}\n", VersionString().c_str());
   auto offset = TESSDATA_NUM_ENTRIES * sizeof(int64_t);
   for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
     if (!entries_[i].empty()) {
-      tprintf("%u:%s:size=%zu, offset=%zu\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
+      tprintf("{}:{}:size={}, offset={}\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
               offset);
       offset += entries_[i].size();
     }
@@ -267,7 +267,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
     if (fp != nullptr) {
       fclose(fp);
       if (!LoadDataFromFile(filename.c_str(), &entries_[type])) {
-        tprintf("ERROR: Load of file %s failed!\n", filename.c_str());
+        tprintf("ERROR: Load of file {} failed!\n", filename.c_str());
         return false;
       }
     }
@@ -293,7 +293,7 @@ bool TessdataManager::OverwriteComponents(const char *new_traineddata_filename,
     TessdataType type;
     if (TessdataTypeFromFileName(component_filenames[i], &type)) {
       if (!LoadDataFromFile(component_filenames[i], &entries_[type])) {
-        tprintf("ERROR: Failed to read component file:%s\n", component_filenames[i]);
+        tprintf("ERROR: Failed to read component file:{}\n", component_filenames[i]);
         return false;
       }
     }
@@ -322,7 +322,7 @@ bool TessdataManager::TessdataTypeFromFileSuffix(const char *suffix, TessdataTyp
 #if !defined(NDEBUG)
   tprintf(
       "ERROR: TessdataManager can't determine which tessdata"
-      " component is represented by %s\n",
+      " component is represented by {}\n",
       suffix);
 #endif
   return false;
