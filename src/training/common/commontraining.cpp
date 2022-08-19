@@ -14,6 +14,7 @@
 #define _USE_MATH_DEFINES // for M_PI
 
 #include <tesseract/debugheap.h>
+#include <tesseract/assert.h>
 
 #include "commontraining.h"
 
@@ -93,7 +94,7 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 // -M 0.625   -B 0.05   -I 1.0   -C 1e-6.
 CLUSTERCONFIG Config = {elliptical, 0.625, 0.05, 1.0, 1e-6, 0};
 FEATURE_DEFS_STRUCT feature_defs;
-static CCUtil ccutil;
+static CCUtil *ccutil = nullptr;
 
 INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
 static INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
@@ -130,6 +131,9 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argv command line arguments
  */
 void ParseArguments(int *argc, const char ***argv) {
+	if (!ccutil)
+		ccutil = new CCUtil();
+
   std::string usage;
   if (*argc) {
     usage += (*argv)[0];
@@ -146,8 +150,9 @@ void ParseArguments(int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
+	ASSERT(ccutil != nullptr);
     tesseract::ParamUtils::ReadParamsFile(
-        FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil.params());
+        FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
   }
 }
 

@@ -42,11 +42,43 @@ enum SetParamConstraint {
   SET_PARAM_CONSTRAINT_NON_INIT_ONLY,
 };
 
-struct ParamsVectors {
-  std::vector<IntParam *> int_params;
-  std::vector<BoolParam *> bool_params;
-  std::vector<StringParam *> string_params;
-  std::vector<DoubleParam *> double_params;
+class ParamsVectors {
+  std::vector<IntParam *> _int_params;
+  std::vector<BoolParam *> _bool_params;
+  std::vector<StringParam *> _string_params;
+  std::vector<DoubleParam *> _double_params;
+
+public:
+	ParamsVectors() {
+	}
+	~ParamsVectors() {
+	}
+
+	std::vector<IntParam *> &int_params() {
+		return _int_params;
+	}
+	std::vector<BoolParam *> &bool_params() {
+		return _bool_params;
+	}
+	std::vector<StringParam *> &string_params() {
+		return _string_params;
+	}
+	std::vector<DoubleParam *> &double_params() {
+		return _double_params;
+	}
+
+	const std::vector<IntParam *> &int_params_c() const {
+		return _int_params;
+	}
+	const std::vector<BoolParam *> &bool_params_c() const {
+		return _bool_params;
+	}
+	const std::vector<StringParam *> &string_params_c() const {
+		return _string_params;
+	}
+	const std::vector<DoubleParam *> &double_params_c() const {
+		return _double_params;
+	}
 };
 
 // Utility functions for working with Tesseract parameters.
@@ -150,11 +182,11 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = &(vec->int_params);
-    vec->int_params.push_back(this);
+    params_vec_ = vec;
+    vec->int_params().push_back(this);
   }
   ~IntParam() {
-    ParamUtils::RemoveParam<IntParam>(this, params_vec_);
+    ParamUtils::RemoveParam<IntParam>(this, &params_vec_->int_params());
   }
   operator int32_t() const {
     return value_;
@@ -169,10 +201,10 @@ public:
     value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->int_params) {
+    for (auto *param : vec->int_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param %s=%d by =%d\n", name_, value_,
-        // param);
+        // *param);
         value_ = *param;
         break;
       }
@@ -182,8 +214,9 @@ public:
 private:
   int32_t value_;
   int32_t default_;
-  // Pointer to the vector that contains this param (not owned by this class).
-  std::vector<IntParam *> *params_vec_;
+
+  // Pointer to the vector that contains this param (not owned by this class). Used by the destructor.
+  ParamsVectors *params_vec_;
 };
 
 class BoolParam : public Param {
@@ -192,11 +225,11 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = &(vec->bool_params);
-    vec->bool_params.push_back(this);
+    params_vec_ = vec;
+    vec->bool_params().push_back(this);
   }
   ~BoolParam() {
-    ParamUtils::RemoveParam<BoolParam>(this, params_vec_);
+    ParamUtils::RemoveParam<BoolParam>(this, &params_vec_->bool_params());
   }
   operator bool() const {
     return value_;
@@ -211,7 +244,7 @@ public:
     value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->bool_params) {
+    for (auto *param : vec->bool_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param %s=%s by =%s\n", name_, value_ ? "true" :
         // "false", *param ? "true" : "false");
@@ -224,8 +257,9 @@ public:
 private:
   bool value_;
   bool default_;
+
   // Pointer to the vector that contains this param (not owned by this class).
-  std::vector<BoolParam *> *params_vec_;
+  ParamsVectors *params_vec_;
 };
 
 class StringParam : public Param {
@@ -235,11 +269,11 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = &(vec->string_params);
-    vec->string_params.push_back(this);
+    params_vec_ = vec;
+    vec->string_params().push_back(this);
   }
   ~StringParam() {
-    ParamUtils::RemoveParam<StringParam>(this, params_vec_);
+    ParamUtils::RemoveParam<StringParam>(this, &params_vec_->string_params());
   }
   operator std::string &() {
     return value_;
@@ -266,7 +300,7 @@ public:
     value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->string_params) {
+    for (auto *param : vec->string_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param %s=%s by =%s\n", name_, value_,
         // param->c_str());
@@ -279,8 +313,9 @@ public:
 private:
   std::string value_;
   std::string default_;
+
   // Pointer to the vector that contains this param (not owned by this class).
-  std::vector<StringParam *> *params_vec_;
+  ParamsVectors *params_vec_;
 };
 
 class DoubleParam : public Param {
@@ -289,11 +324,11 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = &(vec->double_params);
-    vec->double_params.push_back(this);
+    params_vec_ = vec;
+    vec->double_params().push_back(this);
   }
   ~DoubleParam() {
-    ParamUtils::RemoveParam<DoubleParam>(this, params_vec_);
+    ParamUtils::RemoveParam<DoubleParam>(this, &params_vec_->double_params());
   }
   operator double() const {
     return value_;
@@ -308,7 +343,7 @@ public:
     value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->double_params) {
+    for (auto *param : vec->double_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param %s=%f by =%f\n", name_, value_,
         // *param);
@@ -321,8 +356,9 @@ public:
 private:
   double value_;
   double default_;
+
   // Pointer to the vector that contains this param (not owned by this class).
-  std::vector<DoubleParam *> *params_vec_;
+  ParamsVectors *params_vec_;
 };
 
 // Global parameter lists.

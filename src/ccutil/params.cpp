@@ -33,8 +33,9 @@
 
 namespace tesseract {
 
+TESS_API
 tesseract::ParamsVectors *GlobalParams() {
-  static tesseract::ParamsVectors global_params = tesseract::ParamsVectors();
+  static tesseract::ParamsVectors global_params; // static auto-inits at startup
   return &global_params;
 }
 
@@ -82,7 +83,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
                           ParamsVectors *member_params) {
   // Look for the parameter among string parameters.
   auto *sp =
-      FindParam<StringParam>(name, GlobalParams()->string_params, member_params->string_params);
+      FindParam<StringParam>(name, GlobalParams()->string_params(), member_params->string_params());
   if (sp != nullptr && sp->constraint_ok(constraint)) {
     sp->set_value(value);
   }
@@ -91,7 +92,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
   }
 
   // Look for the parameter among int parameters.
-  auto *ip = FindParam<IntParam>(name, GlobalParams()->int_params, member_params->int_params);
+  auto *ip = FindParam<IntParam>(name, GlobalParams()->int_params(), member_params->int_params());
   if (ip && ip->constraint_ok(constraint)) {
     int intval = INT_MIN;
     std::stringstream stream(value);
@@ -103,7 +104,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
   }
 
   // Look for the parameter among bool parameters.
-  auto *bp = FindParam<BoolParam>(name, GlobalParams()->bool_params, member_params->bool_params);
+  auto *bp = FindParam<BoolParam>(name, GlobalParams()->bool_params(), member_params->bool_params());
   if (bp != nullptr && bp->constraint_ok(constraint)) {
     if (*value == 'T' || *value == 't' || *value == 'Y' || *value == 'y' || *value == '1') {
       bp->set_value(true);
@@ -114,7 +115,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
 
   // Look for the parameter among double parameters.
   auto *dp =
-      FindParam<DoubleParam>(name, GlobalParams()->double_params, member_params->double_params);
+      FindParam<DoubleParam>(name, GlobalParams()->double_params(), member_params->double_params());
   if (dp != nullptr && dp->constraint_ok(constraint)) {
     double doubleval = NAN;
     std::stringstream stream(value);
@@ -131,26 +132,26 @@ bool ParamUtils::GetParamAsString(const char *name, const ParamsVectors *member_
                                   std::string *value) {
   // Look for the parameter among string parameters.
   auto *sp =
-      FindParam<StringParam>(name, GlobalParams()->string_params, member_params->string_params);
+      FindParam<StringParam>(name, GlobalParams()->string_params_c(), member_params->string_params_c());
   if (sp) {
     *value = sp->c_str();
     return true;
   }
   // Look for the parameter among int parameters.
-  auto *ip = FindParam<IntParam>(name, GlobalParams()->int_params, member_params->int_params);
+  auto *ip = FindParam<IntParam>(name, GlobalParams()->int_params_c(), member_params->int_params_c());
   if (ip) {
     *value = std::to_string(int32_t(*ip));
     return true;
   }
   // Look for the parameter among bool parameters.
-  auto *bp = FindParam<BoolParam>(name, GlobalParams()->bool_params, member_params->bool_params);
+  auto *bp = FindParam<BoolParam>(name, GlobalParams()->bool_params_c(), member_params->bool_params_c());
   if (bp != nullptr) {
     *value = bool(*bp) ? "1" : "0";
     return true;
   }
   // Look for the parameter among double parameters.
   auto *dp =
-      FindParam<DoubleParam>(name, GlobalParams()->double_params, member_params->double_params);
+      FindParam<DoubleParam>(name, GlobalParams()->double_params_c(), member_params->double_params_c());
   if (dp != nullptr) {
     std::ostringstream stream;
     stream.imbue(std::locale::classic());
@@ -167,19 +168,19 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
   stream.imbue(std::locale::classic());
   for (int v = 0; v < num_iterations; ++v) {
     const ParamsVectors *vec = (v == 0) ? GlobalParams() : member_params;
-    for (auto int_param : vec->int_params) {
+    for (auto int_param : vec->int_params_c()) {
       stream << int_param->name_str() << '\t' << (int32_t)(*int_param) << '\t'
              << int_param->info_str() << '\n';
     }
-    for (auto bool_param : vec->bool_params) {
+    for (auto bool_param : vec->bool_params_c()) {
       stream << bool_param->name_str() << '\t' << bool(*bool_param) << '\t'
              << bool_param->info_str() << '\n';
     }
-    for (auto string_param : vec->string_params) {
+    for (auto string_param : vec->string_params_c()) {
       stream << string_param->name_str() << '\t' << string_param->c_str() << '\t'
              << string_param->info_str() << '\n';
     }
-    for (auto double_param : vec->double_params) {
+    for (auto double_param : vec->double_params_c()) {
       stream << double_param->name_str() << '\t' << (double)(*double_param) << '\t'
              << double_param->info_str() << '\n';
     }
@@ -192,16 +193,16 @@ void ParamUtils::ResetToDefaults(ParamsVectors *member_params) {
   int num_iterations = (member_params == nullptr) ? 1 : 2;
   for (int v = 0; v < num_iterations; ++v) {
     ParamsVectors *vec = (v == 0) ? GlobalParams() : member_params;
-    for (auto &param : vec->int_params) {
+    for (auto &param : vec->int_params()) {
       param->ResetToDefault();
     }
-    for (auto &param : vec->bool_params) {
+    for (auto &param : vec->bool_params()) {
       param->ResetToDefault();
     }
-    for (auto &param : vec->string_params) {
+    for (auto &param : vec->string_params()) {
       param->ResetToDefault();
     }
-    for (auto &param : vec->double_params) {
+    for (auto &param : vec->double_params()) {
       param->ResetToDefault();
     }
   }
