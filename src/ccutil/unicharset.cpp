@@ -42,6 +42,8 @@
 
 namespace tesseract {
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(unicharset)
+
 // Special character used in representing character fragments.
 static const char kSeparator = '|';
 // Special character used in representing 'natural' character fragments.
@@ -184,16 +186,12 @@ UNICHARSET::UNICHARSET()
     : ids(), script_table(nullptr), script_table_size_used(0) {
   clear();
 
-  int HEAPDBG_SECTION_START = fzPushHeapDbgPurpose(__FILE__, __LINE__);
-
   for (int i = 0; i < SPECIAL_UNICHAR_CODES_COUNT; ++i) {
     unichar_insert(kSpecialUnicharCodes[i]);
     if (i == UNICHAR_JOINED) {
       set_isngram(i, true);
     }
   }
-
-  (void)fzPopHeapDbgPurpose(HEAPDBG_SECTION_START, __LINE__);
 }
 
 UNICHARSET::~UNICHARSET() {
@@ -1197,5 +1195,7 @@ std::string UNICHARSET::CleanupString(const char *utf8_str, size_t length) {
   }
   return result;
 }
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(unicharset)
 
 } // namespace tesseract

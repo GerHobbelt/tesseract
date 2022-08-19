@@ -10,9 +10,6 @@
 #define FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(prefix)  /**/
 #define FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(prefix)    /**/
 
-#define fzPushHeapDbgPurpose(s, l)               0
-#define fzPopHeapDbgPurpose(related_dummy, l)    0
-
 #endif
 
 #endif
