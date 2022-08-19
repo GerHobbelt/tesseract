@@ -62,7 +62,6 @@ public:
      */
     ~thread_pool()
     {
-        //cv.notify_all();
         wait_for_tasks();
         destroy_threads();
     }
@@ -428,8 +427,6 @@ private:
 				{
 					std::unique_lock<std::mutex> lock(cv_m);
 					cv.wait(lock);
-					int i = 2;
-					i++;
 				}
 			}
 		}
