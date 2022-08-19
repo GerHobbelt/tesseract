@@ -14,6 +14,8 @@
 
 #define THREAD_POOL_VERSION "v2.0.0 (2021-08-14)"
 
+#include "tprintf.h"  // for tprintf
+
 #include <atomic>      // std::atomic
 #include <chrono>      // std::chrono
 #include <condition_variable> // std::condition_variable
@@ -60,7 +62,6 @@ public:
      */
     ~thread_pool()
     {
-        cv.notify_all();
         wait_for_tasks();
         destroy_threads();
     }
@@ -85,9 +86,9 @@ public:
      *
      * @return The number of running tasks.
      */
-    ui32 get_tasks_running() const
+	ui64 get_tasks_running() const
     {
-        return tasks_total - (ui32)get_tasks_queued();
+        return (tasks_total - get_tasks_queued());
     }
 
     /**
@@ -95,7 +96,7 @@ public:
      *
      * @return The total number of tasks.
      */
-    ui32 get_tasks_total() const
+	ui64 get_tasks_total() const
     {
         return tasks_total;
     }
@@ -292,17 +293,40 @@ public:
         cv.notify_all();
         while (true)
         {
-            if (!paused)
-            {
-                if (tasks_total == 0)
-                    break;
-            }
-            else
-            {
-                if (get_tasks_running() == 0)
-                    break;
-            }
-            sleep_or_yield();
+			if (alive_threads_total == 0)
+				break;
+
+			// don't check the task queue when we've already shut down the pool. Just terminate those threads as these numbers
+			// won't be changing anymore anyway.
+			if (running)
+			{
+				if (!paused)
+				{
+					if (tasks_total == 0)
+						break;
+				} else
+				{
+					if (get_tasks_running() == 0)
+						break;
+				}
+			}
+			
+			{
+				// just keep screaming...
+				// Without this, in practice it turns out sometimes a thread (or more) remains stuck for a while...
+				//
+				// See also:
+				// - https://en.cppreference.com/w/cpp/thread/condition_variable/notify_all
+				// - https://stackoverflow.com/questions/38184549/not-all-threads-notified-of-condition-variable-notify-all
+				// where one of the answers says: "Finally, cv.notify_all() only notified currently waiting threads. If a thread shows up later, no dice."
+				// which is corroborated by the docs above: "Unblocks all threads currently waiting for *this." and then later:
+				// "This makes it impossible for notify_one() to, for example, be delayed and unblock a thread that started waiting just after the call to notify_one() was made."
+				// Ditto for notify_all() on that one, of course.
+				tesseract::tprintf("threads pending: %d\n", (int)alive_threads_total);
+				cv.notify_all();
+			}
+
+			sleep_or_yield();
         }
     }
 
@@ -319,7 +343,8 @@ public:
      * @brief The duration, in microseconds, that the worker function should sleep for when it cannot find any tasks in the queue. If set to 0, then instead of sleeping, the worker function will execute std::this_thread::yield() if there are no tasks in the queue. The default value is 1000.
      */
     ui32 sleep_duration = 1000;
-    std::condition_variable cv;
+
+	std::condition_variable cv;
     std::mutex cv_m;
 
 private:
@@ -374,10 +399,11 @@ private:
      * @brief Sleep for sleep_duration microseconds. If that variable is set to zero, yield instead.
      *
      */
-    void sleep_or_yield()
+    void sleep_or_yield(int factor = 1)
     {
-        if (sleep_duration)
-            std::this_thread::sleep_for(std::chrono::microseconds(sleep_duration));
+		auto t = sleep_duration * factor;
+        if (t > 0)
+            std::this_thread::sleep_for(std::chrono::microseconds(t));
         else
             std::this_thread::yield();
     }
@@ -387,20 +413,37 @@ private:
      */
     void worker()
     {
-        while (running)
-        {
-            std::function<void()> task;
-            if (!paused && pop_task(task))
-            {
-                task();
-                tasks_total--;
-            }
-            else
-            {
-                std::unique_lock<std::mutex> lock(cv_m);
-                cv.wait(lock);
-            }
-        }
+		try
+		{
+			alive_threads_total++;
+			while (running)
+			{
+				std::function<void()> task;
+				if (!paused && pop_task(task))
+				{
+					task();
+					tasks_total--;
+				} else
+				{
+					std::unique_lock<std::mutex> lock(cv_m);
+					cv.wait(lock);
+				}
+			}
+		}
+		catch (...)
+		{
+			// don't care that much no more. Still, try to log it.
+			std::exception_ptr p = std::current_exception();
+			try {
+				if (p) {
+					std::rethrow_exception(p);
+				}
+			}
+			catch (const std::exception& e) {
+				tesseract::tprintf("ERROR: thread::worker caught unhandled exception: %s.\nWARNING: The thread will terminate/abort now!\n", e.what());
+			}
+		}
+		alive_threads_total--;
     }
 
     // ============
@@ -435,7 +478,12 @@ private:
     /**
      * @brief An atomic variable to keep track of the total number of unfinished tasks - either still in the queue, or running in a thread.
      */
-    std::atomic<ui32> tasks_total = 0;
+    std::atomic<ui64> tasks_total = 0;
+
+	/**
+	 * @brief An atomic variable to keep track of the total number of activated threads - each is either waiting for a task or executing a task. That number is tracked by `tasks_total`.
+	 */
+	std::atomic<ui32> alive_threads_total = 0;
 };
 
 //                                     End class thread_pool                                     //
