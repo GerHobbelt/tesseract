@@ -14,6 +14,8 @@
 
 #define THREAD_POOL_VERSION "v2.0.0 (2021-08-14)"
 
+#include "tprintf.h"  // for tprintf
+
 #include <atomic>      // std::atomic
 #include <chrono>      // std::chrono
 #include <condition_variable> // std::condition_variable
@@ -321,7 +323,7 @@ public:
 				// which is corroborated by the docs above: "Unblocks all threads currently waiting for *this." and then later:
 				// "This makes it impossible for notify_one() to, for example, be delayed and unblock a thread that started waiting just after the call to notify_one() was made."
 				// Ditto for notify_all() on that one, of course.
-				fprintf(stderr, "threads pending: %d\n", (int)alive_threads_total);
+				tesseract::tprintf("threads pending: %d\n", (int)alive_threads_total);
 				cv.notify_all();
 			}
 
@@ -441,7 +443,7 @@ private:
 				}
 			}
 			catch (const std::exception& e) {
-				fprintf(stderr, "Caught exception: %s\n", e.what());
+				tesseract::tprintf("ERROR: thread::worker caught unhandled exception: %s.\nWARNING: The thread will terminate/abort now!\n", e.what());
 			}
 		}
 		alive_threads_total--;
