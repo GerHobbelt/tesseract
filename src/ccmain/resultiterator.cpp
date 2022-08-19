@@ -42,7 +42,7 @@ ResultIterator::ResultIterator(const LTRResultIterator &resit) : LTRResultIterat
   preserve_interword_spaces_ = false;
 
   auto *p = ParamUtils::FindParam<BoolParam>(
-      "preserve_interword_spaces", GlobalParams()->bool_params, tesseract_->params()->bool_params);
+      "preserve_interword_spaces", GlobalParams()->bool_params_c(), tesseract_->params()->bool_params_c());
   if (p != nullptr) {
     preserve_interword_spaces_ = (bool)(*p);
   }
@@ -782,8 +782,8 @@ void ResultIterator::AppendUTF8ParagraphText(std::string *text) const {
 
 bool ResultIterator::BidiDebug(int min_level) const {
   int debug_level = 1;
-  auto *p = ParamUtils::FindParam<IntParam>("bidi_debug", GlobalParams()->int_params,
-                                            tesseract_->params()->int_params);
+  auto *p = ParamUtils::FindParam<IntParam>("bidi_debug", GlobalParams()->int_params_c(),
+                                            tesseract_->params()->int_params_c());
   if (p != nullptr) {
     debug_level = (int32_t)(*p);
   }

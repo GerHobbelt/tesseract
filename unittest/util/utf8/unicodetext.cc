@@ -28,6 +28,9 @@
 #include "util/utf8/unilib.h"            // for IsInterchangeValid, etc
 #include "util/utf8/unilib_utf8_utils.h" // for OneCharLen
 
+#undef min
+#undef max
+
 static int CodepointDistance(const char *start, const char *end) {
   int n = 0;
   // Increment n on every non-trail-byte.
