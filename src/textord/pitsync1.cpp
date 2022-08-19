@@ -313,8 +313,8 @@ double check_pitch_sync(   // find segmentation
     //                      (segpt_it.mark_cycle_pt();!segpt_it.cycled_list();segpt_it.forward())
     //                      {
     //                              segpt=segpt_it.data();
-    //                              tprintf("At {}, (%x) cost={}, m={}, sq={},
-    //                              pred=%x\n",
+    //                              tprintf("At {}, ({}) cost={}, m={}, sq={},
+    //                              pred={}\n",
     //                                      segpt->position(),segpt,segpt->cost_function(),
     //                                      segpt->sum(),segpt->squares(),segpt->previous());
     //                      }

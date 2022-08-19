@@ -26,13 +26,13 @@ bool ValidateGrapheme::ConsumeGraphemeIfValid() {
     // Reject easily detected badly formed sequences.
     if (prev_cc == CharClass::kWhitespace && is_combiner) {
       if (report_errors_)
-		  tprintf("ERROR: Word started with a combiner:0x%x\n", ch);
+		  tprintf("ERROR: Word started with a combiner:{}\n", ch);
      return false;
     }
 #endif
     if (prev_cc == CharClass::kVirama && cc == CharClass::kVirama) {
       if (report_errors_) {
-        tprintf("ERROR: Two grapheme links in a row:0x%x 0x%x\n", prev_ch, ch);
+        tprintf("ERROR: Two grapheme links in a row:{} {}\n", prev_ch, ch);
       }
       return false;
     }
@@ -94,13 +94,13 @@ bool ValidateGrapheme::IsBadlyFormed(char32 prev_ch, char32 ch) {
   // Reject badly formed Indic vowels.
   if (IsBadlyFormedIndicVowel(prev_ch, ch)) {
     if (report_errors_) {
-      tprintf("ERROR: Badly formed Indic vowel sequence:0x%x 0x%x\n", prev_ch, ch);
+      tprintf("ERROR: Badly formed Indic vowel sequence:{} {}\n", prev_ch, ch);
     }
     return true;
   }
   if (IsBadlyFormedThai(prev_ch, ch)) {
     if (report_errors_) {
-      tprintf("ERROR: Badly formed Thai:0x%x 0x%x\n", prev_ch, ch);
+      tprintf("ERROR: Badly formed Thai:{} {}\n", prev_ch, ch);
     }
     return true;
   }

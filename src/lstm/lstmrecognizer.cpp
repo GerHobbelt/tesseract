@@ -235,7 +235,7 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
   if (dict_->FinishLoad()) {
     return true; // Success.
   }
-  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang %s!!\n", lang.c_str());
+  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang {}!!\n", lang);
   delete dict_;
   dict_ = nullptr;
   return false;

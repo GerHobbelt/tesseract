@@ -63,7 +63,7 @@ void BoxChar::GetDirection(int *num_rtl, int *num_ltr) const {
   if (uni_vector.empty()) {
     tprintf("ERROR: Illegal utf8 in boxchar string:{} = ", ch_.c_str());
     for (char c : ch_) {
-      tprintf(" 0x%x", c);
+      tprintf(" {}", c);
     }
     tprintf("\n");
     return;
@@ -375,7 +375,7 @@ std::string BoxChar::GetTesseractBoxStr(int height, const std::vector<BoxChar *>
       tprintf("ERROR: Call PrepareToWrite before WriteTesseractBoxFile!!\n");
       return "";
     }
-    int nbytes = snprintf(buffer, kMaxLineLength, "%s %d %d %d %d %d\n", boxe->ch_.c_str(), box->x,
+    int nbytes = snprintf(buffer, kMaxLineLength, "{} {} {} {} {} {}\n", boxe->ch_.c_str(), box->x,
                           height - box->y - box->h, box->x + box->w, height - box->y, boxe->page_);
     output.append(buffer, nbytes);
   }

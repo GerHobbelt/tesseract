@@ -861,7 +861,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   tprintf("ERROR: Encoding of string failed!\n");
   tprintf("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintf(" %x", cleaned[err_index++] & 0xff);
+    tprintf(" {}", cleaned[err_index++] & 0xff);
   }
   tprintf("\n");
   return false;

@@ -856,8 +856,8 @@ bool find_row_pitch(     // find lines
     }
   }
   if (textord_debug_pitch_metric) {
-    tprintf("Blk={}:Row={}:%c:p_iqr={}:g_iqr={}:dm_p_iqr={}:dm_g_iqr={}:{}:", block_index,
-            row_index, 'X', pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr,
+    tprintf("Blk={}:Row={}:{}:p_iqr={}:g_iqr={}:dm_p_iqr={}:dm_g_iqr={}:{}:", block_index,
+            row_index, "X", pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr,
             pitch_iqr > maxwidth && dm_pitch_iqr > maxwidth
                 ? "D"
                 : (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr ? "S" : "M"));

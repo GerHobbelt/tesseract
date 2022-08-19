@@ -480,7 +480,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
   char uch[UNICHAR_LEN];
   char kerned_uch[UNICHAR_LEN];
   int x_gap, x_gap_before, x_gap_after, num_kerned;
-  ASSERT_HOST(tfscanf(fontinfo_file, "%d\n", &num_unichars) == 1);
+  ASSERT_HOST(tfscanf(fontinfo_file, "{}\n", &num_unichars) == 1);
   FontInfo *fi = &fontinfo_table_.at(fontinfo_id);
   fi->init_spacing(unicharset_.size());
   FontSpacingInfo *spacing = nullptr;

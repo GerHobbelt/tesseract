@@ -75,9 +75,9 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
       default:
         xht = "UNKNOWN";
     }
-    tprintf("\nStopper:  {} (word=%c, case=%c, xht_ok={}=[{},{}])\n",
-            best_choice.unichar_string().c_str(), (is_valid_word ? 'y' : 'n'),
-            (is_case_ok ? 'y' : 'n'), xht, best_choice.min_x_height(), best_choice.max_x_height());
+    tprintf("\nStopper:  {} (word={}, case={}, xht_ok={}=[{},{}])\n",
+            best_choice.unichar_string().c_str(), (is_valid_word ? "y" : "n"),
+            (is_case_ok ? "y" : "n"), xht, best_choice.min_x_height(), best_choice.max_x_height());
   }
   // Do not accept invalid words in PASS1.
   if (reject_offset_ <= 0.0f && !is_valid_word) {
@@ -120,11 +120,11 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
   int WordSize;
 
   if (stopper_debug_level >= 1) {
-    tprintf("\nRejecter: {} (word=%c, case=%c, unambig=%c, multiple=%c)\n",
-            word->best_choice->debug_string().c_str(), (valid_word(*word->best_choice) ? 'y' : 'n'),
-            (case_ok(*word->best_choice) ? 'y' : 'n'),
-            word->best_choice->dangerous_ambig_found() ? 'n' : 'y',
-            word->best_choices.singleton() ? 'n' : 'y');
+    tprintf("\nRejecter: {} (word={}, case={}, unambig={}, multiple={})\n",
+            word->best_choice->debug_string().c_str(), (valid_word(*word->best_choice) ? "y" : "n"),
+            (case_ok(*word->best_choice) ? "y" : "n"),
+            word->best_choice->dangerous_ambig_found() ? "n" : "y",
+            word->best_choices.singleton() ? "n" : "y");
   }
 
   if (word->best_choice->empty() || !word->best_choices.singleton()) {

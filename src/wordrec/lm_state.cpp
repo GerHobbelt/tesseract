@@ -32,7 +32,7 @@ void ViterbiStateEntry::Print(const char *msg) const {
   tprintf(" with ratings_sum={} length={} cost={}", this->ratings_sum, this->length,
           this->cost);
   if (this->top_choice_flags) {
-    tprintf(" top_choice_flags=0x%x", this->top_choice_flags);
+    tprintf(" top_choice_flags={}", this->top_choice_flags);
   }
   if (!this->Consistent()) {
     tprintf(" inconsistent=(punc {} case {} chartype {} script {} font {})",

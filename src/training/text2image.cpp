@@ -312,7 +312,7 @@ static void ExtractFontProperties(const std::string &utf8_text, StringRenderer *
         ++ok_count;
       }
       const std::string &ch1 = boxes[b + 1]->ch();
-      tlog(3, "%s%s\n", ch0.c_str(), ch1.c_str());
+      tlog(3, "{}{}\n", ch0.c_str(), ch1.c_str());
       spacing_map_it1 = spacing_map.find(ch1);
       if (spacing_map_it1 == spacing_map.end() &&
           render->font().GetSpacingProperties(ch1, &x_bearing, &x_advance)) {
@@ -559,7 +559,7 @@ static int Main() {
   if (strncmp(src_utf8.c_str(), "\xef\xbb\xbf", 3) == 0) {
     src_utf8.erase(0, 3);
   }
-  tlog(1, "Render string of size %zu\n", src_utf8.length());
+  tlog(1, "Render string of size {}\n", src_utf8.length());
 
   if (FLAGS_render_ngrams || FLAGS_only_extract_font_properties) {
     // Try to preserve behavior of old text2image by expanding inter-word
@@ -617,7 +617,7 @@ static int Main() {
         rand_utf8.append(kSeparator);
       }
     }
-    tlog(1, "Rendered ngram string of size %zu\n", rand_utf8.length());
+    tlog(1, "Rendered ngram string of size {}\n", rand_utf8.length());
     src_utf8.swap(rand_utf8);
   }
   if (FLAGS_only_extract_font_properties) {
@@ -644,7 +644,7 @@ static int Main() {
     for (size_t offset = 0;
          offset < strlen(to_render_utf8) && (FLAGS_max_pages == 0 || page_num < FLAGS_max_pages);
          ++im, ++page_num) {
-      tlog(1, "Starting page %d\n", im);
+      tlog(1, "Starting page {}\n", im);
       Image pix = nullptr;
       if (FLAGS_find_fonts) {
         offset += render.RenderAllFontsToImage(FLAGS_min_coverage, to_render_utf8 + offset,

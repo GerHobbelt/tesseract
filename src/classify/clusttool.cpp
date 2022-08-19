@@ -117,7 +117,7 @@ uint16_t ReadSampleSize(TFile *fp) {
   const int kMaxLineSize = 100;
   char line[kMaxLineSize];
   ASSERT_HOST(fp->FGets(line, kMaxLineSize) != nullptr);
-  ASSERT_HOST(sscanf(line, "%d", &SampleSize) == 1);
+  ASSERT_HOST(sscanf(line, "{}", &SampleSize) == 1);
   ASSERT_HOST(SampleSize >= 0 && SampleSize <= MAXSAMPLESIZE);
   return SampleSize;
 }

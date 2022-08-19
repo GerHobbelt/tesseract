@@ -591,7 +591,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
   if (language_model_debug_level > 1) {
     tprintf(
         "AddViterbiStateEntry for unichar {} rating={}"
-        " certainty={} top_choice_flags=0x%x",
+        " certainty={} top_choice_flags={}",
         dict_->getUnicharset().id_to_unichar(b->unichar_id()), b->rating(), b->certainty(),
         top_choice_flags);
     if (language_model_debug_level > 5) {
@@ -792,7 +792,7 @@ void LanguageModel::GenerateTopChoiceInfo(ViterbiStateEntry *new_vse,
     new_vse->top_choice_flags &= ~(vit.data()->top_choice_flags);
   }
   if (language_model_debug_level > 2) {
-    tprintf("GenerateTopChoiceInfo: top_choice_flags=0x%x\n", new_vse->top_choice_flags);
+    tprintf("GenerateTopChoiceInfo: top_choice_flags={}\n", new_vse->top_choice_flags);
   }
 }
 

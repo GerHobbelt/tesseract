@@ -1882,7 +1882,7 @@ void pre_associate_blobs( // make rough chars
       //                      if (testing_on && textord_show_final_blobs)
       //                      {
       //                              tprintf("Blob at ({},{})->({},{}),
-      //                              addr=%x, count={}\n",
+      //                              addr={}, count={}\n",
       //                                      blob_box.left(),blob_box.bottom(),
       //                                      blob_box.right(),blob_box.top(),
       //                                      (void*)blob,blob_it.length());

@@ -1862,13 +1862,13 @@ static char kBlobTypes[BRT_COUNT + 1] = "NHSRIUVT";
 void ColPartition::Print() const {
   int y = MidY();
   tprintf(
-      "ColPart:%c(M{}-%c{}-B{}/{},{}/{})->({}B-{}%c-{}M/{},{}/{})"
-      " w-ok={}, v-ok={}, type={}%c{}, fc={}, lc={}, boxes={}"
+      "ColPart:{}(M{}-{}{}-B{}/{},{}/{})->({}B-{}{}{}M/{},{}/{})"
+      " w-ok={}, v-ok={}, type={}{}{}, fc={}, lc={}, boxes={}"
       " ts={} bs={} ls={} rs={}\n",
-      boxes_.empty() ? 'E' : ' ', left_margin_, left_key_tab_ ? 'T' : 'B',
+      boxes_.empty() ? "E" : " ", left_margin_, left_key_tab_ ? "T" : "B",
       LeftAtY(y), bounding_box_.left(), median_left_, bounding_box_.bottom(),
       median_bottom_, bounding_box_.right(), RightAtY(y),
-      right_key_tab_ ? 'T' : 'B', right_margin_, median_right_,
+      right_key_tab_ ? "T" : "B", right_margin_, median_right_,
       bounding_box_.top(), median_top_, good_width_, good_column_, type_,
       kBlobTypes[blob_type_], flow_, first_column_, last_column_,
       boxes_.length(), space_above_, space_below_, space_to_left_,

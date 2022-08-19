@@ -231,7 +231,7 @@ bool PangoFontInfo::CoversUTF8Text(const char *utf8_text, int byte_length) const
       char tmp[5];
       int len = it.get_utf8(tmp);
       tmp[len] = '\0';
-      tlog(2, "'%s' (U+%x) not covered by font\n", tmp, *it);
+      tlog(2, "'{}' (U+{}) not covered by font\n", tmp, *it);
       pango_coverage_unref(coverage);
       g_object_unref(font);
       return false;
@@ -296,7 +296,7 @@ int PangoFontInfo::DropUncoveredChars(std::string *utf8_text) const {
       if (TLOG_IS_ON(2)) {
         UNICHAR unichar(unicode);
         char *str = unichar.utf8_str();
-        tlog(2, "'%s' (U+%x) not covered by font\n", str, unicode);
+        tlog(2, "'{}' (U+{}) not covered by font\n", str, unicode);
         delete[] str;
       }
       ++num_dropped_chars;
@@ -407,7 +407,7 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
     if (TLOG_IS_ON(2)) {
       PangoFontDescription *desc = pango_font_describe(font);
       char *desc_str = pango_font_description_to_string(desc);
-      tlog(2, "Desc of font in run: %s\n", desc_str);
+      tlog(2, "Desc of font in run: {}\n", desc_str);
       g_free(desc_str);
       pango_font_description_free(desc);
     }
@@ -496,17 +496,17 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
   }
   if (selected_font == nullptr) {
     pango_font_description_free(desc);
-    tlog(4, "** Font '%s' failed to load from font map!\n", input_query_desc);
+    tlog(4, "** Font '{}' failed to load from font map!\n", input_query_desc);
     return false;
   }
   PangoFontDescription *selected_desc = pango_font_describe(selected_font);
 
   bool equal = pango_font_description_equal(desc, selected_desc);
-  tlog(3, "query weight = %d \t selected weight =%d\n", pango_font_description_get_weight(desc),
+  tlog(3, "query weight = {} \t selected weight ={}\n", pango_font_description_get_weight(desc),
        pango_font_description_get_weight(selected_desc));
 
   char *selected_desc_str = pango_font_description_to_string(selected_desc);
-  tlog(2, "query_desc: '%s' Selected: '%s'\n", query_desc.c_str(), selected_desc_str);
+  tlog(2, "query_desc: '{}' Selected: '{}'\n", query_desc.c_str(), selected_desc_str);
   if (!equal && best_match != nullptr) {
     *best_match = selected_desc_str;
     // Clip the ending ' 0' if there is one. It seems that, if there is no
@@ -521,7 +521,7 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
   g_object_unref(selected_font);
   pango_font_description_free(desc);
   if (!equal)
-    tlog(4, "** Font '%s' failed pango_font_description_equal!\n", input_query_desc);
+    tlog(4, "** Font '{}' failed pango_font_description_equal!\n", input_query_desc);
   return equal;
 }
 
@@ -548,7 +548,7 @@ const std::vector<std::string> &FontUtils::ListAvailableFonts() {
   ListFontFamilies(&families, &n_families);
   for (int i = 0; i < n_families; ++i) {
     const char *family_name = pango_font_family_get_name(families[i]);
-    tlog(2, "Listing family %s\n", family_name);
+    tlog(2, "Listing family {}\n", family_name);
     if (ShouldIgnoreFontFamilyName(family_name)) {
       continue;
     }
@@ -655,12 +655,12 @@ std::string FontUtils::BestFonts(const std::unordered_map<char32, int64_t> &ch_m
     int raw_score = raw_scores[i];
     if ((score >= least_good_enough && raw_score >= least_raw_enough) || score >= override_enough) {
       fonts->push_back(std::make_pair(font_names[i].c_str(), font_flags[i]));
-      tlog(1, "OK font %s = %.4f%%, raw = %d = %.2f%%\n", font_names[i].c_str(),
+      tlog(1, "OK font {} = {}%, raw = {} = {}%%\n", font_names[i],
            100.0 * score / most_ok_chars, raw_score, 100.0 * raw_score / best_raw_score);
       font_list += font_names[i];
       font_list += "\n";
     } else if (score >= least_good_enough || raw_score >= least_raw_enough) {
-      tlog(1, "Runner-up font %s = %.4f%%, raw = %d = %.2f%%\n", font_names[i].c_str(),
+      tlog(1, "Runner-up font {} = {}%, raw = {} = {}%%\n", font_names[i],
            100.0 * score / most_ok_chars, raw_score, 100.0 * raw_score / best_raw_score);
     }
   }
@@ -686,7 +686,7 @@ bool FontUtils::SelectFont(const char *utf8_word, const int utf8_len,
   for (const auto &all_font : all_fonts) {
     PangoFontInfo font;
     std::vector<std::string> found_graphemes;
-    ASSERT_HOST_MSG(font.ParseFontDescriptionName(all_font), "Could not parse font desc name %s\n",
+    ASSERT_HOST_MSG(font.ParseFontDescriptionName(all_font), "Could not parse font desc name {}\n",
                     all_font.c_str());
     if (font.CanRenderString(utf8_word, utf8_len, &found_graphemes)) {
       if (graphemes) {

@@ -394,7 +394,7 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
         prevCode = " ";
       }
       if (uids) {
-        tprintf("%x(|){}(>)%x(|){}\n", intPrevCode, prevScore, intCode,
+        tprintf("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode,
                 node->score);
       } else {
         tprintf("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);

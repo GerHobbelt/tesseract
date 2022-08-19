@@ -229,7 +229,7 @@ bool IsValidCodepoint(const char32 ch) {
 }
 
 bool IsWhitespace(const char32 ch) {
-  ASSERT_HOST_MSG(IsValidCodepoint(ch), "Invalid Unicode codepoint: 0x%x\n", ch);
+  ASSERT_HOST_MSG(IsValidCodepoint(ch), "Invalid Unicode codepoint: {}\n", ch);
   return u_isUWhiteSpace(static_cast<UChar32>(ch));
 }
 
