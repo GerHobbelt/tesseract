@@ -756,10 +756,10 @@ void StringRenderer::ComputeClusterBoxes() {
     tlog(2, "[{} {}], {}, {} : start_byte={} end_byte={} : '{}'\n", cluster_rect.x, cluster_rect.y,
          cluster_rect.width, cluster_rect.height, start_byte_index, end_byte_index,
          cluster_text.c_str());
-    ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:%s  start_byte_index:%d\n",
-                    cluster_text.c_str(), start_byte_index);
-    ASSERT_HOST_MSG(cluster_rect.height, "cluster_text:%s  start_byte_index:%d\n",
-                    cluster_text.c_str(), start_byte_index);
+    ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:{}  start_byte_index:{}\n",
+                    cluster_text, start_byte_index);
+    ASSERT_HOST_MSG(cluster_rect.height, "cluster_text:{}  start_byte_index:{}\n",
+                    cluster_text, start_byte_index);
     if (box_padding_) {
       cluster_rect.x = std::max(0, cluster_rect.x - box_padding_);
       cluster_rect.width += 2 * box_padding_;
