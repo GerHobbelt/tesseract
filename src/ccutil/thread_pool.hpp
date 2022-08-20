@@ -29,6 +29,17 @@
 #include <thread>      // std::this_thread, std::thread
 #include <type_traits> // std::common_type_t, std::decay_t, std::enable_if_t, std::is_void_v, std::invoke_result_t
 #include <utility>     // std::move
+#if defined(_MSC_VER)
+// see also https://docs.microsoft.com/en-us/cpp/cpp/try-except-statement?view=msvc-170 et al.
+#include <winnt.h>
+#include <excpt.h>
+#include <exception>
+#include <stdexcept>
+#pragma warning(push)
+#pragma warning(disable: 4005) // warning C4005: macro redefinition
+#include <ntstatus.h> // STATUS_POSSIBLE_DEADLOCK
+#pragma warning(pop)
+#endif
 
 // ============================================================================================= //
 //                                    Begin class thread_pool                                    //
@@ -290,6 +301,7 @@ public:
      */
     void wait_for_tasks()
     {
+		int sleep_factor = 1;
         cv.notify_all();
         while (true)
         {
@@ -310,23 +322,54 @@ public:
 						break;
 				}
 			}
-			
+			else
 			{
-				// just keep screaming...
-				// Without this, in practice it turns out sometimes a thread (or more) remains stuck for a while...
-				//
-				// See also:
-				// - https://en.cppreference.com/w/cpp/thread/condition_variable/notify_all
-				// - https://stackoverflow.com/questions/38184549/not-all-threads-notified-of-condition-variable-notify-all
-				// where one of the answers says: "Finally, cv.notify_all() only notified currently waiting threads. If a thread shows up later, no dice."
-				// which is corroborated by the docs above: "Unblocks all threads currently waiting for *this." and then later:
-				// "This makes it impossible for notify_one() to, for example, be delayed and unblock a thread that started waiting just after the call to notify_one() was made."
-				// Ditto for notify_all() on that one, of course.
-				tesseract::tprintf("threads pending: {}\n", (int)alive_threads_total);
-				cv.notify_all();
-			}
+				bool go = true;
+				for (ui32 i = 0; i < thread_count; i++)
+				{
+					// This is the real check that also detects when a thread has been swiftly terminated
+					// WITHOUT AN EXCEPTION OR ERROR when the application has invoked `exit()` to
+					// terminate the current run.
+					//
+					// https://stackoverflow.com/questions/33943601/check-if-stdthread-is-still-running
+					//
+					// While some say thread.joinable() is not dependable when used once, we don't mind
+					// as we'll be looping through here anyway until all threads check out as such.
+					//
+					// Which is also why we keep firing those `cv.notify_all()` notifications further below:
+					// together they guarantee the threads will be cleaned up properly, assuming none of
+					// them is stuck forever in a task() they just happen to be executing...
+					bool terminated = threads[i].joinable();
+					go &= terminated;
+				}
+				if (go)
+					break;
 
-			sleep_or_yield();
+				if (sleep_factor < 1000)
+				{
+					sleep_factor++;
+				}
+			}
+			
+			int alive_count = alive_threads_total;
+			int a = get_tasks_running();
+			int b = tasks_total;
+
+			// just keep screaming...
+			// Without this, in practice it turns out sometimes a thread (or more) remains stuck for a while...
+			//
+			// See also:
+			// - https://en.cppreference.com/w/cpp/thread/condition_variable/notify_all
+			// - https://stackoverflow.com/questions/38184549/not-all-threads-notified-of-condition-variable-notify-all
+			// where one of the answers says: "Finally, cv.notify_all() only notified currently waiting threads. If a thread shows up later, no dice."
+			// which is corroborated by the docs above: "Unblocks all threads currently waiting for *this." and then later:
+			// "This makes it impossible for notify_one() to, for example, be delayed and unblock a thread that started waiting just after the call to notify_one() was made."
+			// Ditto for notify_all() on that one, of course.
+			cv.notify_all();
+
+			tesseract::tprintf("threads pending: {}, tasks running: {}, tasks total: {}\n", alive_count, a, b);
+
+			sleep_or_yield(sleep_factor);
         }
     }
 
@@ -411,11 +454,10 @@ private:
     /**
      * @brief A worker function to be assigned to each thread in the pool. Continuously pops tasks out of the queue and executes them, as long as the atomic variable running is set to true.
      */
-    void worker()
-    {
+	void __worker()
+	{
 		try
 		{
-			alive_threads_total++;
 			while (running)
 			{
 				std::function<void()> task;
@@ -443,10 +485,137 @@ private:
 				tesseract::tprintf("ERROR: thread::worker caught unhandled exception: {}.\nWARNING: The thread will terminate/abort now!\n", e.what());
 			}
 		}
-		alive_threads_total--;
-    }
+	}
 
-    // ============
+// MSVC supports hardware SEH:
+#if defined(_MSC_VER)
+
+	struct _EXCEPTION_POINTERS __ex_info = {0};
+
+	int ex_filter(unsigned long code, struct _EXCEPTION_POINTERS *info)
+	{
+		if (info != NULL)
+		{
+			__ex_info = *info;
+		}
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
+
+#endif
+
+	void worker()
+	{
+		alive_threads_total++;
+
+// MSVC supports hardware SEH:
+#if defined(_MSC_VER)
+
+		__try
+		{
+			__try
+			{
+				__worker();
+			}
+			__finally
+			{
+				alive_threads_total--;
+				tesseract::tprintf("%s: thread::worker unwinding; termination is %s\n", AbnormalTermination() ? "ERROR" : "INFO", AbnormalTermination() ? "ABNORMAL" : "normal");
+			}
+		}
+		__except (ex_filter(GetExceptionCode(), GetExceptionInformation()))
+		{
+			struct _EXCEPTION_POINTERS ex_info = __ex_info;
+			auto code = GetExceptionCode();
+#if 0
+			std::exception_ptr p = std::current_exception();
+#else
+			void *p = ex_info.ExceptionRecord->ExceptionAddress;
+#endif
+
+#define select_and_report(x)																	\
+	case x:																						\
+		tesseract::tprintf("ERROR: thread::worker unwinding; termination code is %s, current_exception_ptr = %p\n", #x, p);
+
+			switch (code)
+			{
+			default:
+				tesseract::tprintf("ERROR: thread::worker unwinding; termination code is %s\n", "**UNKNOWN**");
+				break;
+
+				select_and_report(STILL_ACTIVE)
+					break;
+				select_and_report(EXCEPTION_ACCESS_VIOLATION)
+					break;
+				select_and_report(EXCEPTION_DATATYPE_MISALIGNMENT)
+					break;
+				select_and_report(EXCEPTION_BREAKPOINT)
+					break;
+				select_and_report(EXCEPTION_SINGLE_STEP)
+					break;
+				select_and_report(EXCEPTION_ARRAY_BOUNDS_EXCEEDED)
+					break;
+				select_and_report(EXCEPTION_FLT_DENORMAL_OPERAND)
+					break;
+				select_and_report(EXCEPTION_FLT_DIVIDE_BY_ZERO)
+					break;
+				select_and_report(EXCEPTION_FLT_INEXACT_RESULT)
+					break;
+				select_and_report(EXCEPTION_FLT_INVALID_OPERATION)
+					break;
+				select_and_report(EXCEPTION_FLT_OVERFLOW)
+					break;
+				select_and_report(EXCEPTION_FLT_STACK_CHECK)
+					break;
+				select_and_report(EXCEPTION_FLT_UNDERFLOW)
+					break;
+				select_and_report(EXCEPTION_INT_DIVIDE_BY_ZERO)
+					break;
+				select_and_report(EXCEPTION_INT_OVERFLOW)
+					break;
+				select_and_report(EXCEPTION_PRIV_INSTRUCTION)
+					break;
+				select_and_report(EXCEPTION_IN_PAGE_ERROR)
+					break;
+				select_and_report(EXCEPTION_ILLEGAL_INSTRUCTION)
+					break;
+				select_and_report(EXCEPTION_NONCONTINUABLE_EXCEPTION)
+					break;
+				select_and_report(EXCEPTION_STACK_OVERFLOW)
+					break;
+				select_and_report(EXCEPTION_INVALID_DISPOSITION)
+					break;
+				select_and_report(EXCEPTION_GUARD_PAGE)
+					break;
+				select_and_report(EXCEPTION_INVALID_HANDLE)
+					break;
+				select_and_report(EXCEPTION_POSSIBLE_DEADLOCK)
+					break;
+				select_and_report(CONTROL_C_EXIT)
+					break;
+			}
+
+#if 0
+			if (p)
+			{
+				std::rethrow_exception(p);
+			}
+#endif
+
+			// TODO:
+			// - RaiseException https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-raiseexception
+			// - SetThreadErrorMode https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-setthreaderrormode
+		}
+
+#else
+
+		__worker();
+		alive_threads_total--;
+
+#endif
+
+	}
+
+	// ============
     // Private data
     // ============
 
