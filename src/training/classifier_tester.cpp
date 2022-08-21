@@ -57,7 +57,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
     }
   }
   if (classifier == CN_COUNT) {
-    fprintf(stderr, "Invalid classifier name:%s\n", FLAGS_classifier.c_str());
+    tprintf("ERROR: Invalid classifier name:{}\n", FLAGS_classifier.c_str());
     return nullptr;
   }
 
@@ -85,7 +85,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   } else if (classifier == CN_FULL) {
     shape_classifier = new tesseract::TessClassifier(false, classify);
   }
-  tprintf("Testing classifier %s:\n", classifer_name);
+  tprintf("Testing classifier {}:\n", classifer_name);
   return shape_classifier;
 }
 
@@ -123,7 +123,7 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
   tesseract::ShapeClassifier *shape_classifier =
       InitializeClassifier(FLAGS_classifier.c_str(), trainer->unicharset(), argc, argv, &api);
   if (shape_classifier == nullptr) {
-    fprintf(stderr, "Classifier init failed!:%s\n", FLAGS_classifier.c_str());
+    tprintf("ERROR: Classifier init failed!:{}\n", FLAGS_classifier.c_str());
     return EXIT_FAILURE;
   }
 
@@ -145,7 +145,7 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
 
 TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
 {
-	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
 	return 1;
 }
 

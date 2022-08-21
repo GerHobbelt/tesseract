@@ -417,14 +417,14 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
 
       if ((garbage_level != G_NEVER_CRUNCH) && (terrible_word_crunch(word, garbage_level))) {
         if (crunch_debug > 0) {
-          tprintf("T CRUNCHING: \"{}\"\n", word->best_choice->unichar_string().c_str());
+          tprintf("T CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
         }
         word->unlv_crunch_mode = CR_KEEP_SPACE;
         if (prev_potential_marked) {
           while (copy_it.word() != word) {
             if (crunch_debug > 0) {
               tprintf("P1 CRUNCHING: \"{}\"\n",
-                      copy_it.word()->best_choice->unichar_string().c_str());
+                      copy_it.word()->best_choice->unichar_string());
             }
             copy_it.word()->unlv_crunch_mode = CR_KEEP_SPACE;
             copy_it.forward();
@@ -436,14 +436,14 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
                  (potential_word_crunch(word, garbage_level, ok_dict_word))) {
         if (found_terrible_word) {
           if (crunch_debug > 0) {
-            tprintf("P2 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string().c_str());
+            tprintf("P2 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
           }
           word->unlv_crunch_mode = CR_KEEP_SPACE;
         } else if (!prev_potential_marked) {
           copy_it = page_res_it;
           prev_potential_marked = true;
           if (crunch_debug > 1) {
-            tprintf("P3 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string().c_str());
+            tprintf("P3 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
           }
         }
       } else {
@@ -451,7 +451,7 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
         // Forget earlier potential crunches
         prev_potential_marked = false;
         if (crunch_debug > 2) {
-          tprintf("NO CRUNCH: \"{}\"\n", word->best_choice->unichar_string().c_str());
+          tprintf("NO CRUNCH: \"{}\"\n", word->best_choice->unichar_string());
         }
       }
     }

@@ -127,7 +127,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       break;
 
     default:
-      tprintf("ERROR: Cannot convert RAW image to Pix with bpp = %d\n", bpp);
+      tprintf("ERROR: Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
 
   SetImage(pix, angle);
@@ -426,7 +426,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   bool thresholding_debug;
   api->GetBoolVariable("thresholding_debug", &thresholding_debug);
   if (thresholding_debug) {
-    tprintf("\nimage width: %d  height: %d  ppi: %d\n", pix_w, pix_h, yres_);
+    tprintf("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   if (method == ThresholdMethod::Sauvola) {
@@ -457,7 +457,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     kfactor = std::max(0.0, kfactor);
 
     if (thresholding_debug) {
-      tprintf("window size: %d  kfactor: %.3f  nx:%d  ny: %d\n", window_size, kfactor, nx, ny);
+      tprintf("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
@@ -490,7 +490,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     api->GetDoubleVariable("thresholding_score_fraction", &score_fraction);
 
     if (thresholding_debug) {
-      tprintf("tile size: %d  smooth_size: %d  score_fraction: %.2f\n", tile_size, smooth_size, score_fraction);
+      tprintf("tile size: {}  smooth_size: {}  score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
@@ -532,7 +532,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
 /// Returns false on error.
 bool ImageThresholder::ThresholdToPix(Image *pix) {
   if (image_width_ > INT16_MAX || image_height_ > INT16_MAX) {
-    tprintf("ERROR: Image too large: (%d, %d)\n", image_width_, image_height_);
+    tprintf("ERROR: Image too large: ({}, {})\n", image_width_, image_height_);
     return false;
   }
   if (pix_channels_ == 0) {

@@ -357,7 +357,7 @@ static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
     if (bbox->left_tab_type() == TT_MAYBE_ALIGNED) {
       const TBOX &box = bbox->bounding_box();
       if (AlignedBlob::WithinTestRegion(2, box.left(), box.bottom())) {
-        tprintf("Finding line vector starting at bbox (%d,%d)\n", box.left(), box.bottom());
+        tprintf("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
       TabVector *vector =
@@ -464,7 +464,7 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
   int max_line_width = resolution / kThinLineFraction;
   int min_line_length = resolution / kMinLineLengthFraction;
   if (pixa_display != nullptr) {
-    tprintf("Image resolution = %d, max line width = %d, min length=%d\n", resolution,
+    tprintf("Image resolution = {}, max line width = {}, min length={}\n", resolution,
             max_line_width, min_line_length);
   }
   int closing_brick = max_line_width / 3;

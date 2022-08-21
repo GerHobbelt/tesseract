@@ -78,7 +78,7 @@ int Dawg::check_for_words(const char *filename, const UNICHARSET &unicharset,
 
   word_file = fopen(filename, "r");
   if (word_file == nullptr) {
-    tprintf("ERROR: Could not open file %s\n", filename);
+    tprintf("ERROR: Could not open file {}\n", filename);
     ASSERT_HOST(word_file);
   }
 
@@ -88,17 +88,17 @@ int Dawg::check_for_words(const char *filename, const UNICHARSET &unicharset,
     if (word.length() > 0 && !word.contains_unichar_id(INVALID_UNICHAR_ID)) {
       if (!match_words(&word, 0, 0,
                        enable_wildcard ? wildcard : INVALID_UNICHAR_ID)) {
-        tprintf("WARNING: Missing word: %s\n", string);
+        tprintf("WARNING: Missing word: {}\n", string);
         ++misses;
       }
     } else {
-      tprintf("ERROR: Failed to create a valid word from %s\n", string);
+      tprintf("ERROR: Failed to create a valid word from {}\n", string);
     }
   }
   fclose(word_file);
   // Make sure the user sees this with fprintf instead of tprintf.
   if (debug_level_) {
-    tprintf("Number of lost words=%d\n", misses);
+    tprintf("Number of lost words={}\n", misses);
   }
   return misses;
 }
@@ -321,7 +321,7 @@ bool SquishedDawg::read_squished_dawg(TFile *file) {
     return false;
   }
   if (magic != kDawgMagicNumber) {
-    tprintf("ERROR: Bad magic number on dawg: %d vs %d\n", magic, kDawgMagicNumber);
+    tprintf("ERROR: Bad magic number on dawg: {} vs {}\n", magic, kDawgMagicNumber);
     return false;
   }
 
@@ -340,8 +340,8 @@ bool SquishedDawg::read_squished_dawg(TFile *file) {
     return false;
   }
   if (debug_level_ > 2) {
-    tprintf("type: %d lang: %s perm: %d unicharset_size: %d num_edges: %d\n",
-            type_, lang_.c_str(), perm_, unicharset_size_, num_edges_);
+    tprintf("type: {} lang: {} perm: {} unicharset_size: {} num_edges: {}\n",
+            type_, lang_, perm_, unicharset_size_, num_edges_);
     for (EDGE_REF edge = 0; edge < num_edges_; ++edge) {
       print_edge(edge);
     }
@@ -423,8 +423,8 @@ bool SquishedDawg::write_squished_dawg(TFile *file) {
   }
 
   if (debug_level_) {
-    tprintf("%d nodes in DAWG\n", node_count);
-    tprintf("%d edges in DAWG\n", num_edges);
+    tprintf("{} nodes in DAWG\n", node_count);
+    tprintf("{} edges in DAWG\n", num_edges);
   }
 
   for (edge = 0; edge < num_edges_; edge++) {

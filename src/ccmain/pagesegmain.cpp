@@ -174,7 +174,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   
   if ( max_page_gradient_recognize != 100 && abs(osr->gradient) > abs(max_page_gradient_recognize) ) {
     tprintf("Returning early due to high page gradient.\n");
-    tprintf("Page Gradient: %.6f\n", osr->gradient);
+    tprintf("Page Gradient: {}\n", osr->gradient);
     return -1; 
   }
   return auto_page_seg_ret_val;
@@ -332,7 +332,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
     if (res > estimated_resolution && res < kMaxCredibleResolution) {
       estimated_resolution = res;
-      tprintf("Estimating resolution as %d\n", estimated_resolution);
+      tprintf("Estimating resolution as {}\n", estimated_resolution);
     }
   }
 
@@ -400,14 +400,14 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         if (!cjk && !vertical_text && osd_orientation == 2) {
           // upside down latin text is improbable with such a weak margin.
           tprintf(
-              "OSD: Weak margin (%.2f), horiz textlines, not CJK: "
+              "OSD: Weak margin ({}), horiz textlines, not CJK: "
               "Don't rotate.\n",
               osd_margin);
           osd_orientation = 0;
         } else {
           tprintf(
-              "OSD: Weak margin (%.2f) for %d blob text block, "
-              "but using orientation anyway: %d\n",
+              "OSD: Weak margin ({}) for {} blob text block, "
+              "but using orientation anyway: {}\n",
               osd_margin, osd_blobs.length(), osd_orientation);
         }
       }

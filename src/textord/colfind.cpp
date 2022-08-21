@@ -257,7 +257,7 @@ void ColumnFinder::CorrectOrientation(TO_BLOCK *block, bool vertical_text_lines,
     stroke_width_->CorrectForRotation(rerotate_, &part_grid_);
   }
   if (textord_debug_tabfind) {
-    tprintf("Vertical=%d, orientation=%d, final rotation=(%f, %f)+(%f,%f)\n", vertical_text_lines,
+    tprintf("Vertical={}, orientation={}, final rotation=({}, {})+({},{})\n", vertical_text_lines,
             recognition_rotation, rotation_.x(), rotation_.y(), text_rotation_.x(),
             text_rotation_.y());
   }
@@ -469,7 +469,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     TransformToBlocks(blocks, to_blocks);
   }
   if (textord_debug_tabfind) {
-    tprintf("Found %d blocks, %d to_blocks\n", blocks->length(), to_blocks->length());
+    tprintf("Found {} blocks, {} to_blocks\n", blocks->length(), to_blocks->length());
   }
 
 #ifndef GRAPHICS_DISABLED
@@ -659,7 +659,7 @@ void ColumnFinder::ImproveColumnCandidates(PartSetVector *src_sets, PartSetVecto
 // Prints debug information on the column candidates.
 void ColumnFinder::PrintColumnCandidates(const char *title) {
   int set_size = column_sets_.size();
-  tprintf("Found %d %s:\n", set_size, title);
+  tprintf("Found {} {}:\n", set_size, title);
   if (textord_debug_tabfind >= 3) {
     for (int i = 0; i < set_size; ++i) {
       ColPartitionSet *column_set = column_sets_.at(i);
@@ -726,19 +726,19 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
   int start, end;
   while (BiggestUnassignedRange(set_count, any_columns_possible, &start, &end)) {
     if (textord_debug_tabfind >= 2) {
-      tprintf("Biggest unassigned range = %d- %d\n", start, end);
+      tprintf("Biggest unassigned range = {}- {}\n", start, end);
     }
     // Find the modal column_set_id in the range.
     int column_set_id = RangeModalColumnSet(column_set_costs, assigned_costs, start, end);
     if (textord_debug_tabfind >= 2) {
-      tprintf("Range modal column id = %d\n", column_set_id);
+      tprintf("Range modal column id = {}\n", column_set_id);
       column_sets_.at(column_set_id)->Print();
     }
     // Now find the longest run of the column_set_id in the range.
     ShrinkRangeToLongestRun(column_set_costs, assigned_costs, any_columns_possible, column_set_id,
                             &start, &end);
     if (textord_debug_tabfind >= 2) {
-      tprintf("Shrunk range = %d- %d\n", start, end);
+      tprintf("Shrunk range = {}- {}\n", start, end);
     }
     // Extend the start and end past the longest run, while there are
     // only small gaps in compatibility that can be overcome by larger
@@ -750,7 +750,7 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
                              1, set_count, &end);
     ++end;
     if (textord_debug_tabfind) {
-      tprintf("Column id %d applies to range = %d - %d\n", column_set_id, start, end);
+      tprintf("Column id {} applies to range = {} - {}\n", column_set_id, start, end);
     }
     // Assign the column to the range, which now may overlap with other ranges.
     AssignColumnToRange(column_set_id, start, end, column_set_costs, assigned_costs);
@@ -873,7 +873,7 @@ void ColumnFinder::ExtendRangePastSmallGaps(int **column_set_costs, const int *a
                                             const bool *any_columns_possible, int column_set_id,
                                             int step, int end, int *start) {
   if (textord_debug_tabfind > 2) {
-    tprintf("Starting expansion at %d, step=%d, limit=%d\n", *start, step, end);
+    tprintf("Starting expansion at {}, step={}, limit={}\n", *start, step, end);
   }
   if (*start == end) {
     return; // Cannot be expanded.
@@ -895,7 +895,7 @@ void ColumnFinder::ExtendRangePastSmallGaps(int **column_set_costs, const int *a
       }
     }
     if (textord_debug_tabfind > 2) {
-      tprintf("At %d, Barrier size=%d\n", i, barrier_size);
+      tprintf("At {}, Barrier size={}\n", i, barrier_size);
     }
     if (barrier_size > kMaxIncompatibleColumnCount) {
       return; // Barrier too big.
@@ -915,7 +915,7 @@ void ColumnFinder::ExtendRangePastSmallGaps(int **column_set_costs, const int *a
       }
     }
     if (textord_debug_tabfind > 2) {
-      tprintf("At %d, good size = %d\n", i, good_size);
+      tprintf("At {}, good size = {}\n", i, good_size);
     }
     // If we had enough good ones we can extend the start and keep looking.
     if (good_size >= barrier_size) {
@@ -1026,7 +1026,7 @@ void ColumnFinder::GridSplitPartitions() {
     // Now run the rect search on the main blob grid.
     GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> rectsearch(this);
     if (debug) {
-      tprintf("Searching box (%d,%d)->(%d,%d)\n", margin_box.left(), margin_box.bottom(),
+      tprintf("Searching box ({},{})->({},{})\n", margin_box.left(), margin_box.bottom(),
               margin_box.right(), margin_box.top());
       part->Print();
     }
@@ -1042,7 +1042,7 @@ void ColumnFinder::GridSplitPartitions() {
       gsearch.RemoveBBox();
       int x_middle = (margin_box.left() + margin_box.right()) / 2;
       if (debug) {
-        tprintf("Splitting part at %d:", x_middle);
+        tprintf("Splitting part at {}:", x_middle);
         part->Print();
       }
       ColPartition *split_part = part->SplitAt(x_middle);
@@ -1063,7 +1063,7 @@ void ColumnFinder::GridSplitPartitions() {
       part_grid_.InsertBBox(true, true, part);
       gsearch.RepositionIterator();
     } else if (debug) {
-      tprintf("Part cannot be split: blob (%d,%d)->(%d,%d) in column gap\n",
+      tprintf("Part cannot be split: blob ({},{})->({},{}) in column gap\n",
               bbox->bounding_box().left(), bbox->bounding_box().bottom(),
               bbox->bounding_box().right(), bbox->bounding_box().top());
     }
@@ -1207,7 +1207,7 @@ void ColumnFinder::InsertRemainingNoise(TO_BLOCK *block) {
         best_distance < kMaxDistToPartSizeRatio * best_part->median_height()) {
       // Close enough to merge.
       if (debug) {
-        tprintf("Adding noise blob with distance %d, thr=%g:box:", best_distance,
+        tprintf("Adding noise blob with distance {}, thr={}:box:", best_distance,
                 kMaxDistToPartSizeRatio * best_part->median_height());
         blob->bounding_box().print();
         tprintf("To partition:");
@@ -1376,9 +1376,9 @@ void ColumnFinder::SmoothPartnerRuns() {
     ColPartition *partner = part->SingletonPartner(true);
     if (partner != nullptr) {
       if (partner->SingletonPartner(false) != part) {
-        tprintf("Ooops! Partition:(%d partners)", part->upper_partners()->length());
+        tprintf("Ooops! Partition:({} partners)", part->upper_partners()->length());
         part->Print();
-        tprintf("has singleton partner:(%d partners", partner->lower_partners()->length());
+        tprintf("has singleton partner:({} partners", partner->lower_partners()->length());
         partner->Print();
         tprintf("but its singleton partner is:");
         if (partner->SingletonPartner(false) == nullptr) {
@@ -1461,7 +1461,7 @@ void ColumnFinder::TransformToBlocks(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_block
       ASSERT_HOST(column_set != nullptr);
       column_set->ChangeWorkColumns(bleft_, tright_, resolution_, &good_parts_, &work_set);
       if (textord_debug_tabfind) {
-        tprintf("Changed column groups at grid index %d, y=%d\n", gsearch.GridY(),
+        tprintf("Changed column groups at grid index {}, y={}\n", gsearch.GridY(),
                 gsearch.GridY() * gridsize());
       }
     }
@@ -1594,7 +1594,7 @@ void ColumnFinder::RotateAndReskewBlocks(bool input_is_rtl, TO_BLOCK_LIST *block
     block->set_median_size(static_cast<int>(widths.median() + 0.5),
                            static_cast<int>(heights.median() + 0.5));
     if (textord_debug_tabfind >= 2) {
-      tprintf("Block median size = (%d, %d)\n", block->median_size().x(), block->median_size().y());
+      tprintf("Block median size = ({}, {})\n", block->median_size().x(), block->median_size().y());
     }
   }
 
@@ -1642,7 +1642,7 @@ FCOORD ColumnFinder::ComputeBlockAndClassifyRotation(BLOCK *block) {
   block->set_re_rotation(block_rotation);
   block->set_classify_rotation(classify_rotation);
   if (textord_debug_tabfind) {
-    tprintf("Blk %d, type %d rerotation(%.2f, %.2f), char(%.2f,%.2f), box:", block->pdblk.index(),
+    tprintf("Blk {}, type {} rerotation({}, {}), char({},{}), box:", block->pdblk.index(),
             block->pdblk.poly_block()->isA(), block->re_rotation().x(), block->re_rotation().y(),
             classify_rotation.x(), classify_rotation.y());
     block->pdblk.bounding_box().print();

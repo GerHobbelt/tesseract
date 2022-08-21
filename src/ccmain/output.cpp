@@ -232,10 +232,12 @@ char determine_newline_type( // test line ends
   end_gap = block_box.right() - word_box.right();
   end_gap -= static_cast<int32_t>(block->space());
   width = next_box.right() - next_box.left();
-  //      tprintf("end_gap={}-{}={}, width={}-{}={}, nl={}\n",
-  //              block_box.right(),word_box.right(),end_gap,
-  //              next_box.right(),next_box.left(),width,
-  //              end_gap>width ? CTRL_HARDLINE : CTRL_NEWLINE);
+#if 0
+  tprintf("end_gap={}-{}={}, width={}-{}={}, nl={}\n",
+               block_box.right(),word_box.right(),end_gap,
+                next_box.right(),next_box.left(),width,
+                end_gap>width ? CTRL_HARDLINE : CTRL_NEWLINE);
+#endif
   return end_gap > width ? CTRL_HARDLINE : CTRL_NEWLINE;
 }
 

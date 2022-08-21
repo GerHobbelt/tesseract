@@ -200,7 +200,7 @@ void PDBLK::plot(            // draw outline
     hand_poly->plot(window, serial);
   } else if (!leftside.empty()) {
     startpt = *(it.data()); // bottom left corner
-    //              tprintf("Block %d bottom left is (%d,%d)\n",
+    //              tprintf("Block {} bottom left is ({},{})\n",
     //                      serial,startpt.x(),startpt.y());
     char temp_buff[34];
 #  if defined(PRId32)

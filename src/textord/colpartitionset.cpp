@@ -295,7 +295,7 @@ bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
           if (debug) {
             int next_right = next_part->bounding_box().right();
             tprintf("CompatibleColumns false due to 2 parts of good width\n");
-            tprintf("part1 %d-%d, part2 %d-%d\n", left, right, next_left,
+            tprintf("part1 {}-{}, part2 {}-{}\n", left, right, next_left,
                     next_right);
             right_col->Print();
           }
@@ -609,8 +609,8 @@ void ColPartitionSet::AccumulateColumnWidthsAndGaps(int *total_width,
 void ColPartitionSet::Print() {
   ColPartition_IT it(&parts_);
   tprintf(
-      "Partition set of %d parts, %d good, coverage=%d+%d"
-      " (%d,%d)->(%d,%d)\n",
+      "Partition set of {} parts, {} good, coverage={}+{}"
+      " ({},{})->({},{})\n",
       it.length(), good_column_count_, good_coverage_, bad_coverage_,
       bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(),
       bounding_box_.top());

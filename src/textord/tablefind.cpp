@@ -1726,7 +1726,7 @@ bool TableFinder::HLineBelongsToTable(const ColPartition &part,
       }
     }
   }
-  // tprintf("%d %d %d\n",
+  // tprintf("{} {} {}\n",
   // num_extra_partitions,extra_space_to_right,extra_space_to_left);
   return (extra_space_to_right > num_extra_partitions / 2) ||
          (extra_space_to_left > num_extra_partitions / 2);

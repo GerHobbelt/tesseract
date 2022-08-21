@@ -345,13 +345,13 @@ float Textord::filter_noise_blobs(BLOBNBOX_LIST *src_list,     // original list
     }
   }
   max_height = size_stats.ile(textord_initialasc_ile);
-  //      tprintf("max_y=%g, min_y=%g, initial_x=%g, max_height=%g,",
+  //      tprintf("max_y={}, min_y={}, initial_x={}, max_height={},",
   //              max_y,min_y,initial_x,max_height);
   max_height *= tesseract::CCStruct::kXHeightCapRatio;
   if (max_height > initial_x) {
     initial_x = max_height;
   }
-  //      tprintf(" ret=%g\n",initial_x);
+  //      tprintf(" ret={}\n",initial_x);
   return initial_x;
 }
 
@@ -444,11 +444,11 @@ void Textord::cleanup_blocks(bool clean_noise, BLOCK_LIST *blocks) {
     }
     ++num_blocks_all;
     if (textord_noise_debug) {
-      tprintf("cleanup_blocks: # rows = %d / %d\n", num_rows, num_rows_all);
+      tprintf("cleanup_blocks: # rows = {} / {}\n", num_rows, num_rows_all);
     }
   }
   if (textord_noise_debug) {
-    tprintf("cleanup_blocks: # blocks = %d / %d\n", num_blocks, num_blocks_all);
+    tprintf("cleanup_blocks: # blocks = {} / {}\n", num_blocks, num_blocks_all);
   }
 }
 
@@ -523,15 +523,15 @@ bool Textord::clean_noise_from_row( // remove empties
         dot_count += 2;
       }
       if (testing_on) {
-        tprintf("Blob at (%d,%d) -> (%d,%d), ols=%d, tc=%d, bldiff=%g\n", blob_box.left(),
+        tprintf("Blob at ({},{}) -> ({},{}), ols={}, tc={}, bldiff={}\n", blob_box.left(),
                 blob_box.bottom(), blob_box.right(), blob_box.top(), blob->out_list()->length(),
                 trans_count, blob_box.bottom() - row->base_line(blob_box.left()));
       }
     }
   }
   if (textord_noise_debug) {
-    tprintf("Row ending at (%d,%g):", blob_box.right(), row->base_line(blob_box.right()));
-    tprintf(" R=%g, dc=%d, nc=%d, %s\n",
+    tprintf("Row ending at ({},{}):", blob_box.right(), row->base_line(blob_box.right()));
+    tprintf(" R={}, dc={}, nc={}, {}\n",
             norm_count > 0 ? static_cast<float>(dot_count) / norm_count : 9999, dot_count,
             norm_count,
             dot_count > norm_count * textord_noise_normratio && dot_count > 2 ? "REJECTED"

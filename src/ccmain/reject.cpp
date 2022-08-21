@@ -81,7 +81,7 @@ void Tesseract::set_done(WERD_RES *word, int16_t pass) {
     word->done = false;
   }
   if (tessedit_rejection_debug) {
-    tprintf("set_done(): done=%d\n", word->done);
+    tprintf("set_done(): done={}\n", word->done);
     word->best_choice->print("");
   }
 }
@@ -169,10 +169,10 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
 
   check_debug_pt(word, 10);
   if (tessedit_rejection_debug) {
-    tprintf("Permuter Type = %d\n", word->best_choice->permuter());
-    tprintf("Certainty: %f     Rating: %f\n", word->best_choice->certainty(),
+    tprintf("Permuter Type = {}\n", word->best_choice->permuter());
+    tprintf("Certainty: {}     Rating: {}\n", word->best_choice->certainty(),
             word->best_choice->rating());
-    tprintf("Dict word: %d\n", dict_word(*(word->best_choice)));
+    tprintf("Dict word: {}\n", dict_word(*(word->best_choice)));
   }
 
   flip_hyphens(word);

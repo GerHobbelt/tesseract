@@ -635,7 +635,7 @@ bool TessPDFRenderer::BeginDocumentHandler() {
     font = buffer.data();
   } else {
 #if !defined(NDEBUG)
-    tprintf("ERROR: Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str().c_str());
+    tprintf("ERROR: Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str());
 #endif
     font = pdf_ttf;
     size = sizeof(pdf_ttf);

@@ -106,7 +106,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
       if (other_case_id != INVALID_UNICHAR_ID) {
         unicharset->set_other_case(unichar_id, other_case_id);
       } else if (unichar_id >= SPECIAL_UNICHAR_CODES_COUNT && report_errors) {
-        tprintf("ERROR: Other case %s of %s is not in unicharset\n", other_case_uch.c_str(), unichar_str);
+        tprintf("ERROR: Other case {} of {} is not in unicharset\n", other_case_uch, unichar_str);
       }
     }
 
@@ -124,7 +124,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
     if (mirror_uch_id != INVALID_UNICHAR_ID) {
       unicharset->set_mirror(unichar_id, mirror_uch_id);
     } else if (report_errors) {
-      tprintf("ERROR: Mirror %s of %s is not in unicharset\n", mirror_uch.c_str(), unichar_str);
+      tprintf("ERROR: Mirror {} of {} is not in unicharset\n", mirror_uch, unichar_str);
     }
 
     // Record normalized version of this unichar.
@@ -154,12 +154,12 @@ void SetScriptProperties(const std::string &script_dir, UNICHARSET *unicharset) 
     if (script_set.load_from_file(filename.c_str())) {
       unicharset->SetPropertiesFromOther(script_set);
     } else if (s != unicharset->common_sid() && s != unicharset->null_sid()) {
-      tprintf("ERROR: Failed to load script unicharset from:%s\n", filename.c_str());
+      tprintf("ERROR: Failed to load script unicharset from:{}\n", filename);
     }
   }
   for (int c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
     if (unicharset->PropertiesIncomplete(c)) {
-      tprintf("WARNING: Properties incomplete for index %d = %s\n", c,
+      tprintf("WARNING: Properties incomplete for index {} = {}\n", c,
               unicharset->id_to_unichar(c));
     }
   }
@@ -192,8 +192,8 @@ void SetPropertiesForInputFile(const std::string &script_dir,
 
   // Load the input unicharset
   unicharset.load_from_file(input_unicharset_file.c_str());
-  tprintf("Loaded unicharset of size %zu from file %s\n", unicharset.size(),
-          input_unicharset_file.c_str());
+  tprintf("Loaded unicharset of size {} from file {}\n", unicharset.size(),
+          input_unicharset_file);
 
   // Set unichar properties
   tprintf("Setting unichar properties\n");
@@ -206,7 +206,7 @@ void SetPropertiesForInputFile(const std::string &script_dir,
   }
 
   // Write the output unicharset
-  tprintf("Writing unicharset to file %s\n", output_unicharset_file.c_str());
+  tprintf("Writing unicharset to file {}\n", output_unicharset_file);
   unicharset.save_to_file(output_unicharset_file.c_str());
 }
 

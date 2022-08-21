@@ -497,7 +497,7 @@ void WeightMatrix::Debug2D(const char *msg) {
       }
     }
   }
-  tprintf("%s\n", msg);
+  tprintf("{}\n", msg);
   histogram.print();
 }
 

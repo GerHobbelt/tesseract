@@ -1167,7 +1167,7 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
     DivideImageIntoParts(im_box, rotation, rerotation, pix, &rectsearch, &part_list);
     if (textord_tabfind_show_images && pixa_debug != nullptr) {
       pixa_debug->AddPix(pix, "ImageComponent");
-      tprintf("Component has %d parts\n", part_list.length());
+      tprintf("Component has {} parts\n", part_list.length());
     }
     pix.destroy();
     if (!part_list.empty()) {

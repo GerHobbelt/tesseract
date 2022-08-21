@@ -185,13 +185,13 @@ bool Tesseract::SubAndSuperscriptFix(WERD_RES *word) {
     word->best_choice->print();
   }
   if (superscript_debug >= 2) {
-    tprintf(" Certainties -- Average: %.2f  Unlikely thresh: %.2f  ", avg_certainty,
+    tprintf(" Certainties -- Average: {}  Unlikely thresh: {}  ", avg_certainty,
             unlikely_threshold);
     if (num_leading) {
-      tprintf("Orig. leading (min): %.2f  ", leading_certainty);
+      tprintf("Orig. leading (min): {}  ", leading_certainty);
     }
     if (num_trailing) {
-      tprintf("Orig. trailing (min): %.2f  ", trailing_certainty);
+      tprintf("Orig. trailing (min): {}  ", trailing_certainty);
     }
     tprintf("\n");
   }
@@ -555,13 +555,13 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
       }
       const char *char_str = wc.unicharset()->id_to_unichar(unichar_id);
       if (bad_certainty) {
-        tprintf(" Rejecting: don't believe character {} with certainty %.2f "
-            "which is less than threshold %.2f\n",
+        tprintf(" Rejecting: don't believe character {} with certainty {} "
+            "which is less than threshold {}\n",
             char_str, char_certainty, certainty_threshold);
       }
       if (bad_height) {
-        tprintf(" Rejecting: character {} seems too small @ %.2f versus "
-            "expected %.2f\n",
+        tprintf(" Rejecting: character {} seems too small @ {} versus "
+            "expected {}\n",
             char_str, char_height, normal_height);
       }
     }
@@ -579,7 +579,7 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
   }
   bool all_ok = ok_run_count == wc.length();
   if (all_ok && debug) {
-    tprintf(" Accept: worst revised certainty is %.2f\n", worst_certainty);
+    tprintf(" Accept: worst revised certainty is {}\n", worst_certainty);
   }
   if (!all_ok) {
     if (left_ok) {

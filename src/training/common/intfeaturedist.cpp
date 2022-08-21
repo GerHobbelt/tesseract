@@ -107,7 +107,7 @@ double IntFeatureDist::DebugFeatureDistance(const std::vector<int> &features) co
     const int index = features[i];
     const double weight = 1.0;
     INT_FEATURE_STRUCT f = feature_map_->InverseMapFeature(features[i]);
-    tprintf("Testing feature weight %g:", weight);
+    tprintf("Testing feature weight {}:", weight);
     f.print();
     if (features_[index]) {
       // A perfect match.

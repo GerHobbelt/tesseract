@@ -174,7 +174,7 @@ bool ReadNextBox(int target_page, int *line_number, FILE *box_file, std::string 
     }
     if (*buffptr != '\0') {
       if (!ParseBoxFileStr(buffptr, &page, utf8_str, bounding_box)) {
-        tprintf("ERROR: Box file format error on line %i; ignored\n", *line_number);
+        tprintf("ERROR: Box file format error on line {}; ignored\n", *line_number);
         continue;
       }
       if (target_page >= 0 && target_page != page) {
@@ -253,7 +253,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
     tesseract::UNICHAR ch(uch + used, uch_len - used);
     int new_used = ch.utf8_len();
     if (new_used == 0) {
-      tprintf("ERROR: Bad UTF-8 str %s starts with 0x%02x at col %d\n", uch + used, uch[used], used + 1);
+      tprintf("ERROR: Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
       return false;
     }
     used += new_used;
