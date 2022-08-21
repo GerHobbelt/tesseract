@@ -52,9 +52,19 @@
 //const int kNumThreads = 24; // 21497 ms
 //const int kNumThreads = 24; // 20761 ms
 //const int kNumThreads = 24; // 20938 ms
-static const unsigned kNumThreads = 24; // 20640 ms
+//static const size_t kNumThreads = 24; // 20640 ms
 //const int kNumThreads = 48; // 22425 ms
-static thread_pool pool(kNumThreads);
+//
+// While the above, setting kNumThreads to 24, may have worked for Stefan on EPYC or similar UniMannheim hardware, the key take-away
+// from the threadpool benchmarks (vanilla and augmented) is that the number of threads SHOULD equal your number CPU (virtual) cores on
+// lightly loaded machines. The augmented benchmark shows that you're often even better off (if only a little) when you limit your threads
+// to "one less" so your regular (large core count) machine, which has other jobs to do alongside this, has one core left for "other stuff"
+// (like running an app, GUI and OS). The augmented threadpool code would get this encoded as...
+//static const int kNumThreads = -1;
+// ... but we're going for broke here and expect benchmarks to usually run on otherwise unburdened heavy-duty hardware, so as to optimize
+// for those, we just say TAKE IT ALL:
+static const int kNumThreads = 0;
+static BS::thread_pool pool(kNumThreads);
 #elif defined(_OPENMP)
 static const int kNumThreads = 4;
 #else
@@ -191,7 +201,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
           acts_.CopyTimeStepFrom(t, *output, t);
         }
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else if (IsTraining() && type_ != NT_SOFTMAX) {
     pool.parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
@@ -204,7 +215,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         output->WriteTimeStep(t, temp_line);
         acts_.CopyTimeStepFrom(t, *output, t);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else {
     pool.parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
@@ -216,7 +228,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         ForwardTimeStep(curr_input[thread_id], t, temp_line);
         output->WriteTimeStep(t, temp_line);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   }
 #else // THREADPOOL
   std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
@@ -363,7 +376,8 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
         BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), backprop);
         back_deltas->WriteTimeStep(t, backprop);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else {
     pool.parallelize_loop(0, width,
       [this, &fwd_deltas, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
@@ -373,7 +387,8 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
       for (unsigned t = start; t < end; t++) {
         BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), nullptr);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   }
 #else
 #ifdef _OPENMP
