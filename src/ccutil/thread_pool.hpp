@@ -606,13 +606,13 @@ public:
                 task_available_cv.notify_all();
             }
 
-			// This is not needed any more, fortunately, as we're steadily increasing the poll period, so, even when it started at zero(0),
-			// each round through here will raise it above that number and there's no need for us to YIELD explicitly:
+            // This is not needed any more, fortunately, as we're steadily increasing the poll period, so, even when it started at zero(0),
+            // each round through here will raise it above that number and there's no need for us to YIELD explicitly:
 #if 0
-			std::this_thread::yield();
+            std::this_thread::yield();
 #endif
 
-			tasks_done_lock.lock();
+            tasks_done_lock.lock();
         }
         waiting = false;
     }
@@ -1048,11 +1048,11 @@ case x:																																												\
 
     /**
      * @brief The `wait_for_tasks()` poll cycle period, in milliseconds, where after each `sleep_duration` wait_for_tasks() will be incited to broadcast its waiting state to the worker threads so they wake from their potential short slumbers and check all shutdown / reactivation conditions and signal back when they've done so. Consequently, when there's no tasks pending or incoming, thread workers are not woken up, ever, unless `wait_for_tasks()` explicitly asks for them to wake up and check everything, including 'pause mode' and 'shutdown/cleanup' (running == 0).
-	 * If set to 0, then instead of sleeping for a bit when termination conditions have not yet been met, `wait_for_tasks()` will execute std::this_thread::yield(). The default value is 10 milliseconds.
-	 *
-	 * Note that the `sleep_duration` value is only relevant to execution timing of `wait_for_tasks()` when one of these conditions apply:
-	 * - the threadpool has been put into 'pause mode' and there are no more lingering tasks from the previous era being finished, while the queue stays in 'pause mode'.
-	 * - the threadpool is shutting down (running==false, due to threadpool instance cleanup & destruction, usually part of an application shutdown)
+     * If set to 0, then instead of sleeping for a bit when termination conditions have not yet been met, `wait_for_tasks()` will execute std::this_thread::yield(). The default value is 10 milliseconds.
+     *
+     * Note that the `sleep_duration` value is only relevant to execution timing of `wait_for_tasks()` when one of these conditions apply:
+     * - the threadpool has been put into 'pause mode' and there are no more lingering tasks from the previous era being finished, while the queue stays in 'pause mode'.
+     * - the threadpool is shutting down (running==false, due to threadpool instance cleanup & destruction, usually part of an application shutdown)
      */
     std::chrono::milliseconds sleep_duration = std::chrono::milliseconds(10);
 
