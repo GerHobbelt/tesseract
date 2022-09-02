@@ -43,7 +43,7 @@
 #include "tesseractclass.h"
 #include "tessvars.h"
 #include "werdit.h"
-
+#include <emscripten.h>
 const char *const kBackUpConfigFile = "tempconfigdata.config";
 #ifndef DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
@@ -228,6 +228,11 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
         return false;
       }
     }
+
+    EM_ASM_ARGS({
+      if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+    }, pass_n == 1 ? (30 + 50 * w / words->size()) : (80 + 10 * w / words->size()));
+
     if (word->word->tess_failed) {
       unsigned s;
       for (s = 0; s < word->lang_words.size() && word->lang_words[s]->tess_failed; ++s) {
@@ -448,6 +453,11 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
   if (monitor != nullptr) {
     monitor->progress = 100;
   }
+
+  EM_ASM_ARGS({
+    if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+  }, 100);
+
   return true;
 }
 
@@ -609,6 +619,11 @@ void Tesseract::rejection_passes(PAGE_RES *page_res, ETEXT_DESC *monitor,
       monitor->ocr_alive = true;
       monitor->progress = 95 + 5 * word_index / stats_.word_count;
     }
+
+    EM_ASM_ARGS({
+      if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+    }, 95 + 5 * word_index / stats_.word_count);
+
     if (word->rebuild_word == nullptr) {
       // Word was not processed by tesseract.
       page_res_it.forward();
