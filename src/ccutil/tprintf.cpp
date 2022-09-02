@@ -64,7 +64,7 @@ void vTessPrint(fmt::string_view format, fmt::format_args args) {
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
-  assert(debug_file_name != nullptr);
+  ASSERT0(debug_file_name != nullptr);
   if (debug_file_name == nullptr) {
     // This should not happen.
     return;
