@@ -805,7 +805,7 @@ protected:
             {
                 // see also the comments in the workerthread_main() method
                 size_t scap = worker_failure_message.capacity();
-                ASSERT_AND_CONTINUE(scap >= 80);
+                ASSERT_AND_CONTINUE0(scap >= 80);
                 if (scap >= 80)
                 {
                     snprintf(&worker_failure_message[0], scap, "thread::worker caught unhandled C++ exception: %s", e.what());
@@ -844,7 +844,7 @@ protected:
      */
     [[nodiscard]] bool __worker_SEH(std::string &worker_failure_message)
     {
-        ASSERT_AND_CONTINUE(worker_failure_message.capacity() >= 70 + 150 + 80);
+        ASSERT_AND_CONTINUE0(worker_failure_message.capacity() >= 70 + 150 + 80);
 
         alive_threads_count++;
 
@@ -863,7 +863,7 @@ protected:
                 // see also the comments in the workerthread_main() method
                 size_t slen = worker_failure_message.length();
                 size_t scap = worker_failure_message.capacity() - slen;
-                ASSERT_AND_CONTINUE(scap >= 70);
+                ASSERT_AND_CONTINUE0(scap >= 70);
                 if (scap >= 70)
                 {
                     if (slen > 0)
@@ -891,7 +891,7 @@ protected:
             // see also the comments in the workerthread_main() method
             size_t slen = worker_failure_message.length();
             size_t scap = worker_failure_message.capacity() - slen;
-            ASSERT_AND_CONTINUE(scap >= 150);
+            ASSERT_AND_CONTINUE0(scap >= 150);
             if (scap >= 150)
             {
                 if (slen > 0)
