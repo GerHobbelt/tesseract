@@ -14,7 +14,6 @@
 
 #if defined(HAVE_MUPDF)
 #include "tprintf.h"          // for tprintf
-#include "mupdf/assertions.h"     // for ASSERT
 #endif
 
 #include <atomic>             // std::atomic
@@ -42,6 +41,10 @@
 #pragma warning(pop)
 #endif
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
+
 #ifndef ASSERT
 #if defined(_WIN32)
 #define ASSERT(expr)			(void)((expr) || (DebugBreak(), 0))
@@ -50,12 +53,20 @@
 #endif
 #endif
 
+#ifndef ASSERT0
+#define ASSERT0(expr)			ASSERT(expr)
+#endif
+
 #ifndef ASSERT_AND_CONTINUE
 #if defined(_WIN32)
 #define ASSERT_AND_CONTINUE(expr)			(void)((expr) || (DebugBreak(), 0))
 #else
 #define ASSERT_AND_CONTINUE(expr)
 #endif
+#endif
+
+#ifndef ASSERT_AND_CONTINUE0
+#define ASSERT_AND_CONTINUE0(expr)			ASSERT_AND_CONTINUE0(expr)
 #endif
 
 namespace BS
@@ -484,7 +495,7 @@ public:
         const bool was_paused = paused;
         paused = true;
         wait_for_tasks();
-        ASSERT(!running || get_tasks_running() == 0);
+        ASSERT0(!running || get_tasks_running() == 0);
         destroy_threads();
         thread_count = determine_thread_count(thread_count_);
         threads = std::make_unique<std::thread[]>(thread_count);
@@ -872,7 +883,7 @@ protected:
                         scap--;
                     }
                     snprintf(&worker_failure_message[slen], scap, "%s: thread::worker unwinding; termination is %s.", AbnormalTermination() ? "ERROR" : "INFO", AbnormalTermination() ? "ABNORMAL" : "normal");
-                    ASSERT(strlen(&worker_failure_message[slen]) < 70);
+                    ASSERT0(strlen(&worker_failure_message[slen]) < 70);
                 }
             }
         }
@@ -962,7 +973,7 @@ case x:																																												\
                     break;
                 }
                 worker_failure_message[scap - 1] = 0;		// snprintf() doesn't guarantee a NUL at the end. **We do.**
-                ASSERT(strlen(&worker_failure_message[slen]) < 150);
+                ASSERT0(strlen(&worker_failure_message[slen]) < 150);
 
 #if 0
                 if (p)
@@ -1017,11 +1028,11 @@ case x:																																												\
         // - https://stackoverflow.com/questions/6700480/how-to-create-a-stdstring-directly-from-a-char-array-without-copying#comments-6700534 :: "Yes, it is permitted in C++11. There's a lot of arcane wording around this, which pretty much boils down to it being illegal to modify the null terminator, and being illegal to modify anything through the data() or c_str() pointers, but valid through &str[0]. stackoverflow.com/a/14291203/5696" – John Calsbeek
         std::string worker_failure_message;
         worker_failure_message.reserve(worker_failure_message_size);
-        ASSERT(worker_failure_message.capacity() >= worker_failure_message_size);
+        ASSERT0(worker_failure_message.capacity() >= worker_failure_message_size);
 
         bool abnormal_exit = __worker_SEH(worker_failure_message);
 
-        ASSERT(!abnormal_exit || !worker_failure_message.empty()); // message MUST be filled any time an abnormal termination has been observed.
+        ASSERT0(!abnormal_exit || !worker_failure_message.empty()); // message MUST be filled any time an abnormal termination has been observed.
         if (!worker_failure_message.empty())
         {
 #if defined(HAVE_MUPDF)
