@@ -26,6 +26,9 @@
 
 #include <algorithm>
 
+#undef min
+#undef max
+
 // Padding factor to use on definitely oriented blobs
 const int kOrientedPadFactor = 8;
 // Padding factor to use on not definitely oriented blobs.

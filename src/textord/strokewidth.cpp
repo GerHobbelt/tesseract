@@ -36,6 +36,9 @@
 #include "textlineprojection.h"
 #include "tordmain.h" // For SetBlobStrokeWidth.
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 #ifndef GRAPHICS_DISABLED

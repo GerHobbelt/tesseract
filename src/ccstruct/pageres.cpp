@@ -42,6 +42,9 @@
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
 
+#undef min
+#undef max
+
 struct Pix;
 
 namespace tesseract {

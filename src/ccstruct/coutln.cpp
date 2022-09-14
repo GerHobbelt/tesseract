@@ -40,6 +40,9 @@
 #include <cstdlib>   // for abs
 #include <cstring>   // for memset, memcpy, memmove
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 ICOORD C_OUTLINE::step_coords[4] = {ICOORD(-1, 0), ICOORD(0, -1), ICOORD(1, 0), ICOORD(0, 1)};

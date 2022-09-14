@@ -33,7 +33,11 @@
 
 #include <allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
+#include <algorithm> // for max, min
 #include <cinttypes> // for PRId64
+
+#undef min
+#undef max
 
 namespace tesseract {
 

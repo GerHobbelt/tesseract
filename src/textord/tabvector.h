@@ -28,6 +28,9 @@
 
 #include <algorithm>
 
+#undef min
+#undef max
+
 class BLOBNBOX;
 class ScrollView;
 

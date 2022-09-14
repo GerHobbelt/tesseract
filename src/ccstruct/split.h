@@ -23,6 +23,9 @@
 #include "params.h" // for BOOL_VAR_H, BoolParam
 #include "rect.h"   // for TBOX
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 class ScrollView;
