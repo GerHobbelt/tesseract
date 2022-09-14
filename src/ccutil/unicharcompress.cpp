@@ -23,6 +23,9 @@
 #include <memory>
 #include "tprintf.h"
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 // String used to represent the null_id in direct_set.
