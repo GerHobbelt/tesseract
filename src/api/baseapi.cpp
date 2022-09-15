@@ -644,22 +644,18 @@ Pix *TessBaseAPI::GetThresholdedImage() {
  * ONLY available after SetImage if you have Leptonica installed.
  */
 void TessBaseAPI::WriteImage(const int type) {
-  tprintf("WriteImage called with (%d)\n", type);
   if (tesseract_ == nullptr || thresholder_ == nullptr) {
-    tprintf("Returning early 1");
     return;
   }
   if (type == 0) {
     if (tesseract_->pix_original() == nullptr) {
-      tprintf("Returning early 2\n");
       return;
     }
-    Pix *p1 = tesseract_->pix_grey();
-    tprintf("Writing image\n");
+    Pix *p1 = tesseract_->pix_original();
     pixWrite("/image.png", p1, IFF_PNG);
 
   } else if (type == 1) {
-    if (tesseract_->pix_grey() == nullptr) {
+    if (tesseract_->pix_grey() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
       return;
     }
     Pix *p1 = tesseract_->pix_grey();
