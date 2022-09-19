@@ -357,6 +357,17 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
   ParamUtils::PrintParams(fp, tesseract_->params());
 }
 
+void TessBaseAPI::SaveParameters() {
+  // Save current config variables before switching modes.
+  FILE *fp = fopen(kOldVarsFile, "wb");
+  PrintVariables(fp);
+  fclose(fp);
+}
+
+void TessBaseAPI::RestoreParameters() {
+  ReadConfigFile(kOldVarsFile);
+}
+
 /**
  * The datapath must be the name of the data directory or
  * some other file in which the data directory resides (for instance argv[0].)

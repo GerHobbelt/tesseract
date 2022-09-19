@@ -161,6 +161,12 @@ public:
    */
   void PrintVariables(FILE *fp) const;
 
+
+  // Functions added by Tesseract.js-core to save and restore parameters
+  void SaveParameters();
+  void RestoreParameters();
+
+
   /**
    * Get value of named variable as a string, if it exists.
    */
