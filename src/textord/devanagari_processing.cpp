@@ -28,6 +28,9 @@
 #include "tordmain.h"
 
 #include <allheaders.h>
+#if LIBLEPT_MINOR_VERSION > 82
+#include "pix_internal.h"
+#endif
 
 namespace tesseract {
 
