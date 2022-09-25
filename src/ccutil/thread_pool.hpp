@@ -820,7 +820,7 @@ protected:
                 if (scap >= 80)
                 {
                     snprintf(&worker_failure_message[0], scap, "thread::worker caught unhandled C++ exception: %s", e.what());
-                    worker_failure_message[scap - 1] = 0;		// snprintf() doesn't guarantee a NUL at the end. **We do.**
+                    worker_failure_message[scap - 1] = 0;        // snprintf() doesn't guarantee a NUL at the end. **We do.**
                 }
             }
             return true;
@@ -1025,7 +1025,7 @@ case x:																																												\
     {
         // You SHOULD reserve space for any caught thread fatality report. We SHOULD have this space already present beforehand as we cannot trust the system to do much of anything any more when we happen to encounter such a catastrophic situation.
         //
-        // - https://stackoverflow.com/questions/6700480/how-to-create-a-stdstring-directly-from-a-char-array-without-copying#comments-6700534 :: "Yes, it is permitted in C++11. There's a lot of arcane wording around this, which pretty much boils down to it being illegal to modify the null terminator, and being illegal to modify anything through the data() or c_str() pointers, but valid through &str[0]. stackoverflow.com/a/14291203/5696" – John Calsbeek
+        // - https://stackoverflow.com/questions/6700480/how-to-create-a-stdstring-directly-from-a-char-array-without-copying#comments-6700534 :: "Yes, it is permitted in C++11. There's a lot of arcane wording around this, which pretty much boils down to it being illegal to modify the null terminator, and being illegal to modify anything through the data() or c_str() pointers, but valid through &str[0]. stackoverflow.com/a/14291203/5696" -- John Calsbeek
         std::string worker_failure_message;
         worker_failure_message.reserve(worker_failure_message_size);
         ASSERT0(worker_failure_message.capacity() >= worker_failure_message_size);
