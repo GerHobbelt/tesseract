@@ -47,14 +47,19 @@ void tprintf(const char *format, ...) {
     return;
   }
 
-  debugfp = fopen(debug_file_name, "a+");
   va_list args;           // variable args
   va_start(args, format); // variable list
-  vfprintf(debugfp, format, args);
-  // Webassembly build does not always flush properly if not explicitly called for. 
-  // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
+  if (debug_file_name[0] != '\0') {
+    debugfp = fopen(debug_file_name, "a+");
+    vfprintf(debugfp, format, args);
+    // Webassembly build does not always flush properly if not explicitly called for. 
+    // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
+    fclose(debugfp);
+  } else {
+    vfprintf(stderr, format, args);
+  }
   va_end(args);
-  fclose(debugfp);
+
 
 }
 
