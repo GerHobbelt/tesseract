@@ -622,6 +622,27 @@ void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle) {
   }
 }
 
+void TessBaseAPI::SetImage(int exif, const float angle) {
+  if (InternalSetImage()) {
+    const char *filename1 = "/input";
+    Pix *pix = pixRead(filename1);
+    if (pix == nullptr) {
+      tprintf("Image file %s cannot be read!\n", filename1);
+      return;
+    }
+    if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
+      // remove alpha channel from png
+      Pix *p1 = pixRemoveAlpha(pix);
+      pixSetSpp(p1, 3);
+      (void)pixCopy(pix, p1);
+      pixDestroy(&p1);
+    }
+    thresholder_->SetImage(pix, exif, angle);
+    SetInputImage(thresholder_->GetPixRect());
+    pixDestroy(&pix);
+  }
+}
+
 /**
  * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
  * Each SetRectangle clears the recogntion results so multiple rectangles

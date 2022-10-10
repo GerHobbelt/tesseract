@@ -332,6 +332,8 @@ public:
    */
   void SetImage(Pix *pix, int exif = 1, const float angle = 0);
 
+  void SetImage(int exif = 1, const float angle = 0);
+
   /**
    * Set the resolution of the source image in pixels per inch so font size
    * information can be calculated in results.  Call this after SetImage().
