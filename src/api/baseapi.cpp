@@ -690,9 +690,15 @@ void TessBaseAPI::WriteImage(const int type) {
     if (tesseract_->pix_grey() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
       return;
     }
-    Pix *p1 = tesseract_->pix_grey();
-    pixWrite("/image.png", p1, IFF_PNG);
-
+    // When the user uploads a black and white image, there will be no pix_grey.
+    // Therefore, we return pix_binary instead in this case. 
+    if (tesseract_->pix_grey() == nullptr) {
+      Pix *p1 = tesseract_->pix_binary();
+      pixWrite("/image.png", p1, IFF_PNG);
+    } else {
+      Pix *p1 = tesseract_->pix_grey();
+      pixWrite("/image.png", p1, IFF_PNG);
+    }
   } else if (type == 2) {
     if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
       return;
