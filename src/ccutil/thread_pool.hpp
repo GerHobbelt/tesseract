@@ -35,6 +35,7 @@
 // see also https://docs.microsoft.com/en-us/cpp/cpp/try-except-statement?view=msvc-170 et al.
 #include <windows.h>
 #include <excpt.h>
+#include <winternl.h>  // define NTSTATUS
 #pragma warning(push)
 #pragma warning(disable: 4005) // warning C4005: macro redefinition
 #include <ntstatus.h> // STATUS_POSSIBLE_DEADLOCK
@@ -911,8 +912,8 @@ protected:
                     scap--;
                 }
 
-#define select_and_report(x)																																						\
-case x:																																												\
+#define select_and_report(x)																															\
+case x:																																					\
     snprintf(&worker_failure_message[slen], scap, "ERROR: thread::worker unwinding; termination code is %s, current_exception_ptr = 0x%p\n", #x, reinterpret_cast<void *>(p));
 
                 switch (code)
