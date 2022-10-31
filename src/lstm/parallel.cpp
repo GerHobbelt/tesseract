@@ -21,11 +21,7 @@
 
 #include "parallel.h"
 
-#ifdef _OPENMP
-#  include <omp.h>
-#endif
-
-#include "functions.h" // For conditional undef of _OPENMP.
+#include "functions.h" // For TESSERACT_ENABLE_MULTITHREADING
 #include "networkscratch.h"
 
 namespace tesseract {
@@ -66,12 +62,13 @@ void Parallel::Forward(ParallelismBackend& parallelism_backend,
     for (int i = 0; i < stack_size; ++i) {
       results[i].Resize(input, stack_[i]->NumOutputs(), scratch);
     }
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(stack_size)
-#endif
-    for (int i = 0; i < stack_size; ++i) {
+    parallelism_backend.ParallelFor(
+          0, stack_size,
+          ParallelSettings().SetThreadCount(stack_size)
+                            .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+          [&](std::int64_t i) {
       stack_[i]->Forward(parallelism_backend, debug, input, nullptr, scratch, results[i]);
-    }
+    });
     // Now pack all the results (serially) into the output.
     int out_offset = 0;
     output->Resize(*results[0], NumOutputs());
@@ -136,13 +133,14 @@ bool Parallel::Backward(ParallelismBackend& parallelism_backend,
       in_deltas[i]->CopyUnpacking(fwd_deltas, feature_offset, num_features);
       feature_offset += num_features;
     }
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(stack_size)
-#endif
-    for (unsigned i = 0; i < stack_size; ++i) {
+    parallelism_backend.ParallelFor(
+          0, stack_size,
+          ParallelSettings().SetThreadCount(stack_size)
+                            .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+          [&](std::int64_t i) {
       stack_[i]->Backward(parallelism_backend, debug, *in_deltas[i], scratch,
                           i == 0 ? back_deltas : out_deltas[i]);
-    }
+    });
     if (needs_to_backprop_) {
       for (unsigned i = 1; i < stack_size; ++i) {
         back_deltas->AddAllToFloat(*out_deltas[i]);
