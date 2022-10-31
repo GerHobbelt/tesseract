@@ -721,10 +721,10 @@ bool LSTM::Backward(ParallelismBackend& parallelism_backend,
     if (w == GFS && !Is2D()) {
       return;
     }
-    gate_weights_[w].SumOuterTransposed(*gate_errors_t[w], *source_t, false);
+    gate_weights_[w].SumOuterTransposed(parallelism_backend, *gate_errors_t[w], *source_t, false);
   });
   if (softmax_ != nullptr) {
-    softmax_->FinishBackward(*softmax_errors_t);
+    softmax_->FinishBackward(parallelism_backend, *softmax_errors_t);
   }
   return needs_to_backprop_;
 }

@@ -426,7 +426,8 @@ void WeightMatrix::VectorDotMatrix(const TFloat *u, TFloat *v) const {
 // inputs.
 // Note that (matching MatrixDotVector) v[last][] is missing, presumed 1.0.
 // Runs parallel if requested. Note that u and v must be transposed.
-void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const TransposedArray &v,
+void WeightMatrix::SumOuterTransposed(ParallelismBackend& parallelism_backend,
+                                      const TransposedArray &u, const TransposedArray &v,
                                       bool in_parallel) {
   assert(!int_mode_);
   int num_outputs = dw_.dim1();
@@ -436,10 +437,11 @@ void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const Transposed
   int num_samples = u.dim2();
   // v is missing the last element in dim1.
   assert(v.dim1() == num_inputs);
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(4) if (in_parallel)
-#endif
-  for (int i = 0; i < num_outputs; ++i) {
+  parallelism_backend.ParallelFor(
+        0, num_outputs,
+        ParallelSettings().SetThreadCount(4)
+                          .SetMultiThreadingEnabled(in_parallel),
+        [&](std::int64_t i) {
     TFloat *dwi = dw_[i];
     const TFloat *ui = u[i];
     for (int j = 0; j < num_inputs; ++j) {
@@ -451,7 +453,7 @@ void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const Transposed
       total += ui[k];
     }
     dwi[num_inputs] = total;
-  }
+  });
 }
 
 // Updates the weights using the given learning rate and momentum.

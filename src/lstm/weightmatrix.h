@@ -147,7 +147,8 @@ public:
   // from u and v, starting with u[i][offset] and v[j][offset].
   // Note that (matching MatrixDotVector) v[last][] is missing, presumed 1.0.
   // Runs parallel if requested. Note that inputs must be transposed.
-  void SumOuterTransposed(const TransposedArray &u, const TransposedArray &v, bool parallel);
+  void SumOuterTransposed(ParallelismBackend &parallelism_backend,
+                          const TransposedArray &u, const TransposedArray &v, bool parallel);
   // Updates the weights using the given learning rate, momentum and adam_beta.
   // num_samples is used in the Adam correction factor.
   void Update(float learning_rate, float momentum, float adam_beta, int num_samples);

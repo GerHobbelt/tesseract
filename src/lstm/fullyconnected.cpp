@@ -261,7 +261,7 @@ bool FullyConnected::Backward(ParallelismBackend& parallelism_backend,
       back_deltas->WriteTimeStep(t, backprop);
     }
   });
-  FinishBackward(*errors_t.get());
+  FinishBackward(parallelism_backend, *errors_t.get());
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
 #if DEBUG_DETAIL > 0
@@ -297,11 +297,12 @@ void FullyConnected::BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat
   errors_t->WriteStrided(t, curr_errors);
 }
 
-void FullyConnected::FinishBackward(const TransposedArray &errors_t) {
+void FullyConnected::FinishBackward(ParallelismBackend& parallelism_backend,
+                                    const TransposedArray &errors_t) {
   if (external_source_ == nullptr) {
-    weights_.SumOuterTransposed(errors_t, source_t_, true);
+    weights_.SumOuterTransposed(parallelism_backend, errors_t, source_t_, true);
   } else {
-    weights_.SumOuterTransposed(errors_t, *external_source_, true);
+    weights_.SumOuterTransposed(parallelism_backend, errors_t, *external_source_, true);
   }
 }
 

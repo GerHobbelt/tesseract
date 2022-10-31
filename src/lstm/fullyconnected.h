@@ -104,7 +104,8 @@ public:
   // Components of Backward so FullyConnected can be reused inside LSTM.
   void BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat *curr_errors,
                         TransposedArray *errors_t, TFloat *backprop);
-  void FinishBackward(const TransposedArray &errors_t);
+  void FinishBackward(ParallelismBackend& parallelism_backend,
+                      const TransposedArray &errors_t);
 
   // Updates the weights using the given learning rate, momentum and adam_beta.
   // num_samples is used in the adam computation iff use_adam_ is true.
