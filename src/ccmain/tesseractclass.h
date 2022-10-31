@@ -180,6 +180,8 @@ public:
   Tesseract();
   ~Tesseract() override;
 
+  void SetParallelismBackend(ParallelismBackend* backend);
+
   // Return appropriate dictionary
   Dict &getDict() override;
 
@@ -1017,6 +1019,11 @@ private:
   LSTMRecognizer *lstm_recognizer_;
   // Output "page" number (actually line number) using TrainLineRecognizer.
   int train_line_page_num_;
+  // Default parallelism backend used if no custom backend is specified
+  std::unique_ptr<ParallelismBackend> default_parallelism_backend_;
+  // Current parallelism backend, either default_parallelism_backend_.get() or
+  // whatever was supplied by the user.
+  ParallelismBackend* parallelism_backend_ = nullptr;
 };
 
 } // namespace tesseract

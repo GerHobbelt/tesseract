@@ -23,6 +23,7 @@
 
 #include "export.h"
 #include "pageiterator.h"
+#include "parallelismbackend.h"
 #include "publictypes.h"
 #include "resultiterator.h"
 #include "unichar.h"
@@ -222,6 +223,18 @@ public:
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params, FileReader reader);
+
+  /**
+   * Sets parallelism backend for use by Tesseract algorithms. This allows
+   * greater control on how exactly parallel tasks are run. For example,
+   * a backend backend by a custom thread pool can be supplied.
+   *
+   * The ownership of the `backend` pointer remains with the caller. The caller
+   * must ensure its lifetime exceeds the lifetime of TessBaseAPI.
+   *
+   * By default, a backend based on OpenMP is used if available.
+   */
+  void SetParallelismBackend(ParallelismBackend* backend);
 
   /**
    * Returns the languages string used in the last valid initialization.

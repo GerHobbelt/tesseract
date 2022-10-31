@@ -437,6 +437,10 @@ int TessBaseAPI::Init(const char *data, int data_size, const char *language, Ocr
   return 0;
 }
 
+void TessBaseAPI::SetParallelismBackend(ParallelismBackend* backend) {
+  tesseract_->SetParallelismBackend(backend);
+}
+
 /**
  * Returns the languages string used in the last valid initialization.
  * If the last initialization specified "deu+hin" then that will be

@@ -464,7 +464,11 @@ Tesseract::Tesseract()
     , equ_detect_(nullptr)
 #endif // ndef DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
-    , train_line_page_num_(0) {}
+    , train_line_page_num_(0)
+{
+  default_parallelism_backend_ = GetDefaultParallelismBackend();
+  parallelism_backend_ = default_parallelism_backend_.get();
+}
 
 Tesseract::~Tesseract() {
   Clear();
@@ -475,6 +479,10 @@ Tesseract::~Tesseract() {
   }
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
+}
+
+void Tesseract::SetParallelismBackend(ParallelismBackend* backend) {
+  parallelism_backend_ = backend;
 }
 
 Dict &Tesseract::getDict() {
