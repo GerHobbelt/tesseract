@@ -50,8 +50,9 @@ enum TrainingFlags {
 // Note that a sub-class, LSTMTrainer is used for training.
 class TESS_API LSTMRecognizer {
 public:
-  LSTMRecognizer();
-  LSTMRecognizer(const std::string &language_data_path_prefix);
+  LSTMRecognizer(ParallelismBackend& parallelism_backend);
+  LSTMRecognizer(ParallelismBackend &parallelism_backend,
+                 const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
   int NumOutputs() const {
@@ -325,6 +326,8 @@ protected:
   const char *DecodeSingleLabel(int label);
 
 protected:
+  // The backend to use for parallel operations
+  ParallelismBackend& parallelism_backend_;
   // The network hierarchy.
   Network *network_;
   // The unicharset. Only the unicharset element is serialized.

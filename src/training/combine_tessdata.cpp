@@ -43,7 +43,8 @@ static int list_network(TessdataManager &tm, const char *filename) {
   }
   tesseract::TFile fp;
   if (tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
-    tesseract::LSTMRecognizer recognizer;
+    auto parallelism_backend = tesseract::GetDefaultParallelismBackend();
+    tesseract::LSTMRecognizer recognizer{*parallelism_backend};
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintf("Failed to deserialize LSTM in %s!\n", filename);
       return EXIT_FAILURE;
@@ -204,7 +205,8 @@ int main(int argc, char **argv) {
       tprintf("No LSTM Component found in %s!\n", argv[2]);
       return EXIT_FAILURE;
     }
-    tesseract::LSTMRecognizer recognizer;
+    auto parallelism_backend = tesseract::GetDefaultParallelismBackend();
+    tesseract::LSTMRecognizer recognizer{*parallelism_backend};
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintf("Failed to deserialize LSTM in %s!\n", argv[2]);
       return EXIT_FAILURE;

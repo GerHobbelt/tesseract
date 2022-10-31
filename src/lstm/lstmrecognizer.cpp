@@ -47,13 +47,15 @@ const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
 const double kCertOffset = -0.085;
 
-LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
-    : LSTMRecognizer::LSTMRecognizer() {
+LSTMRecognizer::LSTMRecognizer(ParallelismBackend &parallelism_backend,
+                               const std::string &language_data_path_prefix)
+    : LSTMRecognizer::LSTMRecognizer(parallelism_backend) {
   ccutil_.language_data_path_prefix = language_data_path_prefix;
 }
 
-LSTMRecognizer::LSTMRecognizer()
-    : network_(nullptr)
+LSTMRecognizer::LSTMRecognizer(ParallelismBackend &parallelism_backend)
+    : parallelism_backend_{parallelism_backend}
+    , network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
     , sample_iteration_(0)
