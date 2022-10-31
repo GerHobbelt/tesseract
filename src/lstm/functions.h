@@ -26,7 +26,6 @@
 // to a small number, so outputs can be diffed.
 #define DEBUG_DETAIL 0
 #if DEBUG_DETAIL > 0
-#  undef _OPENMP // Disable open mp to get the outputs in sync.
 #define TESSERACT_ENABLE_MULTITHREADING 1
 #else
 #define TESSERACT_ENABLE_MULTITHREADING 0
