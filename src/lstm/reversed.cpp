@@ -49,23 +49,25 @@ void Reversed::SetNetwork(Network *network) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void Reversed::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Reversed::Forward(ParallelismBackend& parallelism_backend,
+                       bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                        NetworkScratch *scratch, NetworkIO *output) {
   NetworkScratch::IO rev_input(input, scratch);
   ReverseData(input, rev_input);
   NetworkScratch::IO rev_output(input, scratch);
-  stack_[0]->Forward(debug, *rev_input, nullptr, scratch, rev_output);
+  stack_[0]->Forward(parallelism_backend, debug, *rev_input, nullptr, scratch, rev_output);
   ReverseData(*rev_output, output);
 }
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Reversed::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Reversed::Backward(ParallelismBackend& parallelism_backend,
+                        bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                         NetworkIO *back_deltas) {
   NetworkScratch::IO rev_input(fwd_deltas, scratch);
   ReverseData(fwd_deltas, rev_input);
   NetworkScratch::IO rev_output(fwd_deltas, scratch);
-  if (stack_[0]->Backward(debug, *rev_input, scratch, rev_output)) {
+  if (stack_[0]->Backward(parallelism_backend, debug, *rev_input, scratch, rev_output)) {
     ReverseData(*rev_output, back_deltas);
     return true;
   }

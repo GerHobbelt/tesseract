@@ -103,7 +103,8 @@ void Series::CacheXScaleFactor(int factor) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void Series::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Series::Forward(ParallelismBackend& parallelism_backend,
+                     bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                      NetworkScratch *scratch, NetworkIO *output) {
   int stack_size = stack_.size();
   ASSERT_HOST(stack_size > 1);
@@ -112,20 +113,22 @@ void Series::Forward(bool debug, const NetworkIO &input, const TransposedArray *
   NetworkScratch::IO buffer2(input, scratch);
   // Run each network in turn, giving the output of n as the input to n + 1,
   // with the final network providing the real output.
-  stack_[0]->Forward(debug, input, input_transpose, scratch, buffer1);
+  stack_[0]->Forward(parallelism_backend, debug, input, input_transpose, scratch, buffer1);
   for (int i = 1; i < stack_size; i += 2) {
-    stack_[i]->Forward(debug, *buffer1, nullptr, scratch, i + 1 < stack_size ? buffer2 : output);
+    stack_[i]->Forward(parallelism_backend, debug, *buffer1, nullptr, scratch,
+                       i + 1 < stack_size ? buffer2 : output);
     if (i + 1 == stack_size) {
       return;
     }
-    stack_[i + 1]->Forward(debug, *buffer2, nullptr, scratch,
+    stack_[i + 1]->Forward(parallelism_backend, debug, *buffer2, nullptr, scratch,
                            i + 2 < stack_size ? buffer1 : output);
   }
 }
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Series::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Series::Backward(ParallelismBackend& parallelism_backend,
+                      bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                       NetworkIO *back_deltas) {
   if (!IsTraining()) {
     return false;
@@ -138,19 +141,21 @@ bool Series::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *s
   // Run each network in reverse order, giving the back_deltas output of n as
   // the fwd_deltas input to n-1, with the 0 network providing the real output.
   if (!stack_.back()->IsTraining() ||
-      !stack_.back()->Backward(debug, fwd_deltas, scratch, buffer1)) {
+      !stack_.back()->Backward(parallelism_backend, debug, fwd_deltas, scratch, buffer1)) {
     return false;
   }
   for (int i = stack_size - 2; i >= 0; i -= 2) {
     if (!stack_[i]->IsTraining() ||
-        !stack_[i]->Backward(debug, *buffer1, scratch, i > 0 ? buffer2 : back_deltas)) {
+        !stack_[i]->Backward(parallelism_backend, debug, *buffer1, scratch,
+                             i > 0 ? buffer2 : back_deltas)) {
       return false;
     }
     if (i == 0) {
       return needs_to_backprop_;
     }
     if (!stack_[i - 1]->IsTraining() ||
-        !stack_[i - 1]->Backward(debug, *buffer2, scratch, i > 1 ? buffer1 : back_deltas)) {
+        !stack_[i - 1]->Backward(parallelism_backend, debug, *buffer2, scratch,
+                                 i > 1 ? buffer1 : back_deltas)) {
       return false;
     }
   }

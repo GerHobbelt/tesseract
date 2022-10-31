@@ -34,7 +34,8 @@ bool Maxpool::DeSerialize(TFile *fp) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void Maxpool::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Maxpool::Forward(ParallelismBackend& parallelism_backend,
+                      bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                       NetworkScratch *scratch, NetworkIO *output) {
   output->ResizeScaled(input, x_scale_, y_scale_, no_);
   maxes_.ResizeNoInit(output->Width(), ni_);
@@ -67,7 +68,8 @@ void Maxpool::Forward(bool debug, const NetworkIO &input, const TransposedArray 
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Maxpool::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Maxpool::Backward(ParallelismBackend& parallelism_backend,
+                       bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                        NetworkIO *back_deltas) {
   back_deltas->ResizeToMap(fwd_deltas.int_mode(), back_map_, ni_);
   back_deltas->MaxpoolBackward(fwd_deltas, maxes_);

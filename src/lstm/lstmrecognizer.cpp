@@ -347,7 +347,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   inputs->set_int_mode(IsIntMode());
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
-  network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
+  network_->Forward(parallelism_backend_, debug, *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
     float pos_min, pos_mean, pos_sd;
@@ -359,7 +359,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       pixInvert(pix, pix);
       Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, &inv_inputs);
-      network_->Forward(debug, inv_inputs, nullptr, &scratch_space_, &inv_outputs);
+      network_->Forward(parallelism_backend_, debug, inv_inputs, nullptr, &scratch_space_,
+                        &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (inv_mean > pos_mean) {
@@ -374,7 +375,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         // Inverting was not an improvement, so undo and run again, so the
         // outputs match the best forward result.
         SetRandomSeed();
-        network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
+        network_->Forward(parallelism_backend_, debug, *inputs, nullptr, &scratch_space_, outputs);
       }
     }
   }

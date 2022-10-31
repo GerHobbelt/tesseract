@@ -87,7 +87,8 @@ public:
 
   // Runs forward propagation of activations on the input line.
   // See Network for a detailed discussion of the arguments.
-  void Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+  void Forward(ParallelismBackend& parallelism_backend,
+               bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                NetworkScratch *scratch, NetworkIO *output) override;
   // Components of Forward so FullyConnected can be reused inside LSTM.
   void SetupForward(const NetworkIO &input, const TransposedArray *input_transpose);
@@ -97,7 +98,8 @@ public:
 
   // Runs backward propagation of errors on the deltas line.
   // See Network for a detailed discussion of the arguments.
-  bool Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+  bool Backward(ParallelismBackend& parallelism_backend,
+                bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                 NetworkIO *back_deltas) override;
   // Components of Backward so FullyConnected can be reused inside LSTM.
   void BackwardTimeStep(const NetworkIO &fwd_deltas, int t, TFloat *curr_errors,

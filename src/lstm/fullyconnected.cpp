@@ -126,7 +126,8 @@ bool FullyConnected::DeSerialize(TFile *fp) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void FullyConnected::Forward(bool debug, const NetworkIO &input,
+void FullyConnected::Forward(ParallelismBackend& parallelism_backend,
+                             bool debug, const NetworkIO &input,
                              const TransposedArray *input_transpose, NetworkScratch *scratch,
                              NetworkIO *output) {
   int width = input.Width();
@@ -235,7 +236,8 @@ void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t, TFloat *outpu
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool FullyConnected::Backward(ParallelismBackend& parallelism_backend,
+                              bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                               NetworkIO *back_deltas) {
 #ifndef GRAPHICS_DISABLED
   if (debug) {

@@ -52,7 +52,8 @@ bool Convolve::DeSerialize(TFile *fp) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void Convolve::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Convolve::Forward(ParallelismBackend& parallelism_backend,
+                       bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                        NetworkScratch *scratch, NetworkIO *output) {
   output->Resize(input, no_);
   int y_scale = 2 * half_y_ + 1;
@@ -89,7 +90,8 @@ void Convolve::Forward(bool debug, const NetworkIO &input, const TransposedArray
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Convolve::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Convolve::Backward(ParallelismBackend& parallelism_backend,
+                        bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                         NetworkIO *back_deltas) {
   back_deltas->Resize(fwd_deltas, ni_);
   NetworkScratch::IO delta_sum;

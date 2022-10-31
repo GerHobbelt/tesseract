@@ -288,7 +288,8 @@ bool LSTM::DeSerialize(TFile *fp) {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void LSTM::Forward(ParallelismBackend& parallelism_backend,
+                   bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                    NetworkScratch *scratch, NetworkIO *output) {
   input_map_ = input.stride_map();
   input_width_ = input.Width();
@@ -504,7 +505,8 @@ void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *in
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool LSTM::Backward(ParallelismBackend& parallelism_backend,
+                    bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                     NetworkIO *back_deltas) {
 #ifndef GRAPHICS_DISABLED
   if (debug) {

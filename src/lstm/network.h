@@ -266,7 +266,8 @@ public:
   // reference it on a call to backward. This is a bit ugly, but it makes it
   // possible for a replicating parallel to calculate the input transpose once
   // instead of all the replicated networks having to do it.
-  virtual void Forward(bool debug, const NetworkIO &input,
+  virtual void Forward(ParallelismBackend& parallelism_backend,
+                       bool debug, const NetworkIO &input,
                        const TransposedArray *input_transpose,
                        NetworkScratch *scratch, NetworkIO *output) = 0;
 
@@ -275,7 +276,8 @@ public:
   // Returns false if back_deltas was not set, due to there being no point in
   // propagating further backwards. Thus most complete networks will always
   // return false from Backward!
-  virtual bool Backward(bool debug, const NetworkIO &fwd_deltas,
+  virtual bool Backward(ParallelismBackend& parallelism_backend,
+                        bool debug, const NetworkIO &fwd_deltas,
                         NetworkScratch *scratch, NetworkIO *back_deltas) = 0;
 
   // === Debug image display methods. ===

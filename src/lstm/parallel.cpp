@@ -49,7 +49,8 @@ StaticShape Parallel::OutputShape(const StaticShape &input_shape) const {
 
 // Runs forward propagation of activations on the input line.
 // See NetworkCpp for a detailed discussion of the arguments.
-void Parallel::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Parallel::Forward(ParallelismBackend& parallelism_backend,
+                       bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                        NetworkScratch *scratch, NetworkIO *output) {
   bool parallel_debug = false;
   // If this parallel is a replicator of convolvers, or holds a 1-d LSTM pair,
@@ -69,7 +70,7 @@ void Parallel::Forward(bool debug, const NetworkIO &input, const TransposedArray
 #  pragma omp parallel for num_threads(stack_size)
 #endif
     for (int i = 0; i < stack_size; ++i) {
-      stack_[i]->Forward(debug, input, nullptr, scratch, results[i]);
+      stack_[i]->Forward(parallelism_backend, debug, input, nullptr, scratch, results[i]);
     }
     // Now pack all the results (serially) into the output.
     int out_offset = 0;
@@ -91,7 +92,7 @@ void Parallel::Forward(bool debug, const NetworkIO &input, const TransposedArray
     // Run each network, putting the outputs into result.
     int out_offset = 0;
     for (int i = 0; i < stack_size; ++i) {
-      stack_[i]->Forward(debug, input, src_transpose, scratch, result);
+      stack_[i]->Forward(parallelism_backend, debug, input, src_transpose, scratch, result);
       // All networks must have the same output width
       if (i == 0) {
         output->Resize(*result, NumOutputs());
@@ -110,7 +111,8 @@ void Parallel::Forward(bool debug, const NetworkIO &input, const TransposedArray
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Parallel::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Parallel::Backward(ParallelismBackend& parallelism_backend,
+                        bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                         NetworkIO *back_deltas) {
   // If this parallel is a replicator of convolvers, or holds a 1-d LSTM pair,
   // or a 2-d LSTM quad, do debug locally, and don't pass the flag on.
@@ -138,7 +140,8 @@ bool Parallel::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch 
 #  pragma omp parallel for num_threads(stack_size)
 #endif
     for (unsigned i = 0; i < stack_size; ++i) {
-      stack_[i]->Backward(debug, *in_deltas[i], scratch, i == 0 ? back_deltas : out_deltas[i]);
+      stack_[i]->Backward(parallelism_backend, debug, *in_deltas[i], scratch,
+                          i == 0 ? back_deltas : out_deltas[i]);
     }
     if (needs_to_backprop_) {
       for (unsigned i = 1; i < stack_size; ++i) {
@@ -156,7 +159,7 @@ bool Parallel::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch 
       int num_features = stack_[i]->NumOutputs();
       in_deltas->CopyUnpacking(fwd_deltas, feature_offset, num_features);
       feature_offset += num_features;
-      if (stack_[i]->Backward(debug, *in_deltas, scratch, back_deltas)) {
+      if (stack_[i]->Backward(parallelism_backend, debug, *in_deltas, scratch, back_deltas)) {
         if (i == 0) {
           out_deltas.ResizeFloat(*back_deltas, back_deltas->NumFeatures(), scratch);
           out_deltas->CopyAll(*back_deltas);

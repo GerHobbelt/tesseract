@@ -61,14 +61,16 @@ void Input::CacheXScaleFactor(int factor) {
 
 // Runs forward propagation of activations on the input line.
 // See Network for a detailed discussion of the arguments.
-void Input::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void Input::Forward(ParallelismBackend& parallelism_backend,
+                    bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                     NetworkScratch *scratch, NetworkIO *output) {
   *output = input;
 }
 
 // Runs backward propagation of errors on the deltas line.
 // See NetworkCpp for a detailed discussion of the arguments.
-bool Input::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
+bool Input::Backward(ParallelismBackend& parallelism_backend,
+                     bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                      NetworkIO *back_deltas) {
   tprintf("Input::Backward should not be called!!\n");
   return false;

@@ -64,7 +64,8 @@ bool TFNetwork::DeSerialize(TFile *fp) {
 
 // Runs forward propagation of activations on the input line.
 // See Network for a detailed discussion of the arguments.
-void TFNetwork::Forward(bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
+void TFNetwork::Forward(ParallelismBackend& parallelism_backend,
+                        bool debug, const NetworkIO &input, const TransposedArray *input_transpose,
                         NetworkScratch *scratch, NetworkIO *output) {
   std::vector<std::pair<std::string, Tensor>> tf_inputs;
   int depth = input_shape_.depth();
