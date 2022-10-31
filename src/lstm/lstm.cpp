@@ -21,9 +21,6 @@
 
 #include "lstm.h"
 
-#ifdef _OPENMP
-#  include <omp.h>
-#endif
 #include <cstdio>
 #include <cstdlib>
 #include <sstream> // for std::ostringstream
@@ -36,33 +33,6 @@
 #include "functions.h"
 #include "networkscratch.h"
 #include "tprintf.h"
-
-// Macros for openmp code if it is available, otherwise empty macros.
-#ifdef _OPENMP
-#  define PARALLEL_IF_OPENMP(__num_threads)                                  \
-    PRAGMA(omp parallel if (__num_threads > 1) num_threads(__num_threads)) { \
-      PRAGMA(omp sections nowait) {                                          \
-        PRAGMA(omp section) {
-#  define SECTION_IF_OPENMP \
-    }                       \
-    PRAGMA(omp section) {
-#  define END_PARALLEL_IF_OPENMP \
-    }                            \
-    } /* end of sections */      \
-    } /* end of parallel section */
-
-// Define the portable PRAGMA macro.
-#  ifdef _MSC_VER // Different _Pragma
-#    define PRAGMA(x) __pragma(x)
-#  else
-#    define PRAGMA(x) _Pragma(#    x)
-#  endif // _MSC_VER
-
-#else // _OPENMP
-#  define PARALLEL_IF_OPENMP(__num_threads)
-#  define SECTION_IF_OPENMP
-#  define END_PARALLEL_IF_OPENMP
-#endif // _OPENMP
 
 namespace tesseract {
 
@@ -373,55 +343,67 @@ void LSTM::Forward(ParallelismBackend& parallelism_backend,
       source_.ReadTimeStep(t, curr_input);
     }
     // Matrix multiply the inputs with the source.
-    PARALLEL_IF_OPENMP(GFS)
-    // It looks inefficient to create the threads on each t iteration, but the
-    // alternative of putting the parallel outside the t loop, a single around
-    // the t-loop and then tasks in place of the sections is a *lot* slower.
-    // Cell inputs.
-    if (source_.int_mode()) {
-      gate_weights_[CI].MatrixDotVector(source_.i(t), temp_lines[CI]);
-    } else {
-      gate_weights_[CI].MatrixDotVector(curr_input, temp_lines[CI]);
-    }
-    FuncInplace<GFunc>(ns_, temp_lines[CI]);
+    int thread_count = GFS + 1;
+    parallelism_backend.ParallelFor(
+          0, thread_count,
+          ParallelSettings().SetThreadCount(thread_count)
+                            .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+          [&](int action) {
+      // This is a bit hacky way to issue 4 unrelated tasks, however representing the
+      // computation as parallel allows to use parallelism primitives not specific to
+      // OpenMP.
 
-    SECTION_IF_OPENMP
-    // Input Gates.
-    if (source_.int_mode()) {
-      gate_weights_[GI].MatrixDotVector(source_.i(t), temp_lines[GI]);
-    } else {
-      gate_weights_[GI].MatrixDotVector(curr_input, temp_lines[GI]);
-    }
-    FuncInplace<FFunc>(ns_, temp_lines[GI]);
+      // OpenMP-specific: It looks inefficient to create the threads on each t iteration,
+      // but the alternative of putting the parallel outside the t loop, a single around
+      // the t-loop and then tasks in place of the sections is a *lot* slower.
 
-    SECTION_IF_OPENMP
-    // 1-D forget gates.
-    if (source_.int_mode()) {
-      gate_weights_[GF1].MatrixDotVector(source_.i(t), temp_lines[GF1]);
-    } else {
-      gate_weights_[GF1].MatrixDotVector(curr_input, temp_lines[GF1]);
-    }
-    FuncInplace<FFunc>(ns_, temp_lines[GF1]);
+      if (action == CI) {
+        // Cell inputs.
+        if (source_.int_mode()) {
+          gate_weights_[CI].MatrixDotVector(source_.i(t), temp_lines[CI]);
+        } else {
+          gate_weights_[CI].MatrixDotVector(curr_input, temp_lines[CI]);
+        }
+        FuncInplace<GFunc>(ns_, temp_lines[CI]);
 
-    // 2-D forget gates.
-    if (Is2D()) {
-      if (source_.int_mode()) {
-        gate_weights_[GFS].MatrixDotVector(source_.i(t), temp_lines[GFS]);
-      } else {
-        gate_weights_[GFS].MatrixDotVector(curr_input, temp_lines[GFS]);
+      } else if (action == GI) {
+        // Input Gates.
+        if (source_.int_mode()) {
+          gate_weights_[GI].MatrixDotVector(source_.i(t), temp_lines[GI]);
+        } else {
+          gate_weights_[GI].MatrixDotVector(curr_input, temp_lines[GI]);
+        }
+        FuncInplace<FFunc>(ns_, temp_lines[GI]);
+
+      } else if (action == GF1) {
+        // 1-D forget gates.
+        if (source_.int_mode()) {
+          gate_weights_[GF1].MatrixDotVector(source_.i(t), temp_lines[GF1]);
+        } else {
+          gate_weights_[GF1].MatrixDotVector(curr_input, temp_lines[GF1]);
+        }
+        FuncInplace<FFunc>(ns_, temp_lines[GF1]);
+
+      } else if (action == GFS) {
+        // 2-D forget gates.
+        if (Is2D()) {
+          if (source_.int_mode()) {
+            gate_weights_[GFS].MatrixDotVector(source_.i(t), temp_lines[GFS]);
+          } else {
+            gate_weights_[GFS].MatrixDotVector(curr_input, temp_lines[GFS]);
+          }
+          FuncInplace<FFunc>(ns_, temp_lines[GFS]);
+        }
+      } else if (action == GO) {
+        // Output gates.
+        if (source_.int_mode()) {
+          gate_weights_[GO].MatrixDotVector(source_.i(t), temp_lines[GO]);
+        } else {
+          gate_weights_[GO].MatrixDotVector(curr_input, temp_lines[GO]);
+        }
+        FuncInplace<FFunc>(ns_, temp_lines[GO]);
       }
-      FuncInplace<FFunc>(ns_, temp_lines[GFS]);
-    }
-
-    SECTION_IF_OPENMP
-    // Output gates.
-    if (source_.int_mode()) {
-      gate_weights_[GO].MatrixDotVector(source_.i(t), temp_lines[GO]);
-    } else {
-      gate_weights_[GO].MatrixDotVector(curr_input, temp_lines[GO]);
-    }
-    FuncInplace<FFunc>(ns_, temp_lines[GO]);
-    END_PARALLEL_IF_OPENMP
+    });
 
     // Apply forget gate to state.
     MultiplyVectorsInPlace(ns_, temp_lines[GF1], curr_state);
@@ -653,53 +635,63 @@ bool LSTM::Backward(ParallelismBackend& parallelism_backend,
     }
 #endif
     // Matrix multiply to get the source errors.
-    PARALLEL_IF_OPENMP(GFS)
+    int thread_count = GFS + 1;
+    parallelism_backend.ParallelFor(
+          0, thread_count,
+          ParallelSettings().SetThreadCount(thread_count)
+                            .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+          [&](int action) {
+      // This is a bit hacky way to issue 4 unrelated tasks, however representing the
+      // computation as parallel allows to use parallelism primitives not specific to
+      // OpenMP.
 
-    // Cell inputs.
-    node_values_[CI].FuncMultiply3<GPrime>(t, node_values_[GI], t, curr_stateerr, gate_errors[CI]);
-    ClipVector(ns_, -kErrClip, kErrClip, gate_errors[CI].get());
-    gate_weights_[CI].VectorDotMatrix(gate_errors[CI], sourceerr_temps[CI]);
-    gate_errors_t[CI].get()->WriteStrided(t, gate_errors[CI]);
+      if (action == CI) {
+        // Cell inputs.
+        node_values_[CI].FuncMultiply3<GPrime>(t, node_values_[GI], t, curr_stateerr, gate_errors[CI]);
+        ClipVector(ns_, -kErrClip, kErrClip, gate_errors[CI].get());
+        gate_weights_[CI].VectorDotMatrix(gate_errors[CI], sourceerr_temps[CI]);
+        gate_errors_t[CI].get()->WriteStrided(t, gate_errors[CI]);
 
-    SECTION_IF_OPENMP
-    // Input Gates.
-    node_values_[GI].FuncMultiply3<FPrime>(t, node_values_[CI], t, curr_stateerr, gate_errors[GI]);
-    ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GI].get());
-    gate_weights_[GI].VectorDotMatrix(gate_errors[GI], sourceerr_temps[GI]);
-    gate_errors_t[GI].get()->WriteStrided(t, gate_errors[GI]);
+      } else if (action == GI) {
+        // Input Gates.
+        node_values_[GI].FuncMultiply3<FPrime>(t, node_values_[CI], t, curr_stateerr, gate_errors[GI]);
+        ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GI].get());
+        gate_weights_[GI].VectorDotMatrix(gate_errors[GI], sourceerr_temps[GI]);
+        gate_errors_t[GI].get()->WriteStrided(t, gate_errors[GI]);
 
-    SECTION_IF_OPENMP
-    // 1-D forget Gates.
-    if (t > 0) {
-      node_values_[GF1].FuncMultiply3<FPrime>(t, state_, t - 1, curr_stateerr, gate_errors[GF1]);
-      ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GF1].get());
-      gate_weights_[GF1].VectorDotMatrix(gate_errors[GF1], sourceerr_temps[GF1]);
-    } else {
-      memset(gate_errors[GF1], 0, ns_ * sizeof(gate_errors[GF1][0]));
-      memset(sourceerr_temps[GF1], 0, na_ * sizeof(*sourceerr_temps[GF1]));
-    }
-    gate_errors_t[GF1].get()->WriteStrided(t, gate_errors[GF1]);
+      } else if (action == GF1) {
+        // 1-D forget Gates.
+        if (t > 0) {
+          node_values_[GF1].FuncMultiply3<FPrime>(t, state_, t - 1, curr_stateerr, gate_errors[GF1]);
+          ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GF1].get());
+          gate_weights_[GF1].VectorDotMatrix(gate_errors[GF1], sourceerr_temps[GF1]);
+        } else {
+          memset(gate_errors[GF1], 0, ns_ * sizeof(gate_errors[GF1][0]));
+          memset(sourceerr_temps[GF1], 0, na_ * sizeof(*sourceerr_temps[GF1]));
+        }
+        gate_errors_t[GF1].get()->WriteStrided(t, gate_errors[GF1]);
 
-    // 2-D forget Gates.
-    if (up_pos >= 0) {
-      node_values_[GFS].FuncMultiply3<FPrime>(t, state_, up_pos, curr_stateerr, gate_errors[GFS]);
-      ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GFS].get());
-      gate_weights_[GFS].VectorDotMatrix(gate_errors[GFS], sourceerr_temps[GFS]);
-    } else {
-      memset(gate_errors[GFS], 0, ns_ * sizeof(gate_errors[GFS][0]));
-      memset(sourceerr_temps[GFS], 0, na_ * sizeof(*sourceerr_temps[GFS]));
-    }
-    if (Is2D()) {
-      gate_errors_t[GFS].get()->WriteStrided(t, gate_errors[GFS]);
-    }
-
-    SECTION_IF_OPENMP
-    // Output gates.
-    state_.Func2Multiply3<HFunc, FPrime>(node_values_[GO], t, outputerr, gate_errors[GO]);
-    ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GO].get());
-    gate_weights_[GO].VectorDotMatrix(gate_errors[GO], sourceerr_temps[GO]);
-    gate_errors_t[GO].get()->WriteStrided(t, gate_errors[GO]);
-    END_PARALLEL_IF_OPENMP
+      } else if (action == GFS) {
+        // 2-D forget Gates.
+        if (up_pos >= 0) {
+          node_values_[GFS].FuncMultiply3<FPrime>(t, state_, up_pos, curr_stateerr, gate_errors[GFS]);
+          ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GFS].get());
+          gate_weights_[GFS].VectorDotMatrix(gate_errors[GFS], sourceerr_temps[GFS]);
+        } else {
+          memset(gate_errors[GFS], 0, ns_ * sizeof(gate_errors[GFS][0]));
+          memset(sourceerr_temps[GFS], 0, na_ * sizeof(*sourceerr_temps[GFS]));
+        }
+        if (Is2D()) {
+          gate_errors_t[GFS].get()->WriteStrided(t, gate_errors[GFS]);
+        }
+      } else if (action == GO) {
+        // Output gates.
+        state_.Func2Multiply3<HFunc, FPrime>(node_values_[GO], t, outputerr, gate_errors[GO]);
+        ClipVector(ns_, -kErrClip, kErrClip, gate_errors[GO].get());
+        gate_weights_[GO].VectorDotMatrix(gate_errors[GO], sourceerr_temps[GO]);
+        gate_errors_t[GO].get()->WriteStrided(t, gate_errors[GO]);
+      }
+    });
 
     SumVectors(na_, sourceerr_temps[CI], sourceerr_temps[GI], sourceerr_temps[GF1],
                sourceerr_temps[GO], sourceerr_temps[GFS], curr_sourceerr);
@@ -722,15 +714,15 @@ bool LSTM::Backward(ParallelismBackend& parallelism_backend,
   source_.Transpose(source_t.get());
   state_t.Init(ns_, width, scratch);
   state_.Transpose(state_t.get());
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(GFS) if (!Is2D())
-#endif
-  for (int w = 0; w < WT_COUNT; ++w) {
+  parallelism_backend.ParallelFor(
+        0, WT_COUNT,
+        ParallelSettings().SetMultiThreadingEnabled(!Is2D() && TESSERACT_ENABLE_MULTITHREADING),
+        [&](std::int64_t w) {
     if (w == GFS && !Is2D()) {
-      continue;
+      return;
     }
     gate_weights_[w].SumOuterTransposed(*gate_errors_t[w], *source_t, false);
-  }
+  });
   if (softmax_ != nullptr) {
     softmax_->FinishBackward(*softmax_errors_t);
   }
