@@ -21,21 +21,11 @@
 
 #include "fullyconnected.h"
 
-#ifdef _OPENMP
-#  include <omp.h>
-#endif
 #include <cstdio>
 #include <cstdlib>
 
 #include "functions.h"
 #include "networkscratch.h"
-
-// Number of threads to use for parallel calculation of Forward and Backward.
-#ifdef _OPENMP
-const int kNumThreads = 4;
-#else
-const int kNumThreads = 1;
-#endif
 
 namespace tesseract {
 
@@ -137,26 +127,22 @@ void FullyConnected::Forward(ParallelismBackend& parallelism_backend,
     output->Resize(input, no_);
   }
   SetupForward(input, input_transpose);
-  std::vector<NetworkScratch::FloatVec> temp_lines(kNumThreads);
-  std::vector<NetworkScratch::FloatVec> curr_input(kNumThreads);
+  auto num_threads = std::min(4, parallelism_backend.GetMaxThreadCount());
+  std::vector<NetworkScratch::FloatVec> temp_lines(num_threads);
+  std::vector<NetworkScratch::FloatVec> curr_input(num_threads);
   int ro = no_;
   if (IntSimdMatrix::intSimdMatrix) {
     ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < num_threads; ++i) {
     temp_lines[i].Init(ro, scratch);
     curr_input[i].Init(ni_, scratch);
   }
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(kNumThreads)
-  for (int t = 0; t < width; ++t) {
-    // Thread-local pointer to temporary storage.
-    int thread_id = omp_get_thread_num();
-#else
-  for (int t = 0; t < width; ++t) {
-    // Thread-local pointer to temporary storage.
-    int thread_id = 0;
-#endif
+  parallelism_backend.ParallelForWithThreadId(
+        0, width,
+        ParallelSettings().SetThreadCount(num_threads)
+                          .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+        [&](std::int64_t t, int thread_id) {
     TFloat *temp_line = temp_lines[thread_id];
     if (input.int_mode()) {
       ForwardTimeStep(input.i(t), t, temp_line);
@@ -168,7 +154,7 @@ void FullyConnected::Forward(ParallelismBackend& parallelism_backend,
     if (IsTraining() && type_ != NT_SOFTMAX) {
       acts_.CopyTimeStepFrom(t, *output, t);
     }
-  }
+  });
   // Zero all the elements that are in the padding around images that allows
   // multiple different-sized images to exist in a single array.
   // acts_ is only used if this is not a softmax op.
@@ -245,28 +231,26 @@ bool FullyConnected::Backward(ParallelismBackend& parallelism_backend,
   }
 #endif
   back_deltas->Resize(fwd_deltas, ni_);
-  std::vector<NetworkScratch::FloatVec> errors(kNumThreads);
-  for (int i = 0; i < kNumThreads; ++i) {
+  auto num_threads = std::min(4, parallelism_backend.GetMaxThreadCount());
+  std::vector<NetworkScratch::FloatVec> errors(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
     errors[i].Init(no_, scratch);
   }
   std::vector<NetworkScratch::FloatVec> temp_backprops;
   if (needs_to_backprop_) {
-    temp_backprops.resize(kNumThreads);
-    for (int i = 0; i < kNumThreads; ++i) {
+    temp_backprops.resize(num_threads);
+    for (int i = 0; i < num_threads; ++i) {
       temp_backprops[i].Init(ni_, scratch);
     }
   }
   int width = fwd_deltas.Width();
   NetworkScratch::GradientStore errors_t;
   errors_t.Init(no_, width, scratch);
-#ifdef _OPENMP
-#  pragma omp parallel for num_threads(kNumThreads)
-  for (int t = 0; t < width; ++t) {
-    int thread_id = omp_get_thread_num();
-#else
-  for (int t = 0; t < width; ++t) {
-    int thread_id = 0;
-#endif
+  parallelism_backend.ParallelForWithThreadId(
+        0, width,
+        ParallelSettings().SetThreadCount(num_threads)
+                          .SetMultiThreadingEnabled(TESSERACT_ENABLE_MULTITHREADING),
+        [&](std::int64_t t, int thread_id) {
     TFloat *backprop = nullptr;
     if (needs_to_backprop_) {
       backprop = temp_backprops[thread_id];
@@ -276,7 +260,7 @@ bool FullyConnected::Backward(ParallelismBackend& parallelism_backend,
     if (backprop != nullptr) {
       back_deltas->WriteTimeStep(t, backprop);
     }
-  }
+  });
   FinishBackward(*errors_t.get());
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
