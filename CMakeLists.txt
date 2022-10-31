@@ -714,6 +714,7 @@ set(TESSERACT_SRC
     src/api/altorenderer.cpp
     src/api/hocrrenderer.cpp
     src/api/lstmboxrenderer.cpp
+    src/api/parallelismbackend.cpp
     src/api/pdfrenderer.cpp
     src/api/wordstrboxrenderer.cpp)
 
@@ -917,6 +918,7 @@ install(
         include/tesseract/pageiterator.h
         include/tesseract/resultiterator.h
         include/tesseract/osdetect.h
+        include/tesseract/parallelismbackend.h
         include/tesseract/publictypes.h
         include/tesseract/ocrclass.h
         include/tesseract/export.h
