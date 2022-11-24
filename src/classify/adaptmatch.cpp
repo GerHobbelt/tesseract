@@ -646,7 +646,7 @@ void Classify::StartBackupAdaptiveClassifier() {
  */
 void Classify::SettupPass1() {
   EnableLearning = classify_enable_learning;
-
+  UseLearning = false;
   getDict().SettupStopperPass1();
 
 } /* SettupPass1 */
@@ -662,6 +662,7 @@ void Classify::SettupPass1() {
  */
 void Classify::SettupPass2() {
   EnableLearning = false;
+  UseLearning = true;
   getDict().SettupStopperPass2();
 
 } /* SettupPass2 */
@@ -1489,7 +1490,7 @@ void Classify::DoAdaptiveMatch(TBLOB *Blob, ADAPT_RESULTS *Results) {
     return;
   }
 
-  if (AdaptedTemplates->NumPermClasses < matcher_permanent_classes_min || tess_cn_matching) {
+  if (AdaptedTemplates->NumPermClasses < matcher_permanent_classes_min || tess_cn_matching  || !UseLearning) {
     CharNormClassifier(Blob, *sample, Results);
   } else {
     Ambiguities = BaselineClassifier(Blob, bl_features, fx_info, AdaptedTemplates, Results);

@@ -168,20 +168,16 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
   for (int v = 0; v < num_iterations; ++v) {
     const ParamsVectors *vec = (v == 0) ? GlobalParams() : member_params;
     for (auto int_param : vec->int_params) {
-      stream << int_param->name_str() << '\t' << (int32_t)(*int_param) << '\t'
-             << int_param->info_str() << '\n';
+      stream << int_param->name_str() << '\t' << (int32_t)(*int_param) << '\n';
     }
     for (auto bool_param : vec->bool_params) {
-      stream << bool_param->name_str() << '\t' << bool(*bool_param) << '\t'
-             << bool_param->info_str() << '\n';
+      stream << bool_param->name_str() << '\t' << bool(*bool_param) << '\n';
     }
     for (auto string_param : vec->string_params) {
-      stream << string_param->name_str() << '\t' << string_param->c_str() << '\t'
-             << string_param->info_str() << '\n';
+      stream << string_param->name_str() << '\t' << string_param->c_str() << '\n';
     }
     for (auto double_param : vec->double_params) {
-      stream << double_param->name_str() << '\t' << (double)(*double_param) << '\t'
-             << double_param->info_str() << '\n';
+      stream << double_param->name_str() << '\t' << (double)(*double_param) << '\n';
     }
   }
   fprintf(fp, "%s", stream.str().c_str());
