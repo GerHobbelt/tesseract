@@ -54,6 +54,7 @@ jobs:
            brew install leptonica
            brew install libarchive
            brew install pango
+           brew install icu4c && brew link icu4c
            brew install cabextract
            brew install ninja
            ninja --version
@@ -84,6 +85,8 @@ jobs:
         run: |
              set -e
              export PKG_CONFIG_PATH=$(brew --prefix)/opt/icu4c/lib/pkgconfig:$(brew --prefix)/opt/libarchive/lib/pkgconfig:/$(brew --prefix)/opt/libffi/lib/pkgconfig:$PKG_CONFIG_PATH
+             export LDFLAGS="-L/usr/local/opt/icu4c/lib"
+             export CPPFLAGS="-I/usr/local/opt/icu4c/include"
              mkdir build
              mkdir inst
              cmake \
