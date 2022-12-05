@@ -141,7 +141,7 @@ AM_CONDITIONAL([HAVE_NEON], false)
 
 case "${host_cpu}" in
 
-  *86*)
+  amd64|*86*)
 
     AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
     AM_CONDITIONAL([HAVE_AVX], ${avx})
