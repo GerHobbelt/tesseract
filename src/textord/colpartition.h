@@ -31,6 +31,9 @@
 
 #include <algorithm>
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 // Number of colors in the color1, color2 arrays.

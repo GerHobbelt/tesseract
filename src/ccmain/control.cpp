@@ -1202,7 +1202,7 @@ bool Tesseract::SelectGoodDiacriticOutlines(int pass, float certainty_threshold,
     *ok_outlines = best_outlines;
     if (debug_noise_removal) {
       tprintf("{} noise combination ", blob ? "Adding" : "New");
-      for (auto best_outline : best_outlines) {
+      for (auto &&best_outline : best_outlines) {
         tprintf("{}", best_outline ? "T" : "F");
       }
       tprintf(" yields certainty {}, beating target of {}\n", best_cert, target_cert);

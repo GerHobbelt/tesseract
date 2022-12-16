@@ -14,7 +14,6 @@
 
 #if defined(HAVE_MUPDF)
 #include "tprintf.h"          // for tprintf
-#include "mupdf/assert.h"     // for ASSERT
 #endif
 
 #include <atomic>             // std::atomic
@@ -36,10 +35,15 @@
 // see also https://docs.microsoft.com/en-us/cpp/cpp/try-except-statement?view=msvc-170 et al.
 #include <windows.h>
 #include <excpt.h>
+#include <winternl.h>  // define NTSTATUS
 #pragma warning(push)
 #pragma warning(disable: 4005) // warning C4005: macro redefinition
 #include <ntstatus.h> // STATUS_POSSIBLE_DEADLOCK
 #pragma warning(pop)
+#endif
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
 #endif
 
 #ifndef ASSERT
@@ -50,12 +54,20 @@
 #endif
 #endif
 
+#ifndef ASSERT0
+#define ASSERT0(expr)			ASSERT(expr)
+#endif
+
 #ifndef ASSERT_AND_CONTINUE
 #if defined(_WIN32)
 #define ASSERT_AND_CONTINUE(expr)			(void)((expr) || (DebugBreak(), 0))
 #else
 #define ASSERT_AND_CONTINUE(expr)
 #endif
+#endif
+
+#ifndef ASSERT_AND_CONTINUE0
+#define ASSERT_AND_CONTINUE0(expr)			ASSERT_AND_CONTINUE0(expr)
 #endif
 
 namespace BS
@@ -484,7 +496,7 @@ public:
         const bool was_paused = paused;
         paused = true;
         wait_for_tasks();
-        ASSERT(!running || get_tasks_running() == 0);
+        ASSERT0(!running || get_tasks_running() == 0);
         destroy_threads();
         thread_count = determine_thread_count(thread_count_);
         threads = std::make_unique<std::thread[]>(thread_count);
@@ -606,13 +618,13 @@ public:
                 task_available_cv.notify_all();
             }
 
-			// This is not needed any more, fortunately, as we're steadily increasing the poll period, so, even when it started at zero(0),
-			// each round through here will raise it above that number and there's no need for us to YIELD explicitly:
+            // This is not needed any more, fortunately, as we're steadily increasing the poll period, so, even when it started at zero(0),
+            // each round through here will raise it above that number and there's no need for us to YIELD explicitly:
 #if 0
-			std::this_thread::yield();
+            std::this_thread::yield();
 #endif
 
-			tasks_done_lock.lock();
+            tasks_done_lock.lock();
         }
         waiting = false;
     }
@@ -805,11 +817,11 @@ protected:
             {
                 // see also the comments in the workerthread_main() method
                 size_t scap = worker_failure_message.capacity();
-                ASSERT_AND_CONTINUE(scap >= 80);
+                ASSERT_AND_CONTINUE0(scap >= 80);
                 if (scap >= 80)
                 {
                     snprintf(&worker_failure_message[0], scap, "thread::worker caught unhandled C++ exception: %s", e.what());
-                    worker_failure_message[scap - 1] = 0;		// snprintf() doesn't guarantee a NUL at the end. **We do.**
+                    worker_failure_message[scap - 1] = 0;        // snprintf() doesn't guarantee a NUL at the end. **We do.**
                 }
             }
             return true;
@@ -844,7 +856,7 @@ protected:
      */
     [[nodiscard]] bool __worker_SEH(std::string &worker_failure_message)
     {
-        ASSERT_AND_CONTINUE(worker_failure_message.capacity() >= 70 + 150 + 80);
+        ASSERT_AND_CONTINUE0(worker_failure_message.capacity() >= 70 + 150 + 80);
 
         alive_threads_count++;
 
@@ -863,7 +875,7 @@ protected:
                 // see also the comments in the workerthread_main() method
                 size_t slen = worker_failure_message.length();
                 size_t scap = worker_failure_message.capacity() - slen;
-                ASSERT_AND_CONTINUE(scap >= 70);
+                ASSERT_AND_CONTINUE0(scap >= 70);
                 if (scap >= 70)
                 {
                     if (slen > 0)
@@ -872,7 +884,7 @@ protected:
                         scap--;
                     }
                     snprintf(&worker_failure_message[slen], scap, "%s: thread::worker unwinding; termination is %s.", AbnormalTermination() ? "ERROR" : "INFO", AbnormalTermination() ? "ABNORMAL" : "normal");
-                    ASSERT(strlen(&worker_failure_message[slen]) < 70);
+                    ASSERT0(strlen(&worker_failure_message[slen]) < 70);
                 }
             }
         }
@@ -891,7 +903,7 @@ protected:
             // see also the comments in the workerthread_main() method
             size_t slen = worker_failure_message.length();
             size_t scap = worker_failure_message.capacity() - slen;
-            ASSERT_AND_CONTINUE(scap >= 150);
+            ASSERT_AND_CONTINUE0(scap >= 150);
             if (scap >= 150)
             {
                 if (slen > 0)
@@ -900,8 +912,8 @@ protected:
                     scap--;
                 }
 
-#define select_and_report(x)																																						\
-case x:																																												\
+#define select_and_report(x)																															\
+case x:																																					\
     snprintf(&worker_failure_message[slen], scap, "ERROR: thread::worker unwinding; termination code is %s, current_exception_ptr = 0x%p\n", #x, reinterpret_cast<void *>(p));
 
                 switch (code)
@@ -962,7 +974,7 @@ case x:																																												\
                     break;
                 }
                 worker_failure_message[scap - 1] = 0;		// snprintf() doesn't guarantee a NUL at the end. **We do.**
-                ASSERT(strlen(&worker_failure_message[slen]) < 150);
+                ASSERT0(strlen(&worker_failure_message[slen]) < 150);
 
 #if 0
                 if (p)
@@ -1014,14 +1026,14 @@ case x:																																												\
     {
         // You SHOULD reserve space for any caught thread fatality report. We SHOULD have this space already present beforehand as we cannot trust the system to do much of anything any more when we happen to encounter such a catastrophic situation.
         //
-        // - https://stackoverflow.com/questions/6700480/how-to-create-a-stdstring-directly-from-a-char-array-without-copying#comments-6700534 :: "Yes, it is permitted in C++11. There's a lot of arcane wording around this, which pretty much boils down to it being illegal to modify the null terminator, and being illegal to modify anything through the data() or c_str() pointers, but valid through &str[0]. stackoverflow.com/a/14291203/5696" – John Calsbeek
+        // - https://stackoverflow.com/questions/6700480/how-to-create-a-stdstring-directly-from-a-char-array-without-copying#comments-6700534 :: "Yes, it is permitted in C++11. There's a lot of arcane wording around this, which pretty much boils down to it being illegal to modify the null terminator, and being illegal to modify anything through the data() or c_str() pointers, but valid through &str[0]. stackoverflow.com/a/14291203/5696" -- John Calsbeek
         std::string worker_failure_message;
         worker_failure_message.reserve(worker_failure_message_size);
-        ASSERT(worker_failure_message.capacity() >= worker_failure_message_size);
+        ASSERT0(worker_failure_message.capacity() >= worker_failure_message_size);
 
         bool abnormal_exit = __worker_SEH(worker_failure_message);
 
-        ASSERT(!abnormal_exit || !worker_failure_message.empty()); // message MUST be filled any time an abnormal termination has been observed.
+        ASSERT0(!abnormal_exit || !worker_failure_message.empty()); // message MUST be filled any time an abnormal termination has been observed.
         if (!worker_failure_message.empty())
         {
 #if defined(HAVE_MUPDF)
@@ -1048,11 +1060,11 @@ case x:																																												\
 
     /**
      * @brief The `wait_for_tasks()` poll cycle period, in milliseconds, where after each `sleep_duration` wait_for_tasks() will be incited to broadcast its waiting state to the worker threads so they wake from their potential short slumbers and check all shutdown / reactivation conditions and signal back when they've done so. Consequently, when there's no tasks pending or incoming, thread workers are not woken up, ever, unless `wait_for_tasks()` explicitly asks for them to wake up and check everything, including 'pause mode' and 'shutdown/cleanup' (running == 0).
-	 * If set to 0, then instead of sleeping for a bit when termination conditions have not yet been met, `wait_for_tasks()` will execute std::this_thread::yield(). The default value is 10 milliseconds.
-	 *
-	 * Note that the `sleep_duration` value is only relevant to execution timing of `wait_for_tasks()` when one of these conditions apply:
-	 * - the threadpool has been put into 'pause mode' and there are no more lingering tasks from the previous era being finished, while the queue stays in 'pause mode'.
-	 * - the threadpool is shutting down (running==false, due to threadpool instance cleanup & destruction, usually part of an application shutdown)
+     * If set to 0, then instead of sleeping for a bit when termination conditions have not yet been met, `wait_for_tasks()` will execute std::this_thread::yield(). The default value is 10 milliseconds.
+     *
+     * Note that the `sleep_duration` value is only relevant to execution timing of `wait_for_tasks()` when one of these conditions apply:
+     * - the threadpool has been put into 'pause mode' and there are no more lingering tasks from the previous era being finished, while the queue stays in 'pause mode'.
+     * - the threadpool is shutting down (running==false, due to threadpool instance cleanup & destruction, usually part of an application shutdown)
      */
     std::chrono::milliseconds sleep_duration = std::chrono::milliseconds(10);
 

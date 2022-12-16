@@ -115,12 +115,12 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
             tprintf("ERROR: Failed to open output_ambig_words_file {}\n", output_ambig_words_file.c_str());
             throw "Failed to open output_ambig_words_file";	// GHo: analyzed code flow; this entire function seems to only be used in DISABLED_LEGACY_ENGINE but better to throw than to exit() anyway!
           }
-	  std::string word_str;
+          std::string word_str;
           word->string_and_lengths(&word_str, nullptr);
           word_str += " ";
           fprintf(output_ambig_words_file_, "%s", word_str.c_str());
         }
-	std::string word_str;
+        std::string word_str;
         word->string_and_lengths(&word_str, nullptr);
         word_str += " ";
         fprintf(output_ambig_words_file_, "%s", word_str.c_str());

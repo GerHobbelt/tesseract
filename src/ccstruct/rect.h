@@ -32,10 +32,10 @@
 #include <cstdio>    // for FILE
 #include <string>    // for std::string
 
-namespace tesseract {
-
 #undef max
 #undef min
+
+namespace tesseract {
 
 class TESS_API TBOX { // bounding box
 public:

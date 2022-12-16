@@ -3,7 +3,7 @@
 
 #if defined(HAVE_MUPDF)
 
-#include "mupdf/assert.h"
+#include "mupdf/assertions.h"
 
 #else
 

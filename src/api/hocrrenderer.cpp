@@ -61,7 +61,6 @@ static void AddBaselineCoordsTohOCR(const PageIterator *it,
   tesseract::Orientation orientation = GetBlockTextOrientation(it);
   if (orientation != ORIENTATION_PAGE_UP) {
     hocr_str << "; textangle " << 360 - orientation * 90;
-    return;
   }
 
   int left, top, right, bottom;
@@ -419,7 +418,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
                    << " id='"
                    << "timestep" << page_id << "_" << wcnt << "_" << tcnt
                    << "'>";
-          for (auto conf : timestep) {
+          for (auto &&conf : timestep) {
             hocr_str << "\n         <span class='ocrx_cinfo'"
                      << " id='"
                      << "choice_" << page_id << "_" << wcnt << "_" << ccnt

@@ -141,7 +141,7 @@ AM_CONDITIONAL([HAVE_NEON], false)
 
 case "${host_cpu}" in
 
-  *86*)
+  amd64|*86*)
 
     AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
     AM_CONDITIONAL([HAVE_AVX], ${avx})
@@ -181,7 +181,7 @@ case "${host_cpu}" in
 
     ;;
 
-  aarch64|arm64)
+  aarch64*|arm64)
 
     # ARMv8 always has NEON and does not need special compiler flags.
     AM_CONDITIONAL([HAVE_NEON], true)

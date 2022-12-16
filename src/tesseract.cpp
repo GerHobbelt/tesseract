@@ -483,9 +483,10 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
                       const char **outputbase, const char **datapath, l_int32 *dpi,
                       bool *list_langs,
                       const char **visible_pdf_image_file,
-                      bool *print_parameters, bool* print_fonts_table, std::vector<std::string> *vars_vec,
-                      std::vector<std::string> *vars_values, l_int32 *arg_i,
-                      tesseract::PageSegMode *pagesegmode, tesseract::OcrEngineMode *enginemode) {
+                      bool *print_parameters, bool *print_fonts_table,
+                      std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
+                      l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
+                      tesseract::OcrEngineMode *enginemode) {
   int i = 1;
   if (i < argc) {
     const char* verb = argv[i];
@@ -563,7 +564,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       try {
         auto loglevel = loglevels.at(loglevel_string);
 		FLAGS_tlog_level = loglevel;
-      } catch(const std::out_of_range& e) {
+      } catch (const std::out_of_range &e) {
 		(void)e;		// unused variable
         // TODO: Allow numeric argument?
         tprintf("Error, unsupported --loglevel {}\n", loglevel_string);
@@ -853,7 +854,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
                  &visible_pdf_image_file,
-                 &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i, &pagesegmode, &enginemode)) {
+                 &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
+                 &pagesegmode, &enginemode)) {
     return EXIT_FAILURE;
   }
 
@@ -907,7 +909,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
 #if !DISABLED_LEGACY_ENGINE
   if (print_fonts_table) {
-    FILE* fout = stdout;
+    FILE *fout = stdout;
     fprintf(stdout, "Tesseract fonts table:\n");
     api.PrintFontsTable(fout);
     api.End();
