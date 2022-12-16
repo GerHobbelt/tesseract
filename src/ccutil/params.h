@@ -287,7 +287,7 @@ public:
   bool empty() const {
     return value_.empty();
   }
-  bool operator==(const std::string &other) {
+  bool operator==(const std::string &other) const {
     return value_ == other;
   }
   void operator=(const std::string &value) {
