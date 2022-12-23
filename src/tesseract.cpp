@@ -900,18 +900,16 @@ extern "C" int tesseract_main(int argc, const char** argv)
   }
 
   if (print_parameters) {
-    FILE *fout = stdout;
-    tprintf("Tesseract parameters:\n");
-    api.PrintVariables(fout);
+	tprintf("Tesseract parameters:\n");
+    api.PrintVariables();
     api.End();
     return EXIT_SUCCESS;
   }
 
 #if !DISABLED_LEGACY_ENGINE
   if (print_fonts_table) {
-    FILE *fout = stdout;
-    fprintf(stdout, "Tesseract fonts table:\n");
-    api.PrintFontsTable(fout);
+    tprintf("Tesseract fonts table:\n");
+    api.PrintFontsTable();
     api.End();
     return EXIT_SUCCESS;
   }

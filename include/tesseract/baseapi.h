@@ -155,16 +155,16 @@ public:
 #if !DISABLED_LEGACY_ENGINE
 
   /**
-   * Print Tesseract fonts table to the given file.
+   * Print Tesseract fonts table to the given file (stdout by default).
    */
-  void PrintFontsTable(FILE *fp) const;
+  void PrintFontsTable(FILE *fp = nullptr) const;
 
 #endif
 
   /**
-   * Print Tesseract parameters to the given file.
+   * Print Tesseract parameters to the given file (stdout by default).
    */
-  void PrintVariables(FILE *fp) const;
+  void PrintVariables(FILE *fp = nullptr) const;
 
   /**
    * Get value of named variable as a string, if it exists.

@@ -166,7 +166,9 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
   int num_iterations = (member_params == nullptr) ? 1 : 2;
   // When printing to stdout info text is included.
   // Info text is omitted when printing to a file (would result in an invalid config file).
-  bool print_info = (fp == stdout) ? true : false;
+  if (!fp)
+	  fp = stdout;
+  bool print_info = (fp == stdout || fp == stderr);
   std::ostringstream stream;
   stream.imbue(std::locale::classic());
   for (int v = 0; v < num_iterations; ++v) {
@@ -204,6 +206,13 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
       }
     }
   }
+#ifdef HAVE_MUPDF
+  if (print_info)
+  {
+	  tprintf("{}", stream.str().c_str());
+	  return;
+  }
+#endif
   fprintf(fp, "%s", stream.str().c_str());
 }
 
