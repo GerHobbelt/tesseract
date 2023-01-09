@@ -825,7 +825,41 @@ int main(int argc, char **argv) {
       fprintf(stderr, "%s", osd_warning.c_str());
     }
 #endif
-    bool succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
+
+
+    Pix *pix = pixRead(image);
+    auto renderer = renderers[0].get();
+    renderer->BeginDocument("TODO");
+    //document_title.c_str());
+
+    bool succeed = api.ProcessPage(pix, 0, image, NULL, 0, renderers[0].get());
+    //bool succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
+
+    {
+        Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
+
+        //pixWrite("/tmp/out.png", pix, IFF_PNG);
+        //Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
+        Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+        //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
+
+        api.SetPageSegMode(PSM_SINGLE_BLOCK);
+        //api.SetPageSegMode(PSM_SPARSE_TEXT);
+        api.SetImage(newpix);
+
+        api.Recognize(NULL);
+
+        // TODO: error handling
+        renderer->AddImage(&api);
+
+        boxaDestroy(&default_boxes);
+        pixDestroy(&newpix);
+    }
+
+    pixDestroy(&pix);
+
+    renderer->EndDocument();
+
     if (!succeed) {
       fprintf(stderr, "Error during processing.\n");
       ret_val = EXIT_FAILURE;
