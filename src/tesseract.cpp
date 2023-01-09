@@ -269,6 +269,7 @@ static void PrintHelpExtra(const char *program) {
       "  --user-patterns PATH  Specify the location of user patterns file.\n"
       "                        (Same as: -c user_patterns_file=PATH)\n"
       "  --dpi VALUE           Specify DPI for input image.\n"
+      "  --two-pass            Whether to use a two-pass approach (only with --psm 3).\n"
       "  --loglevel LEVEL      Specify logging level. LEVEL can be\n"
       "                        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL or OFF.\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
@@ -514,7 +515,7 @@ bool std::filesystem::exists(const char* filename) {
 // NOTE: arg_i is used here to avoid ugly *i so many times in this function
 static bool ParseArgs(int argc, const char** argv, const char **lang, const char **image,
                       const char **outputbase, const char **datapath, l_int32 *dpi,
-                      bool *list_langs,
+                      bool *twopass, bool *list_langs,
                       const char **visible_pdf_image_file,
                       bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
@@ -581,6 +582,8 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if (strcmp(argv[i], "--dpi") == 0 && i + 1 < argc) {
       *dpi = atoi(argv[i + 1]);
       ++i;
+    } else if (strcmp(argv[i], "--two-pass") == 0) {
+      *twopass= true;
     } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
       // Allow the log levels which are used by log4cxx.
       std::string loglevel_string = argv[++i];
@@ -858,6 +861,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   bool print_parameters = false;
   bool print_fonts_table = false;
   l_int32 dpi = 0;
+  bool twopass = false;
   int arg_i = 1;
   int ret_val = EXIT_SUCCESS;
 
@@ -889,7 +893,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
-  if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
+  if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &twopass, &list_langs,
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
                  &pagesegmode, &enginemode)) {
@@ -1197,7 +1201,43 @@ extern "C" int tesseract_main(int argc, const char** argv)
       tprintf("{}", osd_warning);
     }
 #endif
-    bool succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
+
+    bool succeed;
+
+    if (!twopass) {
+        succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
+    } else {
+        Pix *pix = pixRead(image);
+        auto renderer = renderers[0].get();
+        renderer->BeginDocument("");
+        //document_title.c_str());
+
+        succeed = api.ProcessPage(pix, 0, image, NULL, 0, renderers[0].get());
+
+        {
+            Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
+
+            //pixWrite("/tmp/out.png", pix, IFF_PNG);
+            //Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
+            Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+            //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
+
+            api.SetPageSegMode(PSM_SINGLE_BLOCK);
+            //api.SetPageSegMode(PSM_SPARSE_TEXT);
+            api.SetImage(newpix);
+
+            succeed = succeed && !api.Recognize(NULL);
+            renderer->AddImage(&api);
+
+            boxaDestroy(&default_boxes);
+            pixDestroy(&newpix);
+        }
+
+        pixDestroy(&pix);
+
+        renderer->EndDocument();
+    }
+
     if (!succeed) {
       tprintf("ERROR: Error during page processing. File: {}\n", image);
       ret_val = EXIT_FAILURE;
