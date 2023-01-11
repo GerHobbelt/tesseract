@@ -107,6 +107,9 @@ SIMDDetect SIMDDetect::detector;
 #if defined(__aarch64__)
 // ARMv8 always has NEON.
 bool SIMDDetect::neon_available_ = true;
+#elif defined(HAVE_NEON)
+// If true, then Neon has been detected.
+bool SIMDDetect::neon_available_ = true;
 #else
 // If true, then Neon has been detected.
 bool SIMDDetect::neon_available_ = false;
