@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        intsindmatrixsse.cpp
 // Description: SSE implementation of 8-bit int SIMD matrix multiply.
@@ -103,5 +105,7 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixSSE = {
 };
 
 } // namespace tesseract.
+
+#endif
 
 #endif

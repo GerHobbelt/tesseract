@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        intsimdmatrixavx2.cpp
 // Description: matrix-vector product for 8-bit data on avx2.
@@ -582,5 +584,7 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixAVX2 = {
 };
 
 } // namespace tesseract.
+
+#endif
 
 #endif

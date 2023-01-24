@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        dotproductavx.cpp
 // Description: Architecture-specific dot-product function.
@@ -82,5 +84,7 @@ double DotProductAVX(const double *u, const double *v, int n) {
 #endif
 
 } // namespace tesseract.
+
+#endif
 
 #endif

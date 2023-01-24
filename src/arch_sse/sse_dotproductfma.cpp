@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        dotproductfma.cpp
 // Description: Architecture-specific dot-product function.
@@ -86,5 +88,7 @@ double DotProductFMA(const double *u, const double *v, int n) {
 #endif
 
 } // namespace tesseract.
+
+#endif
 
 #endif

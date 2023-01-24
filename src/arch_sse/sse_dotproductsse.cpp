@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        dotproductsse.cpp
 // Description: Architecture-specific dot-product function.
@@ -142,5 +144,7 @@ double DotProductSSE(const double *u, const double *v, int n) {
 #endif
 
 } // namespace tesseract.
+
+#endif
 
 #endif

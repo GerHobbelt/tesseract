@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        dotproductneon.cpp
 // Description: Dot product function for ARM NEON.
@@ -69,3 +71,5 @@ TFloat DotProductNEON(const TFloat *u, const TFloat *v, int n) {
 } // namespace tesseract
 
 #endif /* __ARM_NEON */
+
+#endif

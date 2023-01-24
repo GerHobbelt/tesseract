@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        intsimdmatrix.cpp
 // Description: Base class for 8-bit int SIMD matrix multipliers.
@@ -92,3 +94,5 @@ void IntSimdMatrix::MatrixDotVector(const GENERIC_2D_ARRAY<int8_t> &w,
 }
 
 } // namespace tesseract
+
+#endif

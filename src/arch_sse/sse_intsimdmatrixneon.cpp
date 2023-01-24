@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        intsimdmatrixneon.cpp
 // Description: matrix-vector product for 8-bit data on neon.
@@ -203,3 +205,5 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixNEON = {
 } // namespace tesseract.
 
 #endif /* __ARM_NEON */
+
+#endif

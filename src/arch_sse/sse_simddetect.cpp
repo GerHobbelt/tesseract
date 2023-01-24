@@ -1,3 +1,5 @@
+#if 0 // obsoleete; new code in ../arch/
+
 ///////////////////////////////////////////////////////////////////////
 // File:        simddetect.cpp
 // Description: Architecture detector.
@@ -159,3 +161,5 @@ void SIMDDetect::Update() {
 }
 
 } // namespace tesseract
+
+#endif
