@@ -21,6 +21,7 @@
 // a unicharset.
 
 #include <cstdlib>
+#include <filesystem>
 #include "boxread.h"
 #include "common/commandlineflags.h"
 #include "common/commontraining.h"     // CheckSharedLibraryVersion
@@ -69,15 +70,21 @@ static int Main(int argc, const char** argv) {
   UNICHARSET unicharset;
   // Load input files
   for (int arg = 1; arg < argc; ++arg) {
+    std::filesystem::path filePath = argv[arg];
     std::string file_data = tesseract::ReadFile(argv[arg]);
     if (file_data.empty()) {
       continue;
     }
     std::vector<std::string> texts;
-    if (ReadMemBoxes(-1, /*skip_blanks*/ true, &file_data[0],
-                     /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
-                     /*box_texts*/ nullptr, /*pages*/ nullptr)) {
+    if (filePath.extension() == ".box") {
       tprintf("Extracting unicharset from box file {}\n", argv[arg]);
+      bool res = ReadMemBoxes(-1, /*skip_blanks*/ true, &file_data[0],
+                   /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
+                   /*box_texts*/ nullptr, /*pages*/ nullptr);
+      if (!res) {
+        tprintf("ERROR: Can not read box data from '{}'\n", argv[arg]);
+        return EXIT_FAILURE;
+      }
     } else {
       tprintf("Extracting unicharset from plain text file {}\n", argv[arg]);
       texts.clear();
