@@ -263,7 +263,9 @@ static void PrintHelpExtra(const char *program) {
       "OCR options:\n"
       "  --tessdata-dir PATH   Specify the location of tessdata path.\n"
       "  --user-words PATH     Specify the location of user words file.\n"
+      "                        (Same as: -c user_words_file=PATH)\n"
       "  --user-patterns PATH  Specify the location of user patterns file.\n"
+      "                        (Same as: -c user_patterns_file=PATH)\n"
       "  --dpi VALUE           Specify DPI for input image.\n"
       "  --loglevel LEVEL      Specify logging level. LEVEL can be\n"
       "                        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL or OFF.\n"
@@ -274,6 +276,11 @@ static void PrintHelpExtra(const char *program) {
 #if !DISABLED_LEGACY_ENGINE
       "  --oem NUM             Specify OCR Engine mode.\n"
 #endif
+      "  --visible-pdf-image PATH\n"
+      "                        Specify path to source page image which will be\n"
+      "                        used as image underlay in PDF output.\n"
+      "                        (page rendered then as image + OCR text hidden overlay)\n"
+      "\n"
       "NOTE: These options must occur before any configfile.\n"
       "\n",
       program, program, program, program
@@ -879,7 +886,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   api.SetOutputName(outputbase);
 
-  const int init_failed = api.InitFull(datapath, lang, enginemode, &(argv[arg_i]), argc - arg_i,
+  int config_count = argc - arg_i;
+  const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count,
                                    &vars_vec, &vars_values, false);
 
   if (!SetVariablesFromCLArgs(api, argc, argv)) {
