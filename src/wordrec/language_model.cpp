@@ -1382,7 +1382,12 @@ void LanguageModel::ExtractFeaturesFromPath(const ViterbiStateEntry &vse, float 
   // features[PTRAIN_NUM_BAD_FONT] = vse.consistency_info.inconsistent_font;
 
   // Classifier-related features.
-  features[PTRAIN_RATING_PER_CHAR] = vse.ratings_sum / static_cast<float>(vse.outline_length);
+  if (vse.outline_length > 0.0f) {
+    features[PTRAIN_RATING_PER_CHAR] = vse.ratings_sum / vse.outline_length;
+  } else {
+    // Avoid FP division by 0.
+    features[PTRAIN_RATING_PER_CHAR] = 0.0f;
+  }
 }
 
 WERD_CHOICE *LanguageModel::ConstructWord(ViterbiStateEntry *vse, WERD_RES *word_res,
