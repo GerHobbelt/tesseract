@@ -19,6 +19,16 @@
 #  include "config_auto.h"
 #endif
 
+#if defined(HAVE_MUPDF) || defined(BUILD_MONOLITHIC)
+#include "mupdf/fitz.h"
+#include "mupdf/helpers/cpu.h"
+#else
+static const int fz_get_cpu_core_count()
+{
+	return 1;   // TODO/HACK
+}
+#endif
+
 #include "fullyconnected.h"
 
 // 21843 ms
@@ -63,7 +73,7 @@
 //static const int kNumThreads = -1;
 // ... but we're going for broke here and expect benchmarks to usually run on otherwise unburdened heavy-duty hardware, so as to optimize
 // for those, we just say TAKE IT ALL:
-static const int kNumThreads = 0;
+static const int kNumThreads = std::max(1, fz_get_cpu_core_count());
 static BS::thread_pool pool(kNumThreads);
 #elif defined(_OPENMP)
 static const int kNumThreads = 4;
@@ -175,6 +185,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   SetupForward(input, input_transpose);
 #if defined(THREADPOOL)
+  ASSERT0(kNumThreads > 0);
   std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
   auto *curr_input = &local_scratch[0];
   auto *temp_lines = &local_scratch[kNumThreads];
@@ -232,6 +243,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
 	pool.wait_for_tasks();
   }
 #else // THREADPOOL
+  ASSERT0(kNumThreads > 0);
   std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
   auto *curr_input = &local_scratch[0];
   auto *temp_lines = &local_scratch[kNumThreads];
