@@ -331,7 +331,7 @@ void ImageData::AddBoxes(const std::vector<TBOX> &boxes,
 }
 
 #ifndef TESSERACT_IMAGEDATA_AS_PIX
-// Saves the given Pix as a PNG-encoded string and destroys it.
+// Saves the given Pix as a PNG-encoded string and destroy it.
 // In case of missing PNG support in Leptonica use PNM format,
 // which requires more memory.
 void ImageData::SetPixInternal(Image pix, std::vector<char> *image_data) {
