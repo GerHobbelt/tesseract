@@ -1405,7 +1405,8 @@ void EquationDetect::GetOutputTiffName(const char *name, std::string &image_name
   ASSERT_HOST(name);
   char page[50];
   snprintf(page, sizeof(page), "%04d", page_count_);
-  image_name = (lang_tesseract_->imagebasename) + page + name + ".tif";
+  // name: _spt, _bi, _seed, _merged
+  image_name = (lang_tesseract_->imagebasename) + page + name + ".tiff";
 }
 
 void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {

@@ -120,9 +120,12 @@ protected:
   void ExpectCorrect(const GENERIC_2D_ARRAY<float> &output, const std::string &truth_utf8,
                      Dict *dict, PointerVector<WERD_RES> *words) {
     RecodeBeamSearch beam_search(recoder_, encoded_null_char_, false, dict);
-    beam_search.Decode(output, 3.5, -0.125, -25.0, nullptr);
+#ifndef NDEBUG
+	beam_search.SetDebug(true);
+#endif
+	beam_search.Decode(output, 3.5, -0.125, -25.0, &ccutil_.unicharset);
     // Uncomment and/or change nullptr above to &ccutil_.unicharset to debug:
-    // beam_search.DebugBeams(ccutil_.unicharset);
+    beam_search.DebugBeams(&ccutil_.unicharset);
     std::vector<int> labels, xcoords;
     beam_search.ExtractBestPathAsLabels(&labels, &xcoords);
     LOG(INFO) << "Labels size = " << labels.size() << " coords " << xcoords.size() << "\n";

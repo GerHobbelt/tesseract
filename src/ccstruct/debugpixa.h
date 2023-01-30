@@ -5,6 +5,9 @@
 
 #include <allheaders.h>
 
+#include <string>
+#include <vector>
+
 namespace tesseract {
 
 // Class to hold a Pixa collection of debug images with captions and save them
@@ -35,15 +38,58 @@ public:
     Image pix_debug =
         pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
     pixaAddPix(pixa_, pix_debug, L_INSERT);
+	captions.push_back(caption);
+  }
+
+  // Return true wheen one or more images have been collected.
+  bool HasPix() {
+    return (pixaGetCount(pixa_) > 0);
   }
 
   // Sets the destination filename and enables images to be written to a PDF
   // on destruction.
   void WritePDF(const char *filename) {
-    if (pixaGetCount(pixa_) > 0) {
+    if (HasPix()) {
+		// TODO: add the captions to the PDF as well, but in TEXT format, not as part of the pix (i.e. not using the bitmap `fonts_`)
+
       pixaConvertToPdf(pixa_, 300, 1.0f, 0, 0, "AllDebugImages", filename);
-      pixaClear(pixa_);
+      //pixaClear(pixa_);
     }
+  }
+
+  void WritePNGs(const char *filename) {
+	  if (HasPix()) {
+		  const char *ext = strrchr(filename, '.');
+		  std::string partname(filename);
+		  partname = partname.substr(0, ext - filename);
+		  int counter = 0;
+		  const char *label = NULL;
+		  int n = pixaGetCount(pixa_);
+
+		  for (int i = 0; i < n; i++) {
+			  counter++;
+			  char in[40];
+			  snprintf(in, 40, ".in%04d", counter);
+			  std::string caption = captions[i];
+			  const char *cprefix = (caption.empty() ? "" : ".");
+			  std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
+
+			  auto pixs = pixaGetPix(pixa_, i, L_CLONE);
+			  if (pixs == nullptr) {
+				  L_ERROR("pixs[%d] not retrieved\n", __func__, i);
+				  continue;
+			  }
+			  pixWrite(fn.c_str(), pixs, IFF_PNG);
+			  pixDestroy(&pixs);
+		  }
+		  //pixaClear(pixa_);
+	  }
+  }
+
+  void Clear()
+  {
+	  pixaClear(pixa_);
+	  captions.clear();
   }
 
 private:
@@ -51,6 +97,8 @@ private:
   Pixa *pixa_;
   // The fonts used to draw text captions.
   L_Bmf *fonts_;
+  // the captions for each image
+  std::vector<std::string> captions;
 };
 
 } // namespace tesseract

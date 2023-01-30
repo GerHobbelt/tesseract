@@ -42,7 +42,7 @@ public:
   // The blob_block is the usual result of connected component analysis,
   // holding the detected blobs.
   // The returned Pix should be PixDestroyed after use.
-  Image ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block);
+  Image ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block, const std::string &debug_output_path);
 
 private:
   // Computes and returns the noise_density IntGrid, at the same gridsize as

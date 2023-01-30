@@ -80,6 +80,7 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
                                     const TessdataManager &model_mgr, int training_stage,
                                     int verbosity) {
   LSTMTrainer trainer;
+  trainer.SetDebug(HasDebug());
   trainer.InitCharSet(model_mgr);
   TFile fp;
   if (!model_mgr.GetComponent(TESSDATA_LSTM, &fp) || !trainer.DeSerialize(&model_mgr, &fp)) {

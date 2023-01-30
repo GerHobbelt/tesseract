@@ -922,6 +922,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
   }
 #endif  // !DISABLED_LEGACY_ENGINE
 
+  // record the currently active input image path as soon as possible:
+  // this path is also used to construct the destination path for 
+  // various debug output files.
+  api.SetInputName(image);
+
   FixPageSegMode(api, pagesegmode);
 
   if (dpi) {
@@ -996,6 +1001,57 @@ extern "C" int tesseract_main(int argc, const char** argv)
         "Using PSM 11 (Sparse text) instead.\n\n";
   }
 #endif // DISABLED_LEGACY_ENGINE
+
+  if (debug_all)
+  {
+	  api.SetVariable("textord_tabfind_show_images", "Y");
+	  api.SetVariable("textord_tabfind_show_vlines", "Y");
+	  api.SetVariable("textord_debug_tabfind", "0" /* "9" */ );  // very noisy output
+
+#ifndef GRAPHICS_DISABLED
+	  api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
+	  api.SetVariable("textord_tabfind_show_reject_blobs", "Y");
+	  api.SetVariable("textord_tabfind_show_partitions", "2");
+	  api.SetVariable("textord_tabfind_show_columns", "Y");
+	  api.SetVariable("textord_tabfind_show_blocks", "Y");
+#endif
+
+	  api.SetVariable("tessedit_create_hocr", "T");
+	  api.SetVariable("tessedit_create_alto", "T");
+	  api.SetVariable("tessedit_create_page", "T");
+	  api.SetVariable("tessedit_create_tsv", "T");
+	  api.SetVariable("tessedit_create_pdf", "T");
+        api.SetVariable("textonly_pdf", "F");
+      api.SetVariable("tessedit_write_unlv", "T");
+	  api.SetVariable("tessedit_create_lstmbox", "T");
+	  api.SetVariable("tessedit_create_boxfile", "T");
+	  api.SetVariable("tessedit_create_wordstrbox", "T");
+	  api.SetVariable("tessedit_create_txt", "T");
+
+	  api.SetVariable("tessedit_dump_choices", "T");
+	  api.SetVariable("tessedit_dump_pageseg_images", "T");
+
+	  api.SetVariable("tessedit_write_images", "T");
+	  
+	  api.SetVariable("debug_noise_removal", "T");
+
+	  api.SetVariable("classify_debug_level", "0" /* "9" */ );  // LSTM debug output is extremely noisy
+
+	  api.SetVariable("scribe_save_grey_rotated_image", "T");
+	  api.SetVariable("scribe_save_binary_rotated_image", "T");
+	  api.SetVariable("scribe_save_original_rotated_image", "T");
+
+	  api.SetVariable("hocr_font_info", "T");
+	  api.SetVariable("hocr_char_boxes", "T");
+	  api.SetVariable("hocr_images", "T");
+
+	  api.SetVariable("thresholding_debug", "T");
+
+	  api.SetVariable("preprocess_graynorm_mode", "0"); // 0..3
+
+		  
+
+  }
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;
 

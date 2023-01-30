@@ -249,8 +249,9 @@ Trainability LSTMTrainer::GridSearchDictParams(
   // NO-dict error.
   RecodeBeamSearch base_search(recoder_, null_char_, SimpleTextOutput(),
                                nullptr);
+  base_search.SetDebug(HasDebug());
   base_search.Decode(fwd_outputs, 1.0, 0.0, RecodeBeamSearch::kMinCertainty,
-                     nullptr);
+                     nullptr, 0);
   base_search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
   std::string truth_text = DecodeLabels(truth_labels);
   std::string ocr_text = DecodeLabels(ocr_labels);
@@ -258,11 +259,12 @@ Trainability LSTMTrainer::GridSearchDictParams(
   results += "0,0=" + std::to_string(baseline_error);
 
   RecodeBeamSearch search(recoder_, null_char_, SimpleTextOutput(), dict_);
+  search.SetDebug(HasDebug());
   for (double r = min_dict_ratio; r < max_dict_ratio; r += dict_ratio_step) {
     for (double c = min_cert_offset; c < max_cert_offset;
          c += cert_offset_step) {
       search.Decode(fwd_outputs, r, c, RecodeBeamSearch::kMinCertainty,
-                    nullptr);
+                    nullptr, 0);
       search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
       truth_text = DecodeLabels(truth_labels);
       ocr_text = DecodeLabels(ocr_labels);
@@ -727,6 +729,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
       }
       // Make a copy of *this, so we can mess about without damaging anything.
       LSTMTrainer copy_trainer;
+	  copy_trainer.SetDebug(samples_trainer->HasDebug());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
       copy_trainer.network_->Update(0.0, 0.0, 0.0, 0);
@@ -753,7 +756,8 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
           continue;
         }
         LSTMTrainer layer_trainer;
-        samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
+		layer_trainer.SetDebug(samples_trainer->HasDebug());
+		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);
         // Update the weights in just the layer, using Adam if enabled.
         layer->Update(0.0, momentum_, adam_beta_,
@@ -949,7 +953,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   float image_scale;
   NetworkIO inputs;
   bool invert = trainingdata->boxes().empty();
-  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, debug, invert, upside_down,
+  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down,
                      &image_scale, &inputs, fwd_outputs)) {
     tprintf("ERROR: Image {} not trainable\n", trainingdata->imagefilename());
     return UNENCODABLE;

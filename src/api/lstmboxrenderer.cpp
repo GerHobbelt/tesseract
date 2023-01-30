@@ -99,7 +99,7 @@ char *TessBaseAPI::GetLSTMBoxText(int page_number = 0) {
  * LSTMBox Renderer interface implementation
  **********************************************************************/
 TessLSTMBoxRenderer::TessLSTMBoxRenderer(const char *outputbase)
-    : TessResultRenderer(outputbase, "box") {}
+    : TessResultRenderer(outputbase, "lstm.box") {}
 
 bool TessLSTMBoxRenderer::AddImageHandler(TessBaseAPI *api) {
   const std::unique_ptr<const char[]> lstmbox(api->GetLSTMBoxText(imagenum()));

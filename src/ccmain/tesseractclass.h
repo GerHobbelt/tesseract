@@ -178,7 +178,7 @@ struct WordData {
 using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
                                            PointerVector<WERD_RES> *);
 
-class TESS_API Tesseract : public Wordrec {
+class TESS_API Tesseract: public Wordrec {
 public:
   Tesseract();
   ~Tesseract() override;
@@ -217,6 +217,9 @@ public:
   void set_pix_grey(Image grey_pix) {
     pix_grey_.destroy();
     pix_grey_ = grey_pix;
+  }
+  DebugPixa &pix_debug() {
+	  return pixa_debug_;
   }
   Image pix_original() const {
     return pix_original_;
@@ -983,6 +986,7 @@ public:
   BOOL_VAR_H(scribe_save_binary_rotated_image);
   BOOL_VAR_H(scribe_save_grey_rotated_image);
   BOOL_VAR_H(scribe_save_original_rotated_image);
+  STRING_VAR_H(debug_output_path);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
@@ -992,6 +996,9 @@ public:
 
   // debug PDF output helper methods:
   void AddPixDebugPage(Image pix, const char *title) {
+	  if (pix == nullptr)
+		  return;
+
 	  if (tessedit_dump_pageseg_images) {
 		  pixa_debug_.AddPix(pix, title);
 	  }

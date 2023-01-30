@@ -80,7 +80,7 @@ void ShiroRekhaSplitter::set_orig_pix(Image pix) {
 // split_for_pageseg should be true if the splitting is being done prior to
 // page segmentation. This mode uses the flag
 // pageseg_devanagari_split_strategy to determine the splitting strategy.
-bool ShiroRekhaSplitter::Split(bool split_for_pageseg, DebugPixa *pixa_debug) {
+bool ShiroRekhaSplitter::Split(bool split_for_pageseg, DebugPixa &pixa_debug) {
   SplitStrategy split_strategy = split_for_pageseg ? pageseg_split_strategy_ : ocr_split_strategy_;
   if (split_strategy == NO_SPLIT) {
     return false; // Nothing to do.
@@ -158,8 +158,8 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg, DebugPixa *pixa_debug) {
   }
   boxaDestroy(&regions_to_clear);
   pixaDestroy(&ccs);
-  if (devanagari_split_debugimage && pixa_debug != nullptr) {
-    pixa_debug->AddPix(debug_image_, split_for_pageseg ? "pageseg_split" : "ocr_split");
+  if (devanagari_split_debugimage) {
+    pixa_debug.AddPix(debug_image_, split_for_pageseg ? "pageseg_split" : "ocr_split");
   }
   return true;
 }

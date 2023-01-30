@@ -63,7 +63,8 @@ Classify::Classify()
                   this->params())
     , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", this->params())
     , INT_MEMBER(classify_debug_level, 0, "Classify debug level", this->params())
-    , INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
+	, BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
+	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
     , double_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
                     this->params())
     , double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",

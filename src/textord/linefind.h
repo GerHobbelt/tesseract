@@ -52,7 +52,7 @@ public:
    */
   static void FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
                                  int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
-                                 TabVector_LIST *h_lines);
+                                 TabVector_LIST *h_lines, const std::string &debug_output_path);
 };
 
 } // namespace tesseract.

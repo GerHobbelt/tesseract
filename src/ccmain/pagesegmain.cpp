@@ -230,7 +230,7 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
     }
 #endif // !DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
-                                photomask_pix, pix_thresholds_, pix_grey_, &pixa_debug_,
+                                photomask_pix, pix_thresholds_, pix_grey_, pixa_debug_,
                                 &found_blocks, diacritic_blobs, to_blocks);
     if (result >= 0) {
       finder->GetDeskewVectors(&deskew_, &reskew_);
@@ -296,12 +296,13 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   }
   // Leptonica is used to find the rule/separator lines in the input.
   LineFinder::FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
-                                 &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines);
+                                 &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines,
+	                             debug_output_path);
   if (tessedit_dump_pageseg_images) {
     pixa_debug_.AddPix(pix_binary_, "NoLines");
   }
   // Leptonica is used to find a mask of the photo regions in the input.
-  *photo_mask_pix = ImageFind::FindImages(pix_binary_, &pixa_debug_);
+  *photo_mask_pix = ImageFind::FindImages(pix_binary_, pixa_debug_);
   if (tessedit_dump_pageseg_images) {
     Image pix_no_image_ = nullptr;
     if (*photo_mask_pix != nullptr) {
@@ -342,7 +343,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
                               textord_tabfind_aligned_gap_fraction, &v_lines, &h_lines, vertical_x,
                               vertical_y);
 
-    finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block);
+    finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block, debug_output_path);
 
 #if !DISABLED_LEGACY_ENGINE
 

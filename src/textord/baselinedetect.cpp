@@ -58,7 +58,8 @@ const double kMaxBlobSizeMultiple = 1.3;
 // we will force the linespacing model on all the lines.
 const double kMinFittingLinespacings = 0.25;
 // A y-coordinate within a textline that is to be debugged.
-//#define kDebugYCoord 1525
+static int kDebugYCoord = -1525;
+#define DEBUG_BASELINE 1
 
 namespace tesseract {
 
@@ -143,6 +144,7 @@ double BaselineRow::StraightYAtX(double x) const {
 // If use_box_bottoms is false, baselines positions are formed by
 // considering the outlines of the blobs.
 bool BaselineRow::FitBaseline(bool use_box_bottoms) {
+  int debug = debug_all;
   // Deterministic fitting is used wherever possible.
   fitter_.Clear();
   // Linear least squares is a backup if the DetLineFit produces a bad line.
@@ -156,8 +158,8 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     }
     const TBOX &box = blob->bounding_box();
     int x_middle = (box.left() + box.right()) / 2;
-#ifdef kDebugYCoord
-    if (box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) {
+#ifdef DEBUG_BASELINE
+    if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_all) {
       tprintf("Box bottom = {}, baseline pos={} for box at:", box.bottom(),
               blob->baseline_position());
       box.print();
@@ -183,13 +185,14 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
       baseline_pt2_ = pt2;
     }
   }
-  int debug = 0;
-#ifdef kDebugYCoord
-  Print();
-  debug = bounding_box_.bottom() < kDebugYCoord &&
-                  bounding_box_.top() > kDebugYCoord
-              ? 3
-              : 2;
+#ifdef DEBUG_BASELINE
+  if (kDebugYCoord >= 0 || debug_all) {
+	  Print();
+	  debug = bounding_box_.bottom() < kDebugYCoord &&
+		  bounding_box_.top() > kDebugYCoord
+		  ? 3
+		  : 2;
+  }
 #endif
   // Now we obtained a direction from that fit, see if we can improve the
   // fit using the same direction and some other start point.
@@ -222,9 +225,9 @@ void BaselineRow::AdjustBaselineToParallel(int debug, const FCOORD &direction) {
   if (displacement_modes_.empty()) {
     return;
   }
-#ifdef kDebugYCoord
-  if (bounding_box_.bottom() < kDebugYCoord &&
-      bounding_box_.top() > kDebugYCoord && debug < 3)
+#ifdef DEBUG_BASELINE
+  if ((bounding_box_.bottom() < kDebugYCoord &&
+      bounding_box_.top() > kDebugYCoord && debug < 3) || debug_all)
     debug = 3;
 #endif
   FitConstrainedIfBetter(debug, direction, 0.0, displacement_modes_[0]);
@@ -296,22 +299,22 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
   double min_dist = FLT_MAX;
   double max_dist = -FLT_MAX;
   BLOBNBOX_IT blob_it(blobs_);
-#ifdef kDebugYCoord
+#ifdef DEBUG_BASELINE
   bool debug = false;
 #endif
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     BLOBNBOX *blob = blob_it.data();
     const TBOX &box = blob->bounding_box();
-#ifdef kDebugYCoord
-    if (box.bottom() < kDebugYCoord && box.top() > kDebugYCoord)
+#ifdef DEBUG_BASELINE
+	if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_all)
       debug = true;
 #endif
     FCOORD blob_pos((box.left() + box.right()) / 2.0f,
                     blob->baseline_position());
     double offset = direction * blob_pos;
     perp_blob_dists.push_back(offset);
-#ifdef kDebugYCoord
-    if (debug) {
+#ifdef DEBUG_BASELINE
+	if (debug) {
       tprintf("Displacement {} for blob at:", offset);
       box.print();
     }
@@ -326,10 +329,10 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
   }
   std::vector<KDPairInc<float, int>> scaled_modes;
   dist_stats.top_n_modes(kMaxDisplacementsModes, scaled_modes);
-#ifdef kDebugYCoord
+#ifdef DEBUG_BASELINE
   if (debug) {
     for (int i = 0; i < scaled_modes.size(); ++i) {
-      tprintf("Top mode = {} * {}\n", scaled_modes[i].key * disp_quant_factor_,
+      tprintf("Top mode = {} * {}\n", scaled_modes[i].key() * disp_quant_factor_,
               scaled_modes[i].data());
     }
   }

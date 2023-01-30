@@ -33,6 +33,10 @@
 
 #include <algorithm>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
+
 namespace tesseract {
 
 /// Denominator of resolution makes max pixel width to allow thin lines.
@@ -690,7 +694,7 @@ static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
 // The detected lines are removed from the pix.
 void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
                                     int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
-                                    TabVector_LIST *h_lines) {
+                                    TabVector_LIST *h_lines, const std::string &debug_output_path) {
   if (pix == nullptr || vertical_x == nullptr || vertical_y == nullptr) {
     tprintf("Error in parameters for LineFinder::FindAndRemoveLines\n");
     return;
@@ -754,7 +758,12 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   pix_non_hline.destroy();
   pix_intersections.destroy();
   if (pixa_display != nullptr) {
-    pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", "vhlinefinding.pdf");
+	const int page_index = 0;
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "vhlinefinding", "pdf");
+#if defined(HAVE_MUPDF)
+	fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
+#endif
+    pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
     pixaDestroy(&pixa_display);
   }
 }

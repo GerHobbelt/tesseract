@@ -82,7 +82,7 @@ public:
   // Returns true if a split was actually performed.
   // If split_for_pageseg is true, the pageseg_split_strategy_ is used for
   // splitting. If false, the ocr_split_strategy_ is used.
-  bool Split(bool split_for_pageseg, DebugPixa *pixa_debug);
+  bool Split(bool split_for_pageseg, DebugPixa &pixa_debug);
 
   // Clears the memory held by this object.
   void Clear();

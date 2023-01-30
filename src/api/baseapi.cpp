@@ -100,6 +100,10 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
+
 
 namespace tesseract {
 
@@ -110,6 +114,7 @@ static STRING_VAR(document_title, "", "Title of output document (used for hOCR a
 #ifdef HAVE_LIBCURL
 static INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
 #endif
+BOOL_VAR(debug_all, false, "Turn on all the debugging features");
 
 /** Minimum sensible image size to be worth running tesseract. */
 const int kMinRectSize = 10;
@@ -293,6 +298,10 @@ void TessBaseAPI::SetVisibleImageFilename(const char* name) {
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
   output_file_ = name ? name : "";
+}
+
+const std::string &TessBaseAPI::GetOutputName() {
+	return output_file_;
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -686,31 +695,35 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 
 	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
+
+  const char *debug_output_path = tesseract_->debug_output_path.c_str();
+
   //Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
   // if (scribe_save_binary_rotated_image) {
   //   Pix *p1 = tesseract_->pix_binary();
   //   pixWrite("/binary_image.png", p1, IFF_PNG);
   // }
   bool scribe_save_grey_rotated_image;
+  int page_number = 0;
   GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
   if (scribe_save_grey_rotated_image) {
-    tprintf("Saving grey_image.png\n");
-    Pix *p1 = tesseract_->pix_grey();
-    pixWrite("/grey_image.png", p1, IFF_PNG);
+	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "grey_image", "png");
+	  Pix *p1 = tesseract_->pix_grey();
+	  WritePix(file_path, p1, IFF_PNG);
   }
   bool scribe_save_binary_rotated_image;
   GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
   if (scribe_save_binary_rotated_image) {
-    tprintf("Saving binary_image.png\n");
-    Pix *p1 = tesseract_->pix_binary();
-    pixWrite("/binary_image.png", p1, IFF_PNG);
+	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "binary_image", "png");
+	  Pix *p1 = tesseract_->pix_binary();
+	  WritePix(file_path, p1, IFF_PNG);
   }
   bool scribe_save_original_rotated_image;
   GetBoolVariable("scribe_save_original_rotated_image", &scribe_save_original_rotated_image);
   if (scribe_save_original_rotated_image) {
-    tprintf("Saving original_image.png\n");
-    Pix *p1 = tesseract_->pix_original();
-    pixWrite("/original_image.png", p1, IFF_PNG);
+	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "original_image", "png");
+	  Pix *p1 = tesseract_->pix_original();
+	  WritePix(file_path, p1, IFF_PNG);
   }
 
   return tesseract_->pix_binary().clone();
@@ -1382,16 +1395,14 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   GetIntVariable("preprocess_graynorm_mode", &graynorm_mode);
   if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
     // Write normalized image 
-    std::string output_filename = output_file_ + ".preprocessed";
-    if (page_index > 0) {
-      output_filename += std::to_string(page_index);
-    }
-    output_filename += ".tif";
+	std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "preprocessed", "tiff");
+	Pix *p1;
     if (graynorm_mode == 2) {
-      pixWrite(output_filename.c_str(), thresholder_->GetPixRect(), IFF_TIFF_G4);
+      p1 = thresholder_->GetPixRect();
     } else {
-      pixWrite(output_filename.c_str(), GetInputImage(), IFF_TIFF_G4);
+      p1 = GetInputImage();
     }
+	WritePix(file_path, p1, IFF_TIFF_G4);
   }
 
   // Recognition
@@ -1421,12 +1432,8 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-    std::string output_filename = output_file_ + ".processed";
-    if (page_index > 0) {
-      output_filename += std::to_string(page_index);
-    }
-    output_filename += ".tif";
-    pixWrite(output_filename.c_str(), page_pix, IFF_TIFF_G4);
+	std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "processed", "tiff");
+	WritePix(file_path, page_pix, IFF_TIFF_G4);
     pixDestroy(&page_pix);
   }
 
@@ -2287,38 +2294,86 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
-  auto thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  auto thresholding_method = selected_thresholding_method;
 
-  if (thresholding_method == ThresholdMethod::Otsu) {
-    Image pix_binary(*pix);
-    if (!thresholder_->ThresholdToPix(&pix_binary)) {
-      return false;
-    }
-    *pix = pix_binary;
+  for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
+  {
+	  bool go = false;
 
-    if (!thresholder_->IsBinary()) {
-      tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-      tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-    } else {
-      tesseract_->set_pix_thresholds(nullptr);
-      tesseract_->set_pix_grey(nullptr);
-    }
+	  if (m != (int)ThresholdMethod::Max)
+	  {
+		  if (!debug_all)
+			  continue;
 
-	tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "OtsuGrey");
-	tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "OtsuThresholds");
-  } else {
-    auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(this, thresholding_method);
+		  thresholding_method = (ThresholdMethod)m;
+	  }
+	  else
+	  {
+		  // on last round, we reset to the selected threshold method
+		  thresholding_method = selected_thresholding_method;
+		  go = true;
+	  }
 
-    if (!ok) {
-      return false;
-    }
-    *pix = pix_binary;
+	  if (thresholding_method == ThresholdMethod::Otsu) {
+		  Image pix_binary(*pix);
+		  if (!thresholder_->ThresholdToPix(&pix_binary)) {
+			  return false;
+		  }
 
-    tesseract_->set_pix_thresholds(pix_thresholds);
-    tesseract_->set_pix_grey(pix_grey);
+		  if (go)
+			*pix = pix_binary;
 
-	tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "NonOtsuGrey");
-	tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "NonOtsuThresholds");
+		  if (!thresholder_->IsBinary()) {
+			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+			  tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+		  } else {
+			  tesseract_->set_pix_thresholds(nullptr);
+			  tesseract_->set_pix_grey(nullptr);
+		  }
+
+		  tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "OtsuGrey");
+		  tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "OtsuThresholds");
+		  tesseract_->AddPixDebugPage(pix_binary, "OtsuBinary");
+	  } else {
+		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(this, thresholding_method);
+
+		  if (!ok) {
+			  return false;
+		  }
+
+		  if (go)
+			  *pix = pix_binary;
+
+		  tesseract_->set_pix_thresholds(pix_thresholds);
+		  tesseract_->set_pix_grey(pix_grey);
+
+		  std::string caption;
+		  switch (thresholding_method)
+		  {
+		  case ThresholdMethod::LeptonicaOtsu:
+			  caption = "LeptonicaOtsu";
+			  break;
+		  case ThresholdMethod::Sauvola:
+			  caption = "Sauvola (Leptonica)";
+			  break;
+		  case ThresholdMethod::OtsuOnNormalizedBackground:
+			  caption = "OtsuOnNormalizedBackground";
+			  break;
+		  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
+			  caption = "MaskingAndOtsuOnNormalizedBackground";
+			  break;
+		  case ThresholdMethod::Nlbin:
+			  caption = "Nlbin";
+			  break;
+		  default:
+			  caption = "NonOtsu";
+			  break;
+		  }
+		  tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + "Grey").c_str());
+		  tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + "Thresholds").c_str());
+		  tesseract_->AddPixDebugPage(pix_binary, (caption + "Binary").c_str());
+	  }
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -2643,6 +2698,63 @@ std::string HOcrEscape(const char *text) {
     }
   }
   return ret;
+}
+
+std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension)
+{
+	size_t pos = strcspn(basepath, ":\\/");
+	const char *filename = basepath;
+	const char *p = basepath + pos;
+	while (*p)
+	{
+		filename = p + 1;
+		pos = strcspn(filename, ":\\/");
+		p = filename + pos;
+	}
+	size_t pathlen = filename - basepath;
+	if (!*filename)
+		filename = "tesseract";
+
+	char ns[40] ={0};
+	if (page_number != 0)
+	{
+		snprintf(ns, sizeof(ns), "p%04d", page_number);
+	}
+
+	static int unique_seq_counter = 0;
+	unique_seq_counter++;
+
+	char nq[40] ={0};
+	snprintf(nq, sizeof(nq), "%04d", unique_seq_counter);
+
+	std::string f(basepath);
+	f = f.substr(0, pathlen);
+	f += nq;
+	f += "-";
+	f += filename;
+	f += ".";
+	f += label;
+	if (*ns)
+	{
+		f += ".";
+		f += ns;
+	}
+	f += ".";
+	f += filename_extension;
+
+	return std::move(f);
+}
+
+void WritePix(const std::string &file_path, Pix *pic, int file_type)
+{
+	tprintf("Saving {}\n", file_path.c_str());
+#if defined(HAVE_MUPDF)
+	fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
+#endif
+	if (pixWrite(file_path.c_str(), pic, file_type))
+	{
+		tprintf("ERROR: Writing {} failed\n", file_path.c_str());
+	}
 }
 
 } // namespace tesseract

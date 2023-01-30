@@ -157,7 +157,7 @@ ColumnFinder::~ColumnFinder() {
 // On return, IsVerticallyAlignedText may be called (now optionally) to
 // determine the gross textline alignment of the page.
 void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix,
-                                       TO_BLOCK *input_block) {
+                                       TO_BLOCK *input_block, const std::string &debug_output_path) {
   part_grid_.Init(gridsize(), bleft(), tright());
   delete stroke_width_;
   stroke_width_ = new StrokeWidth(gridsize(), bleft(), tright());
@@ -176,7 +176,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   CCNonTextDetect nontext_detect(gridsize(), bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   nontext_map_ =
-      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
+      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block, debug_output_path);
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();
@@ -293,7 +293,7 @@ void ColumnFinder::CorrectOrientation(TO_BLOCK *block, bool vertical_text_lines,
 // in debug mode, which requests a retry with more debug info.
 int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int scaled_factor,
                              TO_BLOCK *input_block, Image photo_mask_pix, Image thresholds_pix,
-                             Image grey_pix, DebugPixa *pixa_debug, BLOCK_LIST *blocks,
+                             Image grey_pix, DebugPixa &pixa_debug, BLOCK_LIST *blocks,
                              BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks) {
   photo_mask_pix |= nontext_map_;
   stroke_width_->FindLeaderPartitions(input_block, &part_grid_);

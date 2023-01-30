@@ -363,6 +363,7 @@ public:
   BOOL_VAR_H(prioritize_division);
   BOOL_VAR_H(classify_enable_learning);
   INT_VAR_H(classify_debug_level);
+  BOOL_VAR_H(tess_debug_lstm);
 
   /* mfoutline.cpp ***********************************************************/
   /* control knobs used to control normalization of outlines */

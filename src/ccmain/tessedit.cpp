@@ -170,6 +170,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
 #endif // DISABLED_LEGACY_ENGINE
     if (mgr->IsComponentAvailable(TESSDATA_LSTM)) {
       lstm_recognizer_ = new LSTMRecognizer(language_data_path_prefix.c_str());
+	  lstm_recognizer_->SetDebug(tess_debug_lstm);
       ASSERT_HOST(lstm_recognizer_->Load(this->params(), lstm_use_matrix ? language : "", mgr));
 	  // TODO: ConvertToInt optional extra
     } else {
@@ -298,6 +299,9 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   for (auto *lang : sub_langs_) {
     delete lang;
   }
+
+  if (debug_output_path.empty() && !textbase.empty())
+	debug_output_path = textbase + "-debug";
 
   // Set the basename, compute the data directory.
   main_setup(arg0, textbase);

@@ -507,20 +507,26 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     r = 1;
   }
 
-  // bool scribe_save_grey_rotated_image;
-  // api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
-  // if (scribe_save_grey_rotated_image) {
-  //   tprintf("Saving grey_image.png\n");
-  //   Pix *p1 = pix_grey;
-  //   pixWrite("/grey_image.png", p1, IFF_PNG);
-  // }
-  // bool scribe_save_binary_rotated_image;
-  // api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
-  // if (scribe_save_binary_rotated_image) {
-  //   tprintf("Saving binary_image.png\n");
-  //   Pix *p1 = (PIX*)pix_binary;
-  //   pixWrite("/binary_image.png", p1, IFF_PNG);
-  // }
+#if 01
+  {
+	  std::string debug_output_path = api->GetOutputName();
+	  int page_number = 0;
+	  bool scribe_save_grey_rotated_image;
+	  api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
+	  if (scribe_save_grey_rotated_image) {
+		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, "grey_image", "png");
+		  Pix *p1 = pix_grey;
+		  WritePix(filepath, p1, IFF_PNG);
+	  }
+	  bool scribe_save_binary_rotated_image;
+	  api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
+	  if (scribe_save_binary_rotated_image) {
+		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, "binary_image", "png");
+		  Pix *p1 = (PIX*)pix_binary;
+		  WritePix(filepath, p1, IFF_PNG);
+	  }
+  }
+#endif
 
   bool ok = (r == 0) && pix_binary;
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);

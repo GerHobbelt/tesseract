@@ -20,6 +20,10 @@
 #  include "config_auto.h"
 #endif
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
+
 #include "ccnontextdetect.h"
 #include "helpers.h"         // for IntCastRounded
 #include "imagefind.h"
@@ -81,7 +85,7 @@ CCNonTextDetect::~CCNonTextDetect() {
 // The blob_block is the usual result of connected component analysis,
 // holding the detected blobs.
 // The returned Pix should be PixDestroyed after use.
-Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block) {
+Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block, const std::string &debug_output_path) {
   // Insert the smallest blobs into the grid.
   InsertBlobList(&blob_block->small_blobs);
   InsertBlobList(&blob_block->noise_blobs);
@@ -104,7 +108,9 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   good_grid.Clear(); // Not needed any more.
   Image pix = noise_density_->ThresholdToPix(max_noise_count_);
   if (debug) {
-    pixWrite("junknoisemask.png", pix, IFF_PNG);
+	  const int page_index = 0;
+	  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "junknoisemask", "png");
+	  WritePix(filepath, pix, IFF_PNG);
   }
   ScrollView *win = nullptr;
 #ifndef GRAPHICS_DISABLED
@@ -132,7 +138,9 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 #ifndef GRAPHICS_DISABLED
     win->Update();
 #endif // !GRAPHICS_DISABLED
-    pixWrite("junkccphotomask.png", pix, IFF_PNG);
+	const int page_index = 0;
+	std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "junkccphotomask", "png");
+    WritePix(filepath, pix, IFF_PNG);
 #ifndef GRAPHICS_DISABLED
     win->AwaitEvent(SVET_DESTROY);
     delete win;

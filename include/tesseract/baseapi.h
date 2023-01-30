@@ -121,6 +121,7 @@ public:
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
+  const std::string &GetOutputName();
 
   /**
    * Set the value of an internal "parameter."
@@ -859,6 +860,10 @@ private:
 
 /** Escape a char string - remove &<>"' with HTML codes. */
 std::string HOcrEscape(const char *text);
+
+std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
+
+void WritePix(const std::string &filepath, Pix *pic, int file_type);
 
 } // namespace tesseract
 

@@ -42,7 +42,7 @@ public:
   // The returned pix may be nullptr, meaning no images found.
   // If not nullptr, it must be PixDestroyed by the caller.
   // If textord_tabfind_show_images, debug images are appended to pixa_debug.
-  static Image FindImages(Image pix, DebugPixa *pixa_debug);
+  static Image FindImages(Image pix, DebugPixa &pixa_debug);
 
   // Given an input pix, and a bounding rectangle, the sides of the rectangle
   // are shrunk inwards until they bound any black pixels found within the
@@ -93,7 +93,7 @@ public:
   // ColPartitionGrid::ReTypeBlobs must be called afterwards to fix this
   // situation and collect the image blobs.
   static void FindImagePartitions(Image image_pix, const FCOORD &rotation, const FCOORD &rerotation,
-                                  TO_BLOCK *block, TabFind *tab_grid, DebugPixa *pixa_debug,
+                                  TO_BLOCK *block, TabFind *tab_grid, DebugPixa &pixa_debug,
                                   ColPartitionGrid *part_grid, ColPartition_LIST *big_parts);
 };
 

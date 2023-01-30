@@ -100,6 +100,25 @@ public:
   static bool SetParam(const char *name, const char *value, SetParamConstraint constraint,
                        ParamsVectors *member_params);
 
+  // accept both - and _ in key names, e.g. user-specified 'debug-all' would match 'debug_all'
+  // in the database.
+  static inline bool CompareKeys(const char *db_key, const char *user_key)
+  {
+	  // if (0 == strcmp(db_key, user_key))
+	  //   return true;
+
+	  for (; *db_key && *user_key; db_key++, user_key++)
+	  {
+		  if (*db_key != *user_key)
+		  {
+			  if (*db_key == '_' && *user_key == '-')
+				  continue;
+			  return false;
+		  }
+	  }
+	  return true;
+  }
+
   // Returns the pointer to the parameter with the given name (of the
   // appropriate type) if it was found in the vector obtained from
   // GlobalParams() or in the given member_params.
@@ -107,16 +126,16 @@ public:
   static T *FindParam(const char *name, const std::vector<T *> &global_vec,
                       const std::vector<T *> &member_vec) {
     for (auto *param : global_vec) {
-      if (strcmp(param->name_str(), name) == 0) {
+      if (CompareKeys(param->name_str(), name)) {
         return param;
       }
     }
     for (auto *param : member_vec) {
-      if (strcmp(param->name_str(), name) == 0) {
+      if (CompareKeys(param->name_str(), name)) {
         return param;
       }
     }
-    return nullptr;
+	return nullptr;
   }
   // Removes the given pointer to the param from the given vector.
   template <class T>
@@ -296,6 +315,9 @@ public:
   void set_value(const std::string &value) {
     value_ = value;
   }
+  const std::string &value() {
+	  return value_;
+  }
   void ResetToDefault() {
     value_ = default_;
   }
@@ -416,6 +438,10 @@ ParamsVectors *GlobalParams();
 #define STRING_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
 #define double_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
+
+// ------------------------------------
+
+extern BOOL_VAR_H(debug_all);
 
 } // namespace tesseract
 

@@ -107,7 +107,7 @@ public:
   // direction, so the textline projection_ map can be setup.
   // On return, IsVerticallyAlignedText may be called (now optionally) to
   // determine the gross textline alignment of the page.
-  void SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix, TO_BLOCK *input_block);
+  void SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix, TO_BLOCK *input_block, const std::string &debug_output_path);
 
   // Tests for vertical alignment of text (returning true if so), and generates
   // a list of blobs (in osd_blobs) for orientation and script detection.
@@ -157,7 +157,7 @@ public:
   // Returns -1 if the user hits the 'd' key in the blocks window while running
   // in debug mode, which requests a retry with more debug info.
   int FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int scaled_factor, TO_BLOCK *block,
-                 Image photo_mask_pix, Image thresholds_pix, Image grey_pix, DebugPixa *pixa_debug,
+                 Image photo_mask_pix, Image thresholds_pix, Image grey_pix, DebugPixa &pixa_debug,
                  BLOCK_LIST *blocks, BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks);
 
   // Get the rotation required to deskew, and its inverse rotation.

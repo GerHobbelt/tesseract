@@ -203,13 +203,13 @@ static bool pixNearlyRectangular(Image pix, double min_fraction, double max_frac
 // If not nullptr, they must be destroyed by the caller.
 // Resolution of pix should match the source image (Tesseract::pix_binary_)
 // so the output coordinate systems match.
-static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **boxa,
+static void ConnCompAndRectangularize(Image pix, DebugPixa &pixa_debug, Boxa **boxa,
                                       Pixa **pixa) {
   *boxa = nullptr;
   *pixa = nullptr;
 
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pix, "Conncompimage");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pix, "Conncompimage");
   }
   // Find the individual image regions in the mask image.
   *boxa = pixConnComp(pix, pixa, 8);
@@ -223,8 +223,8 @@ static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **b
   for (int i = 0; i < npixes; ++i) {
     int x_start, x_end, y_start, y_end;
     Image img_pix = pixaGetPix(*pixa, i, L_CLONE);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(img_pix, "A component");
+    if (textord_tabfind_show_images) {
+      pixa_debug.AddPix(img_pix, "A component");
     }
     if (pixNearlyRectangular(img_pix, kMinRectangularFraction, kMaxRectangularFraction,
                              kMaxRectangularGradient, &x_start, &y_start, &x_end, &y_end)) {
@@ -249,7 +249,7 @@ static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **b
 // The returned pix may be nullptr, meaning no images found.
 // If not nullptr, it must be PixDestroyed by the caller.
 // If textord_tabfind_show_images, debug images are appended to pixa_debug.
-Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
+Image ImageFind::FindImages(Image pix, DebugPixa &pixa_debug) {
   // Not worth looking at small images.
   if (pixGetWidth(pix) < kMinImageFindSize || pixGetHeight(pix) < kMinImageFindSize) {
     return pixCreate(pixGetWidth(pix), pixGetHeight(pix), 1);
@@ -257,8 +257,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
 
   // Reduce by factor 2.
   Image pixr = pixReduceRankBinaryCascade(pix, 1, 0, 0, 0);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixr, "CascadeReduced");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixr, "CascadeReduced");
   }
 
   // Get the halftone mask directly from Leptonica.
@@ -272,12 +272,12 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   }
   // Get the halftone mask.
   l_int32 ht_found = 0;
-  Pixa *pixadb = (textord_tabfind_show_images && pixa_debug != nullptr) ? pixaCreate(0) : nullptr;
+  Pixa *pixadb = (textord_tabfind_show_images) ? pixaCreate(0) : nullptr;
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {
     Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(pixdb, "HalftoneMask");
+    if (textord_tabfind_show_images) {
+      pixa_debug.AddPix(pixdb, "HalftoneMask");
     }
     pixdb.destroy();
     pixaDestroy(&pixadb);
@@ -292,8 +292,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
 
   // Expand back up again.
   Image pixht = pixExpandReplicate(pixht2, 2);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixht, "HalftoneReplicated");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixht, "HalftoneReplicated");
   }
   pixht2.destroy();
 
@@ -305,8 +305,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   // Eliminate lines and bars that may be joined to images.
   Image pixfinemask = pixReduceRankBinaryCascade(pixht, 1, 1, 3, 3);
   pixDilateBrick(pixfinemask, pixfinemask, 5, 5);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixfinemask, "FineMask");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixfinemask, "FineMask");
   }
   Image pixreduced = pixReduceRankBinaryCascade(pixht, 1, 1, 1, 1);
   Image pixreduced2 = pixReduceRankBinaryCascade(pixreduced, 3, 3, 3, 0);
@@ -314,8 +314,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   pixDilateBrick(pixreduced2, pixreduced2, 5, 5);
   Image pixcoarsemask = pixExpandReplicate(pixreduced2, 8);
   pixreduced2.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixcoarsemask, "CoarseMask");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixcoarsemask, "CoarseMask");
   }
   // Combine the coarse and fine image masks.
   pixcoarsemask &= pixfinemask;
@@ -324,14 +324,14 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   pixDilateBrick(pixcoarsemask, pixcoarsemask, 3, 3);
   Image pixmask = pixExpandReplicate(pixcoarsemask, 16);
   pixcoarsemask.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixmask, "MaskDilated");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixmask, "MaskDilated");
   }
   // And the image mask with the line and bar remover.
   pixht &= pixmask;
   pixmask.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixht, "FinalMask");
+  if (textord_tabfind_show_images) {
+    pixa_debug.AddPix(pixht, "FinalMask");
   }
   // Make the result image the same size as the input.
   Image result = pixCreate(pixGetWidth(pix), pixGetHeight(pix), 1);
@@ -1144,7 +1144,7 @@ static void DeleteSmallImages(ColPartitionGrid *part_grid) {
 // situation and collect the image blobs.
 void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
                                     const FCOORD &rerotation, TO_BLOCK *block, TabFind *tab_grid,
-                                    DebugPixa *pixa_debug, ColPartitionGrid *part_grid,
+                                    DebugPixa &pixa_debug, ColPartitionGrid *part_grid,
                                     ColPartition_LIST *big_parts) {
   int imageheight = pixGetHeight(image_pix);
   Boxa *boxa;
@@ -1165,8 +1165,8 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
     rectsearch.SetUniqueMode(true);
     ColPartition_LIST part_list;
     DivideImageIntoParts(im_box, rotation, rerotation, pix, &rectsearch, &part_list);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(pix, "ImageComponent");
+    if (textord_tabfind_show_images) {
+      pixa_debug.AddPix(pix, "ImageComponent");
       tprintf("Component has {} parts\n", part_list.length());
     }
     pix.destroy();
