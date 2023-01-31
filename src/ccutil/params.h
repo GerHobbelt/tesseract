@@ -2,6 +2,8 @@
  * File:        params.h
  * Description: Class definitions of the *_VAR classes for tunable constants.
  * Author:      Ray Smith
+ * 
+ * UTF8 detect helper statement: «bloody MSVC»
  *
  * (C) Copyright 1991, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -155,6 +157,15 @@ public:
   // Print parameters to the given file.
   static void PrintParams(FILE *fp, const ParamsVectors *member_params);
 
+  // Report parameters' usage statistics, i.e. report which params have been
+  // set, modified and read/checked until now during this run-time's lifetime.
+  //
+  // Use this method for run-time 'discovery' about which tesseract parameters
+  // are actually *used* during your particular usage of the library, ergo
+  // answering the question:
+  // "Which of all those parameters are actually *relevant* to my use case today?"
+  static void ReportParamsUsageStatistics(const ParamsVectors *member_params);
+
   // Resets all parameters back to default values;
   static void ResetToDefaults(ParamsVectors *member_params);
 };
@@ -183,16 +194,29 @@ public:
             (constraint == SET_PARAM_CONSTRAINT_NON_INIT_ONLY && !this->is_init()));
   }
 
+  typedef struct access_counts {
+	  int reading;
+	  int writing;
+  } access_counts_t;
+
+  access_counts_t access_counts() const {
+	  return access_counts_;
+  }
+
+  virtual std::string formatted_value_str() const = 0;
+
 protected:
   Param(const char *name, const char *comment, bool init)
       : name_(name), info_(comment), init_(init) {
     debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display"));
+	access_counts_ = {0,0};
   }
 
   const char *name_; // name of this parameter
   const char *info_; // for menus
   bool init_;        // needs to be set before init
   bool debug_;
+  mutable access_counts_t access_counts_;
 };
 
 class IntParam : public Param {
@@ -201,6 +225,7 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
+	access_counts_.writing++;
     params_vec_ = vec;
     vec->int_params().push_back(this);
   }
@@ -208,26 +233,35 @@ public:
     ParamUtils::RemoveParam<IntParam>(this, &params_vec_->int_params());
   }
   operator int32_t() const {
-    return value_;
+	  access_counts_.reading++;
+	  return value_;
   }
   void operator=(int32_t value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void set_value(int32_t value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void ResetToDefault() {
-    value_ = default_;
+      access_counts_.writing++;
+      value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->int_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param {}={} by ={}\n", name_, value_,
         // *param);
-        value_ = *param;
+          access_counts_.writing++;
+          value_ = *param;
         break;
       }
     }
+  }
+
+  virtual std::string formatted_value_str() const override {
+      return std::to_string(value_);
   }
 
 private:
@@ -244,33 +278,43 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = vec;
+	access_counts_.writing++;
+	params_vec_ = vec;
     vec->bool_params().push_back(this);
   }
   ~BoolParam() {
     ParamUtils::RemoveParam<BoolParam>(this, &params_vec_->bool_params());
   }
   operator bool() const {
-    return value_;
+	  access_counts_.reading++;
+	  return value_;
   }
   void operator=(bool value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void set_value(bool value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void ResetToDefault() {
-    value_ = default_;
+      access_counts_.writing++;
+      value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->bool_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param {}={} by ={}\n", name_, value_ ? "true" :
         // "false", *param ? "true" : "false");
-        value_ = *param;
+          access_counts_.writing++;
+          value_ = *param;
         break;
       }
     }
+  }
+
+  virtual std::string formatted_value_str() const override {
+      return std::to_string(value_);
   }
 
 private:
@@ -288,48 +332,66 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = vec;
+	access_counts_.writing++;
+	params_vec_ = vec;
     vec->string_params().push_back(this);
   }
   ~StringParam() {
     ParamUtils::RemoveParam<StringParam>(this, &params_vec_->string_params());
   }
   operator std::string &() {
-    return value_;
+	  access_counts_.reading++;
+	  return value_;
   }
   const char *c_str() const {
-    return value_.c_str();
+	  access_counts_.reading++;
+	  return value_.c_str();
   }
   bool contains(char c) const {
-    return value_.find(c) != std::string::npos;
+	  access_counts_.reading++;
+	  return value_.find(c) != std::string::npos;
   }
   bool empty() const {
-    return value_.empty();
+	  access_counts_.reading++;
+	  return value_.empty();
   }
   bool operator==(const std::string &other) const {
-    return value_ == other;
+	  access_counts_.reading++;
+	  return value_ == other;
   }
   void operator=(const std::string &value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void set_value(const std::string &value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   const std::string &value() {
+	  access_counts_.reading++;
 	  return value_;
   }
   void ResetToDefault() {
-    value_ = default_;
+      access_counts_.writing++;
+      value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->string_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param {}={} by ={}\n", name_, value_,
         // param->c_str());
-        value_ = *param;
+          access_counts_.writing++;
+          value_ = *param;
         break;
       }
     }
+  }
+
+  virtual std::string formatted_value_str() const override {
+      std::string rv = (const char *)u8"«";
+      rv += value_;
+      rv += (const char *)u8"»";
+      return rv;
   }
 
 private:
@@ -346,33 +408,49 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    params_vec_ = vec;
+	access_counts_.writing++;
+	params_vec_ = vec;
     vec->double_params().push_back(this);
   }
   ~DoubleParam() {
     ParamUtils::RemoveParam<DoubleParam>(this, &params_vec_->double_params());
   }
   operator double() const {
-    return value_;
+	  access_counts_.reading++;
+	  return value_;
   }
   void operator=(double value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void set_value(double value) {
-    value_ = value;
+	  access_counts_.writing++;
+	  value_ = value;
   }
   void ResetToDefault() {
-    value_ = default_;
+      access_counts_.writing++;
+      value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->double_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
         // tprintf("overriding param {}={} by ={}\n", name_, value_,
         // *param);
-        value_ = *param;
+          access_counts_.writing++;
+          value_ = *param;
         break;
       }
     }
+  }
+
+  virtual std::string formatted_value_str() const override {
+#if 0
+      return std::to_string(value_);   // always outputs %.6f format style values
+#else
+      char sbuf[40];
+      snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
+      return sbuf;
+#endif
   }
 
 private:
@@ -394,6 +472,7 @@ private:
 // parameters are converted to members.
 TESS_API
 ParamsVectors *GlobalParams();
+
 
 /*************************************************************************
  * Note on defining parameters.

@@ -402,6 +402,19 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
   ParamUtils::PrintParams(fp, tesseract_->params());
 }
 
+// Report parameters' usage statistics, i.e. report which params have been
+// set, modified and read/checked until now during this run-time's lifetime.
+//
+// Use this method for run-time 'discovery' about which tesseract parameters
+// are actually *used* during your particular usage of the library, ergo
+// answering the question:
+// "Which of all those parameters are actually *relevant* to my use case today?"
+void TessBaseAPI::ReportParamsUsageStatistics() const {
+	tesseract::ParamsVectors *vec = tesseract_->params();
+
+	ParamUtils::ReportParamsUsageStatistics(vec);
+}
+
 /**
  * The datapath must be the name of the data directory or
  * some other file in which the data directory resides (for instance argv[0].)

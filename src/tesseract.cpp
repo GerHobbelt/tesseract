@@ -966,9 +966,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
     }
 
     pixDestroy(&pixs);
-    return ret_val;
   }
-
+  else {
   // Set in_training_mode to true when using one of these configs:
   // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
   // In this mode no other OCR result files are written.
@@ -1004,143 +1003,140 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   if (debug_all)
   {
-	  api.SetVariable("textord_tabfind_show_images", "Y");
-	  api.SetVariable("textord_tabfind_show_vlines", "Y");
-	  api.SetVariable("textord_debug_tabfind", "0" /* "9" */ );  // very noisy output
+      api.SetVariable("textord_tabfind_show_images", "Y");
+      api.SetVariable("textord_tabfind_show_vlines", "Y");
+      api.SetVariable("textord_debug_tabfind", "0" /* "9" */);  // very noisy output
 
 #ifndef GRAPHICS_DISABLED
-	  api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
-	  api.SetVariable("textord_tabfind_show_reject_blobs", "Y");
-	  api.SetVariable("textord_tabfind_show_partitions", "2");
-	  api.SetVariable("textord_tabfind_show_columns", "Y");
-	  api.SetVariable("textord_tabfind_show_blocks", "Y");
+      api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
+      api.SetVariable("textord_tabfind_show_reject_blobs", "Y");
+      api.SetVariable("textord_tabfind_show_partitions", "2");
+      api.SetVariable("textord_tabfind_show_columns", "Y");
+      api.SetVariable("textord_tabfind_show_blocks", "Y");
 #endif
 
-	  textord_noise_debug
-		  textord_tabfind_show_vlines
-		  textord_oldbl_debug
-		  textord_baseline_debug
-		  INT_VAR(textord_debug_block, 0, "Block to do debug on");
-	  INT_VAR(textord_debug_bugs, 0, "Turn on output related to bugs in tab finding");
-	  INT_VAR(textord_debug_tabfind, 0, "Debug tab finding");
+      api.SetVariable("textord_noise_debug", "Y");
+      api.SetVariable("textord_oldbl_debug", "Y");
+      api.SetVariable("textord_baseline_debug", "Y");
+      api.SetVariable("textord_debug_block", "9");
+      api.SetVariable("textord_debug_bugs", "9");
+      api.SetVariable("textord_debug_tabfind", "9");
 
-		  BOOL_VAR(textord_debug_baselines, false, "Debug baseline generation");
-	  BOOL_VAR(textord_debug_blob, false, "Print test blob information");
-	  BOOL_VAR(textord_debug_blob, false, "Print test blob information");
-	  BOOL_VAR(textord_debug_pitch_metric, false, "Write full metric stuff");
-	  BOOL_VAR(textord_debug_pitch_test, false, "Debug on fixed pitch test");
-	  BOOL_VAR(textord_debug_printable, false, "Make debug windows printable");
-	  BOOL_VAR(textord_debug_xheights, false, "Test xheight algorithms");
-	  BOOL_VAR(textord_debug_xheights, false, "Test xheight algorithms");
+      api.SetVariable("textord_debug_baselines", "Y");
+      api.SetVariable("textord_debug_blob", "Y");
+      api.SetVariable("textord_debug_blob", "Y");
+      api.SetVariable("textord_debug_pitch_metric", "Y");
+      api.SetVariable("textord_debug_pitch_test", "Y");
+      api.SetVariable("textord_debug_printable", "Y");
+      api.SetVariable("textord_debug_xheights", "Y");
+      api.SetVariable("textord_debug_xheights", "Y");
 
+      api.SetVariable("tessedit_create_hocr", "Y");
+      api.SetVariable("tessedit_create_alto", "Y");
+      api.SetVariable("tessedit_create_page", "Y");
+      api.SetVariable("tessedit_create_tsv", "Y");
+      api.SetVariable("tessedit_create_pdf", "Y");
+      api.SetVariable("textonly_pdf", "n");
+      api.SetVariable("tessedit_write_unlv", "Y");
+      api.SetVariable("tessedit_create_lstmbox", "Y");
+      api.SetVariable("tessedit_create_boxfile", "Y");
+      api.SetVariable("tessedit_create_wordstrbox", "Y");
+      api.SetVariable("tessedit_create_txt", "Y");
 
-	  api.SetVariable("tessedit_create_hocr", "T");
-	  api.SetVariable("tessedit_create_alto", "T");
-	  api.SetVariable("tessedit_create_page", "T");
-	  api.SetVariable("tessedit_create_tsv", "T");
-	  api.SetVariable("tessedit_create_pdf", "T");
-        api.SetVariable("textonly_pdf", "F");
-      api.SetVariable("tessedit_write_unlv", "T");
-	  api.SetVariable("tessedit_create_lstmbox", "T");
-	  api.SetVariable("tessedit_create_boxfile", "T");
-	  api.SetVariable("tessedit_create_wordstrbox", "T");
-	  api.SetVariable("tessedit_create_txt", "T");
+      api.SetVariable("tessedit_dump_choices", "Y");
+      api.SetVariable("tessedit_dump_pageseg_images", "Y");
 
-	  api.SetVariable("tessedit_dump_choices", "T");
-	  api.SetVariable("tessedit_dump_pageseg_images", "T");
+      api.SetVariable("tessedit_write_images", "Y");
 
-	  api.SetVariable("tessedit_write_images", "T");
+      api.SetVariable("tessedit_adaption_debug", "Y");
+      api.SetVariable("tessedit_debug_block_rejection", "Y");
+      api.SetVariable("tessedit_debug_doc_rejection", "Y");
+      api.SetVariable("tessedit_debug_fonts", "Y");
+      api.SetVariable("tessedit_debug_quality_metrics", "Y");
 
-	  tessedit_adaption_debug
-		  tessedit_debug_block_rejection
-		  tessedit_debug_doc_rejection
-		  tessedit_debug_fonts
-		  tessedit_debug_quality_metrics
+      api.SetVariable("tessedit_rejection_debug", "Y");
+      api.SetVariable("tessedit_timing_debug", "Y");
 
-		  tessedit_rejection_debug
-		  tessedit_timing_debug
+      api.SetVariable("tessedit_bigram_debug", "Y");
 
-		  tessedit_bigram_debug
+      api.SetVariable("tess_debug_lstm", "Y");
 
-	  tess_debug_lstm
-
-	  api.SetVariable("debug_noise_removal", "T");
+      api.SetVariable("debug_noise_removal", "Y");
 
 
-	  api.SetVariable("classify_debug_level", "0" /* "9" */ );  // LSTM debug output is extremely noisy
-	  classify_learning_debug_level
-	  classify_debug_character_fragments
-		  classify_enable_adaptive_debugger
-		  classify_learn_debug_str??????????????????????
-		  matcher_debug_separate_windows
-		  matcher_debug_flags
-		  matcher_debug_level
+      api.SetVariable("classify_debug_level", "0" /* "9" */);  // LSTM debug output is extremely noisy
+      api.SetVariable("classify_learning_debug_level", "9");
+      api.SetVariable("classify_debug_character_fragments", "Y");
+      api.SetVariable("classify_enable_adaptive_debugger", "Y");
+      //api.SetVariable("classify_learn_debug_str", "????????????????");
+      api.SetVariable("matcher_debug_separate_windows", "Y");
+      api.SetVariable("matcher_debug_flags", "Y");
+      api.SetVariable("matcher_debug_level", "Y");
 
-		  multilang_debug_level
+      api.SetVariable("multilang_debug_level", "Y");
 
-		  paragraph_debug_level
+      api.SetVariable("paragraph_debug_level", "Y");
 
-		  segsearch_debug_level
+      api.SetVariable("segsearch_debug_level", "Y");
 
-		  stopper_debug_level
+      api.SetVariable("stopper_debug_level", "Y");
 
-		  superscript_debug
+      api.SetVariable("superscript_debug", "Y");
 
-		  crunch_debug
+      api.SetVariable("crunch_debug", "Y");
 
-		  dawg_debug_level
+      api.SetVariable("dawg_debug_level", "Y");
 
-		  debug_fix_space_level
-		  debug_noise_removal
-		  debug_x_ht_level
-		  debug_file
-		  debug_output_path
+      api.SetVariable("debug_fix_space_level", "9");
+      api.SetVariable("debug_noise_removal", "Y");
+      api.SetVariable("debug_x_ht_level", "Y");
+      //api.SetVariable("debug_file", "xxxxxxxxxxxxxxxxx");
+      //api.SetVariable("debug_output_path", "xxxxxxxxxxxxxx");
 
-		  hyphen_debug_level
+      api.SetVariable("hyphen_debug_level", "Y");
 
-		  language_model_debug_level
+      api.SetVariable("language_model_debug_level", "Y");
 
-		  tosp_debug_level
+      api.SetVariable("tosp_debug_level", "Y");
 
-		  wordrec_debug_level
+      api.SetVariable("wordrec_debug_level", "Y");
 
-		  word_to_debug
+      api.SetVariable("word_to_debug", "Y");
 
-	  api.SetVariable("scribe_save_grey_rotated_image", "T");
-	  api.SetVariable("scribe_save_binary_rotated_image", "T");
-	  api.SetVariable("scribe_save_original_rotated_image", "T");
+      api.SetVariable("scribe_save_grey_rotated_image", "Y");
+      api.SetVariable("scribe_save_binary_rotated_image", "Y");
+      api.SetVariable("scribe_save_original_rotated_image", "Y");
 
-	  api.SetVariable("hocr_font_info", "T");
-	  api.SetVariable("hocr_char_boxes", "T");
-	  api.SetVariable("hocr_images", "T");
+      api.SetVariable("hocr_font_info", "Y");
+      api.SetVariable("hocr_char_boxes", "Y");
+      api.SetVariable("hocr_images", "Y");
 
-	  api.SetVariable("thresholding_debug", "T");
+      api.SetVariable("thresholding_debug", "Y");
 
-	  thresholding_debug
+      api.SetVariable("thresholding_debug", "Y");
 
-	  api.SetVariable("preprocess_graynorm_mode", "0"); // 0..3
+      api.SetVariable("preprocess_graynorm_mode", "0"); // 0..3
 
-	  tessedit_bigram_debug
+      api.SetVariable("tessedit_bigram_debug", "Y");
 
-		  wordrec_debug_blamer
+      api.SetVariable("wordrec_debug_blamer", "Y");
 
-		  devanagari_split_debugimage
-		  devanagari_split_debuglevel
+      api.SetVariable("devanagari_split_debugimage", "Y");
+      api.SetVariable("devanagari_split_debuglevel", "Y");
 
-		  gapmap_debug
+      api.SetVariable("gapmap_debug", "Y");
 
-		  poly_debug
+      api.SetVariable("poly_debug", "Y");
 
-		  edges_debug
+      api.SetVariable("edges_debug", "Y");
 
-		  ambigs_debug_level
+      api.SetVariable("ambigs_debug_level", "Y");
 
-		  applybox_debug
+      api.SetVariable("applybox_debug", "Y");
 
-		  bidi_debug
+      api.SetVariable("bidi_debug", "Y");
 
-		  chop_debug
-
+      api.SetVariable("chop_debug", "Y");
   }
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;
@@ -1163,6 +1159,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
       ret_val = EXIT_FAILURE;
     }
   }
+  }
+
+  api.ReportParamsUsageStatistics();
 
   return ret_val;
 }

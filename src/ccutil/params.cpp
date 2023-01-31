@@ -79,6 +79,102 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
   return anyerr;
 }
 
+void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
+{
+    tprintf("\n\nTesseract Parameter Usage Statistics: which params have been relevant?\n"
+            "----------------------------------------------------------------------\n\n");
+
+    // first collect all parameter names:
+
+    typedef enum {
+        INT_PARAM = 0,
+        BOOL_PARAM,
+        DOUBLE_PARAM,
+        STRING_PARAM,
+    } param_type_t;
+
+    typedef struct param_info {
+        const char *name;
+        bool global;
+        param_type_t type;
+        const Param *ref;
+    } param_info_t;
+
+    std::vector<param_info_t> param_names;
+
+    if (member_params != nullptr) {
+        for (auto p : member_params->int_params_c()) {
+            param_names.push_back({p->name_str(), false, INT_PARAM, p});
+        }
+        for (auto p : member_params->bool_params_c()) {
+            param_names.push_back({p->name_str(), false, BOOL_PARAM, p});
+        }
+        for (auto p : member_params->string_params_c()) {
+            param_names.push_back({p->name_str(), false, STRING_PARAM, p});
+        }
+        for (auto p : member_params->double_params_c()) {
+            param_names.push_back({p->name_str(), false, DOUBLE_PARAM, p});
+        }
+    }
+
+    const ParamsVectors *globals = GlobalParams();
+
+    for (auto p : globals->int_params_c()) {
+        param_names.push_back({p->name_str(), true, INT_PARAM, p});
+    }
+    for (auto p : globals->bool_params_c()) {
+        param_names.push_back({p->name_str(), true, BOOL_PARAM, p});
+    }
+    for (auto p : globals->string_params_c()) {
+        param_names.push_back({p->name_str(), true, STRING_PARAM, p});
+    }
+    for (auto p : globals->double_params_c()) {
+        param_names.push_back({p->name_str(), true, DOUBLE_PARAM, p});
+    }
+
+    sort(param_names.begin(), param_names.end(), [](param_info_t &a, param_info_t &b)
+    {
+        int rv = strcmp(b.name, a.name);
+        if (rv == 0)
+        {
+            rv = (int)b.global - (int)a.global;
+        }
+        return rv >= 0;
+    });
+
+    static const char *type_map[] = {"[Integer]", "[Boolean]", "[Float]", "[String]"};
+    static const char *categories[] = {"(Global)", "(Local)"};
+    static const char *write_access[] = {".", "w", "W"};
+    static const char *read_access[] = {".", "r", "R"};
+
+    auto acc = [](int access) {
+        if (access > 2)
+            access = 2;
+        return access;
+    };
+
+    for (auto item : param_names) {
+        const Param *p = item.ref;
+        auto stats = p->access_counts();
+        if (stats.reading > 0)
+        {
+            tprintf("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str());
+        }
+    }
+
+#if 01
+    tprintf("\n\nUnused parameters:\n\n");
+    for (auto item : param_names) {
+        const Param *p = item.ref;
+        auto stats = p->access_counts();
+        if (stats.reading <= 0)
+        {
+            tprintf("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str());
+        }
+    }
+#endif
+}
+
 bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstraint constraint,
                           ParamsVectors *member_params) {
   // Look for the parameter among string parameters.
