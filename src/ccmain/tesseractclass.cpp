@@ -176,7 +176,7 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(tessedit_unrej_any_wd, false, "Don't bother with word plausibility",
                   this->params())
     , BOOL_MEMBER(tessedit_fix_hyphens, true, "Crunch double hyphens?", this->params())
-    , BOOL_MEMBER(tessedit_enable_doc_dict, true, "Add words to the document dictionary",
+    , BOOL_MEMBER(tessedit_enable_doc_dict, true, "Add discovered words to the document dictionary when found to be non-ambiguous through internal heuristic",
                   this->params())
     , BOOL_MEMBER(tessedit_debug_fonts, false, "Output font info per char", this->params())
     , INT_MEMBER(tessedit_font_id, 0, "Font ID to use or zero", this->params())

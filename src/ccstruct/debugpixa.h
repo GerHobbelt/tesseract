@@ -50,7 +50,7 @@ public:
   // on destruction.
   void WritePDF(const char *filename) {
     if (HasPix()) {
-		// TODO: add the captions to the PDF as well, but in TEXT format, not as part of the pix (i.e. not using the bitmap `fonts_`)
+      // TODO: add the captions to the PDF as well, but in TEXT format, not as part of the pix (i.e. not using the bitmap `fonts_`)
 
       pixaConvertToPdf(pixa_, 300, 1.0f, 0, 0, "AllDebugImages", filename);
       //pixaClear(pixa_);

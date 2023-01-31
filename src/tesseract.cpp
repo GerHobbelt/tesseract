@@ -1016,6 +1016,24 @@ extern "C" int tesseract_main(int argc, const char** argv)
 	  api.SetVariable("textord_tabfind_show_blocks", "Y");
 #endif
 
+	  textord_noise_debug
+		  textord_tabfind_show_vlines
+		  textord_oldbl_debug
+		  textord_baseline_debug
+		  INT_VAR(textord_debug_block, 0, "Block to do debug on");
+	  INT_VAR(textord_debug_bugs, 0, "Turn on output related to bugs in tab finding");
+	  INT_VAR(textord_debug_tabfind, 0, "Debug tab finding");
+
+		  BOOL_VAR(textord_debug_baselines, false, "Debug baseline generation");
+	  BOOL_VAR(textord_debug_blob, false, "Print test blob information");
+	  BOOL_VAR(textord_debug_blob, false, "Print test blob information");
+	  BOOL_VAR(textord_debug_pitch_metric, false, "Write full metric stuff");
+	  BOOL_VAR(textord_debug_pitch_test, false, "Debug on fixed pitch test");
+	  BOOL_VAR(textord_debug_printable, false, "Make debug windows printable");
+	  BOOL_VAR(textord_debug_xheights, false, "Test xheight algorithms");
+	  BOOL_VAR(textord_debug_xheights, false, "Test xheight algorithms");
+
+
 	  api.SetVariable("tessedit_create_hocr", "T");
 	  api.SetVariable("tessedit_create_alto", "T");
 	  api.SetVariable("tessedit_create_page", "T");
@@ -1032,10 +1050,61 @@ extern "C" int tesseract_main(int argc, const char** argv)
 	  api.SetVariable("tessedit_dump_pageseg_images", "T");
 
 	  api.SetVariable("tessedit_write_images", "T");
-	  
+
+	  tessedit_adaption_debug
+		  tessedit_debug_block_rejection
+		  tessedit_debug_doc_rejection
+		  tessedit_debug_fonts
+		  tessedit_debug_quality_metrics
+
+		  tessedit_rejection_debug
+		  tessedit_timing_debug
+
+		  tessedit_bigram_debug
+
+	  tess_debug_lstm
+
 	  api.SetVariable("debug_noise_removal", "T");
 
+
 	  api.SetVariable("classify_debug_level", "0" /* "9" */ );  // LSTM debug output is extremely noisy
+	  classify_learning_debug_level
+	  classify_debug_character_fragments
+		  classify_enable_adaptive_debugger
+		  classify_learn_debug_str??????????????????????
+		  matcher_debug_separate_windows
+		  matcher_debug_flags
+		  matcher_debug_level
+
+		  multilang_debug_level
+
+		  paragraph_debug_level
+
+		  segsearch_debug_level
+
+		  stopper_debug_level
+
+		  superscript_debug
+
+		  crunch_debug
+
+		  dawg_debug_level
+
+		  debug_fix_space_level
+		  debug_noise_removal
+		  debug_x_ht_level
+		  debug_file
+		  debug_output_path
+
+		  hyphen_debug_level
+
+		  language_model_debug_level
+
+		  tosp_debug_level
+
+		  wordrec_debug_level
+
+		  word_to_debug
 
 	  api.SetVariable("scribe_save_grey_rotated_image", "T");
 	  api.SetVariable("scribe_save_binary_rotated_image", "T");
@@ -1047,9 +1116,30 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
 	  api.SetVariable("thresholding_debug", "T");
 
+	  thresholding_debug
+
 	  api.SetVariable("preprocess_graynorm_mode", "0"); // 0..3
 
-		  
+	  tessedit_bigram_debug
+
+		  wordrec_debug_blamer
+
+		  devanagari_split_debugimage
+		  devanagari_split_debuglevel
+
+		  gapmap_debug
+
+		  poly_debug
+
+		  edges_debug
+
+		  ambigs_debug_level
+
+		  applybox_debug
+
+		  bidi_debug
+
+		  chop_debug
 
   }
 

@@ -455,7 +455,7 @@ public:
   // Do the two WERD_CHOICEs form a meaningful bigram?
   bool valid_bigram(const WERD_CHOICE &word1, const WERD_CHOICE &word2) const;
   /// Returns true if the word contains a valid punctuation pattern.
-  /// Note: Since the domains of punctuation symbols and symblos
+  /// Note: Since the domains of punctuation symbols and symbols
   /// used in numbers are not disjoint, a valid number might contain
   /// an invalid punctuation pattern (e.g. .99).
   bool valid_punctuation(const WERD_CHOICE &word);
@@ -530,6 +530,8 @@ private:
   float wordseg_rating_adjust_factor_;
   // File for recording ambiguities discovered during dictionary search.
   FILE *output_ambig_words_file_;
+
+  // TODO: also add `FILE *` to save new words added due to `tessedit_enable_doc_dict` / `WERD_RES::IsAmbiguous()` heuristic process.
 
 public:
   /// Variable members.
