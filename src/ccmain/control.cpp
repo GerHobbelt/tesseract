@@ -2098,7 +2098,7 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
 
   // This line has some side effect that prevents "Segmentation fault (core dumped)" in certain cases. 
   // Do not understand why that happens. 
-  word->best_choice->debug_string().c_str();
+  (void)word->best_choice->debug_string().c_str();
 
   while (word_next != nullptr) {
 
