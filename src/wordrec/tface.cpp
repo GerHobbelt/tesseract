@@ -39,7 +39,10 @@ namespace tesseract {
 void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_classifier,
                              TessdataManager *init_dict) {
   if (!textbase.empty()) {
-    imagefile = textbase;
+    if (textbase == "-" /* stdout */)
+      imagefile = "tesseract-stdio-session";
+    else
+      imagefile = textbase;
   }
 #if !DISABLED_LEGACY_ENGINE
   InitFeatureDefs(&feature_defs_);

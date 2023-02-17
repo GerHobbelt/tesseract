@@ -47,8 +47,8 @@ public:
 
 public:
   // Read the arguments and set up the data path.
-  void main_setup(const std::string &argv0,   // program name
-                  const std::string &basename // name of image
+  void main_setup(const std::string &argv0,                 // program name
+                  const std::string & output_image_basename // name of output/debug image(s)
   );
   ParamsVectors *params() {
     return &params_;

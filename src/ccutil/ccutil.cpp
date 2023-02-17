@@ -52,8 +52,11 @@ CCUtil::~CCUtil() = default;
  * previous is not successful - use current directory.
  * @param basename - name of image
  */
-void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
-  imagebasename = basename; /**< name of image */
+void CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
+  if (output_image_basename == "-" /* stdout */)
+    imagebasename = "tesseract-stdio-session";
+  else
+    imagebasename = output_image_basename; /**< name of output/debug image(s) */
   
   datadir.clear();
 

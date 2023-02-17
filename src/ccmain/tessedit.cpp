@@ -300,8 +300,12 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     delete lang;
   }
 
-  if (debug_output_path.empty() && !textbase.empty())
-	debug_output_path = textbase + "-debug";
+  if (debug_output_path.empty() && !textbase.empty()) {
+    if (textbase == "-" /* stdout */)
+      debug_output_path = "tesseract-stdio-session-debug";
+    else
+      debug_output_path = textbase + "-debug";
+  }
 
   // Set the basename, compute the data directory.
   main_setup(arg0, textbase);
