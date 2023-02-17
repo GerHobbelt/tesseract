@@ -139,6 +139,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
         {
             rv = (int)b.global - (int)a.global;
         }
+        assert(rv == 0 ? !"Apparently you have double-defined GF:LAGS! Fix that!" : "Ok!");
         return rv >= 0;
     });
 
