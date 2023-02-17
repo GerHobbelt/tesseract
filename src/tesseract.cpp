@@ -1064,7 +1064,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("debug_noise_removal", "Y");
 
 
-      api.SetVariable("classify_debug_level", "0" /* "9" */);  // LSTM debug output is extremely noisy
+      api.SetVariable("classify_debug_level", "1" /* "9" */);  // LSTM debug output is extremely noisy
       api.SetVariable("classify_learning_debug_level", "9");
       api.SetVariable("classify_debug_character_fragments", "Y");
       api.SetVariable("classify_enable_adaptive_debugger", "Y");

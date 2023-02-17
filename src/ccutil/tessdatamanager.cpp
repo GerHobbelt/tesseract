@@ -25,6 +25,11 @@
 #include <cstdio>
 #include <string>
 
+// quick & dirty fix to prevent a metric ton of MSVC errors due to libarchive somehow including winsock1, which clashes in its system header files with winsock2. Sigh.
+#if defined(_WIN32)
+#include <winsock2.h>
+#endif
+
 #if defined(HAVE_LIBARCHIVE)
 #  include <archive.h>
 #  include <archive_entry.h>
