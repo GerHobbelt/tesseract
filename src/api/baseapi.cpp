@@ -1445,8 +1445,8 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-	std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "processed", "tiff");
-	WritePix(file_path, page_pix, IFF_TIFF_G4);
+    std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "processed", "tiff");
+    WritePix(file_path, page_pix, IFF_TIFF_G4);
     pixDestroy(&page_pix);
   }
 
@@ -2314,6 +2314,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   {
 	  bool go = false;
 
+    // debug_all: assist diagnostics by cycling through all thresholding methods and applying each,
+    // saving each result to a separate diagnostic image for later evaluation, before commencing
+    // and finally applying the *user-selected* threshold method and continue with the OCR process:
 	  if (m != (int)ThresholdMethod::Max)
 	  {
 		  if (!debug_all)
@@ -2335,7 +2338,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 		  }
 
 		  if (go)
-			*pix = pix_binary;
+			  *pix = pix_binary;
 
 		  if (!thresholder_->IsBinary()) {
 			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
