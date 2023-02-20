@@ -82,7 +82,7 @@ static int Main(int argc, const char** argv) {
                    /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
                    /*box_texts*/ nullptr, /*pages*/ nullptr);
       if (!res) {
-        tprintf("ERROR: Can not read box data from '{}'\n", argv[arg]);
+        tprintf("ERROR: Cannot read box data from '{}'\n", argv[arg]);
         return EXIT_FAILURE;
       }
     } else {

@@ -727,7 +727,7 @@ void FontUtils::PangoFontTypeInfo() {
              CAIRO_FONT_TYPE_USER) {
     tprintf("Using CAIRO_FONT_TYPE_USER.\n");
   } else if (!font_map) {
-    tprintf("ERROR: Can not create pango cairo font map!\n");
+    tprintf("ERROR: Cannot create pango cairo font map!\n");
   }
 }
 
