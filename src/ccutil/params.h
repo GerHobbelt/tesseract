@@ -522,6 +522,8 @@ ParamsVectors *GlobalParams();
 // ------------------------------------
 
 extern BOOL_VAR_H(debug_all);
+extern STRING_VAR_H(vars_report_file);
+extern BOOL_VAR_H(report_all_variables);
 
 } // namespace tesseract
 

@@ -251,13 +251,16 @@ static void PrintHelpExtra(const char *program) {
       "--help-oem | "
 #endif
       "--version\n"
-      "  {} --list-langs [--tessdata-dir PATH]\n"
+      "  {} --list-langs [--tessdata-dir <path>]\n"
 #if !DISABLED_LEGACY_ENGINE
-      "  {} --print-fonts-table [options...] [configfile...]\n"
+      "  {} --print-fonts-table [options...] [<configfile>...]\n"
 #endif  // !DISABLED_LEGACY_ENGINE
-      "  {} --print-parameters [options...] [configfile...]\n"
-      "  {} imagename|imagelist|stdin outputbase|stdout [options...] "
-      "[configfile...]\n"
+      "  {} --print-parameters [options...] [<configfile>...]\n"
+      "  {} info [<trainingfile>...]\n"
+      "  {} unpack [<file>...]\n"
+      "  {} version\n"
+      "  {} <imagename>|<imagelist>|stdin <outputbase>|stdout [options...] "
+      "[<configfile>...]\n"
       "\n"
       "OCR options:\n"
       "  --tessdata-dir PATH   Specify the location of tessdata path.\n"
@@ -281,8 +284,8 @@ static void PrintHelpExtra(const char *program) {
       "                        (page rendered then as image + OCR text hidden overlay)\n"
       "\n"
       "NOTE: These options must occur before any configfile.\n"
-      "\n",
-      program, program, program, program
+      "",
+      program, program, program, program, program, program, program
 #if !DISABLED_LEGACY_ENGINE
       , program
 #endif  // !DISABLED_LEGACY_ENGINE
@@ -296,7 +299,20 @@ static void PrintHelpExtra(const char *program) {
 
   tprintf(
       "\n"
-      "Single options:\n"
+      "Commands:\n"
+      "\n"
+      "  {} info [<trainingfile>...]\n"
+      "                        Prints info about the trainingfile(s), whether they are\n"
+      "                        LSTM (tesseract v4/v5) or Legacy (teesseract v3)\n"
+      "\n"
+      "  {} unpack [<file>...]\n"
+      "                        Unpack training archives into transcription text files\n"
+      "                        and image scans (pictures)\n"
+      "\n"
+      "  {} version\n"
+      "                        Alias for '--version'.\n"
+      "\n"
+      "Stand-alonee {} options:\n"
       "  -h, --help            Show minimal help message.\n"
       "  --help-extra          Show extra help for advanced users.\n"
       "  --help-psm            Show page segmentation modes.\n"
@@ -308,7 +324,16 @@ static void PrintHelpExtra(const char *program) {
 #if !DISABLED_LEGACY_ENGINE
       "  --print-fonts-table   Print tesseract fonts table.\n"
 #endif  // !DISABLED_LEGACY_ENGINE
-      "  --print-parameters    Print tesseract parameters.\n");
+      "  --print-parameters    Print tesseract parameters.\n"
+      "\n"
+      "You may also use the 'help' command as an alias for '--help' like this:\n"
+      "  {} help\n"
+      "or"
+      "  {} help <section>\n"
+      "where section is one of:\n"
+      "  extra, oem, psm\n"
+      "",
+      program, program, program, program, program, program);
 }
 
 static void PrintHelpMessage(const char *program) {
@@ -316,20 +341,22 @@ static void PrintHelpMessage(const char *program) {
   tprintf(
       "Usage:\n"
       "  {} --help | --help-extra | --version\n"
+      "  {} help [section]\n"
       "  {} --list-langs\n"
-      "  {} imagename outputbase [options...] [configfile...]\n"
+      "  {} --print-parameters\n"
+      "  {} <imagename> <outputbase> [options...] [<configfile>...]\n"
       "\n"
       "OCR options:\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
       "NOTE: These options must occur before any configfile.\n"
       "\n"
-      "Single options:\n"
+      "Stand-alone {} options:\n"
       "  --help                Show this help message.\n"
       "  --help-extra          Show extra help for advanced users.\n"
       "  --version             Show version information.\n"
-      "  --list-langs          List available languages for tesseract "
-      "engine.\n",
-      program, program, program);
+      "  --list-langs          List available languages for tesseract engine.\n"
+      "  --print-parameters    Print tesseract parameters.\n",
+      program, program, program, program, program, program);
 }
 
 static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char** argv) {
@@ -556,7 +583,11 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       ++i;
     } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
       // Allow the log levels which are used by log4cxx.
-      const std::string loglevel_string = argv[++i];
+      std::string loglevel_string = argv[++i];
+      std::transform(loglevel_string.cbegin(), loglevel_string.cend(),
+                   loglevel_string.begin(), // write to the same location
+                   [](unsigned char c) { return std::toupper(c); });
+
       static const std::map<const std::string, int> loglevels {
         {"ALL", INT_MIN},
         {"TRACE", 5000},
@@ -569,9 +600,9 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       };
       try {
         auto loglevel = loglevels.at(loglevel_string);
-		FLAGS_tlog_level = loglevel;
+        FLAGS_tlog_level = loglevel;
       } catch (const std::out_of_range &e) {
-		(void)e;		// unused variable
+		    (void)e;		// unused variable
         // TODO: Allow numeric argument?
         tprintf("Error, unsupported --loglevel {}\n", loglevel_string);
         return false;

@@ -30,9 +30,11 @@
 
 #include <cstdio>
 
+#ifndef strtok_r
 #if defined(_WIN32) && !defined(__GNUC__)
 #  define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #endif /* _WIN32 && !__GNUC__ */
+#endif
 
 namespace tesseract {
 

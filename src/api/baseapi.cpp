@@ -115,6 +115,9 @@ static STRING_VAR(document_title, "", "Title of output document (used for hOCR a
 static INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
 #endif
 BOOL_VAR(debug_all, false, "Turn on all the debugging features");
+STRING_VAR(vars_report_file, "-", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout' or '-' to be output to stdout. Empty means no report will be produced.");
+BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
+
 
 /** Minimum sensible image size to be worth running tesseract. */
 const int kMinRectSize = 10;
