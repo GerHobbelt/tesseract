@@ -101,12 +101,12 @@ bool File::Delete(const char *pathname) {
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 bool File::DeleteMatchingFiles(const char *pattern) {
-  WIN32_FIND_DATA data;
+  WIN32_FIND_DATAA data;
   BOOL result = TRUE;
-  HANDLE handle = FindFirstFile(pattern, &data);
+  HANDLE handle = FindFirstFileA(pattern, &data);
   bool all_deleted = true;
   if (handle != INVALID_HANDLE_VALUE) {
-    for (; result; result = FindNextFile(handle, &data)) {
+    for (; result; result = FindNextFileA(handle, &data)) {
       all_deleted &= File::Delete(data.cFileName);
     }
     FindClose(handle);

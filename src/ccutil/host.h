@@ -28,9 +28,10 @@
 #  ifndef NOMINMAX
 #    define NOMINMAX
 #  endif /* NOMINMAX */
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN
-#  endif
+//#  ifndef WIN32_LEAN_AND_MEAN
+//#    define WIN32_LEAN_AND_MEAN
+//#  endif
+#  include <winsock2.h>  // prevent fatal collisions later on (in altorenderer.cpp for example by the auto-include of winsock 1 in windows.h)
 #  include <windows.h>
 #if defined(_MSC_VER)
 #ifndef _CRTDBG_MAP_ALLOC

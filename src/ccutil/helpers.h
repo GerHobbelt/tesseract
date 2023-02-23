@@ -20,6 +20,38 @@
 #ifndef TESSERACT_CCUTIL_HELPERS_H_
 #define TESSERACT_CCUTIL_HELPERS_H_
 
+// mupdf headers cause some weird error in MSVC system header commdlg.h when include *after* <random> header below. And this only happens for params.cpp, i.e. when params.h has been included first. ... A definite case of WTF?!
+//
+// Which is why we include the mupdf headers here in monolithic builds...
+//
+// EDIT: Subsequent compiler runs and analysis now popped up the same 'crazy' errors in commdlg.h (caused by missing font struct definitions)
+// from control.cpp and a few other tesseract source files. Which forced me to investigate further.
+//
+// Debugging through running the preprocessor (cl /E /P ...) and some grepping
+// 
+//   grep '#line' $( find -name control.i )  | grep -B 1000000 commdlg | grep -B 1000000 wingdi | grep -v "Program Files"
+//
+// showed the original culprit was probably MuPDF\\thirdparty\\curl\\lib\\setup-win32.h.
+// And indeed there we found the often-troublesome WIN32_LEAN_AND_MEAN and a few choice other NOXYZ feature defines before loading windows.h.
+//
+// > Rationale for the precise grep chain is out of scope.
+// > Hint: wingdi defines what commdlg needs. Chain + last filter takes care of getting loading file as last #line stmt, IFF you're lucky.
+// > Of course I was lucky. After N iterations, which got me to this grep chain. EFF that shite, with prejudice!
+//
+// This practice MUST be abolished in all libraries, everywhere, as it causes severe compile errors at surprise locations and at surprise times,
+// while the errors reported aren't always easy to diagnose for everybody. (How many programmers are well versed with gcc -E, cl /P and code inspection?)
+// 
+// Setting these feature defines MUST be the sole prerogative of the final application code/project, if any. Or rather more precise: the final C/C++ *.c+*.cpp source files. 
+// No-one else MUST mess with these in any header / include files, just to 'help' shorten compiler turn-around times. The road to Hell is paved with good intentions.
+// If you want to offer 'help' like that, consider making sure your header files work well with precompiled header caching in the various compilers instead.
+// 
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/fitz.h"
+#include "mupdf/helpers/dir.h"
+#include "mupdf/assertions.h"
+#endif
+
 #include <cassert>
 #include <climits> // for INT_MIN, INT_MAX
 #include <cmath> // std::isfinite
@@ -171,21 +203,21 @@ inline int DivRounded(int a, int b) {
 
 // Return a double cast to int with rounding.
 inline int IntCastRounded(double x) {
-  assert(std::isfinite(x));
-  assert(x < INT_MAX);
-  assert(x > INT_MIN);
+  ASSERT0(std::isfinite(x));
+  ASSERT0(x < INT_MAX);
+  ASSERT0(x > INT_MIN);
   return x >= 0.0 ? static_cast<int>(x + 0.5) : -static_cast<int>(-x + 0.5);
 }
 
 // Return a float cast to int with rounding.
 inline int IntCastRounded(float x) {
-  assert(std::isfinite(x));
+  ASSERT0(std::isfinite(x));
   return x >= 0.0F ? static_cast<int>(x + 0.5F) : -static_cast<int>(-x + 0.5F);
 }
 
 // Reverse the order of bytes in a n byte quantity for big/little-endian switch.
 inline void ReverseN(void *ptr, int num_bytes) {
-  assert(num_bytes == 1 || num_bytes == 2 || num_bytes == 4 || num_bytes == 8);
+  ASSERT0(num_bytes == 1 || num_bytes == 2 || num_bytes == 4 || num_bytes == 8);
   char *cptr = static_cast<char *>(ptr);
   int halfsize = num_bytes / 2;
   for (int i = 0; i < halfsize; ++i) {
@@ -214,7 +246,7 @@ bool DeSerialize(bool swap, FILE *fp, std::vector<T> &data) {
     Reverse32(&size);
   }
   // Arbitrarily limit the number of elements to protect against bad data.
-  assert(size <= UINT16_MAX);
+  ASSERT0(size <= UINT16_MAX);
   if (size > UINT16_MAX) {
     return false;
   }
