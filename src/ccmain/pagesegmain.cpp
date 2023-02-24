@@ -108,10 +108,13 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   // Get page segmentation mode.
   auto pageseg_mode = static_cast<PageSegMode>(static_cast<int>(tessedit_pageseg_mode));
   // If a UNLV zone file can be found, use that instead of segmentation.
-  if (!PSM_COL_FIND_ENABLED(pageseg_mode) && input_file != nullptr && input_file[0] != '\0') {
-    std::string name = input_file;
+  std::string name;
+  if (input_file != nullptr && input_file[0] != '\0') {
+    name = input_file;
     std::size_t lastdot = name.find_last_of(".");
     name = name.substr(0, lastdot);
+  }
+  if (!PSM_COL_FIND_ENABLED(pageseg_mode) && !name.empty()) {
     read_unlv_file(name, width, height, blocks);
   }
   if (blocks->empty()) {
@@ -140,6 +143,15 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
         AutoPageSeg(pageseg_mode, blocks, &to_blocks,
                     enable_noise_removal ? &diacritic_blobs : nullptr, osd_tess, osr);
     if (pageseg_mode == PSM_OSD_ONLY) {
+      if (blocks->empty()) {
+        if (textord_debug_tabfind) {
+          tprintf("WARNING: Empty page\n");
+        }
+        return 0; // AutoPageSeg found an empty page.
+      }
+      if (debug_write_unlv && !name.empty()) {
+        write_unlv_file(name + ".post-AutoPageSeg", width, height, blocks);
+      }
       return auto_page_seg_ret_val;
     }
     // To create blobs from the image region bounds uncomment this line:
@@ -169,6 +181,10 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   bool splitting = pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT;
   bool cjk_mode = textord_use_cjk_fp_model;
 
+  if (debug_write_unlv && !name.empty()) {
+    write_unlv_file(name + ".pre-TextordPage", width, height, blocks);
+  }
+
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
                        pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, osr->gradient);
   
@@ -177,6 +193,11 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     tprintf("Page Gradient: {}\n", osr->gradient);
     return -1; 
   }
+
+  if (debug_all && !name.empty()) {
+    write_unlv_file(name + ".post-TextordPage", width, height, blocks);
+  }
+
   return auto_page_seg_ret_val;
 }
 
