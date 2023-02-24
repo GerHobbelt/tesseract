@@ -138,7 +138,7 @@ struct RecodeNode {
     delete dawgs;
   }
   // Prints details of the node.
-  void Print(int null_char, const UNICHARSET *unicharset, int depth) const;
+  std::string Print(int null_char, const UNICHARSET *unicharset, int depth) const;
 
   // The re-encoded code here = index to network output.
   int code;

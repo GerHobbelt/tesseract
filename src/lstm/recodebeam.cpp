@@ -35,25 +35,27 @@ const int RecodeBeamSearch::kBeamWidths[RecodedCharID::kMaxCodeLen + 1] = {
 static const char *kNodeContNames[] = {"Anything", "OnlyDup", "NoDup"};
 
 // Prints debug details of the node.
-void RecodeNode::Print(int null_char, const UNICHARSET *unicharset,
+std::string RecodeNode::Print(int null_char, const UNICHARSET *unicharset,
                        int depth) const {
+  std::string s;
   if (code == null_char) {
-    tprintf("null_char");
+    return "null_char";
   } else {
-		tprintf("label={}, uid={}={}", code, unichar_id,
+		s = fmt::format("label={}, uid={}={}", code, unichar_id,
 				unicharset ?
 					unicharset->debug_str(unichar_id).c_str() :
 				  std::string(1, (unichar_id < 0x80 && isprint(unichar_id)) ? (char)unichar_id : '.').c_str());
   }
-  tprintf(" score={}, c={},{}{}{} perm={}, hash={}", score, certainty,
+  s += fmt::format(" score={}, c={},{}{}{} perm={}, hash={}", score, certainty,
           start_of_dawg ? " DawgStart" : "", start_of_word ? " Start" : "",
           end_of_word ? " End" : "", permuter, code_hash);
   if (depth > 0 && prev != nullptr) {
-    tprintf(" prev:");
-    prev->Print(null_char, unicharset, depth - 1);
+    s += " prev:";
+    s += prev->Print(null_char, unicharset, depth - 1);
   } else {
-    tprintf("\n");
+    s += "\n";
   }
+  return std::move(s);
 }
 
 // Borrows the pointer, which is expected to survive until *this is deleted.
@@ -555,11 +557,11 @@ void RecodeBeamSearch::DebugBeamPos(const UNICHARSET *unicharset,
   for (auto &unichar_best : unichar_bests) {
     if (unichar_best != nullptr) {
       const RecodeNode &node = *unichar_best;
-      node.Print(null_char_, unicharset, 1);
+      tprintf("{}", node.Print(null_char_, unicharset, 1));
     }
   }
   if (null_best != nullptr) {
-    null_best->Print(null_char_, unicharset, 1);
+    tprintf("{}", null_best->Print(null_char_, unicharset, 1));
   }
 }
 
@@ -1361,8 +1363,9 @@ void RecodeBeamSearch::DebugPath(
     const std::vector<const RecodeNode *> &path) const {
   for (unsigned c = 0; c < path.size(); ++c) {
     const RecodeNode &node = *path[c];
-    tprintf("{} ", c);
-    node.Print(null_char_, unicharset, 1);
+    std::string msg = fmt::format("{} ", c);
+    msg += node.Print(null_char_, unicharset, 1);
+    tprintf("{}", msg);
   }
 }
 
