@@ -19,6 +19,8 @@
 #ifndef TESSERACT_CCUTIL_GENERICVECTOR_H_
 #define TESSERACT_CCUTIL_GENERICVECTOR_H_
 
+#include <tesseract/debugheap.h>
+
 #include "helpers.h"
 #include "serialis.h"
 
@@ -29,9 +31,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <functional> // for std::function
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 
 namespace tesseract {
@@ -322,11 +321,7 @@ public:
   PointerVector<T> &operator+=(const PointerVector &other) {
     this->reserve(this->size_used_ + other.size_used_);
     for (unsigned i = 0; i < other.size(); ++i) {
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-      this->push_back(new (_CLIENT_BLOCK, __FILE__, __LINE__) T(*other.data_[i]));
-#else
       this->push_back(new T(*other.data_[i]));
-#endif	  
     }
     return *this;
   }
@@ -430,11 +425,7 @@ public:
       }
       T *item = nullptr;
       if (non_null != 0) {
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-        item = new (_CLIENT_BLOCK, __FILE__, __LINE__) T;
-#else
         item = new T;
-#endif  // _DEBUG
         if (!item->DeSerialize(swap, fp)) {
           delete item;
           return false;
@@ -465,11 +456,7 @@ void GenericVector<T>::init(int size) {
     if (size < kDefaultVectorSize) {
       size = kDefaultVectorSize;
     }
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-    data_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[size];
-#else
     data_ = new T[size];
-#endif
     size_reserved_ = size;
   }
   clear_cb_ = nullptr;
@@ -490,11 +477,7 @@ void GenericVector<T>::reserve(int size) {
   if (size < kDefaultVectorSize) {
     size = kDefaultVectorSize;
   }
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  T *new_array = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[size];
-#else
   T *new_array = new T[size];
-#endif
   for (int i = 0; i < size_used_; ++i) {
     new_array[i] = data_[i];
   }
