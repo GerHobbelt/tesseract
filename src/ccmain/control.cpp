@@ -21,14 +21,13 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include <cctype>
 #include <cmath>
 #include <cstdint> // for int16_t, int32_t
 #include <cstdio>  // for fclose, fopen, FILE
 #include <ctime>   // for clock
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 #include "control.h"
 #if !DISABLED_LEGACY_ENGINE
@@ -184,11 +183,7 @@ void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
     for (unsigned s = 0; s <= sub_langs_.size(); ++s) {
       // The sub_langs_.size() entry is for the master language.
       Tesseract *lang_t = s < sub_langs_.size() ? sub_langs_[s] : this;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	  WERD_RES* word_res = new (_CLIENT_BLOCK, __FILE__, __LINE__) WERD_RES;
-#else
 	  auto* word_res = new WERD_RES;
-#endif  // _DEBUG
       word_res->InitForRetryRecognition(*word->word);
       word->lang_words.push_back(word_res);
       // LSTM doesn't get setup for pass2.

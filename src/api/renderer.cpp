@@ -18,6 +18,7 @@
 #ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
 #include <cstring>
@@ -25,9 +26,6 @@
 #include <string>     // std::string
 #include "serialis.h" // Serialize
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/helpers/dir.h"

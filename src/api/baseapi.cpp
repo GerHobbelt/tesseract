@@ -76,10 +76,6 @@
 #include <sstream>  // for std::stringstream
 #include <vector>   // for std::vector
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
-
 #include <allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
@@ -2506,11 +2502,7 @@ void TessBaseAPI::ClearResults() {
   page_res_ = nullptr;
   recognition_done_ = false;
   if (block_list_ == nullptr) {
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	  block_list_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) BLOCK_LIST;
-#else
 	  block_list_ = new BLOCK_LIST;
-#endif  // _DEBUG
   } else {
     block_list_->clear();
   }
@@ -2624,13 +2616,8 @@ void TessBaseAPI::GetBlockTextOrientations(int **block_orientation, bool **verti
     tprintf("WARNING: Found no blocks\n");
     return;
   }
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  *block_orientation = new (_CLIENT_BLOCK, __FILE__, __LINE__) int[num_blocks];
-  *vertical_writing = new (_CLIENT_BLOCK, __FILE__, __LINE__) bool[num_blocks];
-#else
   * block_orientation = new int[num_blocks];
   *vertical_writing = new bool[num_blocks];
-#endif  // _DEBUG
   block_it.move_to_first();
   int i = 0;
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
@@ -2658,11 +2645,7 @@ void TessBaseAPI::DetectParagraphs(bool after_text_recognition) {
   int debug_level = 0;
   GetIntVariable("paragraph_debug_level", &debug_level);
   if (paragraph_models_ == nullptr) {
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	  paragraph_models_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) std::vector<ParagraphModel*>;
-#else
 	  paragraph_models_ = new std::vector<ParagraphModel*>;
-#endif  // _DEBUG
   }
   MutableIterator *result_it = GetMutableIterator();
   do { // Detect paragraphs for this block
