@@ -510,7 +510,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
 #if 01
   {
 	  std::string debug_output_path = api->GetOutputName();
-	  int page_number = 0;
+	  static int page_number = 0;
+    page_number++;
 	  bool scribe_save_grey_rotated_image;
 	  api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
 	  if (scribe_save_grey_rotated_image) {
