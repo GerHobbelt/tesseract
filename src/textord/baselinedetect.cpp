@@ -58,7 +58,7 @@ const double kMaxBlobSizeMultiple = 1.3;
 // we will force the linespacing model on all the lines.
 const double kMinFittingLinespacings = 0.25;
 // A y-coordinate within a textline that is to be debugged.
-static int kDebugYCoord = -1525;
+static const int kDebugYCoord = -1525;
 #define DEBUG_BASELINE 1
 
 namespace tesseract {
@@ -159,7 +159,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     const TBOX &box = blob->bounding_box();
     int x_middle = (box.left() + box.right()) / 2;
 #ifdef DEBUG_BASELINE
-    if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_all) {
+    if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_baseline_fit) {
       tprintf("Box bottom = {}, baseline pos={} for box at:", box.bottom(),
               blob->baseline_position());
       box.print();
@@ -186,7 +186,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     }
   }
 #ifdef DEBUG_BASELINE
-  if (kDebugYCoord >= 0 || debug_all) {
+  if (kDebugYCoord >= 0 || debug_baseline_fit) {
 	  Print();
 	  debug = bounding_box_.bottom() < kDebugYCoord &&
 		  bounding_box_.top() > kDebugYCoord
@@ -227,7 +227,7 @@ void BaselineRow::AdjustBaselineToParallel(int debug, const FCOORD &direction) {
   }
 #ifdef DEBUG_BASELINE
   if ((bounding_box_.bottom() < kDebugYCoord &&
-      bounding_box_.top() > kDebugYCoord && debug < 3) || debug_all)
+      bounding_box_.top() > kDebugYCoord && debug < 3) || debug_baseline_fit)
     debug = 3;
 #endif
   FitConstrainedIfBetter(debug, direction, 0.0, displacement_modes_[0]);
@@ -306,7 +306,7 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
     BLOBNBOX *blob = blob_it.data();
     const TBOX &box = blob->bounding_box();
 #ifdef DEBUG_BASELINE
-	if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_all)
+	if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_baseline_fit)
       debug = true;
 #endif
     FCOORD blob_pos((box.left() + box.right()) / 2.0f,
