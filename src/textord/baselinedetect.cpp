@@ -58,8 +58,12 @@ const double kMaxBlobSizeMultiple = 1.3;
 // we will force the linespacing model on all the lines.
 const double kMinFittingLinespacings = 0.25;
 // A y-coordinate within a textline that is to be debugged.
-static const int kDebugYCoord = -1525;
+
 #define DEBUG_BASELINE 1
+
+#ifdef DEBUG_BASELINE
+static int g_debug_baseline_y_coord = -2000;
+#endif
 
 namespace tesseract {
 
@@ -68,7 +72,8 @@ BaselineRow::BaselineRow(double line_spacing, TO_ROW *to_row)
       baseline_pt1_(0.0f, 0.0f),
       baseline_pt2_(0.0f, 0.0f),
       baseline_error_(0.0),
-      good_baseline_(false) {
+      good_baseline_(false)
+{
   ComputeBoundingBox();
   // Compute a scale factor for rounding to ints.
   disp_quant_factor_ = kOffsetQuantizationFactor * line_spacing;
@@ -143,9 +148,12 @@ double BaselineRow::StraightYAtX(double x) const {
 // points to be reasonably sure of the fitted baseline.
 // If use_box_bottoms is false, baselines positions are formed by
 // considering the outlines of the blobs.
-bool BaselineRow::FitBaseline(bool use_box_bottoms) {
-  int debug = debug_all;
-  // Deterministic fitting is used wherever possible.
+bool BaselineRow::FitBaseline(int debug, bool use_box_bottoms) {
+#ifdef DEBUG_BASELINE
+  g_debug_baseline_y_coord = debug & ~0x0F000000;
+  debug >>= 24; debug &= 0x0F;
+#endif
+    // Deterministic fitting is used wherever possible.
   fitter_.Clear();
   // Linear least squares is a backup if the DetLineFit produces a bad line.
   LLSQ llsq;
@@ -159,7 +167,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     const TBOX &box = blob->bounding_box();
     int x_middle = (box.left() + box.right()) / 2;
 #ifdef DEBUG_BASELINE
-    if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_baseline_fit) {
+    if ((box.bottom() < g_debug_baseline_y_coord && box.top() > g_debug_baseline_y_coord) || debug) {
       tprintf("Box bottom = {}, baseline pos={} for box at:", box.bottom(),
               blob->baseline_position());
       box.print();
@@ -186,10 +194,10 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     }
   }
 #ifdef DEBUG_BASELINE
-  if (kDebugYCoord >= 0 || debug_baseline_fit) {
+  if (g_debug_baseline_y_coord >= 0 || debug) {
 	  Print();
-	  debug = bounding_box_.bottom() < kDebugYCoord &&
-		  bounding_box_.top() > kDebugYCoord
+	  debug = bounding_box_.bottom() < g_debug_baseline_y_coord &&
+		  bounding_box_.top() > g_debug_baseline_y_coord
 		  ? 3
 		  : 2;
   }
@@ -221,13 +229,13 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
 // Modifies an existing result of FitBaseline to be parallel to the given
 // direction vector if that produces a better result.
 void BaselineRow::AdjustBaselineToParallel(int debug, const FCOORD &direction) {
-  SetupBlobDisplacements(direction);
+  SetupBlobDisplacements(debug, direction);
   if (displacement_modes_.empty()) {
     return;
   }
 #ifdef DEBUG_BASELINE
-  if ((bounding_box_.bottom() < kDebugYCoord &&
-      bounding_box_.top() > kDebugYCoord && debug < 3) || debug_baseline_fit)
+  if ((bounding_box_.bottom() < g_debug_baseline_y_coord &&
+      bounding_box_.top() > g_debug_baseline_y_coord && debug < 3) || debug)
     debug = 3;
 #endif
   FitConstrainedIfBetter(debug, direction, 0.0, displacement_modes_[0]);
@@ -290,7 +298,7 @@ double BaselineRow::AdjustBaselineToGrid(int debug, const FCOORD &direction,
 
 // Sets up displacement_modes_ with the top few modes of the perpendicular
 // distance of each blob from the given direction vector, after rounding.
-void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
+void BaselineRow::SetupBlobDisplacements(int debug, const FCOORD &direction) {
   // Set of perpendicular displacements of the blob bottoms from the required
   // baseline direction.
   std::vector<double> perp_blob_dists;
@@ -299,15 +307,12 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
   double min_dist = FLT_MAX;
   double max_dist = -FLT_MAX;
   BLOBNBOX_IT blob_it(blobs_);
-#ifdef DEBUG_BASELINE
-  bool debug = false;
-#endif
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     BLOBNBOX *blob = blob_it.data();
     const TBOX &box = blob->bounding_box();
 #ifdef DEBUG_BASELINE
-	if ((box.bottom() < kDebugYCoord && box.top() > kDebugYCoord) || debug_baseline_fit)
-      debug = true;
+	if ((box.bottom() < g_debug_baseline_y_coord && box.top() > g_debug_baseline_y_coord) || debug)
+      debug = 1;
 #endif
     FCOORD blob_pos((box.left() + box.right()) / 2.0f,
                     blob->baseline_position());
@@ -449,13 +454,13 @@ double BaselineBlock::SpacingModelError(double perp_disp, double line_spacing,
 // median angle. Returns true if a good angle is found.
 // If use_box_bottoms is false, baseline positions are formed by
 // considering the outlines of the blobs.
-bool BaselineBlock::FitBaselinesAndFindSkew(bool use_box_bottoms) {
+bool BaselineBlock::FitBaselinesAndFindSkew(int debug, bool use_box_bottoms) {
   if (non_text_block_) {
     return false;
   }
   std::vector<double> angles;
   for (auto row : rows_) {
-    if (row->FitBaseline(use_box_bottoms)) {
+    if (row->FitBaseline(debug, use_box_bottoms)) {
       double angle = row->BaselineAngle();
       angles.push_back(angle);
     }
@@ -874,7 +879,7 @@ void BaselineDetect::ComputeStraightBaselines(bool use_box_bottoms) {
     if (debug_level_ > 0) {
       tprintf("Fitting initial baselines...\n");
     }
-    if (bl_block->FitBaselinesAndFindSkew(use_box_bottoms)) {
+    if (bl_block->FitBaselinesAndFindSkew(000, use_box_bottoms)) {
       block_skew_angles.push_back(bl_block->skew_angle());
     }
   }

@@ -22,6 +22,7 @@
 #include "detlinefit.h"
 #include "points.h"
 #include "rect.h"
+#include "params.h"
 
 struct Pix;
 
@@ -63,7 +64,7 @@ public:
   // points to be reasonably sure of the fitted baseline.
   // If use_box_bottoms is false, baselines positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaseline(bool use_box_bottoms);
+  bool FitBaseline(int debug, bool use_box_bottoms);
   // Modifies an existing result of FitBaseline to be parallel to the given
   // vector if that produces a better result.
   void AdjustBaselineToParallel(int debug, const FCOORD &direction);
@@ -75,7 +76,7 @@ public:
 private:
   // Sets up displacement_modes_ with the top few modes of the perpendicular
   // distance of each blob from the given direction vector, after rounding.
-  void SetupBlobDisplacements(const FCOORD &direction);
+  void SetupBlobDisplacements(int debug, const FCOORD &direction);
 
   // Fits a line in the given direction to blobs that are close to the given
   // target_offset perpendicular displacement from the direction. The fit
@@ -147,7 +148,7 @@ public:
   // median angle. Returns true if a good angle is found.
   // If use_box_bottoms is false, baseline positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaselinesAndFindSkew(bool use_box_bottoms);
+  bool FitBaselinesAndFindSkew(int debug, bool use_box_bottoms);
 
   // Refits the baseline to a constrained angle, using the stored block
   // skew if good enough, otherwise the supplied default skew.

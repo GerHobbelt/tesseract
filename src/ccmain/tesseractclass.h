@@ -987,6 +987,9 @@ public:
   BOOL_VAR_H(scribe_save_grey_rotated_image);
   BOOL_VAR_H(scribe_save_original_rotated_image);
   STRING_VAR_H(debug_output_path);
+  INT_VAR_H(debug_baseline_fit);
+  INT_VAR_H(debug_baseline_y_coord);
+  BOOL_VAR_H(debug_write_unlv);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);

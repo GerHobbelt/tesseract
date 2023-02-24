@@ -1143,8 +1143,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       api.SetVariable("thresholding_debug", "Y");
 
-      api.SetVariable("thresholding_debug", "Y");
-
       api.SetVariable("preprocess_graynorm_mode", "0"); // 0..3
 
       api.SetVariable("tessedit_bigram_debug", "Y");
@@ -1167,6 +1165,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("bidi_debug", "Y");
 
       api.SetVariable("chop_debug", "Y");
+
+      api.SetVariable("debug_baseline_fit", "1"); // 0..3
+      api.SetVariable("debug_baseline_y_coord", "-2000");
+      
+      
   }
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;
