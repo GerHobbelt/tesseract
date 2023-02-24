@@ -1036,7 +1036,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
   {
       api.SetVariable("textord_tabfind_show_images", "Y");
       api.SetVariable("textord_tabfind_show_vlines", "Y");
-      api.SetVariable("textord_debug_tabfind", "0" /* "9" */);  // very noisy output
 
 #ifndef GRAPHICS_DISABLED
       api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
@@ -1047,11 +1046,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 
       api.SetVariable("textord_noise_debug", "Y");
-      api.SetVariable("textord_oldbl_debug", "Y");
+      api.SetVariable("textord_oldbl_debug", "N");  // very noisy output
       api.SetVariable("textord_baseline_debug", "Y");
       api.SetVariable("textord_debug_block", "9");
       api.SetVariable("textord_debug_bugs", "9");
-      api.SetVariable("textord_debug_tabfind", "9");
+      api.SetVariable("textord_debug_tabfind", "0" /* "9" */);  // very noisy output
 
       api.SetVariable("textord_debug_baselines", "Y");
       api.SetVariable("textord_debug_blob", "Y");
@@ -1090,7 +1089,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       api.SetVariable("tessedit_bigram_debug", "Y");
 
-      api.SetVariable("tess_debug_lstm", "Y");
+      api.SetVariable("tess_debug_lstm", "N");  // LSTM debug output is extremely noisy
 
       api.SetVariable("debug_noise_removal", "Y");
 
@@ -1102,35 +1101,35 @@ extern "C" int tesseract_main(int argc, const char** argv)
       //api.SetVariable("classify_learn_debug_str", "????????????????");
       api.SetVariable("matcher_debug_separate_windows", "Y");
       api.SetVariable("matcher_debug_flags", "Y");
-      api.SetVariable("matcher_debug_level", "Y");
+      api.SetVariable("matcher_debug_level", "3");
 
-      api.SetVariable("multilang_debug_level", "Y");
+      api.SetVariable("multilang_debug_level", "3");
 
-      api.SetVariable("paragraph_debug_level", "Y");
+      api.SetVariable("paragraph_debug_level", "3");
 
-      api.SetVariable("segsearch_debug_level", "Y");
+      api.SetVariable("segsearch_debug_level", "3");
 
-      api.SetVariable("stopper_debug_level", "Y");
+      api.SetVariable("stopper_debug_level", "3");
 
       api.SetVariable("superscript_debug", "Y");
 
       api.SetVariable("crunch_debug", "Y");
 
-      api.SetVariable("dawg_debug_level", "Y");
+      api.SetVariable("dawg_debug_level", "3");
 
       api.SetVariable("debug_fix_space_level", "9");
       api.SetVariable("debug_noise_removal", "Y");
-      api.SetVariable("debug_x_ht_level", "Y");
+      api.SetVariable("debug_x_ht_level", "3");
       //api.SetVariable("debug_file", "xxxxxxxxxxxxxxxxx");
       //api.SetVariable("debug_output_path", "xxxxxxxxxxxxxx");
 
-      api.SetVariable("hyphen_debug_level", "Y");
+      api.SetVariable("hyphen_debug_level", "3");
 
-      api.SetVariable("language_model_debug_level", "Y");
+      api.SetVariable("language_model_debug_level", "3");
 
-      api.SetVariable("tosp_debug_level", "Y");
+      api.SetVariable("tosp_debug_level", "3");
 
-      api.SetVariable("wordrec_debug_level", "Y");
+      api.SetVariable("wordrec_debug_level", "3");
 
       api.SetVariable("word_to_debug", "Y");
 
@@ -1153,15 +1152,15 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("wordrec_debug_blamer", "Y");
 
       api.SetVariable("devanagari_split_debugimage", "Y");
-      api.SetVariable("devanagari_split_debuglevel", "Y");
+      api.SetVariable("devanagari_split_debuglevel", "3");
 
       api.SetVariable("gapmap_debug", "Y");
 
-      api.SetVariable("poly_debug", "Y");
+      api.SetVariable("poly_debug", "N");  // very noisy output
 
       api.SetVariable("edges_debug", "Y");
 
-      api.SetVariable("ambigs_debug_level", "Y");
+      api.SetVariable("ambigs_debug_level", "3");
 
       api.SetVariable("applybox_debug", "Y");
 
