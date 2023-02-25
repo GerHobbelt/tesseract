@@ -39,6 +39,10 @@
 #include <tesseract/publictypes.h>  // for JUSTIFICATION_LEFT, JUSTIFICATION_R...
 #include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID, U8
 
+#include <fmt/printf.h> 
+#include <fmt/core.h> 
+#include <fmt/format.h>       // for fmt
+
 #include <algorithm> // for max
 #include <cctype>    // for isspace
 #include <cmath>     // for abs
@@ -112,20 +116,23 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
     }
   }
 
-  std::vector<std::string> col_width_patterns;
-  col_width_patterns.reserve(max_col_widths.size());
+  size_t linewidth = 0;
   for (int max_col_width : max_col_widths) {
-    col_width_patterns.push_back(std::string("%-") + std::to_string(max_col_width) + "s");
+    linewidth += max_col_width;
   }
 
+  linewidth += max_col_widths.size() * strlen(colsep);
   for (const auto &row : rows) {
+    std::string msg;
+    msg.reserve(linewidth);
     for (unsigned c = 0; c < row.size(); c++) {
       if (c > 0) {
-        tprintf("{}", colsep);
+        msg += fmt::format("{}", colsep);
       }
-      tprintf(col_width_patterns[c].c_str(), row[c]);
+      msg += fmt::format("{:<{}s}", row[c], max_col_widths[c]);
+      //msg += fmt::sprintf("%-*s", max_col_widths[c], row[c].c_str());
     }
-    tprintf("\n");
+    tprintf("{}\n", msg.c_str());
   }
 }
 
@@ -514,8 +521,12 @@ void RowScratchRegisters::AppendDebugHeaderFields(std::vector<std::string> &head
 
 void RowScratchRegisters::AppendDebugInfo(const ParagraphTheory &theory,
                                           std::vector<std::string> &dbg) const {
-  char s[30];
-  snprintf(s, sizeof(s), "[%3d,%3d;%3d,%3d]", lmargin_, lindent_, rindent_, rmargin_);
+  char s[60];
+  // The largest (positive and negative) numbers are reported for lindent & rindent.
+  // While the column header has widths 5,4,4,5, it is therefore opportune to slightly
+  // offset the widths in the format string here to allow ample space for lindent & rindent
+  // while keeeping the final table output nicely readable: 4,5,5,4.
+  snprintf(s, sizeof(s), "[%4d,%5d;%5d,%4d]", lmargin_, lindent_, rindent_, rmargin_);
   dbg.emplace_back(s);
   std::string model_string;
   model_string += static_cast<char>(GetLineType());
