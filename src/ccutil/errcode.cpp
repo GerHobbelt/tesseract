@@ -17,8 +17,8 @@
  **********************************************************************/
 
 #include "errcode.h"
+#include "tprintf.h"
 
-#include <cstdio>
 
 namespace tesseract {
 
