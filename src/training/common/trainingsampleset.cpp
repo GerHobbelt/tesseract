@@ -612,7 +612,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
   ASSERT_HOST(font_class_array_ != nullptr);
   IntFeatureDist f_table;
   if (debug) {
-    tprintf("feature table size {}\n", map.sparse_size());
+    tprintf("Feature table size {}\n", map.sparse_size());
   }
   f_table.Init(&map);
   int worst_s1 = 0;

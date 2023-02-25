@@ -604,7 +604,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       } catch (const std::out_of_range &e) {
 		    (void)e;		// unused variable
         // TODO: Allow numeric argument?
-        tprintf("Error, unsupported --loglevel {}\n", loglevel_string);
+        tprintf("ERROR: Unsupported --loglevel {}\n", loglevel_string);
         return false;
       }
     } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
@@ -670,7 +670,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     if (*lang != nullptr && strcmp(*lang, "osd")) {
       // If the user explicitly specifies a language (other than osd)
       // or a script, only orientation can be detected.
-      tprintf("WARNING: detects only orientation with -l {}\n", *lang);
+      tprintf("WARNING: Detects only orientation with -l {}\n", *lang);
     } else {
       // That mode requires osd.traineddata to detect orientation and script.
       *lang = "osd";
@@ -725,7 +725,7 @@ static void PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("Error, could not create PAGE output file: {}\n", strerror(errno));
+        tprintf("ERROR: Could not create ALTO output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -1020,13 +1020,13 @@ extern "C" int tesseract_main(int argc, const char** argv)
   } else if (cur_psm == tesseract::PSM_AUTO_OSD) {
     api.SetPageSegMode(tesseract::PSM_AUTO);
     osd_warning +=
-        "\nWarning: The page segmentation mode 1 (Auto+OSD) is currently "
+        "\nWARNING: The page segmentation mode 1 (Auto+OSD) is currently "
         "disabled. "
         "Using PSM 3 (Auto) instead.\n\n";
   } else if (cur_psm == tesseract::PSM_SPARSE_TEXT_OSD) {
     api.SetPageSegMode(tesseract::PSM_SPARSE_TEXT);
     osd_warning +=
-        "\nWarning: The page segmentation mode 12 (Sparse text + OSD) is "
+        "\nWARNING: The page segmentation mode 12 (Sparse text + OSD) is "
         "currently disabled. "
         "Using PSM 11 (Sparse text) instead.\n\n";
   }
@@ -1186,7 +1186,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
     bool succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
     if (!succeed) {
-      tprintf("ERROR: Error during processing.\n");
+      tprintf("ERROR: Error during page processing.\n");
       ret_val = EXIT_FAILURE;
     }
   }

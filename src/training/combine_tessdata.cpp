@@ -1,3 +1,4 @@
+
 ///////////////////////////////////////////////////////////////////////
 // File:        combine_tessdata.cpp
 // Description: Creates a unified traineddata file from several
@@ -29,7 +30,7 @@ using namespace tesseract;
 static int list_components(TessdataManager &tm, const char *filename) {
   // Initialize TessdataManager with the data in the given traineddata file.
   if (filename != nullptr && !tm.Init(filename)) {
-    tprintf("Failed to read {}\n", filename);
+    tprintf("ERROR: Failed to read {}\n", filename);
     return EXIT_FAILURE;
   }
   tm.Directory();
@@ -38,7 +39,7 @@ static int list_components(TessdataManager &tm, const char *filename) {
 
 static int list_network(TessdataManager &tm, const char *filename, bool tess_debug_lstm) {
   if (filename != nullptr && !tm.Init(filename)) {
-    tprintf("Failed to read {}\n", filename);
+    tprintf("ERROR: Failed to read {}\n", filename);
     return EXIT_FAILURE;
   }
   tesseract::TFile fp;
@@ -46,7 +47,7 @@ static int list_network(TessdataManager &tm, const char *filename, bool tess_deb
     tesseract::LSTMRecognizer recognizer;
 	recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
-      tprintf("Failed to deserialize LSTM in {}!\n", filename);
+      tprintf("ERROR: Failed to deserialize LSTM in {}!\n", filename);
       return EXIT_FAILURE;
     }
     std::cout << "LSTM: network=" << recognizer.GetNetwork()

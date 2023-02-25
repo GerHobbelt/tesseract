@@ -841,7 +841,7 @@ bool UNICHARSET::load_via_fgets(
     stream >> std::setw(255) >> unichar >> std::hex >> properties >> std::dec;
     // stream.flags(std::ios::dec);
     if (stream.fail()) {
-	  tesseract::tprintf("ERROR: stream failure. {}:{} failed\n", __FILE__, __LINE__);
+	  tesseract::tprintf("ERROR: stream failure. ({}:{})\n", __FILE__, __LINE__);
       return false;
     }
     auto position = stream.tellg();

@@ -311,7 +311,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   char_frag_info->num_fragments = 1;
   if (prev_fragment && !this_fragment) {
     if (debug) {
-      tprintf("Skip choice with incomplete fragment\n");
+      tprintf("WARNING: Skip choice with incomplete fragment\n");
     }
     return false;
   }
@@ -349,7 +349,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
         }
       } else {
         if (debug) {
-          tprintf("Non-starting fragment piece with no prev_fragment\n");
+          tprintf("WARNING: Non-starting fragment piece with no prev_fragment\n");
         }
         return false;
       }
@@ -357,7 +357,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   }
   if (word_ending && char_frag_info->fragment) {
     if (debug) {
-      tprintf("Word cannot end with a fragment\n");
+      tprintf("WARNING: Word cannot end with a fragment\n");
     }
     return false;
   }

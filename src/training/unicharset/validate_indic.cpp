@@ -258,7 +258,7 @@ bool ValidateIndic::ConsumeConsonantHeadIfValid() {
         output_.push_back(joiner.second);
       } else {
         if (report_errors_) {
-          tprintf("ERROR: Skipping unnecessary joiner: {} {} {}\n", output_.back(), joiner.second,
+          tprintf("WARNING: Skipping unnecessary joiner: {} {} {}\n", output_.back(), joiner.second,
                   codes_[codes_used_].second);
         }
         joiner = std::make_pair(CharClass::kOther, 0);

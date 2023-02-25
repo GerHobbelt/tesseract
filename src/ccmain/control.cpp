@@ -1949,7 +1949,7 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   }
   if (tessedit_font_id > 0) {
     if (tessedit_font_id >= fontinfo_size) {
-      tprintf("Error, invalid font ID provided: must be below {}.\n"
+      tprintf("ERROR: Invalid font ID provided: must be below {}.\n"
               "Falling back to font auto-detection.\n", fontinfo_size);
     } else {
       word->fontinfo = &fontinfo_table_.at(tessedit_font_id);

@@ -111,7 +111,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
     return false;
   }
   if (IsIntMode()) {
-    tprintf("Error, {} is an integer (fast) model, cannot continue training\n",
+    tprintf("ERROR: {} is an integer (fast) model, cannot continue training.\n",
             filename);
     return false;
   }

@@ -221,7 +221,7 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     N = NumberOfProtos(LabeledProto->List, true, false);
     if (N < 1) {
       tprintf(
-          "\nEERROR: Not enough protos for {}: {} protos"
+          "\nERROR: Not enough protos for {}: {} protos"
           " ({} significant protos"
           ", {} insignificant protos)\n",
           LabeledProto->Label, N, NumberOfProtos(LabeledProto->List, true, false),

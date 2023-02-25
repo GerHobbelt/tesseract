@@ -88,7 +88,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Initialize TessdataManager.
   std::string tessdata_path = language_data_path_prefix + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
-    tprintf("ERROR: Error opening data file {}\n", tessdata_path);
+    tprintf("ERROR: Error opening data file {}\n", tessdata_path.c_str());
     tprintf(
         "INFO: Please make sure the TESSDATA_PREFIX environment variable is set"
         " to your \"tessdata\" directory.\n");

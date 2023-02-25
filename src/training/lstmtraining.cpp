@@ -143,7 +143,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   trainer.SetDebug(true);
 #endif
   if (!trainer.InitCharSet(FLAGS_traineddata.c_str())) {
-    tprintf("Error, failed to read {}\n", FLAGS_traineddata.c_str());
+    tprintf("ERROR: Failed to read {}\n", FLAGS_traineddata.c_str());
     return EXIT_FAILURE;
   }
 

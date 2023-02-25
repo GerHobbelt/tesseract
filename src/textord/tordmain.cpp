@@ -211,6 +211,11 @@ void assign_blobs_to_blocks2(Image pix,
 void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks) {
   auto width = pixGetWidth(pix);
   auto height = pixGetHeight(pix);
+  
+  if (width > INT16_MAX || height > INT16_MAX) {
+    tprintf("ERROR: Input image too large! ({}, {})\n", width, height);
+    return; // Can't handle it.
+  }
 
   BLOCK_IT block_it(blocks); // iterator
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {

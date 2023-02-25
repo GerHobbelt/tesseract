@@ -198,7 +198,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
       found = edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, word_end, unichar_id, &edge_ptr,
                            &edge_index);
       if (found && debug_level_ > 1) {
-        tprintf("exploring edge {} in node {}\n", edge_index, last_node);
+        tprintf("Exploring edge {} in node {}\n", edge_index, last_node);
       }
       if (!found) {
         still_finding_chars = false;
@@ -224,7 +224,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     if (!still_finding_chars) {
       the_next_node = new_dawg_node();
       if (debug_level_ > 1) {
-        tprintf("adding node {}\n", the_next_node);
+        tprintf("Adding node {}\n", the_next_node);
       }
       if (the_next_node == 0) {
         add_failed = true;
@@ -479,7 +479,7 @@ void Trie::remove_edge_linkage(NODE_REF node1, NODE_REF node2, int direction, bo
   EDGE_INDEX edge_index = 0;
   ASSERT_HOST(edge_char_of(node1, node2, direction, word_end, unichar_id, &edge_ptr, &edge_index));
   if (debug_level_ > 1) {
-    tprintf("removed edge in nodes_[{}]: ", node1);
+    tprintf("Removed edge in nodes_[{}]: ", node1);
     print_edge_rec(*edge_ptr);
     tprintf("\n");
   }

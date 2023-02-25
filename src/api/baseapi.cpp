@@ -383,7 +383,7 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
 		continue;
 	}
 #endif
-	fprintf(fp, "ID=%3d: %s is_italic=%s is_bold=%s"
+    fprintf(fp, "ID=%3d: %s is_italic=%s is_bold=%s"
                 " is_fixed_pitch=%s is_serif=%s is_fraktur=%s\n",
                 font_index, font.name,
                 font.is_italic() ? "true" : "false",
