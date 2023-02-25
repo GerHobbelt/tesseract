@@ -37,7 +37,6 @@
 
 namespace tesseract {
 
-
 TESS_API
 tesseract::ParamsVectors *GlobalParams() {
   static tesseract::ParamsVectors global_params; // static auto-inits at startup
@@ -84,7 +83,7 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
   return anyerr;
 }
 
-void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors* member_params)
+void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
 {
   std::string report_path = vars_report_file;
   FILE* f = nullptr;
@@ -167,7 +166,13 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors* member_params)
   {
     rv = (int) b.global - (int) a.global;
   }
-  ASSERT0(rv == 0 ? !"Apparently you have double-defined GF:LAGS! Fix that!" : !!"Ok!");
+#if !defined(NDEBUG)
+  if (rv == 0) 
+  {
+  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
+	ASSEERT0(!"Apparently you have double-defined a Tesseract Variable.");
+  }
+#endif
   return rv >= 0;
   });
 
