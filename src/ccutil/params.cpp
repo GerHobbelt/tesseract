@@ -88,8 +88,10 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
   std::string report_path = vars_report_file;
   FILE* f = nullptr;
 
-  if (report_path == "stdout" || report_path == "-")
+  if (report_path == "stdout" || report_path == "-" || report_path == "1")
     f = stdout;
+  else if (report_path == "stdeerr" || report_path == "+" || report_path == "2")
+    f = stderr;
   else if (!report_path.empty())
   {
 #if defined(HAVE_MUPDF)
