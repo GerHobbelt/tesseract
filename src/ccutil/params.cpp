@@ -90,7 +90,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
 
   if (report_path == "stdout" || report_path == "-" || report_path == "1")
     f = stdout;
-  else if (report_path == "stdeerr" || report_path == "+" || report_path == "2")
+  else if (report_path == "stderr" || report_path == "+" || report_path == "2")
     f = stderr;
   else if (!report_path.empty())
   {
@@ -103,7 +103,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
 #endif
     if (!f)
     {
-      tprintf("ERROR: Cannot produce paramater usage report file: {}\n", report_path);
+      tprintf("ERROR: Cannot produce parameter usage report file: {}\n", report_path);
     }
   }
 
