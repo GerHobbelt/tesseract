@@ -172,7 +172,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
   if (rv == 0) 
   {
   	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
-	ASSEERT0(!"Apparently you have double-defined a Tesseract Variable.");
+    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
   }
 #endif
   return rv >= 0;
