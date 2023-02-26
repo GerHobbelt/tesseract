@@ -44,9 +44,15 @@ namespace tesseract {
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
 void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
+  if (filename || !*filename) {
+    tprintf("ERROR: empty config filename specified. No config loaded.\n");
+    return;
+  }
+
   std::string path = datadir;
   path += "configs/";
   path += filename;
+  tprintf("Read Config: test if '{}' is a readable file.\n", path);
   FILE *fp;
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
@@ -54,10 +60,19 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
     path = datadir;
     path += "tessconfigs/";
     path += filename;
+    tprintf("Read Config: test if '{}' is a readable file.\n", path);
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
       fclose(fp);
     } else {
       path = filename;
+      tprintf("Read Config: test if '{}' is a readable file.\n", path);
+      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+        fclose(fp);
+      }
+      else {
+        tprintf("ERROR: config file '{}' cannot be opened / does not exist.\n", path);
+        return;
+      }
     }
   }
   ParamUtils::ReadParamsFile(path.c_str(), constraint, this->params());
