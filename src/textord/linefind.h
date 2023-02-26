@@ -24,12 +24,16 @@ namespace tesseract {
 
 class TabVector_LIST;
 
+class Tesseract;
+
 /**
- * The LineFinder class is a simple static function wrapper class that mainly
+ * The LineFinder class is a simple wrapper class that mainly
  * exposes the FindVerticalLines function.
  */
 class LineFinder {
 public:
+  LineFinder(Tesseract* tess);
+
   /**
    * Finds vertical and horizontal line objects in the given pix and removes
    * them.
@@ -50,9 +54,31 @@ public:
    *
    * The detected lines are removed from the pix.
    */
-  static void FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+  void FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
                                  int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
-                                 TabVector_LIST *h_lines, const std::string &debug_output_path);
+                                 TabVector_LIST *h_lines);
+
+protected:
+
+  // Most of the heavy lifting of line finding. Given src_pix and its separate
+  // resolution, returns image masks:
+  // pix_vline           candidate vertical lines.
+  // pix_non_vline       pixels that didn't look like vertical lines.
+  // pix_hline           candidate horizontal lines.
+  // pix_non_hline       pixels that didn't look like horizontal lines.
+  // pix_intersections   pixels where vertical and horizontal lines meet.
+  // pix_music_mask      candidate music staves.
+  // This function promises to initialize all the output (2nd level) pointers,
+  // but any of the returns that are empty will be nullptr on output.
+  // None of the input (1st level) pointers may be nullptr except
+  // pix_music_mask, which will disable music detection, and pixa_display, which
+  // is for debug.
+  void GetLineMasks(int resolution, Image src_pix, Image* pix_vline, Image* pix_non_vline,
+                           Image* pix_hline, Image* pix_non_hline, Image* pix_intersections,
+                           Image* pix_music_mask);
+
+private:
+  Tesseract* tesseract_; // reference to the active instance
 };
 
 } // namespace tesseract.

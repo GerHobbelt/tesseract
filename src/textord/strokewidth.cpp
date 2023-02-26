@@ -35,6 +35,11 @@
 #include "tabfind.h"
 #include "textlineprojection.h"
 #include "tordmain.h" // For SetBlobStrokeWidth.
+#include "tesseractclass.h"
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
 
 #undef min
 #undef max
@@ -114,13 +119,15 @@ const double kNoiseOverlapGrowthFactor = 4.0;
 // image to qualify as noisy.
 const double kNoiseOverlapAreaFactor = 1.0 / 512;
 
-StrokeWidth::StrokeWidth(int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : BlobGrid(gridsize, bleft, tright)
+StrokeWidth::StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
+    : tesseract_(tess)
+    , BlobGrid(gridsize, bleft, tright)
     , nontext_map_(nullptr)
     , projection_(nullptr)
     , denorm_(nullptr)
     , grid_box_(bleft, tright)
     , rerotation_(1.0f, 0.0f) {
+  ASSERT0(tess != nullptr);
 }
 
 StrokeWidth::~StrokeWidth() {
@@ -325,7 +332,7 @@ void StrokeWidth::RemoveLineResidue(ColPartition_LIST *big_part_list) {
         leaders_win_->Rectangle(box.left(), box.bottom(), box.right(), box.top());
       }
 #endif // !GRAPHICS_DISABLED
-      ColPartition::MakeBigPartition(bbox, big_part_list);
+      ColPartition::MakeBigPartition(tesseract_, bbox, big_part_list);
     }
   }
 }
@@ -468,7 +475,7 @@ void StrokeWidth::FindLeadersAndMarkNoise(TO_BLOCK *block, ColPartition_LIST *le
         continue;
       }
       // Put all the linked blobs into a ColPartition.
-      auto *part = new ColPartition(BRT_UNKNOWN, ICOORD(0, 1));
+      auto *part = new ColPartition(tesseract_, BRT_UNKNOWN, ICOORD(0, 1));
       BLOBNBOX *blob;
       for (blob = bbox; blob != nullptr && blob->flow() == BTFT_NONE;
            blob = blob->neighbour(BND_RIGHT)) {
@@ -585,7 +592,7 @@ static int UpperQuartileCJKSize(int gridsize, BLOBNBOX_LIST *blobs) {
 }
 
 // Fix broken CJK characters, using the fake joined blobs mechanism.
-// Blobs are really merged, ie the master takes all the outlines and the
+// Blobs are really merged, i.e. the master takes all the outlines and the
 // others are deleted.
 // Returns true if sufficient blobs are merged that it may be worth running
 // again, due to a better estimate of character size.
@@ -1425,7 +1432,7 @@ void StrokeWidth::FindVerticalTextChains(ColPartitionGrid *part_grid) {
     if (bbox->owner() == nullptr && bbox->UniquelyVertical() &&
         (blob = MutualUnusedVNeighbour(bbox, BND_ABOVE)) != nullptr) {
       // Put all the linked blobs into a ColPartition.
-      auto *part = new ColPartition(BRT_VERT_TEXT, ICOORD(0, 1));
+      auto *part = new ColPartition(tesseract_, BRT_VERT_TEXT, ICOORD(0, 1));
       part->AddBox(bbox);
       while (blob != nullptr) {
         part->AddBox(blob);
@@ -1469,7 +1476,7 @@ void StrokeWidth::FindHorizontalTextChains(ColPartitionGrid *part_grid) {
     if (bbox->owner() == nullptr && bbox->UniquelyHorizontal() &&
         (blob = MutualUnusedHNeighbour(bbox, BND_RIGHT)) != nullptr) {
       // Put all the linked blobs into a ColPartition.
-      auto *part = new ColPartition(BRT_TEXT, ICOORD(0, 1));
+      auto *part = new ColPartition(tesseract_, BRT_TEXT, ICOORD(0, 1));
       part->AddBox(bbox);
       while (blob != nullptr) {
         part->AddBox(blob);
@@ -1808,7 +1815,7 @@ void StrokeWidth::RemoveLargeUnusedBlobs(TO_BLOCK *block, ColPartitionGrid *part
       // Large blobs should have gone into partitions by now if they are
       // genuine characters, so move any unowned ones out to the big parts
       // list. This will include drop caps and vertically touching characters.
-      ColPartition::MakeBigPartition(blob, big_parts);
+      ColPartition::MakeBigPartition(tesseract_, blob, big_parts);
     }
   }
 }
@@ -1857,7 +1864,7 @@ void StrokeWidth::MakePartitionsFromCellList(PageSegMode pageseg_mode, bool comb
   BLOBNBOX_C_IT cell_it(cell_list);
   if (combine) {
     BLOBNBOX *bbox = cell_it.extract();
-    auto *part = new ColPartition(bbox->region_type(), ICOORD(0, 1));
+    auto *part = new ColPartition(tesseract_, bbox->region_type(), ICOORD(0, 1));
     part->AddBox(bbox);
     part->set_flow(bbox->flow());
     for (cell_it.forward(); !cell_it.empty(); cell_it.forward()) {
@@ -1867,7 +1874,7 @@ void StrokeWidth::MakePartitionsFromCellList(PageSegMode pageseg_mode, bool comb
   } else {
     for (; !cell_it.empty(); cell_it.forward()) {
       BLOBNBOX *bbox = cell_it.extract();
-      auto *part = new ColPartition(bbox->region_type(), ICOORD(0, 1));
+      auto *part = new ColPartition(tesseract_, bbox->region_type(), ICOORD(0, 1));
       part->set_flow(bbox->flow());
       part->AddBox(bbox);
       CompletePartition(pageseg_mode, part, part_grid);
@@ -1946,7 +1953,7 @@ bool StrokeWidth::ConfirmEasyMerge(const ColPartition *p1, const ColPartition *p
 
 // Returns true if there is no significant noise in between the boxes.
 bool StrokeWidth::NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const {
-  return ImageFind::BlankImageInBetween(box1, box2, grid_box_, rerotation_, nontext_map_);
+  return tesseract_->image_finder_.BlankImageInBetween(box1, box2, grid_box_, rerotation_, nontext_map_);
 }
 
 #ifndef GRAPHICS_DISABLED

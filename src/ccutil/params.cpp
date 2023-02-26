@@ -34,6 +34,10 @@
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::stringstream
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"
+#endif
+
 
 namespace tesseract {
 

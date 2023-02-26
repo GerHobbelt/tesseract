@@ -95,7 +95,7 @@ protected:
     BLOCK_LIST found_blocks;
     TO_BLOCK_LIST temp_blocks;
     finder_ =
-        tesseract_->SetupPageSegAndDetectOrientation(tesseract::PSM_AUTO_OSD, &src_blocks, osd_tess.get(),
+        tesseract_->SetupPageSegAndDetectOrientation(tesseract::PSM_AUTO_OSD, &src_blocks, 
                                                      &osr, &temp_blocks, &photomask_pix, nullptr);
     TO_BLOCK_IT to_block_it(&temp_blocks);
     TO_BLOCK *to_block = to_block_it.data();

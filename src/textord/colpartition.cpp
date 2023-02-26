@@ -30,6 +30,7 @@
 #include "host.h"    // for NearlyEqual
 #include "imagefind.h"
 #include "workingpartset.h"
+#include "tesseractclass.h"
 
 #include <algorithm>
 
@@ -88,8 +89,9 @@ const int kMaxColorDistance = 900;
 
 // blob_type is the blob_region_type_ of the blobs in this partition.
 // Vertical is the direction of logical vertical on the possibly skewed image.
-ColPartition::ColPartition(BlobRegionType blob_type, const ICOORD &vertical)
-    : left_margin_(-INT32_MAX),
+ColPartition::ColPartition(Tesseract* tess, BlobRegionType blob_type, const ICOORD &vertical)
+    : tesseract_(tess),
+      left_margin_(-INT32_MAX),
       right_margin_(INT32_MAX),
       median_bottom_(INT32_MAX),
       median_top_(-INT32_MAX),
@@ -97,6 +99,7 @@ ColPartition::ColPartition(BlobRegionType blob_type, const ICOORD &vertical)
       median_right_(-INT32_MAX),
       blob_type_(blob_type),
       vertical_(vertical) {
+  assert(tess != nullptr);
   memset(special_blobs_densities_, 0, sizeof(special_blobs_densities_));
 }
 
@@ -105,11 +108,11 @@ ColPartition::ColPartition(BlobRegionType blob_type, const ICOORD &vertical)
 // WARNING: Despite being on C_LISTs, the BLOBNBOX owns the C_BLOB and
 // the ColPartition owns the BLOBNBOX!!!
 // Call DeleteBoxes before deleting the ColPartition.
-ColPartition *ColPartition::FakePartition(const TBOX &box,
+ColPartition *ColPartition::FakePartition(Tesseract* tess, const TBOX &box,
                                           PolyBlockType block_type,
                                           BlobRegionType blob_type,
                                           BlobTextFlowType flow) {
-  auto *part = new ColPartition(blob_type, ICOORD(0, 1));
+  auto *part = new ColPartition(tess, blob_type, ICOORD(0, 1));
   part->set_type(block_type);
   part->set_flow(flow);
   part->AddBox(new BLOBNBOX(C_BLOB::FakeBlob(box)));
@@ -126,10 +129,10 @@ ColPartition *ColPartition::FakePartition(const TBOX &box,
 // than the surrounding text that may be a dropcap, two or more vertically
 // touching characters, or some graphic element.
 // If the given list is not nullptr, the partition is also added to the list.
-ColPartition *ColPartition::MakeBigPartition(BLOBNBOX *box,
+ColPartition *ColPartition::MakeBigPartition(Tesseract* tess, BLOBNBOX *box,
                                              ColPartition_LIST *big_part_list) {
   box->set_owner(nullptr);
-  auto *single = new ColPartition(BRT_UNKNOWN, ICOORD(0, 1));
+  auto *single = new ColPartition(tess, BRT_UNKNOWN, ICOORD(0, 1));
   single->set_flow(BTFT_NONE);
   single->AddBox(box);
   single->ComputeLimits();
@@ -158,10 +161,10 @@ ColPartition::~ColPartition() {
 
 // Constructs a fake ColPartition with no BLOBNBOXes to represent a
 // horizontal or vertical line, given a type and a bounding box.
-ColPartition *ColPartition::MakeLinePartition(BlobRegionType blob_type,
+ColPartition *ColPartition::MakeLinePartition(Tesseract* tess, BlobRegionType blob_type,
                                               const ICOORD &vertical, int left,
                                               int bottom, int right, int top) {
-  auto *part = new ColPartition(blob_type, vertical);
+  auto *part = new ColPartition(tess, blob_type, vertical);
   part->bounding_box_ = TBOX(left, bottom, right, top);
   part->median_bottom_ = bottom;
   part->median_top_ = top;
@@ -409,15 +412,17 @@ bool ColPartition::MatchingTextColor(const ColPartition &other) const {
     return false; // Too noisy.
   }
 
+  auto& image_finder_ = tesseract_->image_finder_;
+
   // Colors must match for other to count.
   double d_this1_o =
-      ImageFind::ColorDistanceFromLine(other.color1_, other.color2_, color1_);
+    image_finder_.ColorDistanceFromLine(other.color1_, other.color2_, color1_);
   double d_this2_o =
-      ImageFind::ColorDistanceFromLine(other.color1_, other.color2_, color2_);
+    image_finder_.ColorDistanceFromLine(other.color1_, other.color2_, color2_);
   double d_o1_this =
-      ImageFind::ColorDistanceFromLine(color1_, color2_, other.color1_);
+    image_finder_.ColorDistanceFromLine(color1_, color2_, other.color1_);
   double d_o2_this =
-      ImageFind::ColorDistanceFromLine(color1_, color2_, other.color2_);
+    image_finder_.ColorDistanceFromLine(color1_, color2_, other.color2_);
   // All 4 distances must be small enough.
   return d_this1_o < kMaxColorDistance && d_this2_o < kMaxColorDistance &&
          d_o1_this < kMaxColorDistance && d_o2_this < kMaxColorDistance;
@@ -1806,7 +1811,7 @@ TO_ROW *ColPartition::MakeToRow() {
 // Returns a copy of everything except the list of boxes. The resulting
 // ColPartition is only suitable for keeping in a column candidate list.
 ColPartition *ColPartition::ShallowCopy() const {
-  auto *part = new ColPartition(blob_type_, vertical_);
+  auto *part = new ColPartition(tesseract_, blob_type_, vertical_);
   part->left_margin_ = left_margin_;
   part->right_margin_ = right_margin_;
   part->bounding_box_ = bounding_box_;

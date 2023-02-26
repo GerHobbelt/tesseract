@@ -83,6 +83,10 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
+
 
 namespace tesseract {
 

@@ -138,7 +138,7 @@ public:
         return param;
       }
     }
-	return nullptr;
+    return nullptr;
   }
   // Removes the given pointer to the param from the given vector.
   template <class T>

@@ -251,7 +251,7 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
     }
 #endif // !DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
-                                photomask_pix, pix_thresholds_, pix_grey_, pixa_debug_,
+                                photomask_pix, pix_thresholds_, pix_grey_, 
                                 &found_blocks, diacritic_blobs, to_blocks);
     if (result >= 0) {
       finder->GetDeskewVectors(&deskew_, &reskew_);
@@ -313,17 +313,16 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
   ASSERT_HOST(pix_binary_ != nullptr);
   if (tessedit_dump_pageseg_images) {
-    pixa_debug_.AddPix(pix_binary_, "PageSegInput");
+    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
   }
   // Leptonica is used to find the rule/separator lines in the input.
-  LineFinder::FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
-                                 &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines,
-	                             debug_output_path);
+  line_finder_.FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
+                                 &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines);
   if (tessedit_dump_pageseg_images) {
-    pixa_debug_.AddPix(pix_binary_, "NoLines");
+    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : Lines Removed");
   }
   // Leptonica is used to find a mask of the photo regions in the input.
-  *photo_mask_pix = ImageFind::FindImages(pix_binary_, pixa_debug_);
+  *photo_mask_pix = image_finder_.FindImages(pix_binary_);
   if (tessedit_dump_pageseg_images) {
     Image pix_no_image_ = nullptr;
     if (*photo_mask_pix != nullptr) {
@@ -331,7 +330,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     } else {
       pix_no_image_ = pix_binary_.clone();
     }
-    pixa_debug_.AddPix(pix_no_image_, "NoImages");
+    AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
     pix_no_image_.destroy();
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) {
@@ -359,12 +358,12 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   }
 
   if (to_block->line_size >= 2) {
-    finder = new ColumnFinder(static_cast<int>(to_block->line_size), blkbox.botleft(),
+    finder = new ColumnFinder(this, static_cast<int>(to_block->line_size), blkbox.botleft(),
                               blkbox.topright(), estimated_resolution, textord_use_cjk_fp_model,
                               textord_tabfind_aligned_gap_fraction, &v_lines, &h_lines, vertical_x,
                               vertical_y);
 
-    finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block, debug_output_path);
+    finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block);
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -394,7 +393,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
           AddAllScriptsConverted(lang->unicharset, osd_tess->unicharset, &osd_scripts);
         }
       }
-      os_detect_blobs(&osd_scripts, &osd_blobs, osr, osd_tess);
+      osd_tess->os_detect_blobs(&osd_scripts, &osd_blobs, osr);
       if (pageseg_mode == PSM_OSD_ONLY) {
         delete finder;
         return nullptr;

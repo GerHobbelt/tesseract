@@ -52,7 +52,7 @@ enum PartitionFindResult {
  */
 class StrokeWidth : public BlobGrid {
 public:
-  StrokeWidth(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~StrokeWidth() override;
 
   // Sets the neighbours member of the medium-sized blobs in the block.
@@ -306,6 +306,8 @@ private:
 #endif
 
 private:
+  Tesseract* tesseract_;   // reference to the active instance
+
   // Image map of photo/noise areas on the page. Borrowed pointer (not owned.)
   Image nontext_map_;
   // Textline projection map. Borrowed pointer.

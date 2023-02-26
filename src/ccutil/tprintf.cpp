@@ -28,14 +28,19 @@
 #include <climits> // for INT_MAX
 #include <cstdio>
 
-namespace tesseract {
-
 #ifdef HAVE_MUPDF
 
 #include "mupdf/fitz/config.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/context.h"
+#include "mupdf/assertions.h"     // for ASSERT
+
+#endif
+
+namespace tesseract {
+
+#ifdef HAVE_MUPDF
 
 static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 	auto msg = fmt::vformat(format, args);

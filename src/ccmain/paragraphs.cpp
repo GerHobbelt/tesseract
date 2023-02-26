@@ -34,6 +34,7 @@
 #include "tprintf.h"             // for tprintf
 #include "unicharset.h"          // for UNICHARSET
 #include "werd.h"                // for WERD, W_REP_CHAR
+#include "tesseractclass.h"
 
 #include <tesseract/pageiterator.h> // for PageIterator
 #include <tesseract/publictypes.h>  // for JUSTIFICATION_LEFT, JUSTIFICATION_R...
@@ -2322,7 +2323,7 @@ void CanonicalizeDetectionResults(std::vector<PARA *> *row_owners, PARA_LIST *pa
 //   paragraphs - this is the actual list of PARA objects.
 //   models - the list of paragraph models referenced by the PARA objects.
 //            caller is responsible for deleting the models.
-void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
+void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
                       std::vector<PARA *> *row_owners, PARA_LIST *paragraphs,
                       std::vector<ParagraphModel *> *models) {
   ParagraphTheory theory(models);
@@ -2344,6 +2345,7 @@ void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
   //   be a paragraph of its own.
   SeparateSimpleLeaderLines(&rows, 0, rows.size(), &theory);
 
+  int debug_level = this->paragraph_debug_level;
   DebugDump(debug_level > 1, "End of Pass 1", theory, rows);
 
   std::vector<Interval> leftovers;
@@ -2566,7 +2568,7 @@ static void InitializeRowInfo(bool after_recognition, const MutableIterator &it,
 // This is called after rows have been identified and words are recognized.
 // Much of this could be implemented before word recognition, but text helps
 // to identify bulleted lists and gives good signals for sentence boundaries.
-void DetectParagraphs(int debug_level, bool after_text_recognition,
+void Tesseract::DetectParagraphs(bool after_text_recognition,
                       const MutableIterator *block_start, std::vector<ParagraphModel *> *models) {
   // Clear out any preconceived notions.
   if (block_start->Empty(RIL_TEXTLINE)) {
@@ -2619,7 +2621,7 @@ void DetectParagraphs(int debug_level, bool after_text_recognition,
   std::vector<PARA *> row_owners;
   std::vector<PARA *> the_paragraphs;
   if (!is_image_block) {
-    DetectParagraphs(debug_level, &row_infos, &row_owners, block->para_list(), models);
+    DetectParagraphs(&row_infos, &row_owners, block->para_list(), models);
   } else {
     row_owners.resize(row_infos.size());
     CanonicalizeDetectionResults(&row_owners, block->para_list());

@@ -22,6 +22,7 @@
 #if defined(HAVE_MUPDF) || defined(BUILD_MONOLITHIC)
 #include "mupdf/fitz.h"
 #include "mupdf/helpers/cpu.h"
+#include "mupdf/assertions.h"     // for ASSERT
 #else
 static const int fz_get_cpu_core_count()
 {

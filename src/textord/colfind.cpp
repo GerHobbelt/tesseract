@@ -41,8 +41,13 @@
 #include "tablefind.h"
 #include "workingpartset.h"
 #include "tabletransfer.h"
+#include "tesseractclass.h"
 
 #include <algorithm>
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
 
 
 namespace tesseract {
@@ -83,10 +88,11 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 // bleft and tright are the bounds of the image (or rectangle) being processed.
 // vlines is a (possibly empty) list of TabVector and vertical_x and y are
 // the sum logical vertical vector produced by LineFinder::FindVerticalLines.
-ColumnFinder::ColumnFinder(int gridsize, const ICOORD &bleft, const ICOORD &tright, int resolution,
+ColumnFinder::ColumnFinder(Tesseract *tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, int resolution,
                            bool cjk_script, double aligned_gap_fraction, TabVector_LIST *vlines,
                            TabVector_LIST *hlines, int vertical_x, int vertical_y)
-    : TabFind(gridsize, bleft, tright, vlines, vertical_x, vertical_y, resolution)
+    : tesseract_(tess)
+    , TabFind(gridsize, bleft, tright, vlines, vertical_x, vertical_y, resolution)
     , cjk_script_(cjk_script)
     , min_gutter_width_(static_cast<int>(kMinGutterWidthGrid * gridsize))
     , mean_column_gap_(tright.x() - bleft.x())
@@ -98,11 +104,12 @@ ColumnFinder::ColumnFinder(int gridsize, const ICOORD &bleft, const ICOORD &trig
     , text_rotation_(0.0f, 0.0f)
     , best_columns_(nullptr)
     , stroke_width_(nullptr)
-    , part_grid_(gridsize, bleft, tright)
+    , part_grid_(tess, gridsize, bleft, tright)
     , nontext_map_(nullptr)
     , projection_(resolution)
     , denorm_(nullptr)
     , equation_detect_(nullptr) {
+  ASSERT0(tess != nullptr);
   TabVector_IT h_it(&horizontal_lines_);
   h_it.add_list_after(hlines);
 }
@@ -157,10 +164,10 @@ ColumnFinder::~ColumnFinder() {
 // On return, IsVerticallyAlignedText may be called (now optionally) to
 // determine the gross textline alignment of the page.
 void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix,
-                                       TO_BLOCK *input_block, const std::string &debug_output_path) {
+                                       TO_BLOCK *input_block) {
   part_grid_.Init(gridsize(), bleft(), tright());
   delete stroke_width_;
-  stroke_width_ = new StrokeWidth(gridsize(), bleft(), tright());
+  stroke_width_ = new StrokeWidth(tesseract_, gridsize(), bleft(), tright());
   min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridsize());
   input_block->ReSetAndReFilterBlobs();
 #ifndef GRAPHICS_DISABLED
@@ -173,10 +180,10 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   nontext_map_.destroy();
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
-  CCNonTextDetect nontext_detect(gridsize(), bleft(), tright());
+  CCNonTextDetect nontext_detect(tesseract_, gridsize(), bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   nontext_map_ =
-      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block, debug_output_path);
+      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();
@@ -293,7 +300,7 @@ void ColumnFinder::CorrectOrientation(TO_BLOCK *block, bool vertical_text_lines,
 // in debug mode, which requests a retry with more debug info.
 int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int scaled_factor,
                              TO_BLOCK *input_block, Image photo_mask_pix, Image thresholds_pix,
-                             Image grey_pix, DebugPixa &pixa_debug, BLOCK_LIST *blocks,
+                             Image grey_pix, BLOCK_LIST *blocks,
                              BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks) {
   photo_mask_pix |= nontext_map_;
   stroke_width_->FindLeaderPartitions(input_block, &part_grid_);
@@ -304,11 +311,12 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
                                           denorm_, cjk_script_, &projection_, diacritic_blobs,
                                           &part_grid_, &big_parts_);
   if (!PSM_SPARSE(pageseg_mode)) {
-    ImageFind::FindImagePartitions(photo_mask_pix, rotation_, rerotate_, input_block, this,
-                                   pixa_debug, &part_grid_, &big_parts_);
-    ImageFind::TransferImagePartsToImageMask(rerotate_, &part_grid_, photo_mask_pix);
-    ImageFind::FindImagePartitions(photo_mask_pix, rotation_, rerotate_, input_block, this,
-                                   pixa_debug, &part_grid_, &big_parts_);
+    auto& image_finder_ = tesseract_->image_finder_;
+    image_finder_.FindImagePartitions(photo_mask_pix, rotation_, rerotate_, input_block, this,
+                                   &part_grid_, &big_parts_);
+    image_finder_.TransferImagePartsToImageMask(rerotate_, &part_grid_, photo_mask_pix);
+    image_finder_.FindImagePartitions(photo_mask_pix, rotation_, rerotate_, input_block, this,
+                                   &part_grid_, &big_parts_);
   }
   part_grid_.ReTypeBlobs(&image_bblobs_);
   TidyBlobs(input_block);
@@ -1292,7 +1300,7 @@ void ColumnFinder::GridInsertHLinePartitions() {
     TabVector *hline = hline_it.data();
     TBOX line_box = BoxFromHLine(hline);
     ColPartition *part =
-        ColPartition::MakeLinePartition(BRT_HLINE, vertical_skew_, line_box.left(),
+        ColPartition::MakeLinePartition(tesseract_, BRT_HLINE, vertical_skew_, line_box.left(),
                                         line_box.bottom(), line_box.right(), line_box.top());
     part->set_type(PT_HORZ_LINE);
     bool any_image = false;
@@ -1332,7 +1340,7 @@ void ColumnFinder::GridInsertVLinePartitions() {
         ++right;
       }
     }
-    ColPartition *part = ColPartition::MakeLinePartition(
+    ColPartition *part = ColPartition::MakeLinePartition(tesseract_,
         BRT_VLINE, vertical_skew_, left, vline->startpt().y(), right, vline->endpt().y());
     part->set_type(PT_VERT_LINE);
     bool any_image = false;

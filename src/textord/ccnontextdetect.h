@@ -25,12 +25,15 @@
 
 namespace tesseract {
 
+class TESS_API Tesseract;
+
+
 // The CCNonTextDetect class contains grid-based operations on blobs to create
 // a full-resolution image mask analogous yet complementary to
 // pixGenHalftoneMask as it is better at line-drawings, graphs and charts.
 class CCNonTextDetect : public BlobGrid {
 public:
-  CCNonTextDetect(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  CCNonTextDetect(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~CCNonTextDetect() override;
 
   // Creates and returns a Pix with the same resolution as the original
@@ -42,7 +45,7 @@ public:
   // The blob_block is the usual result of connected component analysis,
   // holding the detected blobs.
   // The returned Pix should be PixDestroyed after use.
-  Image ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block, const std::string &debug_output_path);
+  Image ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK *blob_block);
 
 private:
   // Computes and returns the noise_density IntGrid, at the same gridsize as
@@ -72,6 +75,9 @@ private:
   // Returns true if the given blob overlaps more than max_overlaps blobs
   // in the current grid.
   bool BlobOverlapsTooMuch(BLOBNBOX *blob, int max_overlaps);
+
+private:
+  Tesseract* tesseract_;   // reference to the active instance
 
   // Max entry in noise_density_ before the cell is declared noisy.
   int max_noise_count_;

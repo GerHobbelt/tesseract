@@ -94,6 +94,9 @@ Tesseract::Tesseract()
                  " adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background, 5 = Nlbin",
                  this->params())
+    , BOOL_MEMBER(showcase_threshold_methods, false,
+                  "Showcase the avialable threshold methods as part of the thresholding process",
+                  this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",
                   this->params())
@@ -466,7 +469,12 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", this->params())
     , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", this->params())
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", this->params())
+    , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", this->params())
+    , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", this->params())
 
+    , splitter_(this)
+    , image_finder_(this)
+    , line_finder_(this)
     , backup_config_file_(nullptr)
     , pix_binary_(nullptr)
     , pix_grey_(nullptr)
@@ -508,15 +516,22 @@ Dict &Tesseract::getDict() {
 }
 
 void Tesseract::Clear() {
-  if (!debug_output_path.empty() && pixa_debug_.HasPix()) {
-	const int page_index = 0;
-	std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "pdf");
-	// WritePix(file_path, pixa_debug_, IFF_TIFF_G4);
-    pixa_debug_.WritePDF(file_path.c_str());
-	file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "png");
-	pixa_debug_.WritePNGs(file_path.c_str());
+  if (!debug_output_path.empty() && pixa_debug__.HasPix()) {
+    const int page_index = 0;
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "pdf");
+#if defined(HAVE_MUPDF)
+    fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
+#endif
+    //pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
+    pixa_debug__.WritePDF(file_path.c_str());
+
+    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "png");
+#if defined(HAVE_MUPDF)
+    fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
+#endif
+    pixa_debug__.WritePNGs(file_path.c_str());
   }
-  pixa_debug_.Clear();
+  pixa_debug__.Clear();
   pix_binary_.destroy();
   pix_grey_.destroy();
   pix_thresholds_.destroy();
@@ -600,7 +615,7 @@ void Tesseract::PrepareForPageseg() {
   // the newly split image.
   splitter_.set_orig_pix(pix_binary());
   splitter_.set_pageseg_split_strategy(max_pageseg_strategy);
-  if (splitter_.Split(true, pixa_debug_)) {
+  if (splitter_.Split(true)) {
     ASSERT_HOST(splitter_.splitted_image());
     pix_binary_.destroy();
     pix_binary_ = splitter_.splitted_image().clone();
@@ -627,7 +642,7 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, O
   splitter_.set_segmentation_block_list(block_list);
   splitter_.set_ocr_split_strategy(max_ocr_strategy);
   // Run the splitter for OCR
-  bool split_for_ocr = splitter_.Split(false, pixa_debug_);
+  bool split_for_ocr = splitter_.Split(false);
   // Restore pix_binary to the binarized original pix for future reference.
   ASSERT_HOST(splitter_.orig_pix());
   pix_binary_.destroy();

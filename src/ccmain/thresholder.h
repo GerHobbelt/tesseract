@@ -27,6 +27,8 @@ struct Pix;
 
 namespace tesseract {
 
+class TESS_API Tesseract;
+
 /**
  * Except when Otsu is chosen
  * Leptonica is used for thresholding
@@ -41,6 +43,27 @@ enum class ThresholdMethod {
   Max,           // Number of Thresholding methods
 };
 
+static inline const char* ThresholdMethodName(ThresholdMethod method)
+{
+  switch (method)
+  {
+  case ThresholdMethod::Otsu:
+    return "Otsu (tesseract)";
+  case ThresholdMethod::LeptonicaOtsu:
+    return "Otsu (Leptonica)";
+  case ThresholdMethod::Sauvola:
+    return "Sauvola (Leptonica)";
+  case ThresholdMethod::OtsuOnNormalizedBackground:
+    return "OtsuOnNormalizedBackground";
+  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
+    return "MaskingAndOtsuOnNormalizedBackground";
+  case ThresholdMethod::Nlbin:
+    return "Nlbin";
+  default:
+    return "Unknown::NonOtsu";
+  }
+}
+
 class TessBaseAPI;
 
 /// Base class for all tesseract image thresholding classes.
@@ -51,7 +74,7 @@ class TessBaseAPI;
 /// desired.
 class TESS_API ImageThresholder {
 public:
-  ImageThresholder();
+  ImageThresholder(Tesseract *tess);
   virtual ~ImageThresholder();
 
   /// Destroy the Pix if there is one, freeing memory.
@@ -136,8 +159,7 @@ public:
   /// Returns false on error.
   virtual bool ThresholdToPix(Image *pix);
 
-  virtual std::tuple<bool, Image, Image, Image> Threshold(TessBaseAPI *api,
-                                                          ThresholdMethod method);
+  virtual std::tuple<bool, Image, Image, Image> Threshold(ThresholdMethod method);
 
   // Gets a pix that contains an 8 bit threshold value at each pixel. The
   // returned pix may be an integer reduction of the binary image such that
@@ -198,6 +220,9 @@ protected:
   // arrays and also the bytes per pixel in src_pix.
   void ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
                           const std::vector <int> &hi_values, Image *pix) const;
+
+private:
+  Tesseract* tesseract_;    // reference to the active instance
 
 protected:
   /// Clone or other copy of the source Pix.

@@ -98,6 +98,7 @@
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/helpers/dir.h"
+#include "mupdf/assertions.h"
 #endif
 
 
@@ -341,7 +342,10 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
   auto *p = ParamUtils::FindParam<StringParam>(name, GlobalParams()->string_params(),
                                                tesseract_->params()->string_params());
-  return (p != nullptr) ? p->c_str() : nullptr;
+  if (p == nullptr) {
+    return nullptr;
+  }
+  return p->c_str();
 }
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
@@ -705,7 +709,9 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 	  }
 	  tesseract_->set_pix_binary(pix);
 
-	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
+    if (tesseract_->tessedit_dump_pageseg_images) {
+      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image (because it wasn't thresholded yet)");
+    }
   }
 
   const char *debug_output_path = tesseract_->debug_output_path.c_str();
@@ -715,27 +721,24 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   //   Pix *p1 = tesseract_->pix_binary();
   //   pixWrite("/binary_image.png", p1, IFF_PNG);
   // }
-  bool scribe_save_grey_rotated_image;
-  int page_number = 0;
-  GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
-  if (scribe_save_grey_rotated_image) {
-	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "grey_image", "png");
+  const int page_number = 0;
+  if (tesseract_->scribe_save_grey_rotated_image) {
+	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "grey_image", "png");
 	  Pix *p1 = tesseract_->pix_grey();
-	  WritePix(file_path, p1, IFF_PNG);
+	  //WritePix(file_path, p1, IFF_PNG);
+    tesseract_->AddPixDebugPage(p1, "greyscale image");
   }
-  bool scribe_save_binary_rotated_image;
-  GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
-  if (scribe_save_binary_rotated_image) {
-	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "binary_image", "png");
+  if (tesseract_->scribe_save_binary_rotated_image) {
+	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "binary_image", "png");
 	  Pix *p1 = tesseract_->pix_binary();
-	  WritePix(file_path, p1, IFF_PNG);
+	  //WritePix(file_path, p1, IFF_PNG);
+    tesseract_->AddPixDebugPage(p1, "binary (black & white) image");
   }
-  bool scribe_save_original_rotated_image;
-  GetBoolVariable("scribe_save_original_rotated_image", &scribe_save_original_rotated_image);
-  if (scribe_save_original_rotated_image) {
-	  std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "original_image", "png");
+  if (tesseract_->scribe_save_original_rotated_image) {
+	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "original_image", "png");
 	  Pix *p1 = tesseract_->pix_original();
-	  WritePix(file_path, p1, IFF_PNG);
+	  //WritePix(file_path, p1, IFF_PNG);
+    tesseract_->AddPixDebugPage(p1, "original image");
   }
 
   return tesseract_->pix_binary().clone();
@@ -1003,13 +1006,11 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
     // Now run the main recognition.
-    bool wait_for_text = true;
-    GetBoolVariable("paragraph_text_based", &wait_for_text);
-    if (!wait_for_text) {
+    if (!tesseract_->paragraph_text_based) {
       DetectParagraphs(false);
     }
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
-      if (wait_for_text) {
+      if (tesseract_->paragraph_text_based) {
         DetectParagraphs(true);
       }
     } else {
@@ -1038,19 +1039,51 @@ Pix *TessBaseAPI::GetInputImage() {
   return tesseract_->pix_original();
 }
 
+static const char* NormalizationModeName(int mode) {
+  switch(mode) {
+    case 0:
+      return "No normalization";
+    case 1:
+      return "Thresholding + Recognition";
+    case 2:
+      return "Thresholding";
+    case 3:
+      return "Recognition";
+    default:
+      ASSERT0(!"Unknown Normalization Mode");
+      return "Unknown Normalization Mode";
+  }
+}
+
 // Grayscale normalization (preprocessing)
 bool TessBaseAPI::NormalizeImage(int mode){
   if (!GetInputImage()){
     tprintf("Please use SetImage before applying the image pre-processing steps.");
     return false;
   }
+  std::string caption = fmt::format("Grayscale normalization based on nlbin(Thomas Breuel) mode = {} ({})",
+    mode, NormalizationModeName(mode));
+
+  Image pix = thresholder_->GetPixNormRectGrey();
+  if (tesseract_->debug_image_normalization) {
+    tesseract_->AddPixDebugPage(pix, caption);
+  }
   if (mode == 1) {
-    SetInputImage(thresholder_->GetPixNormRectGrey());
+    SetInputImage(pix);
     thresholder_->SetImage(GetInputImage());
+    if (tesseract_->debug_image_normalization) {
+      tesseract_->AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder & set up as input image");
+    }
   } else if (mode == 2) {
-    thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
+    thresholder_->SetImage(pix);
+    if (tesseract_->debug_image_normalization) {
+      tesseract_->AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder");
+    }
   } else if (mode == 3) {
-    SetInputImage(thresholder_->GetPixNormRectGrey());
+    SetInputImage(pix);
+    if (tesseract_->debug_image_normalization) {
+      tesseract_->AddPixDebugPage(GetInputImage(), "Grayscale normalization, now set up as input image");
+    }
   } else {
     return false;
   }
@@ -1403,18 +1436,18 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   // Image preprocessing on image
   // Grayscale normalization
-  int graynorm_mode;
-  GetIntVariable("preprocess_graynorm_mode", &graynorm_mode);
+  int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
     // Write normalized image 
-	std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "preprocessed", "tiff");
-	Pix *p1;
+    //std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "preprocessed", "tiff");
+    Pix *p1;
     if (graynorm_mode == 2) {
       p1 = thresholder_->GetPixRect();
     } else {
       p1 = GetInputImage();
     }
-	WritePix(file_path, p1, IFF_TIFF_G4);
+    //WritePix(file_path, p1, IFF_TIFF_G4);
+    tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
   }
 
   // Recognition
@@ -1444,9 +1477,12 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
+#if 0
     std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "processed", "tiff");
     WritePix(file_path, page_pix, IFF_TIFF_G4);
     pixDestroy(&page_pix);
+#endif
+    tesseract_->AddPixDebugPage(page_pix, "processed : text recog done");
   }
 
   if (failed && retry_config != nullptr && retry_config[0] != '\0') {
@@ -2059,14 +2095,14 @@ int *TessBaseAPI::AllWordConfidences() {
  * Returns false if adaption was not possible for some reason.
  */
 bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
-  int debug = 0;
-  GetIntVariable("applybox_debug", &debug);
   bool success = true;
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
-  SetVariable("classify_enable_learning", "0");
+
+  tesseract_->classify_enable_learning = 0;
+
   const std::unique_ptr<const char[]> text(GetUTF8Text());
-  if (debug) {
+  if (tesseract_->applybox_debug) {
     tprintf("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
   }
   if (text != nullptr) {
@@ -2267,7 +2303,7 @@ bool TessBaseAPI::InternalSetImage() {
     return false;
   }
   if (thresholder_ == nullptr) {
-    thresholder_ = new ImageThresholder;
+    thresholder_ = new ImageThresholder(tesseract_);
   }
   ClearResults();
   return true;
@@ -2285,8 +2321,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     pixDestroy(pix);
   }
   // Zero resolution messes up the algorithms, so make sure it is credible.
-  int user_dpi = 0;
-  GetIntVariable("user_defined_dpi", &user_dpi);
+  int user_dpi = tesseract_->user_defined_dpi;
   int y_res = thresholder_->GetScaledYResolution();
   if (user_dpi && (user_dpi < kMinCredibleResolution || user_dpi > kMaxCredibleResolution)) {
     tprintf(
@@ -2318,7 +2353,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     // and finally applying the *user-selected* threshold method and continue with the OCR process:
 	  if (m != (int)ThresholdMethod::Max)
 	  {
-		  if (!debug_all)
+		  if (!tesseract_->showcase_threshold_methods)
 			  continue;
 
 		  thresholding_method = (ThresholdMethod)m;
@@ -2347,11 +2382,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 			  tesseract_->set_pix_grey(nullptr);
 		  }
 
-		  tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "OtsuGrey");
-		  tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "OtsuThresholds");
-		  tesseract_->AddPixDebugPage(pix_binary, "OtsuBinary");
+      if (tesseract_->tessedit_dump_pageseg_images) {
+        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
+        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
+        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
+      }
 	  } else {
-		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(this, thresholding_method);
+		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
 
 		  if (!ok) {
 			  return false;
@@ -2363,31 +2400,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 		  tesseract_->set_pix_thresholds(pix_thresholds);
 		  tesseract_->set_pix_grey(pix_grey);
 
-		  std::string caption;
-		  switch (thresholding_method)
-		  {
-		  case ThresholdMethod::LeptonicaOtsu:
-			  caption = "LeptonicaOtsu";
-			  break;
-		  case ThresholdMethod::Sauvola:
-			  caption = "Sauvola (Leptonica)";
-			  break;
-		  case ThresholdMethod::OtsuOnNormalizedBackground:
-			  caption = "OtsuOnNormalizedBackground";
-			  break;
-		  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
-			  caption = "MaskingAndOtsuOnNormalizedBackground";
-			  break;
-		  case ThresholdMethod::Nlbin:
-			  caption = "Nlbin";
-			  break;
-		  default:
-			  caption = "NonOtsu";
-			  break;
-		  }
-		  tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + "Grey").c_str());
-		  tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + "Thresholds").c_str());
-		  tesseract_->AddPixDebugPage(pix_binary, (caption + "Binary").c_str());
+      std::string caption = ThresholdMethodName(thresholding_method);
+
+      if (tesseract_->tessedit_dump_pageseg_images) {
+        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + " : Grey = pre-image").c_str());
+        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + " : Thresholds").c_str());
+        tesseract_->AddPixDebugPage(pix_binary, (caption + " : Binary = post-image").c_str());
+      }
 	  }
   }
 
@@ -2435,7 +2454,9 @@ int TessBaseAPI::FindLines() {
 	  }
 	  tesseract_->set_pix_binary(pix);
 
-	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
+    if (tesseract_->tessedit_dump_pageseg_images) {
+      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image");
+    }
   }
 
   tesseract_->PrepareForPageseg();
@@ -2575,7 +2596,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
   if (input_file_.empty()) {
     input_file_ = kInputFile;
   }
-  return orientation_and_script_detection(input_file_.c_str(), osr, tesseract_) > 0;
+  return tesseract_->orientation_and_script_detection(input_file_.c_str(), osr) > 0;
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
@@ -2642,15 +2663,13 @@ void TessBaseAPI::GetBlockTextOrientations(int **block_orientation, bool **verti
 }
 
 void TessBaseAPI::DetectParagraphs(bool after_text_recognition) {
-  int debug_level = 0;
-  GetIntVariable("paragraph_debug_level", &debug_level);
   if (paragraph_models_ == nullptr) {
 	  paragraph_models_ = new std::vector<ParagraphModel*>;
   }
   MutableIterator *result_it = GetMutableIterator();
   do { // Detect paragraphs for this block
     std::vector<ParagraphModel *> models;
-    ::tesseract::DetectParagraphs(debug_level, after_text_recognition, result_it, &models);
+    tesseract_->DetectParagraphs(after_text_recognition, result_it, &models);
     paragraph_models_->insert(paragraph_models_->end(), models.begin(), models.end());
   } while (result_it->Next(RIL_BLOCK));
   delete result_it;
@@ -2727,14 +2746,14 @@ std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const 
 	unique_seq_counter++;
 
 	char nq[40] ={0};
-	snprintf(nq, sizeof(nq), "%04d", unique_seq_counter);
+	snprintf(nq, sizeof(nq), "n%04d", unique_seq_counter);
 
 	std::string f(basepath);
 	f = f.substr(0, pathlen);
-	f += nq;
-	f += "-";
 	f += filename;
-	f += ".";
+  f += ".";
+  f += nq;
+  f += ".";
 	f += label;
 	if (*ns)
 	{

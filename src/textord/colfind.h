@@ -45,6 +45,7 @@ class LineSpacing;
 class StrokeWidth;
 class TempColumn_LIST;
 class EquationDetectBase;
+class TESS_API Tesseract;
 
 // The ColumnFinder class finds columns in the grid.
 class TESS_API ColumnFinder : public TabFind {
@@ -58,7 +59,7 @@ public:
   // If cjk_script is true, then broken CJK characters are fixed during
   // layout analysis to assist in detecting horizontal vs vertically written
   // textlines.
-  ColumnFinder(int gridsize, const ICOORD &bleft, const ICOORD &tright, int resolution,
+  ColumnFinder(Tesseract *tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, int resolution,
                bool cjk_script, double aligned_gap_fraction, TabVector_LIST *vlines,
                TabVector_LIST *hlines, int vertical_x, int vertical_y);
   ~ColumnFinder() override;
@@ -107,7 +108,7 @@ public:
   // direction, so the textline projection_ map can be setup.
   // On return, IsVerticallyAlignedText may be called (now optionally) to
   // determine the gross textline alignment of the page.
-  void SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix, TO_BLOCK *input_block, const std::string &debug_output_path);
+  void SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix, TO_BLOCK *input_block);
 
   // Tests for vertical alignment of text (returning true if so), and generates
   // a list of blobs (in osd_blobs) for orientation and script detection.
@@ -157,7 +158,7 @@ public:
   // Returns -1 if the user hits the 'd' key in the blocks window while running
   // in debug mode, which requests a retry with more debug info.
   int FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int scaled_factor, TO_BLOCK *block,
-                 Image photo_mask_pix, Image thresholds_pix, Image grey_pix, DebugPixa &pixa_debug,
+                 Image photo_mask_pix, Image thresholds_pix, Image grey_pix,
                  BLOCK_LIST *blocks, BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks);
 
   // Get the rotation required to deskew, and its inverse rotation.
@@ -283,6 +284,9 @@ private:
   // Returns the rotation that needs to be applied to the blobs to make
   // them sit in the rotated block.
   FCOORD ComputeBlockAndClassifyRotation(BLOCK *block);
+
+private:
+  Tesseract* tesseract_; // reference to the active instance
 
   // If true then the page language is cjk, so it is safe to perform
   // FixBrokenCJK.

@@ -32,13 +32,19 @@ public:
 
   // Adds the given pix to the set of pages in the PDF file, with the given
   // caption added to the top.
-  void AddPix(const Image pix, const char *caption) {
+  void AddPix(const Image &pix, const char *caption, bool keep_a_copy = true) {
     int depth = pixGetDepth(pix);
+#ifdef TESSERACT_DISABLE_DEBUG_FONTS
+    pixaAddPix(pixa_, pix, keep_a_copy ? L_COPY : L_INSERT);
+#else
     int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
     Image pix_debug =
         pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+    if (keep_a_copy)
+      pix.destroy();
     pixaAddPix(pixa_, pix_debug, L_INSERT);
-	captions.push_back(caption);
+#endif
+    captions.push_back(caption);
   }
 
   // Return true wheen one or more images have been collected.
@@ -57,6 +63,10 @@ public:
     }
   }
 
+  static void SanitizeCaptionForFilenamePart(std::string& str) {
+    
+  }
+
   void WritePNGs(const char *filename) {
 	  if (HasPix()) {
 		  const char *ext = strrchr(filename, '.');
@@ -71,6 +81,7 @@ public:
 			  char in[40];
 			  snprintf(in, 40, ".in%04d", counter);
 			  std::string caption = captions[i];
+        SanitizeCaptionForFilenamePart(caption);
 			  const char *cprefix = (caption.empty() ? "" : ".");
 			  std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
 

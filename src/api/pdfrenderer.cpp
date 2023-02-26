@@ -29,6 +29,7 @@
 #include <tesseract/baseapi.h>
 #include <tesseract/publictypes.h> // for PTIsTextType()
 #include <tesseract/renderer.h>
+
 #include <cmath>
 #include <cstring>
 #include <fstream>   // for std::ifstream
@@ -36,6 +37,7 @@
 #include <memory>    // std::unique_ptr
 #include <sstream>   // for std::stringstream
 
+#include "tesseractclass.h"
 
 #include "helpers.h" // for Swap
 
@@ -75,7 +77,7 @@ codes into Unicode values. If its not present then the reader will
 fall back through a series of heuristics to try and guess the
 result. This is, as you would expect, prone to failure.
 
-This doesn't concern you of course, since you always write a ToUnicode
+This doesn't concern you of course, since you always writing a ToUnicode
 CMap, so because you are writing the text in text rendering mode 3 it
 would seem that you don't really need to worry about this, but in the
 PDF spec you cannot have an isolated ToUnicode CMap, it has to be
@@ -107,7 +109,7 @@ given value. So we have a glyph name, we then use that as the key to
 the dictionary and retrieve the associated value. For a type 1 font,
 the value is a glyph program that describes how to draw the glyph.
 
-For CIDFonts, its a little more complicated. Because CIDFonts can be
+For CIDFonts, it's a little more complicated. Because CIDFonts can be
 large, using a glyph name as the key is unreasonable (it would also
 lead to unfeasibly large Encoding arrays), so instead we use a 'CID'
 as the key. CIDs are just numbers.
@@ -902,8 +904,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    int jpg_quality;
-    api->GetIntVariable("jpg_quality", &jpg_quality);
+    int jpg_quality = api->tesseract()->jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
 	  if (destroy_pix)
 	  {

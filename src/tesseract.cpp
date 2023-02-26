@@ -1168,6 +1168,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       api.SetVariable("debug_baseline_fit", "1"); // 0..3
       api.SetVariable("debug_baseline_y_coord", "-2000");
+
+      api.SetVariable("showcase_threshold_methods", "N");
+
+      api.SetVariable("debug_write_unlv", "Y");
+      api.SetVariable("debug_line_finding", "Y");
+      api.SetVariable("debug_image_normalization", "Y");
   }
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;

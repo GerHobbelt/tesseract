@@ -302,8 +302,8 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     // ****************** Pass 1 *******************
 
 #if !DISABLED_LEGACY_ENGINE
-    // If the adaptive classifier is full switch to one we prepared earlier,
-    // ie on the previous page. If the current adaptive classifier is non-empty,
+    // If the adaptive classifier is full, switch to one we prepared earlier,
+    // i.e. on the previous page. If the current adaptive classifier is non-empty,
     // prepare a backup starting at this page, in case it fills up. Do all this
     // independently for each language.
     if (AdaptiveClassifierIsFull()) {

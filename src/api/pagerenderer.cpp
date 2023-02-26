@@ -764,10 +764,8 @@ char
   Pta *line_baseline_pts = ptaCreate(0);
 
   // Replace this with real flags:
-  bool POLYGONFLAG;
-  GetBoolVariable("tessedit_create_page_polygon", &POLYGONFLAG);
-  bool WORDLEVELFLAG;
-  GetBoolVariable("tessedit_create_page_wordlevel", &WORDLEVELFLAG);
+  #define POLYGONFLAG   tesseract_->tessedit_create_page_polygon
+  #define WORDLEVELFLAG tesseract_->tessedit_create_page_wordlevel
 
   // Use "C" locale (needed for int values larger than 999).
   page_str.imbue(std::locale::classic());
