@@ -84,7 +84,7 @@ void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD
   pix_ = final_pix;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the blobs in the window colored according to textline quality.
 void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollView *win) {
@@ -124,7 +124,7 @@ void TextlineProjection::MoveNonTextlineBlobs(BLOBNBOX_LIST *blobs,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Create a window and display the projection in it.
 void TextlineProjection::DisplayProjection() const {

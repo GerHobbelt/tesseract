@@ -183,7 +183,7 @@ void ROW::print( // print
  * Draw the ROW in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void ROW::plot(              // draw it
     ScrollView *window,      // window to draw in
     ScrollView::Color colour // colour to draw in

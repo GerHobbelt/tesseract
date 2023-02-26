@@ -89,7 +89,7 @@ ROW *fixed_pitch_words( // find lines
   // boundaries
   ICOORDELT_IT cell_it = &row->char_cells;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != nullptr) {
     plot_row_cells(to_win, ScrollView::RED, row, 0, &row->char_cells);
   }

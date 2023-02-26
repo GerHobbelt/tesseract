@@ -253,7 +253,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   close_to_win();
 #endif
 }

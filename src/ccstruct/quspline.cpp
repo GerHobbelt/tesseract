@@ -336,7 +336,7 @@ void QSPLINE::extrapolate( // linear extrapolation
  * Draw the QSPLINE in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void QSPLINE::plot(          // draw it
     ScrollView *window,      // window to draw in
     ScrollView::Color colour // colour to draw in

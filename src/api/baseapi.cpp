@@ -984,7 +984,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   int result = 0;
   if (tesseract_->interactive_display_mode) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
 #endif // !GRAPHICS_DISABLED
        // The page_res is invalid after an interactive session, so cleanup

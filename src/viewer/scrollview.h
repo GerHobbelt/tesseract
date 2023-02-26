@@ -160,7 +160,7 @@ public:
 
   ~ScrollView();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
@@ -321,10 +321,10 @@ public:
   // Custom messages (manipulating java code directly) can be send through this.
   // Send a message to the server without adding the
   // window id. Used for global events like Exit().
-  // Note: This should only be called if you are know what you are doing, since
+  // Note: This should only be called if you know what you are doing, since
   // you are fiddling with the Java objects on the server directly. Calling
   // this just for fun will likely break your application!
-  // It is public so you can actually take use of the LUA functionalities, but
+  // It is public so you can actually make use of the LUA functionalities, but
   // be careful!
   static void SendRawMessage(const char *msg);
 

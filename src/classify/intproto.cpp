@@ -35,7 +35,7 @@
 #include "picofeat.h"
 #include "points.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
 
@@ -133,7 +133,7 @@ void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill);
 void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *Proto,
                      TABLE_FILLER *Filler);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);
 
@@ -146,7 +146,7 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
 static ScrollView *IntMatchWindow = nullptr;
 static ScrollView *FeatureDisplayWindow = nullptr;
@@ -411,7 +411,7 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
   return static_cast<uint8_t>(Modulo(bucket, num_buckets));
 } /* CircBucketFor */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * This routine clears the global feature and proto
  * display lists.
@@ -546,7 +546,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * This routine renders the specified feature into a
@@ -881,7 +881,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -1190,7 +1190,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -1534,7 +1534,7 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * This routine renders the specified feature into ShapeList.
@@ -1628,7 +1628,7 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * Initializes the int matcher window if it is not already

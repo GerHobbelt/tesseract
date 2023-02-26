@@ -78,7 +78,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
       // Running debug, keep the correct answer, and debug the classifier.
       tprintf("Error on sample {}: {} Classifier debug output:\n", it->GlobalSampleIndex(),
               it->sample_set()->SampleToString(*mutable_sample).c_str());
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
 #endif
       --error_samples;
@@ -138,7 +138,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
         ++total_new_errors;
         new_classifier->UnicharClassifySample(*mutable_sample, page_pix, 1, correct_id, &results);
         if (results.size() > 0 && error_samples > 0) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
           new_classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
 #endif
           --error_samples;

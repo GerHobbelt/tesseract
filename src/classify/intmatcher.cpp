@@ -504,7 +504,7 @@ void IntegerMatcher::Match(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR ProtoMask
     }
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (PrintProtoMatchesOn(Debug) || PrintMatchSummaryOn(Debug)) {
     DebugFeatureProtoError(ClassTemplate, ProtoMask, ConfigMask, *tables, NumFeatures, Debug);
   }
@@ -524,7 +524,7 @@ void IntegerMatcher::Match(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR ProtoMask
 
   FindBestMatch(ClassTemplate, *tables, Result);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (PrintMatchSummaryOn(Debug)) {
     Result->Print();
   }
@@ -573,7 +573,7 @@ int IntegerMatcher::FindGoodProtos(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR P
                            tables, Debug);
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (PrintProtoMatchesOn(Debug) || PrintMatchSummaryOn(Debug)) {
     DebugFeatureProtoError(ClassTemplate, ProtoMask, ConfigMask, *tables, NumFeatures, Debug);
   }
@@ -653,7 +653,7 @@ int IntegerMatcher::FindBadFeatures(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR 
     }
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (PrintProtoMatchesOn(Debug) || PrintMatchSummaryOn(Debug)) {
     DebugFeatureProtoError(ClassTemplate, ProtoMask, ConfigMask, *tables, NumFeatures, Debug);
   }
@@ -884,7 +884,7 @@ int IntegerMatcher::UpdateTablesForFeature(INT_CLASS_STRUCT *ClassTemplate, BIT_
 /**
  * Print debugging information for Configurations
  */
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void IntegerMatcher::DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR ProtoMask,
                                             BIT_VECTOR ConfigMask, const ScratchEvidence &tables,
                                             int16_t NumFeatures, int Debug) {

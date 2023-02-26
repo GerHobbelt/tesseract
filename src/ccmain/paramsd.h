@@ -21,7 +21,7 @@
 #ifndef TESSERACT_CCMAIN_PARAMSD_H_
 #define TESSERACT_CCMAIN_PARAMSD_H_
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #  include "scrollview.h" // for ScrollView (ptr only), SVEvent (ptr only)

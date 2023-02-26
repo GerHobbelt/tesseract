@@ -27,7 +27,7 @@
 #include "render.h"
 #include "split.h"
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 

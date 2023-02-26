@@ -607,7 +607,7 @@ void BaselineBlock::FitBaselineSplines(bool enable_splines,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Draws the (straight) baselines and final blobs colored according to
 // what was discarded as noise and what is associated with each row.
@@ -914,7 +914,7 @@ void BaselineDetect::ComputeBaselineSplinesAndXheights(const ICOORD &page_tr,
       bl_block->PrepareForSplineFitting(page_tr, remove_noise);
     }
     bl_block->FitBaselineSplines(enable_splines, show_final_rows, textord);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (show_final_rows) {
       bl_block->DrawFinalRows(page_tr);
     }

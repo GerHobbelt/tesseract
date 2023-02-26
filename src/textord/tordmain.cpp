@@ -242,7 +242,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
   TO_BLOCK_IT block_it = blocks;                  // destination iterator
   TO_BLOCK *block;                                // created block
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (to_win != nullptr) {
     to_win->Clear();
   }
@@ -263,7 +263,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
     block->line_size *= textord_min_linesize;
     block->max_blob_size = block->line_size * textord_excess_blobsize;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_blobs && testing_on) {
       if (to_win == nullptr) {
         create_to_win(page_tr);

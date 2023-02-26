@@ -381,7 +381,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   if (HasDebug()) {
     std::vector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     DisplayForward(*inputs, labels, coords, "LSTMForward", &debug_win_);
 #endif
     DebugActivationPath(*outputs, labels, coords);
@@ -404,7 +404,7 @@ std::string LSTMRecognizer::DecodeLabels(const std::vector<int> &labels) {
   return result;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the forward results in a window with the characters and
 // boundaries as determined by the labels and label_coords.

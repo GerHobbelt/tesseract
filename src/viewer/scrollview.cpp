@@ -87,7 +87,7 @@ std::unique_ptr<SVEvent> SVEvent::copy() const {
 // instead of weak vtables in every compilation unit.
 SVEventHandler::~SVEventHandler() = default;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /// This is the main loop which handles the ScrollView-logic from the server
 /// to the client. It basically loops through messages, parses them to events
@@ -282,12 +282,14 @@ void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, 
   // network connection yet and we have to set it up in a different thread.
   if (stream_ == nullptr) {
     nr_created_windows_ = 0;
+#if 0
     stream_ = new SVNetwork(server_name, kSvPort);
     waiting_for_events_mu = new std::mutex();
     svmap_mu = new std::mutex();
     SendRawMessage("svmain = luajava.bindClass('com.google.scrollview.ScrollView')\n");
     std::thread t(&ScrollView::MessageReceiver);
     t.detach();
+#endif
   }
 
   // Set up the variables on the clientside.
@@ -302,9 +304,11 @@ void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, 
   points_ = new SVPolyLineBuffer;
   points_->empty = true;
 
+#if 0
   svmap_mu->lock();
   svmap[window_id_] = this;
   svmap_mu->unlock();
+#endif
 
   for (auto &i : event_table_) {
     i = nullptr;
@@ -362,7 +366,7 @@ void ScrollView::StartEventHandler() {
 #endif // !GRAPHICS_DISABLED
 
 ScrollView::~ScrollView() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   svmap_mu->lock();
   if (svmap[window_id_] != nullptr) {
     svmap_mu->unlock();
@@ -387,7 +391,7 @@ ScrollView::~ScrollView() {
 #endif // !GRAPHICS_DISABLED
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void ScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);

@@ -129,7 +129,7 @@ public:
   void print(    // print
       FILE *fp) const; // file to print on
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                     // draw one
       ScrollView *window,        // window to draw in
       ScrollView::Color colour); // uniform colour

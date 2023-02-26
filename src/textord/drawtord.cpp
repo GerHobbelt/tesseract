@@ -36,7 +36,7 @@ BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
 ScrollView *to_win = nullptr;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**********************************************************************
  * create_to_win

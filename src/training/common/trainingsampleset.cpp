@@ -785,7 +785,7 @@ void TrainingSampleSet::AddAllFontsForClass(int class_id, Shape *shape) const {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the samples with the given indexed feature that also match
 // the given shape.

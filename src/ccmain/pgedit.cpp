@@ -39,7 +39,7 @@
 #include <cmath>
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 
@@ -371,9 +371,9 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   build_image_window(width, height);
   word_display_mode.set(DF_EDGE_STEP);
   do_re_display(&tesseract::Tesseract::word_set_display);
-#  ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   pe = new ParamsEditor(this, image_win);
-#  endif
+#endif
   PGEventHandler pgEventHandler(this);
 
   image_win->AddEventHandler(&pgEventHandler);
@@ -896,7 +896,7 @@ bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   return true;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * word_set_display()  Word processor
  *

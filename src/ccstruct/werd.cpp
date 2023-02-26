@@ -285,7 +285,7 @@ void WERD::print() const {
  * Draw the WERD in the given colour.
  */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void WERD::plot(ScrollView *window, ScrollView::Color colour) {
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {

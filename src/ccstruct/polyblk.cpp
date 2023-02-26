@@ -242,7 +242,7 @@ void POLY_BLOCK::move(ICOORD shift) {
   compute_bb();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   ICOORDELT_IT v = &vertices;
 
@@ -384,7 +384,7 @@ int lessthan(const void *first, const void *second) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /// Returns a color to draw the given type.
 ScrollView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
   // Keep kPBColors in sync with PolyBlockType.

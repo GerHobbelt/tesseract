@@ -24,7 +24,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 extern ScrollView *fx_win;
 #endif // !GRAPHICS_DISABLED
 void create_fx_win();      // make features win

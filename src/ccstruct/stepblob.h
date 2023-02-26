@@ -95,7 +95,7 @@ public:
   // pixDestroy after use.
   Image render_outline();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw one
       ScrollView *window,              // window to draw in
       ScrollView::Color blob_colour,   // for outer bits

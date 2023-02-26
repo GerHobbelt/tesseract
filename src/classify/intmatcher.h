@@ -100,7 +100,7 @@ private:
   int FindBestMatch(INT_CLASS_STRUCT *ClassTemplate, const ScratchEvidence &tables,
                     tesseract::UnicharRating *Result);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR ProtoMask, BIT_VECTOR ConfigMask,
                               const ScratchEvidence &tables, int16_t NumFeatures, int Debug);
 

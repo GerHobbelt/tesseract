@@ -94,7 +94,7 @@ public:
   // mask image.
   Image render_mask(const FCOORD &rerotation, TBOX *mask_box);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   /// draw histogram
   ///@param window window to draw in
   ///@param serial serial number

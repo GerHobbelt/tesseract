@@ -346,7 +346,7 @@ private:
   // class.
   EquationDetectBase *equation_detect_;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Various debug windows that automatically go away on completion.
   ScrollView *input_blobs_win_ = nullptr;
 

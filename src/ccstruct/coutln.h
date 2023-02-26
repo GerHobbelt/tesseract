@@ -249,7 +249,7 @@ public:
   // being the coords of the upper-left corner of the pix.
   void render_outline(int left, int top, Image pix) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw one
       ScrollView *window,              // window to draw in
       ScrollView::Color colour) const; // colour to draw it

@@ -222,7 +222,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
   TESSLINE *outline;
   int16_t num_points = 0;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (chop_debug > 2) {
     wordrec_display_splits.set_value(true);
   }
@@ -270,7 +270,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
       delete seam;
       seam = nullptr;
     }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     else if (wordrec_display_splits) {
       seam->Mark(edge_window);
       if (chop_debug > 2) {

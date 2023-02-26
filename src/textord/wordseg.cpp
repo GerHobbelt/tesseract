@@ -158,7 +158,7 @@ void set_row_spaces( // find space sizes
       row->space_size = row->pr_space;
       row->kern_size = row->pr_nonsp;
     }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_initial_words && testing_on) {
       plot_word_decisions(to_win, static_cast<int16_t>(row->fixed_pitch), row);
     }

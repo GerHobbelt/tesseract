@@ -181,7 +181,7 @@ Image PDBLK::render_mask(const FCOORD &rerotation, TBOX *mask_box) {
  * Plot the outline of a block in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void PDBLK::plot(            // draw outline
     ScrollView *window,      // window to draw in
     int32_t serial,          // serial number

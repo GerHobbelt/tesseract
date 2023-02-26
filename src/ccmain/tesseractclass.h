@@ -565,7 +565,7 @@ public:
 
   //// pgedit.h //////////////////////////////////////////////////////////
   SVMenuNode *build_menu_new();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void pgeditor_main(int width, int height, PAGE_RES *page_res);
 
   void process_image_event( // action in image win
@@ -581,7 +581,7 @@ public:
   bool word_bln_display(PAGE_RES_IT *pr_it);
   bool word_blank_and_set_display(PAGE_RES_IT *pr_its);
   bool word_set_display(PAGE_RES_IT *pr_it);
-  // #ifndef GRAPHICS_DISABLED
+  // #if !GRAPHICS_DISABLED
   bool word_dumper(PAGE_RES_IT *pr_it);
   // #endif // !GRAPHICS_DISABLED
   void blob_feature_display(PAGE_RES *page_res, const TBOX &selection_box);

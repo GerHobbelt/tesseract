@@ -18,6 +18,11 @@
 #ifndef TESSERACT_LSTM_LSTMTRAINER_H_
 #define TESSERACT_LSTM_LSTMTRAINER_H_
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "export.h"
 
 #include "imagedata.h" // for DocumentCache
@@ -402,7 +407,7 @@ protected:
                                const TestCallback &tester);
 
 protected:
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Alignment display window.
   ScrollView *align_win_;
   // CTC target display window.

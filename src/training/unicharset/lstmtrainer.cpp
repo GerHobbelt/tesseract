@@ -66,7 +66,7 @@ const double kHighConfidence = 0.9375; // 15/16.
 const double kImprovementFraction = 15.0 / 16.0;
 // Fraction of last written best to make it worth writing another.
 const double kBestCheckpointFraction = 31.0 / 32.0;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Scale factor for display of target activations of CTC.
 const int kTargetXScale = 5;
 const int kTargetYScale = 100;
@@ -90,7 +90,7 @@ LSTMTrainer::LSTMTrainer(const char *model_base, const char *checkpoint_name,
 }
 
 LSTMTrainer::~LSTMTrainer() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   delete align_win_;
   delete target_win_;
   delete ctc_win_;
@@ -894,7 +894,7 @@ Trainability LSTMTrainer::TrainOnLine(const ImageData *trainingdata,
     network_->Update(learning_rate_, batch ? -1.0f : momentum_, adam_beta_,
                      training_iteration_ + 1);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug_interval_ == 1 && debug_win_ != nullptr) {
     debug_win_->AwaitEvent(SVET_CLICK);
   }
@@ -1139,7 +1139,7 @@ void LSTMTrainer::SetNullChar() {
 
 // Factored sub-constructor sets up reasonable default values.
 void LSTMTrainer::EmptyConstructor() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   align_win_ = nullptr;
   target_win_ = nullptr;
   ctc_win_ = nullptr;
@@ -1181,7 +1181,7 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
       tprintf("TRAINING activation path for truth string {}\n",
               truth_text);
       DebugActivationPath(outputs, labels, xcoords);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       DisplayForward(inputs, labels, xcoords, "LSTMTraining", &align_win_);
       if (OutputLossType() == LT_CTC) {
         DisplayTargets(fwd_outputs, "CTC Outputs", &ctc_win_);
@@ -1193,7 +1193,7 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
   return true;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the network targets as line a line graph.
 void LSTMTrainer::DisplayTargets(const NetworkIO &targets,

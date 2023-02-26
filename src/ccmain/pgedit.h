@@ -29,7 +29,7 @@ class PAGE_RES;
 
 class Tesseract;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // A small event handler class to process incoming events to
 // this window.
 class PGEventHandler : public SVEventHandler {

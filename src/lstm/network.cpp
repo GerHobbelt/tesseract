@@ -48,7 +48,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Min and max window sizes.
 const int kMinWinSize = 500;
@@ -329,7 +329,7 @@ TFloat Network::Random(TFloat range) {
   return randomizer_->SignedRand(range);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // === Debug image display methods. ===
 // Displays the image of the matrix to the forward window.

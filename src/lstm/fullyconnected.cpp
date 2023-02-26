@@ -301,7 +301,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   tprintf("F Output:{}\n", name_.c_str());
   output->Print(10);
 #endif
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }
@@ -362,7 +362,7 @@ void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t,
 // See NetworkCpp for a detailed discussion of the arguments.
 bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
                               NetworkScratch *scratch, NetworkIO *back_deltas) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayBackward(fwd_deltas);
   }

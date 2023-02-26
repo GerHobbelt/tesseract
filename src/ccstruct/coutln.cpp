@@ -951,7 +951,7 @@ void C_OUTLINE::render_outline(int left, int top, Image pix) const {
  * @param colour colour to draw in
  */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position

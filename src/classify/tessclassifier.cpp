@@ -81,7 +81,7 @@ int TessClassifier::DisplayClassifyAs(const TrainingSample &sample, Image page_p
     tprintf("No built-in templates for class/shape {}\n", shape_id);
     return index;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   classify_->ShowBestMatchFor(shape_id, sample.features(), sample.num_features());
 #endif
   return index;

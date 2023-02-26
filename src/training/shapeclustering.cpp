@@ -70,7 +70,7 @@ extern "C" int tesseract_shape_clustering_main(int argc, const char** argv)
   }
 
   if (FLAGS_display_cloud_font >= 0) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     trainer->DisplaySamples(FLAGS_canonical_class1.c_str(), FLAGS_display_cloud_font,
                             FLAGS_canonical_class2.c_str(), FLAGS_display_canonical_font);
 #endif // !GRAPHICS_DISABLED

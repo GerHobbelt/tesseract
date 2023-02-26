@@ -29,7 +29,7 @@
 
 #include "scrollview.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
 #include "tprintf.h"
@@ -89,7 +89,7 @@ const UNICHARSET &ShapeClassifier::GetUnicharset() const {
   return GetShapeTable()->unicharset();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Visual debugger classifies the given sample, displays the results and
 // solicits user input to display other classifications. Returns when

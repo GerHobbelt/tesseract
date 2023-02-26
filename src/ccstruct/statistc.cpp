@@ -592,7 +592,7 @@ void STATS::print_summary() const {
  * Draw a histogram of the stats table.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void STATS::plot(ScrollView *window, // to draw in
                  float xorigin,      // bottom left
                  float yorigin,
@@ -617,7 +617,7 @@ void STATS::plot(ScrollView *window, // to draw in
  * Draw a histogram of the stats table. (Line only)
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void STATS::plotline(ScrollView *window, // to draw in
                      float xorigin,      // bottom left
                      float yorigin,

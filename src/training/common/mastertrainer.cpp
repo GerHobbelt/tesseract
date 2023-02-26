@@ -32,7 +32,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #  include "svmnode.h"
 #endif
 
@@ -751,7 +751,7 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
 
 #if !DISABLED_LEGACY_ENGINE
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Debugging for cloud/canonical features.
 // Displays a Features window containing:

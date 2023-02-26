@@ -205,7 +205,7 @@ void DisplayIntProto(INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, float Evidence);
 
 void ShowMatchDisplay();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Clears the given window and draws the featurespace guides for the
 // appropriate normalization method.
 TESS_API
@@ -213,7 +213,7 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window);
 #endif // !GRAPHICS_DISABLED
 
 /*----------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 TESS_API
 void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);

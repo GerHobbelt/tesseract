@@ -540,7 +540,7 @@ void TabVector::Debug(const char *prefix) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Draw this tabvector in place in the given window.
 void TabVector::Display(ScrollView *tab_win) {

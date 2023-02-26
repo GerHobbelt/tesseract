@@ -58,7 +58,7 @@ using namespace tesseract;
 /*----------------------------------------------------------------------------
             Public Code
 -----------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 static void DisplayProtoList(const char *ch, LIST protolist) {
   auto window = std::make_unique<ScrollView>("Char samples", 50, 200, 520, 520, 260, 260, true);
   LIST proto = protolist;
@@ -105,7 +105,7 @@ static LIST ClusterOneConfig(int shape_id, const char *class_label, LIST mf_clas
   // Merge protos where reasonable to make more of them significant by
   // representing almost all samples of the class/font.
   MergeInsignificantProtos(proto_list, class_label, clusterer, &Config);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (strcmp(FLAGS_test_ch.c_str(), class_label) == 0) {
     DisplayProtoList(FLAGS_test_ch.c_str(), proto_list);
   }

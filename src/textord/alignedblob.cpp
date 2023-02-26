@@ -166,7 +166,7 @@ bool AlignedBlob::WithinTestRegion(int detail_level, int x, int y) {
          y <= textord_testregion_top && y >= textord_testregion_bottom;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the tab codes of the BLOBNBOXes in this grid.
 ScrollView *AlignedBlob::DisplayTabs(const char *window_name, ScrollView *tab_win) {

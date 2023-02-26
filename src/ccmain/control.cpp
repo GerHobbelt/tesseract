@@ -1570,7 +1570,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
       TrainedXheightFix(word, block, row);
     }
   }
-#  ifndef GRAPHICS_DISABLED
+#  if !GRAPHICS_DISABLED
   if (tessedit_display_outwords) {
     if (fx_win == nullptr) {
       create_fx_win();

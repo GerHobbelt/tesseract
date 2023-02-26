@@ -161,7 +161,7 @@ TBOX TBOX::bounding_union( // box enclosing both
  *
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void TBOX::plot(                    // paint box
     ScrollView *fd,                 // where to paint
     ScrollView::Color fill_colour,  // colour for inside

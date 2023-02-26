@@ -497,7 +497,7 @@ void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *in
   tprintf("Output:{}\n", name_);
   output->Print(10);
 #endif
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }
@@ -508,7 +508,7 @@ void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *in
 // See NetworkCpp for a detailed discussion of the arguments.
 bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                     NetworkIO *back_deltas) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayBackward(fwd_deltas);
   }

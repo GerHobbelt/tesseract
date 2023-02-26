@@ -74,7 +74,7 @@ public:
       int left,         // new left edge
       int right);       // new right edge
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw it
       ScrollView *window,              // in window
       ScrollView::Color colour) const; // in colour

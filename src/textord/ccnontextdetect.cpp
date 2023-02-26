@@ -120,7 +120,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
     tesseract_->AddPixDebugPage(pix, "nontext.junknoisemask");
   }
   ScrollView *win = nullptr;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     win = MakeWindow(0, 400, "Photo Mask Blobs");
   }
@@ -142,7 +142,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, ScrollView::GOLDENROD, pix);
   MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::WHITE, pix);
   if (debug) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     win->Update();
 #endif // !GRAPHICS_DISABLED
 #if 0
@@ -151,7 +151,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
     WritePix(filepath, pix, IFF_PNG);
 #endif
     tesseract_->AddPixDebugPage(pix, "nontext.junkccphotomask");
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     win->AwaitEvent(SVET_DESTROY);
     delete win;
 #endif // !GRAPHICS_DISABLED
@@ -264,7 +264,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
     if (!noise_density_->RectMostlyOverThreshold(box, max_noise_count_) &&
         (max_blob_overlaps < 0 || !BlobOverlapsTooMuch(blob, max_blob_overlaps))) {
       blob->ClearNeighbours();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (win != nullptr) {
         blob->plot(win, ok_color, ok_color);
       }
@@ -288,7 +288,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
         pixRasterop(nontext_mask, box.left(), imageheight - box.top(), box.width(), box.height(),
                     PIX_SET, nullptr, 0, 0);
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (win != nullptr) {
         blob->plot(win, ScrollView::RED, ScrollView::RED);
       }

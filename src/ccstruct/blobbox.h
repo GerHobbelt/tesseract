@@ -456,7 +456,7 @@ public:
   // See coutln.h for an explanation of edge offsets.
   static void ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *blobs);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Helper to draw all the blobs on the list in the given body_colour,
   // with child outlines in the child_colour.
   static void PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
@@ -767,7 +767,7 @@ public:
   // See coutln.h for an explanation of edge offsets.
   void ComputeEdgeOffsets(Image thresholds, Image grey);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draw the noise blobs from all lists in red.
   void plot_noise_blobs(ScrollView *to_win);
   // Draw the blobs on the various lists in the block in different colors.
@@ -845,7 +845,7 @@ void vertical_coutline_projection( // project outlines
     C_OUTLINE *outline,            // outline to project
     STATS *stats                   // output
 );
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void plot_blob_list(ScrollView *win,                 // window to draw in
                     BLOBNBOX_LIST *list,             // blob list
                     ScrollView::Color body_colour,   // colour to draw

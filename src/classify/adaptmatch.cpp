@@ -230,7 +230,7 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
     PrintAdaptiveMatchResults(*Results);
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (classify_enable_adaptive_debugger) {
     DebugAdaptiveClassifier(Blob, Results);
   }
@@ -239,7 +239,7 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
   delete Results;
 } /* AdaptiveClassifier */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // If *win is nullptr, sets it to a new ScrollView() object with title msg.
 // Clears the window and draws baselines.
@@ -287,7 +287,7 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
   }
   int start_blob = 0;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (classify_debug_character_fragments) {
     if (learn_fragmented_word_debug_win_ != nullptr) {
       learn_fragmented_word_debug_win_->Wait();
@@ -407,7 +407,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
     rotated_blob = blob;
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draw debug windows showing the blob that is being learned if needed.
   if (strcmp(classify_learn_debug_str.c_str(), correct_text) == 0) {
     RefreshDebugWindow(&learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
@@ -751,7 +751,7 @@ void Classify::InitAdaptedClass(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, A
   if (classify_learning_debug_level >= 1) {
     tprintf("Added new class '{}' with class id {} and {} protos.\n",
             unicharset.id_to_unichar(ClassId), ClassId, NumFeatures);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (classify_learning_debug_level > 1) {
       DisplayAdaptedChar(Blob, IClass);
     }
@@ -918,7 +918,7 @@ void Classify::AdaptToChar(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, float 
       if (classify_learning_debug_level >= 1) {
         tprintf("Found poor match to temp config {} = {}%.\n", int_result.config,
                 int_result.rating * 100.0);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         if (classify_learning_debug_level > 2) {
           DisplayAdaptedChar(Blob, IClass);
         }
@@ -932,7 +932,7 @@ void Classify::AdaptToChar(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, float 
         UpdateAmbigsGroup(ClassId, Blob);
       }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (classify_learning_debug_level > 1) {
         DisplayAdaptedChar(Blob, IClass);
       }
@@ -942,7 +942,7 @@ void Classify::AdaptToChar(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, float 
   }
 } /* AdaptToChar */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 void Classify::DisplayAdaptedChar(TBLOB *blob, INT_CLASS_STRUCT *int_class) {
   INT_FX_RESULT_STRUCT fx_info;
@@ -1436,7 +1436,7 @@ void Classify::ConvertMatchesToChoices(const DENORM &denorm, const TBOX &box,
 } // ConvertMatchesToChoices
 
 /*---------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  *
  * @param blob blob whose classification is being debugged
@@ -2057,7 +2057,7 @@ void Classify::SetAdaptiveThreshold(float Threshold) {
   classify_adapt_feature_threshold.set_value(ClipToRange<int>(255 * Threshold, 0, 255));
 } /* SetAdaptiveThreshold */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /*---------------------------------------------------------------------------*/
 /**

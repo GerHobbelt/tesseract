@@ -723,7 +723,7 @@ void WERD_CHOICE::print_state(const char *msg) const {
   tprintf("\n");
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the segmentation state of *this (if not the same as the last
 // one displayed) and waits for a click in the window.

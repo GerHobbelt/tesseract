@@ -83,7 +83,7 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
   int block_index;                                   // block number
   int row_index;                                     // row number
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_initial_words && testing_on) {
     if (to_win == nullptr) {
       create_to_win(page_tr);
@@ -127,7 +127,7 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
     }
     block_index++;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_initial_words && testing_on) {
     ScrollView::Update();
   }
@@ -311,7 +311,7 @@ void compute_block_pitch(TO_BLOCK *block,     // input list
   if (!block->get_rows()->empty()) {
     ASSERT_HOST(block->xheight > 0);
     find_repeated_chars(block, textord_show_initial_words && testing_on);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_initial_words && testing_on) {
       // overlap_picture_ops(true);
       ScrollView::Update();
@@ -455,7 +455,7 @@ bool try_doc_fixed(             // determine pitch
 
   row_it.set_to_list(block_it.data()->get_rows());
   row = row_it.data();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != nullptr) {
     projection.plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
@@ -473,7 +473,7 @@ bool try_doc_fixed(             // determine pitch
         pitch_sd / pitch, pitch_sd / total_row_count / pitch);
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != nullptr) {
     float row_shift;              // shift for row
     ICOORDELT_LIST *master_cells; // cells for page
@@ -1341,7 +1341,7 @@ float compute_pitch_sd(        // find fp cells
   if (blob_it.empty()) {
     return space_size * 10;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (testing_on && to_win != nullptr) {
     blob_box = blob_it.data()->bounding_box();
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
@@ -1386,7 +1386,7 @@ float compute_pitch_sd(        // find fp cells
       }
       tprintf("\n");
     }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
       plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
     }
@@ -1475,7 +1475,7 @@ float compute_pitch_sd2(       // find fp cells
     occupation = 0;
     return initial_pitch * 10;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (testing_on && to_win != nullptr) {
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
@@ -1507,7 +1507,7 @@ float compute_pitch_sd2(       // find fp cells
     }
     tprintf("\n");
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
     plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
   }
@@ -1629,7 +1629,7 @@ void print_pitch_sd(         // find fp cells
   }
   word_sync = sqrt(word_sync);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_row_cuts && to_win != nullptr) {
     plot_fp_cells2(to_win, ScrollView::CORAL, row, &seg_list);
   }
@@ -1727,7 +1727,7 @@ void find_repeated_chars(TO_BLOCK *block,   // Block to search.
  * Plot a block of words as if fixed pitch.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void plot_fp_word(   // draw block of words
     TO_BLOCK *block, // block to draw
     float pitch,     // pitch to draw with

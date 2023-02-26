@@ -46,7 +46,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 static INT_VAR(textord_tabfind_show_strokewidths, 0, "Show stroke widths (ScrollView)");
 #else
 static INT_VAR(textord_tabfind_show_strokewidths, 0, "Show stroke widths");
@@ -131,11 +131,11 @@ StrokeWidth::StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, con
 }
 
 StrokeWidth::~StrokeWidth() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (widths_win_ != nullptr) {
     widths_win_->AwaitEvent(SVET_DESTROY);
     if (textord_tabfind_only_strokewidths) {
-      assert(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
+      ASSERT0(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
       exit(1);
     }
     delete widths_win_;
@@ -324,7 +324,7 @@ void StrokeWidth::RemoveLineResidue(ColPartition_LIST *big_part_list) {
       box.print();
     }
     if (max_height * kLineResidueSizeRatio < box.height()) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (leaders_win_ != nullptr) {
         // We are debugging, so display deleted in pink blobs in the same
         // window that we use to display leader detection.
@@ -372,7 +372,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
   }
   FindTextlineFlowDirection(pageseg_mode, false);
   projection_->ConstructProjection(block, rerotation, nontext_map_);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths) {
     ScrollView *line_blobs_win = MakeWindow(0, 0, "Initial textline Blobs");
     projection_->PlotGradedBlobs(&block->blobs, line_blobs_win);
@@ -492,7 +492,7 @@ void StrokeWidth::FindLeadersAndMarkNoise(TO_BLOCK *block, ColPartition_LIST *le
       }
     }
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths) {
     leaders_win_ = DisplayGoodBlobs("LeaderNeighbours", 0, 0);
   }
@@ -566,7 +566,7 @@ void StrokeWidth::MarkLeaderNeighbours(const ColPartition *part, LeftOrRight sid
     } else {
       best_blob->set_leader_on_left(true);
     }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (leaders_win_ != nullptr) {
       leaders_win_->Pen(side == LR_LEFT ? ScrollView::RED : ScrollView::GREEN);
       const TBOX &blob_box = best_blob->bounding_box();
@@ -847,7 +847,7 @@ void StrokeWidth::FindTextlineFlowDirection(PageSegMode pageseg_mode, bool displ
       SetNeighbourFlows(bbox);
     }
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if ((textord_tabfind_show_strokewidths && display_if_debugging) ||
       textord_tabfind_show_strokewidths > 1) {
     initial_widths_win_ = DisplayGoodBlobs("InitialStrokewidths", 400, 0);
@@ -868,7 +868,7 @@ void StrokeWidth::FindTextlineFlowDirection(PageSegMode pageseg_mode, bool displ
   while ((bbox = gsearch.NextFullSearch()) != nullptr) {
     SmoothNeighbourTypes(pageseg_mode, true, bbox);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if ((textord_tabfind_show_strokewidths && display_if_debugging) ||
       textord_tabfind_show_strokewidths > 1) {
     widths_win_ = DisplayGoodBlobs("ImprovedStrokewidths", 800, 0);
@@ -1292,7 +1292,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
   if (!FindingVerticalOnly(pageseg_mode)) {
     FindHorizontalTextChains(part_grid);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths) {
     chains_win_ = MakeWindow(0, 400, "Initial text chains");
     part_grid->DisplayBoxes(chains_win_);
@@ -1320,7 +1320,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
       DetectAndRemoveNoise(pre_overlap, grid_box, block, part_grid, diacritic_blobs)) {
     return PFR_NOISE;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths) {
     textlines_win_ = MakeWindow(400, 400, "GoodTextline blobs");
     part_grid->DisplayBoxes(textlines_win_);
@@ -1340,7 +1340,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
   while (part_grid->GridSmoothNeighbours(BTFT_STRONG_CHAIN, nontext_map_, grid_box, rerotation)) {
     ;
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths) {
     smoothed_win_ = MakeWindow(800, 400, "Smoothed blobs");
     part_grid->DisplayBoxes(smoothed_win_);
@@ -1366,7 +1366,7 @@ bool StrokeWidth::DetectAndRemoveNoise(int pre_overlap, const TBOX &grid_box, TO
     if (post_overlap > pre_overlap * kNoiseOverlapGrowthFactor &&
         post_overlap > grid_box.area() * kNoiseOverlapAreaFactor) {
       // This is noisy enough to fix.
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (textord_tabfind_show_strokewidths) {
         ScrollView *noise_win = MakeWindow(1000, 500, "Noise Areas");
         noise_grid->DisplayBoxes(noise_win);
@@ -1956,7 +1956,7 @@ bool StrokeWidth::NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const {
   return tesseract_->image_finder_.BlankImageInBetween(box1, box2, grid_box_, rerotation_, nontext_map_);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /** Displays the blobs colored according to the number of good neighbours
  * and the vertical/horizontal flow.

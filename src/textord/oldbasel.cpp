@@ -375,7 +375,7 @@ void Textord::find_textlines(TO_BLOCK *block,   // block row is in
     make_first_baseline(&blobcoords[0], blobcount, &xcoords[0], &ycoords[0], spline, &row->baseline,
                         jumplimit);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_final_rows) {
     row->baseline.plot(to_win, ScrollView::GOLDENROD);
   }

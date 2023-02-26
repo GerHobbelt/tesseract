@@ -398,7 +398,7 @@ void ColPartitionSet::GetColumnBoxes(int y_bottom, int y_top,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the edges of the columns at the given y coords.
 void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,

@@ -30,7 +30,7 @@
 #  include "config_auto.h"
 #endif
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #include "svmnode.h"
 

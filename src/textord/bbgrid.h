@@ -160,7 +160,11 @@ class BBGrid : public GridBase {
   friend class GridSearch<BBC, BBC_CLIST, BBC_C_IT>;
 
 public:
+  // This empty constructor is here only so that the class can be ELISTIZED.
+  // TODO(rays) change deep_copy in elst.h line 955 to take a callback copier
+  // and eliminate CLASSNAME##_copier.
   BBGrid();
+
   BBGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~BBGrid() override;
 
@@ -204,7 +208,7 @@ public:
   // Returned IntGrid must be deleted after use.
   IntGrid *CountCellElements();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
   // Make a window of an appropriate size to display things in the grid.
   ScrollView *MakeWindow(int x, int y, const char *window_name);
@@ -612,7 +616,7 @@ IntGrid *BBGrid<BBC, BBC_CLIST, BBC_C_IT>::CountCellElements() {
   return intgrid;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 template <class G>
 class TabEventHandler : public SVEventHandler {
 public:

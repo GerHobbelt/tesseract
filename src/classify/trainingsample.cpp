@@ -324,7 +324,7 @@ Image TrainingSample::RenderToPix(const UNICHARSET *unicharset) const {
   return pix;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the features in the given window with the given color.
 void TrainingSample::DisplayFeatures(ScrollView::Color color, ScrollView *window) const {

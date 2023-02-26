@@ -101,7 +101,7 @@ void Parallel::Forward(bool debug, const NetworkIO &input, const TransposedArray
       out_offset = output->CopyPacking(*result, out_offset);
     }
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (parallel_debug) {
     DisplayForward(*output);
   }
@@ -115,7 +115,7 @@ bool Parallel::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch 
   // If this parallel is a replicator of convolvers, or holds a 1-d LSTM pair,
   // or a 2-d LSTM quad, do debug locally, and don't pass the flag on.
   if (debug && type_ != NT_PARALLEL) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     DisplayBackward(fwd_deltas);
 #endif
     debug = false;

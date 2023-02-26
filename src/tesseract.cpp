@@ -1037,7 +1037,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("textord_tabfind_show_images", "Y");
       api.SetVariable("textord_tabfind_show_vlines", "Y");
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
       api.SetVariable("textord_tabfind_show_reject_blobs", "Y");
       api.SetVariable("textord_tabfind_show_partitions", "2");

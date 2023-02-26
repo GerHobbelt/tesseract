@@ -90,7 +90,7 @@ void Textord::to_spacing(ICOORD page_tr,       // topright of page
                   row_index, row->pitch_decision, row->fixed_pitch);
         }
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (textord_show_initial_words) {
         plot_word_decisions(to_win, static_cast<int16_t>(row->fixed_pitch), row);
       }
@@ -1278,7 +1278,7 @@ context.
         (within_xht_current_gap > row->max_nonspace)) {
       space = true;
       fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 20, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
@@ -1290,14 +1290,14 @@ context.
       } else {
         fuzzy_non = true;
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 21, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
     } else if (tosp_use_xht_gaps && (real_current_gap < row->min_space) &&
                (within_xht_current_gap >= row->min_space)) {
       space = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 22, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
@@ -1328,7 +1328,7 @@ other side of a narrow blob then this gap is a kern. */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 1, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1346,7 +1346,7 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 2, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1361,7 +1361,7 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 3, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1377,14 +1377,14 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 4, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
       } else if ((((next_blob_box.width() > 0) && narrow_blob(row, next_blob_box)) ||
                   ((prev_blob_box.width() > 0) && narrow_blob(row, prev_blob_box)))) {
         fuzzy_sp = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 6, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1412,7 +1412,7 @@ where there is a large difference between the kern and space estimates.
         } else {
           fuzzy_non = true;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 7, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1423,7 +1423,7 @@ where there is a large difference between the kern and space estimates.
                  !(narrow_blob(row, next_blob_box) || suspected_punct_blob(row, next_blob_box))) {
         space = true;
         fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 8, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1434,7 +1434,7 @@ where there is a large difference between the kern and space estimates.
                                               !suspected_punct_blob(row, next_blob_box)))) {
         space = true;
         fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 9, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1507,7 +1507,7 @@ void Textord::peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void Textord::mark_gap(TBOX blob,    // blob following gap
                        int16_t rule, // heuristic id
                        int16_t prev_gap, int16_t prev_blob_width, int16_t current_gap,
@@ -1682,7 +1682,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
   if ((reduced_box.width() > 0) &&
       ((reduced_box.left() + tosp_near_lh_edge * reduced_box.width()) < left_above_xht) &&
       (reduced_box.height() > 0.7 * row->xheight)) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_initial_words) {
       reduced_box.plot(to_win, ScrollView::YELLOW, ScrollView::YELLOW);
     }

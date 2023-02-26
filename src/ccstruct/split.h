@@ -89,7 +89,7 @@ struct SPLIT {
   bool IsLittleChunk(int min_points, int min_area) const;
 
   void Print() const;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draws the split in the given window.
   void Mark(ScrollView *window) const;
 #endif

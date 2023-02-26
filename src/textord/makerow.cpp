@@ -266,7 +266,7 @@ void make_initial_textrows( // find lines
 ) {
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   ScrollView::Color colour; // of row
 
   if (textord_show_initial_rows && testing_on) {
@@ -281,7 +281,7 @@ void make_initial_textrows( // find lines
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     fit_lms_line(row_it.data());
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_initial_rows && testing_on) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
@@ -579,7 +579,7 @@ void cleanup_rows_making( // find lines
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_parallel_rows && testing_on) {
     if (to_win == nullptr) {
       create_to_win(page_tr);
@@ -668,7 +668,7 @@ void delete_non_dropout_rows( // find lines
       static_cast<int32_t>(ceil(block->line_spacing * (tesseract::CCStruct::kXHeightFraction +
                                                        tesseract::CCStruct::kAscenderFraction))),
       max_y - min_y + 1, &occupation[0], &deltas[0]);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (testing_on) {
     draw_occupation(xleft, ybottom, min_y, max_y, &occupation[0], &deltas[0]);
   }
@@ -680,7 +680,7 @@ void delete_non_dropout_rows( // find lines
     distance = deltas[line_index - min_y];
     if (find_best_dropout_row(row, distance, block->line_spacing / 2, line_index, &row_it,
                               testing_on)) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (testing_on) {
         plot_parallel_row(row, gradient, block_edge, ScrollView::WHITE, rotation);
       }
@@ -997,7 +997,7 @@ void expand_rows(       // find lines
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_expanded_rows && testing_on) {
     if (to_win == nullptr) {
       create_to_win(page_tr);
@@ -1049,7 +1049,7 @@ void expand_rows(       // find lines
               tprintf("Eating row below at {}\n", test_row->intercept());
             }
             row_it.forward();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
             if (textord_show_expanded_rows && testing_on) {
               plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
             }
@@ -1094,7 +1094,7 @@ void expand_rows(       // find lines
             }
             row_it.backward();
             blob_it.set_to_list(row->blob_list());
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
             if (textord_show_expanded_rows && testing_on) {
               plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
             }
@@ -1856,7 +1856,7 @@ void pre_associate_blobs( // make rough chars
     FCOORD rotation,      // inverse landscape
     bool testing_on       // correct orientation
 ) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   ScrollView::Color colour; // of boxes
 #endif
   BLOBNBOX *blob;     // current blob
@@ -1867,7 +1867,7 @@ void pre_associate_blobs( // make rough chars
   BLOBNBOX_IT start_it; // iterator
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   colour = ScrollView::RED;
 #endif
 
@@ -1904,7 +1904,7 @@ void pre_associate_blobs( // make rough chars
                  block->line_size * tesseract::CCStruct::kXHeightFraction * textord_chop_width);
       // attempt chop
     }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (testing_on && textord_show_final_blobs) {
       if (to_win == nullptr) {
         create_to_win(page_tr);
@@ -1939,7 +1939,7 @@ void fit_parallel_rows( // find lines
     int32_t block_edge, // edge of block
     bool testing_on     // correct orientation
 ) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   ScrollView::Color colour; // of row
 #endif
   TO_ROW_IT row_it = block->get_rows();
@@ -1952,7 +1952,7 @@ void fit_parallel_rows( // find lines
       fit_parallel_lms(gradient, row_it.data());
     }
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (testing_on) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
@@ -2005,7 +2005,7 @@ void fit_parallel_lms(float gradient, TO_ROW *row) {
 void Textord::make_spline_rows(TO_BLOCK *block, // block to do
                                float gradient,  // gradient to fit
                                bool testing_on) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   ScrollView::Color colour; // of row
   if (testing_on && to_win == nullptr) {
     create_to_win(page_tr_);
@@ -2022,7 +2022,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
     }
   }
   if (textord_old_baselines) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (testing_on) {
       colour = ScrollView::RED;
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
@@ -2036,7 +2036,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
 #endif
     make_old_baselines(block, testing_on, gradient);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (testing_on) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
@@ -2308,7 +2308,7 @@ void assign_blobs_to_rows( // find lines
   if (gradient != nullptr) {
     g_length = std::sqrt(1 + *gradient * *gradient);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (drawing_skew) {
     to_win->SetCursor(block->block->pdblk.bounding_box().left(), ycoord);
   }
@@ -2338,7 +2338,7 @@ void assign_blobs_to_rows( // find lines
     last_x = blob->bounding_box().left();
     top = blob->bounding_box().top() - block_skew;
     bottom = blob->bounding_box().bottom() - block_skew;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (drawing_skew) {
       to_win->DrawTo(blob->bounding_box().left(), ycoord + block_skew);
     }

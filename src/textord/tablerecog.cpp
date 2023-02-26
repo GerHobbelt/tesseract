@@ -314,7 +314,7 @@ double StructuredTable::CalculateCellFilledPercentage(unsigned row, unsigned col
   return std::min(1.0, area_covered / current_area);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 void StructuredTable::Display(ScrollView *window, ScrollView::Color color) {
   window->Brush(ScrollView::NONE);

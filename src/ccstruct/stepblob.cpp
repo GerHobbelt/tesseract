@@ -96,7 +96,7 @@ static void position_outline( // put in place
  * in the child colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST *list,          // outline to draw
     ScrollView *window,            // window to draw in
@@ -522,7 +522,7 @@ Image C_BLOB::render_outline() {
  * Draw the C_BLOB in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void C_BLOB::plot(ScrollView *window,               // window to draw in
                   ScrollView::Color blob_colour,    // main colour
                   ScrollView::Color child_colour) { // for holes

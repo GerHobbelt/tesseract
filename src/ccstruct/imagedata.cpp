@@ -273,7 +273,7 @@ int ImageData::MemoryUsed() const {
   return image_data_.size();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Draws the data in a new window.
 void ImageData::Display() const {

@@ -688,7 +688,7 @@ public:
   // treated as read-only.
   ColPartition *CopyButDontOwnBlobs();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Provides a color for BBGrid to draw the rectangle.
   ScrollView::Color BoxColor() const;
 #endif // !GRAPHICS_DISABLED
