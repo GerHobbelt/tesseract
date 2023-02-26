@@ -32,8 +32,9 @@
 
 namespace tesseract {
 
-Textord::Textord(CCStruct *ccstruct)
-    : ccstruct_(ccstruct)
+Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
+    : tesseract_(tess)
+    , ccstruct_(ccstruct)
     , use_cjk_fp_model_(false)
     ,
     // makerow.cpp ///////////////////////////////////////////
@@ -171,7 +172,9 @@ Textord::Textord(CCStruct *ccstruct)
     , BOOL_MEMBER(textord_noise_debug, false, "Debug row garbage detector", ccstruct_->params())
     , double_MEMBER(textord_blshift_maxshift, 0.00, "Max baseline shift", ccstruct_->params())
     , double_MEMBER(textord_blshift_xfraction, 9.99, "Min size of baseline shift",
-                    ccstruct_->params()) {}
+                    ccstruct_->params()) {
+  ASSERT0(tess != nullptr);
+}
 
 // Make the textlines and words inside each block.
 void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,

@@ -91,8 +91,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 ColumnFinder::ColumnFinder(Tesseract *tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, int resolution,
                            bool cjk_script, double aligned_gap_fraction, TabVector_LIST *vlines,
                            TabVector_LIST *hlines, int vertical_x, int vertical_y)
-    : tesseract_(tess)
-    , TabFind(gridsize, bleft, tright, vlines, vertical_x, vertical_y, resolution)
+    : TabFind(tess, gridsize, bleft, tright, vlines, vertical_x, vertical_y, resolution)
     , cjk_script_(cjk_script)
     , min_gutter_width_(static_cast<int>(kMinGutterWidthGrid * gridsize))
     , mean_column_gap_(tright.x() - bleft.x())
@@ -109,7 +108,6 @@ ColumnFinder::ColumnFinder(Tesseract *tess, int gridsize, const ICOORD &bleft, c
     , projection_(resolution)
     , denorm_(nullptr)
     , equation_detect_(nullptr) {
-  ASSERT0(tess != nullptr);
   TabVector_IT h_it(&horizontal_lines_);
   h_it.add_list_after(hlines);
 }

@@ -37,6 +37,8 @@ using WidthCallback = std::function<bool(int)>;
 struct AlignedBlobParams;
 class ColPartitionGrid;
 
+class TESS_API Tesseract;
+
 /** Pixel resolution of column width estimates. */
 const int kColumnWidthFactor = 20;
 
@@ -51,7 +53,7 @@ const int kColumnWidthFactor = 20;
  */
 class TESS_API TabFind : public AlignedBlob {
 public:
-  TabFind(int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
+  TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
           int vertical_x, int vertical_y, int resolution);
   ~TabFind() override;
 

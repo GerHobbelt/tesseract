@@ -77,8 +77,6 @@ private:
   bool BlobOverlapsTooMuch(BLOBNBOX *blob, int max_overlaps);
 
 private:
-  Tesseract* tesseract_;   // reference to the active instance
-
   // Max entry in noise_density_ before the cell is declared noisy.
   int max_noise_count_;
   // Completed noise density map, which we keep around to use for secondary

@@ -44,7 +44,7 @@ BOOL_VAR(devanagari_split_debugimage, 0,
 
 ShiroRekhaSplitter::ShiroRekhaSplitter(Tesseract* tess)
   : tesseract_(tess) {
-  assert(tess != nullptr);
+  ASSERT0(tess != nullptr);
   orig_pix_ = nullptr;
   segmentation_block_list_ = nullptr;
   splitted_image_ = nullptr;

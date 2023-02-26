@@ -306,8 +306,6 @@ private:
 #endif
 
 private:
-  Tesseract* tesseract_;   // reference to the active instance
-
   // Image map of photo/noise areas on the page. Borrowed pointer (not owned.)
   Image nontext_map_;
   // Textline projection map. Borrowed pointer.

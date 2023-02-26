@@ -66,11 +66,9 @@ const double kPhotoOffsetFraction = 0.375;
 const double kMinGoodTextPARatio = 1.5;
 
 CCNonTextDetect::CCNonTextDetect(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : tesseract_(tess)
-    , BlobGrid(gridsize, bleft, tright)
+    : BlobGrid(tess, gridsize, bleft, tright)
     , max_noise_count_(static_cast<int>(kMaxSmallNeighboursPerPix * gridsize * gridsize))
     , noise_density_(nullptr) {
-  assert(tess != nullptr);
   // TODO(rays) break max_noise_count_ out into an area-proportional
   // value, as now plus an additive constant for the number of text blobs
   // in the 3x3 neighbourhood - maybe 9.
@@ -96,7 +94,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   // Add the medium blobs that don't have a good strokewidth neighbour.
   // Those that do go into good_grid as an antidote to spreading beyond the
   // real reaches of a noise region.
-  BlobGrid good_grid(gridsize(), bleft(), tright());
+  BlobGrid good_grid(tesseract_, gridsize(), bleft(), tright());
   BLOBNBOX_IT blob_it(&blob_block->blobs);
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     BLOBNBOX *blob = blob_it.data();

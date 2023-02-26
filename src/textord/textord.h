@@ -72,12 +72,18 @@ private:
 // Make it usable by BBGrid.
 CLISTIZEH(WordWithBox);
 
-using WordGrid = BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
+class WordGrid : public BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT> {
+public:
+  WordGrid(Tesseract* tess, int gridsize, const ICOORD& bleft, const ICOORD& tright) :
+    BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>(tess, gridsize, bleft, tright) {
+  }
+};
+
 using WordSearch = GridSearch<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 
 class Textord {
 public:
-  explicit Textord(CCStruct *ccstruct);
+  explicit Textord(Tesseract* tess, CCStruct *ccstruct);
   ~Textord() = default;
 
   // Make the textlines and words inside each block.
@@ -119,6 +125,8 @@ public:
   void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks, bool testing_on);
 
 private:
+  Tesseract* tesseract_;   // reference to the active instance
+
   // For underlying memory management and other utilities.
   CCStruct *ccstruct_;
 

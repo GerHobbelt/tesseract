@@ -62,9 +62,9 @@ const double kCosMaxSkewAngle = 0.866025;
 static BOOL_VAR(textord_tabfind_show_initialtabs, false, "Show tab candidates");
 static BOOL_VAR(textord_tabfind_show_finaltabs, false, "Show tab vectors");
 
-TabFind::TabFind(int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
+TabFind::TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
                  int vertical_x, int vertical_y, int resolution)
-    : AlignedBlob(gridsize, bleft, tright)
+    : AlignedBlob(tess, gridsize, bleft, tright)
     , resolution_(resolution)
     , image_origin_(0, tright.y() - 1)
     , v_it_(&vectors_) {

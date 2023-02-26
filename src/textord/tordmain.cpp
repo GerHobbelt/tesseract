@@ -756,7 +756,7 @@ void Textord::TransferDiacriticsToBlockGroups(BLOBNBOX_LIST *diacritic_blobs, BL
     if (group->bounding_box.null_box()) {
       continue;
     }
-    WordGrid word_grid(group->min_xheight, group->bounding_box.botleft(),
+    WordGrid word_grid(tesseract_, group->min_xheight, group->bounding_box.botleft(),
                        group->bounding_box.topright());
     for (auto b : group->blocks) {
       ROW_IT row_it(b->row_list());

@@ -153,8 +153,8 @@ void AlignedBlobParams::set_vertical(int vertical_x, int vertical_y) {
   vertical.set_y(vertical_y / factor);
 }
 
-AlignedBlob::AlignedBlob(int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : BlobGrid(gridsize, bleft, tright) {}
+AlignedBlob::AlignedBlob(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
+    : BlobGrid(tess, gridsize, bleft, tright) {}
 
 // Return true if the given coordinates are within the test rectangle
 // and the debug level is at least the given detail level.

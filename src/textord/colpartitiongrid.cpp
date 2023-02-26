@@ -71,10 +71,8 @@ const int kSmoothDecisionMargin = 4;
 
 ColPartitionGrid::ColPartitionGrid(Tesseract* tess, int gridsize, const ICOORD &bleft,
                                    const ICOORD &tright)
-    : tesseract_(tess)
-    , BBGrid<ColPartition, ColPartition_CLIST, ColPartition_C_IT>(
-          gridsize, bleft, tright) {
-  ASSERT0(tess != nullptr);
+    : BBGrid<ColPartition, ColPartition_CLIST, ColPartition_C_IT>(
+          tess, gridsize, bleft, tright) {
 }
 
 // Handles a click event in a display window.

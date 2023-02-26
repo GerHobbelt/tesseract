@@ -286,8 +286,6 @@ private:
   FCOORD ComputeBlockAndClassifyRotation(BLOCK *block);
 
 private:
-  Tesseract* tesseract_; // reference to the active instance
-
   // If true then the page language is cjk, so it is safe to perform
   // FixBrokenCJK.
   bool cjk_script_;

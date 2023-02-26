@@ -282,14 +282,12 @@ void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, 
   // network connection yet and we have to set it up in a different thread.
   if (stream_ == nullptr) {
     nr_created_windows_ = 0;
-#if 0
     stream_ = new SVNetwork(server_name, kSvPort);
     waiting_for_events_mu = new std::mutex();
     svmap_mu = new std::mutex();
     SendRawMessage("svmain = luajava.bindClass('com.google.scrollview.ScrollView')\n");
     std::thread t(&ScrollView::MessageReceiver);
     t.detach();
-#endif
   }
 
   // Set up the variables on the clientside.
@@ -304,11 +302,9 @@ void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, 
   points_ = new SVPolyLineBuffer;
   points_->empty = true;
 
-#if 0
   svmap_mu->lock();
   svmap[window_id_] = this;
   svmap_mu->unlock();
-#endif
 
   for (auto &i : event_table_) {
     i = nullptr;

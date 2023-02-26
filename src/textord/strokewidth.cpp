@@ -120,14 +120,12 @@ const double kNoiseOverlapGrowthFactor = 4.0;
 const double kNoiseOverlapAreaFactor = 1.0 / 512;
 
 StrokeWidth::StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : tesseract_(tess)
-    , BlobGrid(gridsize, bleft, tright)
+    : BlobGrid(tess, gridsize, bleft, tright)
     , nontext_map_(nullptr)
     , projection_(nullptr)
     , denorm_(nullptr)
     , grid_box_(bleft, tright)
     , rerotation_(1.0f, 0.0f) {
-  ASSERT0(tess != nullptr);
 }
 
 StrokeWidth::~StrokeWidth() {
@@ -1500,7 +1498,7 @@ void StrokeWidth::FindHorizontalTextChains(ColPartitionGrid *part_grid) {
 // which ALL the blobs are diacritics, in which case the partition is
 // exploded (deleted) back to its blobs.
 void StrokeWidth::TestDiacritics(ColPartitionGrid *part_grid, TO_BLOCK *block) {
-  BlobGrid small_grid(gridsize(), bleft(), tright());
+  BlobGrid small_grid(tesseract_, gridsize(), bleft(), tright());
   small_grid.InsertBlobList(&block->noise_blobs);
   small_grid.InsertBlobList(&block->blobs);
   int medium_diacritics = 0;

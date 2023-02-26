@@ -337,14 +337,14 @@ static void GetLineBoxes(bool horizontal_lines, Image pix_lines, Image pix_inter
 // The input line_bblobs list is const really.
 // The output vertical_x and vertical_y are the total of all the vectors.
 // The output list of TabVector makes no reference to the input BLOBNBOXes.
-static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
+void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
                             BLOBNBOX_LIST *line_bblobs, int *vertical_x, int *vertical_y,
                             TabVector_LIST *vectors) {
   BLOBNBOX_IT bbox_it(line_bblobs);
   int b_count = 0;
   // Put all the blobs into the grid to find the lines, and move the blobs
   // to the output lists.
-  AlignedBlob blob_grid(kLineFindGridSize, bleft, tright);
+  AlignedBlob blob_grid(tesseract_, kLineFindGridSize, bleft, tright);
   for (bbox_it.mark_cycle_pt(); !bbox_it.cycled_list(); bbox_it.forward()) {
     BLOBNBOX *bblob = bbox_it.data();
     bblob->set_left_tab_type(TT_MAYBE_ALIGNED);
@@ -622,7 +622,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
 // If no good lines are found, pix_vline is destroyed.
 // None of the input pointers may be nullptr, and if *pix_vline is nullptr then
 // the function does nothing.
-static void FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
+void LineFinder::FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
                                 int *vertical_y, Image *pix_vline, Image pix_non_vline,
                                 Image src_pix, TabVector_LIST *vectors) {
   if (pix_vline == nullptr || *pix_vline == nullptr) {
@@ -657,7 +657,7 @@ static void FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
 // If no good lines are found, pix_hline is destroyed.
 // None of the input pointers may be nullptr, and if *pix_hline is nullptr then
 // the function does nothing.
-static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
+void LineFinder::FindAndRemoveHLines(Image pix_intersections, int vertical_x,
                                 int vertical_y, Image *pix_hline, Image pix_non_hline,
                                 Image src_pix, TabVector_LIST *vectors) {
   if (pix_hline == nullptr || *pix_hline == nullptr) {

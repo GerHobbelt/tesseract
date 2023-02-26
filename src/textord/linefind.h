@@ -77,6 +77,43 @@ protected:
                            Image* pix_hline, Image* pix_non_hline, Image* pix_intersections,
                            Image* pix_music_mask);
 
+  // Finds vertical lines in the given list of BLOBNBOXes. bleft and tright
+  // are the bounds of the image on which the input line_bblobs were found.
+  // The input line_bblobs list is const really.
+  // The output vertical_x and vertical_y are the total of all the vectors.
+  // The output list of TabVector makes no reference to the input BLOBNBOXes.
+  void FindLineVectors(const ICOORD& bleft, const ICOORD& tright,
+                              BLOBNBOX_LIST* line_bblobs, int* vertical_x, int* vertical_y,
+                              TabVector_LIST* vectors);
+
+  // Finds vertical line objects in pix_vline and removes them from src_pix.
+  // Uses the given resolution to determine size thresholds instead of any
+  // that may be present in the pix.
+  // The output vertical_x and vertical_y contain a sum of the output vectors,
+  // thereby giving the mean vertical direction.
+  // The output vectors are owned by the list and Frozen (cannot refit) by
+  // having no boxes, as there is no need to refit or merge separator lines.
+  // If no good lines are found, pix_vline is destroyed.
+  // None of the input pointers may be nullptr, and if *pix_vline is nullptr then
+  // the function does nothing.
+  void FindAndRemoveVLines(Image pix_intersections, int* vertical_x,
+                                  int* vertical_y, Image* pix_vline, Image pix_non_vline,
+                                  Image src_pix, TabVector_LIST* vectors);
+
+  // Finds horizontal line objects in pix_hline and removes them from src_pix.
+  // Uses the given resolution to determine size thresholds instead of any
+  // that may be present in the pix.
+  // The output vertical_x and vertical_y contain a sum of the output vectors,
+  // thereby giving the mean vertical direction.
+  // The output vectors are owned by the list and Frozen (cannot refit) by
+  // having no boxes, as there is no need to refit or merge separator lines.
+  // If no good lines are found, pix_hline is destroyed.
+  // None of the input pointers may be nullptr, and if *pix_hline is nullptr then
+  // the function does nothing.
+  void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
+                                  int vertical_y, Image* pix_hline, Image pix_non_hline,
+                                  Image src_pix, TabVector_LIST* vectors);
+
 private:
   Tesseract* tesseract_; // reference to the active instance
 };

@@ -29,9 +29,15 @@
 
 #include <allheaders.h>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
+
 class BLOCK;
 
 namespace tesseract {
+
+class TESS_API Tesseract;
 
 // Helper function to return a scaled Pix with one pixel per grid cell,
 // set (black) where the given outline enters the corresponding grid cell,
@@ -165,7 +171,7 @@ public:
   // and eliminate CLASSNAME##_copier.
   BBGrid();
 
-  BBGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  BBGrid(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~BBGrid() override;
 
   // (Re)Initialize the grid. The gridsize is the size in pixels of each cell,
@@ -229,7 +235,7 @@ public:
 protected:
   BBC_CLIST *grid_; // 2-d array of CLISTS of BBC elements.
 
-private:
+  Tesseract* tesseract_; // reference to the active instance
 };
 
 // The GridSearch class enables neighbourhood searching on a BBGrid.
@@ -476,8 +482,10 @@ template <class BBC, class BBC_CLIST, class BBC_C_IT>
 BBGrid<BBC, BBC_CLIST, BBC_C_IT>::BBGrid() : grid_(nullptr) {}
 
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-BBGrid<BBC, BBC_CLIST, BBC_C_IT>::BBGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : grid_(nullptr) {
+BBGrid<BBC, BBC_CLIST, BBC_C_IT>::BBGrid(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
+    : tesseract_(tess)
+    , grid_(nullptr) {
+  ASSERT0(tess != nullptr);
   Init(gridsize, bleft, tright);
 }
 

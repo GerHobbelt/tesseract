@@ -248,9 +248,6 @@ private:
   // own partition, and add to the partition list.
   void RemoveBadBox(BLOBNBOX* box, ColPartition* part,
                            ColPartition_LIST* part_list);
-
-private:
-  Tesseract* tesseract_;     // reference to the active instance
 };
 
 } // namespace tesseract.
