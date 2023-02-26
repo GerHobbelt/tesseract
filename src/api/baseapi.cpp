@@ -1483,10 +1483,10 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     monitor.set_deadline_msecs(timeout_millisec);
 
     // Now run the main recognition.
-    failed = Recognize(&monitor) < 0;
+    failed = (Recognize(&monitor) < 0);
   } else {
     // Normal layout and character recognition with no timeout.
-    failed = Recognize(nullptr) < 0;
+    failed = (Recognize(nullptr) < 0);
   }
 
   if (tesseract_->tessedit_write_images) {
@@ -2401,6 +2401,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
         tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
       }
+
+      if (!go)
+        pix_binary.destroy();
 	  } else {
 		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
 
@@ -2421,7 +2424,10 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + " : Thresholds").c_str());
         tesseract_->AddPixDebugPage(pix_binary, (caption + " : Binary = post-image").c_str());
       }
-	  }
+
+      if (!go)
+        pix_binary.destroy();
+    }
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,

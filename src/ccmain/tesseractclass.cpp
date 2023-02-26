@@ -501,11 +501,14 @@ Tesseract::Tesseract()
 
 Tesseract::~Tesseract() {
   Clear();
-  pix_original_.destroy();
   end_tesseract();
   for (auto *lang : sub_langs_) {
     delete lang;
   }
+#if !DISABLED_LEGACY_ENGINE
+  delete equ_detect_;
+  equ_detect_ = nullptr;
+#endif // !DISABLED_LEGACY_ENGINE
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
 }
@@ -535,6 +538,7 @@ void Tesseract::Clear() {
 #endif
     pixa_debug__.WritePNGs(file_path.c_str());
   }
+  pix_original_.destroy();
   pixa_debug__.Clear();
   pix_binary_.destroy();
   pix_grey_.destroy();

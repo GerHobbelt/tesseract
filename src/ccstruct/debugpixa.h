@@ -40,7 +40,7 @@ namespace tesseract {
       int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
       Image pix_debug =
         pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
-      if (keep_a_copy)
+      if (!keep_a_copy)
         pix.destroy();
       pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif

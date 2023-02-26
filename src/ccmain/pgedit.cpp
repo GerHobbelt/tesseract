@@ -974,7 +974,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   //boxaDestroy(BOXA * *pboxa);
   l_uint32 bordercolor;
   composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-  pixDrawBoxa(pix, boxlist, 2, bordercolor);
+  pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+  boxaDestroy(&boxlist);
 
   int block_count = 1;
 
@@ -1009,6 +1010,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
     }
     //image_win->Update();
   }
+
+  this->AddPixDebugPage(pix, "current page results", false);
 }
 
 #endif // !GRAPHICS_DISABLED

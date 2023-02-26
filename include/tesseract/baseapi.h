@@ -826,8 +826,10 @@ protected:
 
 protected:
   Tesseract *tesseract_;          ///< The underlying data object.
+#if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tesseract_;      ///< For orientation & script detection.
   EquationDetect *equ_detect_;    ///< The equation detector.
+#endif
   FileReader reader_;             ///< Reads files from any filesystem.
   ImageThresholder *thresholder_; ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;

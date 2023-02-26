@@ -495,7 +495,8 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       //boxaDestroy(BOXA * *pboxa);
       l_uint32 bordercolor;
       composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      boxaDestroy(&boxlist);
 
       block->plot_graded_blobs(pix);
       block->plot_noise_blobs(pix);

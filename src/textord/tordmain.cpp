@@ -287,7 +287,8 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         //boxaDestroy(BOXA * *pboxa);
         l_uint32 bordercolor;
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
 
         block->plot_graded_blobs(pix);
 
@@ -319,7 +320,8 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         //boxaDestroy(BOXA * *pboxa);
         l_uint32 bordercolor;
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
 
         plot_box_list(pix, &block->noise_blobs, ScrollView::WHITE);
         plot_box_list(pix, &block->small_blobs, ScrollView::WHITE);

@@ -189,7 +189,8 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
       //boxaDestroy(BOXA * *pboxa);
       l_uint32 bordercolor;
       composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      boxaDestroy(&boxlist);
 
       input_block->plot_graded_blobs(pix);
 
@@ -429,7 +430,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         //boxaDestroy(BOXA * *pboxa);
         l_uint32 bordercolor;
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
 
         input_block->plot_graded_blobs(pix);
 
@@ -479,7 +481,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
       //boxaDestroy(BOXA * *pboxa);
       l_uint32 bordercolor;
       composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      boxaDestroy(&boxlist);
 
       part_grid_.DisplayBoxes(pix);
       DisplayTabVectors(pix);
@@ -544,7 +547,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         //boxaDestroy(BOXA * *pboxa);
         l_uint32 bordercolor;
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
 
         part_grid_.DisplayBoxes(pix);
         if (!textord_debug_printable) {
@@ -660,7 +664,8 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     //boxaDestroy(BOXA * *pboxa);
     l_uint32 bordercolor;
     composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-    pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
 
     DisplayBoxes(pix);
     BLOCK_IT block_it(blocks);
@@ -704,7 +709,8 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
     //boxaDestroy(BOXA * *pboxa);
     l_uint32 bordercolor;
     composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-    pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
 
     DisplayBoxes(pix);
     //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);

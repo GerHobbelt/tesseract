@@ -385,11 +385,13 @@ void Dict::End() {
       delete dawg;
     }
   }
-  dawg_cache_->FreeDawg(bigram_dawg_);
+  if (dawg_cache_ != nullptr) {
+    dawg_cache_->FreeDawg(bigram_dawg_);
+  }
   if (dawg_cache_is_ours_) {
     delete dawg_cache_;
-    dawg_cache_ = nullptr;
   }
+  dawg_cache_ = nullptr;
   for (auto successor : successors_) {
     delete successor;
   }
