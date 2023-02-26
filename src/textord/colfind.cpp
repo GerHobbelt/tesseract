@@ -170,8 +170,31 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   input_block->ReSetAndReFilterBlobs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_blocks) {
-    input_blobs_win_ = MakeWindow(0, 0, "Filtered Input Blobs");
-    input_block->plot_graded_blobs(input_blobs_win_);
+    if (!tesseract_->debug_do_not_use_scrollview_app) {
+      input_blobs_win_ = MakeWindow(0, 0, "Filtered Input Blobs");
+      input_block->plot_graded_blobs(input_blobs_win_);
+    }
+    else {
+      const char* name = "Filtered Input Blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+      pixClearAll(pix);
+
+      BOX* border = boxCreate(2, 2, width + 4, height + 4);
+      // boxDestroy(BOX * *pbox);
+      BOXA* boxlist = boxaCreate(1);
+      boxaAddBox(boxlist, border, false);
+      //boxaDestroy(BOXA * *pboxa);
+      l_uint32 bordercolor;
+      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+      input_block->plot_graded_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name, false);
+    }
   }
 #endif // !GRAPHICS_DISABLED
   SetBlockRuleEdges(input_block);
@@ -387,8 +410,31 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     Clear();
 #if !GRAPHICS_DISABLED
     if (textord_tabfind_show_reject_blobs) {
-      ScrollView *rej_win = MakeWindow(500, 300, "Rejected blobs");
-      input_block->plot_graded_blobs(rej_win);
+      if (!tesseract_->debug_do_not_use_scrollview_app) {
+        ScrollView *rej_win = MakeWindow(500, 300, "Rejected blobs");
+        input_block->plot_graded_blobs(rej_win);
+      }
+      else {
+        const char* name = "Rejected blobs";
+        auto width = tright_.x() - bleft_.x();
+        auto height = tright_.y() - bleft_.y();
+
+        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+        input_block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name, false);
+      }
     }
 #endif // !GRAPHICS_DISABLED
     InsertBlobsToGrid(false, false, &image_bblobs_, this);
@@ -413,9 +459,33 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   }
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initial_partitions) {
-    ScrollView *part_win = MakeWindow(100, 300, "InitialPartitions");
-    part_grid_.DisplayBoxes(part_win);
-    DisplayTabVectors(part_win);
+    if (!tesseract_->debug_do_not_use_scrollview_app) {
+      ScrollView* part_win = MakeWindow(100, 300, "InitialPartitions");
+      part_grid_.DisplayBoxes(part_win);
+      DisplayTabVectors(part_win);
+    }
+    else {
+      const char* name = "InitialPartitions";
+      auto width = tesseract_->ImageWidth();
+      auto height = tesseract_->ImageHeight();
+
+      Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+      pixClearAll(pix);
+
+      BOX* border = boxCreate(2, 2, width + 4, height + 4);
+      // boxDestroy(BOX * *pbox);
+      BOXA* boxlist = boxaCreate(1);
+      boxaAddBox(boxlist, border, false);
+      //boxaDestroy(BOXA * *pboxa);
+      l_uint32 bordercolor;
+      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+      part_grid_.DisplayBoxes(pix);
+      DisplayTabVectors(pix);
+
+      tesseract_->AddPixDebugPage(pix, name, false);
+    }
   }
 #endif
   if (!PSM_SPARSE(pageseg_mode)) {
@@ -447,15 +517,46 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 
 #if !GRAPHICS_DISABLED
     if (textord_tabfind_show_partitions) {
-      ScrollView *window = MakeWindow(400, 300, "Partitions");
-      if (window != nullptr) {
-        part_grid_.DisplayBoxes(window);
-        if (!textord_debug_printable) {
-          DisplayTabVectors(window);
+      if (!tesseract_->debug_do_not_use_scrollview_app) {
+        ScrollView* window = MakeWindow(400, 300, "Partitions");
+        if (window != nullptr) {
+          part_grid_.DisplayBoxes(window);
+          if (!textord_debug_printable) {
+            DisplayTabVectors(window);
+          }
+          if (window != nullptr && textord_tabfind_show_partitions > 1) {
+            window->AwaitEvent(SVET_DESTROY);
+          }
         }
-        if (window != nullptr && textord_tabfind_show_partitions > 1) {
+      }
+      else {
+        const char* name = "Partitions";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+        part_grid_.DisplayBoxes(pix);
+        if (!textord_debug_printable) {
+          DisplayTabVectors(pix);
+        }
+#if 0
+        if (textord_tabfind_show_partitions > 1) {
           window->AwaitEvent(SVET_DESTROY);
         }
+#endif
+
+        tesseract_->AddPixDebugPage(pix, name, false);
       }
     }
 #endif // !GRAPHICS_DISABLED
@@ -527,33 +628,94 @@ void ColumnFinder::SetEquationDetect(EquationDetectBase *detect) {
 
 // Displays the blob and block bounding boxes in a window called Blocks.
 void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
-  if (blocks_win_ == nullptr) {
-    blocks_win_ = MakeWindow(700, 300, "Blocks");
-  } else {
-    blocks_win_->Clear();
+  if (!tesseract_->debug_do_not_use_scrollview_app) {
+    if (blocks_win_ == nullptr) {
+      blocks_win_ = MakeWindow(700, 300, "Blocks");
+    }
+    else {
+      blocks_win_->Clear();
+    }
+    DisplayBoxes(blocks_win_);
+    BLOCK_IT block_it(blocks);
+    int serial = 1;
+    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
+      BLOCK* block = block_it.data();
+      block->pdblk.plot(blocks_win_, serial++,
+                        textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    }
+    blocks_win_->Update();
   }
-  DisplayBoxes(blocks_win_);
-  BLOCK_IT block_it(blocks);
-  int serial = 1;
-  for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
-    BLOCK *block = block_it.data();
-    block->pdblk.plot(blocks_win_, serial++,
-                      textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+  else {
+    const char* name = "Blocks";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+    pixClearAll(pix);
+
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+    DisplayBoxes(pix);
+    BLOCK_IT block_it(blocks);
+    int serial = 1;
+    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
+      BLOCK* block = block_it.data();
+      block->pdblk.plot(pix, serial++,
+                        textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    }
+
+    tesseract_->AddPixDebugPage(pix, name, false);
   }
-  blocks_win_->Update();
 }
 
 // Displays the column edges at each grid y coordinate defined by
 // best_columns_.
 void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
-  ScrollView *col_win = MakeWindow(50, 300, "Columns");
-  DisplayBoxes(col_win);
-  col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
-  for (int i = 0; i < gridheight_; ++i) {
-    ColPartitionSet *columns = best_columns_[i];
-    if (columns != nullptr) {
-      columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
+  if (!tesseract_->debug_do_not_use_scrollview_app) {
+    ScrollView* col_win = MakeWindow(50, 300, "Columns");
+    DisplayBoxes(col_win);
+    col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    for (int i = 0; i < gridheight_; ++i) {
+      ColPartitionSet* columns = best_columns_[i];
+      if (columns != nullptr) {
+        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
+      }
     }
+  }
+  else {
+    const char* name = "Columns";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+    pixClearAll(pix);
+
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+    DisplayBoxes(pix);
+    //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    for (int i = 0; i < gridheight_; ++i) {
+      ColPartitionSet* columns = best_columns_[i];
+      if (columns != nullptr) {
+        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix);
+      }
+    }
+
+    tesseract_->AddPixDebugPage(pix, name, false);
   }
 }
 

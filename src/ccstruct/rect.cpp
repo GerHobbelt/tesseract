@@ -173,6 +173,16 @@ void TBOX::plot(                    // paint box
 }
 #endif
 
+void TBOX::plot(                  // use current settings
+  Image& pix) const {             // where to paint
+  //pix->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
+  auto x = bot_left.x();
+  auto y = bot_left.y();
+  auto x2 = top_right.x();
+  auto y2 = top_right.y();
+}
+
+
 // Appends the bounding box as ({},{})->({},{}) to a string.
 void TBOX::print_to_str(std::string &str) const {
   // "({},{})->({},{})", left(), bottom(), right(), top()

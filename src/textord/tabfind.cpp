@@ -26,6 +26,7 @@
 #include "host.h" // for NearlyEqual
 #include "linefind.h"
 #include "tabfind.h"
+#include "tesseractclass.h"
 
 #include <algorithm>
 
@@ -473,10 +474,34 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
   if (textord_debug_tabfind) {
     tprintf("Moved {} large blobs to normal list\n", b_count);
 #if !GRAPHICS_DISABLED
-    ScrollView *rej_win = MakeWindow(500, 300, "Image blobs");
-    block->plot_graded_blobs(rej_win);
-    block->plot_noise_blobs(rej_win);
-    rej_win->Update();
+    if (!tesseract_->debug_do_not_use_scrollview_app) {
+      ScrollView *rej_win = MakeWindow(500, 300, "Image blobs");
+      block->plot_graded_blobs(rej_win);
+      block->plot_noise_blobs(rej_win);
+      rej_win->Update();
+    }
+    else {
+      const char* name = "Image blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+      pixClearAll(pix);
+
+      BOX* border = boxCreate(2, 2, width + 4, height + 4);
+      // boxDestroy(BOX * *pbox);
+      BOXA* boxlist = boxaCreate(1);
+      boxaAddBox(boxlist, border, false);
+      //boxaDestroy(BOXA * *pboxa);
+      l_uint32 bordercolor;
+      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+      pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+      block->plot_graded_blobs(pix);
+      block->plot_noise_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name, false);
+    }
 #endif // !GRAPHICS_DISABLED
   }
   block->DeleteUnownedNoise();
@@ -501,6 +526,17 @@ ScrollView *TabFind::DisplayTabVectors(ScrollView *tab_win) {
   }
   tab_win->Update();
   return tab_win;
+}
+
+void TabFind::DisplayTabVectors(Image &pix) {
+  // For every vector, display it.
+  TabVector_IT it(&vectors_);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    TabVector* vector = it.data();
+    vector->Display(pix);
+  }
+  //tab_win->Update();
+  return;
 }
 
 #endif

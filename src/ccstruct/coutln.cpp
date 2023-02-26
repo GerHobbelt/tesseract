@@ -979,6 +979,39 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   }
 }
 
+void C_OUTLINE::plot(Image& pix, ScrollView::Color colour) const {
+  int16_t stepindex; // index to cstep
+  ICOORD pos;        // current position
+  DIR128 stepdir;    // direction of step
+
+  pos = start; // current position
+  //window->Pen(colour);
+  if (stepcount == 0) {
+    //window->Rectangle(box.left(), box.top(), box.right(), box.bottom());
+    return;
+  }
+  auto x = pos.x();
+  auto y = pos.y();
+  //window->SetCursor(pos.x(), pos.y());
+
+  stepindex = 0;
+  while (stepindex < stepcount) {
+    pos += step(stepindex); // step to next
+    auto x2 = pos.x();
+    auto y2 = pos.y();
+    stepdir = step_dir(stepindex);
+    stepindex++; // count steps
+    // merge straight lines
+    while (stepindex < stepcount && stepdir.get_dir() == step_dir(stepindex).get_dir()) {
+      pos += step(stepindex);
+      x2 = pos.x();
+      y2 = pos.y();
+      stepindex++;
+    }
+    //window->DrawTo(pos.x(), pos.y());
+  }
+}
+
 /**
  * Draws the outline in the given colour, normalized using the given denorm,
  * making use of sub-pixel accurate information if available.

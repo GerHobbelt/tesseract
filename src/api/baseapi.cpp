@@ -983,12 +983,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif // !DISABLED_LEGACY_ENGINE
 
   int result = 0;
-  if (tesseract_->interactive_display_mode) {
+  if (tesseract_->interactive_display_mode && !tesseract_->debug_do_not_use_scrollview_app) {
 #if !GRAPHICS_DISABLED
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
 #endif // !GRAPHICS_DISABLED
-       // The page_res is invalid after an interactive session, so cleanup
-       // in a way that lets us continue to the next page without crashing.
+    // The page_res is invalid after an interactive session, so cleanup
+    // in a way that lets us continue to the next page without crashing.
     delete page_res_;
     page_res_ = nullptr;
     return -1;
@@ -1005,13 +1005,27 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
+    if (debug_all) {
+      tesseract_->display_current_page_result(page_res_);
+    }
+
     // Now run the main recognition.
     if (!tesseract_->paragraph_text_based) {
       DetectParagraphs(false);
+      if (debug_all) {
+        tesseract_->display_current_page_result(page_res_);
+      }
     }
+
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
+      if (debug_all) {
+        tesseract_->display_current_page_result(page_res_);
+      }
       if (tesseract_->paragraph_text_based) {
         DetectParagraphs(true);
+        if (debug_all) {
+          tesseract_->display_current_page_result(page_res_);
+        }
       }
     } else {
       result = -1;
@@ -2721,40 +2735,43 @@ std::string HOcrEscape(const char *text) {
   return ret;
 }
 
-std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension)
+std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const char* label, const char* filename_extension)
 {
-	size_t pos = strcspn(basepath, ":\\/");
-	const char *filename = basepath;
-	const char *p = basepath + pos;
-	while (*p)
-	{
-		filename = p + 1;
-		pos = strcspn(filename, ":\\/");
-		p = filename + pos;
-	}
-	size_t pathlen = filename - basepath;
-	if (!*filename)
-		filename = "tesseract";
+  size_t pos = strcspn(basepath, ":\\/");
+  const char* filename = basepath;
+  const char* p = basepath + pos;
+  while (*p)
+  {
+    filename = p + 1;
+    pos = strcspn(filename, ":\\/");
+    p = filename + pos;
+  }
+  size_t pathlen = filename - basepath;
+  if (!*filename)
+    filename = "tesseract";
 
-	char ns[40] ={0};
-	if (page_number != 0)
-	{
-		snprintf(ns, sizeof(ns), "p%04d", page_number);
-	}
+  char ns[40] = { 0 };
+  if (page_number != 0)
+  {
+    snprintf(ns, sizeof(ns), "p%04d", page_number);
+  }
 
-	static int unique_seq_counter = 0;
-	unique_seq_counter++;
+  static int unique_seq_counter = 0;
+  unique_seq_counter++;
 
-	char nq[40] ={0};
-	snprintf(nq, sizeof(nq), "n%04d", unique_seq_counter);
+  char nq[40] = { 0 };
+  snprintf(nq, sizeof(nq), "n%04d", unique_seq_counter);
 
-	std::string f(basepath);
-	f = f.substr(0, pathlen);
-	f += filename;
+  std::string f(basepath);
+  f = f.substr(0, pathlen);
+  f += filename;
   f += ".";
   f += nq;
-  f += ".";
-	f += label;
+  if (label && *label)
+  {
+    f += ".";
+    f += label;
+  }
 	if (*ns)
 	{
 		f += ".";
@@ -2764,6 +2781,11 @@ std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const 
 	f += filename_extension;
 
 	return std::move(f);
+}
+
+std::string mkUniqueOutputFilePath(const std::string& basepath, int page_number, const char* label, const char* filename_extension)
+{
+  return mkUniqueOutputFilePath(basepath.c_str(), page_number, label, filename_extension);
 }
 
 void WritePix(const std::string &file_path, Pix *pic, int file_type)

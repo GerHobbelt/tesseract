@@ -364,6 +364,9 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   if (current_page_res->block_res_list.empty()) {
     return;
   }
+  if (debug_do_not_use_scrollview_app) {
+    return;
+  }
 
   recog_done = false;
   stillRunning = true;
@@ -950,6 +953,62 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     delete it;
   }
 #  endif // !DISABLED_LEGACY_ENGINE
+}
+
+
+
+/**
+ *  display_current_page_result()
+ */
+void Tesseract::display_current_page_result(PAGE_RES* page_res) {
+  auto width = ImageWidth();
+  auto height = ImageHeight();
+
+  Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+  pixClearAll(pix);
+
+  BOX* border = boxCreate(2, 2, width + 4, height + 4);
+  // boxDestroy(BOX * *pbox);
+  BOXA* boxlist = boxaCreate(1);
+  boxaAddBox(boxlist, border, false);
+  //boxaDestroy(BOXA * *pboxa);
+  l_uint32 bordercolor;
+  composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+  pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+  int block_count = 1;
+
+  bool display_image = debug_display_page;
+  bool display_blocks = debug_display_page_blocks;
+  bool display_baselines = debug_display_page_baselines;
+
+  // bool (tesseract::Tesseract:: * word_painter)(PAGE_RES_IT * pr_it)
+
+  //image_win->Clear();
+  if (display_image) {
+    pixRasterop(pix, 4, 4, width, height, PIX_SRC, pix_binary_, 0, 0);
+    //image_win->Draw(pix_binary_, 0, 0);
+  }
+
+  {
+    PAGE_RES_IT pr_it(page_res);
+    word_dumper(&pr_it);
+  }
+
+  //image_win->Brush(ScrollView::NONE);
+  if (page_res != nullptr) {
+    PAGE_RES_IT pr_it(page_res);
+    for (WERD_RES* word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
+      //(this->*word_painter)(&pr_it);
+      if (display_baselines && pr_it.row() != pr_it.prev_row()) {
+        pr_it.row()->row->plot_baseline(pix, ScrollView::GREEN);
+      }
+      if (display_blocks && pr_it.block() != pr_it.prev_block()) {
+        pr_it.block()->block->pdblk.plot(pix, block_count++, ScrollView::RED);
+      }
+    }
+    //image_win->Update();
+  }
 }
 
 #endif // !GRAPHICS_DISABLED

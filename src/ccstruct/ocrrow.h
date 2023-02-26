@@ -142,6 +142,13 @@ public:
     // draw it
     baseline.plot(window, colour);
   }
+
+  void plot_baseline(             // draw the baseline
+      Image &pix,                 // image to draw in
+      ScrollView::Color colour) { // colour to draw
+    // draw it
+    baseline.plot(pix);
+  }
 #endif // !GRAPHICS_DISABLED
   ROW &operator=(const ROW &source);
 

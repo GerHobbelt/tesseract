@@ -81,6 +81,26 @@ void plot_box_list(               // make gradients win
 }
 
 /**********************************************************************
+ * plot_box_list
+ *
+ * Draw a list of blobs.
+ **********************************************************************/
+
+void plot_box_list(               // make gradients win
+    Image& pix,                   // iamge to draw in
+    BLOBNBOX_LIST* list,          // blob list
+    ScrollView::Color body_colour // colour to draw
+) {
+  BLOBNBOX_IT it = list; // iterator
+
+  //pix->Pen(body_colour);
+  //pix->Brush(ScrollView::NONE);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    it.data()->bounding_box().plot(pix);
+  }
+}
+
+/**********************************************************************
  * plot_to_row
  *
  * Draw the blobs of a row in a given colour and draw the line fit.

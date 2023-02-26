@@ -202,6 +202,11 @@ protected:
    */
   ScrollView *DisplayTabVectors(ScrollView *tab_win);
 
+  /**
+   * Display the tab vectors found in this grid.
+   */
+  void DisplayTabVectors(Image &pix);
+
   // First part of FindTabVectors, which may be used twice if the text
   // is mostly of vertical alignment.  If find_vertical_text flag is
   // true, this finds vertical textlines in possibly rotated blob space.

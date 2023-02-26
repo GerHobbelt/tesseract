@@ -47,7 +47,9 @@ bool read_unlv_file(   // print list of sides
   int height;
   BLOCK_IT block_it = blocks; // block iterator
 
-  name += UNLV_EXT; // add extension
+  if (!name.ends_with(UNLV_EXT)) {
+    name += UNLV_EXT; // add extension
+  }
   if ((pdfp = fopen(name.c_str(), "rb")) == nullptr) {
     tprintf("ERROR: Cannot read UZN file {}.\n", name);
     return false; // didn't read one
@@ -85,7 +87,9 @@ bool write_unlv_file(   // print list of sides
   int height;
   BLOCK_IT block_it = (BLOCK_LIST *)blocks; // block iterator
 
-  name += UNLV_EXT; // add extension
+  if (!name.ends_with(UNLV_EXT)) {
+    name += UNLV_EXT; // add extension
+  }
   if ((pdfp = fopen(name.c_str(), "wb")) == nullptr) {
     tprintf("ERROR: Cannot create UZN file {}.\n", name);
     return false; // didn't write one

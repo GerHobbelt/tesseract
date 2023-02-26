@@ -62,8 +62,9 @@ public:
   void move(ICOORD shift);
 
 #if !GRAPHICS_DISABLED
-
   void plot(ScrollView *window, int32_t num);
+
+  void plot(Image &pix, int32_t num);
 
   void fill(ScrollView *window, ScrollView::Color colour);
 #endif // !GRAPHICS_DISABLED

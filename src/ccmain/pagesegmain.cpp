@@ -182,7 +182,9 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   bool cjk_mode = textord_use_cjk_fp_model;
 
   if (debug_write_unlv && !name.empty()) {
-    write_unlv_file(name + ".pre-TextordPage", width, height, blocks);
+    const int page_number = 0;
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, ".pre-TextordPage", "uzn");
+    write_unlv_file(file_path, width, height, blocks);
   }
 
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
@@ -194,8 +196,10 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     return -1; 
   }
 
-  if (debug_all && !name.empty()) {
-    write_unlv_file(name + ".post-TextordPage", width, height, blocks);
+  if (debug_write_unlv && !name.empty()) {
+    const int page_number = 0;
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, ".post-TextordPage", "uzn");
+    write_unlv_file(file_path, width, height, blocks);
   }
 
   return auto_page_seg_ret_val;

@@ -99,6 +99,9 @@ public:
   // Display the edges of the columns at the given y coords.
   void DisplayColumnEdges(int y_bottom, int y_top, ScrollView *win);
 
+  // Display the edges of the columns at the given y coords.
+  void DisplayColumnEdges(int y_bottom, int y_top, Image &pix);
+
   // Return the ColumnSpanningType that best explains the columns overlapped
   // by the given coords(left,right,y), with the given margins.
   // Also return the first and last column index touched by the coords and

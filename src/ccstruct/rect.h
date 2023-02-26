@@ -305,6 +305,9 @@ public:
     fd->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   }
 
+  void plot(                  // use current settings
+    Image& pix) const;        // where to paint
+
   void plot(                                  // paint box
       ScrollView *fd,                         // where to paint
       ScrollView::Color fill_colour,          // colour for inside

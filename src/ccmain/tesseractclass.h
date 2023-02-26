@@ -581,6 +581,9 @@ public:
   bool word_bln_display(PAGE_RES_IT *pr_it);
   bool word_blank_and_set_display(PAGE_RES_IT *pr_its);
   bool word_set_display(PAGE_RES_IT *pr_it);
+
+  void display_current_page_result(PAGE_RES* page_res);
+
   // #if !GRAPHICS_DISABLED
   bool word_dumper(PAGE_RES_IT *pr_it);
   // #endif // !GRAPHICS_DISABLED
@@ -1006,6 +1009,10 @@ public:
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
+  BOOL_VAR_H(debug_do_not_use_scrollview_app);
+  BOOL_VAR_H(debug_display_page);
+  BOOL_VAR_H(debug_display_page_blocks);
+  BOOL_VAR_H(debug_display_page_baselines);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);

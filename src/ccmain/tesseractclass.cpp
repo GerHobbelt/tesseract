@@ -471,6 +471,10 @@ Tesseract::Tesseract()
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", this->params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", this->params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", this->params())
+    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", this->params())
+    , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", this->params())
+    , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", this->params())
+    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", this->params())
 
     , splitter_(this)
     , image_finder_(this)
@@ -525,7 +529,7 @@ void Tesseract::Clear() {
     //pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
     pixa_debug__.WritePDF(file_path.c_str());
 
-    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "png");
+    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
 #if defined(HAVE_MUPDF)
     fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif

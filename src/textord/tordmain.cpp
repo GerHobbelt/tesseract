@@ -48,6 +48,7 @@
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
 #include "tprintf.h"     // for tprintf
 #include "werd.h"        // for WERD_IT, WERD, WERD_LIST, W_DONT_CHOP
+#include "tesseractclass.h"
 
 #include <allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
 
@@ -265,19 +266,68 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
 
 #if !GRAPHICS_DISABLED
     if (textord_show_blobs && testing_on) {
-      if (to_win == nullptr) {
-        create_to_win(page_tr);
+      if (!tesseract_->debug_do_not_use_scrollview_app) {
+        if (to_win == nullptr) {
+          create_to_win(page_tr);
+        }
+        block->plot_graded_blobs(to_win);
       }
-      block->plot_graded_blobs(to_win);
+      else {
+        const char* name = "Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+        block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name, false);
+      }
     }
     if (textord_show_boxes && testing_on) {
-      if (to_win == nullptr) {
-        create_to_win(page_tr);
+      if (!tesseract_->debug_do_not_use_scrollview_app) {
+        if (to_win == nullptr) {
+          create_to_win(page_tr);
+        }
+        plot_box_list(to_win, &block->noise_blobs, ScrollView::WHITE);
+        plot_box_list(to_win, &block->small_blobs, ScrollView::WHITE);
+        plot_box_list(to_win, &block->large_blobs, ScrollView::WHITE);
+        plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
       }
-      plot_box_list(to_win, &block->noise_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->small_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->large_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
+      else {
+        const char* name = "Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pixDrawBoxa(pix, boxlist, 2, bordercolor);
+
+        plot_box_list(pix, &block->noise_blobs, ScrollView::WHITE);
+        plot_box_list(pix, &block->small_blobs, ScrollView::WHITE);
+        plot_box_list(pix, &block->large_blobs, ScrollView::WHITE);
+        plot_box_list(pix, &block->blobs, ScrollView::WHITE);
+
+        tesseract_->AddPixDebugPage(pix, name, false);
+      }
     }
 #endif // !GRAPHICS_DISABLED
   }

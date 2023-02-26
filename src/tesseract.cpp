@@ -1118,7 +1118,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("dawg_debug_level", "3");
 
       api.SetVariable("debug_fix_space_level", "9");
-      api.SetVariable("debug_noise_removal", "Y");
       api.SetVariable("debug_x_ht_level", "3");
       //api.SetVariable("debug_file", "xxxxxxxxxxxxxxxxx");
       //api.SetVariable("debug_output_path", "xxxxxxxxxxxxxx");
@@ -1174,6 +1173,13 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("debug_write_unlv", "Y");
       api.SetVariable("debug_line_finding", "Y");
       api.SetVariable("debug_image_normalization", "Y");
+      api.SetVariable("debug_do_not_use_scrollview_app", "Y");
+
+      api.SetVariable("interactive_display_mode", "Y");
+
+      api.SetVariable("debug_display_page", "Y");
+      api.SetVariable("debug_display_page_blocks", "Y");
+      api.SetVariable("debug_display_page_baselines", "Y");
   }
 
   std::vector<std::unique_ptr<TessResultRenderer>> renderers;
