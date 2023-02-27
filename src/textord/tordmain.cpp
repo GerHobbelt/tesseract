@@ -212,14 +212,6 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
 
-#if 0   // no check as this is not a public-facing API; the check should've happened already, before you got here.
-  auto est_cost = tesseract_->EstimateImageMemoryCost(width, height);
-  if (width > TDIMENSION_MAX || height > TDIMENSION_MAX || est_cost.is_too_large()) {
-    tprintf("ERROR: Image too large: ({}, {}, {})\n", width, height, est_cost.to_string());
-    return;
-  }
-#endif
-
   BLOCK_IT block_it(blocks); // iterator
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
     BLOCK *block = block_it.data();

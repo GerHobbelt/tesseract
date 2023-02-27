@@ -166,7 +166,6 @@ struct WordData {
   PointerVector<WERD_RES> lang_words;
 };
 
-
 // Definition of a Tesseract WordRecognizer. The WordData provides the context
 // of row/block, in_word holds an initialized, possibly pre-classified word,
 // that the recognizer may or may not consume (but if so it sets
@@ -235,6 +234,7 @@ public:
   // (unless overridden by the `pix` argument) uses the current original image for the estimate,
   // i.e. tells you the cost estimate of this run:
   ImageCostEstimate EstimateImageMemoryCost(const Pix* pix = nullptr /* default: use pix_original() data */) const;
+
   // Helper, which may be invoked after SetInputImage() or equivalent has been called:
   // reports the cost estimate for the current instance/image via `tprintf()` and returns
   // `true` when the cost is expected to be too high.

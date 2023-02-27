@@ -1,6 +1,6 @@
 /**********************************************************************
  * File:        memcost_estimate.h
- * Description: Inline routines and macros for serialisation functions
+ * Description: Declare the light memory capacity cost info class
  * Author:      Ger Hobbelt
  *
  * (C) Copyright 1990, Hewlett-Packard Ltd.
