@@ -1714,7 +1714,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
  * NOTE that we need to rotate all the coordinates as
  * find_blob_limits finds the y min and max within a specified x band
  *************************************************************************/
-TBOX Textord::reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, int16_t *left_above_xht) {
+TBOX Textord::reduced_box_for_blob(BLOBNBOX* blob, TO_ROW* row, int16_t* left_above_xht) {
   float baseline;
   float blob_x_centre;
   float left_limit;
@@ -1729,22 +1729,23 @@ TBOX Textord::reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, int16_t *left_ab
   baseline = row->baseline.y(blob_x_centre);
 
   /*
-Find LH limit of blob ABOVE the xht. This is so that we can detect certain
-caps ht chars which should NOT have their box reduced: T, Y, V, W etc
-*/
+    Find LH limit of blob ABOVE the xht. This is so that we can detect certain
+    caps ht chars which should NOT have their box reduced: T, Y, V, W etc
+  */
   left_limit = static_cast<float>(INT32_MAX);
   junk = static_cast<float>(-INT32_MAX);
   find_cblob_hlimits(blob->cblob(), (baseline + 1.1 * row->xheight), static_cast<float>(INT16_MAX),
                      left_limit, junk);
   if (left_limit > junk) {
-    *left_above_xht = INT16_MAX; // No area above xht
-  } else {
+    *left_above_xht = TDIMENSION_MAX; // No area above xht
+  }
+  else {
     *left_above_xht = static_cast<int16_t>(std::floor(left_limit));
   }
   /*
-Find reduced LH limit of blob - the left extent of the region ABOVE the
-baseline.
-*/
+    Find reduced LH limit of blob - the left extent of the region ABOVE the
+    baseline.
+  */
   left_limit = static_cast<float>(INT32_MAX);
   junk = static_cast<float>(-INT32_MAX);
   find_cblob_hlimits(blob->cblob(), baseline, static_cast<float>(INT16_MAX), left_limit, junk);
@@ -1753,8 +1754,8 @@ baseline.
     return TBOX(); // no area within xht so return empty box
   }
   /*
-Find reduced RH limit of blob - the right extent of the region BELOW the xht.
-*/
+    Find reduced RH limit of blob - the right extent of the region BELOW the xht.
+  */
   junk = static_cast<float>(INT32_MAX);
   right_limit = static_cast<float>(-INT32_MAX);
   find_cblob_hlimits(blob->cblob(), static_cast<float>(-INT16_MAX), (baseline + row->xheight), junk,

@@ -384,7 +384,7 @@ bool try_doc_fixed(             // determine pitch
   TO_BLOCK *block;         // current block;
   TO_ROW *row;             // current row
   int16_t projection_left; // edges
-  int16_t projection_right;
+  TDimension projection_right;
   int16_t row_left; // edges of row
   int16_t row_right;
   float master_y;     // uniform shifts
@@ -409,7 +409,7 @@ bool try_doc_fixed(             // determine pitch
   master_x = row_it.data()->projection_left;
   master_y = row_it.data()->baseline.y(master_x);
   projection_left = INT16_MAX;
-  projection_right = -INT16_MAX;
+  projection_right = TDIMENSION_MIN;
   prop_blocks = 0;
   fixed_blocks = 0;
   total_row_count = 0;

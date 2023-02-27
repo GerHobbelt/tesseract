@@ -181,7 +181,7 @@ int32_t row_words(    // compute space size
 ) {
   bool testing_row;      // contains testpt
   bool prev_valid;       // if decent size
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;        // end of prev blob
   int32_t cluster_count; // no of clusters
   int32_t gap_index;     // which cluster
   int32_t smooth_factor; // for smoothing stats
@@ -334,7 +334,7 @@ int32_t row_words2(   // compute space size
 ) {
   bool prev_valid;       // if decent size
   bool this_valid;       // current blob big enough
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;     // end of prev blob
   int32_t min_width;     // min interesting width
   int32_t valid_count;   // good gaps
   int32_t total_count;   // total gaps
@@ -359,7 +359,7 @@ int32_t row_words2(   // compute space size
   //      if (testing_on)
   //              tprintf("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   const bool testing_row = false;
   // min blob size
   min_width = static_cast<int32_t>(block->pr_space);
@@ -380,7 +380,7 @@ int32_t row_words2(   // compute space size
   valid_count = gap_stats.get_total();
   if (valid_count < total_count * textord_words_minlarge) {
     gap_stats.clear();
-    prev_x = -INT16_MAX;
+    prev_x = TDIMENSION_MIN;
     for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
       blob = blob_it.data();
       if (!blob->joined_to_prev()) {
