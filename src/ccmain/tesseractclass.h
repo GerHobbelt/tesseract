@@ -46,6 +46,7 @@
 
 #include <tesseract/publictypes.h> // for OcrEngineMode, PageSegMode, OEM_L...
 #include <tesseract/unichar.h>     // for UNICHAR_ID
+#include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 
 #include <allheaders.h> // for pixDestroy, pixGetWidth, pixGetHe...
 
@@ -165,6 +166,7 @@ struct WordData {
   PointerVector<WERD_RES> lang_words;
 };
 
+
 // Definition of a Tesseract WordRecognizer. The WordData provides the context
 // of row/block, in_word holds an initialized, possibly pre-classified word,
 // that the recognizer may or may not consume (but if so it sets
@@ -227,6 +229,18 @@ public:
       lang->set_pix_original(original_pix ? original_pix.clone() : nullptr);
     }
   }
+
+  // Return a memory capacity cost estimate for the given image / current original image.
+  //
+  // (unless overridden by the `pix` argument) uses the current original image for the estimate,
+  // i.e. tells you the cost estimate of this run:
+  ImageCostEstimate EstimateImageMemoryCost(const Pix* pix = nullptr /* default: use pix_original() data */) const;
+  // Helper, which may be invoked after SetInputImage() or equivalent has been called:
+  // reports the cost estimate for the current instance/image via `tprintf()` and returns
+  // `true` when the cost is expected to be too high.
+  bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use pix_original() data */) const;
+  bool CheckAndReportIfImageTooLarge(int width, int height) const;
+
   // Returns a pointer to a Pix representing the best available resolution image
   // of the page, with best available bit depth as second priority. Result can
   // be of any bit depth, but never color-mapped, as that has always been

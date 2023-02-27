@@ -28,6 +28,7 @@
 #include "unichar.h"
 
 #include <tesseract/version.h>
+#include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 
 #include <cstdio>
 #include <vector> // for std::vector
@@ -113,6 +114,37 @@ public:
   Pix *GetInputImage();
   int GetSourceYResolution();
   const char *GetDatapath();
+
+  /**
+  * Return a memory capacity cost estimate for the given image dimensions and
+  * some heuristics re tesseract behaviour, e.g. input images will be normalized/greyscaled,
+  * then thresholded, all of which will be kept in memory while the session runs.
+  *
+  * Also uses the Tesseract Variable `allowed_image_memory_capacity` to indicate
+  * whether the estimated cost is oversized --> `cost.is_too_large()`
+  *
+  * For user convenience, static functions are provided:
+  * the static functions MAY be used by userland code *before* the high cost of
+  * instantiating a Tesseract instance is incurred.
+  */
+  static ImageCostEstimate EstimateImageMemoryCost(int image_width, int image_height, float allowance = 1.0e30f /* a.k.a.dont_care, use system limit and be done */ );
+  static ImageCostEstimate EstimateImageMemoryCost(const Pix* pix, float allowance = 1.0e30f /* a.k.a. dont_care, use system limit and be done */ );
+
+  /**
+  * Ditto, but this API may be invoked after SetInputImage() or equivalent has been called
+  * and reports the cost estimate for the current instance/image.
+  */
+  ImageCostEstimate EstimateImageMemoryCost() const;
+
+  /**
+  * Helper, which may be invoked after SetInputImage() or equivalent has been called:
+  * reports the cost estimate for the current instance/image via `tprintf()` and returns
+  * `true` when the cost is expected to be too high.
+  *
+  * You can use this as a fast pre-flight check. Many major tesseract APIs perform
+  * this same check as part of their startup routine.
+  */
+  bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
