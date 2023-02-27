@@ -382,8 +382,6 @@ ParamsVectors *GlobalParams();
 
 #define double_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
-extern double_VAR_H(allowed_image_memory_capacity);
-
 } // namespace tesseract
 
 #endif

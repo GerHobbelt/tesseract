@@ -647,12 +647,12 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   auto cost = TessBaseAPI::EstimateImageMemoryCost(width, height, allowed_image_memory_capacity);
 
   if (debug_all) {
-    tprintf("Image size & memory cost estimate: {} x {} px, estimated cost {} vs. {} allowed capacity.\n",
-      width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity));
+    tprintf("Image size & memory cost estimate: %d x %d px, estimated cost %s vs. %s allowed capacity.\n",
+      width, height, cost.to_string().c_str(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity).c_str());
   }
 
   if (width >= TDIMENSION_MAX || height >= TDIMENSION_MAX || cost.is_too_large()) {
-    tprintf("ERROR: Image is too large: ({} x {} px, {})\n", width, height, cost.to_string());
+    tprintf("ERROR: Image is too large: (%d x %d px, %s)\n", width, height, cost.to_string().c_str());
     return true;
   }
   return false;

@@ -103,8 +103,7 @@ static STRING_VAR(document_title, "", "Title of output document (used for hOCR a
 #ifdef HAVE_LIBCURL
 static INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
 #endif
-double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
-
+static double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 
 /** Minimum sensible image size to be worth running tesseract. */
 const int kMinRectSize = 10;
