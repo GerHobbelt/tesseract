@@ -668,4 +668,45 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, O
   splitter_.Clear();
 }
 
+// Return a memory capacity cost estimate for the given image / current original image.
+//
+// uses the current original image for the estimate, i.e. tells you the cost estimate of this run:
+ImageCostEstimate Tesseract::EstimateImageMemoryCost(const Pix* pix) const {
+  // default: use pix_original() data 
+  if (pix == nullptr) {
+    pix = pix_original();
+  }
+
+  return TessBaseAPI::EstimateImageMemoryCost(pix, allowed_image_memory_capacity);
+}
+
+// Helper, which may be invoked after SetInputImage() or equivalent has been called:
+// reports the cost estimate for the current instance/image via `tprintf()` and returns
+// `true` when the cost is expected to be too high.
+bool Tesseract::CheckAndReportIfImageTooLarge(const Pix* pix) const {
+  // default: use pix_original() data 
+  if (pix == nullptr) {
+    pix = pix_original();
+  }
+
+  auto w = pixGetWidth(pix);
+  auto h = pixGetHeight(pix);
+  return CheckAndReportIfImageTooLarge(w, h);
+}
+
+bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
+  auto cost = TessBaseAPI::EstimateImageMemoryCost(width, height, allowed_image_memory_capacity);
+
+  if (debug_all) {
+    tprintf("Image size & memory cost estimate: {} x {} px, estimated cost {} vs. {} allowed capacity.\n",
+      width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity));
+  }
+
+  if (width >= TDIMENSION_MAX || height >= TDIMENSION_MAX || cost.is_too_large()) {
+    tprintf("ERROR: Image is too large: ({} x {} px, {})\n", width, height, cost.to_string());
+    return true;
+  }
+  return false;
+}
+
 } // namespace tesseract

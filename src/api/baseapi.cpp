@@ -75,6 +75,7 @@
 #include <set>      // for std::pair
 #include <sstream>  // for std::stringstream
 #include <vector>   // for std::vector
+#include <cfloat>
 
 #include <allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
@@ -106,14 +107,15 @@ namespace tesseract {
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
-static STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output)");
+BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
+STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output)");
 #ifdef HAVE_LIBCURL
-static INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
+INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
 #endif
 BOOL_VAR(debug_all, false, "Turn on all the debugging features");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
 BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
+double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 
 
 /** Minimum sensible image size to be worth running tesseract. */
@@ -293,6 +295,66 @@ void TessBaseAPI::SetInputName(const char *name) {
 /** Set the name of the visible image files. Needed only for PDF output. */
 void TessBaseAPI::SetVisibleImageFilename(const char* name) {
   visible_image_file_ = name ? name : "";
+}
+
+/**
+* Return a memory capacity cost estimate for the given image dimensions and
+* some heuristics re tesseract behaviour, e.g. input images will be normalized/greyscaled,
+* then thresholded, all of which will be kept in memory while the session runs.
+*
+* Also uses the Tesseract Variable `allowed_image_memory_capacity` to indicate
+* whether the estimated cost is oversized --> `cost.is_too_large()`
+*
+* For user convenience, static functions are provided:
+* the static functions MAY be used by userland code *before* the high cost of
+* instantiating a Tesseract instance is incurred.
+*/
+ImageCostEstimate TessBaseAPI::EstimateImageMemoryCost(int image_width, int image_height, float allowance) {
+  // The heuristics used:
+  // 
+  // we reckon with leptonica Pix storage at 4 bytes per pixel,
+  // tesseract storing (worst case) 3 different images: original, greyscale, binary thresholded,
+  // we DO NOT reckon with the extra image that may serve as background for PDF outputs, etc.
+  // we DO NOT reckon with the memory cost for the OCR match tree, etc.
+  // However, we attempt a VERY ROUGH estimate by calculating a 20% overdraft for internal operations'
+  // storage costs.
+  float cost = 4 * 3 * 1.20f;
+  cost *= image_width;
+  cost *= image_height;
+
+  if (allowed_image_memory_capacity > 0.0) {
+    // any rediculous input values will be replaced by the Tesseract configuration value:
+    if (allowance > allowed_image_memory_capacity || allowance <= 0.0)
+      allowance = allowed_image_memory_capacity;
+  }
+
+  return ImageCostEstimate(cost, allowance);
+}
+
+ImageCostEstimate TessBaseAPI::EstimateImageMemoryCost(const Pix* pix, float allowance) {
+  auto w = pixGetWidth(pix);
+  auto h = pixGetHeight(pix);
+  return EstimateImageMemoryCost(w, h, allowance);
+}
+
+/**
+* Ditto, but this API may be invoked after SetInputImage() or equivalent has been called
+* and reports the cost estimate for the current instance/image.
+*/
+ImageCostEstimate TessBaseAPI::EstimateImageMemoryCost() const {
+  return tesseract_->EstimateImageMemoryCost();
+}
+
+/**
+* Helper, which may be invoked after SetInputImage() or equivalent has been called:
+* reports the cost estimate for the current instance/image via `tprintf()` and returns
+* `true` when the cost is expected to be too high.
+*
+* You can use this as a fast pre-flight check. Many major tesseract APIs perform
+* this same check as part of their startup routine.
+*/
+bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
+  return tesseract_->CheckAndReportIfImageTooLarge(pix);
 }
 
 /** Set the name of the output files. Needed only for debugging. */
@@ -1448,6 +1510,22 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   SetImage(pix);
 
+  // Before wee start to do *real* work, do a preliminary sanity check re expected memory pressure.
+  // The check MAY recur in some (semi)public APIs that MAY be called later, but this is the big one
+  // and it's a simple check at negligible cost, saving us some headaches when we start feeding large
+  // material to the Tesseract animal.
+  //
+  // TODO: rescale overlarge input images? Or is that left to userland code? (as it'll be pretty fringe anyway)
+  {
+    auto cost = TessBaseAPI::EstimateImageMemoryCost(pix);
+    std::string cost_report = cost;
+    tprintf("Estimated memory pressure: {} for input image size {} x {} px\n", cost_report, pixGetWidth(pix), pixGetHeight(pix));
+
+    if (CheckAndReportIfImageTooLarge(pix)) {
+      return false;   // fail early
+    }
+  }
+
   // Image preprocessing on image
   // Grayscale normalization
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
@@ -1465,7 +1543,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   }
 
   // Recognition
-
+  
   bool failed = false;
 
   if (tesseract_->tessedit_pageseg_mode == PSM_AUTO_ONLY) {

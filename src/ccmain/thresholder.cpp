@@ -534,15 +534,24 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
 // Threshold the source image as efficiently as possible to the output Pix.
 // Creates a Pix and sets pix to point to the resulting pointer.
 // Caller must use pixDestroy to free the created Pix.
+//
 /// Returns false on error.
 bool ImageThresholder::ThresholdToPix(Image *pix) {
-#if !defined(LARGE_IMAGES)
-  if (image_width_ > INT16_MAX || image_height_ > INT16_MAX) {
-    tprintf("ERROR: Image too large: ({}, {})\n", image_width_, image_height_);
-    return false;
+  // tolerate overlarge images when they're about to be cropped by GetPixRect():
+  if (IsFullImage()) {
+    if (tesseract_->CheckAndReportIfImageTooLarge(pix_)) {
+      return false;
+    }
   }
-#endif
+  else {
+    // validate against the future cropped image size:
+    if (tesseract_->CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
+      return false;
+    }
+  }
+
   Image original = GetPixRect();
+
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.

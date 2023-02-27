@@ -521,9 +521,15 @@ ParamsVectors *GlobalParams();
 
 // ------------------------------------
 
+extern BOOL_VAR_H(stream_filelist);
+extern STRING_VAR_H(document_title);
+#ifdef HAVE_LIBCURL
+extern INT_VAR_H(curl_timeout);
+#endif
 extern BOOL_VAR_H(debug_all);
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
+extern double_VAR_H(allowed_image_memory_capacity);
 
 } // namespace tesseract
 

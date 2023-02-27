@@ -27,9 +27,15 @@ namespace tesseract {
 
 // Image dimensions (width and height, coordinates).
 #if defined(LARGE_IMAGES)
-using TDimension = int32_t;
+typedef int32_t TDimension;
+
+#define TDIMENSION_MAX   (1 << 24)    // cutline() and otheer code has * 256 operations, so we try to keep this safe by keeping 8 bits headspace.
+#define TDIMENSION_MIN   (-TDIMENSION_MAX)
 #else
-using TDimension = int16_t;
+typedef int16_t TDimension;
+
+#define TDIMENSION_MAX   INT16_MAX
+#define TDIMENSION_MAX   (-INT16_MAX)
 #endif
 
 // Floating point data type used for LSTM calculations.
