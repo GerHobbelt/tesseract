@@ -29,7 +29,7 @@ namespace tesseract {
 #if defined(LARGE_IMAGES)
 typedef int32_t TDimension;
 
-#define TDIMENSION_MAX   (1 << 24)    // cutline() and otheer code has * 256 operations, so we try to keep this safe by keeping 8 bits headspace.
+#define TDIMENSION_MAX   (1 << 24)    // cutline() and other code has multiply-by 256 operations, so we keep this safe / conservative by keeping 8 bits headspace.
 #define TDIMENSION_MIN   (-TDIMENSION_MAX)
 #else
 typedef int16_t TDimension;

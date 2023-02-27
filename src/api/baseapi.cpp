@@ -1510,7 +1510,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
 
   SetImage(pix);
 
-  // Before wee start to do *real* work, do a preliminary sanity check re expected memory pressure.
+  // Before we start to do *real* work, do a preliminary sanity check re expected memory pressure.
   // The check MAY recur in some (semi)public APIs that MAY be called later, but this is the big one
   // and it's a simple check at negligible cost, saving us some headaches when we start feeding large
   // material to the Tesseract animal.

@@ -1,6 +1,6 @@
 /**********************************************************************
  * File:        memcost_estimate.cpp 
- * Description: Inline routines and macros for serialisation functions
+ * Description: Implement the light memory capacity cost info class; actual cost calculation happens elsewhere.
  * Author:      Ger Hobbelt
  *
  * (C) Copyright 1990, Hewlett-Packard Ltd.
