@@ -188,6 +188,12 @@ void Dict::CleanGlobalDawgCache() {
   }
 }
 
+DawgCache::~DawgCache() {
+  DeleteUnusedDawgs();
+
+  //dawgs_.Get()
+}
+
 // Sets up ready for a Load or LoadLSTM.
 void Dict::SetupForLoad(DawgCache *dawg_cache) {
   if (dawgs_.size() != 0) {

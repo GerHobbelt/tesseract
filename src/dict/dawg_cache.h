@@ -28,6 +28,8 @@ namespace tesseract {
 
 class DawgCache {
 public:
+  ~DawgCache();
+
   Dawg *GetSquishedDawg(const std::string &lang, TessdataType tessdata_dawg_type, int debug_level,
                         TessdataManager *data_file);
 
