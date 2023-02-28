@@ -52,9 +52,6 @@
 #if defined(HAVE_LIBCURL)
 #  include <curl/curl.h>
 #endif
-#if defined(HAVE_MUPDF)
-#  include "mupdf/helpers/debugheap.h"
-#endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include <fcntl.h>
@@ -914,10 +911,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
   // the TessBaseAPI object. This fixes the order of destructor calls:
   // first TessBaseAPI must be destructed, DawgCache must be the last object.
   tesseract::Dict::GlobalDawgCache();
-
-#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC) && defined(HAVE_MUPDF)
-  fzMarkHeapDbgApplicationStart();
-#endif
 
   {
   TessBaseAPI api;
