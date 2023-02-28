@@ -216,7 +216,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
     }
   }
 
-  if (f != stdout)
+  if (f != stdout && f != stderr)
   {
     fclose(f);
   }
