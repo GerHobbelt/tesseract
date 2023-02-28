@@ -169,11 +169,23 @@ Dict::~Dict() {
   }
 }
 
+static DawgCache *cache = nullptr;  // only set it up when needed, via Dict::GlobalDawgCache()
+
 DawgCache *Dict::GlobalDawgCache() {
   // This global cache (a singleton) will outlive every Tesseract instance
-  // (even those that someone else might declare as global statics).
-  static DawgCache cache;
-  return &cache;
+  // (even those that someone else might declare as global statics) unless
+  // someone calls CleanGlobalDawgCache().
+  if (cache == nullptr) {
+    cache = new DawgCache();
+  }
+  return cache;
+}
+
+void Dict::CleanGlobalDawgCache() {
+  if (cache != nullptr) {
+    delete cache;
+    cache = nullptr;
+  }
 }
 
 // Sets up ready for a Load or LoadLSTM.
@@ -400,6 +412,16 @@ void Dict::End() {
   document_words_ = nullptr;
   delete pending_words_;
   pending_words_ = nullptr;
+
+  delete hyphen_word_;
+  hyphen_word_ = nullptr;
+
+  go_deeper_fxn_ = nullptr;
+  dawg_cache_is_ours_ = false;
+  bigram_dawg_ = nullptr;
+  freq_dawg_ = nullptr;
+  punc_dawg_ = nullptr;
+  unambig_dawg_ = nullptr;
 }
 
 // Returns true if in light of the current state unichar_id is allowed

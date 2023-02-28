@@ -1206,5 +1206,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   api.ReportParamsUsageStatistics();
 
+  tesseract::Dict::CleanGlobalDawgCache();
+
   return ret_val;
 }
