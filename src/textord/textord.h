@@ -122,7 +122,7 @@ public:
   );
   // tordmain.cpp ///////////////////////////////////////////
   void find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks);
-  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks, bool testing_on);
+  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks);
 
 private:
   Tesseract* tesseract_;   // reference to the active instance
@@ -149,14 +149,12 @@ public:
                            const FCOORD &rotation,
                            float gradient, // global skew
                            int block_line_size);
-  void make_spline_rows(TO_BLOCK *block, // block to do
-                        float gradient,  // gradient to fit
-                        bool testing_on);
+  void make_spline_rows(TO_BLOCK* block, // block to do
+                        float gradient);  // gradient to fit
 
 private:
   //// oldbasel.cpp ////////////////////////////////////////
   void make_old_baselines(TO_BLOCK *block, // block to do
-                          bool testing_on, // correct orientation
                           float gradient);
   void correlate_lines(TO_BLOCK *block, float gradient);
   void correlate_neighbours(TO_BLOCK *block, // block rows are in.

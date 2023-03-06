@@ -215,7 +215,7 @@ int Tesseract::orientation_and_script_detection(const char *filename, OSResults 
   } else {
     TBOX page_box(0, 0, width, height);
     // Filter_blobs sets up the TO_BLOCKs the same as find_components does.
-    mutable_textord()->filter_blobs(page_box.topright(), &port_blocks, true);
+    mutable_textord()->filter_blobs(page_box.topright(), &port_blocks);
   }
 
   return os_detect(&port_blocks, osr);

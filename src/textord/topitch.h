@@ -37,8 +37,8 @@ extern double_VAR_H(textord_balance_factor);
 void compute_fixed_pitch(ICOORD page_tr,             // top right
                          TO_BLOCK_LIST *port_blocks, // input list
                          float gradient,             // page skew
-                         FCOORD rotation,            // for drawing
-                         bool testing_on);           // correct orientation
+                         FCOORD rotation             // for drawing
+);
 void fix_row_pitch(                                  // get some value
     TO_ROW *bad_row,                                 // row to fix
     TO_BLOCK *bad_block,                             // block of bad_row
@@ -48,12 +48,11 @@ void fix_row_pitch(                                  // get some value
 );
 void compute_block_pitch(TO_BLOCK *block,     // input list
                          FCOORD rotation,     // for drawing
-                         int32_t block_index, // block number
-                         bool testing_on);    // correct orientation
+                         int32_t block_index  // block number
+);
 bool compute_rows_pitch(                      // find line stats
     TO_BLOCK *block,                          // block to do
-    int32_t block_index,                      // block number
-    bool testing_on                           // correct orientation
+    int32_t block_index                       // block number
 );
 bool try_doc_fixed(             // determine pitch
     ICOORD page_tr,             // top right
@@ -66,8 +65,7 @@ bool try_block_fixed(   // find line stats
 );
 bool try_rows_fixed(     // find line stats
     TO_BLOCK *block,     // block to do
-    int32_t block_index, // block number
-    bool testing_on      // correct orientation
+    int32_t block_index  // block number
 );
 void print_block_counts( // find line stats
     TO_BLOCK *block,     // block to do
@@ -80,8 +78,7 @@ void count_block_votes( // find line stats
     int32_t &corr_prop, int32_t &dunno);
 bool row_pitch_stats( // find line stats
     TO_ROW *row,      // current row
-    int32_t maxwidth, // of spaces
-    bool testing_on   // correct orientation
+    int32_t maxwidth  // of spaces
 );
 bool find_row_pitch(     // find lines
     TO_ROW *row,         // row to do
@@ -89,8 +86,7 @@ bool find_row_pitch(     // find lines
     int32_t dm_gap,      // ignorable gaps
     TO_BLOCK *block,     // block of row
     int32_t block_index, // block_number
-    int32_t row_index,   // number of row
-    bool testing_on      // correct orientation
+    int32_t row_index    // number of row
 );
 bool fixed_pitch_row( // find lines
     TO_ROW *row,      // row to do
@@ -116,8 +112,7 @@ float tune_row_pitch(           // find fp cells
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
     int16_t &best_mid_cuts,     // no of cheap cuts
-    ICOORDELT_LIST *best_cells, // row cells
-    bool testing_on             // individual words
+    ICOORDELT_LIST *best_cells  // row cells
 );
 float tune_row_pitch2(          // find fp cells
     TO_ROW *row,                // row to do
@@ -128,8 +123,7 @@ float tune_row_pitch2(          // find fp cells
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
     int16_t &best_mid_cuts,     // no of cheap cuts
-    ICOORDELT_LIST *best_cells, // row cells
-    bool testing_on             // individual words
+    ICOORDELT_LIST *best_cells  // row cells
 );
 float compute_pitch_sd(        // find fp cells
     TO_ROW *row,               // row to do
@@ -141,7 +135,6 @@ float compute_pitch_sd(        // find fp cells
     float &sp_sd,              // space sd
     int16_t &mid_cuts,         // no of free cuts
     ICOORDELT_LIST *row_cells, // list of chop pts
-    bool testing_on,           // individual words
     int16_t start = 0,         // start of good range
     int16_t end = 0            // end of good range
 );
@@ -154,7 +147,6 @@ float compute_pitch_sd2(       // find fp cells
     int16_t &occupation,       // no of occupied cells
     int16_t &mid_cuts,         // no of free cuts
     ICOORDELT_LIST *row_cells, // list of chop pts
-    bool testing_on,           // individual words
     int16_t start = 0,         // start of good range
     int16_t end = 0            // end of good range
 );
@@ -165,8 +157,8 @@ void print_pitch_sd(         // find fp cells
     int16_t projection_right, float space_size,
     float initial_pitch // guess at pitch
 );
-void find_repeated_chars(TO_BLOCK *block,  // Block to search.
-                         bool testing_on); // Debug mode.
+void find_repeated_chars(TO_BLOCK *block   // Block to search.
+);
 void plot_fp_word(                         // draw block of words
     TO_BLOCK *block,                       // block to draw
     float pitch,                           // pitch to draw with

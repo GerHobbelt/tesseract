@@ -571,8 +571,8 @@ void BaselineBlock::PrepareForSplineFitting(ICOORD page_tr, bool remove_noise) {
   }
   FCOORD rotation(1.0f, 0.0f);
   double gradient = tan(skew_angle_);
-  separate_underlines(block_, gradient, rotation, true);
-  pre_associate_blobs(page_tr, block_, rotation, true);
+  separate_underlines(block_, gradient, rotation);
+  pre_associate_blobs(page_tr, block_, rotation);
 }
 
 // Fits splines to the textlines, or creates fake QSPLINES from the straight
@@ -581,12 +581,12 @@ void BaselineBlock::PrepareForSplineFitting(ICOORD page_tr, bool remove_noise) {
 // Although x-height estimation is conceptually separate, it is part of
 // detecting perspective distortion and therefore baseline fitting.
 void BaselineBlock::FitBaselineSplines(bool enable_splines,
-                                       bool show_final_rows, Textord *textord) {
+                                       Textord *textord) {
   double gradient = tan(skew_angle_);
   FCOORD rotation(1.0f, 0.0f);
 
   if (enable_splines) {
-    textord->make_spline_rows(block_, gradient, show_final_rows);
+    textord->make_spline_rows(block_, gradient);
   } else {
     // Make a fake spline from the existing line.
     TBOX block_box = block_->block->pdblk.bounding_box();
@@ -913,7 +913,7 @@ void BaselineDetect::ComputeBaselineSplinesAndXheights(const ICOORD &page_tr,
     if (enable_splines) {
       bl_block->PrepareForSplineFitting(page_tr, remove_noise);
     }
-    bl_block->FitBaselineSplines(enable_splines, show_final_rows, textord);
+    bl_block->FitBaselineSplines(enable_splines, textord);
 #if !GRAPHICS_DISABLED
     if (show_final_rows) {
       bl_block->DrawFinalRows(page_tr);

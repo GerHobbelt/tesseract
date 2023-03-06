@@ -84,7 +84,6 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  **********************************************************************/
 
 void Textord::make_old_baselines(TO_BLOCK *block, // block to do
-                                 bool testing_on, // correct orientation
                                  float gradient) {
   QSPLINE *prev_baseline; // baseline of previous row
   TO_ROW *row;            // current row

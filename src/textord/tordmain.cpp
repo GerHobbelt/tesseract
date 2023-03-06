@@ -223,7 +223,7 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
 
   assign_blobs_to_blocks2(pix, blocks, to_blocks);
   ICOORD page_tr(width, height);
-  filter_blobs(page_tr, to_blocks, !textord_test_landscape);
+  filter_blobs(page_tr, to_blocks);
 }
 
 /**********************************************************************
@@ -233,8 +233,8 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
  **********************************************************************/
 
 void Textord::filter_blobs(ICOORD page_tr,        // top right
-                           TO_BLOCK_LIST *blocks, // output list
-                           bool testing_on) {     // for plotting
+                           TO_BLOCK_LIST *blocks  // output list
+) {     
   TO_BLOCK_IT block_it = blocks;                  // destination iterator
   TO_BLOCK *block;                                // created block
 
@@ -260,7 +260,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
     block->max_blob_size = block->line_size * textord_excess_blobsize;
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_blobs && testing_on) {
+    if (textord_show_blobs) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
         if (to_win == nullptr) {
           create_to_win(page_tr);
@@ -268,7 +268,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         block->plot_graded_blobs(to_win);
       }
       else {
-        const char* name = "Rejected blobs";
+        const char* name = "filter_blobs: Rejected blobs";
         auto width = tesseract_->ImageWidth();
         auto height = tesseract_->ImageHeight();
 
@@ -290,7 +290,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         tesseract_->AddPixDebugPage(pix, name, false);
       }
     }
-    if (textord_show_boxes && testing_on) {
+    if (textord_show_boxes) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
         if (to_win == nullptr) {
           create_to_win(page_tr);
@@ -301,7 +301,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
       }
       else {
-        const char* name = "Rejected blobs";
+        const char* name = "filter_blobs: Rejected blobs";
         auto width = tesseract_->ImageWidth();
         auto height = tesseract_->ImageHeight();
 

@@ -416,7 +416,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         input_block->plot_graded_blobs(rej_win);
       }
       else {
-        const char* name = "Rejected blobs";
+        const char* name = "FindBlocks: Rejected blobs";
         auto width = tright_.x() - bleft_.x();
         auto height = tright_.y() - bleft_.y();
 

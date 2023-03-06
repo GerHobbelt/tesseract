@@ -197,7 +197,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   } else if (!PSM_SPARSE(pageseg_mode)) {
     // AutoPageSeg does not need to find_components as it did that already.
     // Filter_blobs sets up the TO_BLOCKs the same as find_components does.
-    filter_blobs(page_tr_, to_blocks, true);
+    filter_blobs(page_tr_, to_blocks);
   }
 
   ASSERT_HOST(!to_blocks->empty());
