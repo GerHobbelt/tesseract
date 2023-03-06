@@ -1040,7 +1040,7 @@ public:
 	  if (pix == nullptr)
 		  return;
 
-    pixa_debug__.AddPix(pix, title, keeep_a_copy);
+    pixa_debug_.AddPix(pix, title, keeep_a_copy);
   }
   void AddPixDebugPage(const Image &pix, const std::string& title, bool keeep_a_copy = true) {
     AddPixDebugPage(pix, title.c_str(), keeep_a_copy);
@@ -1115,7 +1115,7 @@ private:
   // Thresholds that were used to generate the thresholded image from grey.
   Image pix_thresholds_;
   // Debug images. If non-empty, will be written on destruction.
-  DebugPixa pixa_debug__;
+  DebugPixa pixa_debug_;
   // Input image resolution after any scaling. The resolution is not well
   // transmitted by operations on Pix, so we keep an independent record here.
   int source_resolution_;

@@ -523,23 +523,23 @@ Dict &Tesseract::getDict() {
 }
 
 void Tesseract::Clear() {
-  if (!debug_output_path.empty() && pixa_debug__.HasPix()) {
+  if (!debug_output_path.empty() && pixa_debug_.HasPix()) {
     const int page_index = 0;
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "pdf");
 #if defined(HAVE_MUPDF)
     fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
     //pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
-    pixa_debug__.WritePDF(file_path.c_str());
+    pixa_debug_.WritePDF(file_path.c_str());
 
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
 #if defined(HAVE_MUPDF)
     fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
-    pixa_debug__.WritePNGs(file_path.c_str());
+    pixa_debug_.WritePNGs(file_path.c_str());
   }
   pix_original_.destroy();
-  pixa_debug__.Clear();
+  pixa_debug_.Clear();
   pix_binary_.destroy();
   pix_grey_.destroy();
   pix_thresholds_.destroy();
