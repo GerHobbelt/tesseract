@@ -116,9 +116,6 @@ static bool recog_done = false; // recog_all_words was called
 // debug mode (in which only a single Tesseract thread/instance will exist).
 static std::bitset<16> word_display_mode;
 static ColorationMode color_mode = CM_RAINBOW;
-static bool display_image = false;
-static bool display_blocks = false;
-static bool display_baselines = false;
 
 static PAGE_RES *current_page_res = nullptr;
 
@@ -333,7 +330,7 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
   int block_count = 1;
 
   image_win->Clear();
-  if (display_image) {
+  if (debug_display_page) {
     image_win->Draw(pix_binary_, 0, 0);
   }
 
@@ -341,10 +338,10 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
   PAGE_RES_IT pr_it(current_page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     (this->*word_painter)(&pr_it);
-    if (display_baselines && pr_it.row() != pr_it.prev_row()) {
+    if (debug_display_page_baselines && pr_it.row() != pr_it.prev_row()) {
       pr_it.row()->row->plot_baseline(image_win, ScrollView::GREEN);
     }
-    if (display_blocks && pr_it.block() != pr_it.prev_block()) {
+    if (debug_display_page_blocks && pr_it.block() != pr_it.prev_block()) {
       pr_it.block()->block->pdblk.plot(image_win, block_count++, ScrollView::RED);
     }
   }
@@ -503,15 +500,15 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       do_re_display(&tesseract::Tesseract::word_set_display);
       break;
     case IMAGE_CMD_EVENT:
-      display_image = (new_value[0] == 'T');
+      debug_display_page = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case BLOCKS_CMD_EVENT:
-      display_blocks = (new_value[0] == 'T');
+      debug_display_page_blocks = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case BASELINES_CMD_EVENT:
-      display_baselines = (new_value[0] == 'T');
+      debug_display_page_baselines = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case SHOW_SUBSCRIPT_CMD_EVENT:
