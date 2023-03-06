@@ -529,14 +529,18 @@ void Tesseract::Clear() {
 #if defined(HAVE_MUPDF)
     fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
+#if 0
     //pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
     pixa_debug_.WritePDF(file_path.c_str());
-
-    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
-#if defined(HAVE_MUPDF)
-    fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
+
+    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "html");
+    pixa_debug_.WriteHTML(file_path.c_str());
+
+#if 0
+    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
     pixa_debug_.WritePNGs(file_path.c_str());
+#endif
   }
   pix_original_.destroy();
   pixa_debug_.Clear();
