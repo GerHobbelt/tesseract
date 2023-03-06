@@ -1036,14 +1036,14 @@ public:
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:
-  void AddPixDebugPage(const Image &pix, const char *title, bool keeep_a_copy = true) {
+  void AddPixDebugPage(const Image &pix, const char *title, bool keep_a_copy = true) {
 	  if (pix == nullptr)
 		  return;
 
-    pixa_debug_.AddPix(pix, title, keeep_a_copy);
+    pixa_debug_.AddPix(pix, title, keep_a_copy);
   }
-  void AddPixDebugPage(const Image &pix, const std::string& title, bool keeep_a_copy = true) {
-    AddPixDebugPage(pix, title.c_str(), keeep_a_copy);
+  void AddPixDebugPage(const Image &pix, const std::string& title, bool keep_a_copy = true) {
+    AddPixDebugPage(pix, title.c_str(), keep_a_copy);
   }
 
 public:
