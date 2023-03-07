@@ -253,9 +253,9 @@ namespace tesseract {
           // if top(SRC) is white, and bot(DST) is white, use white.
 
           // constant fade factors:
-          const int red_factor = 0.2 * 256;
-          const int green_factor = 0.6 * 256;
-          const int blue_factor = 0.6 * 256;
+          const int red_factor = 0.1 * 256;
+          const int green_factor = 0.5 * 256;
+          const int blue_factor = 0.5 * 256;
 
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
@@ -329,6 +329,20 @@ namespace tesseract {
         ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
         std::string now_str = ss.str();
 
+        std::ostringstream languages;
+        int num_subs = tesseract_->num_sub_langs();
+        if (num_subs > 0) {
+          languages << "<p>Language";
+          if (num_subs > 1)
+            languages << "s";
+          languages << ": ";
+          int i;
+          for (i = 0; i < num_subs - 1; ++i) {
+            languages << tesseract_->get_sub_lang(i)->lang << " + ";
+          }
+          languages << tesseract_->get_sub_lang(i)->lang << "</p>";
+        }
+
       fprintf(html, "<html>\n\
 <head>\n\
   <title>Tesseract diagnostic image set</title>\n\
@@ -346,6 +360,9 @@ namespace tesseract {
     img {\n\
       border: solid #b0cfff .5em;\n\
       max-width: 70em;\n\
+      margin-left: auto;\n\
+      margin-right: auto;\n\
+      display: block;\n\
     }\n\
     figcaption {\n\
       background-color: #325180;\n\
@@ -357,6 +374,7 @@ namespace tesseract {
     figure {\n\
       max-width: 70em;\n\
       margin-left: 0;\n\
+      background-color: #c5d5ed;\n\
     }\n\
   </style>\n\
 </head>\n\
@@ -367,7 +385,8 @@ namespace tesseract {
 <p>Input image file path: %s</p>\n\
 <p>Output base: %s</p>\n\
 <p>Input image path: %s</p>\n\
-<p>Language: %s</p>\n\
+<p>Primary Language: %s</p>\n\
+%s\
 <p>Language Data Path Prefix: %s</p>\n\
 <p>Data directory: %s</p>\n\
 <p>Main directory: %s</p>\n\
@@ -377,6 +396,7 @@ namespace tesseract {
         check_unknown(tesseract_->imagebasename).c_str(),
         check_unknown(tesseract_->imagefile).c_str(),
         tesseract_->lang.c_str(),
+        languages.str().c_str(),
         check_unknown(tesseract_->language_data_path_prefix).c_str(),
         check_unknown(tesseract_->datadir).c_str(),
         check_unknown(tesseract_->directory).c_str()
