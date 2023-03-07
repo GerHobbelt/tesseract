@@ -25,6 +25,11 @@
 #include <cerrno>
 #include <iostream> // std::cout
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/fitz.h"           // fz_basename
+#include "mupdf/helpers/dir.h"
+#endif
+
 using namespace tesseract;
 
 static int list_components(TessdataManager &tm, const char *filename) {
@@ -214,7 +219,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       return EXIT_FAILURE;
     }
     tesseract::LSTMRecognizer recognizer;
-	recognizer.SetDebug(tess_debug_lstm);
+    recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintf("ERROR: Failed to deserialize LSTM in {}!\n", argv[2]);
       return EXIT_FAILURE;
@@ -246,39 +251,40 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     }
     return result;
   } else {
+    const char* exename = fz_basename(argv[0]);
     tprintf(
         "Usage for combining tessdata components:\n"
         "  {} language_data_path_prefix\n"
         "  (e.g. {} tessdata/eng.)\n\n",
-        argv[0], argv[0]);
+        exename, exename);
     tprintf(
         "Usage for extracting tessdata components:\n"
         "  {} -e traineddata_file [output_component_file...]\n"
         "  (e.g. {} -e eng.traineddata eng.unicharset)\n\n",
-        argv[0], argv[0]);
+        exename, exename);
     tprintf(
         "Usage for overwriting tessdata components:\n"
         "  {} -o traineddata_file [input_component_file...]\n"
         "  (e.g. {} -o eng.traineddata eng.unicharset)\n\n",
-        argv[0], argv[0]);
+        exename, exename);
     tprintf(
         "Usage for unpacking all tessdata components:\n"
         "  {} -u traineddata_file output_path_prefix\n"
         "  (e.g. {} -u eng.traineddata tmp/eng.)\n\n",
-        argv[0], argv[0]);
+        exename, exename);
     tprintf(
         "Usage for listing the network information\n"
         "  {} -l traineddata_file\n"
         "  (e.g. {} -l eng.traineddata)\n\n",
-        argv[0], argv[0]);
+        exename, exename);
     tprintf(
         "Usage for listing directory of components:\n"
         "  {} -d traineddata_file\n\n",
-        argv[0]);
+        exename);
     tprintf(
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
-        argv[0]);
+        exename);
     return EXIT_FAILURE;
   }
   tm.Directory();
