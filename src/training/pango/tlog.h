@@ -22,6 +22,7 @@
 
 #include "export.h"
 #include <tesseract/export.h>
+#include <fmt/format.h>       // for fmt
 
 #include "../common/commandlineflags.h"
 #include "errcode.h"
@@ -30,17 +31,25 @@
 TESS_PANGO_TRAINING_API
 DECLARE_INT_PARAM_FLAG(tlog_level);
 
-// Variant guarded by the numeric logging level parameter FLAGS_tlog_level
-// (default 0).  Code using ParseCommandLineFlags() can control its value using
-// the --tlog_level commandline argument. Otherwise it must be specified in a
-// config file like other params.
-#define tlog(level, ...)             \
-  {                                  \
-    if (FLAGS_tlog_level >= level) { \
-      tprintf(__VA_ARGS__);          \
-    }                                \
+namespace tesseract {
+
+  // Variant guarded by the numeric logging level parameter FLAGS_tlog_level
+  // (default 0).  Code using ParseCommandLineFlags() can control its value using
+  // the --tlog_level commandline argument. Otherwise it must be specified in a
+  // config file like other params.
+  template <typename S, typename... Args>
+  void tlog(int level, const S* format, Args &&...args) {
+    if (FLAGS_tlog_level >= level) {
+      //tprintf(format, ...);
+      vTessPrint(format, fmt::make_format_args(args...));
+    }
   }
 
-#define TLOG_IS_ON(level) (FLAGS_tlog_level >= level)
+  static inline bool
+    TLOG_IS_ON(int level) {
+    return (FLAGS_tlog_level >= level);
+  }
+
+}
 
 #endif // TESSERACT_TRAINING_TLOG_H_
