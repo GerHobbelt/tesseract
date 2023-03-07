@@ -98,6 +98,12 @@ namespace tesseract {
     return nullptr;
   }
 
+  static std::string check_unknown(const std::string& s, const char* default_value = "(unknown / nil)") {
+    if (s.empty())
+      return default_value;
+    return s;
+  }
+
   static void SanitizeCaptionForFilenamePart(std::string& str) {
     auto len = str.size();
     char* s = str.data();
@@ -290,12 +296,16 @@ namespace tesseract {
     fprintf(html, "<section>\n\
   <h2>image #%02d: %s</h2>\n\
   <figure>\n\
-    <img src = \"%s\" >\n\
+    <img src=\"%s\" >\n\
     <figcaption>size: %d x %d px; %s</figcaption>\n\
   </figure>\n\
   <p>%s</p>\n\
 </section>\n",
-    counter, title, pixfname, (int) w, (int) h, depth_str, description);
+      counter, title,
+      pixfname,
+      (int) w, (int) h, depth_str,
+      description
+    );
   }
 
   void DebugPixa::WriteHTML(const char* filename) {
@@ -354,7 +364,8 @@ namespace tesseract {
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
 <p>tesseract run @ %s</p>\n\
-<p>Input image base name: %s</p>\n\
+<p>Input image file path: %s</p>\n\
+<p>Output base: %s</p>\n\
 <p>Input image path: %s</p>\n\
 <p>Language: %s</p>\n\
 <p>Language Data Path Prefix: %s</p>\n\
@@ -362,14 +373,14 @@ namespace tesseract {
 <p>Main directory: %s</p>\n\
 ",
         now_str.c_str(),
-        tesseract_->imagebasename.c_str(),
-        tesseract_->imagefile.c_str(),
+        check_unknown(tesseract_->input_file_path).c_str(),
+        check_unknown(tesseract_->imagebasename).c_str(),
+        check_unknown(tesseract_->imagefile).c_str(),
         tesseract_->lang.c_str(),
-        tesseract_->language_data_path_prefix.c_str(),
-        tesseract_->datadir.c_str(),
-        tesseract_->directory.c_str()
+        check_unknown(tesseract_->language_data_path_prefix).c_str(),
+        check_unknown(tesseract_->datadir).c_str(),
+        check_unknown(tesseract_->directory).c_str()
       );
-      //AppendString(api->GetInputName());
 
       {
         std::string fn(partname + ".img-original.png");

@@ -867,7 +867,6 @@ protected:
   std::vector<ParagraphModel *> *paragraph_models_;
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
-  std::string input_file_;           ///< Name used by training code.
   std::string visible_image_file_;
   Pix* pix_visible_image_;           ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.

@@ -132,11 +132,7 @@ const char kUNLVSuspect = '^';
 static const char *kOldVarsFile = "failed_vars.txt";
 
 #if !DISABLED_LEGACY_ENGINE
-/**
- * Filename used for input image file, from which to derive a name to search
- * for a possible UNLV zone file, if none is specified by SetInputName.
- */
-static const char *kInputFile = "noname.tif";
+
 static const char kUnknownFontName[] = "UnknownFont";
 
 static STRING_VAR(classify_font_name, kUnknownFontName,
@@ -289,7 +285,10 @@ size_t TessBaseAPI::getOpenCLDevice(void **data) {
  * loading a UNLV zone file.
  */
 void TessBaseAPI::SetInputName(const char *name) {
-  input_file_ = name ? name : "";
+  if (tesseract_ == nullptr) {
+    tesseract_ = new Tesseract;
+  }
+  tesseract_->input_file_path = name ? name : "";
 }
 
 /** Set the name of the visible image files. Needed only for PDF output. */
@@ -1016,9 +1015,9 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   recognition_done_ = true;
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
-    page_res_ = tesseract_->ApplyBoxes(input_file_.c_str(), true, block_list_);
+    page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
-    page_res_ = tesseract_->ApplyBoxes(input_file_.c_str(), false, block_list_);
+    page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
@@ -1031,7 +1030,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 
   if (tesseract_->tessedit_train_line_recognizer) {
-    if (!tesseract_->TrainLineRecognizer(input_file_.c_str(), output_file_, block_list_)) {
+    if (!tesseract_->TrainLineRecognizer(tesseract_->input_file_path.c_str(), output_file_, block_list_)) {
       return -1;
     }
     tesseract_->CorrectClassifyWords(page_res_);
@@ -1060,9 +1059,9 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     ExtractFontName(output_file_.c_str(), &fontname);
     tesseract_->ApplyBoxTraining(fontname, page_res_);
   } else if (tesseract_->tessedit_ambigs_training) {
-    FILE *training_output_file = tesseract_->init_recog_training(input_file_.c_str());
+    FILE *training_output_file = tesseract_->init_recog_training(tesseract_->input_file_path.c_str());
     // OCR the page segmented into words by tesseract.
-    tesseract_->recog_training_segmented(input_file_.c_str(), page_res_, monitor,
+    tesseract_->recog_training_segmented(tesseract_->input_file_path.c_str(), page_res_, monitor,
                                          training_output_file);
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
@@ -1171,8 +1170,8 @@ Pix* TessBaseAPI::GetVisibleImage() {
 }
 
 const char *TessBaseAPI::GetInputName() {
-  if (!input_file_.empty()) {
-    return input_file_.c_str();
+  if (tesseract_ != nullptr && !tesseract_->input_file_path.empty()) {
+    return tesseract_->input_file_path.c_str();
   }
   return nullptr;
 }
@@ -2296,7 +2295,6 @@ void TessBaseAPI::End() {
 #endif // !DISABLED_LEGACY_ENGINE
   delete tesseract_;
   tesseract_ = nullptr;
-  input_file_.clear();
   pixDestroy(&pix_visible_image_);
   pix_visible_image_ = nullptr;
   visible_image_file_.clear();
@@ -2602,7 +2600,7 @@ int TessBaseAPI::FindLines() {
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
-  if (tesseract_->SegmentPage(input_file_.c_str(), block_list_, osd_tess, &osr) < 0) {
+  if (tesseract_->SegmentPage(tesseract_->input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
     return -1;
   }
 
@@ -2691,10 +2689,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
   }
 
-  if (input_file_.empty()) {
-    input_file_ = kInputFile;
-  }
-  return tesseract_->orientation_and_script_detection(input_file_.c_str(), osr) > 0;
+  return tesseract_->orientation_and_script_detection(tesseract_->input_file_path.c_str(), osr) > 0;
 }
 #endif // !DISABLED_LEGACY_ENGINE
 

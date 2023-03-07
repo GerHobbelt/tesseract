@@ -54,6 +54,7 @@ public:
     return &params_;
   }
 
+  std::string input_file_path; // name of currently processed input file
   std::string datadir;       // dir for data files
   std::string imagebasename; // name of image
   std::string lang;

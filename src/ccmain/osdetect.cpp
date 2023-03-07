@@ -187,9 +187,13 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
 
 // Find connected components in the page and process a subset until finished or
 // a stopping criterion is met.
+//
+// Notes:
+// The given filename is used to derive a name to search for a possible UNLV zone file.
+//
 // Returns the number of blobs used in making the estimate. 0 implies failure.
 int Tesseract::orientation_and_script_detection(const char *filename, OSResults *osr) {
-  std::string name = filename; // truncated name
+  std::string name = filename ? filename : ""; // truncated name
 
   const char *lastdot = strrchr(name.c_str(), '.');
   if (lastdot != nullptr) {
@@ -201,7 +205,7 @@ int Tesseract::orientation_and_script_detection(const char *filename, OSResults 
   int height = pixGetHeight(pix_binary());
 
   BLOCK_LIST blocks;
-  if (!read_unlv_file(name, width, height, &blocks)) {
+  if (!name.empty() || !read_unlv_file(name, width, height, &blocks)) {
     FullPageBlock(width, height, &blocks);
   }
 
