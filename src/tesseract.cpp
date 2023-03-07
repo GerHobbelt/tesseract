@@ -1169,7 +1169,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetVariable("debug_baseline_fit", "1"); // 0..3
       api.SetVariable("debug_baseline_y_coord", "-2000");
 
-      api.SetVariable("showcase_threshold_methods", "N");
+      api.SetVariable("showcase_threshold_methods", "Y");
 
       api.SetVariable("debug_write_unlv", "Y");
       api.SetVariable("debug_line_finding", "Y");
@@ -1199,13 +1199,15 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
     bool succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
     if (!succeed) {
-      tprintf("ERROR: Error during page processing.\n");
+      tprintf("ERROR: Error during page processing. File: {}\n", image);
       ret_val = EXIT_FAILURE;
     }
   }
   }
 
-  api.ReportParamsUsageStatistics();
+  if (ret_val == EXIT_SUCCESS) {
+    api.ReportParamsUsageStatistics();
+  }
   }
   // ^^^ end of scope for the Tesseract api instance
   // --> cache occupancy is removed, so the next call will succeed without fail (due to internal sanity checks)
