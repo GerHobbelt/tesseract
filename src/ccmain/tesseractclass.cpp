@@ -535,7 +535,7 @@ void Tesseract::Clear() {
 #endif
 
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "html");
-    pixa_debug_.WriteHTML(file_path.c_str());
+    pixa_debug_.WriteHTML(file_path.c_str(), pix_original_);
 
 #if 0
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");

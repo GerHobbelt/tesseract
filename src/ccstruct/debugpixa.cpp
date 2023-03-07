@@ -17,6 +17,9 @@
 #include "mupdf/fitz.h"
 #endif
 
+#undef TESSERACT_DISABLE_DEBUG_FONTS 
+#define TESSERACT_DISABLE_DEBUG_FONTS 1
+
 namespace tesseract {
 
   DebugPixa::DebugPixa() {
@@ -186,7 +189,124 @@ namespace tesseract {
     }
   }
 
-  void DebugPixa::WriteHTML(const char* filename) {
+  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const Image* original_image)
+  {
+    const char* pixfname = fz_basename(img_filename);
+    int w, h, depth;
+    pixGetDimensions(pix, &w, &h, &depth);
+    const char* depth_str = ([depth]() {
+      switch (depth) {
+      default:
+        return "unidentified color depth (probably color paletted)";
+      case 1:
+        return "monochrome (binary)";
+      case 32:
+        return "full color + alpha";
+      case 24:
+        return "full color";
+      case 8:
+        return "color palette (256 colors)";
+      case 4:
+        return "color palette (16 colors)";
+      }
+    })();
+
+    if (original_image == nullptr) {
+      pixWrite(img_filename, pix, IFF_PNG);
+    }
+    else {
+      //auto w2 = pixGetWidth(*original_image);
+      //auto h2 = pixGetHeight(*original_image);
+      //pixSetAll(dstpix);
+      //pixBlendBackgroundToColor(dstpix, *original_image, nullptr, 0xff000000, 1.0, 0, 255);
+      //pixMultiplyByColor(dstpix, *original_image, nullptr, 0xff000000);
+
+      int ow, oh, od;
+      pixGetDimensions(*original_image, &ow, &oh, &od);
+
+      Image toplayer = pixConvertTo32(pix);
+      Image botlayer = pixConvertTo32(*original_image);
+
+      if (w != ow || h != oh)
+      {
+        toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+      }
+
+      auto datas = pixGetData(toplayer);
+      auto datad = pixGetData(botlayer);
+      auto wpls = pixGetWpl(toplayer);
+      auto wpld = pixGetWpl(botlayer);
+      int i, j;
+      for (i = 0; i < oh; i++) {
+        auto lines = (datas + i * wpls);
+        auto lined = (datad + i * wpld);
+        for (j = 0; j < ow; j++) {
+          // if top(SRC) is black, use that.
+          // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use that.
+          // if top(SRC) is white, and bot(DST) is white, use white.
+          
+          int rvals, gvals, bvals;
+          extractRGBValues(lines[j], &rvals, &gvals, &bvals);
+
+          int rvald, gvald, bvald;
+          extractRGBValues(lined[j], &rvald, &gvald, &bvald);
+
+          // R
+          rvald = rvald * 0.2 + 255 * 0.8;
+          if (rvals < rvald)
+            rvald = rvals;
+
+          // G
+          gvald = gvald * 0.7 + 255 * 0.3;
+          if (gvals < gvald)
+            gvald = gvals;
+
+          // B
+          bvald = bvald * 0.7 + 255 * 0.3;
+          if (bvals < bvald)
+            bvald = bvals;
+
+          // A
+          //avald = 0;
+
+          composeRGBPixel(rvald, gvald, bvald, lined + j);
+        }
+      }
+      //pixCopyResolution(pixd, pixs);
+      //pixCopyInputFormat(pixd, pixs);
+
+#if 0
+      for (i = 0; i < h2; i++) {
+        auto line = data + i * wpl;
+        for (j = 0; j < w; j++) {
+          int rval, gval, bval;
+          extractRGBValues(line[j], &rval, &gval, &bval);
+          nrval = (l_int32) (frval * rval + 0.5);
+          ngval = (l_int32) (fgval * gval + 0.5);
+          nbval = (l_int32) (fbval * bval + 0.5);
+          composeRGBPixel(nrval, ngval, nbval, line + j);
+        }
+      }
+#endif
+
+      pixWrite(img_filename, botlayer, IFF_PNG);
+
+      botlayer.destroy();
+      toplayer.destroy();
+    }
+
+    fprintf(html, "<section>\n\
+  <h2>image #%02d: %s</h2>\n\
+  <figure>\n\
+    <img src = \"%s\" >\n\
+    <figcaption>size: %d x %d px; %s</figcaption>\n\
+  </figure>\n\
+  <p>%s</p>\n\
+</section>\n",
+    counter, title, pixfname, (int) w, (int) h, depth_str, description);
+  }
+
+  void DebugPixa::WriteHTML(const char* filename, const Image& original_image) {
     if (HasPix()) {
       const char* ext = strrchr(filename, '.');
       std::string partname(filename);
@@ -244,6 +364,12 @@ namespace tesseract {
 <p>tesseract run @ %s</p>\n",
         now_str.c_str());
 
+      {
+        std::string fn(partname + ".img-original.png");
+
+        write_one_pix_for_html(html, 0, fn.c_str(), original_image, "original image", "The original image as registered with the Tesseract instance.", nullptr);
+      }
+
       int n = pixaGetCount(pixa_);
 
       for (int i = 0; i < n; i++) {
@@ -255,45 +381,14 @@ namespace tesseract {
         const char* cprefix = (caption.empty() ? "" : ".");
         std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
 
-        auto pixs = pixaGetPix(pixa_, i, L_CLONE);
+        Image pixs = pixaGetPix(pixa_, i, L_CLONE);
         if (pixs == nullptr) {
           L_ERROR("pixs[%d] not retrieved\n", __func__, i);
           continue;
         }
-        pixWrite(fn.c_str(), pixs, IFF_PNG);
+        write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[i].c_str(), &original_image);
 
-        const char* pixfname = fz_basename(fn.c_str());
-        auto w = pixGetWidth(pixs);
-        auto h = pixGetHeight(pixs);
-        auto depth = pixGetDepth(pixs);
-        const char* depth_str = ([depth]() {
-          switch (depth) {
-          default:
-            return "unidentified color depth (probably color paletted)";
-          case 1:
-            return "monochrome (binary)";
-          case 32:
-            return "full color + alpha";
-          case 24:
-            return "full color";
-          case 8:
-            return "color palette (256 colors)";
-          case 4:
-            return "color palette (16 colors)";
-          }
-        })();
-
-        fprintf(html, "<section>\n\
-  <h2>image #%02d: %s</h2>\n\
-  <figure>\n\
-    <img src = \"%s\" >\n\
-    <figcaption>size: %d x %d px; %s</figcaption>\n\
-  </figure>\n\
-  <p>%s</p>\n\
-</section>\n",
-          i + 1, caption.c_str(), pixfname, (int) w, (int) h, depth_str, captions[i].c_str());
-
-        pixDestroy(&pixs);
+        pixs.destroy();
       }
       //pixaClear(pixa_);
 

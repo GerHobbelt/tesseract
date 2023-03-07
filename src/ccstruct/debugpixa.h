@@ -35,7 +35,7 @@ namespace tesseract {
 
     void WritePNGs(const char* filename);
 
-    void WriteHTML(const char* filename);
+    void WriteHTML(const char* filename, const Image& original_image);
 
     void Clear();
 
