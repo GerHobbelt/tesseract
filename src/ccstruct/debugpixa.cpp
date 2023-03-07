@@ -2,6 +2,7 @@
 #include "debugpixa.h"
 #include "image.h"
 #include "tprintf.h"
+#include "tesseractclass.h"
 
 #include <allheaders.h>
 
@@ -22,7 +23,9 @@
 
 namespace tesseract {
 
-  DebugPixa::DebugPixa() {
+  DebugPixa::DebugPixa(Tesseract* tesseract_ref)
+    : tesseract_(tesseract_ref)
+  {
     pixa_ = pixaCreate(0);
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     fonts_ = NULL;
@@ -189,7 +192,7 @@ namespace tesseract {
     }
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const Image* original_image)
+  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
   {
     const char* pixfname = fz_basename(img_filename);
     int w, h, depth;
@@ -222,10 +225,10 @@ namespace tesseract {
       //pixMultiplyByColor(dstpix, *original_image, nullptr, 0xff000000);
 
       int ow, oh, od;
-      pixGetDimensions(*original_image, &ow, &oh, &od);
+      pixGetDimensions(original_image, &ow, &oh, &od);
 
       Image toplayer = pixConvertTo32(pix);
-      Image botlayer = pixConvertTo32(*original_image);
+      Image botlayer = pixConvertTo32(original_image);
 
       if (w != ow || h != oh)
       {
@@ -306,7 +309,7 @@ namespace tesseract {
     counter, title, pixfname, (int) w, (int) h, depth_str, description);
   }
 
-  void DebugPixa::WriteHTML(const char* filename, const Image& original_image) {
+  void DebugPixa::WriteHTML(const char* filename) {
     if (HasPix()) {
       const char* ext = strrchr(filename, '.');
       std::string partname(filename);
@@ -361,13 +364,27 @@ namespace tesseract {
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract run @ %s</p>\n",
-        now_str.c_str());
+<p>tesseract run @ %s</p>\n\
+<p>Input image base name: %s</p>\n\
+<p>Input image path: %s</p>\n\
+<p>Language: %s</p>\n\
+<p>Language Data Path Prefix: %s</p>\n\
+<p>Data directory: %s</p>\n\
+<p>Main directory: %s</p>\n\
+",
+        now_str.c_str(),
+        tesseract_->imagebasename.c_str(),
+        tesseract_->imagefile.c_str(),
+        tesseract_->lang.c_str(),
+        tesseract_->language_data_path_prefix.c_str(),
+        tesseract_->datadir.c_str(),
+        tesseract_->directory.c_str()
+      );
 
       {
         std::string fn(partname + ".img-original.png");
 
-        write_one_pix_for_html(html, 0, fn.c_str(), original_image, "original image", "The original image as registered with the Tesseract instance.", nullptr);
+        write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
       }
 
       int n = pixaGetCount(pixa_);
@@ -386,7 +403,7 @@ namespace tesseract {
           L_ERROR("pixs[%d] not retrieved\n", __func__, i);
           continue;
         }
-        write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[i].c_str(), &original_image);
+        write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[i].c_str(), tesseract_->pix_original());
 
         pixs.destroy();
       }

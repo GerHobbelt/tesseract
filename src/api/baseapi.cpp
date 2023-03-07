@@ -2579,7 +2579,7 @@ int TessBaseAPI::FindLines() {
     if (strcmp(language_.c_str(), "osd") == 0) {
       osd_tess = tesseract_;
     } else {
-      osd_tesseract_ = new Tesseract;
+      osd_tesseract_ = new Tesseract(tesseract_);
       TessdataManager mgr(reader_);
       if (datapath_.empty()) {
         tprintf(

@@ -194,7 +194,7 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract();
+  Tesseract(Tesseract *parent = nullptr);
   ~Tesseract() override;
 
   // Return appropriate dictionary
@@ -1055,7 +1055,6 @@ public:
     AddPixDebugPage(pix, title.c_str(), keep_a_copy);
   }
 
-
 public:
   // Find connected components in the page and process a subset until finished or
   // a stopping criterion is met.
@@ -1107,6 +1106,14 @@ public:
   // first letter of this word upper case?"
   void DetectParagraphs(bool after_text_recognition,
                         const MutableIterator* block_start, std::vector<ParagraphModel*>* models);
+
+public:
+  Tesseract* get_parent_instance() const {
+    return parent_instance_;
+  }
+
+protected:
+  Tesseract* parent_instance_;      // reference to parent tesseract instance for sub-languages. Used, f.e., to allow using a single DebugPixa diagnostic channel for all languages tested on the input.
 
 private:
   // The filename of a backup config file. If not null, then we currently

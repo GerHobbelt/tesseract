@@ -50,8 +50,9 @@
 
 namespace tesseract {
 
-Tesseract::Tesseract()
-    : BOOL_MEMBER(tessedit_resegment_from_boxes, false,
+Tesseract::Tesseract(Tesseract *parent)
+    : parent_instance_(parent)
+    , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
                   "Take segmentation and labeling from box file", this->params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
                   "Conversion of word/line box file to char box file", this->params())
@@ -476,6 +477,7 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", this->params())
     , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", this->params())
 
+    , pixa_debug_(this)
     , splitter_(this)
     , image_finder_(this)
     , line_finder_(this)
@@ -535,7 +537,7 @@ void Tesseract::Clear() {
 #endif
 
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "html");
-    pixa_debug_.WriteHTML(file_path.c_str(), pix_original_);
+    pixa_debug_.WriteHTML(file_path.c_str());
 
 #if 0
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
