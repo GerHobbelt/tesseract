@@ -119,7 +119,7 @@ static void plot_outline_list(     // draw outlines
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST* list,          // outline to draw
     Image& pix,
-    l_uint32* data, int wpl, int w, int h, int& cmap_offset, bool noise
+    std::vector<uint32_t>& cmap, int& cmap_offset, bool noise
 ) {
   C_OUTLINE* outline;     // current outline
   C_OUTLINE_IT it = list; // iterator
@@ -131,9 +131,9 @@ static void plot_outline_list(     // draw outlines
     outline = it.data();
     // draw it
     cmap_offset = color0;
-    outline->plot(pix, data, wpl, w, h, cmap_offset, noise);
+    outline->plot(pix, cmap, cmap_offset, noise);
     if (!outline->child()->empty()) {
-      plot_outline_list(outline->child(), pix, data, wpl, w, h, cmap_offset, noise);
+      plot_outline_list(outline->child(), pix, cmap, cmap_offset, noise);
     }
   }
 }
@@ -552,8 +552,8 @@ void C_BLOB::plot(ScrollView *window,               // window to draw in
   plot_outline_list(&outlines, window, blob_colour, child_colour);
 }
 
-void C_BLOB::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cmap_offset, bool noise) {
-  plot_outline_list(&outlines, pix, data, wpl, w, h, cmap_offset, noise);
+void C_BLOB::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) {
+  plot_outline_list(&outlines, pix, cmap, cmap_offset, noise);
 }
 
 // Draws the blob in the given colour, and child_colour, normalized

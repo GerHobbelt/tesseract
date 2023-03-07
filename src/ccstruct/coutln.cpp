@@ -979,11 +979,14 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   }
 }
 
-void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cmap_offset, bool noise) const {
+void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step
 
+  // WARNING: leptonica PTA coordinates are vertically flipped vs. tesseract coordinates (?huh?)
+  int img_height = pixGetHeight(pix);
+  
   int color_index = cmap_offset;
   cmap_offset++;
   if ((cmap_offset & (64 - 1)) == 0) {
@@ -997,7 +1000,7 @@ void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cma
   //window->Pen(colour);
   if (stepcount == 0) {
     //window->Rectangle(box.left(), box.top(), box.right(), box.bottom());
-    BOX* b = boxCreate(box.left(), box.top(), box.right() - box.left(), box.bottom() - box.top());
+    BOX* b = boxCreate(box.left(), img_height - box.top(), box.right() - box.left(), box.bottom() - box.top());
     pta = generatePtaBox(b, width);
     boxDestroy(&b);
   }
@@ -1018,7 +1021,7 @@ void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cma
       y2 = pos.y();
       //ptaAddPt(pta, x2, y2);
       {
-        PTA* pta2 = generatePtaWideLine(x, y, x2, y2, width);
+        PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
         ptaJoin(pta, pta2, 0, -1);
         ptaDestroy(&pta2);
       }
@@ -1034,7 +1037,7 @@ void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cma
         y2 = pos.y();
         //ptaAddPt(pta, x2, y2);
         {
-          PTA* pta2 = generatePtaWideLine(x, y, x2, y2, width);
+          PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
           ptaJoin(pta, pta2, 0, -1);
           ptaDestroy(&pta2);
         }
@@ -1049,7 +1052,7 @@ void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cma
     // close the poly?
     if (x2 != x || y2 != y) {
       {
-        PTA* pta2 = generatePtaWideLine(x2, y2, x0, y0, width);
+        PTA* pta2 = generatePtaWideLine(x2, img_height - y2, x0, img_height - y0, width);
         ptaJoin(pta, pta2, 0, -1);
         ptaDestroy(&pta2);
       }
@@ -1067,7 +1070,8 @@ void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cma
   int npts = ptaGetCount(pta);
 
   int r, g, b;
-  pixcmapGetColor(pixGetColormap(pix), color_index, &r, &g, &b);
+  uint32_t color = cmap[color_index];
+  extractRGBValues(color, &r, &g, &b);
   pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
 
   ptaDestroy(&pta);

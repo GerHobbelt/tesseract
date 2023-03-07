@@ -182,24 +182,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
       Image pix = pixCreate(width, height, 32 /* RGBA */);
       pixSetAll(pix);
 
-#if 0
-      BOX* border = boxCreate(2, 2, width + 4, height + 4);
-      // boxDestroy(BOX * *pbox);
-      BOXA* boxlist = boxaCreate(1);
-      boxaAddBox(boxlist, border, false);
-      //boxaDestroy(BOXA * *pboxa);
-      l_uint32 bordercolor;
-      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-      boxaDestroy(&boxlist);
-#endif
-
-      int w, h;
-      pixGetDimensions(pix, &w, &h, NULL);
-      l_uint32* data = pixGetData(pix);
-      int wpl = pixGetWpl(pix);
-
-      input_block->plot_graded_blobs(pix, data, wpl, w, h);
+      input_block->plot_graded_blobs(pix);
 
       tesseract_->AddPixDebugPage(pix, name, false);
     }
@@ -430,24 +413,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         Image pix = pixCreate(width, height, 32 /* RGBA */);
         pixSetAll(pix);
 
-#if 0
-        BOX* border = boxCreate(2, 2, width + 4, height + 4);
-        // boxDestroy(BOX * *pbox);
-        BOXA* boxlist = boxaCreate(1);
-        boxaAddBox(boxlist, border, false);
-        //boxaDestroy(BOXA * *pboxa);
-        l_uint32 bordercolor;
-        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-        boxaDestroy(&boxlist);
-#endif
-
-        int w, h;
-        pixGetDimensions(pix, &w, &h, NULL);
-        l_uint32 *data = pixGetData(pix);
-        int wpl = pixGetWpl(pix);
-
-        input_block->plot_graded_blobs(pix, data, wpl, w, h);
+        input_block->plot_graded_blobs(pix);
 
         tesseract_->AddPixDebugPage(pix, name, false);
       }

@@ -369,6 +369,7 @@ namespace tesseract {
         tesseract_->datadir.c_str(),
         tesseract_->directory.c_str()
       );
+      //AppendString(api->GetInputName());
 
       {
         std::string fn(partname + ".img-original.png");
