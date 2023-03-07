@@ -515,7 +515,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     // Now open up in both directions independently to find lines of at least
     // 1 inch/kMinLineLengthFraction in length.
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow");
+      tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, min_line_length);
     *pix_hline = pixOpenBrick(nullptr, pix_hollow, min_line_length, 1);

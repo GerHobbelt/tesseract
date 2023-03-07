@@ -192,6 +192,10 @@ namespace tesseract {
     }
   }
 
+  static inline int FADE(int val, const int factor) {
+    return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
+  }
+
   static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
   {
     const char* pixfname = fz_basename(img_filename);
@@ -218,12 +222,6 @@ namespace tesseract {
       pixWrite(img_filename, pix, IFF_PNG);
     }
     else {
-      //auto w2 = pixGetWidth(*original_image);
-      //auto h2 = pixGetHeight(*original_image);
-      //pixSetAll(dstpix);
-      //pixBlendBackgroundToColor(dstpix, *original_image, nullptr, 0xff000000, 1.0, 0, 255);
-      //pixMultiplyByColor(dstpix, *original_image, nullptr, 0xff000000);
-
       int ow, oh, od;
       pixGetDimensions(original_image, &ow, &oh, &od);
 
@@ -247,7 +245,12 @@ namespace tesseract {
           // if top(SRC) is black, use that.
           // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use that.
           // if top(SRC) is white, and bot(DST) is white, use white.
-          
+
+          // constant fade factors:
+          const int red_factor = 0.2 * 256;
+          const int green_factor = 0.6 * 256;
+          const int blue_factor = 0.6 * 256;
+
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
 
@@ -255,17 +258,17 @@ namespace tesseract {
           extractRGBValues(lined[j], &rvald, &gvald, &bvald);
 
           // R
-          rvald = rvald * 0.2 + 255 * 0.8;
+          rvald = FADE(rvald, red_factor);
           if (rvals < rvald)
             rvald = rvals;
 
           // G
-          gvald = gvald * 0.7 + 255 * 0.3;
+          gvald = FADE(gvald, green_factor);
           if (gvals < gvald)
             gvald = gvals;
 
           // B
-          bvald = bvald * 0.7 + 255 * 0.3;
+          bvald = FADE(bvald, blue_factor);
           if (bvals < bvald)
             bvald = bvals;
 
@@ -277,20 +280,6 @@ namespace tesseract {
       }
       //pixCopyResolution(pixd, pixs);
       //pixCopyInputFormat(pixd, pixs);
-
-#if 0
-      for (i = 0; i < h2; i++) {
-        auto line = data + i * wpl;
-        for (j = 0; j < w; j++) {
-          int rval, gval, bval;
-          extractRGBValues(line[j], &rval, &gval, &bval);
-          nrval = (l_int32) (frval * rval + 0.5);
-          ngval = (l_int32) (fgval * gval + 0.5);
-          nbval = (l_int32) (fbval * bval + 0.5);
-          composeRGBPixel(nrval, ngval, nbval, line + j);
-        }
-      }
-#endif
 
       pixWrite(img_filename, botlayer, IFF_PNG);
 

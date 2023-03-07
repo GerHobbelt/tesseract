@@ -506,7 +506,7 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       int wpl = pixGetWpl(pix);
 
       block->plot_graded_blobs(pix, data, wpl, w, h);
-      block->plot_noise_blobs(pix, data, wpl, w, h);
+      //block->plot_noise_blobs(pix, data, wpl, w, h);
 
       tesseract_->AddPixDebugPage(pix, name, false);
     }

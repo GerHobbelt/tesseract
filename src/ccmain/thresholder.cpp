@@ -559,8 +559,7 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
   } else {
     if (pixGetColormap(original)) {
       Image tmp;
-      Image without_cmap =
-          pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
       int depth = pixGetDepth(without_cmap);
       if (depth > 1 && depth < 8) {
         tmp = pixConvertTo8(without_cmap, false);

@@ -979,37 +979,98 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   }
 }
 
-void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h) const {
+void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int& cmap_offset, bool noise) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step
+
+  int color_index = cmap_offset;
+  cmap_offset++;
+  if ((cmap_offset & (64 - 1)) == 0) {
+    cmap_offset--;                  // end of 'local' cmap color range reached: do not overflow the index
+  }
+
+  const int width = 2;
+  PTA* pta = nullptr;
 
   pos = start; // current position
   //window->Pen(colour);
   if (stepcount == 0) {
     //window->Rectangle(box.left(), box.top(), box.right(), box.bottom());
-    return;
+    BOX* b = boxCreate(box.left(), box.top(), box.right() - box.left(), box.bottom() - box.top());
+    pta = generatePtaBox(b, width);
+    boxDestroy(&b);
   }
-  auto x = pos.x();
-  auto y = pos.y();
-  //window->SetCursor(pos.x(), pos.y());
+  else {
+    auto x = pos.x();
+    auto y = pos.y();
+    auto x0 = x;
+    auto y0 = y;
+    auto x2 = x;
+    auto y2 = y;
+    //ptaAddPt(pta, x, y);
+    pta = ptaCreate(0);
 
-  stepindex = 0;
-  while (stepindex < stepcount) {
-    pos += step(stepindex); // step to next
-    auto x2 = pos.x();
-    auto y2 = pos.y();
-    stepdir = step_dir(stepindex);
-    stepindex++; // count steps
-    // merge straight lines
-    while (stepindex < stepcount && stepdir.get_dir() == step_dir(stepindex).get_dir()) {
-      pos += step(stepindex);
+    stepindex = 0;
+    while (stepindex < stepcount) {
+      pos += step(stepindex); // step to next
       x2 = pos.x();
       y2 = pos.y();
-      stepindex++;
+      //ptaAddPt(pta, x2, y2);
+      {
+        PTA* pta2 = generatePtaWideLine(x, y, x2, y2, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+      x = x2;
+      y = y2;
+
+      stepdir = step_dir(stepindex);
+      stepindex++; // count steps
+      // merge straight lines
+      while (stepindex < stepcount && stepdir.get_dir() == step_dir(stepindex).get_dir()) {
+        pos += step(stepindex);
+        x2 = pos.x();
+        y2 = pos.y();
+        //ptaAddPt(pta, x2, y2);
+        {
+          PTA* pta2 = generatePtaWideLine(x, y, x2, y2, width);
+          ptaJoin(pta, pta2, 0, -1);
+          ptaDestroy(&pta2);
+        }
+        x = x2;
+        y = y2;
+
+        stepindex++;
+      }
+      //window->DrawTo(pos.x(), pos.y());
     }
-    //window->DrawTo(pos.x(), pos.y());
+
+    // close the poly?
+    if (x2 != x || y2 != y) {
+      {
+        PTA* pta2 = generatePtaWideLine(x2, y2, x0, y0, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+    }
   }
+
+  {
+    PTA* pta2;
+    //ptaRemoveDupsByAset(pta, &pta2);
+    ptaRemoveDupsByHmap(pta, &pta2, nullptr);
+    ptaDestroy(&pta);
+    pta = pta2;
+  }
+
+  int npts = ptaGetCount(pta);
+
+  int r, g, b;
+  pixcmapGetColor(pixGetColormap(pix), color_index, &r, &g, &b);
+  pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
+
+  ptaDestroy(&pta);
 }
 
 /**

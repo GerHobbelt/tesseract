@@ -441,13 +441,15 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour
 
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour.
-void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, uint32_t* data, int wpl, int w, int h) {
+void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, uint32_t* data, int wpl, int w, int h, int cmap_offset) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot(pix, data, wpl, w, h);
+    BLOBNBOX* blob = it.data();
+    blob->plot(pix, data, wpl, w, h, cmap_offset, blob->DeletableNoise());
   }
 }
 
+#if 0
 // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
 // given list in the given body_colour, with child outlines in the
 // child_colour.
@@ -460,6 +462,8 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST* list, Image& pix, uint32_t* data, i
     }
   }
 }
+#endif
+
 
 ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
@@ -516,9 +520,9 @@ void BLOBNBOX::plot(ScrollView *window,               // window to draw in
   }
 }
 
-void BLOBNBOX::plot(Image& pix, l_uint32* data, int wpl, int w, int h) { 
+void BLOBNBOX::plot(Image& pix, l_uint32* data, int wpl, int w, int h, int &cmap_offset, bool noise) {
   if (cblob_ptr != nullptr) {
-    cblob_ptr->plot(pix, data, wpl, w, h);
+    cblob_ptr->plot(pix, data, wpl, w, h, cmap_offset, noise);
   }
 }
 #endif
@@ -1073,6 +1077,51 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
   BLOBNBOX::ComputeEdgeOffsets(thresholds, grey, &noise_blobs);
 }
 
+
+static inline int cmapInterpolate(int factor, int c0, int c1) {
+  int c = c0 * factor + c1 * (256 - factor);
+  return c >> 8;
+}
+
+static void initDiagPlotColorMapColorRange(PIXCMAP* cmap, int start_index, int h0, int s0, int v0, int h1, int s1, int v1) {
+  for (int i = 0; i < 64; i++) {
+    int h = cmapInterpolate(i, h0, h1);
+    int s = cmapInterpolate(i, s0, s1);
+    int v = cmapInterpolate(i, v0, v1);
+
+    int pos = start_index + i;
+    // lpetonica uses a HSV unit sets of (240, 255, 255) instead of (360, 100%, 100%) so we must convert to that too:
+    if (pixcmapGetCount(cmap) <= pos) {
+      pixcmapAddColor(cmap, (h * 240) / 360, (s * 255) / 100, (v * 255) / 100);
+    }
+    else {
+      pixcmapResetColor(cmap, pos, (h * 240) / 360, (s * 255) / 100, (v * 255) / 100);
+    }
+  }
+}
+
+static void initDiagPlotColorMap(PIXCMAP* cmap) {
+  int depth = pixcmapGetDepth(cmap);
+
+  // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
+  // --> noise_blobs
+  initDiagPlotColorMapColorRange(cmap, 0, 204, 100, 71, 262, 100, 71);
+
+  // hsv(143, 100%, 64%) - hsv(115, 77%, 71%)
+  // --> small_blobs
+  initDiagPlotColorMapColorRange(cmap, 64, 143, 100, 64, 115, 77, 71);
+
+  // hsv(297, 100%, 81%) - hsv(321, 100%, 82%)
+  // --> large_blobs
+  initDiagPlotColorMapColorRange(cmap, 2 * 64, 297, 100, 81, 321, 100, 82);
+
+  // hsv(61, 100%, 76%) - hsv(26, 100%, 94%)
+  // --> blobs
+  initDiagPlotColorMapColorRange(cmap, 3 * 64, 61, 100, 76, 26, 100, 94);
+
+  pixcmapConvertHSVToRGB(cmap);
+}
+
 #if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
 void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
@@ -1080,14 +1129,6 @@ void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
   BLOBNBOX::PlotNoiseBlobs(&small_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&large_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&blobs, ScrollView::RED, ScrollView::RED, win);
-}
-
-// Draw the noise blobs from all lists in red.
-void TO_BLOCK::plot_noise_blobs(Image& pix, uint32_t* data, int wpl, int w, int h) {
-  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotNoiseBlobs(&small_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotNoiseBlobs(&large_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotNoiseBlobs(&blobs, pix, data, wpl, w, h);
 }
 
 // Draw the blobs on the various lists in the block in different colors.
@@ -1100,10 +1141,54 @@ void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
 
 // Draw the blobs on the various lists in the block in different colors.
 void TO_BLOCK::plot_graded_blobs(Image &pix, l_uint32* data, int wpl, int w, int h) {
-  BLOBNBOX::PlotBlobs(&noise_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotBlobs(&small_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotBlobs(&large_blobs, pix, data, wpl, w, h);
-  BLOBNBOX::PlotBlobs(&blobs, pix, data, wpl, w, h);
+#if 0
+
+  LEPT_DLL extern l_ok pixRenderPta(PIX* pix, PTA* pta, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderPtaArb(PIX* pix, PTA* pta, l_uint8 rval, l_uint8 gval, l_uint8 bval);
+  LEPT_DLL extern l_ok pixRenderPtaBlend(PIX* pix, PTA* pta, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_float32 fract);
+  LEPT_DLL extern l_ok pixRenderLine(PIX* pix, l_int32 x1, l_int32 y1, l_int32 x2, l_int32 y2, l_int32 width, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderLineArb(PIX* pix, l_int32 x1, l_int32 y1, l_int32 x2, l_int32 y2, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval);
+  LEPT_DLL extern l_ok pixRenderLineBlend(PIX* pix, l_int32 x1, l_int32 y1, l_int32 x2, l_int32 y2, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_float32 fract);
+  LEPT_DLL extern l_ok pixRenderBox(PIX* pix, BOX* box, l_int32 width, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderBoxArb(PIX* pix, BOX* box, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval);
+  LEPT_DLL extern l_ok pixRenderBoxBlend(PIX* pix, BOX* box, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_float32 fract);
+  LEPT_DLL extern l_ok pixRenderBoxa(PIX* pix, BOXA* boxa, l_int32 width, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderBoxaArb(PIX* pix, BOXA* boxa, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval);
+  LEPT_DLL extern l_ok pixRenderBoxaBlend(PIX* pix, BOXA* boxa, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_float32 fract, l_int32 removedups);
+  LEPT_DLL extern l_ok pixRenderHashBox(PIX* pix, BOX* box, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderHashBoxArb(PIX* pix, BOX* box, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 rval, l_int32 gval, l_int32 bval);
+  LEPT_DLL extern l_ok pixRenderHashBoxBlend(PIX* pix, BOX* box, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 rval, l_int32 gval, l_int32 bval, l_float32 fract);
+  LEPT_DLL extern l_ok pixRenderHashMaskArb(PIX* pix, PIX* pixm, l_int32 x, l_int32 y, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 rval, l_int32 gval, l_int32 bval);
+  LEPT_DLL extern l_ok pixRenderHashBoxa(PIX* pix, BOXA* boxa, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 op);
+  LEPT_DLL extern l_ok pixRenderHashBoxaArb(PIX* pix, BOXA* boxa, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 rval, l_int32 gval, l_int32 bval);
+  LEPT_DLL extern l_ok pixRenderHashBoxaBlend(PIX* pix, BOXA* boxa, l_int32 spacing, l_int32 width, l_int32 orient, l_int32 outline, l_int32 rval, l_int32 gval, l_int32 bval, l_float32 fract);
+  LEPT_DLL extern l_ok pixRenderPolyline(PIX* pix, PTA* ptas, l_int32 width, l_int32 op, l_int32 closeflag);
+  LEPT_DLL extern l_ok pixRenderPolylineArb(PIX* pix, PTA* ptas, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_int32 closeflag);
+  LEPT_DLL extern l_ok pixRenderPolylineBlend(PIX* pix, PTA* ptas, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval, l_float32 fract, l_int32 closeflag, l_int32 removedups);
+  LEPT_DLL extern l_ok pixRenderGridArb(PIX* pix, l_int32 nx, l_int32 ny, l_int32 width, l_uint8 rval, l_uint8 gval, l_uint8 bval);
+  LEPT_DLL extern PIX* pixRenderRandomCmapPtaa(PIX* pix, PTAA* ptaa, l_int32 polyflag, l_int32 width, l_int32 closeflag);
+  LEPT_DLL extern PIX* pixRenderPolygon(PTA* ptas, l_int32 width, l_int32* pxmin, l_int32* pymin);
+  LEPT_DLL extern PIX* pixFillPolygon(PIX* pixs, PTA* pta, l_int32 xmin, l_int32 ymin);
+#endif
+
+  PIXCMAP* cmap = pixGetColormap(pix);
+  if (!cmap) {
+    cmap = pixcmapCreate(8);
+    initDiagPlotColorMap(cmap);
+    pixSetColormap(pix, cmap);
+  }
+
+  // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
+  BLOBNBOX::PlotBlobs(&noise_blobs, pix, data, wpl, w, h, 0);
+  // hsv(143, 100%, 64%) - hsv(115, 77%, 71%)
+  BLOBNBOX::PlotBlobs(&small_blobs, pix, data, wpl, w, h, 64);
+  // hsv(297, 100%, 81%) - hsv(321, 100%, 82%)
+  BLOBNBOX::PlotBlobs(&large_blobs, pix, data, wpl, w, h, 2 * 64);
+  // hsv(61, 100%, 76%) - hsv(26, 100%, 94%)
+  BLOBNBOX::PlotBlobs(&blobs, pix, data, wpl, w, h, 3 * 64);
+
+  //pixcmapDestroy(cmap);
+  pixDestroyColormap(pix);
 }
 
 
