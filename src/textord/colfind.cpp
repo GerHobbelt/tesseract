@@ -179,9 +179,10 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
       auto width = tright_.x() - bleft_.x();
       auto height = tright_.y() - bleft_.y();
 
-      Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-      pixClearAll(pix);
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
 
+#if 0
       BOX* border = boxCreate(2, 2, width + 4, height + 4);
       // boxDestroy(BOX * *pbox);
       BOXA* boxlist = boxaCreate(1);
@@ -191,8 +192,14 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
       composeRGBAPixel(255, 32, 32, 255, &bordercolor);
       pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
       boxaDestroy(&boxlist);
+#endif
 
-      input_block->plot_graded_blobs(pix);
+      int w, h;
+      pixGetDimensions(pix, &w, &h, NULL);
+      l_uint32* data = pixGetData(pix);
+      int wpl = pixGetWpl(pix);
+
+      input_block->plot_graded_blobs(pix, data, wpl, w, h);
 
       tesseract_->AddPixDebugPage(pix, name, false);
     }
@@ -420,9 +427,10 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         auto width = tright_.x() - bleft_.x();
         auto height = tright_.y() - bleft_.y();
 
-        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-        pixClearAll(pix);
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
 
+#if 0
         BOX* border = boxCreate(2, 2, width + 4, height + 4);
         // boxDestroy(BOX * *pbox);
         BOXA* boxlist = boxaCreate(1);
@@ -432,8 +440,14 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
         pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
         boxaDestroy(&boxlist);
+#endif
 
-        input_block->plot_graded_blobs(pix);
+        int w, h;
+        pixGetDimensions(pix, &w, &h, NULL);
+        l_uint32 *data = pixGetData(pix);
+        int wpl = pixGetWpl(pix);
+
+        input_block->plot_graded_blobs(pix, data, wpl, w, h);
 
         tesseract_->AddPixDebugPage(pix, name, false);
       }
@@ -471,9 +485,10 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
       auto width = tesseract_->ImageWidth();
       auto height = tesseract_->ImageHeight();
 
-      Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-      pixClearAll(pix);
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
 
+#if 0
       BOX* border = boxCreate(2, 2, width + 4, height + 4);
       // boxDestroy(BOX * *pbox);
       BOXA* boxlist = boxaCreate(1);
@@ -483,9 +498,15 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
       composeRGBAPixel(255, 32, 32, 255, &bordercolor);
       pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
       boxaDestroy(&boxlist);
+#endif
 
-      part_grid_.DisplayBoxes(pix);
-      DisplayTabVectors(pix);
+      int w, h;
+      pixGetDimensions(pix, &w, &h, NULL);
+      l_uint32* data = pixGetData(pix);
+      int wpl = pixGetWpl(pix);
+
+      part_grid_.DisplayBoxes(pix, data, wpl, w, h);
+      DisplayTabVectors(pix, data, wpl, w, h);
 
       tesseract_->AddPixDebugPage(pix, name, false);
     }
@@ -537,9 +558,10 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         auto width = tesseract_->ImageWidth();
         auto height = tesseract_->ImageHeight();
 
-        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-        pixClearAll(pix);
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
 
+#if 0
         BOX* border = boxCreate(2, 2, width + 4, height + 4);
         // boxDestroy(BOX * *pbox);
         BOXA* boxlist = boxaCreate(1);
@@ -549,10 +571,16 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
         pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
         boxaDestroy(&boxlist);
+#endif
 
-        part_grid_.DisplayBoxes(pix);
+        int w, h;
+        pixGetDimensions(pix, &w, &h, NULL);
+        l_uint32* data = pixGetData(pix);
+        int wpl = pixGetWpl(pix);
+
+        part_grid_.DisplayBoxes(pix, data, wpl, w, h);
         if (!textord_debug_printable) {
-          DisplayTabVectors(pix);
+          DisplayTabVectors(pix, data, wpl, w, h);
         }
 #if 0
         if (textord_tabfind_show_partitions > 1) {
@@ -654,9 +682,10 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     auto width = tesseract_->ImageWidth();
     auto height = tesseract_->ImageHeight();
 
-    Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-    pixClearAll(pix);
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
 
+#if 0
     BOX* border = boxCreate(2, 2, width + 4, height + 4);
     // boxDestroy(BOX * *pbox);
     BOXA* boxlist = boxaCreate(1);
@@ -666,14 +695,19 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     composeRGBAPixel(255, 32, 32, 255, &bordercolor);
     pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
     boxaDestroy(&boxlist);
+#endif
 
-    DisplayBoxes(pix);
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
     BLOCK_IT block_it(blocks);
     int serial = 1;
     for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
       BLOCK* block = block_it.data();
-      block->pdblk.plot(pix, serial++,
-                        textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+      block->pdblk.plot(pix, serial++, data, wpl, w, h);
     }
 
     tesseract_->AddPixDebugPage(pix, name, false);
@@ -699,9 +733,10 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
     auto width = tesseract_->ImageWidth();
     auto height = tesseract_->ImageHeight();
 
-    Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-    pixClearAll(pix);
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
 
+#if 0
     BOX* border = boxCreate(2, 2, width + 4, height + 4);
     // boxDestroy(BOX * *pbox);
     BOXA* boxlist = boxaCreate(1);
@@ -711,13 +746,19 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
     composeRGBAPixel(255, 32, 32, 255, &bordercolor);
     pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
     boxaDestroy(&boxlist);
+#endif
 
-    DisplayBoxes(pix);
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
     //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
     for (int i = 0; i < gridheight_; ++i) {
       ColPartitionSet* columns = best_columns_[i];
       if (columns != nullptr) {
-        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix);
+        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix, data, wpl, w, h);
       }
     }
 

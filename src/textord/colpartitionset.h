@@ -100,7 +100,7 @@ public:
   void DisplayColumnEdges(int y_bottom, int y_top, ScrollView *win);
 
   // Display the edges of the columns at the given y coords.
-  void DisplayColumnEdges(int y_bottom, int y_top, Image &pix);
+  void DisplayColumnEdges(int y_bottom, int y_top, Image &pix, uint32_t* data, int wpl, int w, int h);
 
   // Return the ColumnSpanningType that best explains the columns overlapped
   // by the given coords(left,right,y), with the given margins.

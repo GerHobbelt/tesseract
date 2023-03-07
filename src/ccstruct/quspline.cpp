@@ -362,7 +362,7 @@ void QSPLINE::plot(          // draw it
 }
 #endif
 
-void QSPLINE::plot(Image &pix) const {
+void QSPLINE::plot(Image &pix, uint32_t* data, int wpl, int w, int h) const {
   if (pix == nullptr) {
     return;
   }

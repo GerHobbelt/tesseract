@@ -979,7 +979,7 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   }
 }
 
-void C_OUTLINE::plot(Image& pix, ScrollView::Color colour) const {
+void C_OUTLINE::plot(Image& pix, l_uint32* data, int wpl, int w, int h) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step

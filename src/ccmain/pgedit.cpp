@@ -961,9 +961,10 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   auto width = ImageWidth();
   auto height = ImageHeight();
 
-  Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-  pixClearAll(pix);
+  Image pix = pixCreate(width, height, 32 /* RGBA */);
+  pixSetAll(pix);
 
+#if 0
   BOX* border = boxCreate(2, 2, width + 4, height + 4);
   // boxDestroy(BOX * *pbox);
   BOXA* boxlist = boxaCreate(1);
@@ -973,6 +974,12 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   composeRGBAPixel(255, 32, 32, 255, &bordercolor);
   pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
   boxaDestroy(&boxlist);
+#endif
+
+  int w, h;
+  pixGetDimensions(pix, &w, &h, NULL);
+  l_uint32* data = pixGetData(pix);
+  int wpl = pixGetWpl(pix);
 
   int block_count = 1;
 
@@ -999,10 +1006,10 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
     for (WERD_RES* word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
       //(this->*word_painter)(&pr_it);
       if (display_baselines && pr_it.row() != pr_it.prev_row()) {
-        pr_it.row()->row->plot_baseline(pix, ScrollView::GREEN);
+        pr_it.row()->row->plot_baseline(pix, data, wpl, w, h);
       }
       if (display_blocks && pr_it.block() != pr_it.prev_block()) {
-        pr_it.block()->block->pdblk.plot(pix, block_count++, ScrollView::RED);
+        pr_it.block()->block->pdblk.plot(pix, block_count++, data, wpl, w, h);
       }
     }
     //image_win->Update();

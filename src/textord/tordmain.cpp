@@ -272,9 +272,10 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         auto width = tesseract_->ImageWidth();
         auto height = tesseract_->ImageHeight();
 
-        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
-        pixClearAll(pix);
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
 
+#if 0
         BOX* border = boxCreate(2, 2, width + 4, height + 4);
         // boxDestroy(BOX * *pbox);
         BOXA* boxlist = boxaCreate(1);
@@ -284,8 +285,14 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         composeRGBAPixel(255, 32, 32, 255, &bordercolor);
         pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
         boxaDestroy(&boxlist);
+#endif
 
-        block->plot_graded_blobs(pix);
+        int w, h;
+        pixGetDimensions(pix, &w, &h, NULL);
+        l_uint32* data = pixGetData(pix);
+        int wpl = pixGetWpl(pix);
+
+        block->plot_graded_blobs(pix, data, wpl, w, h);
 
         tesseract_->AddPixDebugPage(pix, name, false);
       }

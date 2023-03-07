@@ -567,7 +567,7 @@ void TabVector::Display(ScrollView *tab_win) {
 }
 
 // Draw this tabvector in place in the given window.
-void TabVector::Display(Image &pix) {
+void TabVector::Display(Image &pix, uint32_t* data, int wpl, int w, int h) {
   if (textord_debug_printable) {
     //tab_win->Pen(ScrollView::BLUE);
   }

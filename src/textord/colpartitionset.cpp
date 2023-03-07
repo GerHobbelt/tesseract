@@ -413,7 +413,7 @@ void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
 
 // Display the edges of the columns at the given y coords.
 void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
-                                         Image &pix) {
+                                         Image &pix, uint32_t *data, int wpl, int w, int h) {
   ColPartition_IT it(&parts_);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     ColPartition* part = it.data();

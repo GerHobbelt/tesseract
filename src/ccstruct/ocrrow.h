@@ -144,10 +144,10 @@ public:
   }
 
   void plot_baseline(             // draw the baseline
-      Image &pix,                 // image to draw in
-      ScrollView::Color colour) { // colour to draw
+      Image &pix, uint32_t *data, int wpl, int w, int h
+  ) { 
     // draw it
-    baseline.plot(pix);
+    baseline.plot(pix, data, wpl, w, h);
   }
 #endif // !GRAPHICS_DISABLED
   ROW &operator=(const ROW &source);

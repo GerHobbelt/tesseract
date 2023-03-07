@@ -227,7 +227,7 @@ public:
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
   // ScrollView::Color BBC::BoxColor() const.
-  void DisplayBoxes(Image &pix);
+  void DisplayBoxes(Image &pix, uint32_t* data, int wpl, int w, int h);
 
 #endif // !GRAPHICS_DISABLED
 
@@ -689,7 +689,7 @@ void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollView *tab_win) {
 // Use of this function requires an additional member of the BBC class:
 // ScrollView::Color BBC::BoxColor() const.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(Image &pix) {
+void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(Image &pix, uint32_t *data, int wpl, int w, int h) {
   //tab_win->Pen(ScrollView::BLUE);
   //tab_win->Brush(ScrollView::NONE);
 

@@ -205,7 +205,7 @@ protected:
   /**
    * Display the tab vectors found in this grid.
    */
-  void DisplayTabVectors(Image &pix);
+  void DisplayTabVectors(Image &pix, uint32_t *data, int wpl, int w, int h);
 
   // First part of FindTabVectors, which may be used twice if the text
   // is mostly of vertical alignment.  If find_vertical_text flag is

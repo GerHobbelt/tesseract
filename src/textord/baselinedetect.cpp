@@ -619,34 +619,36 @@ void BaselineBlock::DrawFinalRows(const ICOORD &page_tr) {
   FCOORD rotation(1.0f, 0.0f);
   int left_edge = block_->block->pdblk.bounding_box().left();
   ScrollView *win = create_to_win(page_tr);
-  ScrollView::Color colour = ScrollView::RED;
-  TO_ROW_IT row_it = block_->get_rows();
-  for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
-    plot_parallel_row(row_it.data(), gradient, left_edge, colour, rotation);
-    colour = static_cast<ScrollView::Color>(colour + 1);
-    if (colour > ScrollView::MAGENTA) {
-      colour = ScrollView::RED;
+  if (win != nullptr) {
+    ScrollView::Color colour = ScrollView::RED;
+    TO_ROW_IT row_it = block_->get_rows();
+    for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
+      plot_parallel_row(row_it.data(), gradient, left_edge, colour, rotation);
+      colour = static_cast<ScrollView::Color>(colour + 1);
+      if (colour > ScrollView::MAGENTA) {
+        colour = ScrollView::RED;
+      }
     }
+    plot_blob_list(win, &block_->blobs, ScrollView::MAGENTA, ScrollView::WHITE);
+    // Show discarded blobs.
+    plot_blob_list(win, &block_->underlines, ScrollView::YELLOW,
+                   ScrollView::CORAL);
+    if (block_->blobs.length() > 0) {
+      tprintf("{} blobs discarded as noise\n", block_->blobs.length());
+    }
+    draw_meanlines(block_, gradient, left_edge, ScrollView::WHITE, rotation);
   }
-  plot_blob_list(win, &block_->blobs, ScrollView::MAGENTA, ScrollView::WHITE);
-  // Show discarded blobs.
-  plot_blob_list(win, &block_->underlines, ScrollView::YELLOW,
-                 ScrollView::CORAL);
-  if (block_->blobs.length() > 0) {
-    tprintf("{} blobs discarded as noise\n", block_->blobs.length());
-  }
-  draw_meanlines(block_, gradient, left_edge, ScrollView::WHITE, rotation);
 }
 
 #endif // !GRAPHICS_DISABLED
 
-void BaselineBlock::DrawPixSpline(Image pix_in) {
+void BaselineBlock::DrawPixSpline(Image pix_in, uint32_t* data, int wpl, int w, int h) {
   if (non_text_block_) {
     return;
   }
   TO_ROW_IT row_it = block_->get_rows();
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
-    row_it.data()->baseline.plot(pix_in);
+    row_it.data()->baseline.plot(pix_in, data, wpl, w, h);
   }
 }
 

@@ -352,7 +352,7 @@ public:
   void Display(ScrollView *tab_win);
 
   // Draw this tabvector in place in the given window.
-  void Display(Image &pix);
+  void Display(Image &pix, uint32_t* data, int wpl, int w, int h);
 
   // Refit the line and/or re-evaluate the vector if the dirty flags are set.
   void FitAndEvaluateIfNeeded(const ICOORD &vertical, TabFind *finder);

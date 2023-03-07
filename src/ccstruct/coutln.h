@@ -254,9 +254,7 @@ public:
       ScrollView *window,              // window to draw in
       ScrollView::Color colour) const; // colour to draw it
 
-  void plot(                           // draw one
-      Image& pix,                      // image to draw in
-      ScrollView::Color colour) const; // colour to draw it
+  void plot(Image& pix, uint32_t* data, int wpl, int w, int h) const; // colour to draw it
   
   // Draws the outline in the given colour, normalized using the given denorm,
   // making use of sub-pixel accurate information if available.

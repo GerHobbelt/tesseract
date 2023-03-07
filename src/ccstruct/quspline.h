@@ -82,7 +82,7 @@ public:
 
   // Paint the baseline over pix. If pix has depth of 32, then the line will
   // be painted in red. Otherwise it will be painted in black.
-  void plot(Image &pix) const;
+  void plot(Image &pix, uint32_t* data, int wpl, int w, int h) const;
 
   QSPLINE &operator=(const QSPLINE &source); // from this
 

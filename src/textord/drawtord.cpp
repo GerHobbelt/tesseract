@@ -48,6 +48,9 @@ ScrollView *create_to_win(ICOORD page_tr) {
   if (to_win != nullptr) {
     return to_win;
   }
+  if (1) {
+    return to_win;
+  }
   to_win = new ScrollView(TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
                           page_tr.x(), page_tr.y(), true);
   return to_win;
@@ -116,6 +119,9 @@ void plot_to_row(             // draw a row
   BLOBNBOX_IT it = row->blob_list();
   float left, right; // end of row
 
+  if (to_win == nullptr)
+    return;
+
   if (it.empty()) {
     tprintf("ERROR: No blobs in row at {}\n", row->parallel_c());
     return;
@@ -151,6 +157,9 @@ void plot_parallel_row(       // draw a row
   BLOBNBOX_IT it = row->blob_list();
   auto fleft = static_cast<float>(left); // floating version
   float right;                           // end of row
+
+  if (to_win == nullptr)
+    return;
 
   //      left=it.data()->bounding_box().left();
   it.move_to_last();
@@ -188,6 +197,9 @@ void draw_occupation(                    // draw projection
   int32_t line_index;                     // pixel coord
   ScrollView::Color colour;               // of histogram
   auto fleft = static_cast<float>(xleft); // float version
+
+  if (to_win == nullptr)
+    return;
 
   colour = ScrollView::WHITE;
   to_win->Pen(colour);
@@ -233,6 +245,10 @@ void draw_meanlines(          // draw a block
   TO_ROW *row;         // current row
   BLOBNBOX_IT blob_it; // blobs
   float right;         // end of row
+
+  if (to_win == nullptr)
+    return;
+
   to_win->Pen(colour);
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     row = row_it.data();

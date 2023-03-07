@@ -238,7 +238,7 @@ void PDBLK::plot(            // draw outline
 void PDBLK::plot(            // draw outline
     Image &pix,              // image to draw in
     int32_t serial,          // serial number
-    ScrollView::Color colour // colour to draw in
+    uint32_t* data, int wpl, int w, int h
 ) {
   ICOORD startpt;              // start of outline
   ICOORD endpt;                // end of outline

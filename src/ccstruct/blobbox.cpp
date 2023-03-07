@@ -441,24 +441,22 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour
 
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour.
-void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, ScrollView::Color body_colour,
-                         ScrollView::Color child_colour, Image& pix) {
+void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, uint32_t* data, int wpl, int w, int h) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot(pix, body_colour, child_colour);
+    it.data()->plot(pix, data, wpl, w, h);
   }
 }
 
 // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
 // given list in the given body_colour, with child outlines in the
 // child_colour.
-void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST* list, ScrollView::Color body_colour,
-                              ScrollView::Color child_colour, Image& pix) {
+void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST* list, Image& pix, uint32_t* data, int wpl, int w, int h) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX* blob = it.data();
     if (blob->DeletableNoise()) {
-      blob->plot(pix, body_colour, child_colour);
+      blob->plot(pix, data, wpl, w, h);
     }
   }
 }
@@ -518,11 +516,9 @@ void BLOBNBOX::plot(ScrollView *window,               // window to draw in
   }
 }
 
-void BLOBNBOX::plot(Image& pix,                       // iamge to draw in
-                    ScrollView::Color blob_colour,    // for outer bits
-                    ScrollView::Color child_colour) { // for holes
+void BLOBNBOX::plot(Image& pix, l_uint32* data, int wpl, int w, int h) { 
   if (cblob_ptr != nullptr) {
-    cblob_ptr->plot(pix, blob_colour, child_colour);
+    cblob_ptr->plot(pix, data, wpl, w, h);
   }
 }
 #endif
@@ -1087,11 +1083,11 @@ void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
 }
 
 // Draw the noise blobs from all lists in red.
-void TO_BLOCK::plot_noise_blobs(Image& pix) {
-  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, ScrollView::RED, ScrollView::RED, pix);
-  BLOBNBOX::PlotNoiseBlobs(&small_blobs, ScrollView::RED, ScrollView::RED, pix);
-  BLOBNBOX::PlotNoiseBlobs(&large_blobs, ScrollView::RED, ScrollView::RED, pix);
-  BLOBNBOX::PlotNoiseBlobs(&blobs, ScrollView::RED, ScrollView::RED, pix);
+void TO_BLOCK::plot_noise_blobs(Image& pix, uint32_t* data, int wpl, int w, int h) {
+  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotNoiseBlobs(&small_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotNoiseBlobs(&large_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotNoiseBlobs(&blobs, pix, data, wpl, w, h);
 }
 
 // Draw the blobs on the various lists in the block in different colors.
@@ -1103,11 +1099,11 @@ void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
 }
 
 // Draw the blobs on the various lists in the block in different colors.
-void TO_BLOCK::plot_graded_blobs(Image &pix) {
-  BLOBNBOX::PlotBlobs(&noise_blobs, ScrollView::CORAL, ScrollView::BLUE, pix);
-  BLOBNBOX::PlotBlobs(&small_blobs, ScrollView::GOLDENROD, ScrollView::YELLOW, pix);
-  BLOBNBOX::PlotBlobs(&large_blobs, ScrollView::DARK_GREEN, ScrollView::YELLOW, pix);
-  BLOBNBOX::PlotBlobs(&blobs, ScrollView::WHITE, ScrollView::BROWN, pix);
+void TO_BLOCK::plot_graded_blobs(Image &pix, l_uint32* data, int wpl, int w, int h) {
+  BLOBNBOX::PlotBlobs(&noise_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotBlobs(&small_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotBlobs(&large_blobs, pix, data, wpl, w, h);
+  BLOBNBOX::PlotBlobs(&blobs, pix, data, wpl, w, h);
 }
 
 
