@@ -35,7 +35,7 @@ typedef int32_t TDimension;
 typedef int16_t TDimension;
 
 #define TDIMENSION_MAX   INT16_MAX
-#define TDIMENSION_MAX   (-INT16_MAX)
+#define TDIMENSION_MIN   (-INT16_MAX)
 #endif
 
 // Floating point data type used for LSTM calculations.
