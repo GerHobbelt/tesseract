@@ -321,7 +321,22 @@ namespace tesseract {
 
       if (w != ow || h != oh)
       {
-        toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        // smaller images are generally masks, etc. and we DO NOT want to be confused by the smoothness
+        // introduced by regular scaling, so we apply brutal sampled scale then:
+        if (w < ow && h < oh) {
+          toplayer = pixScaleBySamplingTopLeft(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        }
+        else if (w > ow && h > oh) {
+          // the new image has been either scaled up vs. the original OR a border was added (TODO)
+          //
+          // for now, we simply apply regular smooth scaling
+          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        }
+        else {
+          // non-uniform scaling...
+          ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        }
       }
 
       auto datas = pixGetData(toplayer);
