@@ -31,15 +31,39 @@ namespace tesseract {
     void AddPix(const Image& pix, const char* caption);
     void AddPix(Image& pix, const char* caption, bool keep_a_copy);
 
+    // Return reference to info stream, where you can collect the diagnostic information gathered.
+    //
+    // NOTE: we expect HTML formatted context to be fed into the stream.
+    std::ostringstream& GetInfoStream()
+    {
+      return info_chunks[info_chunks.size() - 1].information;
+    }
+
+    void PushNextSection(std::string title);          // sibling
+    void PushSubordinateSection(std::string title);   // child
+    void PopSection();                                // pop active; return focus to parent
+
+  protected:
+
+    void PrepNextSection(int level, std::string title);   // internal use
+
+  public:
+
     // Return true when one or more images have been collected.
     bool HasPix() const;
 
+#if 0
     // Sets the destination filename and enables images to be written to a PDF
     // on destruction.
     void WritePDF(const char* filename);
 
+    // Sets the destination filename and enables images to be written as a set of PNGs
+    // on destruction.
     void WritePNGs(const char* filename);
+#endif
 
+    // Sets the destination filename and outputs the collective of images and textual info as a HTML file (+ PNGs)
+    // on destruction.
     void WriteHTML(const char* filename);
 
     void Clear();
@@ -50,7 +74,6 @@ namespace tesseract {
       std::ostringstream information;    // collects the diagnostic information gathered while this section/chunk is the active one.
 
       int first_image_index;             // index into the DebugPixa image list
-      int image_count;                   // number of images in DebugPixa that were filed while this section/chunk was active.
     };
 
     struct DebugProcessStep {
@@ -60,16 +83,17 @@ namespace tesseract {
       //
       // When a section is started, it immediately gets one (empty) info_chunk for the diagnostic methods to file the data they receive into.
       // When the run-time pushes a sub-level step, it is added to the sublevel_items[] set and is made active, until 'popped'.
-      // Once the sublevel step has been "popped" (and before the next one (sub-level sibling) is pushed), thee next info_chunk is readied
+      // Once the sublevel step has been "popped" (and before the next one (sub-level sibling) is pushed), the next info_chunk is readied
       // and made the active one.
       // Thus, when this step itself is popped (inactivated), the size of the info_chunks[] array should be one longer than the sublevel_items[]
       // array, as the latter *interleaves* the former.
       //
       // Note that we expect a *single* "root" step to carry this hierarchy of diagnostic registered process steps: DebugPixa::info_root
 
-      std::vector<DebugProcessInfoChunk> info_chunks;   // carries the information that was filed while this section/chunk was active.
+      int level;                      // hierarchy depth. 0: root
 
-      std::vector<DebugProcessStep> sublevel_items;     // the process sublevel steps that were filed when this section/chunk was active/parent.
+      int first_info_chunk;           // index into info_chunks[] array
+      int last_info_chunk { -1 };     // index into info_chunks[] array; necessary as we allow return-to-parent process steps hierarchy layout.
     };
 
   private:
@@ -84,7 +108,9 @@ namespace tesseract {
     std::vector<std::string> captions;
 
     // non-image additional diagnostics information, collected and stored as hierarchy:
-    DebugProcessStep info_root;
+    std::vector<DebugProcessStep> steps;
+    std::vector<DebugProcessInfoChunk> info_chunks;
+    int active_step_index;
   };
 
 } // namespace tesseract

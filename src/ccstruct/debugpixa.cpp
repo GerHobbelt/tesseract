@@ -32,6 +32,10 @@ namespace tesseract {
 #else
     fonts_ = bmfCreate(nullptr, 14);
 #endif
+
+    // set up the root info section:
+    active_step_index = -1;
+    PushNextSection("");
   }
 
   // If the filename_ has been set and there are any debug images, they are
@@ -78,6 +82,84 @@ namespace tesseract {
     return (pixaGetCount(pixa_) > 0);
   }
 
+  void DebugPixa::PushNextSection(std::string title)
+  {
+    // sibling; but accept only one root!
+    if (active_step_index < 0)
+    {
+      PushSubordinateSection(title);
+      return;
+    }
+    ASSERT0(steps.size() >= 1);
+    ASSERT0(active_step_index < steps.size());
+    auto& prev_step = steps[active_step_index];
+    int prev_level = prev_step.level;
+    // accept only one root, so if root is 'active' again...
+    if (prev_level == 0)
+    {
+      PushSubordinateSection(title);
+      return;
+    }
+
+    PrepNextSection(prev_level, title);
+  }
+
+  void DebugPixa::PushSubordinateSection(std::string title)
+  {
+    // child (or root!)
+    int prev_level = -1;
+    if (active_step_index >= 0)
+    {
+      auto& prev_step = steps[active_step_index];
+      prev_level = prev_step.level;
+    }
+
+    // child
+    PrepNextSection(prev_level + 1, title);
+  }
+
+  void DebugPixa::PrepNextSection(int level, std::string title)
+  {
+    auto& step_ref = steps.emplace_back();
+    // sibling
+    step_ref.level = level;
+    step_ref.title = title;
+    step_ref.first_info_chunk = info_chunks.size();
+
+    active_step_index = steps.size() - 1;
+
+    auto& info_ref = info_chunks.emplace_back();
+    info_ref.first_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+  }
+
+  void DebugPixa::PopSection()
+  {
+    int idx = active_step_index;
+    ASSERT0(steps.size() >= 1);
+    ASSERT0(active_step_index >= 0);
+    ASSERT0(active_step_index < steps.size());
+
+    // return to parent
+    auto& step = steps[idx];
+    auto level = step.level - 1;    // level we seek
+    for (idx--; idx >= 0; idx--)
+    {
+      auto& prov_step = steps[idx];
+      if (prov_step.level == level)
+      {
+        // bingo!
+        active_step_index = idx;
+
+        // now all we need is a fresh info_chunk:
+        auto& info_ref = info_chunks.emplace_back();
+        info_ref.first_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+        return;
+      }
+    }
+    // when we get here, we're already sitting at root, so nothing changes
+  }
+
+#if 0
   // Sets the destination filename and enables images to be written to a PDF
   // on destruction.
   void DebugPixa::WritePDF(const char* filename) {
@@ -88,6 +170,7 @@ namespace tesseract {
       //pixaClear(pixa_);
     }
   }
+#endif
 
   static char* strnrpbrk(char* base, const char* breakset, size_t len)
   {
@@ -168,6 +251,7 @@ namespace tesseract {
     str.resize(len);
   }
 
+#if 0
   void DebugPixa::WritePNGs(const char* filename) {
     if (HasPix()) {
       const char* ext = strrchr(filename, '.');
@@ -197,6 +281,7 @@ namespace tesseract {
       //pixaClear(pixa_);
     }
   }
+#endif
 
   static inline int FADE(int val, const int factor) {
     return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
