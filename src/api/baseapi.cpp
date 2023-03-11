@@ -2832,19 +2832,18 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
   char ns[40] = { 0 };
   if (page_number != 0)
   {
-    snprintf(ns, sizeof(ns), "p%04d", page_number);
+    snprintf(ns, sizeof(ns), ".p%04d", page_number);
   }
 
   static int unique_seq_counter = 0;
   unique_seq_counter++;
 
   char nq[40] = { 0 };
-  snprintf(nq, sizeof(nq), "n%04d", unique_seq_counter);
+  snprintf(nq, sizeof(nq), ".n%04d", unique_seq_counter);
 
   std::string f(basepath);
   f = f.substr(0, pathlen);
   f += filename;
-  f += ".";
   f += nq;
   if (label && *label)
   {
@@ -2853,11 +2852,48 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
   }
 	if (*ns)
 	{
-		f += ".";
 		f += ns;
 	}
 	f += ".";
 	f += filename_extension;
+
+  // sanitize generated filename part:
+  char* str = f.data();
+  int slen = f.length();
+  int dpos = pathlen;
+  bool marker = false;
+  for (int spos = pathlen; spos < slen; spos++)
+  {
+    int c = str[spos];
+    switch (c)
+    {
+    case '.':
+    case '-':
+    case '_':
+    case ' ':
+      if (!marker)
+      {
+        marker = true;
+        str[dpos++] = c;
+      }
+      // otherwise skip additional 'marker' characters in the filename
+      break;
+
+    default:
+      marker = false;
+      str[dpos++] = c;
+      break;
+    }
+  }
+  // no marker tolerated at end of filename:
+  if (marker)
+    dpos--;
+  // fringe case: filename is *only markers*:
+  if (dpos == pathlen)
+    str[dpos++] = '_';
+
+  f.resize(dpos);
+
 
 	return std::move(f);
 }

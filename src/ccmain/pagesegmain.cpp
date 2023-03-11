@@ -183,7 +183,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
 
   if (debug_write_unlv && !name.empty()) {
     const int page_number = 0;
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, ".pre-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "pre-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
@@ -198,7 +198,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
 
   if (debug_write_unlv && !name.empty()) {
     const int page_number = 0;
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, ".post-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "post-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
