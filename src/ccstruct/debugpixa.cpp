@@ -324,7 +324,7 @@ namespace tesseract {
         // smaller images are generally masks, etc. and we DO NOT want to be confused by the smoothness
         // introduced by regular scaling, so we apply brutal sampled scale then:
         if (w < ow && h < oh) {
-          toplayer = pixScaleBySamplingTopLeft(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
         }
         else if (w > ow && h > oh) {
           // the new image has been either scaled up vs. the original OR a border was added (TODO)
