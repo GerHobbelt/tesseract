@@ -27,6 +27,7 @@
 #include <unordered_set>
 
 #include <allheaders.h>
+#include <pix_internal.h>
 
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
@@ -58,7 +59,7 @@ AddPointsToPAGE(Pta *pts, std::stringstream &str) {
     for (int p = 0; p < num_pts; ++p) {
       ptaGetPt(pts, p, &x, &y);
       if (p!=0) str << " ";
-      str << (l_uint32) x << "," << (l_uint32) y;
+      str << std::to_string(x) << "," << std::to_string(y);
     }
     str << "\"/>\n";
 }
@@ -346,7 +347,8 @@ AddBoxToPAGE(const ResultIterator *it, PageIteratorLevel level,
 static void 
 AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss, tesseract::WritingDirection writing_direction) {
   PTA *ptsd;
-   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
+   
+  if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl)!=0){ 
       ptaJoin(pts_ltr, pts_rtl, 0, -1);
       pts_rtl = DestroyAndCreatePta(pts_rtl);
@@ -387,7 +389,7 @@ AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
     for (int p = 0; p < num_pts; ++p) {
       ptaGetPt(baseline_pts, p, &x, &y);
       if (p!=0) str << " ";
-      str << (l_uint32) x << "," << (l_uint32) y;
+      str << std::to_string(x) << "," << std::to_string(y);
     }
     str << "\"/>\n";
 }
@@ -464,6 +466,7 @@ ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDir
   } else {
     SimplifyLinePolygon(baseline_clipped_pts, 3, 1);
   }
+  SimplifyLinePolygon(baseline_clipped_pts, 3, writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM ? 0 : 1);
   return baseline_clipped_pts;
 }
 
@@ -507,7 +510,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
 		  l_float32 val;
 		  numaGetFValue(bin_line, p, &val);
 		  if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
-        }
+      }
     }
   }
 
