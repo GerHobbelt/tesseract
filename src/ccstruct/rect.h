@@ -307,7 +307,7 @@ public:
 #endif
 
   void plot(                  // use current settings
-    Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset) const;        // where to paint
+    Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const;        // where to paint
 
 #if !GRAPHICS_DISABLED
   void plot(                                  // paint box
