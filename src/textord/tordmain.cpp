@@ -48,6 +48,7 @@
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
 #include "tprintf.h"     // for tprintf
 #include "werd.h"        // for WERD_IT, WERD, WERD_LIST, W_DONT_CHOP
+#include "diagnostics_io.h"
 #include "tesseractclass.h"
 
 #include <allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
@@ -225,8 +226,6 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
   ICOORD page_tr(width, height);
   filter_blobs(page_tr, to_blocks);
 }
-
-const std::vector<uint32_t>& initDiagPlotColorMap(void);  // hack: external decl
 
 /**********************************************************************
  * filter_blobs
