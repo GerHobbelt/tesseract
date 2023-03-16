@@ -952,6 +952,7 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
 #  endif // !DISABLED_LEGACY_ENGINE
 }
 
+#endif // !GRAPHICS_DISABLED
 
 
 /**
@@ -963,18 +964,6 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
 
   Image pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(pix);
-
-#if 0
-  BOX* border = boxCreate(2, 2, width + 4, height + 4);
-  // boxDestroy(BOX * *pbox);
-  BOXA* boxlist = boxaCreate(1);
-  boxaAddBox(boxlist, border, false);
-  //boxaDestroy(BOXA * *pboxa);
-  l_uint32 bordercolor;
-  composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-  pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-  boxaDestroy(&boxlist);
-#endif
 
   int w, h;
   pixGetDimensions(pix, &w, &h, NULL);
@@ -1017,7 +1006,5 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
 
   this->AddPixDebugPage(pix, "current page results", false);
 }
-
-#endif // !GRAPHICS_DISABLED
 
 } // namespace tesseract

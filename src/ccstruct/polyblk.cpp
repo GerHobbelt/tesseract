@@ -268,11 +268,12 @@ void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   v.move_to_first();
   window->DrawTo(v.data()->x(), v.data()->y());
 }
+#endif
 
 void POLY_BLOCK::plot(Image &pix, int32_t num) {
   ICOORDELT_IT v = &vertices;
 
-  auto color = ColorForPolyBlockType(type);
+  //auto color = ColorForPolyBlockType(type);
   //window->Pen(ColorForPolyBlockType(type));
 
   v.move_to_first();
@@ -302,6 +303,7 @@ void POLY_BLOCK::plot(Image &pix, int32_t num) {
   //window->DrawTo(v.data()->x(), v.data()->y());
 }
 
+#if !GRAPHICS_DISABLED
 void POLY_BLOCK::fill(ScrollView *window, ScrollView::Color colour) {
   ICOORDELT_IT s_it;
 

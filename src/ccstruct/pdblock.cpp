@@ -234,6 +234,7 @@ void PDBLK::plot(            // draw outline
     window->DrawTo(endpt.x(), endpt.y());
   }
 }
+#endif
 
 void PDBLK::plot(            // draw outline
     Image &pix,              // image to draw in
@@ -300,7 +301,6 @@ void PDBLK::plot(            // draw outline
     //window->DrawTo(endpt.x(), endpt.y());
   }
 }
-#endif
 
 /**********************************************************************
  * PDBLK::operator=

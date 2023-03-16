@@ -226,8 +226,10 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 
 TessBaseAPI::TessBaseAPI()
     : tesseract_(nullptr)
+#if !DISABLED_LEGACY_ENGINE
     , osd_tesseract_(nullptr)
     , equ_detect_(nullptr)
+#endif
     , reader_(nullptr)
     ,
     // thresholder_ is initialized to nullptr here, but will be set before use
@@ -2570,7 +2572,11 @@ int TessBaseAPI::FindLines() {
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
+#if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tess = osd_tesseract_;
+#else
+  Tesseract* osd_tess = nullptr;
+#endif
   OSResults osr;
 #if !DISABLED_LEGACY_ENGINE
   if (PSM_OSD_ENABLED(tesseract_->tessedit_pageseg_mode) && osd_tess == nullptr) {
@@ -2606,7 +2612,7 @@ int TessBaseAPI::FindLines() {
 
   // If Devanagari is being recognized, we use different images for page seg
   // and for OCR.
-  tesseract_->PrepareForTessOCR(block_list_, osd_tess, &osr);
+  tesseract_->PrepareForTessOCR(block_list_, &osr);
   return 0;
 }
 

@@ -438,6 +438,7 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour
     }
   }
 }
+#endif
 
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour.
@@ -449,7 +450,7 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> 
   }
 }
 
-
+#if !GRAPHICS_DISABLED
 ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
@@ -504,13 +505,14 @@ void BLOBNBOX::plot(ScrollView *window,               // window to draw in
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
 }
+#endif
 
 void BLOBNBOX::plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise) {
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(pix, cmap, cmap_offset, noise);
   }
 }
-#endif
+
 /**********************************************************************
  * find_cblob_limits
  *

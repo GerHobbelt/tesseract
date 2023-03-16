@@ -362,7 +362,7 @@ public:
   // Uses the strategy specified in the global variable
   // ocr_devanagari_split_strategy for performing splitting while preparing for
   // Tesseract OCR.
-  void PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, OSResults *osr);
+  void PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr);
 
   int SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess, OSResults *osr);
   void SetupWordScripts(BLOCK_LIST *blocks);

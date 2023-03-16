@@ -100,9 +100,11 @@ public:
       ScrollView *window,              // window to draw in
       ScrollView::Color blob_colour,   // for outer bits
       ScrollView::Color child_colour); // for holes
+#endif // !GRAPHICS_DISABLED
 
   void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise);
 
+#if !GRAPHICS_DISABLED
   // Draws the blob in the given colour, and child_colour, normalized
   // using the given denorm, making use of sub-pixel accurate information
   // if available.

@@ -63,9 +63,11 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(ScrollView *window, int32_t num);
+#endif
 
   void plot(Image &pix, int32_t num);
 
+#if !GRAPHICS_DISABLED
   void fill(ScrollView *window, ScrollView::Color colour);
 #endif // !GRAPHICS_DISABLED
 
