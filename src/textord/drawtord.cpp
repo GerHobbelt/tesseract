@@ -90,16 +90,16 @@ void plot_box_list(               // make gradients win
  **********************************************************************/
 
 void plot_box_list(               // make gradients win
-    Image& pix,                   // iamge to draw in
+    Image& pix,                   // image to draw in
     BLOBNBOX_LIST* list,          // blob list
-    ScrollView::Color body_colour // colour to draw
+    std::vector<uint32_t>& cmap, int& cmap_offset, bool noise    // colour to draw
 ) {
   BLOBNBOX_IT it = list; // iterator
 
   //pix->Pen(body_colour);
   //pix->Brush(ScrollView::NONE);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->bounding_box().plot(pix);
+    it.data()->bounding_box().plot(pix, cmap, cmap_offset, noise);
   }
 }
 
@@ -272,7 +272,7 @@ void draw_meanlines(          // draw a block
  **********************************************************************/
 
 void plot_word_decisions( // draw words
-    ScrollView *win,      // window tro draw in
+    ScrollView *win,      // window to draw in
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 ) {
@@ -343,7 +343,7 @@ void plot_word_decisions( // draw words
  **********************************************************************/
 
 void plot_fp_cells(           // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
@@ -387,7 +387,7 @@ void plot_fp_cells(           // draw words
  **********************************************************************/
 
 void plot_fp_cells2(          // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
@@ -421,7 +421,7 @@ void plot_fp_cells2(          // draw words
  **********************************************************************/
 
 void plot_row_cells(          // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift

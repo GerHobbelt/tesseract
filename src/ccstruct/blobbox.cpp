@@ -1069,7 +1069,13 @@ static inline int cmapInterpolate(int factor, int c0, int c1) {
   return c >> 8;
 }
 
+static std::vector<uint32_t> cmap;
+static bool cmap_is_init = false;
+
 static void initDiagPlotColorMapColorRange(std::vector<uint32_t>& cmap, int start_index, int h0, int s0, int v0, int h1, int s1, int v1) {
+  if (cmap_is_init)
+    return;
+
   for (int i = 0; i < 64; i++) {
     int h = cmapInterpolate(i, h0, h1);
     int s = cmapInterpolate(i, s0, s1);
@@ -1088,7 +1094,7 @@ static void initDiagPlotColorMapColorRange(std::vector<uint32_t>& cmap, int star
   }
 }
 
-static void initDiagPlotColorMap(std::vector<uint32_t> &cmap) {
+const std::vector<uint32_t>& initDiagPlotColorMap(void) {
 
   // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
   // --> noise_blobs
@@ -1105,6 +1111,8 @@ static void initDiagPlotColorMap(std::vector<uint32_t> &cmap) {
   // hsv(61, 100%, 76%) - hsv(26, 100%, 94%)
   // --> blobs
   initDiagPlotColorMapColorRange(cmap, 3 * 64, 61, 100, 76, 26, 100, 94);
+
+  return cmap;
 }
 
 #if !GRAPHICS_DISABLED
@@ -1124,14 +1132,9 @@ void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
   BLOBNBOX::PlotBlobs(&blobs, ScrollView::WHITE, ScrollView::BROWN, win);
 }
 
-static std::vector<uint32_t> cmap;
-static bool cmap_is_init = false;
-
 // Draw the blobs on the various lists in the block in different colors.
 void TO_BLOCK::plot_graded_blobs(Image &pix) {
-  if (!cmap_is_init) {
-    initDiagPlotColorMap(cmap);
-  }
+  auto cmap = initDiagPlotColorMap();
 
   // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
   BLOBNBOX::PlotBlobs(&noise_blobs, pix, cmap, 0);
