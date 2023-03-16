@@ -76,7 +76,7 @@ void Tesseract::recog_word(WERD_RES *word) {
       }
     }
     if (tessedit_rejection_debug && perm_type != word->best_choice->permuter()) {
-      tprintf("Permuter Type Flipped from %d to %d\n", perm_type, word->best_choice->permuter());
+      tprintf("Permuter Type Flipped from {} to {}\n", perm_type, word->best_choice->permuter());
     }
   }
   // Factored out from control.cpp
@@ -110,9 +110,9 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
   if (word->best_choice->length() > word_length) {
     word->best_choice->make_bad(); // should never happen
     tprintf(
-        "recog_word: Discarded long string \"%s\""
-        " (%d characters vs %d blobs)\n",
-        word->best_choice->unichar_string().c_str(), word->best_choice->length(), word_length);
+        "recog_word: Discarded long string \"{}\""
+        " ({} characters vs {} blobs)\n",
+        word->best_choice->unichar_string(), word->best_choice->length(), word_length);
     tprintf("Word is at:");
     word->word->bounding_box().print();
   }

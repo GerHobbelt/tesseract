@@ -40,23 +40,27 @@ static const char *kNodeContNames[] = {"Anything", "OnlyDup", "NoDup"};
 static const float kMinDiplopiaKey = 0.25f;
 
 // Prints debug details of the node.
-void RecodeNode::Print(int null_char, const UNICHARSET &unicharset,
+std::string RecodeNode::Print(int null_char, const UNICHARSET *unicharset,
                        int depth) const {
+  std::string s;
   if (code == null_char) {
-    tprintf("null_char");
+    return "null_char";
   } else {
-    tprintf("label=%d, uid=%d=%s", code, unichar_id,
-            unicharset.debug_str(unichar_id).c_str());
+		s = fmt::format("label={}, uid={}={}", code, unichar_id,
+				unicharset ?
+					unicharset->debug_str(unichar_id).c_str() :
+				  std::string(1, (unichar_id < 0x80 && isprint(unichar_id)) ? (char)unichar_id : '.').c_str());
   }
-  tprintf(" score=%g, c=%g,%s%s%s perm=%d, hash=%" PRIx64, score, certainty,
+  s += fmt::format(" score={}, c={},{}{}{} perm={}, hash={}", score, certainty,
           start_of_dawg ? " DawgStart" : "", start_of_word ? " Start" : "",
           end_of_word ? " End" : "", permuter, code_hash);
   if (depth > 0 && prev != nullptr) {
-    tprintf(" prev:");
-    prev->Print(null_char, unicharset, depth - 1);
+    s += " prev:";
+    s += prev->Print(null_char, unicharset, depth - 1);
   } else {
-    tprintf("\n");
+    s += "\n";
   }
+  return std::move(s);
 }
 
 // Borrows the pointer, which is expected to survive until *this is deleted.
@@ -227,13 +231,13 @@ void RecodeBeamSearch::ExtractBestPathAsLabels(
 // Returns the best path as unichar-ids/certs/ratings/xcoords skipping
 // duplicates, nulls and intermediate parts.
 void RecodeBeamSearch::ExtractBestPathAsUnicharIds(
-    bool debug, const UNICHARSET *unicharset, std::vector<int> *unichar_ids,
+    const UNICHARSET *unicharset, std::vector<int> *unichar_ids,
     std::vector<float> *certs, std::vector<float> *ratings,
     std::vector<int> *xcoords) const {
   std::vector<const RecodeNode *> best_nodes;
   ExtractBestPaths(&best_nodes, nullptr);
   ExtractPathAsUnicharIds(best_nodes, unichar_ids, certs, ratings, xcoords);
-  if (debug) {
+  if (HasDebug()) {
     DebugPath(unicharset, best_nodes);
     DebugUnicharPath(unicharset, best_nodes, *unichar_ids, *certs, *ratings,
                      *xcoords);
@@ -242,7 +246,7 @@ void RecodeBeamSearch::ExtractBestPathAsUnicharIds(
 
 // Returns the best path as a set of WERD_RES.
 void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
-                                              float scale_factor, bool debug,
+                                              float scale_factor,
                                               const UNICHARSET *unicharset,
                                               PointerVector<WERD_RES> *words,
                                               int lstm_choice_mode) {
@@ -255,7 +259,7 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
   std::vector<const RecodeNode *> second_nodes;
   character_boundaries_.clear();
   ExtractBestPaths(&best_nodes, &second_nodes);
-  if (debug) {
+  if (HasDebug()) {
     DebugPath(unicharset, best_nodes);
     ExtractPathAsUnicharIds(second_nodes, &unichar_ids, &certs, &ratings,
                             &xcoords);
@@ -269,7 +273,7 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
   ExtractPathAsUnicharIds(best_nodes, &unichar_ids, &certs, &ratings, &xcoords,
                           &character_boundaries_);
   int num_ids = unichar_ids.size();
-  if (debug) {
+  if (HasDebug()) {
     DebugUnicharPath(unicharset, best_nodes, unichar_ids, certs, ratings,
                      xcoords);
   }
@@ -327,7 +331,7 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
 }
 
 struct greater_than {
-  inline bool operator()(const RecodeNode *&node1, const RecodeNode *&node2) {
+  inline bool operator()(const RecodeNode *&node1, const RecodeNode *&node2) const {
     return (node1->score > node2->score);
   }
 };
@@ -346,7 +350,7 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
   // fill the topology with depths first
   for (int step = beam.size() - 1; step >= 0; --step) {
     std::vector<tesseract::RecodePair> &heaps = beam.at(step)->beams_->heap();
-    for (auto node : heaps) {
+    for (auto &&node : heaps) {
       int backtracker = 0;
       const RecodeNode *curr = &node.data();
       while (curr != nullptr && !visited.count(curr)) {
@@ -399,10 +403,10 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
         prevCode = " ";
       }
       if (uids) {
-        tprintf("%x(|)%f(>)%x(|)%f\n", intPrevCode, prevScore, intCode,
+        tprintf("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode,
                 node->score);
       } else {
-        tprintf("%s(|)%f(>)%s(|)%f\n", prevCode, prevScore, code, node->score);
+        tprintf("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
       }
     }
     tprintf("-\n");
@@ -431,7 +435,7 @@ void RecodeBeamSearch::extractSymbolChoices(const UNICHARSET *unicharset) {
     std::vector<const RecodeNode *> best_nodes;
     std::vector<const RecodeNode *> best;
     // Scan the segmented node chain for valid unichar ids.
-    for (auto entry : heaps) {
+    for (auto &&entry : heaps) {
       bool validChar = false;
       int backcounter = 0;
       const RecodeNode *node = &entry.data();
@@ -518,7 +522,7 @@ void RecodeBeamSearch::extractSymbolChoices(const UNICHARSET *unicharset) {
 }
 
 // Generates debug output of the content of the beams after a Decode.
-void RecodeBeamSearch::DebugBeams(const UNICHARSET &unicharset) const {
+void RecodeBeamSearch::DebugBeams(const UNICHARSET *unicharset) const {
   for (int p = 0; p < beam_size_; ++p) {
     for (int d = 0; d < 2; ++d) {
       for (int c = 0; c < NC_COUNT; ++c) {
@@ -528,7 +532,7 @@ void RecodeBeamSearch::DebugBeams(const UNICHARSET &unicharset) const {
           continue;
         }
         // Print all the best scoring nodes for each unichar found.
-        tprintf("Position %d: %s+%s beam\n", p, d ? "Dict" : "Non-Dict",
+        tprintf("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict",
                 kNodeContNames[c]);
         DebugBeamPos(unicharset, beam_[p]->beams_[index]);
       }
@@ -537,9 +541,9 @@ void RecodeBeamSearch::DebugBeams(const UNICHARSET &unicharset) const {
 }
 
 // Generates debug output of the content of a single beam position.
-void RecodeBeamSearch::DebugBeamPos(const UNICHARSET &unicharset,
+void RecodeBeamSearch::DebugBeamPos(const UNICHARSET *unicharset,
                                     const RecodeHeap &heap) const {
-  std::vector<const RecodeNode *> unichar_bests(unicharset.size());
+  std::vector<const RecodeNode *> unichar_bests(unicharset ? unicharset->size() : 256 /* ASCII range + high ASCII ? */);
   const RecodeNode *null_best = nullptr;
   int heap_size = heap.size();
   for (int i = 0; i < heap_size; ++i) {
@@ -558,11 +562,11 @@ void RecodeBeamSearch::DebugBeamPos(const UNICHARSET &unicharset,
   for (auto &unichar_best : unichar_bests) {
     if (unichar_best != nullptr) {
       const RecodeNode &node = *unichar_best;
-      node.Print(null_char_, unicharset, 1);
+      tprintf("{}", node.Print(null_char_, unicharset, 1));
     }
   }
   if (null_best != nullptr) {
-    null_best->Print(null_char_, unicharset, 1);
+    tprintf("{}", null_best->Print(null_char_, unicharset, 1));
   }
 }
 
@@ -778,7 +782,7 @@ void RecodeBeamSearch::ComputeSecTopN(std::unordered_set<int> *exList,
 void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
                                   double dict_ratio, double cert_offset,
                                   double worst_dict_cert,
-                                  const UNICHARSET *charset, bool debug) {
+                                  const UNICHARSET *charset) {
   if (t == static_cast<int>(beam_.size())) {
     beam_.push_back(new RecodeBeam);
   }
@@ -796,19 +800,19 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
     }
   } else {
     RecodeBeam *prev = beam_[t - 1];
-    if (debug) {
+    if (HasDebug()) {
       int beam_index = BeamIndex(true, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Non-Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -850,7 +854,7 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
 
 void RecodeBeamSearch::DecodeSecondaryStep(
     const float *outputs, int t, double dict_ratio, double cert_offset,
-    double worst_dict_cert, const UNICHARSET *charset, bool debug) {
+    double worst_dict_cert, const UNICHARSET *charset) {
   if (t == static_cast<int>(secondary_beam_.size())) {
     secondary_beam_.push_back(new RecodeBeam);
   }
@@ -867,19 +871,19 @@ void RecodeBeamSearch::DecodeSecondaryStep(
     }
   } else {
     RecodeBeam *prev = secondary_beam_[t - 1];
-    if (debug) {
+    if (HasDebug()) {
       int beam_index = BeamIndex(true, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step %d: Non-Dawg beam %d:\n", t, i);
+        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -1413,8 +1417,9 @@ void RecodeBeamSearch::DebugPath(
     const std::vector<const RecodeNode *> &path) const {
   for (unsigned c = 0; c < path.size(); ++c) {
     const RecodeNode &node = *path[c];
-    tprintf("%u ", c);
-    node.Print(null_char_, *unicharset, 1);
+    std::string msg = fmt::format("{} ", c);
+    msg += node.Print(null_char_, unicharset, 1);
+    tprintf("{}", msg);
   }
 }
 
@@ -1427,13 +1432,17 @@ void RecodeBeamSearch::DebugUnicharPath(
   double total_rating = 0.0;
   for (unsigned c = 0; c < num_ids; ++c) {
     int coord = xcoords[c];
-    tprintf("%d %d=%s r=%g, c=%g, s=%d, e=%d, perm=%d\n", coord, unichar_ids[c],
-            unicharset->debug_str(unichar_ids[c]).c_str(), ratings[c], certs[c],
+	auto unichar_id = unichar_ids[c];
+    tprintf("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_id,
+			(unicharset ?
+				unicharset->debug_str(unichar_id).c_str() :
+				std::string(1, (unichar_id < 0x80 && isprint(unichar_id)) ? (char)unichar_id : '.').c_str()),
+            ratings[c], certs[c],
             path[coord]->start_of_word, path[coord]->end_of_word,
             path[coord]->permuter);
     total_rating += ratings[c];
   }
-  tprintf("Path total rating = %g\n", total_rating);
+  tprintf("Path total rating = {}\n", total_rating);
 }
 
 } // namespace tesseract.

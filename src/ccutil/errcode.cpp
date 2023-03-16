@@ -17,8 +17,8 @@
  **********************************************************************/
 
 #include "errcode.h"
+#include "tprintf.h"
 
-#include <cstdio>
 
 namespace tesseract {
 
@@ -58,9 +58,9 @@ static void error_action(TessErrorLogCode action) {
 void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   if (caller != nullptr) {
     // name of caller
-    fprintf(stderr, "%s\n", fmt::format("{}:Error:{}", caller, message).c_str());
+    tprintf("ERROR: {}\n", fmt::format("{}:{}", caller, message).c_str());
   } else {
-    fprintf(stderr, "%s\n", fmt::format("Error:{}", message).c_str());
+    tprintf("ERROR: {}\n", fmt::format("{}", message).c_str());
   }
   error_action(action);
 }
@@ -68,9 +68,9 @@ void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
 void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const {
   if (caller != nullptr) {
     // name of caller
-    fprintf(stderr, "%s\n", fmt::format("{}:Error:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+    tprintf("ERROR: {}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
   } else {
-    fprintf(stderr, "%s\n", fmt::format("Error:{}:{}", message, fmt::vformat(format, args)).c_str());
+    tprintf("ERROR: {}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
   }
   error_action(action);
 }

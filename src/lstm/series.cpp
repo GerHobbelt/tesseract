@@ -48,10 +48,10 @@ int Series::InitWeights(float range, TRand *randomizer) {
   tprintf("Num outputs,weights in Series:\n");
   for (auto &i : stack_) {
     int weights = i->InitWeights(range, randomizer);
-    tprintf("  %s:%d, %d\n", i->spec().c_str(), i->NumOutputs(), weights);
+    tprintf("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
     num_weights_ += weights;
   }
-  tprintf("Total weights = %d\n", num_weights_);
+  tprintf("Total weights = {}\n", num_weights_);
   return num_weights_;
 }
 
@@ -62,10 +62,10 @@ int Series::RemapOutputs(int old_no, const std::vector<int> &code_map) {
   tprintf("Num (Extended) outputs,weights in Series:\n");
   for (auto &i : stack_) {
     int weights = i->RemapOutputs(old_no, code_map);
-    tprintf("  %s:%d, %d\n", i->spec().c_str(), i->NumOutputs(), weights);
+    tprintf("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
     num_weights_ += weights;
   }
-  tprintf("Total weights = %d\n", num_weights_);
+  tprintf("Total weights = {}\n", num_weights_);
   no_ = stack_.back()->NumOutputs();
   return num_weights_;
 }
@@ -164,7 +164,7 @@ void Series::SplitAt(unsigned last_start, Series **start, Series **end) {
   *start = nullptr;
   *end = nullptr;
   if (last_start >= stack_.size()) {
-    tprintf("ERROR: Invalid split index %u must be in range [0,%zu]!\n", last_start, stack_.size() - 1);
+    tprintf("ERROR: Invalid split index {} must be in range [0,{}]!\n", last_start, stack_.size() - 1);
     return;
   }
   auto *master_series = new Series("MasterSeries");

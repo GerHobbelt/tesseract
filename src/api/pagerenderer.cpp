@@ -15,6 +15,7 @@
 // limitations under the License.
  **********************************************************************/
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h> // for TessBaseAPI
 
 #include <locale>              // for std::locale::classic
@@ -26,14 +27,8 @@
 #include <unordered_set>
 
 #include <allheaders.h>
+#include <pix_internal.h>
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
-
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  include "host.h" // windows.h for MultiByteToWideChar, ...
-#endif
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
 
@@ -64,7 +59,7 @@ AddPointsToPAGE(Pta *pts, std::stringstream &str) {
     for (int p = 0; p < num_pts; ++p) {
       ptaGetPt(pts, p, &x, &y);
       if (p!=0) str << " ";
-      str << (l_uint32) x << "," << (l_uint32) y;
+      str << std::to_string(x) << "," << std::to_string(y);
     }
     str << "\"/>\n";
 }
@@ -148,7 +143,7 @@ RecalcPolygonline(Pta *pts, bool upper) {
   bin_line = numaCreate(num_bin+1);
 
   for (int p = 0; p <= num_bin; ++p) {
-	  numaReplaceNumber(bin_line, p, -1.);
+	  numaAddNumber(bin_line, -1.);
   }
 
   num_pts = ptaGetCount(pts);
@@ -167,9 +162,11 @@ RecalcPolygonline(Pta *pts, bool upper) {
 	  l_float32 val;
 	  numaGetFValue(bin_line, p, &val);
       if (!upper) {
-        if ( val == -1. || y0 > val) numaReplaceNumber(bin_line, p, y0);
+        if ( val == -1. || y0 > val)
+			numaReplaceNumber(bin_line, p, y0);
       } else {
-        if ( val == -1. || y0 < val) numaReplaceNumber(bin_line, p, y0);
+        if ( val == -1. || y0 < val)
+			numaReplaceNumber(bin_line, p, y0);
       }
     }
     index += 2;
@@ -190,9 +187,11 @@ RecalcPolygonline(Pta *pts, bool upper) {
 		l_float32 val;
 		numaGetFValue(bin_line, p, &val);
 		if (y != val) {
-			if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
+			if (y != -1.)
+				ptaAddPt(pts_recalc, x_min+p, y);
 			numaGetFValue(bin_line, p, &y);
-			if (y != -1.) ptaAddPt(pts_recalc, x_min+p, y);
+			if (y != -1.)
+				ptaAddPt(pts_recalc, x_min+p, y);
 		}
 	}
   }
@@ -348,7 +347,8 @@ AddBoxToPAGE(const ResultIterator *it, PageIteratorLevel level,
 static void 
 AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss, tesseract::WritingDirection writing_direction) {
   PTA *ptsd;
-   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
+   
+  if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl)!=0){ 
       ptaJoin(pts_ltr, pts_rtl, 0, -1);
       pts_rtl = DestroyAndCreatePta(pts_rtl);
@@ -389,7 +389,7 @@ AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
     for (int p = 0; p < num_pts; ++p) {
       ptaGetPt(baseline_pts, p, &x, &y);
       if (p!=0) str << " ";
-      str << (l_uint32) x << "," << (l_uint32) y;
+      str << std::to_string(x) << "," << std::to_string(y);
     }
     str << "\"/>\n";
 }
@@ -466,6 +466,7 @@ ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDir
   } else {
     SimplifyLinePolygon(baseline_clipped_pts, 3, 1);
   }
+  SimplifyLinePolygon(baseline_clipped_pts, 3, writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM ? 0 : 1);
   return baseline_clipped_pts;
 }
 
@@ -509,7 +510,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
 		  l_float32 val;
 		  numaGetFValue(bin_line, p, &val);
 		  if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
-        }
+      }
     }
   }
 
@@ -710,26 +711,9 @@ char
 
   int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
 
-  if (input_file_.empty()) {
+  if (tesseract_->input_file_path.empty()) {
     SetInputName(nullptr);
   }
-
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  // convert input name from ANSI encoding to utf-8
-  int str16_len =
-      MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
-  wchar_t *uni16_str = new WCHAR[str16_len];
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str,
-                                  str16_len);
-  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr,
-                                     0, nullptr, nullptr);
-  char *utf8_str = new char[utf8_len];
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len,
-                      nullptr, nullptr);
-  input_file_ = utf8_str;
-  delete[] uni16_str;
-  delete[] utf8_str;
-#endif
 
   // Used variables
   
@@ -762,10 +746,8 @@ char
   Pta *line_baseline_pts = ptaCreate(0);
 
   // Replace this with real flags:
-  bool POLYGONFLAG;
-  GetBoolVariable("tessedit_create_page_polygon", &POLYGONFLAG);
-  bool WORDLEVELFLAG;
-  GetBoolVariable("tessedit_create_page_wordlevel", &WORDLEVELFLAG);
+  #define POLYGONFLAG   tesseract_->tessedit_create_page_polygon
+  #define WORDLEVELFLAG tesseract_->tessedit_create_page_wordlevel
 
   // Use "C" locale (needed for int values larger than 999).
   page_str.imbue(std::locale::classic());
@@ -878,7 +860,7 @@ char
 
     // Create word stream if word level output is active
     if (WORDLEVELFLAG) {
-      word_str << "\t\t\t\t<Word id=\"r_" << tcnt << "_tl_" << lcnt << "_w_" << wcnt << "readingDirection=\""
+      word_str << "\t\t\t\t<Word id=\"r_" << tcnt << "_tl_" << lcnt << "_w_" << wcnt << "\" readingDirection=\""
       << WritingDirectionToStr(writing_direction)  << "\" "
       << "custom=\""<< "readingOrder {index:"<< wcnt <<";}\">\n";
       if (!POLYGONFLAG || ttb_flag){
@@ -1077,11 +1059,7 @@ char
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
-#else
   char* result = new char[text.length() + 1];
-#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }

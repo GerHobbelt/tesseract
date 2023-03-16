@@ -27,6 +27,9 @@
 #include <cmath> // for M_PI
 #include <cstdlib>
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 bool FCOORD::normalise() { // Convert to unit vec

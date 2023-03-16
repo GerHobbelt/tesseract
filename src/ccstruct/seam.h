@@ -156,7 +156,7 @@ public:
   void Print(const char *label) const;
   // Prints a collection of SEAMs.
   static void PrintSeams(const char *label, const std::vector<SEAM *> &seams);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draws the seam in the given window.
   void Mark(ScrollView *window) const;
 #endif

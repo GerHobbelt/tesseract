@@ -84,7 +84,6 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  **********************************************************************/
 
 void Textord::make_old_baselines(TO_BLOCK *block, // block to do
-                                 bool testing_on, // correct orientation
                                  float gradient) {
   QSPLINE *prev_baseline; // baseline of previous row
   TO_ROW *row;            // current row
@@ -104,7 +103,7 @@ void Textord::make_old_baselines(TO_BLOCK *block, // block to do
       prev_baseline = nullptr;
       blob_it.set_to_list(row->blob_list());
       if (textord_debug_baselines) {
-        tprintf("Row baseline generation failed on row at (%d,%d)\n",
+        tprintf("Row baseline generation failed on row at ({},{})\n",
                 blob_it.data()->bounding_box().left(), blob_it.data()->bounding_box().bottom());
       }
     }
@@ -366,7 +365,7 @@ void Textord::find_textlines(TO_BLOCK *block,   // block row is in
   }
 
   if (textord_oldbl_debug) {
-    tprintf("\nInput height=%g, Estimate x-height=%d pixels, jumplimit=%.2f\n", block->line_size,
+    tprintf("\nInput height={}, Estimate x-height={} pixels, jumplimit={}\n", block->line_size,
             lineheight, jumplimit);
   }
   if (holed_line) {
@@ -375,7 +374,7 @@ void Textord::find_textlines(TO_BLOCK *block,   // block row is in
     make_first_baseline(&blobcoords[0], blobcount, &xcoords[0], &ycoords[0], spline, &row->baseline,
                         jumplimit);
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_final_rows) {
     row->baseline.plot(to_win, ScrollView::GOLDENROD);
   }
@@ -707,7 +706,7 @@ int partition_line(    // partition blobs
     /*do each blob in row */
     diff = ydiffs[blobindex]; /*diff from line */
     if (textord_oldbl_debug) {
-      tprintf("%d(%d,%d), ", blobindex, blobcoords[blobindex].left(),
+      tprintf("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
               blobcoords[blobindex].bottom());
     }
     bestpart =
@@ -725,7 +724,7 @@ int partition_line(    // partition blobs
   for (blobindex = startx; blobindex >= 0; blobindex--) {
     diff = ydiffs[blobindex]; /*diff from line */
     if (textord_oldbl_debug) {
-      tprintf("%d(%d,%d), ", blobindex, blobcoords[blobindex].left(),
+      tprintf("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
               blobcoords[blobindex].bottom());
     }
     bestpart =
@@ -778,8 +777,8 @@ void merge_oldbl_parts( // partition blobs
   startx = 0;
   for (blobindex = 0; blobindex < blobcount; blobindex++) {
     if (partids[blobindex] != prevpart) {
-      //                      tprintf("Partition change at (%d,%d) from %d to %d
-      //                      after run of %d\n",
+      //                      tprintf("Partition change at ({},{}) from {} to {}
+      //                      after run of {}\n",
       //                              blobcoords[blobindex].left(),blobcoords[blobindex].bottom(),
       //                              prevpart,partids[blobindex],runlength);
       if (prevpart != biggestpart && runlength > MAXBADRUN) {
@@ -793,7 +792,7 @@ void merge_oldbl_parts( // partition blobs
         m = stats.get_b();
         c = stats.get_c();
         if (textord_oldbl_debug) {
-          tprintf("Fitted line y=%g x + %g\n", m, c);
+          tprintf("Fitted line y={} x + {}\n", m, c);
         }
         found_one = false;
         close_one = false;
@@ -808,7 +807,7 @@ void merge_oldbl_parts( // partition blobs
                 blobcoords[startx - test_blob].bottom());
             diff = m * coord.x() + c - coord.y();
             if (textord_oldbl_debug) {
-              tprintf("Diff of common blob to suspect part=%g at (%g,%g)\n", diff, coord.x(),
+              tprintf("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
                       coord.y());
             }
             if (diff < jumplimit && -diff < jumplimit) {
@@ -824,7 +823,7 @@ void merge_oldbl_parts( // partition blobs
                            blobcoords[blobindex + test_blob - 1].bottom());
             diff = m * coord.x() + c - coord.y();
             if (textord_oldbl_debug) {
-              tprintf("Diff of common blob to suspect part=%g at (%g,%g)\n", diff, coord.x(),
+              tprintf("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
                       coord.y());
             }
             if (diff < jumplimit && -diff < jumplimit) {
@@ -835,8 +834,8 @@ void merge_oldbl_parts( // partition blobs
         if (close_one) {
           if (textord_oldbl_debug) {
             tprintf(
-                "Merged %d blobs back into part %d from %d starting at "
-                "(%d,%d)\n",
+                "Merged {} blobs back into part {} from {} starting at "
+                "({},{})\n",
                 runlength, biggestpart, prevpart, blobcoords[startx].left(),
                 blobcoords[startx].bottom());
           }
@@ -935,7 +934,7 @@ int choose_partition(                              // select partition
   /*adjusted diff from part */
   delta = diff - partdiffs[lastpart] - *drift;
   if (textord_oldbl_debug) {
-    tprintf("Diff=%.2f, Delta=%.3f, Drift=%.3f, ", diff, delta, *drift);
+    tprintf("Diff={}, Delta={}, Drift={}, ", diff, delta, *drift);
   }
   if (ABS(delta) > jumplimit / 2) {
     /*delta on part 0 */
@@ -968,7 +967,7 @@ int choose_partition(                              // select partition
   *lastdelta = delta;
 
   if (textord_oldbl_debug) {
-    tprintf("P=%d\n", bestpart);
+    tprintf("P={}\n", bestpart);
   }
 
   return bestpart;
@@ -1100,7 +1099,7 @@ int segment_spline(             // make xstarts
   }
 
   if (textord_oldbl_debug && turncount > 0) {
-    tprintf("First turn is %d at (%d,%d)\n", turnpoints[0], xcoords[turnpoints[0]],
+    tprintf("First turn is {} at ({},{})\n", turnpoints[0], xcoords[turnpoints[0]],
             ycoords[turnpoints[0]]);
   }
   for (segment = 1; segment < turncount; segment++) {
@@ -1126,7 +1125,7 @@ int segment_spline(             // make xstarts
                        4;
     /*halfway between turns */
     if (textord_oldbl_debug) {
-      tprintf("Turn %d is %d at (%d,%d), mid pt is %d@%d, final @%d\n", segment,
+      tprintf("Turn {} is {} at ({},{}), mid pt is {}@{}, final @{}\n", segment,
               turnpoints[segment], xcoords[turnpoints[segment]], ycoords[turnpoints[segment]],
               ptindex - 1, xcoords[ptindex - 1], xstarts[segment]);
     }
@@ -1215,7 +1214,7 @@ bool split_stepped_spline( // make xstarts
           rightindex--;
         }
         if (textord_debug_baselines) {
-          tprintf("Splitting spline at %d with step %g at (%d,%d)\n", xstarts[segment],
+          tprintf("Splitting spline at {} with step {} at ({},{})\n", xstarts[segment],
                   baseline->step((xstarts[segment - 1] + xstarts[segment]) / 2.0,
                                  (xstarts[segment] + xstarts[segment + 1]) / 2.0),
                   (xcoords[leftindex - 1] + xcoords[leftindex]) / 2,
@@ -1225,11 +1224,11 @@ bool split_stepped_spline( // make xstarts
                             (xcoords[rightindex - 1] + xcoords[rightindex]) / 2, segments);
         doneany = true;
       } else if (textord_debug_baselines) {
-        tprintf("Resegmenting spline failed - insufficient pts (%d,%d,%d,%d)\n", startindex,
+        tprintf("Resegmenting spline failed - insufficient pts ({},{},{},{})\n", startindex,
                 centreindex, endindex, (int32_t)textord_spline_medianwin);
       }
     }
-    //              else tprintf("Spline step at %d is %g\n",
+    //              else tprintf("Spline step at {} is {}\n",
     //                      xstarts[segment],
     //                      baseline->step((xstarts[segment-1]+xstarts[segment])/2.0,
     //                      (xstarts[segment]+xstarts[segment+1])/2.0));
@@ -1479,22 +1478,22 @@ void make_first_xheight( // find xheight
   }
 
   if (textord_oldbl_debug) {
-    tprintf("blobcount=%d, mode_count=%d, mode_t=%d\n", blobcount, mode_count, mode_threshold);
+    tprintf("blobcount={}, mode_count={}, mode_t={}\n", blobcount, mode_count, mode_threshold);
   }
   find_top_modes(&heightstat, HEIGHTBUCKETS, modelist, MODENUM);
   if (textord_oldbl_debug) {
     for (blobindex = 0; blobindex < MODENUM; blobindex++) {
-      tprintf("mode[%d]=%d ", blobindex, modelist[blobindex]);
+      tprintf("mode[{}]={} ", blobindex, modelist[blobindex]);
     }
     tprintf("\n");
   }
   pick_x_height(row, modelist, lefts, rights, &heightstat, mode_threshold);
 
   if (textord_oldbl_debug) {
-    tprintf("Output xheight=%g\n", row->xheight);
+    tprintf("Output xheight={}\n", row->xheight);
   }
   if (row->xheight < 0 && textord_oldbl_debug) {
-    tprintf("WARNING: Row Line height < 0; %4.2f\n", row->xheight);
+    tprintf("WARNING: Row Line height < 0; {}\n", row->xheight);
   }
 
   if (sign_bit < 0) {

@@ -36,7 +36,7 @@
 #include <vector>
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  pragma comment(lib, "Ws2_32.lib")
+#  pragma comment(lib, "ws2_32.lib")
 #  include <winsock2.h> // for fd_set, send, ..
 #  include <ws2tcpip.h> // for addrinfo
 #else
@@ -57,7 +57,7 @@
 #  define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #endif /* _WIN32 && !__GNUC__ */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 

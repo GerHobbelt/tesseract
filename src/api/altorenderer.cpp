@@ -13,11 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <tesseract/debugheap.h>
 #include "errcode.h" // for ASSERT_HOST
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  include "host.h"  // windows.h for MultiByteToWideChar, ...
-#endif
+
 #include "tprintf.h" // for tprintf
+#include "tesseractclass.h"  // for Tesseract
 
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
@@ -25,9 +25,6 @@
 #include <memory>
 #include <sstream> // for std::stringstream
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 namespace tesseract {
 
@@ -145,31 +142,9 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
 
   int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
 
-  if (input_file_.empty()) {
+  if (tesseract_->input_file_path.empty()) {
     SetInputName(nullptr);
   }
-
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  // convert input name from ANSI encoding to utf-8
-  int str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  wchar_t* uni16_str = new (_CLIENT_BLOCK, __FILE__, __LINE__) WCHAR[str16_len];
-#else
-  wchar_t* uni16_str = new WCHAR[str16_len];
-#endif  // _DEBUG
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str, str16_len);
-  int utf8_len =
-      WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr, 0, nullptr, nullptr);
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  char* utf8_str = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[utf8_len];
-#else
-  char* utf8_str = new char[utf8_len];
-#endif  // _DEBUG
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len, nullptr, nullptr);
-  input_file_ = utf8_str;
-  delete[] uni16_str;
-  delete[] utf8_str;
-#endif
 
   std::stringstream alto_str;
   // Use "C" locale (needed for int values larger than 999).
@@ -285,11 +260,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
            << "\t\t</Page>\n";
   const std::string &text = alto_str.str();
 
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
-#else
   char* result = new char[text.length() + 1];
-#endif  // _DEBUG
   strcpy(result, text.c_str());
   delete res_it;
   return result;

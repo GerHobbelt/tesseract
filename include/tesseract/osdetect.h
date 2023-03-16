@@ -120,6 +120,7 @@ private:
   const std::vector<int> *allowed_scripts_;
 };
 
+#if 0   // moved to Tesseract class.
 int orientation_and_script_detection(const char *filename, OSResults *,
                                      tesseract::Tesseract *);
 
@@ -132,6 +133,7 @@ int os_detect_blobs(const std::vector<int> *allowed_scripts,
 
 bool os_detect_blob(BLOBNBOX *bbox, OrientationDetector *o, ScriptDetector *s,
                     OSResults *, tesseract::Tesseract *tess);
+#endif
 
 // Helper method to convert an orientation index to its value in degrees.
 // The value represents the amount of clockwise rotation in degrees that must be

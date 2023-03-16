@@ -24,6 +24,9 @@
 #include "helpers.h"
 #include "serialis.h" // for tesseract::Serialize
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 // Fast lookup table to get the first least significant set bit in a byte.

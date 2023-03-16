@@ -20,10 +20,16 @@
 #  include "config_auto.h"
 #endif
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
+
 #include "ccnontextdetect.h"
 #include "helpers.h"         // for IntCastRounded
 #include "imagefind.h"
 #include "strokewidth.h"
+#include "tesseractclass.h"
+
 
 namespace tesseract {
 
@@ -59,8 +65,8 @@ const double kPhotoOffsetFraction = 0.375;
 // the 1/(4pi) that you would expect.
 const double kMinGoodTextPARatio = 1.5;
 
-CCNonTextDetect::CCNonTextDetect(int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : BlobGrid(gridsize, bleft, tright)
+CCNonTextDetect::CCNonTextDetect(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
+    : BlobGrid(tess, gridsize, bleft, tright)
     , max_noise_count_(static_cast<int>(kMaxSmallNeighboursPerPix * gridsize * gridsize))
     , noise_density_(nullptr) {
   // TODO(rays) break max_noise_count_ out into an area-proportional
@@ -88,7 +94,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   // Add the medium blobs that don't have a good strokewidth neighbour.
   // Those that do go into good_grid as an antidote to spreading beyond the
   // real reaches of a noise region.
-  BlobGrid good_grid(gridsize(), bleft(), tright());
+  BlobGrid good_grid(tesseract_, gridsize(), bleft(), tright());
   BLOBNBOX_IT blob_it(&blob_block->blobs);
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     BLOBNBOX *blob = blob_it.data();
@@ -104,10 +110,15 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   good_grid.Clear(); // Not needed any more.
   Image pix = noise_density_->ThresholdToPix(max_noise_count_);
   if (debug) {
-    pixWrite("junknoisemask.png", pix, IFF_PNG);
+ #if 0
+    const int page_index = 0;
+	  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "nontext.junknoisemask", "png");
+	  WritePix(filepath, pix, IFF_PNG);
+#endif
+    tesseract_->AddPixDebugPage(pix, "nontext.junknoisemask");
   }
   ScrollView *win = nullptr;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     win = MakeWindow(0, 400, "Photo Mask Blobs");
   }
@@ -129,11 +140,16 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, ScrollView::GOLDENROD, pix);
   MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::WHITE, pix);
   if (debug) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     win->Update();
 #endif // !GRAPHICS_DISABLED
-    pixWrite("junkccphotomask.png", pix, IFF_PNG);
-#ifndef GRAPHICS_DISABLED
+#if 0
+    const int page_index = 0;
+    std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "nontext.junkccphotomask", "png");
+    WritePix(filepath, pix, IFF_PNG);
+#endif
+    tesseract_->AddPixDebugPage(pix, "nontext.junkccphotomask");
+#if !GRAPHICS_DISABLED
     win->AwaitEvent(SVET_DESTROY);
     delete win;
 #endif // !GRAPHICS_DISABLED
@@ -167,12 +183,12 @@ IntGrid *CCNonTextDetect::ComputeNoiseDensity(bool debug, Image photo_map, BlobG
         int right = left + gridsize();
         int bottom = height - y * gridsize();
         int top = bottom - gridsize();
-        if (ImageFind::BoundsWithinRect(photo_map, &left, &top, &right, &bottom)) {
+        if (tesseract_->image_finder_.BoundsWithinRect(photo_map, &left, &top, &right, &bottom)) {
           noise_density->SetGridCell(x, y, noise + photo_offset);
         }
       }
       if (debug && noise > max_noise_count_ && good_counts->GridCellValue(x, y) > 0) {
-        tprintf("At %d, %d, noise = %d, good=%d, orig=%d, thr=%d\n", x * gridsize(), y * gridsize(),
+        tprintf("At {}, {}, noise = {}, good={}, orig={}, thr={}\n", x * gridsize(), y * gridsize(),
                 noise_density->GridCellValue(x, y), good_counts->GridCellValue(x, y),
                 noise_counts->GridCellValue(x, y), max_noise_count_);
       }
@@ -246,7 +262,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
     if (!noise_density_->RectMostlyOverThreshold(box, max_noise_count_) &&
         (max_blob_overlaps < 0 || !BlobOverlapsTooMuch(blob, max_blob_overlaps))) {
       blob->ClearNeighbours();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (win != nullptr) {
         blob->plot(win, ok_color, ok_color);
       }
@@ -270,7 +286,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
         pixRasterop(nontext_mask, box.left(), imageheight - box.top(), box.width(), box.height(),
                     PIX_SET, nullptr, 0, 0);
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (win != nullptr) {
         blob->plot(win, ScrollView::RED, ScrollView::RED);
       }
@@ -278,6 +294,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
       // It is safe to delete the cblob now, as it isn't used by the grid
       // or BlobOverlapsTooMuch, and the BLOBNBOXes will go away with the
       // dead_blobs list.
+      // 
       // TODO: remove next line, currently still needed for resultiterator_test.
       delete blob->remove_cblob();
       dead_it.add_to_end(blob_it.extract());

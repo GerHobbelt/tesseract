@@ -40,6 +40,11 @@ void plot_box_list(               // make gradients win
     BLOBNBOX_LIST *list,          // blob list
     ScrollView::Color body_colour // colour to draw
 );
+void plot_box_list(               // make gradients win
+    Image& pix,                   // image to draw in
+    BLOBNBOX_LIST* list,          // blob list
+    ScrollView::Color body_colour // colour to draw
+);
 void plot_to_row(             // draw a row
     TO_ROW *row,              // row to draw
     ScrollView::Color colour, // colour to draw in

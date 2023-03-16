@@ -28,6 +28,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
 set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -279,6 +280,8 @@ elseif(MSVC)
   # 'double' to 'float'
   set(CMAKE_CXX_FLAGS_RELEASE
       "${CMAKE_CXX_FLAGS_RELEASE} /wd4244 /wd4305 /wd4267 /wd4251 /wd4275 /wd4005")
+  set(CMAKE_CXX_FLAGS_RELEASE
+      "${CMAKE_CXX_FLAGS_RELEASE} /wd4068")
   # Don't use /Wall because it generates too many warnings.
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W0 /bigobj")
   # MT flag
@@ -301,13 +304,6 @@ if(OPENMP_BUILD
 endif()
 if(OPENMP_BUILD)
   find_package(OpenMP QUIET)
-  if(OpenMP_FOUND)
-    message(">> OpenMP_FOUND ${OpenMP_FOUND} ${OpenMP_VERSION}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (NOT TARGET OpenMP::OpenMP_CXX)
-      add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-    endif()
-  endif()
   # https://stackoverflow.com/questions/12399422
   # how-to-set-linker-flags-for-openmp-in-cmakes-try-compile-function
   if(NOT OpenMP_FOUND
@@ -328,8 +324,22 @@ if(OPENMP_BUILD)
     add_definitions(-D_OPENMP=201107)
   endif()
   if(MSVC)
-    string(REPLACE "/openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-    string(REPLACE "-openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    # Note: -openmp:llvm is available for X64 from MSVC 16.9
+    # from MSVC 16.10 Preview 2 there is support also for x86 and arm64
+    # https://devblogs.microsoft.com/cppblog/openmp-updates-and-fixes-for-cpp-in-visual-studio-2019-16-10/
+    if ("${OpenMP_CXX_FLAGS}" STREQUAL "-openmp")
+      set(OpenMP_CXX_FLAGS "-openmp:llvm")
+    endif()
+    # 'simd': requires '-openmp:experimental'
+    set_source_files_properties(src/arch/dotproduct.cpp
+                              PROPERTIES COMPILE_FLAGS "-openmp:experimental")
+  endif()
+  if(OpenMP_FOUND)
+    message(">> OpenMP_FOUND ${OpenMP_FOUND} version: ${OpenMP_CXX_VERSION}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if (NOT TARGET OpenMP::OpenMP_CXX)
+      add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+    endif()
   endif()
 endif()
 
@@ -367,10 +377,6 @@ if(SW_BUILD)
   sw_execute()
 else()
   find_package(PkgConfig)
-  if(BUILD_TRAINING_TOOLS AND NOT PKG_CONFIG_FOUND)
-    message(WARNING "Building of Training Tools requires PkgConfig")
-    set(BUILD_TRAINING_TOOLS OFF)
-  endif(BUILD_TRAINING_TOOLS AND NOT PKG_CONFIG_FOUND)
   # Check for required library. option -DLeptonica_DIR=path => cmake hint where
   # to find leptonica
   find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
@@ -769,6 +775,7 @@ target_include_directories(
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch_sse>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccmain>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccstruct>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccutil>
@@ -811,14 +818,8 @@ set_target_properties(libtesseract
 set_target_properties(libtesseract
   PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-if(WIN32)
-  set_target_properties(libtesseract
-     PROPERTIES OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR})
-  set_target_properties(libtesseract
-     PROPERTIES DEBUG_OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR}d)
-else()
-  set_target_properties(libtesseract PROPERTIES OUTPUT_NAME tesseract)
-endif()
+set_target_properties(libtesseract
+  PROPERTIES OUTPUT_NAME tesseract$<$<BOOL:${WIN32}>:${VERSION_MAJOR}${VERSION_MINOR}$<$<CONFIG:DEBUG>:d>>)
 
 if(SW_BUILD)
   target_link_libraries(libtesseract PUBLIC org.sw.demo.danbloomberg.leptonica
@@ -890,8 +891,10 @@ get_target_property(tesseract_NAME libtesseract NAME)
 get_target_property(tesseract_VERSION libtesseract VERSION)
 get_target_property(tesseract_OUTPUT_NAME libtesseract OUTPUT_NAME)
 
-configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
+configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc.in
                @ONLY)
+# to resolve generator expression in OUTPUT_NAME
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tesseract_$<CONFIG>.pc INPUT ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc.in)
 
 configure_package_config_file(
   cmake/templates/TesseractConfig.cmake.in
@@ -903,8 +906,8 @@ write_basic_package_version_file(
   VERSION ${PACKAGE_VERSION}
   COMPATIBILITY SameMajorVersion)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract_$<CONFIG>.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig RENAME tesseract.pc)
 install(TARGETS tesseract DESTINATION bin)
 install(
   TARGETS libtesseract

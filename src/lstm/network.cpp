@@ -48,7 +48,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Min and max window sizes.
 const int kMinWinSize = 500;
@@ -207,7 +207,7 @@ static NetworkType getNetworkType(TFile *fp) {
     for (data = 0; data < NT_COUNT && type_name != kTypeNames[data]; ++data) {
     }
     if (data == NT_COUNT) {
-      tprintf("ERROR: Invalid network layer type:%s\n", type_name.c_str());
+      tprintf("ERROR: Invalid network layer type:{}\n", type_name.c_str());
       return NT_NONE;
     }
   }
@@ -329,7 +329,7 @@ TFloat Network::Random(TFloat range) {
   return randomizer_->SignedRand(range);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // === Debug image display methods. ===
 // Displays the image of the matrix to the forward window.
@@ -370,7 +370,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
       height = kMaxWinSize;
     }
     *window = new ScrollView(window_name, 80, 100, width, height, width, height, tess_coords);
-    tprintf("Created window %s of size %d, %d\n", window_name, width, height);
+    tprintf("Created window {} of size {}, {}\n", window_name, width, height);
   } else {
     (*window)->Clear();
   }

@@ -112,7 +112,7 @@ void LMPainPoints::GenerateFromPath(float rating_cert_scale, ViterbiStateEntry *
       GeneratePainPoint(pain_coord.col, pain_coord.row, LM_PPTYPE_PATH, priority, true,
                         max_char_wh_ratio_, word_res);
     } else if (debug_level_ > 3) {
-      tprintf("NO pain point (Classified) for col=%d row=%d type=%s\n", pain_coord.col,
+      tprintf("NO pain point (Classified) for col={} row={} type={}\n", pain_coord.col,
               pain_coord.row, LMPainPointsTypeName[LM_PPTYPE_PATH]);
       BLOB_CHOICE_IT b_it(word_res->ratings->get(pain_coord.col, pain_coord.row));
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
@@ -130,7 +130,7 @@ void LMPainPoints::GenerateFromAmbigs(const DANGERR &fixpt, ViterbiStateEntry *v
                                       WERD_RES *word_res) {
   // Begins and ends in DANGERR vector now record the blob indices as used
   // by the ratings matrix.
-  for (auto danger : fixpt) {
+  for (auto &&danger : fixpt) {
     // Only use dangerous ambiguities.
     if (danger.dangerous) {
       GeneratePainPoint(danger.begin, danger.end - 1, LM_PPTYPE_AMBIG, vse->cost, true,
@@ -148,7 +148,7 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
     return false;
   }
   if (debug_level_ > 3) {
-    tprintf("Generating pain point for col=%d row=%d type=%s\n", col, row,
+    tprintf("Generating pain point for col={} row={} type={}\n", col, row,
             LMPainPointsTypeName[pp_type]);
   }
   // Compute associate stats.
@@ -185,7 +185,7 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
     MatrixCoordPair pain_point(priority, MATRIX_COORD(col, row));
     pain_points_heaps_[pp_type].Push(&pain_point);
     if (debug_level_) {
-      tprintf("Added pain point with priority %g\n", priority);
+      tprintf("Added pain point with priority {}\n", priority);
     }
     return true;
   } else {
@@ -203,7 +203,7 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
 void LMPainPoints::RemapForSplit(int index) {
   for (auto &pain_points_heap : pain_points_heaps_) {
     std::vector<MatrixCoordPair> &heap = pain_points_heap.heap();
-    for (auto entry : heap) {
+    for (auto &&entry : heap) {
       entry.data().MapForSplit(index);
     }
   }

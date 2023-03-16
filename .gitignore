@@ -88,6 +88,7 @@ tesseract_opencl_profile_devices.dat
 kernel*.bin
 
 # build dirs
+/b
 /build*
 /*.dll
 /*.lib

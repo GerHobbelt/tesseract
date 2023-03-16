@@ -46,7 +46,7 @@ extern BOOL_VAR_H(textord_show_parallel_rows);
 extern BOOL_VAR_H(textord_show_expanded_rows);
 extern BOOL_VAR_H(textord_show_final_rows);
 extern BOOL_VAR_H(textord_show_final_blobs);
-extern BOOL_VAR_H(textord_test_landscape);
+//extern BOOL_VAR_H(textord_test_landscape);
 extern BOOL_VAR_H(textord_parallel_baselines);
 extern BOOL_VAR_H(textord_straight_baselines);
 extern BOOL_VAR_H(textord_old_baselines);
@@ -110,34 +110,30 @@ float make_single_row(ICOORD page_tr, bool allow_sub_blobs, TO_BLOCK *block, TO_
 float make_rows(ICOORD page_tr, // top right
                 TO_BLOCK_LIST *port_blocks);
 void make_initial_textrows(ICOORD page_tr,
-                           TO_BLOCK *block,  // block to do
-                           FCOORD rotation,  // for drawing
-                           bool testing_on); // correct orientation
+                           TO_BLOCK* block,  // block to do
+                           FCOORD rotation); // for drawing
 void fit_lms_line(TO_ROW *row);
 void compute_page_skew(TO_BLOCK_LIST *blocks, // list of blocks
                        float &page_m,         // average gradient
                        float &page_err);      // average error
 void vigorous_noise_removal(TO_BLOCK *block);
 void cleanup_rows_making(ICOORD page_tr,     // top right
-                         TO_BLOCK *block,    // block to do
+                         TO_BLOCK* block,    // block to do
                          float gradient,     // gradient to fit
                          FCOORD rotation,    // for drawing
-                         int32_t block_edge, // edge of block
-                         bool testing_on);   // correct orientation
+                         int32_t block_edge); // edge of block
 void delete_non_dropout_rows(                // find lines
     TO_BLOCK *block,                         // block to do
     float gradient,                          // global skew
     FCOORD rotation,                         // deskew vector
-    int32_t block_edge,                      // left edge
-    bool testing_on                          // correct orientation
+    int32_t block_edge                       // left edge
 );
 bool find_best_dropout_row( // find neighbours
     TO_ROW *row,            // row to test
     int32_t distance,       // dropout dist
     float dist_limit,       // threshold distance
     int32_t line_index,     // index of row
-    TO_ROW_IT *row_it,      // current position
-    bool testing_on         // correct orientation
+    TO_ROW_IT *row_it       // current position
 );
 TBOX deskew_block_coords( // block box
     TO_BLOCK *block,      // block to do
@@ -168,15 +164,13 @@ void expand_rows(       // find lines
     TO_BLOCK *block,    // block to do
     float gradient,     // gradient to fit
     FCOORD rotation,    // for drawing
-    int32_t block_edge, // edge of block
-    bool testing_on     // correct orientation
+    int32_t block_edge  // edge of block
 );
 void adjust_row_limits( // tidy limits
     TO_BLOCK *block     // block to do
 );
 void compute_row_stats( // find lines
-    TO_BLOCK *block,    // block to do
-    bool testing_on     // correct orientation
+    TO_BLOCK *block     // block to do
 );
 float median_block_xheight( // find lines
     TO_BLOCK *block,        // block to do
@@ -197,19 +191,16 @@ int32_t compute_height_modes(STATS *heights,     // stats to search
 void correct_row_xheight(TO_ROW *row,            // row to fix
                          float xheight,          // average values
                          float ascrise, float descdrop);
-void separate_underlines(TO_BLOCK *block,   // block to do
+void separate_underlines(TO_BLOCK* block,   // block to do
                          float gradient,    // skew angle
-                         FCOORD rotation,   // inverse landscape
-                         bool testing_on);  // correct orientation
+                         FCOORD rotation);   // inverse landscape
 void pre_associate_blobs(ICOORD page_tr,    // top right
-                         TO_BLOCK *block,   // block to do
-                         FCOORD rotation,   // inverse landscape
-                         bool testing_on);  // correct orientation
-void fit_parallel_rows(TO_BLOCK *block,     // block to do
+                         TO_BLOCK* block,   // block to do
+                         FCOORD rotation);   // inverse landscape
+void fit_parallel_rows(TO_BLOCK* block,     // block to do
                        float gradient,      // gradient to fit
                        FCOORD rotation,     // for drawing
-                       int32_t block_edge,  // edge of block
-                       bool testing_on);    // correct orientation
+                       int32_t block_edge);  // edge of block
 void fit_parallel_lms(float gradient,       // forced gradient
                       TO_ROW *row);         // row to fit
 void make_baseline_spline(TO_ROW *row,      // row to fit

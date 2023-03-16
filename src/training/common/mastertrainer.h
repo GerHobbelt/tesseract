@@ -195,7 +195,7 @@ public:
   void DebugCanonical(const char *unichar_str1, const char *unichar_str2);
 
 #if !DISABLED_LEGACY_ENGINE
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
   // Debugging for cloud/canonical features.
   // Displays a Features window containing:

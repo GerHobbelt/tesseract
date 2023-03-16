@@ -83,6 +83,10 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
+
 
 namespace tesseract {
 
@@ -150,7 +154,7 @@ void ParseArguments(int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
-	ASSERT(ccutil != nullptr);
+    ASSERT0(ccutil != nullptr);
     tesseract::ParamUtils::ReadParamsFile(
         FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
   }
@@ -167,13 +171,13 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
     if (!shape_table->DeSerialize(&shape_fp)) {
       delete shape_table;
       shape_table = nullptr;
-      tprintf("ERROR: Failed to read shape table %s\n", shape_table_file.c_str());
+      tprintf("ERROR: Failed to read shape table {}\n", shape_table_file.c_str());
     } else {
       int num_shapes = shape_table->NumShapes();
-      tprintf("Read shape table %s of %d shapes\n", shape_table_file.c_str(), num_shapes);
+      tprintf("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
     }
   } else {
-    tprintf("WARNING: No shape table file present: %s\n", shape_table_file.c_str());
+    tprintf("WARNING: No shape table file present: {}\n", shape_table_file.c_str());
   }
   return shape_table;
 }
@@ -185,11 +189,11 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
   FILE *fp = fopen(shape_table_file.c_str(), "wb");
   if (fp != nullptr) {
     if (!shape_table.Serialize(fp)) {
-      fprintf(stderr, "Error writing shape table: %s\n", shape_table_file.c_str());
+      tprintf("ERROR: Error writing shape table: {}\n", shape_table_file.c_str());
     }
     fclose(fp);
   } else {
-    fprintf(stderr, "Error creating shape table: %s\n", shape_table_file.c_str());
+    tprintf("ERROR: Error creating shape table: {}\n", shape_table_file.c_str());
   }
 }
 
@@ -250,7 +254,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   trainer->SetFeatureSpace(fs);
   // Load training data from .tr files in filelist (terminated by nullptr).
   for (const char *page_name = *filelist++; page_name != nullptr; page_name = *filelist++) {
-    tprintf("Reading %s ...\n", page_name);
+    tprintf("Reading {} ...\n", page_name);
     trainer->ReadTrainingSamples(page_name, feature_defs, false);
 
     // If there is a file with [lang].[fontname].exp[num].fontinfo present,
@@ -284,7 +288,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   }
   trainer->PreTrainingSetup();
   if (!FLAGS_O.empty() && !trainer->unicharset().save_to_file(FLAGS_O.c_str())) {
-    fprintf(stderr, "ERROR: Failed to save unicharset to file %s\n", FLAGS_O.c_str());
+    tprintf("ERROR: Failed to save unicharset to file {}\n", FLAGS_O.c_str());
     return {};
   }
 
@@ -294,7 +298,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     if (*shape_table == nullptr) {
       *shape_table = new ShapeTable;
       trainer->SetupFlatShapeTable(*shape_table);
-      tprintf("Flat shape table summary: %s\n", (*shape_table)->SummaryStr().c_str());
+      tprintf("Flat shape table summary: {}\n", (*shape_table)->SummaryStr().c_str());
     }
     (*shape_table)->set_unicharset(trainer->unicharset());
   }
@@ -388,6 +392,7 @@ void ReadTrainingSamples(const FEATURE_DEFS_STRUCT &feature_definitions, const c
       if (feature_type != i) {
         delete char_desc->FeatureSets[i];
       }
+      char_desc->FeatureSets[i] = nullptr;
     }
     delete char_desc;
   }
@@ -515,7 +520,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
       Prototype->Merged = true;
     } else if (best_match != nullptr) {
       if (debug) {
-        tprintf("Red proto at %g,%g matched a green one at %g,%g\n", Prototype->Mean[0],
+        tprintf("Red proto at {},{} matched a green one at {},{}\n", Prototype->Mean[0],
                 Prototype->Mean[1], best_match->Mean[0], best_match->Mean[1]);
       }
       Prototype->Merged = true;
@@ -529,7 +534,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
     // Process insignificant protos that do not match a green one
     if (!Prototype->Significant && Prototype->NumSamples >= min_samples && !Prototype->Merged) {
       if (debug) {
-        tprintf("Red proto at %g,%g becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
+        tprintf("Red proto at {},{} becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
       }
       Prototype->Significant = true;
     }

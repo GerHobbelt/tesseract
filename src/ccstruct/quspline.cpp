@@ -336,7 +336,7 @@ void QSPLINE::extrapolate( // linear extrapolation
  * Draw the QSPLINE in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void QSPLINE::plot(          // draw it
     ScrollView *window,      // window to draw in
     ScrollView::Color colour // colour to draw in
@@ -362,7 +362,7 @@ void QSPLINE::plot(          // draw it
 }
 #endif
 
-void QSPLINE::plot(Image pix) const {
+void QSPLINE::plot(Image &pix, uint32_t* data, int wpl, int w, int h) const {
   if (pix == nullptr) {
     return;
   }

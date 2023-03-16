@@ -72,12 +72,18 @@ private:
 // Make it usable by BBGrid.
 CLISTIZEH(WordWithBox);
 
-using WordGrid = BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
+class WordGrid : public BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT> {
+public:
+  WordGrid(Tesseract* tess, int gridsize, const ICOORD& bleft, const ICOORD& tright) :
+    BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>(tess, gridsize, bleft, tright) {
+  }
+};
+
 using WordSearch = GridSearch<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 
 class Textord {
 public:
-  explicit Textord(CCStruct *ccstruct);
+  explicit Textord(Tesseract* tess, CCStruct *ccstruct);
   ~Textord() = default;
 
   // Make the textlines and words inside each block.
@@ -116,9 +122,11 @@ public:
   );
   // tordmain.cpp ///////////////////////////////////////////
   void find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks);
-  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks, bool testing_on);
+  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks);
 
 private:
+  Tesseract* tesseract_;   // reference to the active instance
+
   // For underlying memory management and other utilities.
   CCStruct *ccstruct_;
 
@@ -141,14 +149,12 @@ public:
                            const FCOORD &rotation,
                            float gradient, // global skew
                            int block_line_size);
-  void make_spline_rows(TO_BLOCK *block, // block to do
-                        float gradient,  // gradient to fit
-                        bool testing_on);
+  void make_spline_rows(TO_BLOCK* block, // block to do
+                        float gradient);  // gradient to fit
 
 private:
   //// oldbasel.cpp ////////////////////////////////////////
   void make_old_baselines(TO_BLOCK *block, // block to do
-                          bool testing_on, // correct orientation
                           float gradient);
   void correlate_lines(TO_BLOCK *block, float gradient);
   void correlate_neighbours(TO_BLOCK *block, // block rows are in.

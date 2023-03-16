@@ -173,7 +173,7 @@ double check_pitch_sync(   // find segmentation
                               // region iterator
   FPSEGPT_LIST_C_IT lattice_it = &lattice;
 
-  //      tprintf("Computing sync on word of %d blobs with pitch %d\n",
+  //      tprintf("Computing sync on word of {} blobs with pitch {}\n",
   //              blob_count, pitch);
   //      if (blob_count==8 && pitch==27)
   //              projection->print(stdout,true);
@@ -186,7 +186,7 @@ double check_pitch_sync(   // find segmentation
   min_it = *blob_it;
   min_box = box_next(&min_it); // get box
   //      if (blob_count==8 && pitch==27)
-  //              tprintf("1st box at (%d,%d)->(%d,%d)\n",
+  //              tprintf("1st box at ({},{})->({},{})\n",
   //                      min_box.left(),min_box.bottom(),
   //                      min_box.right(),min_box.top());
   // left of word
@@ -194,7 +194,7 @@ double check_pitch_sync(   // find segmentation
   for (min_index = 1; min_index < blob_count; min_index++) {
     min_box = box_next(&min_it);
     //              if (blob_count==8 && pitch==27)
-    //                      tprintf("Box at (%d,%d)->(%d,%d)\n",
+    //                      tprintf("Box at ({},{})->({},{})\n",
     //                              min_box.left(),min_box.bottom(),
     //                              min_box.right(),min_box.top());
   }
@@ -313,8 +313,8 @@ double check_pitch_sync(   // find segmentation
     //                      (segpt_it.mark_cycle_pt();!segpt_it.cycled_list();segpt_it.forward())
     //                      {
     //                              segpt=segpt_it.data();
-    //                              tprintf("At %d, (%x) cost=%g, m=%g, sq=%g,
-    //                              pred=%x\n",
+    //                              tprintf("At {}, ({}) cost={}, m={}, sq={},
+    //                              pred={}\n",
     //                                      segpt->position(),segpt,segpt->cost_function(),
     //                                      segpt->sum(),segpt->squares(),segpt->previous());
     //                      }
@@ -337,7 +337,7 @@ double check_pitch_sync(   // find segmentation
   mean_sum = outseg_it.data()->sum();
   mean_sum = mean_sum * mean_sum / best_region_index;
   if (outseg_it.data()->squares() - mean_sum < 0) {
-    tprintf("Impossible sqsum=%g, mean=%g, total=%d\n", outseg_it.data()->squares(),
+    tprintf("Impossible sqsum={}, mean={}, total={}\n", outseg_it.data()->squares(),
             outseg_it.data()->sum(), best_region_index);
   }
   lattice.deep_clear(); // shift the lot
@@ -395,7 +395,7 @@ void make_illegal_segment(   // find segmentation
     segpt = new FPSEGPT(x, false, offset, region_index, pitch, pitch_error, prev_list);
     if (segpt->previous() != nullptr) {
       ASSERT_HOST(offset >= 0);
-      fprintf(stderr, "made fake at %d\n", x);
+      tprintf("Made fake at {}\n", x);
       // make one up
       segpt_it.add_after_then_move(segpt);
       segpt->faked = true;

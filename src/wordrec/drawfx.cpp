@@ -27,7 +27,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #  define FXDEMOWIN "FXDemo"
 #  define FXDEMOXPOS 250

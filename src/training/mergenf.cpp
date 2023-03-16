@@ -32,6 +32,9 @@
 #include "params.h"
 #include "protos.h"
 
+#undef min
+#undef max
+
 using namespace tesseract;
 
 /*-------------------once in subfeat---------------------------------*/

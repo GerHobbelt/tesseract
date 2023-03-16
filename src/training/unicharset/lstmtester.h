@@ -89,6 +89,17 @@ private:
   TessdataManager test_model_mgr_;
   int test_training_stage_ = 0;
   std::string test_result_;
+
+  // == Debugging parameters.==
+  bool debug_ = false;
+
+public:
+	void SetDebug(bool v) {
+		debug_ = v;
+	}
+	bool HasDebug() const {
+		return debug_;
+	}
 };
 
 } // namespace tesseract

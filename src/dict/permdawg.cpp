@@ -59,7 +59,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
   bool checked_unigrams = false;
   if (getUnicharset().get_isngram(orig_uch_id)) {
     if (dawg_debug_level) {
-      tprintf("Checking unigrams in an ngram %s\n", getUnicharset().debug_str(orig_uch_id).c_str());
+      tprintf("Checking unigrams in an ngram {}\n", getUnicharset().debug_str(orig_uch_id));
     }
     int num_unigrams = 0;
     word->remove_last_unichar_id();
@@ -83,7 +83,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
                                              word_ending && i == encoding.size() - 1);
       (*unigram_dawg_args.active_dawgs) = *(unigram_dawg_args.updated_dawgs);
       if (dawg_debug_level) {
-        tprintf("unigram %s is %s\n", getUnicharset().debug_str(uch_id).c_str(),
+        tprintf("unigram {} is {}\n", getUnicharset().debug_str(uch_id),
                 unigrams_ok ? "OK" : "not OK");
       }
     }
@@ -106,21 +106,21 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
     // Add a new word choice
     if (word_ending) {
       if (dawg_debug_level) {
-        tprintf("Found word = %s\n", word->debug_string().c_str());
+        tprintf("Found word = {}\n", word->debug_string());
       }
       if (strcmp(output_ambig_words_file.c_str(), "") != 0) {
         if (output_ambig_words_file_ == nullptr) {
           output_ambig_words_file_ = fopen(output_ambig_words_file.c_str(), "wb+");
           if (output_ambig_words_file_ == nullptr) {
-            tprintf("ERROR: Failed to open output_ambig_words_file %s\n", output_ambig_words_file.c_str());
+            tprintf("ERROR: Failed to open output_ambig_words_file {}\n", output_ambig_words_file.c_str());
             throw "Failed to open output_ambig_words_file";	// GHo: analyzed code flow; this entire function seems to only be used in DISABLED_LEGACY_ENGINE but better to throw than to exit() anyway!
           }
-	  std::string word_str;
+          std::string word_str;
           word->string_and_lengths(&word_str, nullptr);
           word_str += " ";
           fprintf(output_ambig_words_file_, "%s", word_str.c_str());
         }
-	std::string word_str;
+        std::string word_str;
         word->string_and_lengths(&word_str, nullptr);
         word_str += " ";
         fprintf(output_ambig_words_file_, "%s", word_str.c_str());
@@ -142,7 +142,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
     }
   } else {
     if (dawg_debug_level) {
-      tprintf("Last unichar not OK at index %d in %s\n", word_index, word->debug_string().c_str());
+      tprintf("Last unichar not OK at index {} in {}\n", word_index, word->debug_string());
     }
   }
 }
@@ -190,10 +190,10 @@ void Dict::permute_choices(const char *debug, const BLOB_CHOICE_LIST_VECTOR &cha
                            WERD_CHOICE *best_choice, int *attempts_left, void *more_args) {
   if (debug) {
     tprintf(
-        "%s permute_choices: char_choice_index=%d"
-        " limit=%g rating=%g, certainty=%g word=%s\n",
+        "{} permute_choices: char_choice_index={}"
+        " limit={} rating={}, certainty={} word={}\n",
         debug, char_choice_index, *limit, word->rating(), word->certainty(),
-        word->debug_string().c_str());
+        word->debug_string());
   }
   if (static_cast<unsigned>(char_choice_index) < char_choices.size()) {
     BLOB_CHOICE_IT blob_choice_it;
@@ -294,13 +294,13 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
 
   // Print debug info for fragments.
   if (debug && (prev_fragment || this_fragment)) {
-    tprintf("%s check fragments: choice=%s word_ending=%d\n", debug,
-            getUnicharset().debug_str(curr_unichar_id).c_str(), word_ending);
+    tprintf("{} check fragments: choice={} word_ending={}\n", debug,
+            getUnicharset().debug_str(curr_unichar_id), word_ending);
     if (prev_fragment) {
-      tprintf("prev_fragment %s\n", prev_fragment->to_string().c_str());
+      tprintf("prev_fragment {}\n", prev_fragment->to_string());
     }
     if (this_fragment) {
-      tprintf("this_fragment %s\n", this_fragment->to_string().c_str());
+      tprintf("this_fragment {}\n", this_fragment->to_string());
     }
   }
 
@@ -311,7 +311,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   char_frag_info->num_fragments = 1;
   if (prev_fragment && !this_fragment) {
     if (debug) {
-      tprintf("Skip choice with incomplete fragment\n");
+      tprintf("WARNING: Skip choice with incomplete fragment\n");
     }
     return false;
   }
@@ -329,8 +329,8 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
         char_frag_info->unichar_id = getUnicharset().unichar_to_id(this_fragment->get_unichar());
         char_frag_info->fragment = nullptr;
         if (debug) {
-          tprintf("Built character %s from fragments\n",
-                  getUnicharset().debug_str(char_frag_info->unichar_id).c_str());
+          tprintf("Built character {} from fragments\n",
+                  getUnicharset().debug_str(char_frag_info->unichar_id));
         }
       } else {
         if (debug) {
@@ -349,7 +349,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
         }
       } else {
         if (debug) {
-          tprintf("Non-starting fragment piece with no prev_fragment\n");
+          tprintf("WARNING: Non-starting fragment piece with no prev_fragment\n");
         }
         return false;
       }
@@ -357,7 +357,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   }
   if (word_ending && char_frag_info->fragment) {
     if (debug) {
-      tprintf("Word can not end with a fragment\n");
+      tprintf("WARNING: Word cannot end with a fragment\n");
     }
     return false;
   }

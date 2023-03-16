@@ -44,9 +44,15 @@ namespace tesseract {
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
 void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
+  if (filename || !*filename) {
+    tprintf("ERROR: empty config filename specified. No config loaded.\n");
+    return;
+  }
+
   std::string path = datadir;
   path += "configs/";
   path += filename;
+  tprintf("Read Config: test if '{}' is a readable file.\n", path);
   FILE *fp;
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
@@ -54,10 +60,19 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
     path = datadir;
     path += "tessconfigs/";
     path += filename;
+    tprintf("Read Config: test if '{}' is a readable file.\n", path);
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
       fclose(fp);
     } else {
       path = filename;
+      tprintf("Read Config: test if '{}' is a readable file.\n", path);
+      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+        fclose(fp);
+      }
+      else {
+        tprintf("ERROR: config file '{}' cannot be opened / does not exist.\n", path);
+        return;
+      }
     }
   }
   ParamUtils::ReadParamsFile(path.c_str(), constraint, this->params());
@@ -170,6 +185,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
 #endif // DISABLED_LEGACY_ENGINE
     if (mgr->IsComponentAvailable(TESSDATA_LSTM)) {
       lstm_recognizer_ = new LSTMRecognizer(language_data_path_prefix.c_str());
+	  lstm_recognizer_->SetDebug(tess_debug_lstm);
       ASSERT_HOST(lstm_recognizer_->Load(this->params(), lstm_use_matrix ? language : "", mgr));
 	  // TODO: ConvertToInt optional extra
     } else {
@@ -188,7 +204,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     tprintf(
         "ERROR: Tesseract (legacy) engine requested, but components are "
         "not present in {}!!\n",
-        tessdata_path.c_str());
+        tessdata_path);
     return false;
   }
 #endif // !DISABLED_LEGACY_ENGINE
@@ -299,6 +315,13 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     delete lang;
   }
 
+  if (debug_output_path.empty() && !textbase.empty()) {
+    if (textbase == "-" /* stdout */)
+      debug_output_path = "tesseract-stdio-session-debug";
+    else
+      debug_output_path = textbase + "-debug";
+  }
+
   // Set the basename, compute the data directory.
   main_setup(arg0, textbase);
 
@@ -316,7 +339,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       if (!loaded_primary) {
         tess_to_init = this;
       } else {
-        tess_to_init = new Tesseract;
+        tess_to_init = new Tesseract(this);
         tess_to_init->main_setup(arg0, textbase);
       }
 

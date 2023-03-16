@@ -32,8 +32,9 @@
 
 namespace tesseract {
 
-Textord::Textord(CCStruct *ccstruct)
-    : ccstruct_(ccstruct)
+Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
+    : tesseract_(tess)
+    , ccstruct_(ccstruct)
     , use_cjk_fp_model_(false)
     ,
     // makerow.cpp ///////////////////////////////////////////
@@ -171,7 +172,9 @@ Textord::Textord(CCStruct *ccstruct)
     , BOOL_MEMBER(textord_noise_debug, false, "Debug row garbage detector", ccstruct_->params())
     , double_MEMBER(textord_blshift_maxshift, 0.00, "Max baseline shift", ccstruct_->params())
     , double_MEMBER(textord_blshift_xfraction, 9.99, "Min size of baseline shift",
-                    ccstruct_->params()) {}
+                    ccstruct_->params()) {
+  ASSERT0(tess != nullptr);
+}
 
 // Make the textlines and words inside each block.
 void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
@@ -194,7 +197,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   } else if (!PSM_SPARSE(pageseg_mode)) {
     // AutoPageSeg does not need to find_components as it did that already.
     // Filter_blobs sets up the TO_BLOCKs the same as find_components does.
-    filter_blobs(page_tr_, to_blocks, true);
+    filter_blobs(page_tr_, to_blocks);
   }
 
   ASSERT_HOST(!to_blocks->empty());
@@ -253,7 +256,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   close_to_win();
 #endif
 }

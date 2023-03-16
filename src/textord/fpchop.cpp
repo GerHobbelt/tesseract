@@ -89,7 +89,7 @@ ROW *fixed_pitch_words( // find lines
   // boundaries
   ICOORDELT_IT cell_it = &row->char_cells;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != nullptr) {
     plot_row_cells(to_win, ScrollView::RED, row, 0, &row->char_cells);
   }
@@ -112,7 +112,7 @@ ROW *fixed_pitch_words( // find lines
   }
   if (cell_it.empty() || row->char_cells.singleton()) {
     tprintf("WARNING: Row without enough char cells!\n"
-            "Leftmost blob is at (%d,%d)\n", box_it.data()->bounding_box().left(),
+            "Leftmost blob is at ({},{})\n", box_it.data()->bounding_box().left(),
             box_it.data()->bounding_box().bottom());
     return nullptr;
   }

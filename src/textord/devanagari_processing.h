@@ -29,6 +29,7 @@ extern BOOL_VAR_H(devanagari_split_debugimage);
 
 class TBOX;
 class DebugPixa;
+class TESS_API Tesseract;
 
 class PixelHistogram {
 public:
@@ -75,14 +76,14 @@ public:
     MAXIMAL_SPLIT  // Blobs are split maximally.
   };
 
-  ShiroRekhaSplitter();
+  ShiroRekhaSplitter(Tesseract *tess);
   virtual ~ShiroRekhaSplitter();
 
   // Top-level method to perform splitting based on current settings.
   // Returns true if a split was actually performed.
   // If split_for_pageseg is true, the pageseg_split_strategy_ is used for
   // splitting. If false, the ocr_split_strategy_ is used.
-  bool Split(bool split_for_pageseg, DebugPixa *pixa_debug);
+  bool Split(bool split_for_pageseg);
 
   // Clears the memory held by this object.
   void Clear();
@@ -183,6 +184,8 @@ private:
   // word image.
   static void GetShiroRekhaYExtents(Image word_pix, int *shirorekha_top, int *shirorekha_bottom,
                                     int *shirorekha_ylevel);
+
+  Tesseract* tesseract_;   // reference to the driving tesseract instance
 
   Image orig_pix_;       // Just a clone of the input image passed.
   Image splitted_image_; // Image produced after the last splitting round. The

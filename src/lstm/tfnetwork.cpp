@@ -103,7 +103,7 @@ void TFNetwork::Forward(bool debug, const NetworkIO &input, const TransposedArra
   std::vector<Tensor> outputs;
   Status s = session_->Run(tf_inputs, target_layers, {}, &outputs);
   if (!s.ok())
-    tprintf("ERROR: session->Run failed:%s\n", s.error_message().c_str());
+    tprintf("ERROR: session->Run failed:{}\n", s.error_message().c_str());
   ASSERT_HOST(s.ok());
   ASSERT_HOST(outputs.size() == 1);
   const Tensor &output_tensor = outputs[0];
@@ -134,7 +134,7 @@ int TFNetwork::InitFromProto() {
   Status s = session_->Create(model_proto_.graph());
   if (s.ok())
     return model_proto_.global_step();
-  tprintf("Session_->Create returned '%s'\n", s.error_message().c_str());
+  tprintf("Session_->Create returned '{}'\n", s.error_message().c_str());
   return 0;
 }
 

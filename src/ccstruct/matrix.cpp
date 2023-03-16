@@ -124,9 +124,9 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         continue;
       }
       BLOB_CHOICE_IT b_it(rating);
-      tprintf("col=%d row=%d ", col, row);
+      tprintf("col={} row={} ", col, row);
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-        tprintf("%s rat=%g cert=%g ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
+        tprintf("{} rat={} cert={} ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
                 b_it.data()->rating(), b_it.data()->certainty());
       }
       tprintf("\n");
@@ -135,13 +135,13 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
   }
   tprintf("\n");
   for (col = 0; col < dim; ++col) {
-    tprintf("\t%d", col);
+    tprintf("\t{}", col);
   }
   tprintf("\n");
   for (row = 0; row < dim; ++row) {
     for (col = 0; col <= row; ++col) {
       if (col == 0) {
-        tprintf("%d\t", row);
+        tprintf("{}\t", row);
       }
       if (row >= col + band_width) {
         tprintf(" \t");
@@ -152,7 +152,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         BLOB_CHOICE_IT b_it(rating);
         int counter = 0;
         for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-          tprintf("%s ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
+          tprintf("{} ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
           ++counter;
           if (counter == 3) {
             break;

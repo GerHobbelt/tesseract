@@ -61,9 +61,9 @@ void BoxChar::GetDirection(int *num_rtl, int *num_ltr) const {
   // Convert the unichar to UTF32 representation
   std::vector<char32> uni_vector = UNICHAR::UTF8ToUTF32(ch_.c_str());
   if (uni_vector.empty()) {
-    tprintf("Illegal utf8 in boxchar string:%s = ", ch_.c_str());
+    tprintf("ERROR: Illegal utf8 in boxchar string:{} = ", ch_.c_str());
     for (char c : ch_) {
-      tprintf(" 0x%x", c);
+      tprintf(" {}", c);
     }
     tprintf("\n");
     return;
@@ -124,7 +124,7 @@ void BoxChar::PrepareToWrite(std::vector<BoxChar *> *boxes) {
   InsertSpaces(rtl_rules, vertical_rules, boxes);
   for (size_t i = 0; i < boxes->size(); ++i) {
     if ((*boxes)[i]->box_ == nullptr) {
-      tprintf("Null box at index %zu\n", i);
+      tprintf("Null box at index {}\n", i);
     }
   }
   if (rtl_rules) {
@@ -174,7 +174,7 @@ void BoxChar::InsertNewlines(bool rtl_rules, bool vertical_rules, std::vector<Bo
         } else if (rtl_rules) {
           x = prev_box->x - width;
           if (x < 0) {
-            tprintf("prev x = %d, width=%d\n", prev_box->x, width);
+            tprintf("prev x = {}, width={}\n", prev_box->x, width);
             x = 0;
           }
         }
@@ -375,7 +375,7 @@ std::string BoxChar::GetTesseractBoxStr(int height, const std::vector<BoxChar *>
       tprintf("ERROR: Call PrepareToWrite before WriteTesseractBoxFile!!\n");
       return "";
     }
-    int nbytes = snprintf(buffer, kMaxLineLength, "%s %d %d %d %d %d\n", boxe->ch_.c_str(), box->x,
+    int nbytes = snprintf(buffer, kMaxLineLength, "{} {} {} {} {} {}\n", boxe->ch_.c_str(), box->x,
                           height - box->y - box->h, box->x + box->w, height - box->y, boxe->page_);
     output.append(buffer, nbytes);
   }

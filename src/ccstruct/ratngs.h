@@ -170,7 +170,7 @@ public:
   bool PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool debug) const;
 
   void print(const UNICHARSET *unicharset) const {
-    tprintf("r%.2f c%.2f x[%g,%g]: %d %s",
+    tprintf("r{} c{} x[{},{}]: {} {}",
             static_cast<double>(rating_),
             static_cast<double>(certainty_),
             static_cast<double>(min_xheight_),
@@ -179,7 +179,7 @@ public:
   }
   void print_full() const {
     print(nullptr);
-    tprintf(" script=%d, font1=%d, font2=%d, yshift=%g, classifier=%d\n", script_id_, fontinfo_id_,
+    tprintf(" script={}, font1={}, font2={}, yshift={}, classifier={}\n", script_id_, fontinfo_id_,
             fontinfo_id2_, static_cast<double>(yshift_), classifier_);
   }
   // Sort function for sorting BLOB_CHOICEs in increasing order of rating.
@@ -539,7 +539,7 @@ public:
   // bounding boxes, *this to get the unichars, and this->unicharset
   // to get the target positions. If small_caps is true, sub/super are not
   // considered, but dropcaps are.
-  // NOTE: blobs_list should be the chopped_word blobs. (Fully segemented.)
+  // NOTE: blobs_list should be the chopped_word blobs. (Fully segmented.)
   void SetScriptPositions(bool small_caps, TWERD *word, int debug = 0);
   // Sets all the script_pos_ positions to the given position.
   void SetAllScriptPositions(ScriptPos position);
@@ -630,6 +630,8 @@ using BLOB_CHOICE_LIST_VECTOR = std::vector<BLOB_CHOICE_LIST *>;
 // Utilities for comparing WERD_CHOICEs
 
 bool EqualIgnoringCaseAndTerminalPunct(const WERD_CHOICE &word1, const WERD_CHOICE &word2);
+
+bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1, const WERD_CHOICE &word2);
 
 // Utilities for debug printing.
 void print_ratings_list(const char *msg,                     // intro message

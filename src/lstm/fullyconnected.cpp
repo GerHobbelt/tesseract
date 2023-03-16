@@ -19,6 +19,17 @@
 #  include "config_auto.h"
 #endif
 
+#if defined(HAVE_MUPDF) || defined(BUILD_MONOLITHIC)
+#include "mupdf/fitz.h"
+#include "mupdf/helpers/cpu.h"
+#include "mupdf/assertions.h"     // for ASSERT
+#else
+static const int fz_get_cpu_core_count()
+{
+	return 1;   // TODO/HACK
+}
+#endif
+
 #include "fullyconnected.h"
 
 // 21843 ms
@@ -52,9 +63,19 @@
 //const int kNumThreads = 24; // 21497 ms
 //const int kNumThreads = 24; // 20761 ms
 //const int kNumThreads = 24; // 20938 ms
-static const unsigned kNumThreads = 24; // 20640 ms
+//static const size_t kNumThreads = 24; // 20640 ms
 //const int kNumThreads = 48; // 22425 ms
-static thread_pool pool(kNumThreads);
+//
+// While the above, setting kNumThreads to 24, may have worked for Stefan on EPYC or similar UniMannheim hardware, the key take-away
+// from the threadpool benchmarks (vanilla and augmented) is that the number of threads SHOULD equal your number CPU (virtual) cores on
+// lightly loaded machines. The augmented benchmark shows that you're often even better off (if only a little) when you limit your threads
+// to "one less" so your regular (large core count) machine, which has other jobs to do alongside this, has one core left for "other stuff"
+// (like running an app, GUI and OS). The augmented threadpool code would get this encoded as...
+//static const int kNumThreads = -1;
+// ... but we're going for broke here and expect benchmarks to usually run on otherwise unburdened heavy-duty hardware, so as to optimize
+// for those, we just say TAKE IT ALL:
+static const int kNumThreads = std::max(1, fz_get_cpu_core_count());
+static BS::thread_pool pool(kNumThreads);
 #elif defined(_OPENMP)
 static const int kNumThreads = 4;
 #else
@@ -165,6 +186,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   SetupForward(input, input_transpose);
 #if defined(THREADPOOL)
+  ASSERT0(kNumThreads > 0);
   std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
   auto *curr_input = &local_scratch[0];
   auto *temp_lines = &local_scratch[kNumThreads];
@@ -191,7 +213,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
           acts_.CopyTimeStepFrom(t, *output, t);
         }
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else if (IsTraining() && type_ != NT_SOFTMAX) {
     pool.parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
@@ -204,7 +227,8 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         output->WriteTimeStep(t, temp_line);
         acts_.CopyTimeStepFrom(t, *output, t);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else {
     pool.parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
@@ -216,9 +240,11 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         ForwardTimeStep(curr_input[thread_id], t, temp_line);
         output->WriteTimeStep(t, temp_line);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   }
 #else // THREADPOOL
+  ASSERT0(kNumThreads > 0);
   std::vector<NetworkScratch::FloatVec> local_scratch(2 * kNumThreads);
   auto *curr_input = &local_scratch[0];
   auto *temp_lines = &local_scratch[kNumThreads];
@@ -272,10 +298,10 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   output->ZeroInvalidElements();
 #if DEBUG_DETAIL > 0
-  tprintf("F Output:%s\n", name_.c_str());
+  tprintf("F Output:{}\n", name_.c_str());
   output->Print(10);
 #endif
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }
@@ -336,7 +362,7 @@ void FullyConnected::ForwardTimeStep(const int8_t *i_input, int t,
 // See NetworkCpp for a detailed discussion of the arguments.
 bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
                               NetworkScratch *scratch, NetworkIO *back_deltas) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayBackward(fwd_deltas);
   }
@@ -363,7 +389,8 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
         BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), backprop);
         back_deltas->WriteTimeStep(t, backprop);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   } else {
     pool.parallelize_loop(0, width,
       [this, &fwd_deltas, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
@@ -373,7 +400,8 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
       for (unsigned t = start; t < end; t++) {
         BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), nullptr);
       }
-    });
+    }).get();
+	pool.wait_for_tasks();
   }
 #else
 #ifdef _OPENMP
@@ -421,7 +449,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
   if (needs_to_backprop_) {
     back_deltas->ZeroInvalidElements();
 #if DEBUG_DETAIL > 0
-    tprintf("F Backprop:%s\n", name_.c_str());
+    tprintf("F Backprop:{}\n", name_.c_str());
     back_deltas->Print(10);
 #endif
     return true;

@@ -167,14 +167,14 @@ void ROW::move(      // reposition row
 void ROW::print( // print
     FILE *fp     // file to print on
 ) const {
-  tprintf("Kerning= %d\n", kerning);
-  tprintf("Spacing= %d\n", spacing);
+  tprintf("Kerning= {}\n", kerning);
+  tprintf("Spacing= {}\n", spacing);
   bound_box.print();
-  tprintf("Xheight= %f\n", xheight);
-  tprintf("Ascrise= %f\n", ascrise);
-  tprintf("Descdrop= %f\n", descdrop);
-  tprintf("has_drop_cap= %d\n", has_drop_cap_);
-  tprintf("lmargin= %d, rmargin= %d\n", lmargin_, rmargin_);
+  tprintf("Xheight= {}\n", xheight);
+  tprintf("Ascrise= {}\n", ascrise);
+  tprintf("Descdrop= {}\n", descdrop);
+  tprintf("has_drop_cap= {}\n", has_drop_cap_);
+  tprintf("lmargin= {}, rmargin= {}\n", lmargin_, rmargin_);
 }
 
 /**********************************************************************
@@ -183,7 +183,7 @@ void ROW::print( // print
  * Draw the ROW in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void ROW::plot(              // draw it
     ScrollView *window,      // window to draw in
     ScrollView::Color colour // colour to draw in

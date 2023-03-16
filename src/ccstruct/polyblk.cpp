@@ -242,7 +242,7 @@ void POLY_BLOCK::move(ICOORD shift) {
   compute_bb();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   ICOORDELT_IT v = &vertices;
 
@@ -268,7 +268,42 @@ void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   v.move_to_first();
   window->DrawTo(v.data()->x(), v.data()->y());
 }
+#endif
 
+void POLY_BLOCK::plot(Image &pix, int32_t num) {
+  ICOORDELT_IT v = &vertices;
+
+  //auto color = ColorForPolyBlockType(type);
+  //window->Pen(ColorForPolyBlockType(type));
+
+  v.move_to_first();
+
+  if (num > 0) {
+    //window->TextAttributes("Times", 80, false, false, false);
+    char temp_buff[34];
+#  if defined(PRId32)
+    snprintf(temp_buff, sizeof(temp_buff), "%" PRId32, num);
+#  else
+    _ltoa(num, temp_buff, 10);
+#  endif
+    auto tx = v.data()->x();
+    auto ty = v.data()->y();
+    //window->Text(v.data()->x(), v.data()->y(), temp_buff);
+  }
+
+  //window->SetCursor(v.data()->x(), v.data()->y());
+  for (v.mark_cycle_pt(); !v.cycled_list(); v.forward()) {
+    auto x = v.data()->x();
+    auto y = v.data()->y();
+    //window->DrawTo(v.data()->x(), v.data()->y());
+  }
+  v.move_to_first();
+  auto ex = v.data()->x();
+  auto ey = v.data()->y();
+  //window->DrawTo(v.data()->x(), v.data()->y());
+}
+
+#if !GRAPHICS_DISABLED
 void POLY_BLOCK::fill(ScrollView *window, ScrollView::Color colour) {
   ICOORDELT_IT s_it;
 
@@ -384,7 +419,7 @@ int lessthan(const void *first, const void *second) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /// Returns a color to draw the given type.
 ScrollView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
   // Keep kPBColors in sync with PolyBlockType.

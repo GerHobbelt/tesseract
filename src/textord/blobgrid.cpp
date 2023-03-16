@@ -21,8 +21,8 @@
 
 namespace tesseract {
 
-BlobGrid::BlobGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright)
-    : BBGrid<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT>(gridsize, bleft, tright) {}
+BlobGrid::BlobGrid(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright)
+    : BBGrid<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT>(tess, gridsize, bleft, tright) {}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable

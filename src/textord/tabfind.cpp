@@ -26,6 +26,7 @@
 #include "host.h" // for NearlyEqual
 #include "linefind.h"
 #include "tabfind.h"
+#include "tesseractclass.h"
 
 #include <algorithm>
 
@@ -62,9 +63,9 @@ const double kCosMaxSkewAngle = 0.866025;
 static BOOL_VAR(textord_tabfind_show_initialtabs, false, "Show tab candidates");
 static BOOL_VAR(textord_tabfind_show_finaltabs, false, "Show tab vectors");
 
-TabFind::TabFind(int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
+TabFind::TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
                  int vertical_x, int vertical_y, int resolution)
-    : AlignedBlob(gridsize, bleft, tright)
+    : AlignedBlob(tess, gridsize, bleft, tright)
     , resolution_(resolution)
     , image_origin_(0, tright.y() - 1)
     , v_it_(&vectors_) {
@@ -101,7 +102,7 @@ void TabFind::InsertBlobsToGrid(bool h_spread, bool v_spread, BLOBNBOX_LIST *blo
     }
   }
   if (textord_debug_tabfind) {
-    tprintf("Inserted %d blobs into grid, %d rejected.\n", b_count, reject_count);
+    tprintf("Inserted {} blobs into grid, {} rejected.\n", b_count, reject_count);
   }
 }
 
@@ -433,7 +434,7 @@ bool TabFind::FindTabVectors(TabVector_LIST *hlines, BLOBNBOX_LIST *image_blobs,
   }
   part_grid->Deskew(*deskew);
   ApplyTabConstraints();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_finaltabs) {
     tab_win = MakeWindow(640, 50, "FinalTabs");
     DisplayBoxes(tab_win);
@@ -471,12 +472,27 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
     }
   }
   if (textord_debug_tabfind) {
-    tprintf("Moved %d large blobs to normal list\n", b_count);
-#ifndef GRAPHICS_DISABLED
-    ScrollView *rej_win = MakeWindow(500, 300, "Image blobs");
-    block->plot_graded_blobs(rej_win);
-    block->plot_noise_blobs(rej_win);
-    rej_win->Update();
+    tprintf("Moved {} large blobs to normal list\n", b_count);
+#if !GRAPHICS_DISABLED
+    if (!tesseract_->debug_do_not_use_scrollview_app) {
+      ScrollView *rej_win = MakeWindow(500, 300, "Image blobs");
+      block->plot_graded_blobs(rej_win);
+      block->plot_noise_blobs(rej_win);
+      rej_win->Update();
+    }
+    else {
+      const char* name = "Image blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
+
+      block->plot_graded_blobs(pix);
+      //block->plot_noise_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name, false);
+    }
 #endif // !GRAPHICS_DISABLED
   }
   block->DeleteUnownedNoise();
@@ -490,7 +506,7 @@ void TabFind::SetupTabSearch(int x, int y, int *min_key, int *max_key) {
   *max_key = std::max(key1, key2);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 ScrollView *TabFind::DisplayTabVectors(ScrollView *tab_win) {
   // For every vector, display it.
@@ -503,6 +519,17 @@ ScrollView *TabFind::DisplayTabVectors(ScrollView *tab_win) {
   return tab_win;
 }
 
+void TabFind::DisplayTabVectors(Image &pix, uint32_t* data, int wpl, int w, int h) {
+  // For every vector, display it.
+  TabVector_IT it(&vectors_);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    TabVector* vector = it.data();
+    vector->Display(pix, data, wpl, w, h);
+  }
+  //tab_win->Update();
+  return;
+}
+
 #endif
 
 // PRIVATE CODE.
@@ -511,7 +538,7 @@ ScrollView *TabFind::DisplayTabVectors(ScrollView *tab_win) {
 // is mostly of vertical alignment.
 ScrollView *TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
                                            double tabfind_aligned_gap_fraction, TO_BLOCK *block) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs) {
     ScrollView *line_win = MakeWindow(0, 0, "VerticalLines");
     line_win = DisplayTabVectors(line_win);
@@ -528,7 +555,7 @@ ScrollView *TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_g
   TabVector::MergeSimilarTabVectors(vertical_skew_, &vectors_, this);
   SortVectors();
   EvaluateTabs();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs && initial_win != nullptr) {
     initial_win = DisplayTabVectors(initial_win);
   }
@@ -537,7 +564,7 @@ ScrollView *TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_g
   return initial_win;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Helper displays all the boxes in the given vector on the given window.
 static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollView *win) {
@@ -581,7 +608,7 @@ ScrollView *TabFind::FindTabBoxes(int min_gutter_width, double tabfind_aligned_g
   std::sort(left_tab_boxes_.begin(), left_tab_boxes_.end(), StdSortByBoxLeft<BLOBNBOX>);
   std::sort(right_tab_boxes_.begin(), right_tab_boxes_.end(), StdSortRightToLeft<BLOBNBOX>);
   ScrollView *tab_win = nullptr;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(0, 100, "InitialTabs");
     tab_win->Pen(ScrollView::BLUE);
@@ -610,7 +637,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
   int height = box.height();
   bool debug = WithinTestRegion(3, left_x, top_y);
   if (debug) {
-    tprintf("Column edges for blob at (%d,%d)->(%d,%d) are [%d, %d]\n", left_x, top_y, right_x,
+    tprintf("Column edges for blob at ({},{})->({},{}) are [{}, {}]\n", left_x, top_y, right_x,
             bottom_y, left_column_edge, right_column_edge);
   }
   // Compute a search radius based on a multiple of the height.
@@ -675,7 +702,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     int n_left = nbox.left();
     int n_right = nbox.right();
     if (debug) {
-      tprintf("Neighbour at (%d,%d)->(%d,%d)\n", n_left, nbox.bottom(), n_right, nbox.top());
+      tprintf("Neighbour at ({},{})->({},{})\n", n_left, nbox.bottom(), n_right, nbox.top());
     }
     // If the neighbouring blob is the wrong side of a separator line, then it
     // "doesn't exist" as far as we are concerned.
@@ -783,7 +810,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     bbox->set_right_tab_type(TT_NONE);
   }
   if (debug) {
-    tprintf("Left result = %s, Right result=%s\n",
+    tprintf("Left result = {}, Right result = {}\n",
             bbox->left_tab_type() == TT_MAYBE_ALIGNED
                 ? "Aligned"
                 : (bbox->left_tab_type() == TT_MAYBE_RAGGED ? "Ragged" : "None"),
@@ -858,7 +885,7 @@ void TabFind::FindAllTabVectors(int min_gutter_width) {
     }
   }
   if (textord_debug_tabfind) {
-    tprintf("Beginning real tab search with vertical = %d,%d...\n", vertical_x, vertical_y);
+    tprintf("Beginning real tab search with vertical = {},{}\n", vertical_x, vertical_y);
   }
   // Now do the real thing ,but keep the vectors in the dummy_vectors list
   // until they are all done, so we don't get the tab vectors confused with
@@ -923,7 +950,7 @@ void TabFind::SetVerticalSkewAndParallelize(int vertical_x, int vertical_y) {
   // Fit the vertical vector into an ICOORD, which is 16 bit.
   vertical_skew_.set_with_shrink(vertical_x, vertical_y);
   if (textord_debug_tabfind) {
-    tprintf("Vertical skew vector=(%d,%d)\n", vertical_skew_.x(), vertical_skew_.y());
+    tprintf("Vertical skew vector=({},{})\n", vertical_skew_.x(), vertical_skew_.y());
   }
   v_it_.set_to_list(&vectors_);
   for (v_it_.mark_cycle_pt(); !v_it_.cycled_list(); v_it_.forward()) {
@@ -964,7 +991,7 @@ void TabFind::EvaluateTabs() {
 // the most frequent column widths found in a list so that a given width
 // can be tested for being a common width with a simple callback function.
 void TabFind::ComputeColumnWidths(ScrollView *tab_win, ColPartitionGrid *part_grid) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (tab_win != nullptr) {
     tab_win->Pen(ScrollView::WHITE);
   }
@@ -973,7 +1000,7 @@ void TabFind::ComputeColumnWidths(ScrollView *tab_win, ColPartitionGrid *part_gr
   int col_widths_size = (tright_.x() - bleft_.x()) / kColumnWidthFactor;
   STATS col_widths(0, col_widths_size);
   ApplyPartitionsToColumnWidths(part_grid, &col_widths);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (tab_win != nullptr) {
     tab_win->Update();
   }
@@ -1069,7 +1096,7 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
       auto *w = new ICOORDELT(0, width);
       w_it.add_after_then_move(w);
       if (textord_debug_tabfind) {
-        tprintf("Column of width %d has %d = %.2f%% lines\n", width * kColumnWidthFactor, col_count,
+        tprintf("Column of width {} has {} = {}% lines\n", width * kColumnWidthFactor, col_count,
                 100.0 * col_count / total_col_count);
       }
     }
@@ -1114,7 +1141,7 @@ int TabFind::FindMedianGutterWidth(TabVector_LIST *lines) {
     prev_right = partner->startpt().x();
   }
   if (textord_debug_tabfind) {
-    tprintf("TabGutter total %d  median_gap %.2f  median_hgt %.2f\n", gaps.get_total(),
+    tprintf("TabGutter total {}  median_gap {}  median_hgt {}\n", gaps.get_total(),
             gaps.median(), heights.median());
   }
   if (gaps.get_total() < kMinLinesInColumn) {
@@ -1165,7 +1192,7 @@ BLOBNBOX *TabFind::AdjacentBlob(const BLOBNBOX *bbox, bool look_left, bool ignor
         if (h_gap > gap_limit) {
           // Hit a big gap before next tab so don't return anything.
           if (debug) {
-            tprintf("Giving up due to big gap = %d vs %d\n", h_gap, gap_limit);
+            tprintf("Giving up due to big gap = {} vs {}\n", h_gap, gap_limit);
           }
           return result;
         }
@@ -1174,7 +1201,7 @@ BLOBNBOX *TabFind::AdjacentBlob(const BLOBNBOX *bbox, bool look_left, bool ignor
           // Hit a tab facing the wrong way. Stop in case we are crossing
           // the column boundary.
           if (debug) {
-            tprintf("Collision with like tab of type %d at %d,%d\n",
+            tprintf("Collision with like tab of type {} at {},{}\n",
                     look_left ? neighbour->right_tab_type() : neighbour->left_tab_type(), n_left,
                     nbox.bottom());
           }
@@ -1230,7 +1257,7 @@ void TabFind::AddPartnerVector(BLOBNBOX *left_blob, BLOBNBOX *right_blob, TabVec
   if (right->IsSeparator()) {
     // Try to find a nearby left edge to extend.
     if (WithinTestRegion(3, right_box.right(), right_box.bottom())) {
-      tprintf("Box edge (%d,%d-%d)", right_box.right(), right_box.bottom(), right_box.top());
+      tprintf("Box edge ({},{}-{})", right_box.right(), right_box.bottom(), right_box.top());
       right->Print(" looking for improvement for");
     }
     TabVector *v = RightTabForBox(right_box, true, true);

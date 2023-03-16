@@ -314,7 +314,7 @@ double StructuredTable::CalculateCellFilledPercentage(unsigned row, unsigned col
   return std::min(1.0, area_covered / current_area);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 void StructuredTable::Display(ScrollView *window, ScrollView::Color color) {
   window->Brush(ScrollView::NONE);
@@ -398,7 +398,7 @@ bool StructuredTable::VerifyLinedTableCells() {
 
 // TODO(nbeato): Could be much better than this.
 // Examples:
-//   - Caclulate the percentage of filled cells.
+//   - Calculate the percentage of filled cells.
 //   - Calculate the average number of ColPartitions per cell.
 //   - Calculate the number of cells per row with partitions.
 //   - Check if ColPartitions in adjacent cells are similar.

@@ -99,7 +99,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
     }
 
     if (segsearch_debug_level > 0) {
-      tprintf("num_futile_classifications %d\n", num_futile_classifications);
+      tprintf("num_futile_classifications {}\n", num_futile_classifications);
     }
 
     best_choice_bundle->updated = false; // reset updated
@@ -116,7 +116,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
   }
 
   if (segsearch_debug_level > 0) {
-    tprintf("Done with SegSearch (AcceptableChoiceFound: %d)\n",
+    tprintf("Done with SegSearch (AcceptableChoiceFound: {})\n",
             language_model_->AcceptableChoiceFound());
   }
 }
@@ -128,7 +128,7 @@ void Wordrec::InitialSegSearch(WERD_RES *word_res, LMPainPoints *pain_points,
                                std::vector<SegSearchPending> *pending,
                                BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle) {
   if (segsearch_debug_level > 0) {
-    tprintf("Starting SegSearch on ratings matrix%s:\n",
+    tprintf("Starting SegSearch on ratings matrix{}:\n",
             wordrec_enable_assoc ? " (with assoc)" : "");
     word_res->ratings->print(getDict().getUnicharset());
   }
@@ -183,7 +183,7 @@ void Wordrec::UpdateSegSearchNodes(float rating_cert_scale, int starting_col,
       first_row = last_row = (*pending)[col].SingleRow();
     }
     if (segsearch_debug_level > 0) {
-      tprintf("\n\nUpdateSegSearchNodes: col=%d, rows=[%d,%d], alljust=%d\n", col, first_row,
+      tprintf("\n\nUpdateSegSearchNodes: col={}, rows=[{},{}], alljust={}\n", col, first_row,
               last_row, (*pending)[col].IsRowJustClassified(INT32_MAX));
     }
     // Iterate over the pending list for this column.
@@ -200,7 +200,7 @@ void Wordrec::UpdateSegSearchNodes(float rating_cert_scale, int starting_col,
         // the child column.
         (*pending)[row + 1].RevisitWholeColumn();
         if (segsearch_debug_level > 0) {
-          tprintf("Added child col=%d to pending\n", row + 1);
+          tprintf("Added child col={} to pending\n", row + 1);
         }
       } // end if UpdateState.
     }   // end for row.
@@ -232,7 +232,7 @@ void Wordrec::ProcessSegSearchPainPoint(float pain_point_priority, const MATRIX_
                                         WERD_RES *word_res, LMPainPoints *pain_points,
                                         BlamerBundle *blamer_bundle) {
   if (segsearch_debug_level > 0) {
-    tprintf("Classifying pain point %s priority=%.4f, col=%d, row=%d\n", pain_point_type,
+    tprintf("Classifying pain point {} priority={}, col={}, row={}\n", pain_point_type,
             pain_point_priority, pain_point.col, pain_point.row);
   }
   ASSERT_HOST(pain_points != nullptr);
@@ -249,7 +249,7 @@ void Wordrec::ProcessSegSearchPainPoint(float pain_point_priority, const MATRIX_
   if (lst == nullptr) {
     ratings->put(pain_point.col, pain_point.row, classified);
   } else {
-    // We can not delete old BLOB_CHOICEs, since they might contain
+    // We cannot delete old BLOB_CHOICEs, since they might contain
     // ViterbiStateEntries that are parents of other "active" entries.
     // Thus if the matrix cell already contains classifications we add
     // the new ones to the beginning of the list.

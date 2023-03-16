@@ -39,6 +39,14 @@ bool Image::isZero() const {
   return r == 1;
 }
 
+Image& Image::operator =(Pix* pix) {
+  if (pix_ != nullptr) {
+    pixDestroy(&pix_);
+  }
+  pix_ = pix;
+  return *this;
+}
+
 Image Image::operator|(Image i) const {
   return pixOr(nullptr, pix_, i);
 }

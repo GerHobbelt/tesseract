@@ -264,7 +264,7 @@ TBOX TESSLINE::bounding_box() const {
   return TBOX(topleft.x, botright.y, botright.x, topleft.y);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void TESSLINE::plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color) {
   if (is_hole) {
     window->Pen(child_color);
@@ -505,7 +505,7 @@ void TBLOB::CorrectBlobOrder(TBLOB *next) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void TBLOB::plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color) {
   for (TESSLINE *outline = outlines; outline != nullptr; outline = outline->next) {
     outline->plot(window, color, child_color);
@@ -907,7 +907,7 @@ void TWERD::MergeBlobs(unsigned start, unsigned end) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void TWERD::plot(ScrollView *window) {
   ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
   for (auto &blob : blobs) {

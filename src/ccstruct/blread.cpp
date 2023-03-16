@@ -47,8 +47,11 @@ bool read_unlv_file(   // print list of sides
   int height;
   BLOCK_IT block_it = blocks; // block iterator
 
-  name += UNLV_EXT; // add extension
+  if (!name.ends_with(UNLV_EXT)) {
+    name += UNLV_EXT; // add extension
+  }
   if ((pdfp = fopen(name.c_str(), "rb")) == nullptr) {
+    tprintf("ERROR: Cannot read UZN file {}.\n", name);
     return false; // didn't read one
   } else {
     while (tfscanf(pdfp, "%d %d %d %d %*s", &x, &y, &width, &height) >= 4) {
@@ -61,9 +64,80 @@ bool read_unlv_file(   // print list of sides
     }
     fclose(pdfp);
   }
-  tprintf("UZN file %s loaded.\n", name.c_str());
+  tprintf("UZN file {} loaded.\n", name);
   return true;
 }
+
+/**********************************************************************
+ * write_unlv_file
+ *
+ * Write a whole unlv zone file from a list of blocks.
+ **********************************************************************/
+
+bool write_unlv_file(   // print list of sides
+    std::string name, // basename of file
+    int32_t xsize,     // image size
+    int32_t ysize,     // image size
+    const BLOCK_LIST* blocks // block list
+) {
+  FILE* pdfp;   // file pointer
+  int x;        // current top-down coords
+  int y;
+  int width; // of current block
+  int height;
+  BLOCK_IT block_it = (BLOCK_LIST *)blocks; // block iterator
+
+  if (!name.ends_with(UNLV_EXT)) {
+    name += UNLV_EXT; // add extension
+  }
+  if ((pdfp = fopen(name.c_str(), "wb")) == nullptr) {
+    tprintf("ERROR: Cannot create UZN file {}.\n", name);
+    return false; // didn't write one
+  }
+  else {
+    if (!block_it.empty())
+    {
+      auto len = block_it.length();
+      auto cursor = block_it.move_to_first();
+      BLOCK* el = static_cast<BLOCK*>(cursor);
+      for (; el && len > 0; len--) {
+        auto box = el->pdblk.bounding_box();
+        auto name = el->name();
+        auto rr = el->re_rotation();
+        auto cr = el->classify_rotation();
+        auto skew = el->skew();
+        auto prop = el->prop();
+        auto kern = el->kern();
+        auto spac = el->space();
+        auto fc = el->font(); // not assigned
+        auto coh = el->cell_over_xheight();
+        auto sh = el->x_height();
+        auto &pdblk = el->pdblk;
+        auto pagebounds = pdblk.bounding_box();
+
+        x = box.left();
+        width = box.right() - x;
+        y = box.bottom();
+        height = box.top() - y;
+
+        auto y2 = ysize - y;
+
+        int l = fprintf(pdfp, "%d %d %d %d\n", x, y, width, height);
+        if (l < 8) { 
+          tprintf("ERROR: Write error while producing UZN file {}.\n", name);
+          fclose(pdfp);
+          return false; // didn't write one
+        }
+
+        el = block_it.forward();
+      }
+      fclose(pdfp);
+    }
+  }
+  tprintf("UZN file {} saved.\n", name);
+  return true;
+}
+
 
 void FullPageBlock(int width, int height, BLOCK_LIST *blocks) {
   BLOCK_IT block_it(blocks);

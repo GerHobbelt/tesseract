@@ -258,7 +258,7 @@ bool LanguageModel::UpdateState(bool just_classified, int curr_col, int curr_row
                                 LMPainPoints *pain_points, WERD_RES *word_res,
                                 BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle) {
   if (language_model_debug_level > 0) {
-    tprintf("\nUpdateState: col=%d row=%d %s", curr_col, curr_row,
+    tprintf("\nUpdateState: col={} row={} {}", curr_col, curr_row,
             just_classified ? "just_classified" : "");
     if (language_model_debug_level > 5) {
       tprintf("(parent={})\n", static_cast<void *>(parent_node));
@@ -562,7 +562,7 @@ ViterbiStateEntry *LanguageModel::GetNextParentVSE(bool just_classified, bool mi
       const BLOB_CHOICE *competing_b = parent_vse->competing_vse->curr_b;
       UNICHAR_ID other_id = competing_b->unichar_id();
       if (language_model_debug_level >= 5) {
-        tprintf("Parent %s has competition %s\n", unicharset.id_to_unichar(parent_id),
+        tprintf("Parent {} has competition {}\n", unicharset.id_to_unichar(parent_id),
                 unicharset.id_to_unichar(other_id));
       }
       if (unicharset.SizesDistinct(parent_id, other_id)) {
@@ -590,8 +590,8 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
   ViterbiStateEntry_IT vit;
   if (language_model_debug_level > 1) {
     tprintf(
-        "AddViterbiStateEntry for unichar %s rating=%.4f"
-        " certainty=%.4f top_choice_flags=0x%x",
+        "AddViterbiStateEntry for unichar {} rating={}"
+        " certainty={} top_choice_flags={}",
         dict_->getUnicharset().id_to_unichar(b->unichar_id()), b->rating(), b->certainty(),
         top_choice_flags);
     if (language_model_debug_level > 5) {
@@ -680,7 +680,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
                                             : nullptr);
   new_vse->cost = ComputeAdjustedPathCost(new_vse);
   if (language_model_debug_level >= 3) {
-    tprintf("Adjusted cost = %g\n", new_vse->cost);
+    tprintf("Adjusted cost = {}\n", new_vse->cost);
   }
 
   // Invoke Top Choice language model component to make the final adjustments
@@ -711,7 +711,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
        language_model_viterbi_list_max_num_prunable) &&
       new_vse->cost >= curr_state->viterbi_state_entries_prunable_max_cost) {
     if (language_model_debug_level > 1) {
-      tprintf("Discarded ViterbiEntry with high cost %g max cost %g\n", new_vse->cost,
+      tprintf("Discarded ViterbiEntry with high cost {} max cost {}\n", new_vse->cost,
               curr_state->viterbi_state_entries_prunable_max_cost);
     }
     delete new_vse;
@@ -724,7 +724,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
     // Discard the entry if UpdateBestChoice() found flaws in it.
     if (new_vse->cost >= WERD_CHOICE::kBadRating && new_vse != best_choice_bundle->best_vse) {
       if (language_model_debug_level > 1) {
-        tprintf("Discarded ViterbiEntry with high cost %g\n", new_vse->cost);
+        tprintf("Discarded ViterbiEntry with high cost {}\n", new_vse->cost);
       }
       delete new_vse;
       return false;
@@ -761,7 +761,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
       if (prunable_counter == 0) {
         curr_state->viterbi_state_entries_prunable_max_cost = vit.data()->cost;
         if (language_model_debug_level > 1) {
-          tprintf("Set viterbi_state_entries_prunable_max_cost to %g\n",
+          tprintf("Set viterbi_state_entries_prunable_max_cost to {}\n",
                   curr_state->viterbi_state_entries_prunable_max_cost);
         }
         prunable_counter = -1; // stop counting
@@ -792,7 +792,7 @@ void LanguageModel::GenerateTopChoiceInfo(ViterbiStateEntry *new_vse,
     new_vse->top_choice_flags &= ~(vit.data()->top_choice_flags);
   }
   if (language_model_debug_level > 2) {
-    tprintf("GenerateTopChoiceInfo: top_choice_flags=0x%x\n", new_vse->top_choice_flags);
+    tprintf("GenerateTopChoiceInfo: top_choice_flags={}\n", new_vse->top_choice_flags);
   }
 }
 
@@ -868,7 +868,7 @@ LanguageModelDawgInfo *LanguageModel::GenerateDawgInfo(bool word_end, int curr_c
   DawgPositionVector tmp_active_dawgs;
   for (unsigned i = 0; i < normed_ids.size(); ++i) {
     if (language_model_debug_level > 2) {
-      tprintf("Test Letter OK for unichar %d, normed %d\n", b.unichar_id(), normed_ids[i]);
+      tprintf("Test Letter OK for unichar {}, normed {}\n", b.unichar_id(), normed_ids[i]);
     }
     dict_->LetterIsOkay(&dawg_args_, dict_->getUnicharset(), normed_ids[i],
                         word_end && i == normed_ids.size() - 1);
@@ -879,14 +879,14 @@ LanguageModelDawgInfo *LanguageModel::GenerateDawgInfo(bool word_end, int curr_c
       dawg_args_.active_dawgs = &tmp_active_dawgs;
     }
     if (language_model_debug_level > 2) {
-      tprintf("Letter was OK for unichar %d, normed %d\n", b.unichar_id(), normed_ids[i]);
+      tprintf("Letter was OK for unichar {}, normed {}\n", b.unichar_id(), normed_ids[i]);
     }
   }
   dawg_args_.active_dawgs = nullptr;
   if (dawg_args_.permuter != NO_PERM) {
     dawg_info = new LanguageModelDawgInfo(dawg_args_.updated_dawgs, dawg_args_.permuter);
   } else if (language_model_debug_level > 3) {
-    tprintf("Letter %s not OK!\n", dict_->getUnicharset().id_to_unichar(b.unichar_id()));
+    tprintf("Letter {} not OK!\n", dict_->getUnicharset().id_to_unichar(b.unichar_id()));
   }
 
   return dawg_info;
@@ -958,7 +958,7 @@ float LanguageModel::ComputeNgramCost(const char *unichar, float certainty, floa
   int step = 0;
   while (unichar_ptr < unichar_end && (step = UNICHAR::utf8_step(unichar_ptr)) > 0) {
     if (language_model_debug_level > 1) {
-      tprintf("prob(%s | %s)=%g\n", unichar_ptr, context_ptr,
+      tprintf("prob({} | {})={}\n", unichar_ptr, context_ptr,
               dict_->ProbabilityInContext(context_ptr, -1, unichar_ptr, step));
     }
     prob += dict_->ProbabilityInContext(context_ptr, -1, unichar_ptr, step);
@@ -986,7 +986,7 @@ float LanguageModel::ComputeNgramCost(const char *unichar, float certainty, floa
   prob /= static_cast<float>(*unichar_step_len); // normalize
   if (prob < language_model_ngram_small_prob) {
     if (language_model_debug_level > 0) {
-      tprintf("Found small prob %g\n", prob);
+      tprintf("Found small prob {}\n", prob);
     }
     *found_small_prob = true;
     prob = language_model_ngram_small_prob;
@@ -995,7 +995,7 @@ float LanguageModel::ComputeNgramCost(const char *unichar, float certainty, floa
   float ngram_and_classifier_cost = -1 * std::log2(CertaintyScore(certainty) / denom) +
                                     *ngram_cost * language_model_ngram_scale_factor;
   if (language_model_debug_level > 1) {
-    tprintf("-log [ p(%s) * p(%s | %s) ] = -log2(%g*%g) = %g\n", unichar, unichar, context_ptr,
+    tprintf("-log [ p({}) * p({} | {}) ] = -log2({}*{}) = {}\n", unichar, unichar, context_ptr,
             CertaintyScore(certainty) / denom, prob, ngram_and_classifier_cost);
   }
   delete[] modified_context;
@@ -1017,7 +1017,7 @@ float LanguageModel::ComputeDenom(BLOB_CHOICE_LIST *curr_list) {
   assert(len != 0);
   // The ideal situation would be to have the classifier scores for
   // classifying each position as each of the characters in the unicharset.
-  // Since we can not do this because of speed, we add a very crude estimate
+  // Since we cannot do this because of speed, we add a very crude estimate
   // of what these scores for the "missing" classifications would sum up to.
   denom +=
       (dict_->getUnicharset().size() - len) * CertaintyScore(language_model_ngram_nonmatch_score);
@@ -1128,7 +1128,7 @@ void LanguageModel::FillConsistencyInfo(int curr_col, bool word_end, BLOB_CHOICE
     }
     if (language_model_debug_level > 1) {
       tprintf(
-          "pfont %s pfont %s font %s font2 %s common %s(%d)\n",
+          "pfont {} pfont {} font {} font2 {} common {}({})\n",
           (parent_b->fontinfo_id() >= 0) ? fontinfo_table_->at(parent_b->fontinfo_id()).name : "",
           (parent_b->fontinfo_id2() >= 0) ? fontinfo_table_->at(parent_b->fontinfo_id2()).name
                                           : "",
@@ -1190,7 +1190,7 @@ void LanguageModel::FillConsistencyInfo(int curr_col, bool word_end, BLOB_CHOICE
           }
         }
         if (language_model_debug_level > 1) {
-          tprintf("spacing for %s(%d) %s(%d) col %d: expected %g actual %d\n",
+          tprintf("spacing for {}({}) {}({}) col {}: expected {} actual {}\n",
                   unicharset.id_to_unichar(parent_b->unichar_id()), parent_b->unichar_id(),
                   unicharset.id_to_unichar(unichar_id), unichar_id, curr_col, expected_gap,
                   actual_gap);
@@ -1207,10 +1207,10 @@ float LanguageModel::ComputeAdjustedPathCost(ViterbiStateEntry *vse) {
     ExtractFeaturesFromPath(*vse, features);
     float cost = params_model_.ComputeCost(features);
     if (language_model_debug_level > 3) {
-      tprintf("ComputeAdjustedPathCost %g ParamsModel features:\n", cost);
+      tprintf("ComputeAdjustedPathCost {} ParamsModel features:\n", cost);
       if (language_model_debug_level >= 5) {
         for (int f = 0; f < PTRAIN_NUM_FEATURE_TYPES; ++f) {
-          tprintf("%s=%g\n", kParamsTrainingFeatureTypeName[f], features[f]);
+          tprintf("{}={}\n", kParamsTrainingFeatureTypeName[f], features[f]);
         }
       }
     }
@@ -1265,9 +1265,9 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
     word->string_and_lengths(&(curr_hyp.str), nullptr);
     curr_hyp.cost = vse->cost; // record cost for error rate computations
     if (language_model_debug_level > 0) {
-      tprintf("Raw features extracted from %s (cost=%g) [ ", curr_hyp.str.c_str(), curr_hyp.cost);
+      tprintf("Raw features extracted from {} (cost={}) [ ", curr_hyp.str, curr_hyp.cost);
       for (float feature : curr_hyp.features) {
-        tprintf("%g ", feature);
+        tprintf("{} ", feature);
       }
       tprintf("]\n");
     }
@@ -1333,7 +1333,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
                                                             vse->top_choice_flags);
     }
   }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (wordrec_display_segmentations && word_res->chopped_word != nullptr) {
     word->DisplaySegmentation(word_res->chopped_word);
   }
@@ -1382,7 +1382,12 @@ void LanguageModel::ExtractFeaturesFromPath(const ViterbiStateEntry &vse, float 
   // features[PTRAIN_NUM_BAD_FONT] = vse.consistency_info.inconsistent_font;
 
   // Classifier-related features.
-  features[PTRAIN_RATING_PER_CHAR] = vse.ratings_sum / static_cast<float>(vse.outline_length);
+  if (vse.outline_length > 0.0f) {
+    features[PTRAIN_RATING_PER_CHAR] = vse.ratings_sum / vse.outline_length;
+  } else {
+    // Avoid FP division by 0.
+    features[PTRAIN_RATING_PER_CHAR] = 0.0f;
+  }
 }
 
 WERD_CHOICE *LanguageModel::ConstructWord(ViterbiStateEntry *vse, WERD_RES *word_res,
@@ -1430,7 +1435,7 @@ WERD_CHOICE *LanguageModel::ConstructWord(ViterbiStateEntry *vse, WERD_RES *word
       vse->associate_stats.full_wh_ratio_var +=
           pow(full_wh_ratio_mean - curr_vse->associate_stats.full_wh_ratio, 2);
       if (language_model_debug_level > 2) {
-        tprintf("full_wh_ratio_var += (%g-%g)^2\n", full_wh_ratio_mean,
+        tprintf("full_wh_ratio_var += ({}-{})^2\n", full_wh_ratio_mean,
                 curr_vse->associate_stats.full_wh_ratio);
       }
     }

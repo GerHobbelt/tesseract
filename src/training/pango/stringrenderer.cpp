@@ -83,7 +83,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    tprintf("ERROR: Unexpected surface format %d\n", cairo_image_surface_get_format(surface));
+    tprintf("ERROR: Unexpected surface format {}\n", cairo_image_surface_get_format(surface));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -189,7 +189,7 @@ void StringRenderer::SetLayoutProperties() {
 
   int max_width = page_width_ - 2 * h_margin_;
   int max_height = page_height_ - 2 * v_margin_;
-  tlog(3, "max_width = %d, max_height = %d\n", max_width, max_height);
+  tlog(3, "max_width = {}, max_height = {}\n", max_width, max_height);
   if (vertical_text_) {
     using std::swap;
     swap(max_width, max_height);
@@ -301,7 +301,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char *text, int text_length) 
     ;
   }
   int buf_length = it.utf8_data() - text;
-  tlog(1, "len = %d  buf_len = %d\n", text_length, buf_length);
+  tlog(1, "len = {}  buf_len = {}\n", text_length, buf_length);
   pango_layout_set_text(layout_, text, buf_length);
 
   PangoLayoutIter *line_iter = nullptr;
@@ -325,7 +325,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char *text, int text_length) 
     int line_bottom = line_ink_rect.y + line_ink_rect.height;
     if (line_bottom - page_top > max_layout_height) {
       offset = line->start_index;
-      tlog(1, "Found offset = %d\n", offset);
+      tlog(1, "Found offset = {}\n", offset);
       break;
     }
   } while (pango_layout_iter_next_line(line_iter));
@@ -400,7 +400,7 @@ bool StringRenderer::GetClusterStrings(std::vector<std::string> *cluster_text) {
         tlog(2, "Found whitespace\n");
         text = " ";
       }
-      tlog(2, "start_byte=%d end_byte=%d : '%s'\n", start_byte_index, end_byte_index, text.c_str());
+      tlog(2, "start_byte={} end_byte={} : '{}'\n", start_byte_index, end_byte_index, text);
       if (add_ligatures_) {
         // Make sure the output box files have ligatured text in case the font
         // decided to use an unmapped glyph.
@@ -616,7 +616,7 @@ static void MergeBoxCharsToWords(std::vector<BoxChar *> *boxchars) {
       // size of the merged bounding box in relation to those of the individual
       // characters seen so far.
       if (right - left > last_box->w + 5 * box->w) {
-        tlog(1, "Found line break after '%s'", last_boxchar->ch().c_str());
+        tlog(1, "Found line break after '{}'", last_boxchar->ch().c_str());
         // Insert a fake interword space and start a new word with the current
         // boxchar.
         result.push_back(new BoxChar(" ", 1));
@@ -645,11 +645,11 @@ void StringRenderer::ComputeClusterBoxes() {
   std::vector<int> cluster_start_indices;
   do {
     cluster_start_indices.push_back(pango_layout_iter_get_index(cluster_iter));
-    tlog(3, "Added %d\n", cluster_start_indices.back());
+    tlog(3, "Added {}\n", cluster_start_indices.back());
   } while (pango_layout_iter_next_cluster(cluster_iter));
   pango_layout_iter_free(cluster_iter);
   cluster_start_indices.push_back(strlen(text));
-  tlog(3, "Added last index %d\n", cluster_start_indices.back());
+  tlog(3, "Added last index {}\n", cluster_start_indices.back());
   // Sort the indices and create a map from start to end indices.
   std::sort(cluster_start_indices.begin(), cluster_start_indices.end());
   std::map<int, int> cluster_start_to_end_index;
@@ -745,7 +745,7 @@ void StringRenderer::ComputeClusterBoxes() {
       continue;
     }
     if (!cluster_rect.width || !cluster_rect.height || IsUTF8Whitespace(cluster_text.c_str())) {
-      tlog(2, "Skipping whitespace with boxdim (%d,%d) '%s'\n", cluster_rect.width,
+      tlog(2, "Skipping whitespace with boxdim ({},{}) '{}'\n", cluster_rect.width,
            cluster_rect.height, cluster_text.c_str());
       auto *boxchar = new BoxChar(" ", 1);
       boxchar->set_page(page_);
@@ -753,13 +753,13 @@ void StringRenderer::ComputeClusterBoxes() {
       continue;
     }
     // Prepare a boxchar for addition at this byte position.
-    tlog(2, "[%d %d], %d, %d : start_byte=%d end_byte=%d : '%s'\n", cluster_rect.x, cluster_rect.y,
+    tlog(2, "[{} {}], {}, {} : start_byte={} end_byte={} : '{}'\n", cluster_rect.x, cluster_rect.y,
          cluster_rect.width, cluster_rect.height, start_byte_index, end_byte_index,
          cluster_text.c_str());
-    ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:%s  start_byte_index:%d\n",
-                    cluster_text.c_str(), start_byte_index);
-    ASSERT_HOST_MSG(cluster_rect.height, "cluster_text:%s  start_byte_index:%d\n",
-                    cluster_text.c_str(), start_byte_index);
+    ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:{}  start_byte_index:{}\n",
+                    cluster_text, start_byte_index);
+    ASSERT_HOST_MSG(cluster_rect.height, "cluster_text:{}  start_byte_index:{}\n",
+                    cluster_text, start_byte_index);
     if (box_padding_) {
       cluster_rect.x = std::max(0, cluster_rect.x - box_padding_);
       cluster_rect.width += 2 * box_padding_;
@@ -858,6 +858,7 @@ void StringRenderer::CorrectBoxPositionsToLayout(std::vector<BoxChar *> *boxchar
 
 int StringRenderer::StripUnrenderableWords(std::string *utf8_text) const {
   std::string output_text;
+  std::string unrenderable_words;
   const char *text = utf8_text->c_str();
   size_t offset = 0;
   int num_dropped = 0;
@@ -874,13 +875,15 @@ int StringRenderer::StripUnrenderableWords(std::string *utf8_text) const {
       output_text.append(text + offset, word_len);
     } else {
       ++num_dropped;
+      unrenderable_words.append(text + offset, word_len);
+      unrenderable_words.append(" ");
     }
     offset += word_len;
   }
   utf8_text->swap(output_text);
 
   if (num_dropped > 0) {
-    tprintf("Stripped %d unrenderable words\n", num_dropped);
+    tprintf("Stripped {} unrenderable word(s): '{}'\n", num_dropped, unrenderable_words.c_str());
   }
   return num_dropped;
 }
@@ -996,7 +999,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
     // Rotate the layout
     double rotation = -pango_gravity_to_rotation(
         pango_context_get_base_gravity(pango_layout_get_context(layout_)));
-    tlog(2, "Rotating by %f radians\n", rotation);
+    tlog(2, "Rotating by {} radians\n", rotation);
     cairo_rotate(cr_, rotation);
     pango_cairo_update_layout(cr_, layout_);
   }
@@ -1011,7 +1014,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
   if (drop_uncovered_chars_ && !font_.CoversUTF8Text(page_text.c_str(), page_text.length())) {
     int num_dropped = font_.DropUncoveredChars(&page_text);
     if (num_dropped) {
-      tprintf("WARNING: Dropped %d uncovered characters\n", num_dropped);
+      tprintf("WARNING: Dropped {} uncovered characters\n", num_dropped);
     }
   }
   if (add_ligatures_) {
@@ -1081,7 +1084,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
     title_font = "Arial";
   }
   title_font += " 8";
-  tlog(1, "Selected title font: %s\n", title_font.c_str());
+  tlog(1, "Selected title font: {}\n", title_font.c_str());
   if (font_used) {
     font_used->clear();
   }
@@ -1095,7 +1098,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       ++total_chars_;
       ++char_map_[*it];
     }
-    tprintf("Total chars = %d\n", total_chars_);
+    tprintf("Total chars = {}\n", total_chars_);
   }
   const std::vector<std::string> &all_fonts = FontUtils::ListAvailableFonts();
 
@@ -1111,7 +1114,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       char title[kMaxTitleLength];
       snprintf(title, kMaxTitleLength, kTitleTemplate, all_fonts[i].c_str(), ok_chars,
                100.0 * ok_chars / total_chars_, raw_score, 100.0 * raw_score / char_map_.size());
-      tprintf("%s\n", title);
+      tprintf("{}\n", title);
       // This is a good font! Store the offset to return once we've tried all
       // the fonts.
       if (offset) {
@@ -1133,7 +1136,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       // We return the real offset only after cycling through the list of fonts.
       return 0;
     } else {
-      tprintf("Font %s failed with %d hits = %.2f%%\n", all_fonts[i].c_str(), ok_chars,
+      tprintf("Font {} failed with {} hits = {}%%\n", all_fonts[i].c_str(), ok_chars,
               100.0 * ok_chars / total_chars_);
     }
   }

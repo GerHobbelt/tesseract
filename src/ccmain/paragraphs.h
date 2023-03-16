@@ -75,6 +75,8 @@ public:
   bool rword_likely_ends_idea;
 };
 
+#if 0
+
 // Main entry point for Paragraph Detection Algorithm.
 //
 // Given a set of equally spaced textlines (described by row_infos),
@@ -86,7 +88,7 @@ public:
 //   models - the list of paragraph models referenced by the PARA objects.
 //            caller is responsible for deleting the models.
 TESS_API
-void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
+void DetectParagraphs(std::vector<RowInfo> *row_infos,
                       std::vector<PARA *> *row_owners, PARA_LIST *paragraphs,
                       std::vector<ParagraphModel *> *models);
 
@@ -96,8 +98,10 @@ void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
 // We use unicharset during the function to answer questions such as "is the
 // first letter of this word upper case?"
 TESS_API
-void DetectParagraphs(int debug_level, bool after_text_recognition,
+void DetectParagraphs(bool after_text_recognition,
                       const MutableIterator *block_start, std::vector<ParagraphModel *> *models);
+
+#endif
 
 } // namespace tesseract
 

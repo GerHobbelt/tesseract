@@ -456,7 +456,7 @@ public:
   // See coutln.h for an explanation of edge offsets.
   static void ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *blobs);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Helper to draw all the blobs on the list in the given body_colour,
   // with child outlines in the child_colour.
   static void PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
@@ -466,7 +466,13 @@ public:
   // child_colour.
   static void PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
                              ScrollView::Color child_colour, ScrollView *win);
+#endif
 
+  // Helper to draw all the blobs on the list in the given body_colour,
+  // with child outlines in the child_colour.
+  static void PlotBlobs(BLOBNBOX_LIST* list, Image &pix, std::vector<uint32_t>& cmap, int cmap_offset);
+
+#if !GRAPHICS_DISABLED
   static ScrollView::Color TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type);
 
   // Keep in sync with BlobRegionType.
@@ -476,6 +482,8 @@ public:
             ScrollView::Color blob_colour,   // for outer bits
             ScrollView::Color child_colour); // for holes
 #endif
+
+  void plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise);
 
   // Initializes members set by StrokeWidth and beyond, without discarding
   // stored area and strokewidth values, which are expensive to calculate.
@@ -741,10 +749,10 @@ public:
     TO_ROW_IT row_it = &row_list;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       auto row = row_it.data();
-      tprintf("Row range (%g,%g), para_c=%g, blobcount=%" PRId32 "\n",
-              static_cast<double>(row->min_y()),
-              static_cast<double>(row->max_y()),
-              static_cast<double>(row->parallel_c()),
+      tprintf("Row range ({},{}), para_c={}, blobcount={}\n",
+              row->min_y(),
+              row->max_y(),
+              row->parallel_c(),
               row->blob_list()->length());
     }
   }
@@ -767,11 +775,14 @@ public:
   // See coutln.h for an explanation of edge offsets.
   void ComputeEdgeOffsets(Image thresholds, Image grey);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draw the noise blobs from all lists in red.
   void plot_noise_blobs(ScrollView *to_win);
   // Draw the blobs on the various lists in the block in different colors.
   void plot_graded_blobs(ScrollView *to_win);
+
+  // Draw the blobs on the various lists in the block in different colors.
+  void plot_graded_blobs(Image& pix);
 #endif
 
   BLOBNBOX_LIST blobs;       // medium size
@@ -845,7 +856,7 @@ void vertical_coutline_projection( // project outlines
     C_OUTLINE *outline,            // outline to project
     STATS *stats                   // output
 );
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void plot_blob_list(ScrollView *win,                 // window to draw in
                     BLOBNBOX_LIST *list,             // blob list
                     ScrollView::Color body_colour,   // colour to draw

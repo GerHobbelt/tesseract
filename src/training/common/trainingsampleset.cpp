@@ -153,7 +153,7 @@ bool TrainingSampleSet::DeSerialize(bool swap, FILE *fp) {
 void TrainingSampleSet::LoadUnicharset(const char *filename) {
   if (!unicharset_.load_from_file(filename)) {
     tprintf(
-        "ERROR: Failed to load unicharset from file %s\n"
+        "ERROR: Failed to load unicharset from file {}\n"
         "Building unicharset from scratch...\n",
         filename);
     unicharset_.clear();
@@ -299,7 +299,7 @@ float TrainingSampleSet::UnicharDistance(const UnicharAndFonts &uf1, const Unich
         int f2 = uf2.font_ids[j];
         dist_sum += ClusterDistance(f1, c1, f2, c2, feature_map);
         if (debug) {
-          tprintf("Cluster dist %d %d %d %d = %g\n", f1, c1, f2, c2,
+          tprintf("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
                   ClusterDistance(f1, c1, f2, c2, feature_map));
         }
         ++dist_count;
@@ -315,7 +315,7 @@ float TrainingSampleSet::UnicharDistance(const UnicharAndFonts &uf1, const Unich
       int f1 = uf1.font_ids[i % num_fonts1];
       int f2 = uf2.font_ids[index % num_fonts2];
       if (debug) {
-        tprintf("Cluster dist %d %d %d %d = %g\n", f1, c1, f2, c2,
+        tprintf("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
                 ClusterDistance(f1, c1, f2, c2, feature_map));
       }
       dist_sum += ClusterDistance(f1, c1, f2, c2, feature_map);
@@ -539,22 +539,14 @@ void TrainingSampleSet::KillSample(TrainingSample *sample) {
 // Deletes all samples with zero features marked by KillSample.
 void TrainingSampleSet::DeleteDeadSamples() {
   using namespace std::placeholders; // for _1
-  auto old_it = samples_.begin();
-  for (; old_it < samples_.end(); ++old_it) {
-    if (*old_it == nullptr || (*old_it)->class_id() < 0) {
-      break;
-    }
-  }
-  auto new_it = old_it;
-  for (; old_it < samples_.end(); ++old_it) {
-    if (*old_it == nullptr || (*old_it)->class_id() < 0) {
-      delete *old_it;
+  for (auto &&it = samples_.begin(); it < samples_.end();) {
+    if (*it == nullptr || (*it)->class_id() < 0) {
+      samples_.erase(it);
+      delete *it;
     } else {
-      *new_it = *old_it;
-      ++new_it;
+      ++it;
     }
   }
-  samples_.resize(new_it - samples_.begin() + 1);
   num_raw_samples_ = samples_.size();
   // Samples must be re-organized now we have deleted a few.
 }
@@ -574,7 +566,7 @@ void TrainingSampleSet::OrganizeByFontAndClass() {
     int font_id = samples_[s]->font_id();
     int class_id = samples_[s]->class_id();
     if (font_id < 0 || font_id >= font_id_map_.SparseSize()) {
-      tprintf("Font id = %d/%d, class id = %d/%d on sample %zu\n", font_id,
+      tprintf("Font id = {}/{}, class id = {}/{} on sample {}\n", font_id,
               font_id_map_.SparseSize(), class_id, unicharset_size_, s);
     }
     ASSERT_HOST(font_id >= 0 && font_id < font_id_map_.SparseSize());
@@ -620,7 +612,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
   ASSERT_HOST(font_class_array_ != nullptr);
   IntFeatureDist f_table;
   if (debug) {
-    tprintf("feature table size %d\n", map.sparse_size());
+    tprintf("Feature table size {}\n", map.sparse_size());
   }
   f_table.Init(&map);
   int worst_s1 = 0;
@@ -637,7 +629,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
         fcinfo.canonical_sample = -1;
         fcinfo.canonical_dist = 0.0f;
         if (debug) {
-          tprintf("Skipping class %d\n", c);
+          tprintf("Skipping class {}\n", c);
         }
         continue;
       }
@@ -693,8 +685,8 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
       }
       if (debug) {
         tprintf(
-            "Found %d samples of class %d=%s, font %d, "
-            "dist range [%g, %g], worst pair= %s, %s\n",
+            "Found {} samples of class {}={}, font {}, "
+            "dist range [{}, {}], worst pair= {}, {}\n",
             samples_found, c, unicharset_.debug_str(c).c_str(), font_index, min_max_dist,
             max_max_dist, SampleToString(*samples_[max_s1]).c_str(),
             SampleToString(*samples_[max_s2]).c_str());
@@ -702,7 +694,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
     }
   }
   if (debug) {
-    tprintf("Global worst dist = %g, between sample %d and %d\n", global_worst_dist, worst_s1,
+    tprintf("Global worst dist = {}, between sample {} and {}\n", global_worst_dist, worst_s1,
             worst_s2);
   }
 }
@@ -793,7 +785,7 @@ void TrainingSampleSet::AddAllFontsForClass(int class_id, Shape *shape) const {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the samples with the given indexed feature that also match
 // the given shape.

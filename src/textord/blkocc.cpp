@@ -45,7 +45,6 @@ static void horizontal_coutline_projection(C_OUTLINE *outline,
  */
 
 bool test_underline(  // look for underlines
-    bool testing_on,  ///< drawing blob
     C_BLOB *blob,     ///< blob to test
     int16_t baseline, ///< coords of baseline
     int16_t xheight   ///< height of line
@@ -56,14 +55,14 @@ bool test_underline(  // look for underlines
   auto blob_box = blob->bounding_box();
   auto blob_width = blob->bounding_box().width();
   projection.set_range(blob_box.bottom(), blob_box.top());
-  if (testing_on) {
+  if (1) {
     //              blob->plot(to_win,GOLDENROD,GOLDENROD);
     //              line_color_index(to_win,GOLDENROD);
     //              move2d(to_win,blob_box.left(),baseline);
     //              draw2d(to_win,blob_box.right(),baseline);
     //              move2d(to_win,blob_box.left(),baseline+xheight);
     //              draw2d(to_win,blob_box.right(),baseline+xheight);
-    tprintf("Testing underline on blob at (%d,%d)->(%d,%d), base=%d\nOccs:",
+    tprintf("Testing underline on blob at ({},{})->({},{}), base={}\nOccs:",
             blob->bounding_box().left(), blob->bounding_box().bottom(),
             blob->bounding_box().right(), blob->bounding_box().top(), baseline);
   }
@@ -88,11 +87,11 @@ bool test_underline(  // look for underlines
       asc_occ = projection.pile_count(occ);
     }
   }
-  if (testing_on) {
-    tprintf("%d %d %d\n", desc_occ, x_occ, asc_occ);
+  if (1) {
+    tprintf("{} {} {}\n", desc_occ, x_occ, asc_occ);
   }
   if (desc_occ == 0 && x_occ == 0 && asc_occ == 0) {
-    tprintf("Bottom=%d, top=%d, base=%d, x=%d\n", blob_box.bottom(), blob_box.top(), baseline,
+    tprintf("Bottom={}, top={}, base={}, x={}\n", blob_box.bottom(), blob_box.top(), baseline,
             xheight);
     projection.print();
   }

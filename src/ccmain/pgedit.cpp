@@ -39,7 +39,7 @@
 #include <cmath>
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 
@@ -116,9 +116,6 @@ static bool recog_done = false; // recog_all_words was called
 // debug mode (in which only a single Tesseract thread/instance will exist).
 static std::bitset<16> word_display_mode;
 static ColorationMode color_mode = CM_RAINBOW;
-static bool display_image = false;
-static bool display_blocks = false;
-static bool display_baselines = false;
 
 static PAGE_RES *current_page_res = nullptr;
 
@@ -333,7 +330,7 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
   int block_count = 1;
 
   image_win->Clear();
-  if (display_image) {
+  if (debug_display_page) {
     image_win->Draw(pix_binary_, 0, 0);
   }
 
@@ -341,10 +338,10 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
   PAGE_RES_IT pr_it(current_page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     (this->*word_painter)(&pr_it);
-    if (display_baselines && pr_it.row() != pr_it.prev_row()) {
+    if (debug_display_page_baselines && pr_it.row() != pr_it.prev_row()) {
       pr_it.row()->row->plot_baseline(image_win, ScrollView::GREEN);
     }
-    if (display_blocks && pr_it.block() != pr_it.prev_block()) {
+    if (debug_display_page_blocks && pr_it.block() != pr_it.prev_block()) {
       pr_it.block()->block->pdblk.plot(image_win, block_count++, ScrollView::RED);
     }
   }
@@ -364,6 +361,9 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   if (current_page_res->block_res_list.empty()) {
     return;
   }
+  if (debug_do_not_use_scrollview_app) {
+    return;
+  }
 
   recog_done = false;
   stillRunning = true;
@@ -371,9 +371,9 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   build_image_window(width, height);
   word_display_mode.set(DF_EDGE_STEP);
   do_re_display(&tesseract::Tesseract::word_set_display);
-#  ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   pe = new ParamsEditor(this, image_win);
-#  endif
+#endif
   PGEventHandler pgEventHandler(this);
 
   image_win->AddEventHandler(&pgEventHandler);
@@ -500,15 +500,15 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       do_re_display(&tesseract::Tesseract::word_set_display);
       break;
     case IMAGE_CMD_EVENT:
-      display_image = (new_value[0] == 'T');
+      debug_display_page = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case BLOCKS_CMD_EVENT:
-      display_blocks = (new_value[0] == 'T');
+      debug_display_page_blocks = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case BASELINES_CMD_EVENT:
-      display_baselines = (new_value[0] == 'T');
+      debug_display_page_baselines = (new_value[0] == 'T');
       do_re_display(&tesseract::Tesseract::word_display);
       break;
     case SHOW_SUBSCRIPT_CMD_EVENT:
@@ -891,12 +891,12 @@ bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   word_res->word->print();
   if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
       word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
-    tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug().c_str());
+    tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
   }
   return true;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * word_set_display()  Word processor
  *
@@ -953,5 +953,58 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
 }
 
 #endif // !GRAPHICS_DISABLED
+
+
+/**
+ *  display_current_page_result()
+ */
+void Tesseract::display_current_page_result(PAGE_RES* page_res) {
+  auto width = ImageWidth();
+  auto height = ImageHeight();
+
+  Image pix = pixCreate(width, height, 32 /* RGBA */);
+  pixSetAll(pix);
+
+  int w, h;
+  pixGetDimensions(pix, &w, &h, NULL);
+  l_uint32* data = pixGetData(pix);
+  int wpl = pixGetWpl(pix);
+
+  int block_count = 1;
+
+  bool display_image = debug_display_page;
+  bool display_blocks = debug_display_page_blocks;
+  bool display_baselines = debug_display_page_baselines;
+
+  // bool (tesseract::Tesseract:: * word_painter)(PAGE_RES_IT * pr_it)
+
+  //image_win->Clear();
+  if (display_image) {
+    pixRasterop(pix, 4, 4, width, height, PIX_SRC, pix_binary_, 0, 0);
+    //image_win->Draw(pix_binary_, 0, 0);
+  }
+
+  {
+    PAGE_RES_IT pr_it(page_res);
+    word_dumper(&pr_it);
+  }
+
+  //image_win->Brush(ScrollView::NONE);
+  if (page_res != nullptr) {
+    PAGE_RES_IT pr_it(page_res);
+    for (WERD_RES* word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
+      //(this->*word_painter)(&pr_it);
+      if (display_baselines && pr_it.row() != pr_it.prev_row()) {
+        pr_it.row()->row->plot_baseline(pix, data, wpl, w, h);
+      }
+      if (display_blocks && pr_it.block() != pr_it.prev_block()) {
+        pr_it.block()->block->pdblk.plot(pix, block_count++, data, wpl, w, h);
+      }
+    }
+    //image_win->Update();
+  }
+
+  this->AddPixDebugPage(pix, "current page results", false);
+}
 
 } // namespace tesseract

@@ -87,7 +87,7 @@ std::unique_ptr<SVEvent> SVEvent::copy() const {
 // instead of weak vtables in every compilation unit.
 SVEventHandler::~SVEventHandler() = default;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /// This is the main loop which handles the ScrollView-logic from the server
 /// to the client. It basically loops through messages, parses them to events
@@ -362,7 +362,7 @@ void ScrollView::StartEventHandler() {
 #endif // !GRAPHICS_DISABLED
 
 ScrollView::~ScrollView() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   svmap_mu->lock();
   if (svmap[window_id_] != nullptr) {
     svmap_mu->unlock();
@@ -387,7 +387,7 @@ ScrollView::~ScrollView() {
 #endif // !GRAPHICS_DISABLED
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void ScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);

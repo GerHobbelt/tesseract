@@ -32,10 +32,10 @@
 #include <cstdio>    // for FILE
 #include <string>    // for std::string
 
-namespace tesseract {
-
 #undef max
 #undef min
+
+namespace tesseract {
 
 class TESS_API TBOX { // bounding box
 public:
@@ -294,17 +294,22 @@ public:
   }
 
   void print() const { // print
-    tprintf("Bounding box=(%d,%d)->(%d,%d)\n", left(), bottom(), right(), top());
+    tprintf("Bounding box=({},{})->({},{})\n", left(), bottom(), right(), top());
   }
   // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
   void print_to_str(std::string &str) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                  // use current settings
       ScrollView *fd) const { // where to paint
     fd->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   }
+#endif
 
+  void plot(                  // use current settings
+    Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset) const;        // where to paint
+
+#if !GRAPHICS_DISABLED
   void plot(                                  // paint box
       ScrollView *fd,                         // where to paint
       ScrollView::Color fill_colour,          // colour for inside

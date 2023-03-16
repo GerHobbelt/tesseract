@@ -153,7 +153,7 @@ public:
   // tprintf word metadata (but not blob innards)
   void print() const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // plot word on window in a uniform colour
   void plot(ScrollView *window, ScrollView::Color colour);
 
