@@ -287,6 +287,10 @@ namespace tesseract {
     return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
   }
 
+  static inline int MIX(int val1, int val2, const int factor) {
+    return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
+  }
+
   static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
   {
     const char* pixfname = fz_basename(img_filename);
@@ -356,6 +360,8 @@ namespace tesseract {
           const int red_factor = 0.1 * 256;
           const int green_factor = 0.5 * 256;
           const int blue_factor = 0.5 * 256;
+          const int base_mix_factor = 0.90 * 256;
+          const int bottom_mix_factor = 0.085 * 256;
 
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
@@ -364,24 +370,30 @@ namespace tesseract {
           extractRGBValues(lined[j], &rvald, &gvald, &bvald);
 
           // R
-          rvald = FADE(rvald, red_factor);
-          if (rvals < rvald)
-            rvald = rvals;
+          int rval = FADE(rvald, red_factor);
+          if (rvals < rval)
+            rval = MIX(rvals, rval, bottom_mix_factor);
+          else
+            rval = MIX(rvals, rval, base_mix_factor);
 
           // G
-          gvald = FADE(gvald, green_factor);
-          if (gvals < gvald)
-            gvald = gvals;
+          int gval = FADE(gvald, green_factor);
+          if (gvals < gval)
+            gval = MIX(gvals, gval, bottom_mix_factor);
+          else
+            gval = MIX(gvals, gval, base_mix_factor);
 
           // B
-          bvald = FADE(bvald, blue_factor);
-          if (bvals < bvald)
-            bvald = bvals;
+          int bval = FADE(bvald, blue_factor);
+          if (bvals < bval)
+            bval = MIX(bvals, bval, bottom_mix_factor);
+          else
+            bval = MIX(bvals, bval, base_mix_factor);
 
           // A
           //avald = 0;
 
-          composeRGBPixel(rvald, gvald, bvald, lined + j);
+          composeRGBPixel(rval, gval, bval, lined + j);
         }
       }
       //pixCopyResolution(pixd, pixs);

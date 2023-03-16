@@ -488,7 +488,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double score_fraction = tesseract_->thresholding_score_fraction;
 
     if (tesseract_->thresholding_debug) {
-      tprintf("tile size: {}  smooth_size: {}  score_fraction: {}\n", tile_size, smooth_size, score_fraction);
+      tprintf("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
@@ -504,28 +504,6 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     // Unsupported threshold method.
     r = 1;
   }
-
-#if 0
-  {
-	  std::string debug_output_path = api->GetOutputName();
-    std::string caption = ThresholdMethodName(method);
-	  const int page_number = 0;
-	  bool scribe_save_grey_rotated_image;
-	  api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
-	  if (scribe_save_grey_rotated_image) {
-		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".grey_image").c_str(), "png");
-		  Pix *p1 = pix_grey;
-		  WritePix(filepath, p1, IFF_PNG);
-	  }
-	  bool scribe_save_binary_rotated_image;
-	  api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
-	  if (scribe_save_binary_rotated_image) {
-		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".binary_image").c_str(), "png");
-		  Pix *p1 = (PIX*)pix_binary;
-		  WritePix(filepath, p1, IFF_PNG);
-	  }
-  }
-#endif
 
   bool ok = (r == 0) && pix_binary;
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);

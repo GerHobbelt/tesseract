@@ -1350,7 +1350,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 // available. This is particularly useful when hooking Tesseract up to
 // slow hardware such as a book scanning machine.
 //
-// Unfortunately there are tradeoffs. You can't seek on stdin. That
+// Unfortunately there are trade-offs. You can't seek on stdin. That
 // makes automatic detection of datatype (TIFF? filelist? PNG?)
 // impractical.  So we support a command line flag to explicitly
 // identify the scenario that really matters: filelists on
@@ -1370,7 +1370,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
                                 tesseract_->tessedit_page_number);
   }
 
-  // At this point we are officially in autodection territory.
+  // At this point we are officially in auto-detection territory.
   // That means any data in stdin must be buffered, to make it
   // seekable.
   std::string buf;

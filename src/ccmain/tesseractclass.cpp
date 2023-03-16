@@ -116,7 +116,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method",
                     this->params())
-    , double_MEMBER(thresholding_smooth_kernel_size, 0.0,
+    , double_MEMBER(thresholding_smooth_kernel_size, 0.01,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
