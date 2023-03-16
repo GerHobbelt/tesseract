@@ -391,7 +391,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 
     // Make the column_sets_.
     if (!MakeColumns(false)) {
-      tprintf("WARNING: Empty page!!\n");
+      tprintf("WARNING: Empty page!! tesseract could not detect any text block in the image.\n");
       part_grid_.DeleteParts();
       return 0; // This is an empty page.
     }
