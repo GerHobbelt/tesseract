@@ -178,7 +178,7 @@ void TBOX::plot(                    // paint box
 
 void TBOX::plot(                  // use current settings
   Image& pix,                     // where to paint
-  std::vector<uint32_t>& cmap, int& cmap_offset
+  std::vector<uint32_t>& cmap, int& cmap_offset, bool noise
 ) const {
   //pix->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   auto x = bot_left.x();
@@ -209,7 +209,7 @@ void TBOX::plot(                  // use current settings
   int r, g, b;
   uint32_t color = cmap[color_index];
   extractRGBValues(color, &r, &g, &b);
-  pixRenderPtaBlend(pix, pta, r, g, b, 0.9);
+  pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
 
   ptaDestroy(&pta);
 }

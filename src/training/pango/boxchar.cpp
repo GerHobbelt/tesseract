@@ -330,8 +330,8 @@ bool BoxChar::MostlyVertical(const std::vector<BoxChar *> &boxes) {
       int dx = x0 - x1;
       int dy = y0 - y1;
       if (abs(dx) > abs(dy) * kMinNewlineRatio || abs(dy) > abs(dx) * kMinNewlineRatio) {
-        total_dx += dx * dx;
-        total_dy += dy * dy;
+        total_dx += static_cast<int64_t>(dx) * dx;
+        total_dy += static_cast<int64_t>(dy) * dy;
       }
     }
   }

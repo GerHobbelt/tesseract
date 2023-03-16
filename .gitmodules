@@ -1,6 +1,6 @@
 [submodule "googletest"]
 	path = unittest/third_party/googletest
-	url = git@github.com:GerHobbelt/googletest.git
+	url = https://github.com/GerHobbelt/googletest.git
 [submodule "test"]
 	path = test
-	url = git@github.com:GerHobbelt/tesseract-ocr-test.git
+	url = https://github.com/GerHobbelt/tesseract-ocr-test.git
