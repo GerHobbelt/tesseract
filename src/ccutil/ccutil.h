@@ -47,13 +47,14 @@ public:
 
 public:
   // Read the arguments and set up the data path.
-  void main_setup(const std::string &argv0,   // program name
-                  const std::string &basename // name of image
+  void main_setup(const std::string &argv0,                 // program name
+                  const std::string & output_image_basename // name of output/debug image(s)
   );
   ParamsVectors *params() {
     return &params_;
   }
 
+  std::string input_file_path; // name of currently processed input file
   std::string datadir;       // dir for data files
   std::string imagebasename; // name of image
   std::string lang;

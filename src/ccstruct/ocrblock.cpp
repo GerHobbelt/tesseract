@@ -192,22 +192,22 @@ void BLOCK::print( // print list of sides
   ICOORDELT_IT it = &pdblk.leftside; // iterator
 
   pdblk.box.print();
-  tprintf("Proportional= %s\n", proportional ? "TRUE" : "FALSE");
-  tprintf("Kerning= %d\n", kerning);
-  tprintf("Spacing= %d\n", spacing);
-  tprintf("Fixed_pitch=%d\n", pitch);
-  tprintf("Filename= %s\n", filename.c_str());
+  tprintf("Proportional= {}\n", proportional ? "TRUE" : "FALSE");
+  tprintf("Kerning= {}\n", kerning);
+  tprintf("Spacing= {}\n", spacing);
+  tprintf("Fixed_pitch={}\n", pitch);
+  tprintf("Filename= {}\n", filename);
 
   if (dump) {
     tprintf("Left side coords are:\n");
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      tprintf("(%d,%d) ", it.data()->x(), it.data()->y());
+      tprintf("({},{}) ", it.data()->x(), it.data()->y());
     }
     tprintf("\n");
     tprintf("Right side coords are:\n");
     it.set_to_list(&pdblk.rightside);
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      tprintf("(%d,%d) ", it.data()->x(), it.data()->y());
+      tprintf("({},{}) ", it.data()->x(), it.data()->y());
     }
     tprintf("\n");
   }
@@ -312,7 +312,7 @@ static bool RightMargin(ICOORDELT_LIST *segments, int x, int *margin) {
 //  |  You  see this|    | |_| \|_| |   |rectangular      |
 //  |text is  flowed|    |      }   |   |boundary     that|
 //  |around  a  mid-|     \   ____  |   |forms the  ideal-|
-//  |cloumn portrait._____ \       /  __|ized  text margin|
+//  |column portrait._____ \       /  __|ized  text margin|
 //  |  Polyblobs     exist| \    /   |from which we should|
 //  |to account for insets|  |   |   |measure    paragraph|
 //  |which make  otherwise|  -----   |indentation.        |
@@ -426,7 +426,7 @@ void PrintSegmentationStats(BLOCK_LIST *block_list) {
       }
     }
   }
-  tprintf("Block list stats:\nBlocks = %d\nRows = %d\nWords = %d\nBlobs = %d\n", num_blocks,
+  tprintf("Block list stats:\nBlocks = {}\nRows = {}\nWords = {}\nBlobs = {}\n", num_blocks,
           num_rows, num_words, num_blobs);
 }
 

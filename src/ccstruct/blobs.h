@@ -268,7 +268,7 @@ struct TESSLINE {
     return topleft.x <= pt.x && pt.x <= botright.x && botright.y <= pt.y && pt.y <= topleft.y;
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
@@ -369,7 +369,7 @@ struct TBLOB {
     return denorm_;
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
@@ -455,7 +455,7 @@ struct TWERD {
   // the blobs between start and end.
   void MergeBlobs(unsigned start, unsigned end);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(ScrollView *window);
 #endif // !GRAPHICS_DISABLED
 

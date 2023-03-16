@@ -26,7 +26,7 @@ bool ValidateIndic::ConsumeGraphemeIfValid() {
     case CharClass::kZeroWidthNonJoiner:
       // Apart from within an aksara, joiners are silently dropped.
       if (report_errors_) {
-        tprintf("ERROR: Dropping isolated joiner: 0x%x\n", codes_[codes_used_].second);
+        tprintf("ERROR: Dropping isolated joiner: {}\n", codes_[codes_used_].second);
       }
       ++codes_used_;
       return true;
@@ -35,7 +35,7 @@ bool ValidateIndic::ConsumeGraphemeIfValid() {
       return true;
     default:
       if (report_errors_) {
-        tprintf("ERROR: Invalid start of grapheme sequence:%c=0x%x\n",
+        tprintf("ERROR: Invalid start of grapheme sequence:{}={}\n",
                 static_cast<int>(codes_[codes_used_].first),
                 codes_[codes_used_].second);
       }
@@ -175,7 +175,7 @@ bool ValidateIndic::ConsumeViramaIfValid(IndicPair joiner, bool post_matra) {
       if (codes_used_ < num_codes && codes_[codes_used_].second == kZeroWidthNonJoiner) {
         if (output_used_ == output_.size() || output_[output_used_] != kRayana) {
           if (report_errors_) {
-            tprintf("ERROR: Virama ZWJ ZWNJ in non-Sinhala: base=0x%x!\n", static_cast<int>(script_));
+            tprintf("ERROR: Virama ZWJ ZWNJ in non-Sinhala: base={}!\n", static_cast<int>(script_));
           }
           return false;
         }
@@ -207,7 +207,7 @@ bool ValidateIndic::ConsumeViramaIfValid(IndicPair joiner, bool post_matra) {
     if (codes_[codes_used_].second == kZeroWidthJoiner ||
         codes_[codes_used_].second == kZeroWidthNonJoiner) {
       if (report_errors_) {
-        tprintf("ERROR: JHJ!!: 0x%x 0x%x 0x%x\n", joiner.second, output_.back(),
+        tprintf("ERROR: JHJ!!: {} {} {}\n", joiner.second, output_.back(),
                 codes_[codes_used_].second);
       }
       return false;
@@ -250,7 +250,7 @@ bool ValidateIndic::ConsumeConsonantHeadIfValid() {
       joiner = codes_[codes_used_];
       if (++codes_used_ == num_codes) {
         if (report_errors_) {
-          tprintf("ERROR: Skipping ending joiner: 0x%x 0x%x\n", output_.back(), joiner.second);
+          tprintf("ERROR: Skipping ending joiner: {} {}\n", output_.back(), joiner.second);
         }
         return true;
       }
@@ -258,7 +258,7 @@ bool ValidateIndic::ConsumeConsonantHeadIfValid() {
         output_.push_back(joiner.second);
       } else {
         if (report_errors_) {
-          tprintf("ERROR: Skipping unnecessary joiner: 0x%x 0x%x 0x%x\n", output_.back(), joiner.second,
+          tprintf("WARNING: Skipping unnecessary joiner: {} {} {}\n", output_.back(), joiner.second,
                   codes_[codes_used_].second);
         }
         joiner = std::make_pair(CharClass::kOther, 0);

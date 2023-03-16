@@ -42,14 +42,15 @@ FILE *Tesseract::init_recog_training(const char *filename) {
   }
 
   std::string output_fname = filename;
-  const char *lastdot = strrchr(output_fname.c_str(), '.');
+  const char *fname = output_fname.c_str();
+  const char *lastdot = strrchr(fname, '.');
   if (lastdot != nullptr) {
-    output_fname[lastdot - output_fname.c_str()] = '\0';
+    output_fname[lastdot - fname] = '\0';
   }
   output_fname += ".txt";
   FILE *output_file = fopen(output_fname.c_str(), "a+");
   if (output_file == nullptr) {
-    tprintf("Error: Could not open file {}\n", output_fname.c_str());
+    tprintf("ERROR: Could not open file {}\n", output_fname.c_str());
     ASSERT_HOST(output_file);
   }
   return output_file;
@@ -94,7 +95,7 @@ void Tesseract::recog_training_segmented(const char *filename, PAGE_RES *page_re
   // ReadNextBox() will close box_file
   FILE *box_file = fopen(box_fname.c_str(), "r");
   if (box_file == nullptr) {
-    tprintf("Error: Could not open file {}\n", box_fname.c_str());
+    tprintf("ERROR: Could not open file {}\n", box_fname.c_str());
     ASSERT_HOST(box_file);
   }
 

@@ -251,7 +251,8 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
 
   bool do_invert = tessedit_do_invert;
   float threshold = do_invert ? double(invert_threshold) : 0.0f;
-  lstm_recognizer_->RecognizeLine(*im_data, threshold, classify_debug_level > 0,
+  lstm_recognizer_->SetDebug(classify_debug_level > 0 && tess_debug_lstm);
+  lstm_recognizer_->RecognizeLine(*im_data, threshold, 
                                   kWorstDictCertainty / kCertaintyScale, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);
   delete im_data;
@@ -290,7 +291,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       word_certainty *= kCertaintyScale;
       if (getDict().stopper_debug_level >= 1) {
-        tprintf("Best choice certainty=%g, space=%g, scaled=%g, final=%g\n",
+        tprintf("Best choice certainty={}, space={}, scaled={}, final={}\n",
                 word->best_choice->certainty(), word->space_certainty,
                 std::min(word->space_certainty, word->best_choice->certainty()) * kCertaintyScale,
                 word_certainty);

@@ -169,11 +169,23 @@ Dict::~Dict() {
   }
 }
 
+static DawgCache *cache = nullptr;  // only set it up when needed, via Dict::GlobalDawgCache()
+
 DawgCache *Dict::GlobalDawgCache() {
   // This global cache (a singleton) will outlive every Tesseract instance
-  // (even those that someone else might declare as global statics).
-  static DawgCache cache;
-  return &cache;
+  // (even those that someone else might declare as global statics) unless
+  // someone calls CleanGlobalDawgCache().
+  if (cache == nullptr) {
+    cache = new DawgCache();
+  }
+  return cache;
+}
+
+void Dict::CleanGlobalDawgCache() {
+  if (cache != nullptr) {
+    delete cache;
+    cache = nullptr;
+  }
 }
 
 // Sets up ready for a Load or LoadLSTM.
@@ -385,11 +397,13 @@ void Dict::End() {
       delete dawg;
     }
   }
-  dawg_cache_->FreeDawg(bigram_dawg_);
+  if (dawg_cache_ != nullptr) {
+    dawg_cache_->FreeDawg(bigram_dawg_);
+  }
   if (dawg_cache_is_ours_) {
     delete dawg_cache_;
-    dawg_cache_ = nullptr;
   }
+  dawg_cache_ = nullptr;
   for (auto successor : successors_) {
     delete successor;
   }
@@ -398,6 +412,16 @@ void Dict::End() {
   document_words_ = nullptr;
   delete pending_words_;
   pending_words_ = nullptr;
+
+  delete hyphen_word_;
+  hyphen_word_ = nullptr;
+
+  go_deeper_fxn_ = nullptr;
+  dawg_cache_is_ours_ = false;
+  bigram_dawg_ = nullptr;
+  freq_dawg_ = nullptr;
+  punc_dawg_ = nullptr;
+  unambig_dawg_ = nullptr;
 }
 
 // Returns true if in light of the current state unichar_id is allowed
@@ -741,7 +765,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     }
   }
   if (debug) {
-    tprintf("%sWord: %s %4.2f%s", nonword ? "Non-" : "", word->unichar_string().c_str(),
+    tprintf("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
             word->rating(), xheight_triggered);
   }
 
@@ -793,7 +817,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     word->set_rating(new_rating);
   }
   if (debug) {
-    tprintf(" %4.2f --> %4.2f\n", adjust_factor, new_rating);
+    tprintf(" {} --> {}\n", adjust_factor, new_rating);
   }
   word->set_adjust_factor(adjust_factor);
 }

@@ -38,9 +38,9 @@ static const float kMaxFinalCost = 100.0f;
 
 void ParamsModel::Print() {
   for (int p = 0; p < PTRAIN_NUM_PASSES; ++p) {
-    tprintf("ParamsModel for pass %d lang %s\n", p, lang_.c_str());
+    tprintf("ParamsModel for pass {} lang {}\n", p, lang_.c_str());
     for (unsigned i = 0; i < weights_vec_[p].size(); ++i) {
-      tprintf("%s = %g\n", kParamsTrainingFeatureTypeName[i], weights_vec_[p][i]);
+      tprintf("{} = {}\n", kParamsTrainingFeatureTypeName[i], weights_vec_[p][i]);
     }
   }
 }
@@ -62,7 +62,7 @@ bool ParamsModel::ParseLine(char *line, char **key, float *val) {
     end_of_key++;
   }
   if (!line[end_of_key]) {
-    tprintf("ParamsModel::Incomplete line %s\n", line);
+    tprintf("ParamsModel::Incomplete line {}\n", line);
     return false;
   }
   line[end_of_key++] = 0;
@@ -121,7 +121,7 @@ bool ParamsModel::LoadFromFp(const char *lang, TFile *fp) {
     }
     int idx = ParamsTrainingFeatureByName(key);
     if (idx < 0) {
-      tprintf("ParamsModel::Unknown parameter %s\n", key);
+      tprintf("ParamsModel::Unknown parameter {}\n", key);
       continue;
     }
     if (!present[idx]) {
@@ -133,7 +133,7 @@ bool ParamsModel::LoadFromFp(const char *lang, TFile *fp) {
   if (!complete) {
     for (int i = 0; i < PTRAIN_NUM_FEATURE_TYPES; i++) {
       if (!present[i]) {
-        tprintf("Missing field %s.\n", kParamsTrainingFeatureTypeName[i]);
+        tprintf("Missing field {}\n", kParamsTrainingFeatureTypeName[i]);
       }
     }
     lang_ = "";
@@ -150,7 +150,7 @@ bool ParamsModel::SaveToFile(const char *full_path) const {
   }
   FILE *fp = fopen(full_path, "wb");
   if (!fp) {
-    tprintf("Could not open %s for writing.\n", full_path);
+    tprintf("Could not open {} for writing.\n", full_path);
     return false;
   }
   bool all_good = true;

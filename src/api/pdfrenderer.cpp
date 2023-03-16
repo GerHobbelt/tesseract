@@ -20,12 +20,16 @@
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "pdf_ttf.h"
 #include "tprintf.h"
 
 #include <allheaders.h>
 #include <tesseract/baseapi.h>
+#include <tesseract/publictypes.h> // for PTIsTextType()
 #include <tesseract/renderer.h>
+
 #include <cmath>
 #include <cstring>
 #include <fstream>   // for std::ifstream
@@ -33,9 +37,7 @@
 #include <memory>    // std::unique_ptr
 #include <sstream>   // for std::stringstream
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
+#include "tesseractclass.h"
 
 #include "helpers.h" // for Swap
 
@@ -75,7 +77,7 @@ codes into Unicode values. If its not present then the reader will
 fall back through a series of heuristics to try and guess the
 result. This is, as you would expect, prone to failure.
 
-This doesn't concern you of course, since you always write a ToUnicode
+This doesn't concern you of course, since you always writing a ToUnicode
 CMap, so because you are writing the text in text rendering mode 3 it
 would seem that you don't really need to worry about this, but in the
 PDF spec you cannot have an isolated ToUnicode CMap, it has to be
@@ -107,7 +109,7 @@ given value. So we have a glyph name, we then use that as the key to
 the dictionary and retrieve the associated value. For a type 1 font,
 the value is a glyph program that describes how to draw the glyph.
 
-For CIDFonts, its a little more complicated. Because CIDFonts can be
+For CIDFonts, it's a little more complicated. Because CIDFonts can be
 large, using a glyph name as the key is unreasonable (it would also
 lead to unfeasibly large Encoding arrays), so instead we use a 'CID'
 as the key. CIDs are just numbers.
@@ -359,6 +361,12 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
   const std::unique_ptr</*non-const*/ ResultIterator> res_it(api->GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
+      auto block_type = res_it->BlockType();
+      if (!PTIsTextType(block_type)) {
+        // ignore non-text blocks
+        res_it->Next(RIL_BLOCK);
+        continue;
+      }
       pdf_str << "BT\n3 Tr"; // Begin text object, use invisible ink
       old_fontsize = 0;      // Every block will declare its fontsize
       new_block = true;      // Every block will declare its affine matrix
@@ -480,11 +488,7 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
     }
   }
   const std::string &text = pdf_str.str();
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  char* result = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[text.length() + 1];
-#else
   char* result = new char[text.length() + 1];
-#endif  // _DEBUG
   strcpy(result, text.c_str());
   return result;
 }
@@ -635,7 +639,7 @@ bool TessPDFRenderer::BeginDocumentHandler() {
     font = buffer.data();
   } else {
 #if !defined(NDEBUG)
-    tprintf("ERROR: Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str().c_str());
+    tprintf("ERROR: Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str());
 #endif
     font = pdf_ttf;
     size = sizeof(pdf_ttf);
@@ -797,11 +801,7 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
   size_t colorspace_len = colorspace.str().size();
 
   *pdf_object_size = b1_len + colorspace_len + b2_len + cid->nbytescomp + b3_len;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  *pdf_object = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[*pdf_object_size];
-#else
   * pdf_object = new char[*pdf_object_size];
-#endif  // _DEBUG
 
   char *p = *pdf_object;
   memcpy(p, b1.str().c_str(), b1_len);
@@ -904,8 +904,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    int jpg_quality;
-    api->GetIntVariable("jpg_quality", &jpg_quality);
+    int jpg_quality = api->tesseract()->jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
 	  if (destroy_pix)
 	  {

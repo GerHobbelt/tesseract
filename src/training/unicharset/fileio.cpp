@@ -45,7 +45,7 @@ FILE *File::Open(const std::string &filename, const std::string &mode) {
 FILE *File::OpenOrDie(const std::string &filename, const std::string &mode) {
   FILE *stream = fopen(filename.c_str(), mode.c_str());
   if (stream == nullptr) {
-    tprintf("ERROR: Unable to open '%s' in mode '%s': %s\n", filename.c_str(), mode.c_str(),
+    tprintf("ERROR: Unable to open '{}' in mode '{}': {}\n", filename, mode,
             strerror(errno));
   }
   return stream;
@@ -54,7 +54,7 @@ FILE *File::OpenOrDie(const std::string &filename, const std::string &mode) {
 void File::WriteStringToFileOrDie(const std::string &str, const std::string &filename) {
   FILE *stream = fopen(filename.c_str(), "wb");
   if (stream == nullptr) {
-    tprintf("ERROR: Unable to open '%s' for writing: %s\n", filename.c_str(), strerror(errno));
+    tprintf("ERROR: Unable to open '{}' for writing: {}\n", filename, strerror(errno));
     return;
   }
   fputs(str.c_str(), stream);
@@ -93,7 +93,7 @@ bool File::Delete(const char *pathname) {
   const int status = _unlink(pathname);
 #endif
   if (status != 0) {
-    tprintf("ERROR: Unable to delete file '%s$: %s\n", pathname, strerror(errno));
+    tprintf("ERROR: Unable to delete file '{}$: {}\n", pathname, strerror(errno));
     return false;
   }
   return true;
@@ -101,12 +101,12 @@ bool File::Delete(const char *pathname) {
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 bool File::DeleteMatchingFiles(const char *pattern) {
-  WIN32_FIND_DATA data;
+  WIN32_FIND_DATAA data;
   BOOL result = TRUE;
-  HANDLE handle = FindFirstFile(pattern, &data);
+  HANDLE handle = FindFirstFileA(pattern, &data);
   bool all_deleted = true;
   if (handle != INVALID_HANDLE_VALUE) {
-    for (; result; result = FindNextFile(handle, &data)) {
+    for (; result; result = FindNextFileA(handle, &data)) {
       all_deleted &= File::Delete(data.cFileName);
     }
     FindClose(handle);

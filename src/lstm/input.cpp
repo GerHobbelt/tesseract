@@ -90,7 +90,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
     return nullptr;
   }
   if (width < min_width || height < min_width) {
-    tprintf("ERROR: Image too small to scale!! (%dx%d vs min width of %d)\n", width, height, min_width);
+    tprintf("ERROR: Image too small to scale!! ({}x{} vs min width of {})\n", width, height, min_width);
     pix.destroy();
     return nullptr;
   }

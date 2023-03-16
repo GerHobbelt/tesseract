@@ -26,13 +26,15 @@
 
 namespace tesseract {
 
-	CLISTIZEH(BLOBNBOX);
+class TESS_API Tesseract;
+
+CLISTIZEH(BLOBNBOX);
 
 using BlobGridSearch = GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT>;
 
 class TESS_API BlobGrid : public BBGrid<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> {
 public:
-  BlobGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  BlobGrid(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~BlobGrid() override;
 
   // Inserts all the blobs from the given list, with x and y spreading,

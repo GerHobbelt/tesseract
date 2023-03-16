@@ -132,7 +132,7 @@ static void PrintCommandLineFlags() {
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
   for (auto &param : GlobalParams()->int_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintf("  --%s  %s  (type:int default:%d)\n",
+      tprintf("  --{}  {}  (type:int default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(), int32_t(*param));
     }
@@ -140,7 +140,7 @@ static void PrintCommandLineFlags() {
   for (auto &param : GlobalParams()->double_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
-      tprintf("  --%s  %s  (type:double default:%g)\n",
+      tprintf("  --{}  {}  (type:double default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              static_cast<double>(*param));
@@ -148,7 +148,7 @@ static void PrintCommandLineFlags() {
   }
   for (auto &param : GlobalParams()->bool_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintf("  --%s  %s  (type:bool default:%s)\n",
+      tprintf("  --{}  {}  (type:bool default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              bool(*param) ? "true" : "false");
@@ -157,7 +157,7 @@ static void PrintCommandLineFlags() {
   for (auto &param : GlobalParams()->string_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
-      tprintf("  --%s  %s  (type:string default:%s)\n",
+      tprintf("  --{}  {}  (type:string default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              param->c_str());
@@ -167,13 +167,13 @@ static void PrintCommandLineFlags() {
 
 void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, const bool remove_flags) {
   if (*argc == 1) {
-    tprintf("USAGE: %s\n", usage);
+    tprintf("USAGE: {}\n", usage);
     PrintCommandLineFlags();
     exit(0);
   }
 
   if (*argc > 1 && (!strcmp((*argv)[1], "-v") || !strcmp((*argv)[1], "--version"))) {
-    tprintf("%s\n", TessBaseAPI::Version());
+    tprintf("{}\n", TessBaseAPI::Version());
     exit(0);
   }
 
@@ -192,7 +192,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     }
     // If this is asking for usage, print the help message and abort.
     if (!strcmp(current_arg, "help")) {
-      tprintf("Usage:\n  %s [OPTION ...]\n\n", usage);
+      tprintf("Usage:\n  {} [OPTION ...]\n\n", usage);
       PrintCommandLineFlags();
       exit(0);
     }
@@ -211,7 +211,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       lhs.assign(current_arg, equals_position - current_arg);
     }
     if (!lhs.length()) {
-      tprintf("ERROR: Bad argument: %s\n", (*argv)[i]);
+      tprintf("ERROR: Bad argument: {}\n", (*argv)[i]);
       exit(1);
     }
 
@@ -222,22 +222,22 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       if (rhs != nullptr) {
         if (!strlen(rhs)) {
           // Bad input of the format --int_flag=
-          tprintf("ERROR: Bad argument: %s\n", (*argv)[i]);
+          tprintf("ERROR: Bad argument: {}\n", (*argv)[i]);
           exit(1);
         }
         if (!SafeAtoi(rhs, &int_val)) {
-          tprintf("ERROR: Could not parse int from %s in flag %s\n", rhs, (*argv)[i]);
+          tprintf("ERROR: Could not parse int from {} in flag {}\n", rhs, (*argv)[i]);
           exit(1);
         }
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
-          tprintf("ERROR: Could not find value argument for flag %s\n", lhs.c_str());
+          tprintf("ERROR: Could not find value argument for flag {}\n", lhs.c_str());
           exit(1);
         } else {
           ++i;
           if (!SafeAtoi((*argv)[i], &int_val)) {
-            tprintf("ERROR: Could not parse int32_t from %s\n", (*argv)[i]);
+            tprintf("ERROR: Could not parse int32_t from {}\n", (*argv)[i]);
             exit(1);
           }
         }
@@ -252,22 +252,22 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       if (rhs != nullptr) {
         if (!strlen(rhs)) {
           // Bad input of the format --double_flag=
-          tprintf("ERROR: Bad argument: %s\n", (*argv)[i]);
+          tprintf("ERROR: Bad argument: {}\n", (*argv)[i]);
           exit(1);
         }
         if (!SafeAtod(rhs, &double_val)) {
-          tprintf("ERROR: Could not parse double from %s in flag %s\n", rhs, (*argv)[i]);
+          tprintf("ERROR: Could not parse double from {} in flag {}\n", rhs, (*argv)[i]);
           exit(1);
         }
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
-          tprintf("ERROR: Could not find value argument for flag %s\n", lhs.c_str());
+          tprintf("ERROR: Could not find value argument for flag {}\n", lhs.c_str());
           exit(1);
         } else {
           ++i;
           if (!SafeAtod((*argv)[i], &double_val)) {
-            tprintf("ERROR: Could not parse double from %s\n", (*argv)[i]);
+            tprintf("ERROR: Could not parse double from {}\n", (*argv)[i]);
             exit(1);
           }
         }
@@ -286,7 +286,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       } else {
         if (!strlen(rhs)) {
           // Bad input of the format --bool_flag=
-          tprintf("ERROR: Bad argument: %s\n", (*argv)[i]);
+          tprintf("ERROR: Bad argument: {}\n", (*argv)[i]);
           exit(1);
         }
         if (!strcmp(rhs, "false") || !strcmp(rhs, "0")) {
@@ -294,7 +294,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
         } else if (!strcmp(rhs, "true") || !strcmp(rhs, "1")) {
           bool_val = true;
         } else {
-          tprintf("ERROR: Could not parse bool from flag %s\n", (*argv)[i]);
+          tprintf("ERROR: Could not parse bool from flag {}\n", (*argv)[i]);
           exit(1);
         }
       }
@@ -310,7 +310,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       } else {
         // Pick the next argument
         if (i + 1 >= *argc) {
-          tprintf("ERROR: Could not find string value for flag %s\n", lhs.c_str());
+          tprintf("ERROR: Could not find string value for flag {}\n", lhs.c_str());
           exit(1);
         } else {
           string_val = (*argv)[++i];
@@ -321,7 +321,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     }
 
     // Flag was not found. Exit with an error message.
-    tprintf("ERROR: Non-existent flag %s\n", (*argv)[i]);
+    tprintf("ERROR: Non-existent flag {}\n", (*argv)[i]);
     exit(1);
   } // for each argv
   if (remove_flags) {

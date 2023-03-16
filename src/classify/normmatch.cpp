@@ -122,7 +122,7 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
   LIST Protos = NormProtos->Protos[ClassId];
 
   if (DebugMatch) {
-    tprintf("\nChar norm for class %s\n", unicharset.id_to_unichar(ClassId));
+    tprintf("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
   }
 
   int ProtoId = 0;
@@ -131,26 +131,26 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
     float Delta = feature.Params[CharNormY] - Proto->Mean[CharNormY];
     float Match = Delta * Delta * Proto->Weight.Elliptical[CharNormY];
     if (DebugMatch) {
-      tprintf("YMiddle: Proto=%g, Delta=%g, Var=%g, Dist=%g\n", Proto->Mean[CharNormY], Delta,
+      tprintf("YMiddle: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormY], Delta,
               Proto->Weight.Elliptical[CharNormY], Match);
     }
     Delta = feature.Params[CharNormRx] - Proto->Mean[CharNormRx];
     Match += Delta * Delta * Proto->Weight.Elliptical[CharNormRx];
     if (DebugMatch) {
-      tprintf("Height: Proto=%g, Delta=%g, Var=%g, Dist=%g\n", Proto->Mean[CharNormRx], Delta,
+      tprintf("Height: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormRx], Delta,
               Proto->Weight.Elliptical[CharNormRx], Match);
     }
     // Ry is width! See intfx.cpp.
     Delta = feature.Params[CharNormRy] - Proto->Mean[CharNormRy];
     if (DebugMatch) {
-      tprintf("Width: Proto=%g, Delta=%g, Var=%g\n", Proto->Mean[CharNormRy], Delta,
+      tprintf("Width: Proto={}, Delta={}, Var={}\n", Proto->Mean[CharNormRy], Delta,
               Proto->Weight.Elliptical[CharNormRy]);
     }
     Delta = Delta * Delta * Proto->Weight.Elliptical[CharNormRy];
     Delta *= kWidthErrorWeighting;
     Match += Delta;
     if (DebugMatch) {
-      tprintf("Total Dist=%g, scaled=%g, sigmoid=%g, penalty=%g\n", Match,
+      tprintf("Total Dist={}, scaled={}, sigmoid={}, penalty={}\n", Match,
               Match / classify_norm_adj_midpoint, NormEvidenceOf(Match),
               256 * (1 - NormEvidenceOf(Match)));
     }
@@ -214,7 +214,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
       }
       NormProtos->Protos[unichar_id] = Protos;
     } else {
-      tprintf("Error: unichar %s in normproto file is not in unichar set.\n", unichar);
+      tprintf("ERROR: unichar {} in normproto file is not in unichar set.\n", unichar);
       for (int i = 0; i < NumProtos; i++) {
         FreePrototype(ReadPrototype(fp, NormProtos->NumParams));
       }

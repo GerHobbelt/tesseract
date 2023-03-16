@@ -29,7 +29,7 @@
 
 #include "scrollview.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
 #include "tprintf.h"
@@ -89,7 +89,7 @@ const UNICHARSET &ShapeClassifier::GetUnicharset() const {
   return GetShapeTable()->unicharset();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Visual debugger classifies the given sample, displays the results and
 // solicits user input to display other classifications. Returns when
@@ -121,15 +121,15 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample, Image page_pix,
   do {
     std::vector<ScrollView *> windows;
     if (unichar_id >= 0) {
-      tprintf("Debugging class %d = %s\n", unichar_id, unicharset.id_to_unichar(unichar_id));
+      tprintf("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
       UnicharClassifySample(sample, page_pix, 1, unichar_id, &results);
       DisplayClassifyAs(sample, page_pix, unichar_id, 1, windows);
     } else {
-      tprintf("Invalid unichar_id: %d\n", unichar_id);
+      tprintf("Invalid unichar_id: {}\n", unichar_id);
       UnicharClassifySample(sample, page_pix, 1, -1, &results);
     }
     if (unichar_id >= 0) {
-      tprintf("Debugged class %d = %s\n", unichar_id, unicharset.id_to_unichar(unichar_id));
+      tprintf("Debugged class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
     }
     tprintf("Right-click in ClassifierDebug window to choose debug class,");
     tprintf(" Left-click or close window to quit...\n");
@@ -142,7 +142,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample, Image page_pix,
         if (unicharset.contains_unichar(ev->parameter)) {
           unichar_id = unicharset.unichar_to_id(ev->parameter);
         } else {
-          tprintf("Char class '%s' not found in unicharset", ev->parameter);
+          tprintf("Char class '{}' not found in unicharset", ev->parameter);
         }
       }
     } while (unichar_id == old_unichar_id && ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
@@ -170,14 +170,14 @@ int ShapeClassifier::DisplayClassifyAs(const TrainingSample &sample, Image page_
 // Prints debug information on the results.
 void ShapeClassifier::UnicharPrintResults(const char *context,
                                           const std::vector<UnicharRating> &results) const {
-  tprintf("%s\n", context);
+  tprintf("{}\n", context);
   for (const auto &result : results) {
-    tprintf("%g: c_id=%d=%s", result.rating, result.unichar_id,
+    tprintf("{}: c_id={}={}", result.rating, result.unichar_id,
             GetUnicharset().id_to_unichar(result.unichar_id));
     if (!result.fonts.empty()) {
       tprintf(" Font Vector:");
-      for (auto font : result.fonts) {
-        tprintf(" %d", font.fontinfo_id);
+      for (auto &&font : result.fonts) {
+        tprintf(" {}", font.fontinfo_id);
       }
     }
     tprintf("\n");
@@ -185,16 +185,16 @@ void ShapeClassifier::UnicharPrintResults(const char *context,
 }
 void ShapeClassifier::PrintResults(const char *context,
                                    const std::vector<ShapeRating> &results) const {
-  tprintf("%s\n", context);
+  tprintf("{}\n", context);
   for (const auto &result : results) {
-    tprintf("%g:", result.rating);
+    tprintf("{}:", result.rating);
     if (result.joined) {
       tprintf("[J]");
     }
     if (result.broken) {
       tprintf("[B]");
     }
-    tprintf(" %s\n", GetShapeTable()->DebugStr(result.shape_id).c_str());
+    tprintf(" {}\n", GetShapeTable()->DebugStr(result.shape_id).c_str());
   }
 }
 

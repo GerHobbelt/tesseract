@@ -119,7 +119,7 @@ public:
   // Prints summary stats only of the histogram.
   void print_summary() const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draws the histogram as a series of rectangles.
   void plot(ScrollView *window,              // window to draw in
             float xorigin,                   // origin of histo

@@ -36,7 +36,7 @@ BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
 ScrollView *to_win = nullptr;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**********************************************************************
  * create_to_win
@@ -46,6 +46,9 @@ ScrollView *to_win = nullptr;
 
 ScrollView *create_to_win(ICOORD page_tr) {
   if (to_win != nullptr) {
+    return to_win;
+  }
+  if (1) {
     return to_win;
   }
   to_win = new ScrollView(TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
@@ -81,6 +84,26 @@ void plot_box_list(               // make gradients win
 }
 
 /**********************************************************************
+ * plot_box_list
+ *
+ * Draw a list of blobs.
+ **********************************************************************/
+
+void plot_box_list(               // make gradients win
+    Image& pix,                   // iamge to draw in
+    BLOBNBOX_LIST* list,          // blob list
+    ScrollView::Color body_colour // colour to draw
+) {
+  BLOBNBOX_IT it = list; // iterator
+
+  //pix->Pen(body_colour);
+  //pix->Brush(ScrollView::NONE);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    it.data()->bounding_box().plot(pix);
+  }
+}
+
+/**********************************************************************
  * plot_to_row
  *
  * Draw the blobs of a row in a given colour and draw the line fit.
@@ -96,8 +119,11 @@ void plot_to_row(             // draw a row
   BLOBNBOX_IT it = row->blob_list();
   float left, right; // end of row
 
+  if (to_win == nullptr)
+    return;
+
   if (it.empty()) {
-    tprintf("ERROR: No blobs in row at %g\n", row->parallel_c());
+    tprintf("ERROR: No blobs in row at {}\n", row->parallel_c());
     return;
   }
   left = it.data()->bounding_box().left();
@@ -131,6 +157,9 @@ void plot_parallel_row(       // draw a row
   BLOBNBOX_IT it = row->blob_list();
   auto fleft = static_cast<float>(left); // floating version
   float right;                           // end of row
+
+  if (to_win == nullptr)
+    return;
 
   //      left=it.data()->bounding_box().left();
   it.move_to_last();
@@ -168,6 +197,9 @@ void draw_occupation(                    // draw projection
   int32_t line_index;                     // pixel coord
   ScrollView::Color colour;               // of histogram
   auto fleft = static_cast<float>(xleft); // float version
+
+  if (to_win == nullptr)
+    return;
 
   colour = ScrollView::WHITE;
   to_win->Pen(colour);
@@ -213,6 +245,10 @@ void draw_meanlines(          // draw a block
   TO_ROW *row;         // current row
   BLOBNBOX_IT blob_it; // blobs
   float right;         // end of row
+
+  if (to_win == nullptr)
+    return;
+
   to_win->Pen(colour);
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     row = row_it.data();

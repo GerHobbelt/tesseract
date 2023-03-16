@@ -128,7 +128,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   ParseArguments(&argc, &argv);
   int num_fonts = 0;
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
-    tprintf("Reading %s ...\n", PageName);
+    tprintf("Reading {} ...\n", PageName);
     FILE *TrainingPage = fopen(PageName, "rb");
     ASSERT_HOST(TrainingPage);
     if (TrainingPage) {
@@ -165,9 +165,9 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
       } else {
         Config.MinSamples *= 0.95;
         tprintf(
-            "0 significant protos for %s."
-            " Retrying clustering with MinSamples = %f%%\n",
-            CharSample->Label.c_str(), Config.MinSamples);
+            "0 significant protos for {}"
+            " Retrying clustering with MinSamples = {}%\n",
+            CharSample->Label, Config.MinSamples);
       }
     }
     Config.MinSamples = SavedMinSamples;
@@ -211,7 +211,7 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     Filename += "/";
   }
   Filename += "normproto";
-  tprintf("\nWriting %s ...", Filename.c_str());
+  tprintf("\nWriting {} ...", Filename);
   File = fopen(Filename.c_str(), "wb");
   ASSERT_HOST(File);
   fprintf(File, "%0d\n", feature_desc->NumParams);
@@ -221,10 +221,10 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     N = NumberOfProtos(LabeledProto->List, true, false);
     if (N < 1) {
       tprintf(
-          "\nEERROR: Not enough protos for %s: %d protos"
-          " (%d significant protos"
-          ", %d insignificant protos)\n",
-          LabeledProto->Label.c_str(), N, NumberOfProtos(LabeledProto->List, true, false),
+          "\nERROR: Not enough protos for {}: {} protos"
+          " ({} significant protos"
+          ", {} insignificant protos)\n",
+          LabeledProto->Label, N, NumberOfProtos(LabeledProto->List, true, false),
           NumberOfProtos(LabeledProto->List, false, true));
       exit(1);
     }
@@ -254,7 +254,7 @@ static void WriteProtos(FILE *File, uint16_t N, LIST ProtoList, bool WriteSigPro
 
 TESS_API int tesseract_cn_training_main(int argc, const char** argv)
 {
-	tesseract::tprintf("ERROR: the %s tool is not supported in this build.\n", argv[0]);
+	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
 	return 1;
 }
 

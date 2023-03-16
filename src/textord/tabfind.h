@@ -37,6 +37,8 @@ using WidthCallback = std::function<bool(int)>;
 struct AlignedBlobParams;
 class ColPartitionGrid;
 
+class TESS_API Tesseract;
+
 /** Pixel resolution of column width estimates. */
 const int kColumnWidthFactor = 20;
 
@@ -51,7 +53,7 @@ const int kColumnWidthFactor = 20;
  */
 class TESS_API TabFind : public AlignedBlob {
 public:
-  TabFind(int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
+  TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
           int vertical_x, int vertical_y, int resolution);
   ~TabFind() override;
 
@@ -199,6 +201,11 @@ protected:
    * Display the tab vectors found in this grid.
    */
   ScrollView *DisplayTabVectors(ScrollView *tab_win);
+
+  /**
+   * Display the tab vectors found in this grid.
+   */
+  void DisplayTabVectors(Image &pix, uint32_t *data, int wpl, int w, int h);
 
   // First part of FindTabVectors, which may be used twice if the text
   // is mostly of vertical alignment.  If find_vertical_text flag is

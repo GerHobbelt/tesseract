@@ -33,7 +33,11 @@
 
 #include <allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
+#include <algorithm> // for max, min
 #include <cinttypes> // for PRId64
+
+#undef min
+#undef max
 
 namespace tesseract {
 
@@ -68,7 +72,7 @@ ImageData *ImageData::Build(const char *name, int page_number, const char *lang,
   memcpy(&image_data->image_data_[0], imagedata, imagedatasize);
   if (!image_data->AddBoxes(box_text)) {
     if (truth_text == nullptr || truth_text[0] == '\0') {
-      tprintf("ERROR: No text corresponding to page %d from image %s!\n",
+      tprintf("ERROR: No text corresponding to page {} from image {}!\n",
               page_number, name);
       delete image_data;
       return nullptr;
@@ -234,7 +238,7 @@ Image ImageData::PreScale(int target_height, int max_height,
   // Get the scaled image.
   Image pix = pixScale(src_pix, im_factor, im_factor);
   if (pix == nullptr) {
-    tprintf("ERROR: Scaling pix of size %d, %d by factor %g made null pix!!\n",
+    tprintf("ERROR: Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
     src_pix.destroy();
     return nullptr;
@@ -269,7 +273,7 @@ int ImageData::MemoryUsed() const {
   return image_data_.size();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Draws the data in a new window.
 void ImageData::Display() const {
@@ -327,7 +331,7 @@ void ImageData::AddBoxes(const std::vector<TBOX> &boxes,
 }
 
 #ifndef TESSERACT_IMAGEDATA_AS_PIX
-// Saves the given Pix as a PNG-encoded string and destroys it.
+// Saves the given Pix as a PNG-encoded string and destroy it.
 // In case of missing PNG support in Leptonica use PNM format,
 // which requires more memory.
 void ImageData::SetPixInternal(Image pix, std::vector<char> *image_data) {
@@ -371,8 +375,8 @@ bool ImageData::AddBoxes(const char *box_text) {
       AddBoxes(boxes, texts, box_pages);
       return true;
     } else {
-      tprintf("ERROR: No boxes for page %d from image %s!\n", page_number_,
-              imagefilename_.c_str());
+      tprintf("ERROR: No boxes for page {} from image {}!\n", page_number_,
+              imagefilename_);
     }
   }
   return false;
@@ -423,7 +427,7 @@ bool DocumentData::SaveDocument(const char *filename, FileWriter writer) {
   TFile fp;
   fp.OpenWrite(nullptr);
   if (!fp.Serialize(pages_) || !fp.CloseWrite(filename, writer)) {
-    tprintf("ERROR: Serialize failed: %s\n", filename);
+    tprintf("ERROR: Serialize failed: {}\n", filename);
     return false;
   }
   return true;
@@ -521,8 +525,8 @@ int64_t DocumentData::UnCache() {
   pages_offset_ = -1;
   set_total_pages(-1);
   set_memory_used(0);
-  tprintf("Unloaded document %s, saving %" PRId64 " memory\n",
-          document_name_.c_str(), memory_saved);
+  tprintf("Unloaded document {}, saving {} memory\n",
+          document_name_, memory_saved);
   return memory_saved;
 }
 
@@ -556,7 +560,7 @@ bool DocumentData::ReCachePages() {
   TFile fp;
   if (!fp.Open(document_name_.c_str(), reader_) ||
       !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintf("ERROR: Deserialize header failed: %s\n", document_name_.c_str());
+    tprintf("ERROR: Deserialize header failed: {}\n", document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -591,7 +595,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintf("ERROR: Deserialize failed: %s read %d/%d lines\n", document_name_.c_str(),
+    tprintf("ERROR: Deserialize failed: {} read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;
@@ -599,9 +603,9 @@ bool DocumentData::ReCachePages() {
     pages_.clear();
   } else if (loaded_pages > 1) {
     // Avoid lots of messages for training with single line images.
-    tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+    tprintf("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
             loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-            document_name_.c_str());
+            document_name_);
   }
   set_total_pages(loaded_pages);
   return !pages_.empty();

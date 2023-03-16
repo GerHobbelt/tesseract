@@ -16,13 +16,11 @@
  *
  **********************************************************************/
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 namespace tesseract {
 
@@ -84,11 +82,7 @@ char *TessBaseAPI::GetWordStrBoxText(int page_number = 0) {
     wordstr_box_str += " " + std::to_string(page_number); // row for tab for EOL
     wordstr_box_str += "\n";
   }
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-  char* ret = new (_CLIENT_BLOCK, __FILE__, __LINE__) char[wordstr_box_str.length() + 1];
-#else
   char* ret = new char[wordstr_box_str.length() + 1];
-#endif  // _DEBUG
   strcpy(ret, wordstr_box_str.c_str());
   delete res_it;
   return ret;
@@ -98,7 +92,7 @@ char *TessBaseAPI::GetWordStrBoxText(int page_number = 0) {
  * WordStrBox Renderer interface implementation
  **********************************************************************/
 TessWordStrBoxRenderer::TessWordStrBoxRenderer(const char *outputbase)
-    : TessResultRenderer(outputbase, "box") {}
+    : TessResultRenderer(outputbase, "wordstr.box") {}
 
 bool TessWordStrBoxRenderer::AddImageHandler(TessBaseAPI *api) {
   const std::unique_ptr<const char[]> wordstrbox(api->GetWordStrBoxText(imagenum()));

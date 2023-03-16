@@ -40,6 +40,9 @@
 #include <cstdlib>   // for abs
 #include <cstring>   // for memset, memcpy, memmove
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 ICOORD C_OUTLINE::step_coords[4] = {ICOORD(-1, 0), ICOORD(0, -1), ICOORD(1, 0), ICOORD(0, 1)};
@@ -174,12 +177,12 @@ C_OUTLINE::C_OUTLINE(C_OUTLINE *srcline, FCOORD rotation) : offsets(nullptr) {
       pos += srcline->step(stepindex);
       destpos = pos;
       destpos.rotate(rotation);
-      //  tprintf("%i %i %i %i ", destpos.x(), destpos.y(), pos.x(), pos.y());
+      //  tprintf("{} {} {} {} ", destpos.x(), destpos.y(), pos.x(), pos.y());
       while (destpos.x() != prevpos.x() || destpos.y() != prevpos.y()) {
         dir = DIR128(FCOORD(destpos - prevpos));
         dir += 64; // turn to step style
         new_step = dir.get_dir();
-        //  tprintf(" %i\n", new_step);
+        //  tprintf(" {}\n", new_step);
         if (new_step & 31) {
           set_step(destindex++, dir + round1);
           prevpos += step(destindex - 1);
@@ -948,7 +951,7 @@ void C_OUTLINE::render_outline(int left, int top, Image pix) const {
  * @param colour colour to draw in
  */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
@@ -975,7 +978,107 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
     window->DrawTo(pos.x(), pos.y());
   }
 }
+#endif
 
+void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const {
+  int16_t stepindex; // index to cstep
+  ICOORD pos;        // current position
+  DIR128 stepdir;    // direction of step
+
+  // WARNING: leptonica PTA coordinates are vertically flipped vs. tesseract coordinates (?huh?)
+  int img_height = pixGetHeight(pix);
+  
+  int color_index = cmap_offset;
+  cmap_offset++;
+  if ((cmap_offset & (64 - 1)) == 0) {
+    cmap_offset--;                  // end of 'local' cmap color range reached: do not overflow the index
+  }
+
+  const int width = 2;
+  PTA* pta = nullptr;
+
+  pos = start; // current position
+  //window->Pen(colour);
+  if (stepcount == 0) {
+    //window->Rectangle(box.left(), box.top(), box.right(), box.bottom());
+    BOX* b = boxCreate(box.left(), img_height - box.top(), box.right() - box.left(), box.bottom() - box.top());
+    pta = generatePtaBox(b, width);
+    boxDestroy(&b);
+  }
+  else {
+    auto x = pos.x();
+    auto y = pos.y();
+    auto x0 = x;
+    auto y0 = y;
+    auto x2 = x;
+    auto y2 = y;
+    //ptaAddPt(pta, x, y);
+    pta = ptaCreate(0);
+
+    stepindex = 0;
+    while (stepindex < stepcount) {
+      pos += step(stepindex); // step to next
+      x2 = pos.x();
+      y2 = pos.y();
+      //ptaAddPt(pta, x2, y2);
+      {
+        PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+      x = x2;
+      y = y2;
+
+      stepdir = step_dir(stepindex);
+      stepindex++; // count steps
+      // merge straight lines
+      while (stepindex < stepcount && stepdir.get_dir() == step_dir(stepindex).get_dir()) {
+        pos += step(stepindex);
+        x2 = pos.x();
+        y2 = pos.y();
+        //ptaAddPt(pta, x2, y2);
+        {
+          PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
+          ptaJoin(pta, pta2, 0, -1);
+          ptaDestroy(&pta2);
+        }
+        x = x2;
+        y = y2;
+
+        stepindex++;
+      }
+      //window->DrawTo(pos.x(), pos.y());
+    }
+
+    // close the poly?
+    if (x2 != x || y2 != y) {
+      {
+        PTA* pta2 = generatePtaWideLine(x2, img_height - y2, x0, img_height - y0, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+    }
+  }
+
+  {
+    PTA* pta2;
+    //ptaRemoveDupsByAset(pta, &pta2);
+    ptaRemoveDupsByHmap(pta, &pta2, nullptr);
+    ptaDestroy(&pta);
+    pta = pta2;
+  }
+
+  int npts = ptaGetCount(pta);
+
+  int r, g, b;
+  uint32_t color = cmap[color_index];
+  extractRGBValues(color, &r, &g, &b);
+  pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
+
+  ptaDestroy(&pta);
+}
+
+#if !GRAPHICS_DISABLED
 /**
  * Draws the outline in the given colour, normalized using the given denorm,
  * making use of sub-pixel accurate information if available.

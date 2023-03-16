@@ -23,9 +23,14 @@
 #include "colpartitiongrid.h"
 #include "colpartitionset.h"
 #include "imagefind.h"
+#include "tesseractclass.h"
 
 #include <algorithm>
 #include <utility>
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
 
 namespace tesseract {
 
@@ -64,10 +69,11 @@ const double kMaxPartitionSpacing = 1.75;
 // decision in GridSmoothNeighbour.
 const int kSmoothDecisionMargin = 4;
 
-ColPartitionGrid::ColPartitionGrid(int gridsize, const ICOORD &bleft,
+ColPartitionGrid::ColPartitionGrid(Tesseract* tess, int gridsize, const ICOORD &bleft,
                                    const ICOORD &tright)
     : BBGrid<ColPartition, ColPartition_CLIST, ColPartition_C_IT>(
-          gridsize, bleft, tright) {}
+          tess, gridsize, bleft, tright) {
+}
 
 // Handles a click event in a display window.
 void ColPartitionGrid::HandleClick(int x, int y) {
@@ -148,7 +154,7 @@ bool ColPartitionGrid::MergePart(
                                                  confirm_cb, &overlap_increase);
     if (neighbour != nullptr && overlap_increase <= 0) {
       if (debug) {
-        tprintf("Merging:hoverlap=%d, voverlap=%d, OLI=%d\n",
+        tprintf("Merging:hoverlap={}, voverlap={}, OLI={}\n",
                 part->HCoreOverlap(*neighbour), part->VCoreOverlap(*neighbour),
                 overlap_increase);
       }
@@ -163,7 +169,7 @@ bool ColPartitionGrid::MergePart(
       any_done = true;
     } else if (neighbour != nullptr) {
       if (debug) {
-        tprintf("Overlapped when merged with increase %d: ", overlap_increase);
+        tprintf("Overlapped when merged with increase {}: ", overlap_increase);
         neighbour->bounding_box().print();
       }
     } else if (debug) {
@@ -198,7 +204,7 @@ static bool OKMergeCandidate(const ColPartition *part,
     int h_dist = -part->HCoreOverlap(*candidate);
     if (h_dist >= std::max(part_box.width(), c_box.width()) / 2) {
       if (debug) {
-        tprintf("Too far away: h_dist = %d\n", h_dist);
+        tprintf("Too far away: h_dist = {}\n", h_dist);
       }
       return false;
     }
@@ -207,7 +213,7 @@ static bool OKMergeCandidate(const ColPartition *part,
     int v_dist = -part->VCoreOverlap(*candidate);
     if (v_dist >= std::max(part_box.height(), c_box.height()) / 2) {
       if (debug) {
-        tprintf("Too far away: v_dist = %d\n", v_dist);
+        tprintf("Too far away: v_dist = {}\n", v_dist);
       }
       return false;
     }
@@ -336,7 +342,7 @@ int ColPartitionGrid::ComputeTotalOverlap(ColPartitionGrid **overlap_grid) {
       int overlap = n_box.intersection(part_box).area();
       if (overlap > 0 && overlap_grid != nullptr) {
         if (*overlap_grid == nullptr) {
-          *overlap_grid = new ColPartitionGrid(gridsize(), bleft(), tright());
+          *overlap_grid = new ColPartitionGrid(tesseract_, gridsize(), bleft(), tright());
         }
         (*overlap_grid)->InsertBBox(true, true, n_it.data()->ShallowCopy());
         if (!any_part_overlap) {
@@ -439,7 +445,7 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
   // we need anything that might be overlapped by the merged box.
   FindOverlappingPartitions(full_box, part, &neighbours);
   if (debug) {
-    tprintf("Finding best merge candidate from %d, %d neighbours for box:",
+    tprintf("Finding best merge candidate from {}, {} neighbours for box:",
             candidates->length(), neighbours.length());
     part_box.print();
   }
@@ -470,7 +476,7 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
       best_increase = increase;
       best_area = cand_box.bounding_union(part_box).area() - cand_box.area();
       if (debug) {
-        tprintf("New best merge candidate has increase %d, area %d, over box:",
+        tprintf("New best merge candidate has increase {}, area {}, over box:",
                 increase, best_area);
         full_box.print();
         candidate->Print();
@@ -508,10 +514,10 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
 
 // Helper to remove the given box from the given partition, put it in its
 // own partition, and add to the partition list.
-static void RemoveBadBox(BLOBNBOX *box, ColPartition *part,
+void ColPartitionGrid::RemoveBadBox(BLOBNBOX *box, ColPartition *part,
                          ColPartition_LIST *part_list) {
   part->RemoveBox(box);
-  ColPartition::MakeBigPartition(box, part_list);
+  ColPartition::MakeBigPartition(tesseract_, box, part_list);
 }
 
 // Split partitions where it reduces overlap between their bounding boxes.
@@ -1176,7 +1182,7 @@ void ColPartitionGrid::FindFigureCaptions() {
           }
         }
         if (debug) {
-          tprintf("Line count=%d, biggest gap %d, smallest%d, mean height %d\n",
+          tprintf("Line count={}, biggest gap {}, smallest{}, mean height {}\n",
                   line_count, biggest_gap, smallest_gap, mean_height);
           if (end_partner != nullptr) {
             tprintf("End partner:");
@@ -1408,7 +1414,7 @@ void ColPartitionGrid::FindMergeCandidates(const ColPartition *part,
         if (debug) {
           tprintf(
               "Combined box overlaps another that is not OK despite"
-              " allowance of %d:",
+              " allowance of {}:",
               ok_overlap);
           neighbour->bounding_box().print();
           tprintf("Reason:");
@@ -1462,7 +1468,7 @@ bool ColPartitionGrid::SmoothRegionType(Image nontext_map, const TBOX &im_box,
     BlobRegionType type = SmoothInOneDirection(dir, nontext_map, im_box,
                                                rerotation, debug, *part, &dist);
     if (debug) {
-      tprintf("Result in dir %d = %d at dist %d\n", dir, type, dist);
+      tprintf("Result in dir {} = {} at dist {}\n", dir, type, dist);
     }
     if (type != BRT_UNKNOWN && dist < best_dist) {
       best_dist = dist;
@@ -1572,7 +1578,7 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
   ICOORD dist_scaling;
   ComputeSearchBoxAndScaling(direction, part_box, gridsize(), &search_box,
                              &dist_scaling);
-  bool image_region = ImageFind::CountPixelsInRotatedBox(
+  bool image_region = tesseract_->image_finder_.CountPixelsInRotatedBox(
                           search_box, im_box, rerotation, nontext_map) > 0;
   std::vector<int> dists[NPT_COUNT];
   AccumulatePartDistances(part, dist_scaling, search_box, nontext_map, im_box,
@@ -1603,7 +1609,7 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
     }
     *best_distance = min_dist;
     if (debug) {
-      tprintf("Totals: htext=%u+%u, vtext=%u+%u, image=%u+%u, at dist=%d\n",
+      tprintf("Totals: htext={}+{}, vtext={}+{}, image={}+{}, at dist={}\n",
               counts[NPT_HTEXT], counts[NPT_WEAK_HTEXT], counts[NPT_VTEXT],
               counts[NPT_WEAK_VTEXT], counts[NPT_IMAGE], image_bias, min_dist);
     }
@@ -1666,7 +1672,7 @@ void ColPartitionGrid::AccumulatePartDistances(
     TBOX nbox = neighbour->bounding_box();
     BlobRegionType n_type = neighbour->blob_type();
     if ((n_type == BRT_TEXT || n_type == BRT_VERT_TEXT) &&
-        !ImageFind::BlankImageInBetween(part_box, nbox, im_box, rerotation,
+        !tesseract_->image_finder_.BlankImageInBetween(part_box, nbox, im_box, rerotation,
                                         nontext_map)) {
       continue; // Text not visible the other side of image.
     }
@@ -1677,7 +1683,7 @@ void ColPartitionGrid::AccumulatePartDistances(
     int y_gap = std::max(part_box.y_gap(nbox), 0);
     int n_dist = x_gap * dist_scaling.x() + y_gap * dist_scaling.y();
     if (debug) {
-      tprintf("Part has x-gap=%d, y=%d, dist=%d at:", x_gap, y_gap, n_dist);
+      tprintf("Part has x-gap={}, y={}, dist={} at:", x_gap, y_gap, n_dist);
       nbox.print();
     }
     // Truncate the number of boxes, so text doesn't get too much advantage.
@@ -1691,7 +1697,7 @@ void ColPartitionGrid::AccumulatePartDistances(
         count_vector = &dists[NPT_VTEXT];
       }
       if (debug) {
-        tprintf("%s %d\n", n_type == BRT_TEXT ? "Htext" : "Vtext", n_boxes);
+        tprintf("{} {}\n", n_type == BRT_TEXT ? "Htext" : "Vtext", n_boxes);
       }
     } else if ((n_type == BRT_TEXT || n_type == BRT_VERT_TEXT) &&
                (n_flow == BTFT_CHAIN || n_flow == BTFT_NEIGHBOURS)) {
@@ -1702,12 +1708,12 @@ void ColPartitionGrid::AccumulatePartDistances(
         count_vector = &dists[NPT_WEAK_VTEXT];
       }
       if (debug) {
-        tprintf("Weak %d\n", n_boxes);
+        tprintf("Weak {}\n", n_boxes);
       }
     } else {
       count_vector = &dists[NPT_IMAGE];
       if (debug) {
-        tprintf("Image %d\n", n_boxes);
+        tprintf("Image {}\n", n_boxes);
       }
     }
     if (count_vector != nullptr) {
@@ -1798,6 +1804,14 @@ int ColPartitionGrid::FindMargin(int x, bool right_to_left, int x_limit,
     x_limit = x_edge;
   }
   return x_limit;
+}
+
+//-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+
+ColPartitionGridSearch::ColPartitionGridSearch(ColPartitionGrid* part_grid)
+  : GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT>(part_grid) {
 }
 
 } // namespace tesseract.

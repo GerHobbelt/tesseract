@@ -35,7 +35,7 @@
 #include "picofeat.h"
 #include "points.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
 
@@ -133,7 +133,7 @@ void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill);
 void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *Proto,
                      TABLE_FILLER *Filler);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);
 
@@ -146,7 +146,7 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
 static ScrollView *IntMatchWindow = nullptr;
 static ScrollView *FeatureDisplayWindow = nullptr;
@@ -356,7 +356,7 @@ void AddProtoToProtoPruner(PROTO_STRUCT *Proto, int ProtoId, INT_CLASS_STRUCT *C
   float Pad;
 
   if (ProtoId >= Class->NumProtos) {
-    tprintf("AddProtoToProtoPruner:assert failed: %d < %d", ProtoId, Class->NumProtos);
+    tprintf("ERROR: AddProtoToProtoPruner:assert failed: {} < {}", ProtoId, Class->NumProtos);
   }
   assert(ProtoId < Class->NumProtos);
 
@@ -411,7 +411,7 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
   return static_cast<uint8_t>(Modulo(bucket, num_buckets));
 } /* CircBucketFor */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * This routine clears the global feature and proto
  * display lists.
@@ -487,7 +487,7 @@ void Classify::ConvertProto(PROTO_STRUCT *Proto, int ProtoId, INT_CLASS_STRUCT *
   Param = (Proto->Length / GetPicoFeatureLength()) + 0.5;
   Class->ProtoLengths[ProtoId] = TruncateParam(Param, 1, 255);
   if (classify_learning_debug_level >= 2) {
-    tprintf("Converted ffeat to (A=%d,B=%d,C=%d,L=%d)", P->A, P->B, P->C,
+    tprintf("Converted ffeat to (A={},B={},C={},L={})", P->A, P->B, P->C,
             Class->ProtoLengths[ProtoId]);
   }
 } /* ConvertProto */
@@ -513,14 +513,16 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
     FClass = &(FloatProtos[ClassId]);
     if (FClass->NumProtos == 0 && FClass->NumConfigs == 0 &&
         strcmp(target_unicharset.id_to_unichar(ClassId), " ") != 0) {
-      tprintf("Warning: no protos/configs for %s in CreateIntTemplates()\n",
+      tprintf("WARNING: no protos/configs for {} in CreateIntTemplates()\n",
               target_unicharset.id_to_unichar(ClassId));
     }
     assert(UnusedClassIdIn(IntTemplates, ClassId));
     IClass = new INT_CLASS_STRUCT(FClass->NumProtos, FClass->NumConfigs);
-    FontSet fs{FClass->font_set.size()};
-    for (unsigned i = 0; i < fs.size(); ++i) {
-      fs[i] = FClass->font_set.at(i);
+    unsigned fs_size = FClass->font_set.size();
+    FontSet fs;
+    fs.reserve(fs_size);
+    for (unsigned i = 0; i < fs_size; ++i) {
+      fs.push_back(FClass->font_set[i]);
     }
     IClass->font_set_id = this->fontset_table_.push_back(fs);
     AddIntClass(IntTemplates, ClassId, IClass);
@@ -544,7 +546,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * This routine renders the specified feature into a
@@ -668,18 +670,18 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   // Read Templates in parts for 64 bit compatibility.
   uint32_t unicharset_size;
   if (fp->FReadEndian(&unicharset_size, sizeof(unicharset_size), 1) != 1) {
-    tprintf("Bad read of inttemp!\n");
+    tprintf("ERROR: Bad read of inttemp!\n");
   }
   int32_t version_id = 0;
   if (fp->FReadEndian(&version_id, sizeof(version_id), 1) != 1 ||
       fp->FReadEndian(&Templates->NumClassPruners, sizeof(Templates->NumClassPruners), 1) != 1) {
-    tprintf("Bad read of inttemp!\n");
+    tprintf("ERROR: Bad read of inttemp!\n");
   }
   if (version_id < 0) {
     // This file has a version id!
     version_id = -version_id;
     if (fp->FReadEndian(&Templates->NumClasses, sizeof(Templates->NumClasses), 1) != 1) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
   } else {
     Templates->NumClasses = version_id;
@@ -693,11 +695,11 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   if (version_id < 2) {
     std::vector<int16_t> IndexFor(MAX_NUM_CLASSES);
     if (fp->FReadEndian(&IndexFor[0], sizeof(IndexFor[0]), unicharset_size) != unicharset_size) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
     if (fp->FReadEndian(&ClassIdFor[0], sizeof(ClassIdFor[0]), Templates->NumClasses) !=
         Templates->NumClasses) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
   }
 
@@ -706,7 +708,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   for (unsigned i = 0; i < Templates->NumClassPruners; i++) {
     Pruner = new CLASS_PRUNER_STRUCT;
     if (fp->FReadEndian(Pruner, sizeof(Pruner->p[0][0][0][0]), kNumBuckets) != kNumBuckets) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
     if (version_id < 2) {
       TempClassPruner[i] = Pruner;
@@ -781,21 +783,21 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
     if (fp->FReadEndian(&Class->NumProtos, sizeof(Class->NumProtos), 1) != 1 ||
         fp->FRead(&Class->NumProtoSets, sizeof(Class->NumProtoSets), 1) != 1 ||
         fp->FRead(&Class->NumConfigs, sizeof(Class->NumConfigs), 1) != 1) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
     if (version_id == 0) {
       // Only version 0 writes 5 pointless pointers to the file.
       for (j = 0; j < 5; ++j) {
         int32_t junk;
         if (fp->FRead(&junk, sizeof(junk), 1) != 1) {
-          tprintf("Bad read of inttemp!\n");
+          tprintf("ERROR: Bad read of inttemp!\n");
         }
       }
     }
     unsigned num_configs = version_id < 4 ? MaxNumConfigs : Class->NumConfigs;
     ASSERT_HOST(num_configs <= MaxNumConfigs);
     if (fp->FReadEndian(Class->ConfigLengths, sizeof(uint16_t), num_configs) != num_configs) {
-      tprintf("Bad read of inttemp!\n");
+      tprintf("ERROR: Bad read of inttemp!\n");
     }
     if (version_id < 2) {
       ClassForClassId(Templates, ClassIdFor[i]) = Class;
@@ -809,7 +811,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
       Class->ProtoLengths.resize(MaxNumIntProtosIn(Class));
       if (fp->FRead(&Class->ProtoLengths[0], sizeof(uint8_t), MaxNumIntProtosIn(Class)) !=
           MaxNumIntProtosIn(Class)) {
-        tprintf("Bad read of inttemp!\n");
+        tprintf("ERROR: Bad read of inttemp!\n");
       }
     }
 
@@ -819,18 +821,18 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
       unsigned num_buckets = NUM_PP_PARAMS * NUM_PP_BUCKETS * WERDS_PER_PP_VECTOR;
       if (fp->FReadEndian(&ProtoSet->ProtoPruner, sizeof(ProtoSet->ProtoPruner[0][0][0]),
                           num_buckets) != num_buckets) {
-        tprintf("Bad read of inttemp!\n");
+        tprintf("ERROR: Bad read of inttemp!\n");
       }
       for (x = 0; x < PROTOS_PER_PROTO_SET; x++) {
         if (fp->FRead(&ProtoSet->Protos[x].A, sizeof(ProtoSet->Protos[x].A), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].B, sizeof(ProtoSet->Protos[x].B), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].C, sizeof(ProtoSet->Protos[x].C), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].Angle, sizeof(ProtoSet->Protos[x].Angle), 1) != 1) {
-          tprintf("Bad read of inttemp!\n");
+          tprintf("ERROR: Bad read of inttemp!\n");
         }
         if (fp->FReadEndian(&ProtoSet->Protos[x].Configs, sizeof(ProtoSet->Protos[x].Configs[0]),
                             WerdsPerConfigVec) != WerdsPerConfigVec) {
-          tprintf("Bad read of inttemp!\n");
+          tprintf("ERROR: Bad read of inttemp!\n");
         }
       }
       Class->ProtoSets[j] = ProtoSet;
@@ -857,7 +859,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
         }
       } else {
         if (ClassForClassId(Templates, i) != nullptr) {
-          fprintf(stderr, "Class id %u exceeds NumClassesIn (Templates) %u\n", i,
+          tprintf("ERROR: Class id {} exceeds NumClassesIn (Templates) {}\n", i,
                   Templates->NumClasses);
           exit(1);
         }
@@ -879,7 +881,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -952,13 +954,13 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
 void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES_STRUCT *Templates,
                                  const UNICHARSET &target_unicharset) {
   INT_CLASS_STRUCT *Class;
-  auto unicharset_size = target_unicharset.size();
+  uint32_t unicharset_size = target_unicharset.size();
   int version_id = -5; // When negated by the reader -1 becomes +1 etc.
 
   if (Templates->NumClasses != unicharset_size) {
     tprintf(
-        "Warning: executing WriteIntTemplates() with %d classes in"
-        " Templates, while target_unicharset size is %zu\n",
+        "WARNING: Executing WriteIntTemplates() with {} classes in"
+        " Templates, while target_unicharset size is {}\n",
         Templates->NumClasses, unicharset_size);
   }
 
@@ -1136,7 +1138,7 @@ void FillPPCircularBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR]
     LastBucket -= NUM_PP_BUCKETS;
   }
   if (debug) {
-    tprintf("Circular fill from %d to %d", FirstBucket, LastBucket);
+    tprintf("Circular fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; true; CircularIncrement(i, NUM_PP_BUCKETS)) {
     SET_BIT(ParamTable[i], Bit);
@@ -1178,7 +1180,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
   }
 
   if (debug) {
-    tprintf("Linear fill from %d to %d", FirstBucket, LastBucket);
+    tprintf("Linear fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; i <= LastBucket; i++) {
     SET_BIT(ParamTable[i], Bit);
@@ -1188,7 +1190,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -1204,7 +1206,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
  */
 CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *pretrained_on,
                                    int *shape_id) {
-  tprintf("%s\n", Prompt);
+  tprintf("{}\n", Prompt);
   SVEventType ev_type;
   int unichar_id = INVALID_UNICHAR_ID;
   // Wait until a click or popup event.
@@ -1220,12 +1222,12 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           if (*shape_id >= 0 && static_cast<unsigned>(*shape_id) < shape_table_->NumShapes()) {
             int font_id;
             shape_table_->GetFirstUnicharAndFont(*shape_id, &unichar_id, &font_id);
-            tprintf("Shape %d, first unichar=%d, font=%d\n", *shape_id, unichar_id, font_id);
+            tprintf("Shape {}, first unichar={}, font={}\n", *shape_id, unichar_id, font_id);
             return unichar_id;
           }
-          tprintf("Shape index '%s' not found in shape table\n", ev->parameter);
+          tprintf("Shape index '{}' not found in shape table\n", ev->parameter);
         } else {
-          tprintf("No shape table loaded!\n");
+          tprintf("WARNING: No shape table loaded!\n");
         }
       } else {
         if (unicharset.contains_unichar(ev->parameter)) {
@@ -1247,11 +1249,11 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           }
           for (unsigned s = 0; s < shape_table_->NumShapes(); ++s) {
             if (shape_table_->GetShape(s).ContainsUnichar(unichar_id)) {
-              tprintf("%s\n", shape_table_->DebugStr(s).c_str());
+              tprintf("{}\n", shape_table_->DebugStr(s).c_str());
             }
           }
         } else {
-          tprintf("Char class '%s' not found in unicharset", ev->parameter);
+          tprintf("ERROR: Char class '{}' not found in unicharset.", ev->parameter);
         }
       }
     }
@@ -1532,7 +1534,7 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * This routine renders the specified feature into ShapeList.
@@ -1626,7 +1628,7 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
 #endif
 
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 /**
  * Initializes the int matcher window if it is not already

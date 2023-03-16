@@ -250,7 +250,7 @@ public:
   // that threshold. The line_box is used for computing the
   // box_word in the output words. worst_dict_cert is the worst certainty that
   // will be used in a dictionary word.
-  void RecognizeLine(const ImageData &image_data, float invert_threshold, bool debug, double worst_dict_cert,
+  void RecognizeLine(const ImageData &image_data, float invert_threshold, double worst_dict_cert,
                      const TBOX &line_box, PointerVector<WERD_RES> *words, int lstm_choice_mode = 0,
                      int lstm_choice_amount = 5);
 
@@ -265,7 +265,7 @@ public:
   // improve the results. This ensures that outputs contains the correct
   // forward outputs for the best photometric interpretation.
   // inputs is filled with the used inputs to the network.
-  bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool debug, bool re_invert,
+  bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool re_invert,
                      bool upside_down, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
 
   // Converts an array of labels to utf-8, whether or not the labels are
@@ -363,6 +363,17 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
+  bool debug_ = false;
+
+public:
+  void SetDebug(bool v) {
+	debug_ = v;
+  }
+  bool HasDebug() const {
+	  return debug_;
+  }
+
+protected:
   // Recognition debug display window.
   ScrollView *debug_win_;
 };

@@ -216,10 +216,10 @@ void remove_edgept(EDGEPT *point) {
  * Shows the coordinates of both points in a split.
  **********************************************************************/
 void SPLIT::Print() const {
-  tprintf("(%d,%d)--(%d,%d)", point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
+  tprintf("({},{})--({},{})", point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Draws the split in the given window.
 void SPLIT::Mark(ScrollView *window) const {
   window->Pen(ScrollView::GREEN);

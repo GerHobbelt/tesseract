@@ -738,7 +738,7 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     PrintScriptDirs(dirs);
     tprintf("Logical textline order [{}/P={}]: ", 
-    static_cast<void *>(it_->row()),
+            static_cast<void *>(it_->row()),
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     for (int i : textline_order) {
       tprintf("{} ", i);

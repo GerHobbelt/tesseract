@@ -42,6 +42,7 @@ public:
   // Member variables.
 
   INT_VAR_H(classify_debug_level);
+  BOOL_VAR_H(tess_debug_lstm);
   BOOL_VAR_H(classify_bln_numeric_mode);
   double_VAR_H(classify_max_rating_ratio);
   double_VAR_H(classify_max_certainty_margin);
@@ -195,9 +196,9 @@ public:
   void AddNewResult(const UnicharRating &new_result, ADAPT_RESULTS *results);
   int GetAdaptiveFeatures(TBLOB *Blob, INT_FEATURE_ARRAY IntFeatures, FEATURE_SET *FloatFeatures);
 
-#  ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void DebugAdaptiveClassifier(TBLOB *Blob, ADAPT_RESULTS *Results);
-#  endif
+#endif
   PROTO_ID MakeNewTempProtos(FEATURE_SET Features, int NumBadFeat, FEATURE_ID BadFeat[],
                              INT_CLASS_STRUCT *IClass, ADAPT_CLASS_STRUCT *Class, BIT_VECTOR TempProtoMask);
   int MakeNewTemporaryConfig(ADAPT_TEMPLATES_STRUCT *Templates, CLASS_ID ClassId, int FontinfoId,
@@ -269,7 +270,7 @@ public:
     return AdaptedTemplates->NumPermClasses == 0;
   }
   bool LooksLikeGarbage(TBLOB *blob);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void RefreshDebugWindow(ScrollView **win, const char *msg, int y_offset, const TBOX &wbox);
 #endif
   // intfx.cpp
@@ -363,6 +364,7 @@ public:
   BOOL_VAR_H(prioritize_division);
   BOOL_VAR_H(classify_enable_learning);
   INT_VAR_H(classify_debug_level);
+  BOOL_VAR_H(tess_debug_lstm);
 
   /* mfoutline.cpp ***********************************************************/
   /* control knobs used to control normalization of outlines */
@@ -453,7 +455,7 @@ protected:
 private:
   // The currently active static classifier.
   ShapeClassifier *static_classifier_ = nullptr;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   ScrollView *learn_debug_win_ = nullptr;
   ScrollView *learn_fragmented_word_debug_win_ = nullptr;
   ScrollView *learn_fragments_debug_win_ = nullptr;
@@ -482,6 +484,7 @@ private:
 
 public:
   bool EnableLearning = true;
+  bool UseLearning = true;
 };
 
 } // namespace tesseract

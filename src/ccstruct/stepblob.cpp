@@ -96,7 +96,7 @@ static void position_outline( // put in place
  * in the child colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST *list,          // outline to draw
     ScrollView *window,            // window to draw in
@@ -115,6 +115,31 @@ static void plot_outline_list(     // draw outlines
     }
   }
 }
+#endif
+
+static void plot_outline_list(     // draw outlines
+    C_OUTLINE_LIST* list,          // outline to draw
+    Image& pix,
+    std::vector<uint32_t>& cmap, int& cmap_offset, bool noise
+) {
+  C_OUTLINE* outline;     // current outline
+  C_OUTLINE_IT it = list; // iterator
+
+  // keep the color for the siblings identical, so there's more color range for children:
+  int color0 = cmap_offset;
+
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    outline = it.data();
+    // draw it
+    cmap_offset = color0;
+    outline->plot(pix, cmap, cmap_offset, noise);
+    if (!outline->child()->empty()) {
+      plot_outline_list(outline->child(), pix, cmap, cmap_offset, noise);
+    }
+  }
+}
+
+#if !GRAPHICS_DISABLED
 // Draws the outlines in the given colour, and child_colour, normalized
 // using the given denorm, making use of sub-pixel accurate information
 // if available.
@@ -522,12 +547,19 @@ Image C_BLOB::render_outline() {
  * Draw the C_BLOB in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void C_BLOB::plot(ScrollView *window,               // window to draw in
                   ScrollView::Color blob_colour,    // main colour
                   ScrollView::Color child_colour) { // for holes
   plot_outline_list(&outlines, window, blob_colour, child_colour);
 }
+#endif
+
+void C_BLOB::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) {
+  plot_outline_list(&outlines, pix, cmap, cmap_offset, noise);
+}
+
+#if !GRAPHICS_DISABLED
 // Draws the blob in the given colour, and child_colour, normalized
 // using the given denorm, making use of sub-pixel accurate information
 // if available.

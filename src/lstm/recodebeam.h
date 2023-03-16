@@ -138,7 +138,7 @@ struct RecodeNode {
     delete dawgs;
   }
   // Prints details of the node.
-  void Print(int null_char, const UNICHARSET &unicharset, int depth) const;
+  std::string Print(int null_char, const UNICHARSET *unicharset, int depth) const;
 
   // The re-encoded code here = index to network output.
   int code;
@@ -188,32 +188,32 @@ public:
   // Decodes the set of network outputs, storing the lattice internally.
   // If charset is not null, it enables detailed debugging of the beam search.
   void Decode(const NetworkIO &output, double dict_ratio, double cert_offset,
-              double worst_dict_cert, const UNICHARSET *charset, int lstm_choice_mode = 0);
+              double worst_dict_cert, const UNICHARSET *charset, int lstm_choice_mode);
   void Decode(const GENERIC_2D_ARRAY<float> &output, double dict_ratio, double cert_offset,
               double worst_dict_cert, const UNICHARSET *charset);
 
   void DecodeSecondaryBeams(const NetworkIO &output, double dict_ratio, double cert_offset,
                             double worst_dict_cert, const UNICHARSET *charset,
-                            int lstm_choice_mode = 0);
+                            int lstm_choice_mode);
 
   // Returns the best path as labels/scores/xcoords similar to simple CTC.
   void ExtractBestPathAsLabels(std::vector<int> *labels, std::vector<int> *xcoords) const;
   // Returns the best path as unichar-ids/certs/ratings/xcoords skipping
   // duplicates, nulls and intermediate parts.
-  void ExtractBestPathAsUnicharIds(bool debug, const UNICHARSET *unicharset,
+  void ExtractBestPathAsUnicharIds(const UNICHARSET *unicharset,
                                    std::vector<int> *unichar_ids, std::vector<float> *certs,
                                    std::vector<float> *ratings, std::vector<int> *xcoords) const;
 
   // Returns the best path as a set of WERD_RES.
-  void ExtractBestPathAsWords(const TBOX &line_box, float scale_factor, bool debug,
+  void ExtractBestPathAsWords(const TBOX &line_box, float scale_factor, 
                               const UNICHARSET *unicharset, PointerVector<WERD_RES> *words,
-                              int lstm_choice_mode = 0);
+                              int lstm_choice_mode);
 
   // Generates debug output of the content of the beams after a Decode.
-  void DebugBeams(const UNICHARSET &unicharset) const;
+  void DebugBeams(const UNICHARSET *unicharset) const;
 
-  // Extract the best charakters from the current decode iteration and block
-  // those symbols for the next iteration. In contrast to tesseracts standard
+  // Extract the best characters from the current decode iteration and block
+  // those symbols for the next iteration. In contrast to Tesseract's standard
   // method to chose the best overall node chain, this methods looks at a short
   // node chain segmented by the character boundaries and chooses the best
   // option independent of the remaining node chain.
@@ -298,7 +298,7 @@ private:
   using TopPair = KDPairInc<float, int>;
 
   // Generates debug output of the content of a single beam position.
-  void DebugBeamPos(const UNICHARSET &unicharset, const RecodeHeap &heap) const;
+  void DebugBeamPos(const UNICHARSET *unicharset, const RecodeHeap &heap) const;
 
   // Returns the given best_nodes as unichar-ids/certs/ratings/xcoords skipping
   // duplicates, nulls and intermediate parts.
@@ -324,10 +324,10 @@ private:
   // time-step in sequence from left to right. outputs is the activation vector
   // for the current timestep.
   void DecodeStep(const float *outputs, int t, double dict_ratio, double cert_offset,
-                  double worst_dict_cert, const UNICHARSET *charset, bool debug = false);
+                  double worst_dict_cert, const UNICHARSET *charset);
 
   void DecodeSecondaryStep(const float *outputs, int t, double dict_ratio, double cert_offset,
-                           double worst_dict_cert, const UNICHARSET *charset, bool debug = false);
+                           double worst_dict_cert, const UNICHARSET *charset);
 
   // Saves the most certain choices for the current time-step.
   void SaveMostCertainChoices(const float *outputs, int num_outputs, const UNICHARSET *charset,
@@ -423,6 +423,17 @@ private:
   bool is_simple_text_;
   // The encoded (class label) of the null/reject character.
   int null_char_;
+
+  // == Debugging parameters.==
+  bool debug_ = false;
+
+public:
+	void SetDebug(bool v) {
+		debug_ = v;
+	}
+	bool HasDebug() const {
+		return debug_;
+	}
 };
 
 } // namespace tesseract.

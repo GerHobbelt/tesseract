@@ -26,20 +26,17 @@ namespace tesseract {
 
 Classify::Classify()
     : INT_MEMBER(classify_debug_level, 0, "Classify debug level", this->params())
-    ,
+    , BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
 
-    BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
-    ,
+    , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
 
-    double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
+    , double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
                   this->params())
-    ,
 
-    double_MEMBER(classify_max_certainty_margin, 5.5,
+    , double_MEMBER(classify_max_certainty_margin, 5.5,
                   "Veto difference between classifier certainties", this->params())
-    ,
 
-    dict_(this) {}
+    , dict_(this) {}
 
 Classify::~Classify() {}
 
@@ -63,7 +60,8 @@ Classify::Classify()
                   this->params())
     , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", this->params())
     , INT_MEMBER(classify_debug_level, 0, "Classify debug level", this->params())
-    , INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
+	, BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
+	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
     , double_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
                     this->params())
     , double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
@@ -149,7 +147,7 @@ Classify::Classify()
 
 Classify::~Classify() {
   EndAdaptiveClassifier();
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   delete learn_debug_win_;
   delete learn_fragmented_word_debug_win_;
   delete learn_fragments_debug_win_;

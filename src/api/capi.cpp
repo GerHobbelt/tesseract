@@ -15,11 +15,9 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/debugheap.h>
 #include <tesseract/capi.h>
 
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 const char *TessVersion() {
   return TessBaseAPI::Version();

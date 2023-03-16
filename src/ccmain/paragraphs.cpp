@@ -34,10 +34,15 @@
 #include "tprintf.h"             // for tprintf
 #include "unicharset.h"          // for UNICHARSET
 #include "werd.h"                // for WERD, W_REP_CHAR
+#include "tesseractclass.h"
 
 #include <tesseract/pageiterator.h> // for PageIterator
 #include <tesseract/publictypes.h>  // for JUSTIFICATION_LEFT, JUSTIFICATION_R...
 #include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID, U8
+
+#include <fmt/printf.h> 
+#include <fmt/core.h> 
+#include <fmt/format.h>       // for fmt
 
 #include <algorithm> // for max
 #include <cctype>    // for isspace
@@ -112,20 +117,23 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
     }
   }
 
-  std::vector<std::string> col_width_patterns;
-  col_width_patterns.reserve(max_col_widths.size());
+  size_t linewidth = 0;
   for (int max_col_width : max_col_widths) {
-    col_width_patterns.push_back(std::string("%-") + std::to_string(max_col_width) + "s");
+    linewidth += max_col_width;
   }
 
+  linewidth += max_col_widths.size() * strlen(colsep);
   for (const auto &row : rows) {
+    std::string msg;
+    msg.reserve(linewidth);
     for (unsigned c = 0; c < row.size(); c++) {
       if (c > 0) {
-        tprintf("{}", colsep);
+        msg += fmt::format("{}", colsep);
       }
-      tprintf(col_width_patterns[c].c_str(), row[c].c_str());
+      msg += fmt::format("{:<{}s}", row[c], max_col_widths[c]);
+      //msg += fmt::sprintf("%-*s", max_col_widths[c], row[c].c_str());
     }
-    tprintf("\n");
+    tprintf("{}\n", msg.c_str());
   }
 }
 
@@ -514,8 +522,12 @@ void RowScratchRegisters::AppendDebugHeaderFields(std::vector<std::string> &head
 
 void RowScratchRegisters::AppendDebugInfo(const ParagraphTheory &theory,
                                           std::vector<std::string> &dbg) const {
-  char s[30];
-  snprintf(s, sizeof(s), "[%3d,%3d;%3d,%3d]", lmargin_, lindent_, rindent_, rmargin_);
+  char s[60];
+  // The largest (positive and negative) numbers are reported for lindent & rindent.
+  // While the column header has widths 5,4,4,5, it is therefore opportune to slightly
+  // offset the widths in the format string here to allow ample space for lindent & rindent
+  // while keeping the final table output nicely readable: 4,5,5,4.
+  snprintf(s, sizeof(s), "[%4d,%5d;%5d,%4d]", lmargin_, lindent_, rindent_, rmargin_);
   dbg.emplace_back(s);
   std::string model_string;
   model_string += static_cast<char>(GetLineType());
@@ -568,7 +580,7 @@ LineType RowScratchRegisters::GetLineType() const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: %c\n", hypothese.ty);
+        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }
@@ -596,7 +608,7 @@ LineType RowScratchRegisters::GetLineType(const ParagraphModel *model) const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: %c\n", hypothese.ty);
+        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }
@@ -2311,7 +2323,7 @@ void CanonicalizeDetectionResults(std::vector<PARA *> *row_owners, PARA_LIST *pa
 //   paragraphs - this is the actual list of PARA objects.
 //   models - the list of paragraph models referenced by the PARA objects.
 //            caller is responsible for deleting the models.
-void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
+void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
                       std::vector<PARA *> *row_owners, PARA_LIST *paragraphs,
                       std::vector<ParagraphModel *> *models) {
   ParagraphTheory theory(models);
@@ -2333,6 +2345,7 @@ void DetectParagraphs(int debug_level, std::vector<RowInfo> *row_infos,
   //   be a paragraph of its own.
   SeparateSimpleLeaderLines(&rows, 0, rows.size(), &theory);
 
+  int debug_level = this->paragraph_debug_level;
   DebugDump(debug_level > 1, "End of Pass 1", theory, rows);
 
   std::vector<Interval> leftovers;
@@ -2555,7 +2568,7 @@ static void InitializeRowInfo(bool after_recognition, const MutableIterator &it,
 // This is called after rows have been identified and words are recognized.
 // Much of this could be implemented before word recognition, but text helps
 // to identify bulleted lists and gives good signals for sentence boundaries.
-void DetectParagraphs(int debug_level, bool after_text_recognition,
+void Tesseract::DetectParagraphs(bool after_text_recognition,
                       const MutableIterator *block_start, std::vector<ParagraphModel *> *models) {
   // Clear out any preconceived notions.
   if (block_start->Empty(RIL_TEXTLINE)) {
@@ -2608,7 +2621,7 @@ void DetectParagraphs(int debug_level, bool after_text_recognition,
   std::vector<PARA *> row_owners;
   std::vector<PARA *> the_paragraphs;
   if (!is_image_block) {
-    DetectParagraphs(debug_level, &row_infos, &row_owners, block->para_list(), models);
+    DetectParagraphs(&row_infos, &row_owners, block->para_list(), models);
   } else {
     row_owners.resize(row_infos.size());
     CanonicalizeDetectionResults(&row_owners, block->para_list());

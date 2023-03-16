@@ -153,7 +153,7 @@ bool BLOB_CHOICE::PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool
   double baseline_diff = std::fabs(yshift() - other.yshift());
   if (baseline_diff > kMaxBaselineDrift * x_height) {
     if (debug) {
-      tprintf("Baseline diff %g for %d v %d\n", baseline_diff, unichar_id_, other.unichar_id_);
+      tprintf("Baseline diff {} for {} v {}\n", baseline_diff, unichar_id_, other.unichar_id_);
     }
     return false;
   }
@@ -165,7 +165,7 @@ bool BLOB_CHOICE::PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool
       std::min(max_xheight(), other.max_xheight()) - std::max(min_xheight(), other.min_xheight());
   overlap /= denominator;
   if (debug) {
-    tprintf("PosAndSize for %d v %d: bl diff = %g, ranges %g, %g / %g ->%g\n", unichar_id_,
+    tprintf("PosAndSize for {} v {}: bl diff = {}, ranges {}, {} / {} ->{}\n", unichar_id_,
             other.unichar_id_, baseline_diff, this_range, other_range, denominator, overlap);
   }
 
@@ -475,7 +475,7 @@ WERD_CHOICE &WERD_CHOICE::operator+=(const WERD_CHOICE &second) {
   if (second.adjust_factor_ > adjust_factor_) {
     adjust_factor_ = second.adjust_factor_;
   }
-  rating_ += second.rating();          // add ratings
+  rating_ += second.rating();            // add ratings
   if (second.certainty() < certainty_) { // take min
     certainty_ = second.certainty();
   }
@@ -524,7 +524,7 @@ WERD_CHOICE &WERD_CHOICE::operator=(const WERD_CHOICE &source) {
 // bounding boxes, *this to get the unichars, and this->unicharset
 // to get the target positions. If small_caps is true, sub/super are not
 // considered, but dropcaps are.
-// NOTE: blobs_list should be the chopped_word blobs. (Fully segemented.)
+// NOTE: blobs_list should be the chopped_word blobs. (Fully segmented.)
 void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
   // Initialize to normal.
   for (unsigned i = 0; i < length_; ++i) {
@@ -562,15 +562,15 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
       4 * position_counts[tesseract::SP_SUPERSCRIPT] > 3 * length_) {
     if (debug >= 2) {
       tprintf(
-          "WARNING: Most characters of %s are subscript or superscript.\n"
+          "WARNING: Most characters of {} are subscript or superscript.\n"
           "That seems wrong, so I'll assume we got the baseline wrong\n",
-          unichar_string().c_str());
+          unichar_string());
     }
     for (unsigned i = 0; i < length_; i++) {
       ScriptPos sp = script_pos_[i];
       if (sp == tesseract::SP_SUBSCRIPT || sp == tesseract::SP_SUPERSCRIPT) {
         ASSERT_HOST(position_counts[sp] > 0);
-	position_counts[sp]--;
+        position_counts[sp]--;
         position_counts[tesseract::SP_NORMAL]++;
         script_pos_[i] = tesseract::SP_NORMAL;
       }
@@ -578,14 +578,14 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
   }
 
   if ((debug >= 1 && position_counts[tesseract::SP_NORMAL] < length_) || debug >= 2) {
-    tprintf("SetScriptPosition on %s\n", unichar_string().c_str());
+    tprintf("SetScriptPosition on {}\n", unichar_string());
     int chunk_index = 0;
     for (unsigned blob_index = 0; blob_index < length_; ++blob_index) {
       if (debug >= 2 || script_pos_[blob_index] != tesseract::SP_NORMAL) {
         TBLOB *tblob = word->blobs[chunk_index];
         ScriptPositionOf(true, *unicharset_, tblob->bounding_box(), unichar_id(blob_index));
       }
-      chunk_index += state_.empty() ? 1 :  state_[blob_index];
+      chunk_index += state_.empty() ? 1 : state_[blob_index];
     }
   }
 }
@@ -620,9 +620,9 @@ ScriptPos WERD_CHOICE::ScriptPositionOf(bool print_debug, const UNICHARSET &unic
   if (print_debug) {
     const char *pos = ScriptPosToString(retval);
     tprintf(
-        "%s Character %s[bot:%d top: %d]  "
-        "bot_range[%d,%d]  top_range[%d, %d] "
-        "sub_thresh[bot:%d top:%d]  sup_thresh_bot %d\n",
+        "{} Character {}[bot:{} top: {}]  "
+        "bot_range[{},{}]  top_range[{}, {}] "
+        "sub_thresh[bot:{} top:{}]  sup_thresh_bot {}\n",
         pos, unicharset.id_to_unichar(unichar_id), bottom, top, min_bottom, max_bottom, min_top,
         max_top, sub_thresh_bot, sub_thresh_top, sup_thresh_bot);
   }
@@ -689,41 +689,41 @@ unsigned WERD_CHOICE::TotalOfStates() const {
  * Print WERD_CHOICE to stdout.
  */
 void WERD_CHOICE::print(const char *msg) const {
-  tprintf("%s : ", msg);
+  tprintf("{} : ", msg);
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("%s", unicharset_->id_to_unichar(unichar_ids_[i]));
+    tprintf("{}", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
-  tprintf(" : R=%g, C=%g, F=%g, Perm=%d, xht=[%g,%g], ambig=%d\n", rating_, certainty_,
+  tprintf(" : R={}, C={}, F={}, Perm={}, xht=[{},{}], ambig={}\n", rating_, certainty_,
           adjust_factor_, permuter_, min_x_height_, max_x_height_, dangerous_ambig_found_);
   tprintf("pos");
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t%s", ScriptPosToString(script_pos_[i]));
+    tprintf("\t{}", ScriptPosToString(script_pos_[i]));
   }
   tprintf("\nstr");
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t%s", unicharset_->id_to_unichar(unichar_ids_[i]));
+    tprintf("\t{}", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
   tprintf("\nstate:");
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t%d ", state_[i]);
+    tprintf("\t{} ", state_[i]);
   }
   tprintf("\nC");
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t%.3f", certainties_[i]);
+    tprintf("\t{}", certainties_[i]);
   }
   tprintf("\n");
 }
 
 // Prints the segmentation state with an introductory message.
 void WERD_CHOICE::print_state(const char *msg) const {
-  tprintf("%s", msg);
+  tprintf("{}", msg);
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf(" %d", state_[i]);
+    tprintf(" {}", state_[i]);
   }
   tprintf("\n");
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the segmentation state of *this (if not the same as the last
 // one displayed) and waits for a click in the window.
@@ -793,6 +793,39 @@ bool EqualIgnoringCaseAndTerminalPunct(const WERD_CHOICE &word1, const WERD_CHOI
   return true;
 }
 
+bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1,
+                                       const WERD_CHOICE &word2) {
+  const UNICHARSET *uchset = word1.unicharset();
+  if (word2.unicharset() != uchset) {
+    return false;
+  }
+  std::vector<int> w1nonpunct;
+  std::vector<int> w2nonpunct;
+
+  for (int i = 0; i < word1.length(); i++) {
+    if (!uchset->get_ispunctuation(word1.unichar_id(i))) {
+      w1nonpunct.push_back(i);
+    }
+  }
+
+  for (int i = 0; i < word2.length(); i++) {
+    if (!uchset->get_ispunctuation(word2.unichar_id(i))) {
+      w2nonpunct.push_back(i);
+    }
+  }
+
+  if (w1nonpunct.size() != w2nonpunct.size()) {
+    return false;
+  }
+  for (unsigned i = 0; i < w1nonpunct.size(); i++) {
+    if (uchset->to_lower(word1.unichar_id(w1nonpunct[i])) !=
+        uchset->to_lower(word2.unichar_id(w2nonpunct[i]))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * print_ratings_list
  *
@@ -806,11 +839,11 @@ bool EqualIgnoringCaseAndTerminalPunct(const WERD_CHOICE &word1, const WERD_CHOI
 void print_ratings_list(const char *msg, BLOB_CHOICE_LIST *ratings,
                         const UNICHARSET &current_unicharset) {
   if (ratings->empty()) {
-    tprintf("%s:<none>\n", msg);
+    tprintf("{}:<none>\n", msg);
     return;
   }
   if (*msg != '\0') {
-    tprintf("%s\n", msg);
+    tprintf("{}\n", msg);
   }
   BLOB_CHOICE_IT c_it;
   c_it.set_to_list(ratings);

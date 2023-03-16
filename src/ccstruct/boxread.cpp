@@ -43,7 +43,7 @@ static std::string BoxFileName(const char *image_filename) {
   std::string box_filename = image_filename;
   size_t length = box_filename.length();
   std::string last = (length > 8) ? box_filename.substr(length - 8) : "";
-  if (last == ".bin.png" || last == ".nrm.png") {
+  if (last == ".bin.png" || last == ".nrm.png" || last == ".raw.png") {
     box_filename.resize(length - 8);
   } else {
     size_t lastdot = box_filename.find_last_of('.');
@@ -61,6 +61,7 @@ FILE *OpenBoxFile(const char *fname) {
   FILE *box_file = nullptr;
   if (!(box_file = fopen(filename.c_str(), "rb"))) {
     CANTOPENFILE.error("read_next_box", TESSEXIT, "Can't open box file %s", filename.c_str());
+    tprintf("Can't open box file %s", filename.c_str());
   }
   return box_file;
 }
@@ -76,8 +77,14 @@ bool ReadAllBoxes(int target_page, bool skip_blanks, const char *filename, std::
                   std::vector<std::string> *texts, std::vector<std::string> *box_texts,
                   std::vector<int> *pages) {
   std::ifstream input(BoxFileName(filename).c_str(), std::ios::in | std::ios::binary);
+  if (input.fail()) {
+    tprintf("Cannot read box data from '%s'.\n", BoxFileName(filename).c_str());
+    tprintf("Does it exists?\n");
+    return false;
+  }
   std::vector<char> box_data(std::istreambuf_iterator<char>(input), {});
   if (box_data.empty()) {
+    tprintf("No box data found in '%s'.\n", BoxFileName(filename).c_str());
     return false;
   }
   // Convert the array of bytes to a string, so it can be used by the parser.
@@ -174,7 +181,7 @@ bool ReadNextBox(int target_page, int *line_number, FILE *box_file, std::string 
     }
     if (*buffptr != '\0') {
       if (!ParseBoxFileStr(buffptr, &page, utf8_str, bounding_box)) {
-        tprintf("ERROR: Box file format error on line %i; ignored\n", *line_number);
+        tprintf("ERROR: Box file format error on line {}; ignored\n", *line_number);
         continue;
       }
       if (target_page >= 0 && target_page != page) {
@@ -253,7 +260,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
     tesseract::UNICHAR ch(uch + used, uch_len - used);
     int new_used = ch.utf8_len();
     if (new_used == 0) {
-      tprintf("ERROR: Bad UTF-8 str %s starts with 0x%02x at col %d\n", uch + used, uch[used], used + 1);
+      tprintf("ERROR: Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
       return false;
     }
     used += new_used;

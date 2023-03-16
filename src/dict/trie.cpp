@@ -192,13 +192,13 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     unichar_id = word.unichar_id(i);
     marker_flag = (repetitions != nullptr) ? (*repetitions)[i] : false;
     if (debug_level_ > 1) {
-      tprintf("Adding letter %d\n", unichar_id);
+      tprintf("Adding letter {}\n", unichar_id);
     }
     if (still_finding_chars) {
       found = edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, word_end, unichar_id, &edge_ptr,
                            &edge_index);
       if (found && debug_level_ > 1) {
-        tprintf("exploring edge {} in node {}\n", edge_index, last_node);
+        tprintf("Exploring edge {} in node {}\n", edge_index, last_node);
       }
       if (!found) {
         still_finding_chars = false;
@@ -224,7 +224,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     if (!still_finding_chars) {
       the_next_node = new_dawg_node();
       if (debug_level_ > 1) {
-        tprintf("adding node {}\n", the_next_node);
+        tprintf("Adding node {}\n", the_next_node);
       }
       if (the_next_node == 0) {
         add_failed = true;
@@ -242,7 +242,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
   unichar_id = word.unichar_id(i);
   marker_flag = (repetitions != nullptr) ? (*repetitions)[i] : false;
   if (debug_level_ > 1) {
-    tprintf("Adding letter %d\n", unichar_id);
+    tprintf("Adding letter {}\n", unichar_id);
   }
   if (still_finding_chars &&
       edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, false, unichar_id, &edge_ptr, &edge_index)) {
@@ -298,12 +298,12 @@ bool Trie::read_word_list(const char *filename, std::vector<std::string> *words)
     std::string word_str(line_str);
     ++word_count;
     if (debug_level_ && word_count % 10000 == 0) {
-      tprintf("Read %d words so far\n", word_count);
+      tprintf("Read {} words so far\n", word_count);
     }
     words->push_back(word_str);
   }
   if (debug_level_) {
-    tprintf("Read %d words total.\n", word_count);
+    tprintf("Read {} words total.\n", word_count);
   }
   fclose(word_file);
   return true;
@@ -323,7 +323,7 @@ bool Trie::add_word_list(const std::vector<std::string> &words, const UNICHARSET
     if (!word_in_dawg(word)) {
       add_word_to_dawg(word);
       if (!word_in_dawg(word)) {
-        tprintf("ERROR: Word '%s' not in DAWG after adding it\n", i.c_str());
+        tprintf("ERROR: Word '{}' not in DAWG after adding it\n", i.c_str());
         return false;
       }
     }
@@ -397,7 +397,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
 
   FILE *pattern_file = fopen(filename, "rb");
   if (pattern_file == nullptr) {
-    tprintf("ERROR: Error opening pattern file %s\n", filename);
+    tprintf("ERROR: Error opening pattern file {}\n", filename);
     return false;
   }
 
@@ -422,7 +422,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
 #if 0 // TODO: This code should be enabled if kSaneNumConcreteChars != 0.
           if (word.length() < kSaneNumConcreteChars) {
             tprintf(
-                "ERROR: Please provide at least %d concrete characters at the"
+                "ERROR: Please provide at least {} concrete characters at the"
                 " beginning of the pattern.\n",
                 kSaneNumConcreteChars);
             failed = true;
@@ -451,23 +451,23 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
       }
     }
     if (failed) {
-      tprintf("ERROR: Invalid user pattern %s\n", string);
+      tprintf("ERROR: Invalid user pattern {}\n", string);
       continue;
     }
     // Insert the pattern into the trie.
     if (debug_level_ > 2) {
-      tprintf("Inserting expanded user pattern %s\n", word.debug_string().c_str());
+      tprintf("Inserting expanded user pattern {}\n", word.debug_string());
     }
     if (!this->word_in_dawg(word)) {
       this->add_word_to_dawg(word, &repetitions_vec);
       if (!this->word_in_dawg(word)) {
-        tprintf("ERROR: failed to insert pattern '%s'\n", string);
+        tprintf("ERROR: failed to insert pattern '{}'\n", string);
       }
     }
     ++pattern_count;
   }
   if (debug_level_) {
-    tprintf("Read %d valid patterns from %s\n", pattern_count, filename);
+    tprintf("Read {} valid patterns from {}\n", pattern_count, filename);
   }
   fclose(pattern_file);
   return true;
@@ -479,7 +479,7 @@ void Trie::remove_edge_linkage(NODE_REF node1, NODE_REF node2, int direction, bo
   EDGE_INDEX edge_index = 0;
   ASSERT_HOST(edge_char_of(node1, node2, direction, word_end, unichar_id, &edge_ptr, &edge_index));
   if (debug_level_ > 1) {
-    tprintf("removed edge in nodes_[{}]: ", node1);
+    tprintf("Removed edge in nodes_[{}]: ", node1);
     print_edge_rec(*edge_ptr);
     tprintf("\n");
   }
@@ -587,7 +587,7 @@ bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
   int next_node2_num_edges =
       (next_node2_ptr->forward_edges.size() + next_node2_ptr->backward_edges.size());
   if (debug_level_ > 1) {
-    tprintf("Removed %d edges from node {}\n", next_node2_num_edges, next_node2);
+    tprintf("Removed {} edges from node {}\n", next_node2_num_edges, next_node2);
   }
   next_node2_ptr->forward_edges.clear();
   next_node2_ptr->backward_edges.clear();

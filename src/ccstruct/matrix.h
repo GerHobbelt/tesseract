@@ -24,6 +24,8 @@
 #ifndef TESSERACT_CCSTRUCT_MATRIX_H_
 #define TESSERACT_CCSTRUCT_MATRIX_H_
 
+#include <tesseract/debugheap.h>
+
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for ReverseN, ClipToRange
 #include "kdpair.h"  // for KDPairInc
@@ -36,9 +38,6 @@
 #include <cstdint>   // for int32_t
 #include <cstdio>    // for FILE
 #include <cstring>   // for memcpy
-#if defined(_MSC_VER)
-#  include <crtdbg.h>
-#endif
 
 namespace tesseract {
 
@@ -65,11 +64,7 @@ public:
   // and initialize it to empty.
   GENERIC_2D_ARRAY(int dim1, int dim2, const T &empty) : empty_(empty), dim1_(dim1), dim2_(dim2) {
     int new_size = dim1 * dim2;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-    array_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[new_size];
-#else
 	array_ = new T[new_size];
-#endif  // _DEBUG
     size_allocated_ = new_size;
     for (int i = 0; i < size_allocated_; ++i) {
       array_[i] = empty_;
@@ -102,11 +97,7 @@ public:
     int new_size = size1 * size2 + pad;
     if (new_size > size_allocated_) {
       delete[] array_;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	  array_ = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[new_size];
-#else
 	  array_ = new T[new_size];
-#endif  // _DEBUG
       size_allocated_ = new_size;
     }
     dim1_ = size1;
@@ -128,11 +119,7 @@ public:
   void ResizeWithCopy(int size1, int size2) {
     if (size1 != dim1_ || size2 != dim2_) {
       int new_size = size1 * size2;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	  T* new_array = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[new_size];
-#else
 	  T* new_array = new T[new_size];
-#endif  // _DEBUG
       for (int col = 0; col < size1; ++col) {
         for (int row = 0; row < size2; ++row) {
           int old_index = col * dim2() + row;
@@ -658,11 +645,7 @@ public:
     int new_dim1 = this->dim1_ + array2->dim1_;
     int new_dim2 = std::max<int>(this->dim2_, array2->dim2_);
 	int new_size = new_dim1 * new_dim2;
-#if defined(_DEBUG) && defined(_CRTDBG_REPORT_FLAG)
-	T* new_array = new (_CLIENT_BLOCK, __FILE__, __LINE__) T[new_size];
-#else
 	T* new_array = new T[new_size];
-#endif  // _DEBUG
     for (int col = 0; col < new_dim1; ++col) {
       for (int j = 0; j < new_dim2; ++j) {
         int new_index = col * new_dim2 + j;

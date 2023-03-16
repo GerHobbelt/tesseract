@@ -686,14 +686,14 @@ void FPRow::EstimatePitch(bool pass1) {
 void FPRow::DebugOutputResult(int row_index) {
   if (num_chars() > 0) {
     tprintf(
-        "Row %d: pitch_decision=%d, fixed_pitch=%f, max_nonspace=%d, "
-        "space_size=%f, space_threshold=%d, xheight=%f\n",
+        "Row {}: pitch_decision={}, fixed_pitch={}, max_nonspace={}, "
+        "space_size={}, space_threshold={}, xheight={}\n",
         row_index, static_cast<int>(real_row_->pitch_decision), real_row_->fixed_pitch,
         real_row_->max_nonspace, real_row_->space_size, real_row_->space_threshold,
         real_row_->xheight);
 
     for (unsigned i = 0; i < num_chars(); i++) {
-      tprintf("Char %u: is_final=%d is_good=%d num_blobs=%d: ", i, is_final(i), is_good(i),
+      tprintf("Char {}: is_final={} is_good={} num_blobs={}: ", i, is_final(i), is_good(i),
               character(i)->num_blobs());
       box(i).print();
     }
@@ -1040,7 +1040,7 @@ FPAnalyzer::FPAnalyzer(ICOORD page_tr, TO_BLOCK_LIST *port_blocks)
     TO_BLOCK *block = block_it.data();
     if (!block->get_rows()->empty()) {
       ASSERT_HOST(block->xheight > 0);
-      find_repeated_chars(block, false);
+      find_repeated_chars(block);
     }
   }
 
@@ -1131,7 +1131,7 @@ void compute_fixed_pitch_cjk(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
   } while (analyzer.Pass2Analyze() && iteration < analyzer.max_iteration());
 
   if (textord_debug_pitch_test) {
-    tprintf("compute_fixed_pitch_cjk finished after %u iteration (limit=%u)\n", iteration,
+    tprintf("compute_fixed_pitch_cjk finished after {} iteration (limit={})\n", iteration,
             analyzer.max_iteration());
   }
 

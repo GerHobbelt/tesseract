@@ -52,7 +52,7 @@ enum PartitionFindResult {
  */
 class StrokeWidth : public BlobGrid {
 public:
-  StrokeWidth(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~StrokeWidth() override;
 
   // Sets the neighbours member of the medium-sized blobs in the block.
@@ -296,7 +296,7 @@ private:
   // Returns true if there is no significant noise in between the boxes.
   bool NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Displays the blobs colored according to the number of good neighbours
   // and the vertical/horizontal flow.
   ScrollView *DisplayGoodBlobs(const char *window_name, int x, int y);
@@ -316,7 +316,7 @@ private:
   TBOX grid_box_;
   // Rerotation to get back to the original image.
   FCOORD rerotation_;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Windows for debug display.
   ScrollView *leaders_win_ = nullptr;
   ScrollView *initial_widths_win_ = nullptr;

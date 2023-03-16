@@ -249,10 +249,15 @@ public:
   // being the coords of the upper-left corner of the pix.
   void render_outline(int left, int top, Image pix) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw one
       ScrollView *window,              // window to draw in
       ScrollView::Color colour) const; // colour to draw it
+#endif
+
+  void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const; // colour to draw it
+  
+#if !GRAPHICS_DISABLED
   // Draws the outline in the given colour, normalized using the given denorm,
   // making use of sub-pixel accurate information if available.
   void plot_normed(const DENORM &denorm, ScrollView::Color colour, ScrollView *window) const;

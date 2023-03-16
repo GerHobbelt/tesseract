@@ -119,7 +119,7 @@ LSTM::LSTM(const std::string &name, int ni, int ns, int no, bool two_dimensional
     nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : ceil_log2(no_);
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
-    tprintf("ERROR: %d is invalid type of LSTM!\n", type);
+    tprintf("ERROR: {} is invalid type of LSTM!\n", type);
     ASSERT_HOST(false);
   }
   na_ += nf_;
@@ -490,14 +490,14 @@ void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *in
     }
   } while (src_index.Increment());
 #if DEBUG_DETAIL > 0
-  tprintf("Source:%s\n", name_.c_str());
+  tprintf("Source:{}\n", name_);
   source_.Print(10);
-  tprintf("State:%s\n", name_.c_str());
+  tprintf("State:{}\n", name_);
   state_.Print(10);
-  tprintf("Output:%s\n", name_.c_str());
+  tprintf("Output:{}\n", name_);
   output->Print(10);
 #endif
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }
@@ -508,7 +508,7 @@ void LSTM::Forward(bool debug, const NetworkIO &input, const TransposedArray *in
 // See NetworkCpp for a detailed discussion of the arguments.
 bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                     NetworkIO *back_deltas) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayBackward(fwd_deltas);
   }
@@ -563,7 +563,7 @@ bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scr
   }
   TFloat state_clip = Is2D() ? 9.0 : 4.0;
 #if DEBUG_DETAIL > 1
-  tprintf("fwd_deltas:%s\n", name_.c_str());
+  tprintf("fwd_deltas:{}\n", name_);
   fwd_deltas.Print(10);
 #endif
   StrideMap::Index dest_index(input_map_);
@@ -646,9 +646,9 @@ bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scr
     ClipVector<TFloat>(ns_, -state_clip, state_clip, curr_stateerr);
 #if DEBUG_DETAIL > 1
     if (t + 10 > width) {
-      tprintf("t=%d, stateerr=", t);
+      tprintf("t={}, stateerr=", t);
       for (int i = 0; i < ns_; ++i)
-        tprintf(" %g,%g,%g", curr_stateerr[i], outputerr[i], curr_sourceerr[ni_ + nf_ + i]);
+        tprintf(" {},{},{}", curr_stateerr[i], outputerr[i], curr_sourceerr[ni_ + nf_ + i]);
       tprintf("\n");
     }
 #endif
@@ -712,7 +712,7 @@ bool LSTM::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scr
   } while (dest_index.Decrement());
 #if DEBUG_DETAIL > 2
   for (int w = 0; w < WT_COUNT; ++w) {
-    tprintf("%s gate errors[%d]\n", name_.c_str(), w);
+    tprintf("{} gate errors[{}]\n", name_, w);
     gate_errors_t[w].get()->PrintUnTransposed(10);
   }
 #endif
@@ -778,30 +778,30 @@ void LSTM::CountAlternators(const Network &other, TFloat *same, TFloat *changed)
 
 // Prints the weights for debug purposes.
 void LSTM::PrintW() {
-  tprintf("Weight state:%s\n", name_.c_str());
+  tprintf("Weight state:{}\n", name_);
   for (int w = 0; w < WT_COUNT; ++w) {
     if (w == GFS && !Is2D()) {
       continue;
     }
-    tprintf("Gate %d, inputs\n", w);
+    tprintf("Gate {}, inputs\n", w);
     for (int i = 0; i < ni_; ++i) {
-      tprintf("Row %d:", i);
+      tprintf("Row {}:", i);
       for (int s = 0; s < ns_; ++s) {
-        tprintf(" %g", gate_weights_[w].GetWeights(s)[i]);
+        tprintf(" {}", gate_weights_[w].GetWeights(s)[i]);
       }
       tprintf("\n");
     }
-    tprintf("Gate %d, outputs\n", w);
+    tprintf("Gate {}, outputs\n", w);
     for (int i = ni_; i < ni_ + ns_; ++i) {
-      tprintf("Row %d:", i - ni_);
+      tprintf("Row {}:", i - ni_);
       for (int s = 0; s < ns_; ++s) {
-        tprintf(" %g", gate_weights_[w].GetWeights(s)[i]);
+        tprintf(" {}", gate_weights_[w].GetWeights(s)[i]);
       }
       tprintf("\n");
     }
-    tprintf("Gate %d, bias\n", w);
+    tprintf("Gate {}, bias\n", w);
     for (int s = 0; s < ns_; ++s) {
-      tprintf(" %g", gate_weights_[w].GetWeights(s)[na_]);
+      tprintf(" {}", gate_weights_[w].GetWeights(s)[na_]);
     }
     tprintf("\n");
   }
@@ -809,30 +809,30 @@ void LSTM::PrintW() {
 
 // Prints the weight deltas for debug purposes.
 void LSTM::PrintDW() {
-  tprintf("Delta state:%s\n", name_.c_str());
+  tprintf("Delta state:{}\n", name_);
   for (int w = 0; w < WT_COUNT; ++w) {
     if (w == GFS && !Is2D()) {
       continue;
     }
-    tprintf("Gate %d, inputs\n", w);
+    tprintf("Gate {}, inputs\n", w);
     for (int i = 0; i < ni_; ++i) {
-      tprintf("Row %d:", i);
+      tprintf("Row {}:", i);
       for (int s = 0; s < ns_; ++s) {
-        tprintf(" %g", gate_weights_[w].GetDW(s, i));
+        tprintf(" {}", gate_weights_[w].GetDW(s, i));
       }
       tprintf("\n");
     }
-    tprintf("Gate %d, outputs\n", w);
+    tprintf("Gate {}, outputs\n", w);
     for (int i = ni_; i < ni_ + ns_; ++i) {
-      tprintf("Row %d:", i - ni_);
+      tprintf("Row {}:", i - ni_);
       for (int s = 0; s < ns_; ++s) {
-        tprintf(" %g", gate_weights_[w].GetDW(s, i));
+        tprintf(" {}", gate_weights_[w].GetDW(s, i));
       }
       tprintf("\n");
     }
-    tprintf("Gate %d, bias\n", w);
+    tprintf("Gate {}, bias\n", w);
     for (int s = 0; s < ns_; ++s) {
-      tprintf(" %g", gate_weights_[w].GetDW(s, na_));
+      tprintf(" {}", gate_weights_[w].GetDW(s, na_));
     }
     tprintf("\n");
   }

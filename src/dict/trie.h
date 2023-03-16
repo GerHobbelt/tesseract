@@ -324,7 +324,7 @@ protected:
   // Prints the contents of the Trie.
   // At most max_num_edges will be printed for each node.
   void print_all(const char *msg, int max_num_edges) {
-    tprintf("\n__________________________\n%s\n", msg);
+    tprintf("\n__________________________\n{}\n", msg);
     for (size_t i = 0; i < nodes_.size(); ++i) {
       print_node(i, max_num_edges);
     }

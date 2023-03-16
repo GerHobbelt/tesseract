@@ -75,9 +75,9 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
       default:
         xht = "UNKNOWN";
     }
-    tprintf("\nStopper:  %s (word=%c, case=%c, xht_ok=%s=[%g,%g])\n",
-            best_choice.unichar_string().c_str(), (is_valid_word ? 'y' : 'n'),
-            (is_case_ok ? 'y' : 'n'), xht, best_choice.min_x_height(), best_choice.max_x_height());
+    tprintf("\nStopper:  {} (word={}, case={}, xht_ok={}=[{},{}])\n",
+            best_choice.unichar_string().c_str(), (is_valid_word ? "y" : "n"),
+            (is_case_ok ? "y" : "n"), xht, best_choice.min_x_height(), best_choice.max_x_height());
   }
   // Do not accept invalid words in PASS1.
   if (reject_offset_ <= 0.0f && !is_valid_word) {
@@ -93,7 +93,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
   }
 
   if (stopper_debug_level >= 1) {
-    tprintf("Stopper:  Rating = %4.1f, Certainty = %4.1f, Threshold = %4.1f\n",
+    tprintf("Stopper:  Rating = {}, Certainty = {}, Threshold = {}\n",
             best_choice.rating(), best_choice.certainty(), CertaintyThreshold);
   }
 
@@ -104,7 +104,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
     if (stopper_debug_level >= 1) {
       tprintf(
           "AcceptableChoice() returned false"
-          " (no_dang_ambig:%d cert:%.4g thresh:%g uniform:%d)\n",
+          " (no_dang_ambig:{} cert:{} thresh:{} uniform:{})\n",
           no_dang_ambigs, best_choice.certainty(), CertaintyThreshold,
           UniformCertainties(best_choice));
     }
@@ -120,11 +120,11 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
   int WordSize;
 
   if (stopper_debug_level >= 1) {
-    tprintf("\nRejecter: %s (word=%c, case=%c, unambig=%c, multiple=%c)\n",
-            word->best_choice->debug_string().c_str(), (valid_word(*word->best_choice) ? 'y' : 'n'),
-            (case_ok(*word->best_choice) ? 'y' : 'n'),
-            word->best_choice->dangerous_ambig_found() ? 'n' : 'y',
-            word->best_choices.singleton() ? 'n' : 'y');
+    tprintf("\nRejecter: {} (word={}, case={}, unambig={}, multiple={})\n",
+            word->best_choice->debug_string().c_str(), (valid_word(*word->best_choice) ? "y" : "n"),
+            (case_ok(*word->best_choice) ? "y" : "n"),
+            word->best_choice->dangerous_ambig_found() ? "n" : "y",
+            word->best_choices.singleton() ? "n" : "y");
   }
 
   if (word->best_choice->empty() || !word->best_choices.singleton()) {
@@ -140,7 +140,7 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
   }
 
   if (stopper_debug_level >= 1) {
-    tprintf("Rejecter: Certainty = %4.1f, Threshold = %4.1f   ", word->best_choice->certainty(),
+    tprintf("Rejecter: Certainty = {}, Threshold = {}   ", word->best_choice->certainty(),
             CertaintyThreshold);
   }
 
@@ -162,7 +162,7 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
 bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_replaceable,
                             MATRIX *ratings) {
   if (stopper_debug_level > 2) {
-    tprintf("\nRunning NoDangerousAmbig() for %s\n", best_choice->debug_string().c_str());
+    tprintf("\nRunning NoDangerousAmbig() for {}\n", best_choice->debug_string());
   }
 
   // Construct BLOB_CHOICE_LIST_VECTOR with ambiguities
@@ -208,8 +208,8 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
     for (unsigned i = 0; i < best_choice->length(); blob_index += best_choice->state(i), ++i) {
       auto curr_unichar_id = best_choice->unichar_id(i);
       if (stopper_debug_level > 2) {
-        tprintf("Looking for %s ngrams starting with %s:\n", replace ? "replaceable" : "ambiguous",
-                getUnicharset().debug_str(curr_unichar_id).c_str());
+        tprintf("Looking for {} ngrams starting with {}:\n", replace ? "replaceable" : "ambiguous",
+                getUnicharset().debug_str(curr_unichar_id));
       }
       int num_wrong_blobs = best_choice->state(i);
       wrong_ngram_index = 0;
@@ -228,7 +228,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintf("current ngram from spec: ");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, getUnicharset());
-          tprintf("comparison result: %d\n", compare);
+          tprintf("Comparison result: {}\n", compare);
         }
         if (compare == 0) {
           // Record the place where we found an ambiguity.
@@ -238,7 +238,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
                                           getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                                           leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintf("fixpt+=(%d %d %d %d %s)\n", blob_index, blob_index + num_wrong_blobs, false,
+              tprintf("fixpt+=({} {} {} {} {})\n", blob_index, blob_index + num_wrong_blobs, false,
                       getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                       getUnicharset().id_to_unichar(leftmost_id));
             }
@@ -246,7 +246,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
 
           if (replace) {
             if (stopper_debug_level > 2) {
-              tprintf("replace ambiguity with %s : ",
+              tprintf("Replace ambiguity with {} : ",
                       getUnicharset().id_to_unichar(ambig_spec->correct_ngram_id));
               UnicharIdArrayUtils::print(ambig_spec->correct_fragments, getUnicharset());
             }
@@ -305,7 +305,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
     ambigs_found = (alt_word->rating() < 0.0);
     if (ambigs_found) {
       if (stopper_debug_level >= 1) {
-        tprintf("Stopper: Possible ambiguous word = %s\n", alt_word->debug_string().c_str());
+        tprintf("Stopper: Possible ambiguous word = {}\n", alt_word->debug_string());
       }
       if (fixpt != nullptr) {
         // Note: Currently character choices combined from fragments can only
@@ -339,7 +339,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
             fixpt->push_back(
                 DANGERR_INFO(blob_start, blob_end, true, replacement_is_ngram, leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintf("fixpt->dangerous+=(%d %d %d %d %s)\n", orig_i, end_i, true,
+              tprintf("fixpt->dangerous+=({} {} {} {} {})\n", orig_i, end_i, true,
                       replacement_is_ngram, uchset.id_to_unichar(leftmost_id));
             }
           }
@@ -510,8 +510,8 @@ int Dict::UniformCertainties(const WERD_CHOICE &word) {
   if (word.certainty() < CertaintyThreshold) {
     if (stopper_debug_level >= 1) {
       tprintf(
-          "Stopper: Non-uniform certainty = %4.1f"
-          " (m=%4.1f, s=%4.1f, t=%4.1f)\n",
+          "Stopper: Non-uniform certainty = {}"
+          " (m={}, s={}, t={})\n",
           word.certainty(), Mean, StdDev, CertaintyThreshold);
     }
     return false;

@@ -29,7 +29,7 @@ LSTMTester::LSTMTester(int64_t max_memory) : test_data_(max_memory) {}
 bool LSTMTester::LoadAllEvalData(const char *filenames_file) {
   std::vector<std::string> filenames;
   if (!LoadFileLinesToStrings(filenames_file, &filenames)) {
-    tprintf("ERROR: Failed to load list of eval filenames from %s\n", filenames_file);
+    tprintf("ERROR: Failed to load list of eval filenames from {}\n", filenames_file);
     return false;
   }
   return LoadAllEvalData(filenames);
@@ -80,6 +80,7 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
                                     const TessdataManager &model_mgr, int training_stage,
                                     int verbosity) {
   LSTMTrainer trainer;
+  trainer.SetDebug(HasDebug());
   trainer.InitCharSet(model_mgr);
   TFile fp;
   if (!model_mgr.GetComponent(TESSDATA_LSTM, &fp) || !trainer.DeSerialize(&model_mgr, &fp)) {
@@ -106,14 +107,14 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
       word_error += trainer.NewSingleError(tesseract::ET_WORD_RECERR);
       ++error_count;
       if (verbosity > 1 || (verbosity > 0 && result != PERFECT)) {
-        tprintf("Truth:%s\n", truth_text.c_str());
+        tprintf("Truth:{}\n", truth_text.c_str());
         std::vector<int> ocr_labels;
         std::vector<int> xcoords;
         trainer.LabelsFromOutputs(fwd_outputs, &ocr_labels, &xcoords);
         std::string ocr_text = trainer.DecodeLabels(ocr_labels);
-        tprintf("OCR  :%s\n", ocr_text.c_str());
+        tprintf("OCR  :{}\n", ocr_text.c_str());
         if (verbosity > 2 || (verbosity > 1 && result != PERFECT)) {
-          tprintf("Line Char error rate (BCER)=%f, Word error rate (BWER)=%f, Confidence=%f\n\n",
+          tprintf("Line Char error rate (BCER)={}, Word error rate (BWER)={}, Confidence={}\n\n",
                   trainer.NewSingleError(tesseract::ET_CHAR_ERROR),
                   trainer.NewSingleError(tesseract::ET_WORD_RECERR),
                   confidence);

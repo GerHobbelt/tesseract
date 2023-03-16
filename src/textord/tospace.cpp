@@ -80,17 +80,17 @@ void Textord::to_spacing(ICOORD page_tr,       // topright of page
       row = row_it.data();
       if ((row->pitch_decision == PITCH_DEF_PROP) || (row->pitch_decision == PITCH_CORR_PROP)) {
         if ((tosp_debug_level > 0) && !old_text_ord_proportional) {
-          tprintf("Block %d Row %d: Now Proportional\n", block_index, row_index);
+          tprintf("Block {} Row {}: Now Proportional\n", block_index, row_index);
         }
         row_spacing_stats(row, gapmap.get(), block_index, row_index, block_space_gap_width,
                           block_non_space_gap_width);
       } else {
         if ((tosp_debug_level > 0) && old_text_ord_proportional) {
-          tprintf("Block %d Row %d: Now Fixed Pitch Decision:%d fp flag:%f\n", block_index,
+          tprintf("Block {} Row {}: Now Fixed Pitch Decision:{} fp flag:{}\n", block_index,
                   row_index, row->pitch_decision, row->fixed_pitch);
         }
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (textord_show_initial_words) {
         plot_word_decisions(to_win, static_cast<int16_t>(row->fixed_pitch), row);
       }
@@ -365,7 +365,7 @@ void Textord::row_spacing_stats(TO_ROW *row, GAPMAP *gapmap, int16_t block_idx, 
     if (!tosp_recovery_isolated_row_stats ||
         !isolated_row_stats(row, gapmap, &all_gap_stats, suspected_table, block_idx, row_idx)) {
       if (tosp_row_use_cert_spaces && (tosp_debug_level > 5)) {
-        tprintf("B:%d R:%d -- Inadequate certain spaces.\n", block_idx, row_idx);
+        tprintf("B:{} R:{} -- Inadequate certain spaces.\n", block_idx, row_idx);
       }
       if (tosp_row_use_cert_spaces1 && good_block_space_estimate) {
         // Use block default
@@ -393,7 +393,7 @@ are ignoring big gaps*/
   if (tosp_sanity_method == 0) {
     if (suspected_table && (row->space_size < tosp_table_kn_sp_ratio * row->kern_size)) {
       if (tosp_debug_level > 5) {
-        tprintf("B:%d R:%d -- DON'T BELIEVE SPACE %3.2f %d %3.2f.\n", block_idx, row_idx,
+        tprintf("B:{} R:{} -- DON'T BELIEVE SPACE {} {} {}\n", block_idx, row_idx,
                 row->kern_size, row->space_threshold, row->space_size);
       }
       row->space_threshold = static_cast<int32_t>(tosp_table_kn_sp_ratio * row->kern_size);
@@ -413,7 +413,7 @@ are ignoring big gaps*/
                      row->xheight / 2.0f);
       }
       if (tosp_debug_level > 5) {
-        tprintf("B:%d R:%d -- DON'T BELIEVE SPACE %3.2f %d %3.2f -> %3.2f.\n", block_idx, row_idx,
+        tprintf("B:{} R:{} -- DON'T BELIEVE SPACE {} {} {} -> {}\n", block_idx, row_idx,
                 row->kern_size, row->space_threshold, row->space_size, sane_space);
       }
       row->space_size = sane_space;
@@ -424,7 +424,7 @@ are ignoring big gaps*/
     sane_threshold = int32_t(floor(tosp_max_sane_kn_thresh * std::max(row->kern_size, 2.5f)));
     if (row->space_threshold > sane_threshold) {
       if (tosp_debug_level > 5) {
-        tprintf("B:%d R:%d -- DON'T BELIEVE THRESH %3.2f %d %3.2f->%d.\n", block_idx, row_idx,
+        tprintf("B:{} R:{} -- DON'T BELIEVE THRESH {} {} {}->{}\n", block_idx, row_idx,
                 row->kern_size, row->space_threshold, row->space_size, sane_threshold);
       }
       row->space_threshold = sane_threshold;
@@ -440,7 +440,7 @@ are ignoring big gaps*/
 
       if ((row->space_size < sane_space) || (row->space_threshold < sane_threshold)) {
         if (tosp_debug_level > 5) {
-          tprintf("B:%d R:%d -- SUSPECT NO SPACES %3.2f %d %3.2f.\n", block_idx, row_idx,
+          tprintf("B:{} R:{} -- SUSPECT NO SPACES {} {} {}\n", block_idx, row_idx,
                   row->kern_size, row->space_threshold, row->space_size);
         }
         // the minimum sane value
@@ -527,16 +527,16 @@ dubious breaks. */
 
   if (tosp_debug_level > 5) {
     tprintf(
-        "B:%d R:%d L:%d-- Kn:%d Sp:%d Thr:%d -- Kn:%3.2f (%d) Thr:%d (%d) "
-        "Sp:%3.2f\n",
+        "B:{} R:{} L:{}-- Kn:{} Sp:{} Thr:{} -- Kn:{} ({}) Thr:{} ({}) "
+        "Sp:{}\n",
         block_idx, row_idx, row_length, block_non_space_gap_width, block_space_gap_width,
         real_space_threshold, row->kern_size, row->max_nonspace, row->space_threshold,
         row->min_space, row->space_size);
   }
   if (tosp_debug_level > 10) {
     tprintf(
-        "  row->kern_size = %3.2f, row->space_size = %3.2f, "
-        "row->space_threshold = %d\n",
+        "  row->kern_size = {}, row->space_size = {}, "
+        "row->space_threshold = {}\n",
         row->kern_size, row->space_size, row->space_threshold);
   }
 }
@@ -656,7 +656,7 @@ bool Textord::isolated_row_stats(TO_ROW *row, GAPMAP *gapmap, STATS *all_gap_sta
       ((small_gaps_count / static_cast<float>(total)) < tosp_enough_small_gaps) ||
       (total - small_gaps_count < 1)) {
     if (tosp_debug_level > 5) {
-      tprintf("B:%d R:%d -- Can't do isolated row stats.\n", block_idx, row_idx);
+      tprintf("B:{} R:{} -- Can't do isolated row stats.\n", block_idx, row_idx);
     }
     return false;
   }
@@ -724,7 +724,7 @@ bool Textord::isolated_row_stats(TO_ROW *row, GAPMAP *gapmap, STATS *all_gap_sta
   if ((row->kern_size >= row->space_threshold) || (row->space_threshold >= row->space_size) ||
       (row->space_threshold <= 0)) {
     if (tosp_debug_level > 5) {
-      tprintf("B:%d R:%d -- Isolated row stats SANITY FAILURE: %f %d %f\n", block_idx, row_idx,
+      tprintf("B:{} R:{} -- Isolated row stats SANITY FAILURE: {} {} {}\n", block_idx, row_idx,
               row->kern_size, row->space_threshold, row->space_size);
     }
     row->kern_size = 0.0f;
@@ -734,7 +734,7 @@ bool Textord::isolated_row_stats(TO_ROW *row, GAPMAP *gapmap, STATS *all_gap_sta
   }
 
   if (tosp_debug_level > 5) {
-    tprintf("B:%d R:%d -- Isolated row stats: %f %d %f\n", block_idx, row_idx, row->kern_size,
+    tprintf("B:{} R:{} -- Isolated row stats: {} {} {}\n", block_idx, row_idx, row->kern_size,
             row->space_threshold, row->space_size);
   }
   return true;
@@ -810,7 +810,7 @@ threshold is not within it, move the threshold so that is just inside it.
   }
   index--;
   if (tosp_debug_level > 10) {
-    tprintf(" reqd_z_width: %d found %d 0's, starting %d; thresh: %d/n", reqd_zero_width,
+    tprintf(" reqd_z_width: {} found {} 0's, starting {}; thresh: {}/n", reqd_zero_width,
             zero_width, zero_start, row->space_threshold);
   }
   if ((zero_width < reqd_zero_width) ||
@@ -822,14 +822,14 @@ threshold is not within it, move the threshold so that is just inside it.
   }
   if (row->space_threshold < zero_start) {
     if (tosp_debug_level > 5) {
-      tprintf("Improve row kn:%5.2f sp:%5.2f 0's: %d -> %d  thresh:%d -> %d\n", kn, sp, zero_start,
+      tprintf("Improve row kn:{} sp:{} 0's: {} -> {}  thresh:{} -> {}\n", kn, sp, zero_start,
               index, row->space_threshold, zero_start);
     }
     row->space_threshold = zero_start;
   }
   if (row->space_threshold > index) {
     if (tosp_debug_level > 5) {
-      tprintf("Improve row kn:%5.2f sp:%5.2f 0's: %d -> %d  thresh:%d -> %d\n", kn, sp, zero_start,
+      tprintf("Improve row kn:{} sp:{} 0's: {} -> {}  thresh:{} -> {}\n", kn, sp, zero_start,
               index, row->space_threshold, index);
     }
     row->space_threshold = index;
@@ -918,7 +918,7 @@ the gap between the word being built and the next one. */
         prev_blanks = 0;
       }
       if (tosp_debug_level > 5) {
-        tprintf("Repch wd at BOL(%d, %d). rep spacing %5.2f;  Rgap:%d  ",
+        tprintf("Repch wd at BOL({}, {}). rep spacing {};  Rgap:{}  ",
                 box_it.data()->bounding_box().left(), box_it.data()->bounding_box().bottom(),
                 repetition_spacing, current_gap);
       }
@@ -1011,7 +1011,7 @@ the gap between the word being built and the next one. */
               blanks = 0;
             }
             if (tosp_debug_level > 5) {
-              tprintf("Repch wd (%d,%d) rep gap %5.2f;  Lgap:%d (%d blanks);",
+              tprintf("Repch wd ({},{}) rep gap {};  Lgap:{} ({} blanks);",
                       word->bounding_box().left(), word->bounding_box().bottom(),
                       repetition_spacing, current_gap, blanks);
             }
@@ -1032,7 +1032,7 @@ the gap between the word being built and the next one. */
               blanks = 0;
             }
             if (tosp_debug_level > 5) {
-              tprintf(" Rgap:%d (%d blanks)\n", current_gap, blanks);
+              tprintf(" Rgap:{} ({} blanks)\n", current_gap, blanks);
             }
             fuzzy_sp = false;
             fuzzy_non = false;
@@ -1075,7 +1075,7 @@ the gap between the word being built and the next one. */
         blanks = 0;
       }
       if (tosp_debug_level > 5) {
-        tprintf("Repch wd at EOL (%d,%d). rep spacing %5.2f; Lgap:%d (%d blanks)\n",
+        tprintf("Repch wd at EOL ({},{}). rep spacing {}; Lgap:{} ({} blanks)\n",
                 word->bounding_box().left(), word->bounding_box().bottom(), repetition_spacing,
                 current_gap, blanks);
       }
@@ -1100,7 +1100,7 @@ the gap between the word being built and the next one. */
     real_row->recalc_bounding_box();
 
     if (tosp_debug_level > 4) {
-      tprintf("Row: Made %d words in row ((%d,%d)(%d,%d))\n", word_count,
+      tprintf("Row: Made {} words in row (({},{})({},{}))\n", word_count,
               real_row->bounding_box().left(), real_row->bounding_box().bottom(),
               real_row->bounding_box().right(), real_row->bounding_box().top());
     }
@@ -1177,7 +1177,7 @@ ROW *Textord::make_blob_words(TO_ROW *row,    // row to make
     word_it.add_list_after(&words);
     real_row->recalc_bounding_box();
     if (tosp_debug_level > 4) {
-      tprintf("Row:Made %d words in row ((%d,%d)(%d,%d))\n", word_count,
+      tprintf("Row:Made {} words in row (({},{})({},{}))\n", word_count,
               real_row->bounding_box().left(), real_row->bounding_box().bottom(),
               real_row->bounding_box().right(), real_row->bounding_box().top());
     }
@@ -1278,7 +1278,7 @@ context.
         (within_xht_current_gap > row->max_nonspace)) {
       space = true;
       fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 20, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
@@ -1290,14 +1290,14 @@ context.
       } else {
         fuzzy_non = true;
       }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 21, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
     } else if (tosp_use_xht_gaps && (real_current_gap < row->min_space) &&
                (within_xht_current_gap >= row->min_space)) {
       space = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       mark_gap(blob_box, 22, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                next_gap);
 #endif
@@ -1328,7 +1328,7 @@ other side of a narrow blob then this gap is a kern. */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 1, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1346,7 +1346,7 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 2, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1361,7 +1361,7 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 3, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1377,14 +1377,14 @@ a narrow blob then this gap is a kern as well */
         } else {
           space = false;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 4, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
       } else if ((((next_blob_box.width() > 0) && narrow_blob(row, next_blob_box)) ||
                   ((prev_blob_box.width() > 0) && narrow_blob(row, prev_blob_box)))) {
         fuzzy_sp = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 6, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1412,7 +1412,7 @@ where there is a large difference between the kern and space estimates.
         } else {
           fuzzy_non = true;
         }
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 7, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1423,7 +1423,7 @@ where there is a large difference between the kern and space estimates.
                  !(narrow_blob(row, next_blob_box) || suspected_punct_blob(row, next_blob_box))) {
         space = true;
         fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 8, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1434,7 +1434,7 @@ where there is a large difference between the kern and space estimates.
                                               !suspected_punct_blob(row, next_blob_box)))) {
         space = true;
         fuzzy_non = true;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
         mark_gap(blob_box, 9, prev_gap, prev_blob_box.width(), current_gap, next_blob_box.width(),
                  next_gap);
 #endif
@@ -1442,8 +1442,8 @@ where there is a large difference between the kern and space estimates.
     }
     if (tosp_debug_level > 10) {
       tprintf(
-          "word break = %d current_gap = %d, prev_gap = %d, "
-          "next_gap = %d\n",
+          "word break = {} current_gap = {}, prev_gap = {}, "
+          "next_gap = {}\n",
           space ? 1 : 0, current_gap, prev_gap, next_gap);
     }
     prev_gap_was_a_space = space && !(fuzzy_non);
@@ -1507,7 +1507,7 @@ void Textord::peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void Textord::mark_gap(TBOX blob,    // blob following gap
                        int16_t rule, // heuristic id
                        int16_t prev_gap, int16_t prev_blob_width, int16_t current_gap,
@@ -1571,7 +1571,7 @@ void Textord::mark_gap(TBOX blob,    // blob following gap
                     blob.bottom() + blob.height() / 2.0f);
   }
   if (tosp_debug_level > 5) {
-    tprintf("  (%d,%d) Sp<->Kn Rule %d %d %d %d %d %d\n", blob.left() - current_gap / 2,
+    tprintf("  ({},{}) Sp<->Kn Rule {} {} {} {} {} {}\n", blob.left() - current_gap / 2,
             blob.bottom(), rule, prev_gap, prev_blob_width, current_gap, next_blob_width, next_gap);
   }
 }
@@ -1682,7 +1682,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
   if ((reduced_box.width() > 0) &&
       ((reduced_box.left() + tosp_near_lh_edge * reduced_box.width()) < left_above_xht) &&
       (reduced_box.height() > 0.7 * row->xheight)) {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     if (textord_show_initial_words) {
       reduced_box.plot(to_win, ScrollView::YELLOW, ScrollView::YELLOW);
     }

@@ -26,14 +26,20 @@
 namespace tesseract {
 
 class TabFind;
+class TESS_API Tesseract;
+
 
 // ColPartitionGrid is a BBGrid of ColPartition.
 // It collects functions that work on the grid.
 class TESS_API ColPartitionGrid
     : public BBGrid<ColPartition, ColPartition_CLIST, ColPartition_C_IT> {
 public:
+  // This empty constructor is here only so that the class can be ELISTIZED.
+  // TODO(rays) change deep_copy in elst.h line 955 to take a callback copier
+  // and eliminate CLASSNAME##_copier.
   ColPartitionGrid() = default;
-  ColPartitionGrid(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+
+  ColPartitionGrid(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
 
   ~ColPartitionGrid() override = default;
 
@@ -237,6 +243,11 @@ private:
   // and ignoring not_this.
   int FindMargin(int x, bool right_to_left, int x_limit, int y_bottom,
                  int y_top, const ColPartition *not_this);
+
+  // Helper to remove the given box from the given partition, put it in its
+  // own partition, and add to the partition list.
+  void RemoveBadBox(BLOBNBOX* box, ColPartition* part,
+                           ColPartition_LIST* part_list);
 };
 
 } // namespace tesseract.

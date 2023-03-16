@@ -142,8 +142,8 @@ void SEAM::UndoSeam(TBLOB *blob, TBLOB *other_blob) const {
 
 // Prints everything in *this SEAM.
 void SEAM::Print(const char *label) const {
-  tprintf("%s", label);
-  tprintf(" %6.2f @ (%d,%d), p=%u, n=%u ", priority_, location_.x, location_.y, widthp_, widthn_);
+  tprintf("{}", label);
+  tprintf(" {} @ ({},{}), p={}, n={} ", priority_, location_.x, location_.y, widthp_, widthn_);
   for (int s = 0; s < num_splits_; ++s) {
     splits_[s].Print();
     if (s + 1 < num_splits_) {
@@ -157,16 +157,16 @@ void SEAM::Print(const char *label) const {
 /* static */
 void SEAM::PrintSeams(const char *label, const std::vector<SEAM *> &seams) {
   if (!seams.empty()) {
-    tprintf("%s\n", label);
+    tprintf("{}\n", label);
     for (unsigned x = 0; x < seams.size(); ++x) {
-      tprintf("%2u:   ", x);
+      tprintf("{}:   ", x);
       seams[x]->Print("");
     }
     tprintf("\n");
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Draws the seam in the given window.
 void SEAM::Mark(ScrollView *window) const {
   for (int s = 0; s < num_splits_; ++s) {

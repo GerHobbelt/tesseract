@@ -28,6 +28,7 @@
 #include "unichar.h"
 
 #include <tesseract/version.h>
+#include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 
 #include <cstdio>
 #include <tuple>  // for std::tuple
@@ -119,8 +120,40 @@ public:
   void SetVisibleImage(Pix *pix);
   Pix* GetVisibleImage();
 
+  /**
+  * Return a memory capacity cost estimate for the given image dimensions and
+  * some heuristics re tesseract behaviour, e.g. input images will be normalized/greyscaled,
+  * then thresholded, all of which will be kept in memory while the session runs.
+  *
+  * Also uses the Tesseract Variable `allowed_image_memory_capacity` to indicate
+  * whether the estimated cost is oversized --> `cost.is_too_large()`
+  *
+  * For user convenience, static functions are provided:
+  * the static functions MAY be used by userland code *before* the high cost of
+  * instantiating a Tesseract instance is incurred.
+  */
+  static ImageCostEstimate EstimateImageMemoryCost(int image_width, int image_height, float allowance = 1.0e30f /* a.k.a.dont_care, use system limit and be done */ );
+  static ImageCostEstimate EstimateImageMemoryCost(const Pix* pix, float allowance = 1.0e30f /* a.k.a. dont_care, use system limit and be done */ );
+
+  /**
+  * Ditto, but this API may be invoked after SetInputImage() or equivalent has been called
+  * and reports the cost estimate for the current instance/image.
+  */
+  ImageCostEstimate EstimateImageMemoryCost() const;
+
+  /**
+  * Helper, which may be invoked after SetInputImage() or equivalent has been called:
+  * reports the cost estimate for the current instance/image via `tprintf()` and returns
+  * `true` when the cost is expected to be too high.
+  *
+  * You can use this as a fast pre-flight check. Many major tesseract APIs perform
+  * this same check as part of their startup routine.
+  */
+  bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
+
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
+  const std::string &GetOutputName();
 
   /**
    * Set the value of an internal "parameter."
@@ -155,16 +188,27 @@ public:
 #if !DISABLED_LEGACY_ENGINE
 
   /**
-   * Print Tesseract fonts table to the given file.
+   * Print Tesseract fonts table to the given file (stdout by default).
    */
-  void PrintFontsTable(FILE *fp) const;
+  void PrintFontsTable(FILE *fp = nullptr) const;
 
 #endif
 
   /**
-   * Print Tesseract parameters to the given file.
+   * Print Tesseract parameters to the given file (stdout by default).
    */
-  void PrintVariables(FILE *fp) const;
+  void PrintVariables(FILE *fp = nullptr) const;
+
+  /*
+  * Report parameters' usage statistics, i.e. report which params have been
+  * set, modified and read/checked until now during this run-time's lifetime.
+  *
+  * Use this method for run-time 'discovery' about which tesseract parameters
+  * are actually *used* during your particular usage of the library, ergo
+  * answering the question:
+  * "Which of all those parameters are actually *relevant* to my use case today?"
+  */
+  void ReportParamsUsageStatistics() const;
 
   /**
    * Get value of named variable as a string, if it exists.
@@ -317,7 +361,7 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line);
+                int bytes_per_pixel, int bytes_per_line, float angle = 0);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -327,7 +371,7 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix);
+  void SetImage(Pix *pix, float angle = 0);
 
   /**
    * Preprocessing the InputImage 
@@ -814,14 +858,15 @@ protected:
 
 protected:
   Tesseract *tesseract_;          ///< The underlying data object.
+#if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tesseract_;      ///< For orientation & script detection.
   EquationDetect *equ_detect_;    ///< The equation detector.
+#endif
   FileReader reader_;             ///< Reads files from any filesystem.
   ImageThresholder *thresholder_; ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
-  std::string input_file_;           ///< Name used by training code.
   std::string visible_image_file_;
   Pix* pix_visible_image_;           ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
@@ -859,6 +904,11 @@ private:
 
 /** Escape a char string - remove &<>"' with HTML codes. */
 std::string HOcrEscape(const char *text);
+
+std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
+std::string mkUniqueOutputFilePath(const std::string& basepath, int page_number, const char* label, const char* filename_extension);
+
+void WritePix(const std::string &filepath, Pix *pic, int file_type);
 
 } // namespace tesseract
 

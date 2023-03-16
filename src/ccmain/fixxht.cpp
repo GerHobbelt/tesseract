@@ -2,7 +2,6 @@
  * File:        fixxht.cpp  (Formerly fixxht.c)
  * Description: Improve x_ht and look out for case inconsistencies
  * Author:      Phil Cheatle
- * Created:     Thu Aug  5 14:11:08 BST 1993
  *
  * (C) Copyright 1992, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -192,7 +191,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
   // Baseline shift is opposite sign to the bottom shift.
   *baseline_shift = -bottom_shift / word_res->denorm.y_scale();
   if (debug_x_ht_level >= 2) {
-    tprintf("baseline shift=%g\n", *baseline_shift);
+    tprintf("baseline shift={}\n", *baseline_shift);
   }
   if (top_stats.get_total() == 0) {
     return bottom_shift != 0 ? word_res->x_height : 0.0f;
@@ -201,8 +200,8 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
   // of BLN space back to pixel space to get the x-height in pixel space.
   float new_xht = top_stats.median();
   if (debug_x_ht_level >= 2) {
-    tprintf("Median xht=%f\n", new_xht);
-    tprintf("Mode20:A: New x-height = %f (norm), %f (orig)\n", new_xht,
+    tprintf("Median xht={}\n", new_xht);
+    tprintf("Mode20:A: New x-height = {} (norm), {} (orig)\n", new_xht,
             new_xht / word_res->denorm.y_scale());
   }
   // The xheight must change by at least x_ht_min_change to be used.

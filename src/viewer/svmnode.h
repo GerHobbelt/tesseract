@@ -29,7 +29,7 @@
 
 #include "../../include/tesseract/export.h"
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #include <tesseract/export.h>
 

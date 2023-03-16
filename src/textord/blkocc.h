@@ -238,7 +238,6 @@ public:
 extern double_VAR_H(textord_underline_threshold);
 
 bool test_underline(  // look for underlines
-    bool testing_on,  // drawing blob
     C_BLOB *blob,     // blob to test
     int16_t baseline, // coords of baseline
     int16_t xheight   // height of line

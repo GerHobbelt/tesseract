@@ -173,7 +173,7 @@ void NetworkIO::FromPixes(const StaticShape &shape, const std::vector<Image> &pi
   int target_height = shape.height();
   int target_width = shape.width();
   std::vector<std::pair<int, int>> h_w_pairs;
-  for (auto pix : pixes) {
+  for (auto &&pix : pixes) {
     Image var_pix = pix;
     int width = pixGetWidth(var_pix);
     if (target_width != 0) {
@@ -381,9 +381,9 @@ void NetworkIO::Print(int num) const {
     for (int t = 0; t < Width(); ++t) {
       if (num == 0 || t < num || t + num >= Width()) {
         if (int_mode_) {
-          tprintf(" %g", static_cast<float>(i_[t][y]) / INT8_MAX);
+          tprintf(" {}", static_cast<float>(i_[t][y]) / INT8_MAX);
         } else {
-          tprintf(" %g", f_[t][y]);
+          tprintf(" {}", f_[t][y]);
         }
       }
     }

@@ -27,6 +27,8 @@ struct Pix;
 
 namespace tesseract {
 
+class TESS_API Tesseract;
+
 /**
  * Except when Otsu is chosen
  * Leptonica is used for thresholding
@@ -41,6 +43,27 @@ enum class ThresholdMethod {
   Max,           // Number of Thresholding methods
 };
 
+static inline const char* ThresholdMethodName(ThresholdMethod method)
+{
+  switch (method)
+  {
+  case ThresholdMethod::Otsu:
+    return "Otsu (tesseract)";
+  case ThresholdMethod::LeptonicaOtsu:
+    return "Otsu (Leptonica)";
+  case ThresholdMethod::Sauvola:
+    return "Sauvola (Leptonica)";
+  case ThresholdMethod::OtsuOnNormalizedBackground:
+    return "OtsuOnNormalizedBackground";
+  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
+    return "MaskingAndOtsuOnNormalizedBackground";
+  case ThresholdMethod::Nlbin:
+    return "Nlbin";
+  default:
+    return "Unknown::NonOtsu";
+  }
+}
+
 class TessBaseAPI;
 
 /// Base class for all tesseract image thresholding classes.
@@ -51,7 +74,7 @@ class TessBaseAPI;
 /// desired.
 class TESS_API ImageThresholder {
 public:
-  ImageThresholder();
+  ImageThresholder(Tesseract *tess);
   virtual ~ImageThresholder();
 
   /// Destroy the Pix if there is one, freeing memory.
@@ -69,7 +92,7 @@ public:
   /// byte packed with the MSB of the first byte being the first pixel, and a
   /// one pixel is WHITE. For binary images set bytes_per_pixel=0.
   void SetImage(const unsigned char *imagedata, int width, int height, int bytes_per_pixel,
-                int bytes_per_line);
+                int bytes_per_line, float angle = 0);
 
   /// Store the coordinates of the rectangle to process for later use.
   /// Doesn't actually do any thresholding.
@@ -128,7 +151,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix);
+  void SetImage(const Image pix, float angle = 0);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.
@@ -136,8 +159,7 @@ public:
   /// Returns false on error.
   virtual bool ThresholdToPix(Image *pix);
 
-  virtual std::tuple<bool, Image, Image, Image> Threshold(TessBaseAPI *api,
-                                                          ThresholdMethod method);
+  virtual std::tuple<bool, Image, Image, Image> Threshold(ThresholdMethod method);
 
   // Gets a pix that contains an 8 bit threshold value at each pixel. The
   // returned pix may be an integer reduction of the binary image such that
@@ -198,6 +220,9 @@ protected:
   // arrays and also the bytes per pixel in src_pix.
   void ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
                           const std::vector <int> &hi_values, Image *pix) const;
+
+private:
+  Tesseract* tesseract_;    // reference to the active instance
 
 protected:
   /// Clone or other copy of the source Pix.

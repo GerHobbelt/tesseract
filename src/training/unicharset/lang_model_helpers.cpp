@@ -74,7 +74,7 @@ std::string ReadFile(const std::string &filename, FileReader reader) {
   if (read_result) {
     return std::string(&data[0], data.size());
   }
-  tprintf("ERROR: Failed to read data from: %s\n", filename.c_str());
+  tprintf("ERROR: Failed to read data from: {}\n", filename);
   return std::string();
 }
 
@@ -110,7 +110,7 @@ bool WriteRecoder(const UNICHARSET &unicharset, bool pass_through, const std::st
     recoder.SetupPassThrough(unicharset);
   } else {
     int null_char = unicharset.has_special_codes() ? UNICHAR_BROKEN : unicharset.size();
-    tprintf("Null char=%d\n", null_char);
+    tprintf("Null char={}\n", null_char);
     if (!recoder.ComputeEncoding(unicharset, null_char, radical_table_data)) {
       tprintf("ERROR: Creation of encoded unicharset failed!!\n");
       return false;
@@ -218,7 +218,7 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
   std::string radical_filename = script_dir + "/radical-stroke.txt";
   std::string radical_data = ReadFile(radical_filename, reader);
   if (radical_data.empty()) {
-    tprintf("ERROR: Error reading radical code table %s\n", radical_filename.c_str());
+    tprintf("ERROR: Error reading radical code table {}\n", radical_filename);
     return EXIT_FAILURE;
   }
   if (!WriteRecoder(unicharset, pass_through_recoder, output_dir, lang, writer, &radical_data,
@@ -239,6 +239,7 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
     tprintf("ERROR: Error writing output traineddata file!!\n");
     return EXIT_FAILURE;
   }
+  tprintf("Created %s/%s/%s.traineddata", output_dir.c_str(), lang.c_str(), lang.c_str());
   return EXIT_SUCCESS;
 }
 

@@ -22,6 +22,7 @@
 
 #include <tesseract/debugheap.h>
 #include "unicharset.h"
+#include "tprintf.h" // for tprintf
 
 #include "params.h"
 
@@ -686,7 +687,7 @@ void UNICHARSET::unichar_insert(const char *const unichar_repr,
     int index = 0;
     do {
       if (index >= UNICHAR_LEN) {
-        fprintf(stderr, "Utf8 buffer too big, size>%d for %s\n", UNICHAR_LEN,
+        tesseract::tprintf("ERROR: Utf8 buffer too big, size>{} for {}\n", UNICHAR_LEN,
                 unichar_repr);
         return;
       }
@@ -840,7 +841,7 @@ bool UNICHARSET::load_via_fgets(
     stream >> std::setw(255) >> unichar >> std::hex >> properties >> std::dec;
     // stream.flags(std::ios::dec);
     if (stream.fail()) {
-      fprintf(stderr, "%s:%u failed\n", __FILE__, __LINE__);
+	  tesseract::tprintf("ERROR: stream failure. ({}:{})\n", __FILE__, __LINE__);
       return false;
     }
     auto position = stream.tellg();
@@ -1117,7 +1118,7 @@ CHAR_FRAGMENT *CHAR_FRAGMENT::parse_from_string(const char *string) {
   const char *ptr = string;
   int len = strlen(string);
   if (len < kMinLen || *ptr != kSeparator) {
-    return nullptr; // this string can not represent a fragment
+    return nullptr; // this string cannot represent a fragment
   }
   ptr++; // move to the next character
   int step = 0;

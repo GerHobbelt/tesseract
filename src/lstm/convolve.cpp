@@ -80,7 +80,7 @@ void Convolve::Forward(bool debug, const NetworkIO &input, const TransposedArray
       }
     }
   } while (dest_index.Increment());
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }

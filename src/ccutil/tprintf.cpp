@@ -28,14 +28,19 @@
 #include <climits> // for INT_MAX
 #include <cstdio>
 
-namespace tesseract {
-
 #ifdef HAVE_MUPDF
 
 #include "mupdf/fitz/config.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/context.h"
+#include "mupdf/assertions.h"     // for ASSERT
+
+#endif
+
+namespace tesseract {
+
+#ifdef HAVE_MUPDF
 
 static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 	auto msg = fmt::vformat(format, args);
@@ -53,18 +58,23 @@ static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 
 #define MAX_MSG_LEN 2048
 
+// when we use tesseract as part of MuPDF (or mixed with it), we use the fz_error/fz_warn/fz_info APIs to
+// output any error/info/debug messages and have the callbacks which MAY be registered with those APIs
+// handle any writing to logfile, etc., thus *obsoleting/duplicating* the `debug_file` configuration
+// option here.
+#ifndef HAVE_MUPDF
 static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
+#endif
 
 // Trace printf
 void vTessPrint(fmt::string_view format, fmt::format_args args) {
 #ifdef HAVE_MUPDF
 	fz_tess_tprintf(format, args);
-#endif
-
+#else
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
-  assert(debug_file_name != nullptr);
+  ASSERT0(debug_file_name != nullptr);
   if (debug_file_name == nullptr) {
     // This should not happen.
     return;
@@ -90,6 +100,7 @@ void vTessPrint(fmt::string_view format, fmt::format_args args) {
   } else {
     fmt::vprint(stderr, format, args);
   }
+#endif
 }
 
 } // namespace tesseract

@@ -21,6 +21,7 @@
 // a unicharset.
 
 #include <cstdlib>
+#include <filesystem>
 #include "boxread.h"
 #include "common/commandlineflags.h"
 #include "common/commontraining.h"     // CheckSharedLibraryVersion
@@ -60,7 +61,7 @@ static void AddStringsToUnicharset(const std::vector<std::string> &strings, int 
         unicharset->unichar_insert(normed.c_str());
       }
     } else {
-      tprintf("ERROR: Normalization failed for string '%s'\n", string.c_str());
+      tprintf("ERROR: Normalization failed for string '{}'\n", string);
     }
   }
 }
@@ -69,17 +70,23 @@ static int Main(int argc, const char** argv) {
   UNICHARSET unicharset;
   // Load input files
   for (int arg = 1; arg < argc; ++arg) {
+    std::filesystem::path filePath = argv[arg];
     std::string file_data = tesseract::ReadFile(argv[arg]);
     if (file_data.empty()) {
       continue;
     }
     std::vector<std::string> texts;
-    if (ReadMemBoxes(-1, /*skip_blanks*/ true, &file_data[0],
-                     /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
-                     /*box_texts*/ nullptr, /*pages*/ nullptr)) {
-      tprintf("Extracting unicharset from box file %s\n", argv[arg]);
+    if (filePath.extension() == ".box") {
+      tprintf("Extracting unicharset from box file {}\n", argv[arg]);
+      bool res = ReadMemBoxes(-1, /*skip_blanks*/ true, &file_data[0],
+                   /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
+                   /*box_texts*/ nullptr, /*pages*/ nullptr);
+      if (!res) {
+        tprintf("ERROR: Cannot read box data from '{}'\n", argv[arg]);
+        return EXIT_FAILURE;
+      }
     } else {
-      tprintf("Extracting unicharset from plain text file %s\n", argv[arg]);
+      tprintf("Extracting unicharset from plain text file {}\n", argv[arg]);
       texts.clear();
       texts = split(file_data, '\n');
     }
@@ -88,9 +95,9 @@ static int Main(int argc, const char** argv) {
   SetupBasicProperties(/*report_errors*/ true, /*decompose*/ false, &unicharset);
   // Write unicharset file.
   if (unicharset.save_to_file(FLAGS_output_unicharset.c_str())) {
-    tprintf("Wrote unicharset file %s\n", FLAGS_output_unicharset.c_str());
+    tprintf("Wrote unicharset file {}\n", FLAGS_output_unicharset);
   } else {
-    tprintf("ERROR: Cannot save unicharset file %s\n", FLAGS_output_unicharset.c_str());
+    tprintf("ERROR: Cannot save unicharset file {}\n", FLAGS_output_unicharset);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
@@ -110,7 +117,7 @@ extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
   }
   if (argc < 2) {
     tprintf(
-        "Usage: %s [--output_unicharset filename] [--norm_mode mode]"
+        "Usage: {} [--output_unicharset filename] [--norm_mode mode]"
         " box_or_text_file [...]\n",
         argv[0]);
     tprintf("Where mode means:\n");

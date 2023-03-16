@@ -129,7 +129,7 @@ public:
   void print(    // print
       FILE *fp) const; // file to print on
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                     // draw one
       ScrollView *window,        // window to draw in
       ScrollView::Color colour); // uniform colour
@@ -143,6 +143,14 @@ public:
     baseline.plot(window, colour);
   }
 #endif // !GRAPHICS_DISABLED
+
+  void plot_baseline(             // draw the baseline
+      Image &pix, uint32_t *data, int wpl, int w, int h
+  ) { 
+    // draw it
+    baseline.plot(pix, data, wpl, w, h);
+  }
+
   ROW &operator=(const ROW &source);
 
 private:

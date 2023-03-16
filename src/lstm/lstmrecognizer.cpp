@@ -235,7 +235,7 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
   if (dict_->FinishLoad()) {
     return true; // Success.
   }
-  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang %s!!\n", lang.c_str());
+  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang {}!!\n", lang);
   delete dict_;
   dict_ = nullptr;
   return false;
@@ -244,23 +244,24 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
 // Recognizes the line image, contained within image_data, returning the
 // ratings matrix and matching box_word for each WERD_RES in the output.
 void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
-                                   float invert_threshold, bool debug,
+                                   float invert_threshold,
                                    double worst_dict_cert, const TBOX &line_box,
                                    PointerVector<WERD_RES> *words, int lstm_choice_mode,
                                    int lstm_choice_amount) {
   NetworkIO outputs;
   float scale_factor;
   NetworkIO inputs;
-  if (!RecognizeLine(image_data, invert_threshold, debug, false, false, &scale_factor, &inputs, &outputs)) {
+  if (!RecognizeLine(image_data, invert_threshold, false, false, &scale_factor, &inputs, &outputs)) {
     return;
   }
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
+	search_->SetDebug(HasDebug());
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(),
                   lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, debug, &GetUnicharset(), words,
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words,
                                   lstm_choice_mode);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
@@ -318,7 +319,7 @@ void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, fl
 // Recognizes the image_data, returning the labels,
 // scores, and corresponding pairs of start, end x-coords in coords.
 bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
-                                   float invert_threshold, bool debug,
+                                   float invert_threshold,
                                    bool re_invert, bool upside_down, float *scale_factor,
                                    NetworkIO *inputs, NetworkIO *outputs) {
   // This ensures consistent recognition results.
@@ -332,7 +333,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   // Maximum width of image to train on.
   const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
-    tprintf("ERROR: Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix), pixGetHeight(pix));
+    tprintf("ERROR: Image too large to learn!! Size = {}x{}\n", pixGetWidth(pix), pixGetHeight(pix));
     pix.destroy();
     return false;
   }
@@ -344,7 +345,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   inputs->set_int_mode(IsIntMode());
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
-  network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
+  network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
     float pos_min, pos_mean, pos_sd;
@@ -356,13 +357,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       pixInvert(pix, pix);
       Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, &inv_inputs);
-      network_->Forward(debug, inv_inputs, nullptr, &scratch_space_, &inv_outputs);
+      network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (inv_mean > pos_mean) {
         // Inverted did better. Use inverted data.
-        if (debug) {
-          tprintf("Inverting image: old min=%g, mean=%g, sd=%g, inv %g,%g,%g\n", pos_min, pos_mean,
+        if (HasDebug()) {
+          tprintf("Inverting image: old min={}, mean={}, sd={}, inv {},{},{}\n", pos_min, pos_mean,
                   pos_sd, inv_min, inv_mean, inv_sd);
         }
         *outputs = inv_outputs;
@@ -371,16 +372,16 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         // Inverting was not an improvement, so undo and run again, so the
         // outputs match the best forward result.
         SetRandomSeed();
-        network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
+        network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
       }
     }
   }
 
   pix.destroy();
-  if (debug) {
+  if (HasDebug()) {
     std::vector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
     DisplayForward(*inputs, labels, coords, "LSTMForward", &debug_win_);
 #endif
     DebugActivationPath(*outputs, labels, coords);
@@ -403,7 +404,7 @@ std::string LSTMRecognizer::DecodeLabels(const std::vector<int> &labels) {
   return result;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the forward results in a window with the characters and
 // boundaries as determined by the labels and label_coords.
@@ -474,7 +475,7 @@ void LSTMRecognizer::DebugActivationPath(const NetworkIO &outputs, const std::ve
 // of positions.
 void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *label,
                                           int best_choice, int x_start, int x_end) {
-  tprintf("%s=%d On [%d, %d), scores=", label, best_choice, x_start, x_end);
+  tprintf("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
   double max_score = 0.0;
   double mean_score = 0.0;
   const int width = x_end - x_start;
@@ -493,9 +494,9 @@ void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *
         best_score = line[c];
       }
     }
-    tprintf(" %.3g(%s=%d=%.3g)", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
+    tprintf(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
   }
-  tprintf(", Mean=%g, max=%g\n", mean_score, max_score);
+  tprintf(", Mean={}, max={}\n", mean_score, max_score);
 }
 
 // Helper returns true if the null_char is the winner at t, and it beats the
@@ -530,8 +531,9 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
                                        std::vector<int> *xcoords) {
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
+	search_->SetDebug(HasDebug());
   }
-  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr);
+  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 0);
   search_->ExtractBestPathAsLabels(labels, xcoords);
 }
 

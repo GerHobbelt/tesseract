@@ -23,6 +23,7 @@
 
 #include "otsuthr.h"
 #include "thresholder.h"
+#include "tesseractclass.h"
 #include "tprintf.h" // for tprintf
 
 #if defined(USE_OPENCL)
@@ -37,10 +38,16 @@
 #include <cstring>
 #include <tuple>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"
+#endif
+
+
 namespace tesseract {
 
-ImageThresholder::ImageThresholder()
-    : pix_(nullptr)
+ImageThresholder::ImageThresholder(Tesseract* tess)
+    : tesseract_(tess)
+    , pix_(nullptr)
     , image_width_(0)
     , image_height_(0)
     , pix_channels_(0)
@@ -48,6 +55,7 @@ ImageThresholder::ImageThresholder()
     , scale_(1)
     , yres_(300)
     , estimated_res_(300) {
+  ASSERT0(tess != nullptr);
   SetRectangle(0, 0, 0, 0);
 }
 
@@ -74,11 +82,12 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line) {
+                                int bytes_per_pixel, int bytes_per_line, const float angle) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
   }
+  // pixRotate(pixCreate(width, height, bpp == 24 ? 32 : bpp), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
   Image pix = pixCreate(width, height, bpp == 24 ? 32 : bpp);
   l_uint32 *data = pixGetData(pix);
   int wpl = pixGetWpl(pix);
@@ -126,9 +135,10 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       break;
 
     default:
-      tprintf("ERROR: Cannot convert RAW image to Pix with bpp = %d\n", bpp);
+      tprintf("ERROR: Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
-  SetImage(pix);
+
+  SetImage(pix, angle);
   pix.destroy();
 }
 
@@ -160,11 +170,12 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix) {
+void ImageThresholder::SetImage(const Image pix, const float angle) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
-  Image src = pix;
+  Image src = pixRotate(pix, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+  //Image src = pix;
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -398,7 +409,6 @@ ImageThresholder::pixNLBin(PIX *pixs, bool adaptive)
 }
 
 std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
-                                                      TessBaseAPI *api,
                                                       ThresholdMethod method) {
   Image pix_binary = nullptr;
   Image pix_thresholds = nullptr;
@@ -420,17 +430,13 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
-  bool thresholding_debug;
-  api->GetBoolVariable("thresholding_debug", &thresholding_debug);
-  if (thresholding_debug) {
-    tprintf("\nimage width: %d  height: %d  ppi: %d\n", pix_w, pix_h, yres_);
+  if (tesseract_->thresholding_debug) {
+    tprintf("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   if (method == ThresholdMethod::Sauvola) {
     int window_size;
-    double window_size_factor;
-    api->GetDoubleVariable("thresholding_window_size", &window_size_factor);
-    window_size = window_size_factor * yres_;
+    window_size = tesseract_->thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
     window_size = std::min(pix_w < pix_h ? pix_w - 3 : pix_h - 3, window_size);
     int half_window_size = window_size / 2;
@@ -449,12 +455,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
       ny = pix_h / (half_window_size + 2);
     }
 
-    double kfactor;
-    api->GetDoubleVariable("thresholding_kfactor", &kfactor);
+    double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
-    if (thresholding_debug) {
-      tprintf("window size: %d  kfactor: %.3f  nx:%d  ny: %d\n", window_size, kfactor, nx, ny);
+    if (tesseract_->thresholding_debug) {
+      tprintf("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
@@ -470,24 +475,20 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
                                                  &threshold_val);
   } else if (method == ThresholdMethod::LeptonicaOtsu) {
     int tile_size;
-    double tile_size_factor;
-    api->GetDoubleVariable("thresholding_tile_size", &tile_size_factor);
+    double tile_size_factor = tesseract_->thresholding_tile_size;
     tile_size = tile_size_factor * yres_;
     tile_size = std::max(16, tile_size);
 
     int smooth_size;
-    double smooth_size_factor;
-    api->GetDoubleVariable("thresholding_smooth_kernel_size",
-                         &smooth_size_factor);
+    double smooth_size_factor = tesseract_->thresholding_smooth_kernel_size;
     smooth_size_factor = std::max(0.0, smooth_size_factor);
     smooth_size = smooth_size_factor * yres_;
     int half_smooth_size = smooth_size / 2;
 
-    double score_fraction;
-    api->GetDoubleVariable("thresholding_score_fraction", &score_fraction);
+    double score_fraction = tesseract_->thresholding_score_fraction;
 
-    if (thresholding_debug) {
-      tprintf("tile size: %d  smooth_size: %d  score_fraction: %.2f\n", tile_size, smooth_size, score_fraction);
+    if (tesseract_->thresholding_debug) {
+      tprintf("tile size: {}  smooth_size: {}  score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
@@ -504,6 +505,28 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     r = 1;
   }
 
+#if 0
+  {
+	  std::string debug_output_path = api->GetOutputName();
+    std::string caption = ThresholdMethodName(method);
+	  const int page_number = 0;
+	  bool scribe_save_grey_rotated_image;
+	  api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
+	  if (scribe_save_grey_rotated_image) {
+		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".grey_image").c_str(), "png");
+		  Pix *p1 = pix_grey;
+		  WritePix(filepath, p1, IFF_PNG);
+	  }
+	  bool scribe_save_binary_rotated_image;
+	  api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
+	  if (scribe_save_binary_rotated_image) {
+		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".binary_image").c_str(), "png");
+		  Pix *p1 = (PIX*)pix_binary;
+		  WritePix(filepath, p1, IFF_PNG);
+	  }
+  }
+#endif
+
   bool ok = (r == 0) && pix_binary;
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);
 }
@@ -511,21 +534,46 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
 // Threshold the source image as efficiently as possible to the output Pix.
 // Creates a Pix and sets pix to point to the resulting pointer.
 // Caller must use pixDestroy to free the created Pix.
+//
 /// Returns false on error.
 bool ImageThresholder::ThresholdToPix(Image *pix) {
-  if (image_width_ > INT16_MAX || image_height_ > INT16_MAX) {
-    tprintf("ERROR: Image too large: (%d, %d)\n", image_width_, image_height_);
-    return false;
+  // tolerate overlarge images when they're about to be cropped by GetPixRect():
+  if (IsFullImage()) {
+    if (tesseract_->CheckAndReportIfImageTooLarge(pix_)) {
+      return false;
+    }
   }
+  else {
+    // validate against the future cropped image size:
+    if (tesseract_->CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
+      return false;
+    }
+  }
+
+  Image original = GetPixRect();
+
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
-    Image original = GetPixRect();
     *pix = original.copy();
-    original.destroy();
   } else {
-    OtsuThresholdRectToPix(pix_, pix);
+    if (pixGetColormap(original)) {
+      Image tmp;
+      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+      int depth = pixGetDepth(without_cmap);
+      if (depth > 1 && depth < 8) {
+        tmp = pixConvertTo8(without_cmap, false);
+      } else {
+        tmp = without_cmap.copy();
+      }
+      without_cmap.destroy();
+      OtsuThresholdRectToPix(tmp, pix);
+      tmp.destroy();
+    } else {
+      OtsuThresholdRectToPix(pix_, pix);
+    }
   }
+  original.destroy();
   return true;
 }
 
@@ -583,7 +631,7 @@ Image ImageThresholder::GetPixRect() {
 Image ImageThresholder::GetPixRectGrey() {
   auto pix = GetPixRect(); // May have to be reduced to grey.
   int depth = pixGetDepth(pix);
-  if (depth != 8) {
+  if (depth != 8 || pixGetColormap(pix)) {
     if (depth == 24) {
       auto tmp = pixConvert24To32(pix);
       pix.destroy();

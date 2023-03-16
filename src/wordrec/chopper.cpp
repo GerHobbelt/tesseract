@@ -184,7 +184,7 @@ static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB 
       seam->UndoSeam(blob, other_blob);
       delete seam;
       seam = nullptr;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
       if (debug_level) {
         if (debug_level > 2) {
           display_blob(blob, ScrollView::RED);
@@ -285,7 +285,7 @@ SEAM *Wordrec::chop_overlapping_blob(const std::vector<TBOX> &boxes, bool italic
 
     bool almost_equal_box = false;
     int num_overlap = 0;
-    for (auto boxe : boxes) {
+    for (auto &&boxe : boxes) {
       if (original_box.overlap_fraction(boxe) > 0.125) {
         num_overlap++;
       }
@@ -327,7 +327,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
   do {
     auto blob = select_blob_to_split_from_fixpt(fixpt);
     if (chop_debug) {
-      tprintf("blob_number from fixpt = %d\n", blob);
+      tprintf("blob_number from fixpt = {}\n", blob);
     }
     bool split_point_from_dict = (blob != -1);
     if (split_point_from_dict) {
@@ -336,7 +336,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
       blob = select_blob_to_split(blob_choices, rating_ceiling, split_next_to_fragment);
     }
     if (chop_debug) {
-      tprintf("blob_number = %d\n", blob);
+      tprintf("blob_number = {}\n", blob);
     }
     *blob_number = blob;
     if (blob == -1) {
@@ -533,7 +533,7 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
 
   if (chop_debug) {
     if (rating_ceiling < FLT_MAX) {
-      tprintf("rating_ceiling = %8.4f\n", rating_ceiling);
+      tprintf("rating_ceiling = {}\n", rating_ceiling);
     } else {
       tprintf("rating_ceiling = No Limit\n");
     }
@@ -582,9 +582,9 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
             worst_near_fragment = blob_choice->rating();
             if (chop_debug) {
               tprintf(
-                  "worst_index_near_fragment=%d"
-                  " expand_following_fragment=%d"
-                  " expand_preceding_fragment=%d\n",
+                  "worst_index_near_fragment={}"
+                  " expand_following_fragment={}"
+                  " expand_preceding_fragment={}\n",
                   worst_index_near_fragment, expand_following_fragment, expand_preceding_fragment);
             }
           }

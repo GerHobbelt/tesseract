@@ -22,6 +22,7 @@
 #include "detlinefit.h"
 #include "points.h"
 #include "rect.h"
+#include "params.h"
 
 struct Pix;
 
@@ -63,7 +64,7 @@ public:
   // points to be reasonably sure of the fitted baseline.
   // If use_box_bottoms is false, baselines positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaseline(bool use_box_bottoms);
+  bool FitBaseline(int debug, bool use_box_bottoms);
   // Modifies an existing result of FitBaseline to be parallel to the given
   // vector if that produces a better result.
   void AdjustBaselineToParallel(int debug, const FCOORD &direction);
@@ -75,7 +76,7 @@ public:
 private:
   // Sets up displacement_modes_ with the top few modes of the perpendicular
   // distance of each blob from the given direction vector, after rounding.
-  void SetupBlobDisplacements(const FCOORD &direction);
+  void SetupBlobDisplacements(int debug, const FCOORD &direction);
 
   // Fits a line in the given direction to blobs that are close to the given
   // target_offset perpendicular displacement from the direction. The fit
@@ -147,7 +148,7 @@ public:
   // median angle. Returns true if a good angle is found.
   // If use_box_bottoms is false, baseline positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaselinesAndFindSkew(bool use_box_bottoms);
+  bool FitBaselinesAndFindSkew(int debug, bool use_box_bottoms);
 
   // Refits the baseline to a constrained angle, using the stored block
   // skew if good enough, otherwise the supplied default skew.
@@ -171,14 +172,14 @@ public:
   // As a side-effect, computes the xheights of the rows and the block.
   // Although x-height estimation is conceptually separate, it is part of
   // detecting perspective distortion and therefore baseline fitting.
-  void FitBaselineSplines(bool enable_splines, bool show_final_rows, Textord *textord);
+  void FitBaselineSplines(bool enable_splines, Textord *textord);
 
   // Draws the (straight) baselines and final blobs colored according to
   // what was discarded as noise and what is associated with each row.
   void DrawFinalRows(const ICOORD &page_tr);
 
   // Render the generated spline baselines for this block on pix_in.
-  void DrawPixSpline(Image pix_in);
+  void DrawPixSpline(Image pix_in, uint32_t* data, int wpl, int w, int h);
 
 private:
   // Top-level line-spacing calculation. Computes an estimate of the line-
