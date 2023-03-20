@@ -30,7 +30,7 @@ namespace tesseract {
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     fonts_ = NULL;
 #else
-    fonts_ = bmfCreate(nullptr, 14);
+    fonts_ = bmfCreate(nullptr, 10);
 #endif
 
     // set up the root info section:
