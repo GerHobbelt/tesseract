@@ -59,7 +59,8 @@ Unicode true
 !endif
 
 # Name of program and file
-OutFile ${SETUP}-${VERSION}.exe
+!define OUTFILE "${SETUP}-${VERSION}.exe"
+OutFile ${OUTFILE}
 
 !ifdef SIGNCODE
 !finalize "${SIGNCODE} %1"
@@ -78,7 +79,7 @@ BrandingText /TRIMCENTER "(c) 2010-2019 ${PRODUCT_NAME}"
 
 ; File properties.
 !define /date DATEVERSION "%Y%m%d%H%M%S"
-VIProductVersion "${VERSION}.${DATEVERSION}"
+VIProductVersion "${VERSION}"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey "Comments" "patched version provided by Stefan Weil"
 VIAddVersionKey "CompanyName" "Universitätsbibliothek Mannheim"
