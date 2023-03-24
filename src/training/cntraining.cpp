@@ -126,7 +126,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   InitFeatureDefs(&FeatureDefs);
 
   ParseArguments(&argc, &argv);
-  int num_fonts = 0;
+  // int num_fonts = 0;
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     tprintf("Reading {} ...\n", PageName);
     FILE *TrainingPage = fopen(PageName, "rb");
@@ -134,7 +134,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
     if (TrainingPage) {
       ReadTrainingSamples(FeatureDefs, PROGRAM_FEATURE_TYPE, 100, nullptr, TrainingPage, &CharList);
       fclose(TrainingPage);
-      ++num_fonts;
+      // ++num_fonts;
     }
   }
   tprintf("Clustering ...\n");
