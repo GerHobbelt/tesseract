@@ -229,7 +229,6 @@ int Tesseract::orientation_and_script_detection(const char *filename, OSResults 
 // Returns a non-zero number of blobs if the page was successfully processed, or
 // zero if the page had too few characters to be reliable
 int Tesseract::os_detect(TO_BLOCK_LIST *port_blocks, OSResults *osr) {
-  int blobs_total = 0;
   TO_BLOCK_IT block_it;
   block_it.set_to_list(port_blocks);
 
@@ -247,7 +246,6 @@ int Tesseract::os_detect(TO_BLOCK_LIST *port_blocks, OSResults *osr) {
       BLOBNBOX *bbox = bbox_it.data();
       C_BLOB *blob = bbox->cblob();
       TBOX box = blob->bounding_box();
-      ++blobs_total;
 
       // Catch illegal value of box width and avoid division by zero.
       if (box.width() == 0) {
@@ -293,7 +291,6 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
   BLOBNBOX_C_IT filtered_it(blob_list);
   int real_max = std::min(filtered_it.length(), maxCharactersToTry);
 #if 0
-  tprintf("Total blobs found = {}\n", blobs_total);
   tprintf("Number of blobs post-filtering = {}\n", filtered_it.length());
   tprintf("Number of blobs to try = {}\n", real_max);
 #endif
