@@ -13,6 +13,7 @@ ARCH=$1
 
 if test "$ARCH" != "i686"; then
   ARCH=x86_64
+  MINGW=/mingw64
 fi
 
 ROOTDIR=$PWD
@@ -93,9 +94,12 @@ git tag -a v$TAG -m "Tesseract $TAG"
 mkdir -p $BUILDDIR && cd $BUILDDIR
 
 # Run configure.
+PKG_CONFIG_PATH=$MINGW/lib/pkgconfig
+export PKG_CONFIG_PATH
 ../../../configure --disable-openmp --host=$HOST --prefix=/usr/$HOST \
   CXX=$HOST-g++-posix \
-  CXXFLAGS="-fno-math-errno -Wall -Wextra -Wpedantic -g -O2"
+  CXXFLAGS="-fno-math-errno -Wall -Wextra -Wpedantic -g -O2 -i$MINGW/include" \
+  LDFLAGS="-L$MINGW/lib"
 
 make install-jars install training-install html winsetup prefix=$PWD/usr/$HOST
 
