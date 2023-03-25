@@ -34,7 +34,7 @@ sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package
 sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/libalpm13_6.0.1-4_amd64.deb
 sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/makepkg_6.0.1-4_amd64.deb
 sudo dpkg -i *.deb || true
-sudo apt-get --fix-broken --assume-yes --no-install-recommends install
+sudo apt-get install --fix-broken --assume-yes --no-install-recommends
 
 # Configure pacman.
 
