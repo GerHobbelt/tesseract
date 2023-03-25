@@ -98,7 +98,7 @@ PKG_CONFIG_PATH=$MINGW/lib/pkgconfig
 export PKG_CONFIG_PATH
 ../../../configure --disable-openmp --host=$HOST --prefix=/usr/$HOST \
   CXX=$HOST-g++-posix \
-  CXXFLAGS="-fno-math-errno -Wall -Wextra -Wpedantic -g -O2 -i$MINGW/include" \
+  CXXFLAGS="-fno-math-errno -Wall -Wextra -Wpedantic -g -O2 -isystem $MINGW/include" \
   LDFLAGS="-L$MINGW/lib"
 
 make install-jars install training-install html winsetup prefix=$PWD/usr/$HOST
