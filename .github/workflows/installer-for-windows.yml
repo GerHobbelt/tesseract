@@ -7,6 +7,18 @@ on:
     branches:
     - 'windows'
 
+  # Trigger workflow in GitHub web frontend or from API.
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'Target operating system'
+        required: true
+        default: 'Windows (64 bit)'
+        type: choice
+        options:
+          - 'Windows (32 bit)'
+          - 'Windows (64 bit)'
+
 jobs:
   build32:
     # Disable 32 bit builds.
