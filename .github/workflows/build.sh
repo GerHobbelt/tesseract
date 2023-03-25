@@ -29,9 +29,9 @@ sudo apt-get install --assume-yes --no-install-recommends \
   mingw-w64-tools nsis g++-mingw-w64-${ARCH/_/-}
 
 # Install pacman-package-manager and its dependencies (from Ubuntu 22.10).
-sudo curl -O http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/pacman-package-manager_6.0.1-4_amd64.deb
-sudo curl -O http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/libalpm13_6.0.1-4_amd64.deb
-sudo curl -O http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/makepkg_6.0.1-4_amd64.deb
+sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/pacman-package-manager_6.0.1-4_amd64.deb
+sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/libalpm13_6.0.1-4_amd64.deb
+sudo curl -Os http://de.archive.ubuntu.com/ubuntu/pool/universe/p/pacman-package-manager/makepkg_6.0.1-4_amd64.deb
 sudo dpkg -i *.deb || true
 sudo apt-get --fix-broken --assume-yes --no-install-recommends install
 
@@ -42,11 +42,9 @@ sudo sed -Ei 's/^#.*(Include.*mirrorlist)/\1/' /etc/pacman.conf
 (
 # Add msys key for pacman.
 cd /usr/share/keyrings
-sudo curl -O https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2.gpg
-sudo curl -O https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2-revoked
-sudo curl -O https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2-trusted
-sudo pacman-key --init
-sudo pacman-key --populate msys2
+sudo curl -Os https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2.gpg
+sudo curl -Os https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2-revoked
+sudo curl -Os https://raw.githubusercontent.com/msys2/MSYS2-keyring/master/msys2-trusted
 )
 (
 # Add active environments for pacman.
@@ -61,6 +59,8 @@ sudo curl -O https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacma
 # sudo curl -O https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.msys
 )
 
+sudo pacman-key --init
+sudo pacman-key --populate msys2
 sudo pacman -Syu --noconfirm
 
 # Install required pacman packages.
