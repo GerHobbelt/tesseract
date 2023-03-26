@@ -215,7 +215,7 @@ void ImageThresholder::SetImage(const Image pix, const float angle) {
 Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   l_int32 d, thresh, w1, h1, w2, h2, fgval, bgval;
   //l_uint32 black_val, white_val;
-  l_float32 factor, threshpos, avefg, avebg;
+  l_float32 factor, threshpos, avefg, avebg, numfg, numbg;
   PIX *pixg, *pixd, *pixd2;
   BOX *pixbox;
   NUMA *na;
@@ -264,9 +264,20 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   //  background and foreground value
   pixbox = boxCreate(w1 * 0.1, h1 * 0.1, w1 * 0.9, h1 * 0.9);
   na = pixGetGrayHistogramInRect(pixg, pixbox, 1);
-  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, NULL, NULL, NULL);
+  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, &numfg, &numbg, NULL);
   boxDestroy(&pixbox);
   numaDestroy(&na);
+
+  if (numfg > numbg) {
+    // white = fg --> swap the values produced by numaSplitDistribution()
+    l_float32 tmp = avefg;
+    avefg = avebg;
+    avebg = tmp;
+
+    tmp = numfg;
+    numfg = numbg;
+    numbg = tmp;
+  }
 
   /// Subtract by a foreground value and multiply by factor to
   //  set a background value to 255
