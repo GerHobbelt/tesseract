@@ -265,6 +265,8 @@ AC_MSG_RESULT([$enable_legacy])
 AM_CONDITIONAL([DISABLED_LEGACY_ENGINE], test "$enable_legacy" = "no")
 if test "$enable_legacy" = "no"; then
   AC_DEFINE([DISABLED_LEGACY_ENGINE], [1], [Disable legacy OCR engine])
+else
+  AC_DEFINE([DISABLED_LEGACY_ENGINE], [0], [Enable legacy OCR engine])
 fi
 
 # check whether to build OpenMP support
