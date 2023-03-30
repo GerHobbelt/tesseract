@@ -13,11 +13,11 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { name: 18.04-openmp, os: ubuntu-18.04 }
           - { name: 20.04-openmp, os: ubuntu-20.04 }
+          - { name: 22.04-openmp, os: ubuntu-22.04 }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
@@ -29,6 +29,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+           sudo apt-get update
            sudo apt-get install autoconf libleptonica-dev -y
            sudo apt-get install libpango1.0-dev -y
            sudo apt-get install cabextract libarchive-dev -y
@@ -59,7 +60,7 @@ jobs:
            lscpu
            free
            g++ --version
-           tesseract -v 
+           tesseract -v
            time tesseract benchmarks.list - --tessdata-dir ../tessdata_fast > /dev/null 2>&1
            echo "tessdata_fast"
 
@@ -78,6 +79,5 @@ jobs:
     - name: Run Tesseract using image from issue 263 with tessdata and OpenMP Thread Limit
       run: |
            for lmt in {1..3}; do
-                time OMP_THREAD_LIMIT=$lmt tesseract benchmarks.list - --tessdata-dir ../tessdata > /dev/null 2>&1 && echo "OMP_THREAD_LIMIT=" $lmt "tessdata" 
+                time OMP_THREAD_LIMIT=$lmt tesseract benchmarks.list - --tessdata-dir ../tessdata > /dev/null 2>&1 && echo "OMP_THREAD_LIMIT=" $lmt "tessdata"
            done
- 

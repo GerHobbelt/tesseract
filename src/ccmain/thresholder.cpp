@@ -195,16 +195,7 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
   // Convert the image as necessary so it is one of binary, plain RGB, or
   // 8 bit with no colormap. Guarantee that we always end up with our own copy,
   // not just a clone of the input.
-  if (pixGetColormap(src)) {
-    Image tmp = pixRemoveColormap(src, REMOVE_CMAP_BASED_ON_SRC);
-    depth = pixGetDepth(tmp);
-    if (depth > 1 && depth < 8) {
-      pix_ = pixConvertTo8(tmp, false);
-      tmp.destroy();
-    } else {
-      pix_ = tmp;
-    }
-  } else if (depth > 1 && depth < 8) {
+  if (depth > 1 && depth < 8) {
     pix_ = pixConvertTo8(src, false);
   } else {
     pix_ = src.copy();
@@ -322,15 +313,30 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
     tprintf("Image too large: (%d, %d)\n", image_width_, image_height_);
     return false;
   }
+  Image original = GetPixRect();
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
-    Image original = GetPixRect();
     *pix = original.copy();
-    original.destroy();
   } else {
-    OtsuThresholdRectToPix(pix_, pix);
+    if (pixGetColormap(original)) {
+      Image tmp;
+      Image without_cmap =
+          pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+      int depth = pixGetDepth(without_cmap);
+      if (depth > 1 && depth < 8) {
+        tmp = pixConvertTo8(without_cmap, false);
+      } else {
+        tmp = without_cmap.copy();
+      }
+      without_cmap.destroy();
+      OtsuThresholdRectToPix(tmp, pix);
+      tmp.destroy();
+    } else {
+      OtsuThresholdRectToPix(pix_, pix);
+    }
   }
+  original.destroy();
   return true;
 }
 
@@ -388,7 +394,7 @@ Image ImageThresholder::GetPixRect() {
 Image ImageThresholder::GetPixRectGrey() {
   auto pix = GetPixRect(); // May have to be reduced to grey.
   int depth = pixGetDepth(pix);
-  if (depth != 8) {
+  if (depth != 8 || pixGetColormap(pix)) {
     if (depth == 24) {
       auto tmp = pixConvert24To32(pix);
       pix.destroy();
