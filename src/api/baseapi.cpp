@@ -357,6 +357,17 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
   ParamUtils::PrintParams(fp, tesseract_->params());
 }
 
+void TessBaseAPI::SaveParameters() {
+  // Save current config variables before switching modes.
+  FILE *fp = fopen(kOldVarsFile, "wb");
+  PrintVariables(fp);
+  fclose(fp);
+}
+
+void TessBaseAPI::RestoreParameters() {
+  ReadConfigFile(kOldVarsFile);
+}
+
 /**
  * The datapath must be the name of the data directory or
  * some other file in which the data directory resides (for instance argv[0].)
@@ -574,9 +585,9 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  * will automatically perform recognition.
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
-                           int bytes_per_pixel, int bytes_per_line) {
+                           int bytes_per_pixel, int bytes_per_line, int exif, const float angle) {
   if (InternalSetImage()) {
-    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line);
+    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, exif, angle);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -597,7 +608,7 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * Use Pix where possible. Tesseract uses Pix as its internal representation
  * and it is therefore more efficient to provide a Pix directly.
  */
-void TessBaseAPI::SetImage(Pix *pix) {
+void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle) {
   if (InternalSetImage()) {
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
@@ -606,8 +617,32 @@ void TessBaseAPI::SetImage(Pix *pix) {
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
-    thresholder_->SetImage(pix);
+    thresholder_->SetImage(pix, exif, angle);
     SetInputImage(thresholder_->GetPixRect());
+  }
+}
+
+int TessBaseAPI::SetImageFile(int exif, const float angle) {
+  if (InternalSetImage()) {
+    const char *filename1 = "/input";
+    Pix *pix = pixRead(filename1);
+    if (pix == nullptr) {
+      tprintf("Image file %s cannot be read!\n", filename1);
+      return 1;
+    }
+    if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
+      // remove alpha channel from png
+      Pix *p1 = pixRemoveAlpha(pix);
+      pixSetSpp(p1, 3);
+      (void)pixCopy(pix, p1);
+      pixDestroy(&p1);
+    }
+    thresholder_->SetImage(pix, exif, angle);
+    SetInputImage(thresholder_->GetPixRect());
+    pixDestroy(&pix);
+    return 0;
+  } else {
+    return 1;
   }
 }
 
@@ -636,6 +671,46 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   return tesseract_->pix_binary().clone();
+}
+
+/**
+ * Function added by Tesseract.js.
+ * Saves a .png image of the type specified by `type` to "/image.png"
+ * ONLY available after SetImage if you have Leptonica installed.
+ */
+void TessBaseAPI::WriteImage(const int type) {
+  if (tesseract_ == nullptr || thresholder_ == nullptr) {
+    return;
+  }
+  if (type == 0) {
+    if (tesseract_->pix_original() == nullptr) {
+      return;
+    }
+    Pix *p1 = tesseract_->pix_original();
+    pixWrite("/image.png", p1, IFF_PNG);
+
+  } else if (type == 1) {
+    if (tesseract_->pix_grey() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
+      return;
+    }
+    // When the user uploads a black and white image, there will be no pix_grey.
+    // Therefore, we return pix_binary instead in this case. 
+    if (tesseract_->pix_grey() == nullptr) {
+      Pix *p1 = tesseract_->pix_binary();
+      pixWrite("/image.png", p1, IFF_PNG);
+    } else {
+      Pix *p1 = tesseract_->pix_grey();
+      pixWrite("/image.png", p1, IFF_PNG);
+    }
+  } else if (type == 2) {
+    if (tesseract_->pix_binary() == nullptr && !Threshold(&tesseract_->mutable_pix_binary()->pix_)) {
+      return;
+    }
+    Pix *p1 = tesseract_->pix_binary();
+    pixWrite("/image.png", p1, IFF_PNG);
+  }
+
+  return;
 }
 
 /**
@@ -2199,6 +2274,13 @@ int TessBaseAPI::FindLines() {
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, osd_tess, &osr);
   return 0;
+}
+
+/** Function added by Tesseract.js.
+ * Return angle of page.
+ */
+float TessBaseAPI::GetAngle() {
+  return tesseract_->reskew().angle();
 }
 
 /** Delete the pageres and clear the block list ready for a new page. */
