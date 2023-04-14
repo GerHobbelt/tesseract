@@ -866,7 +866,7 @@ add_executable                  (${WASM_NAME}.wasm ${tesseract_js_wrapper})
 
 # # Embeds all subresources in the emitted file as base64 string literals
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SINGLE_FILE=1")
-set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreWASM\"'")
+set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
 
 target_link_libraries           (${WASM_NAME}.wasm libtesseract)
 
