@@ -595,27 +595,27 @@ if(DOTPRODUCT_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
                               PROPERTIES COMPILE_FLAGS ${DOTPRODUCT_FLAGS})
 endif(DOTPRODUCT_FLAGS)
-if(HAVE_AVX)
-  list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
-  set_source_files_properties(src/arch/dotproductavx.cpp
-                              PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
-endif(HAVE_AVX)
-if(HAVE_AVX2)
-  list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
-       src/arch/dotproductavx.cpp)
-  set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
-                              PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
-endif(HAVE_AVX2)
-if(HAVE_AVX512F)
-  list(APPEND arch_files_opt src/arch/dotproductavx512.cpp)
-  set_source_files_properties(src/arch/dotproductavx512.cpp
-                              PROPERTIES COMPILE_FLAGS ${AVX512F_COMPILE_FLAGS})
-endif(HAVE_AVX512F)
-if(HAVE_FMA)
-  list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
-  set_source_files_properties(src/arch/dotproductfma.cpp
-                              PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
-endif(HAVE_FMA)
+# if(HAVE_AVX)
+#   list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
+#   set_source_files_properties(src/arch/dotproductavx.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
+# endif(HAVE_AVX)
+# if(HAVE_AVX2)
+#   list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
+#        src/arch/dotproductavx.cpp)
+#   set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
+# endif(HAVE_AVX2)
+# if(HAVE_AVX512F)
+#   list(APPEND arch_files_opt src/arch/dotproductavx512.cpp)
+#   set_source_files_properties(src/arch/dotproductavx512.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX512F_COMPILE_FLAGS})
+# endif(HAVE_AVX512F)
+# if(HAVE_FMA)
+#   list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
+#   set_source_files_properties(src/arch/dotproductfma.cpp
+#                               PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
+# endif(HAVE_FMA)
 if(HAVE_SSE4_1)
   list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
   set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")

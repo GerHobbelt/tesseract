@@ -2277,10 +2277,10 @@ int TessBaseAPI::FindLines() {
 }
 
 /** Function added by Tesseract.js.
- * Return angle of page.
+ * Return gradient of page.
  */
-float TessBaseAPI::GetAngle() {
-  return tesseract_->reskew().angle();
+float TessBaseAPI::GetGradient() {
+  return tesseract_->gradient();
 }
 
 /** Delete the pageres and clear the block list ready for a new page. */

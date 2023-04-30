@@ -361,9 +361,9 @@ public:
   void WriteImage(const int type);
 
   /** Function added by Tesseract.js.
-   * Return angle of page.
+   * Return gradient of page.
    */
-  float GetAngle();
+  float GetGradient();
 
   /**
    * Get the result of page layout analysis as a leptonica-style
