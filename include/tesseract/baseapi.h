@@ -785,7 +785,7 @@ public:
    * Estimates the Orientation And Script of the image.
    * @return true if the image was processed successfully.
    */
-  bool DetectOS(OSResults *);
+  bool DetectOS(OSResults *results);
 
   /**
    * Return text orientation of each block as determined by an earlier run

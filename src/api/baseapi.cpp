@@ -2723,7 +2723,7 @@ void TessBaseAPI::GetBlockTextOrientations(int **block_orientation, bool **verti
     tprintf("WARNING: Found no blocks\n");
     return;
   }
-  * block_orientation = new int[num_blocks];
+  *block_orientation = new int[num_blocks];
   *vertical_writing = new bool[num_blocks];
   block_it.move_to_first();
   int i = 0;
@@ -2743,7 +2743,7 @@ void TessBaseAPI::GetBlockTextOrientations(int **block_orientation, bool **verti
     (*block_orientation)[i] = num_rotations;
     // The classify_rotation is non-zero only if the text has vertical
     // writing direction.
-    (*vertical_writing)[i] = classify_rotation.y() != 0.0f;
+    (*vertical_writing)[i] = (classify_rotation.y() != 0.0f);
     ++i;
   }
 }
