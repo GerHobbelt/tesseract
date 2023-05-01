@@ -78,7 +78,7 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 #
 # ##############################################################################
 
-message("Configuring tesseract version ${PACKAGE_VERSION}...")
+message(STATUS "Configuring tesseract version ${PACKAGE_VERSION}...")
 
 if(WIN32)
   option(SW_BUILD "Build with sw" ON)
@@ -91,6 +91,10 @@ option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
 option(ENABLE_OPENCL "Enable unsupported experimental OpenCL support" OFF)
+option(ENABLE_NATIVE
+       "Enable optimization for host CPU (could break HW compatibility)" OFF)
+# see
+# https://stackoverflow.com/questions/52653025/why-is-march-native-used-so-rarely
 option(BUILD_TRAINING_TOOLS "Build training tools" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
@@ -125,6 +129,9 @@ endif()
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_CXX_STANDARD 17)
+if("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+  set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # cygwin gnu c++ needs to use -std=gnu++17 instead of -std=c++17
@@ -145,22 +152,31 @@ else()
   message(STATUS "IPO / LTO not supported: <${error}>")
 endif()
 
-check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-  set(MARCH_NATIVE_FLAGS "${MARCH_NATIVE_FLAGS} -march=native")
-  if(NOT CLANG AND MSVC)
-    # clang-cl does not know this argument
-    set(MARCH_NATIVE_FLAGS "${MARCH_NATIVE_FLAGS} -mtune=native")
-  endif()
-  set(MARCH_NATIVE_OPT ON)
-endif()
+set(MARCH_NATIVE_OPT OFF)
+if(ENABLE_NATIVE)
+  check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+  if(COMPILER_SUPPORTS_MARCH_NATIVE)
+    set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -march=native")
+    if(NOT CLANG AND MSVC)
+      # clang-cl does not know this argument
+      set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -mtune=native")
+    endif()
+    set(MARCH_NATIVE_OPT ON)
+  endif(COMPILER_SUPPORTS_MARCH_NATIVE)
+endif(ENABLE_NATIVE)
 
 set(HAVE_AVX FALSE)
 set(HAVE_AVX2 FALSE)
 set(HAVE_FMA FALSE)
 set(HAVE_NEON FALSE)
 
-# Compiler specific environments
+if(HAVE_NEON)
+  set(NEON_COMPILE_FLAGS "-mfpu=neon")
+  message(STATUS "LTO build is not supported on arm/RBPi.")
+  set(ENABLE_LTO FALSE)  # enable LTO cause fatal error on arm/RBPi
+endif()
+
+# Compiler specific environment
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
   set(CMAKE_CXX_FLAGS_DEBUG
       "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og")
@@ -177,7 +193,9 @@ elseif(MSVC)
   # loss of data wd4275 non dll-interface class wd4305 ...truncation from
   # 'double' to 'float'
   set(CMAKE_CXX_FLAGS_RELEASE
-      "${CMAKE_CXX_FLAGS_RELEASE} /wd4244 /wd4305 /wd4267 /wd4251 /wd4275 /wd4005")
+      "${CMAKE_CXX_FLAGS_RELEASE} /wd4244 /wd4305 /wd4267 /wd4251 /wd4275 /wd4005"
+  )
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /wd4068")
   # Don't use /Wall because it generates too many warnings.
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W0 /bigobj")
   # MT flag
@@ -200,13 +218,6 @@ if(OPENMP_BUILD
 endif()
 if(OPENMP_BUILD)
   find_package(OpenMP QUIET)
-  if(OpenMP_FOUND)
-    message(">> OpenMP_FOUND ${OpenMP_FOUND} ${OpenMP_VERSION}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (NOT TARGET OpenMP::OpenMP_CXX)
-      add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-    endif()
-  endif()
   # https://stackoverflow.com/questions/12399422
   # how-to-set-linker-flags-for-openmp-in-cmakes-try-compile-function
   if(NOT OpenMP_FOUND
@@ -227,8 +238,19 @@ if(OPENMP_BUILD)
     add_definitions(-D_OPENMP=201107)
   endif()
   if(MSVC)
-    string(REPLACE "/openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-    string(REPLACE "-openmp" "/openmp:llvm -openmp:experimental" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    # Note: -openmp:llvm is available for X64 from MSVC 16.9 from MSVC 16.10
+    # Preview 2 there is support also for x86 and arm64
+    # https://devblogs.microsoft.com/cppblog/openmp-updates-and-fixes-for-cpp-in-visual-studio-2019-16-10/
+    if("${OpenMP_CXX_FLAGS}" STREQUAL "-openmp")
+      set(OpenMP_CXX_FLAGS "-openmp:llvm")
+    endif()
+  endif()
+  if(OpenMP_FOUND)
+    message(">> OpenMP_FOUND ${OpenMP_FOUND} version: ${OpenMP_CXX_VERSION}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+      add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+    endif()
   endif()
 endif()
 
@@ -282,10 +304,6 @@ if(SW_BUILD)
   sw_execute()
 else()
   find_package(PkgConfig)
-  if(BUILD_TRAINING_TOOLS AND NOT PKG_CONFIG_FOUND)
-    message(WARNING "Building of Training Tools requires PkgConfig")
-    set(BUILD_TRAINING_TOOLS OFF)
-  endif(BUILD_TRAINING_TOOLS AND NOT PKG_CONFIG_FOUND)
   # Check for required library. option -DLeptonica_DIR=path => cmake hint where
   # to find leptonica
   find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
@@ -299,17 +317,15 @@ else()
   include_directories(${Leptonica_INCLUDE_DIRS})
 
   # Check for optional libraries.
-  if(WIN32)
-    find_package(TIFF) # for tesseract
-    if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
-      # try PKG_CONFIG to find libtiff if cmake failed
-      pkg_check_modules(TIFF libtiff-4)
-    endif()
-    if(TIFF_FOUND)
-      set(HAVE_TIFFIO_H ON)
-      include_directories(${TIFF_INCLUDE_DIRS})
-    endif(TIFF_FOUND)
-  endif(WIN32)
+  find_package(TIFF) # for tesseract
+  if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
+    # try PKG_CONFIG to find libtiff if cmake failed
+    pkg_check_modules(TIFF libtiff-4)
+  endif()
+  if(TIFF_FOUND)
+    set(HAVE_TIFFIO_H ON)
+    include_directories(${TIFF_INCLUDE_DIRS})
+  endif(TIFF_FOUND)
   if(DISABLE_ARCHIVE)
     set(HAVE_LIBARCHIVE OFF)
   else(DISABLE_ARCHIVE)
@@ -338,9 +354,9 @@ else()
   endif(DISABLE_CURL)
 endif()
 
-IF(ENABLE_OPENCL)
+if(ENABLE_OPENCL)
   find_package(OpenCL)
-  if (OpenCL_FOUND)
+  if(OpenCL_FOUND)
     include_directories(${OpenCL_INCLUDE_DIRS})
     message(STATUS "OpenCL_INCLUDE_DIRS: ${OpenCL_INCLUDE_DIRS}")
     message(STATUS "OpenCL_LIBRARY: ${OpenCL_LIBRARY}")
@@ -356,8 +372,10 @@ endif(ENABLE_OPENCL)
 #
 # ##############################################################################
 
-if(NOT MSVC)
-  set(MARCH_NATIVE_FLAGS "${MARCH_NATIVE_FLAGS} -O3 -ffast-math")
+if(MSVC)
+  set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} /fp:fast")
+else()
+  set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -O3 -ffast-math")
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
@@ -398,10 +416,17 @@ elseif(${CMAKE_BUILD_TYPE} MATCHES Release)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
   endif() # LTO_SUPPORTED
 endif()
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(BUILD_ARCH "64 bits")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  set(BUILD_ARCH "32 bits")
+endif()
+
 message(STATUS)
 message(STATUS "General configuration for Tesseract ${PACKAGE_VERSION}")
 message(STATUS "--------------------------------------------------------")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE} ${BUILD_ARCH}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Used standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "CXX compiler options: ${COMPILER_FLAGS}")
@@ -412,6 +437,7 @@ message(STATUS "Linker options: ${CMAKE_EXE_LINKER_FLAGS} "
 message(STATUS "Install directory: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "HAVE_AVX: ${HAVE_AVX}")
 message(STATUS "HAVE_AVX2: ${HAVE_AVX2}")
+message(STATUS "HAVE_AVX512F: ${HAVE_AVX512F}")
 message(STATUS "HAVE_FMA: ${HAVE_FMA}")
 message(STATUS "HAVE_SSE4_1: ${HAVE_SSE4_1}")
 message(STATUS "MARCH_NATIVE_OPT: ${MARCH_NATIVE_OPT}")
@@ -424,6 +450,8 @@ message(STATUS "Build with libarchive support [HAVE_LIBARCHIVE]: "
                "${HAVE_LIBARCHIVE}")
 message(STATUS "Build with libcurl support [HAVE_LIBCURL]: ${HAVE_LIBCURL}")
 message(STATUS "Enable float for LSTM [FAST_FLOAT]: ${FAST_FLOAT}")
+message(STATUS "Enable optimization for host CPU (could break HW compatibility)"
+               " [ENABLE_NATIVE]: ${ENABLE_NATIVE}")
 message(STATUS "Disable disable graphics (ScrollView) [GRAPHICS_DISABLED]: "
                "${GRAPHICS_DISABLED}")
 message(STATUS "Disable the legacy OCR engine [DISABLED_LEGACY_ENGINE]: "
@@ -432,10 +460,13 @@ message(STATUS "Build training tools [BUILD_TRAINING_TOOLS]: "
                "${BUILD_TRAINING_TOOLS}")
 message(STATUS "Build tests [BUILD_TESTS]: ${BUILD_TESTS}")
 if(ENABLE_OPENCL)
-  message(STATUS "Enable unsupported experimental OpenCL [ENABLE_OPENCL]: ${USE_OPENCL}")
+  message(
+    STATUS
+      "Enable unsupported experimental OpenCL [ENABLE_OPENCL]: ${USE_OPENCL}")
 endif(ENABLE_OPENCL)
 message(STATUS "Use system ICU Library [USE_SYSTEM_ICU]: ${USE_SYSTEM_ICU}")
-message(STATUS "Install tesseract configs [INSTALL_CONFIGS]: ${INSTALL_CONFIGS}")
+message(
+  STATUS "Install tesseract configs [INSTALL_CONFIGS]: ${INSTALL_CONFIGS}")
 message(STATUS "--------------------------------------------------------")
 message(STATUS)
 
@@ -488,7 +519,7 @@ if(DISABLED_LEGACY_ENGINE)
         PARENT_SCOPE)
   endfunction()
 
-set(TESSERACT_SRC_LEGACY
+  set(TESSERACT_SRC_LEGACY
       src/ccmain/adaptions.cpp
       src/ccmain/docqual.cpp
       src/ccmain/equationdetect.cpp
@@ -560,26 +591,31 @@ if(NOT HAVE_SSE4_1)
       src/arch/intsimdmatrix.cpp)
 endif(NOT HAVE_SSE4_1)
 
-if(MARCH_NATIVE_FLAGS)
+if(DOTPRODUCT_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
-                              PROPERTIES COMPILE_FLAGS ${MARCH_NATIVE_FLAGS})
-endif(MARCH_NATIVE_FLAGS)
-if(HAVE_AVX)
-  list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
-  set_source_files_properties(src/arch/dotproductavx.cpp
-                              PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
-endif(HAVE_AVX)
-if(HAVE_AVX2)
-  list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
-       src/arch/dotproductavx.cpp)
-  set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
-                              PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
-endif(HAVE_AVX2)
-if(HAVE_FMA)
-  list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
-  set_source_files_properties(src/arch/dotproductfma.cpp
-                              PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
-endif(HAVE_FMA)
+                              PROPERTIES COMPILE_FLAGS ${DOTPRODUCT_FLAGS})
+endif(DOTPRODUCT_FLAGS)
+# if(HAVE_AVX)
+#   list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
+#   set_source_files_properties(src/arch/dotproductavx.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
+# endif(HAVE_AVX)
+# if(HAVE_AVX2)
+#   list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
+#        src/arch/dotproductavx.cpp)
+#   set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
+# endif(HAVE_AVX2)
+# if(HAVE_AVX512F)
+#   list(APPEND arch_files_opt src/arch/dotproductavx512.cpp)
+#   set_source_files_properties(src/arch/dotproductavx512.cpp
+#                               PROPERTIES COMPILE_FLAGS ${AVX512F_COMPILE_FLAGS})
+# endif(HAVE_AVX512F)
+# if(HAVE_FMA)
+#   list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
+#   set_source_files_properties(src/arch/dotproductfma.cpp
+#                               PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
+# endif(HAVE_FMA)
 if(HAVE_SSE4_1)
   list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
   set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
@@ -624,40 +660,37 @@ set(TESSERACT_SRC
     src/api/wordstrboxrenderer.cpp)
 
 set(TESSERACT_CONFIGS
-  tessdata/configs/alto
-  tessdata/configs/ambigs.train
-  tessdata/configs/api_config
-  tessdata/configs/bazaar
-  tessdata/configs/bigram
-  tessdata/configs/box.train
-  tessdata/configs/box.train.stderr
-  tessdata/configs/digits
-  tessdata/configs/get.images
-  tessdata/configs/hocr
-  tessdata/configs/inter
-  tessdata/configs/kannada
-  tessdata/configs/linebox
-  tessdata/configs/logfile
-  tessdata/configs/lstm.train
-  tessdata/configs/lstmbox
-  tessdata/configs/lstmdebug
-  tessdata/configs/makebox
-  tessdata/configs/pdf
-  tessdata/configs/quiet
-  tessdata/configs/rebox
-  tessdata/configs/strokewidth
-  tessdata/configs/tsv
-  tessdata/configs/txt
-  tessdata/configs/unlv
-  tessdata/configs/wordstrbox)
+    tessdata/configs/alto
+    tessdata/configs/ambigs.train
+    tessdata/configs/api_config
+    tessdata/configs/bazaar
+    tessdata/configs/bigram
+    tessdata/configs/box.train
+    tessdata/configs/box.train.stderr
+    tessdata/configs/digits
+    tessdata/configs/get.images
+    tessdata/configs/hocr
+    tessdata/configs/inter
+    tessdata/configs/kannada
+    tessdata/configs/linebox
+    tessdata/configs/logfile
+    tessdata/configs/lstm.train
+    tessdata/configs/lstmbox
+    tessdata/configs/lstmdebug
+    tessdata/configs/makebox
+    tessdata/configs/pdf
+    tessdata/configs/quiet
+    tessdata/configs/rebox
+    tessdata/configs/strokewidth
+    tessdata/configs/tsv
+    tessdata/configs/txt
+    tessdata/configs/unlv
+    tessdata/configs/wordstrbox)
 
 set(TESSERACT_TESSCONFIGS
-  tessdata/tessconfigs/batch
-  tessdata/tessconfigs/batch.nochop
-  tessdata/tessconfigs/matdemo
-  tessdata/tessconfigs/msdemo
-  tessdata/tessconfigs/nobatch
-  tessdata/tessconfigs/segdemo)
+    tessdata/tessconfigs/batch tessdata/tessconfigs/batch.nochop
+    tessdata/tessconfigs/matdemo tessdata/tessconfigs/msdemo
+    tessdata/tessconfigs/nobatch tessdata/tessconfigs/segdemo)
 
 set(LIBTESSFILES ${TESSERACT_SRC} ${arch_files} ${arch_files_opt}
                  ${TESSERACT_HDR})
@@ -666,8 +699,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIBTESSFILES})
 
 add_library(libtesseract ${LIBTESSFILES})
 target_include_directories(
-  libtesseract
-  BEFORE
+  libtesseract BEFORE
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
@@ -709,19 +741,19 @@ if(CURL_FOUND)
   endif()
 endif(CURL_FOUND)
 
-set_target_properties(libtesseract
-  PROPERTIES VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-set_target_properties(libtesseract
-  PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+set_target_properties(
+  libtesseract PROPERTIES VERSION
+                          ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+set_target_properties(
+  libtesseract PROPERTIES SOVERSION
+                          ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-if(WIN32)
-  set_target_properties(libtesseract
-     PROPERTIES OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR})
-  set_target_properties(libtesseract
-     PROPERTIES DEBUG_OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR}d)
-else()
-  set_target_properties(libtesseract PROPERTIES OUTPUT_NAME tesseract)
-endif()
+set_target_properties(
+  libtesseract
+  PROPERTIES
+    OUTPUT_NAME
+    tesseract$<$<BOOL:${WIN32}>:${VERSION_MAJOR}${VERSION_MINOR}$<$<CONFIG:DEBUG>:d>>
+)
 
 if(SW_BUILD)
   target_link_libraries(libtesseract PUBLIC org.sw.demo.danbloomberg.leptonica
@@ -747,6 +779,15 @@ if(WIN32
   # Workaround for "libomp.lib is not automatically added on Windows" see:
   # http://lists.llvm.org/pipermail/openmp-dev/2015-August/000857.html
   target_link_libraries(libtesseract PRIVATE ${OpenMP_LIBRARY})
+endif()
+
+if(ANDROID)
+  add_definitions(-DANDROID)
+  find_package(CpuFeaturesNdkCompat REQUIRED)
+  target_include_directories(
+    libtesseract
+    PRIVATE "${CpuFeaturesNdkCompat_DIR}/../../../include/ndk_compat")
+  target_link_libraries(libtesseract PRIVATE CpuFeatures::ndk_compat)
 endif()
 
 # ##############################################################################
@@ -820,11 +861,12 @@ target_link_libraries           (${WASM_NAME} libtesseract)
 # Build tesseract-core.wasm.js (WASM Base64 embedded version)
 #############################################################
 
+
 add_executable                  (${WASM_NAME}.wasm ${tesseract_js_wrapper})
 
 # # Embeds all subresources in the emitted file as base64 string literals
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SINGLE_FILE=1")
-set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreWASM\"'")
+set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
 
 target_link_libraries           (${WASM_NAME}.wasm libtesseract)
 

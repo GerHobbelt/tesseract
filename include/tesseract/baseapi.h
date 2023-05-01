@@ -332,7 +332,7 @@ public:
    */
   void SetImage(Pix *pix, int exif = 1, const float angle = 0);
 
-  void SetImage(int exif = 1, const float angle = 0);
+  int SetImageFile(int exif = 1, const float angle = 0);
 
   /**
    * Set the resolution of the source image in pixels per inch so font size
@@ -361,9 +361,9 @@ public:
   void WriteImage(const int type);
 
   /** Function added by Tesseract.js.
-   * Return angle of page.
+   * Return gradient of page.
    */
-  float GetAngle();
+  float GetGradient();
 
   /**
    * Get the result of page layout analysis as a leptonica-style

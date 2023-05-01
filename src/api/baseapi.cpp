@@ -622,13 +622,13 @@ void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle) {
   }
 }
 
-void TessBaseAPI::SetImage(int exif, const float angle) {
+int TessBaseAPI::SetImageFile(int exif, const float angle) {
   if (InternalSetImage()) {
     const char *filename1 = "/input";
     Pix *pix = pixRead(filename1);
     if (pix == nullptr) {
       tprintf("Image file %s cannot be read!\n", filename1);
-      return;
+      return 1;
     }
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
@@ -640,6 +640,9 @@ void TessBaseAPI::SetImage(int exif, const float angle) {
     thresholder_->SetImage(pix, exif, angle);
     SetInputImage(thresholder_->GetPixRect());
     pixDestroy(&pix);
+    return 0;
+  } else {
+    return 1;
   }
 }
 
@@ -2274,10 +2277,10 @@ int TessBaseAPI::FindLines() {
 }
 
 /** Function added by Tesseract.js.
- * Return angle of page.
+ * Return gradient of page.
  */
-float TessBaseAPI::GetAngle() {
-  return tesseract_->reskew().angle();
+float TessBaseAPI::GetGradient() {
+  return tesseract_->gradient();
 }
 
 /** Delete the pageres and clear the block list ready for a new page. */
