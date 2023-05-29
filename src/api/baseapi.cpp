@@ -463,9 +463,21 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
 
 #endif
 
-/** Print Tesseract parameters to the given file. */
+/** 
+ * Print Tesseract parameters to the given file with descriptions of each option. 
+ * Cannot be used as Tesseract configuration file due to descriptions 
+ * (use DumpVariables instead to create config files).
+ */
 void TessBaseAPI::PrintVariables(FILE *fp) const {
-  ParamUtils::PrintParams(fp, tesseract_->params());
+  ParamUtils::PrintParams(fp, tesseract_->params(), true);
+}
+
+/** 
+ * Print Tesseract parameters to the given file without descriptions. 
+ * Can be used as Tesseract configuration file.
+*/
+void TessBaseAPI::DumpVariables(FILE *fp) const {
+  ParamUtils::PrintParams(fp, tesseract_->params(), false);
 }
 
 // Report parameters' usage statistics, i.e. report which params have been
@@ -1584,7 +1596,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     if (fp == nullptr) {
       tprintf("ERROR: Failed to open file \"{}\"\n", kOldVarsFile);
     } else {
-      PrintVariables(fp);
+      DumpVariables(fp);
       fclose(fp);
     }
     // Switch to alternate mode for retry.

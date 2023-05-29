@@ -156,7 +156,7 @@ public:
                                std::string *value);
 
   // Print parameters to the given file.
-  static void PrintParams(FILE *fp, const ParamsVectors *member_params);
+  static void PrintParams(FILE *fp, const ParamsVectors *member_params, bool print_info = true);
 
   // Report parameters' usage statistics, i.e. report which params have been
   // set, modified and read/checked until now during this run-time's lifetime.
