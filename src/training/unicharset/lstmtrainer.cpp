@@ -652,7 +652,7 @@ SubTrainerResult LSTMTrainer::UpdateSubtrainer(std::stringstream &log_msg) {
       batch_log.imbue(std::locale::classic());
       sub_trainer_->PrepareLogMsg(batch_log);
       batch_log << "\n";
-      tprintf("UpdateSubtrainer:{}", batch_log);
+      tprintf("UpdateSubtrainer:{}", batch_log.str());
       log_msg << batch_log.str();
       sub_error = sub_trainer_->CharError();
       sub_margin = (training_error - sub_error) / sub_error;
