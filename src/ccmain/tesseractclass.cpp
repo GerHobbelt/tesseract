@@ -96,7 +96,7 @@ Tesseract::Tesseract(Tesseract *parent)
                  "adaptive normalized background, 5 = Nlbin",
                  this->params())
     , BOOL_MEMBER(showcase_threshold_methods, false,
-                  "Showcase the avialable threshold methods as part of the thresholding process",
+                  "Showcase the available threshold methods as part of the thresholding process",
                   this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",
@@ -116,7 +116,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method",
                     this->params())
-    , double_MEMBER(thresholding_smooth_kernel_size, 0.0,
+    , double_MEMBER(thresholding_smooth_kernel_size, 0.01,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "

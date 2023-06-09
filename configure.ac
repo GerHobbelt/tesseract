@@ -28,8 +28,8 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
-PACKAGE_YEAR=2022
-PACKAGE_DATE="12/22"
+PACKAGE_YEAR=2023
+PACKAGE_DATE="04/01"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -265,6 +265,8 @@ AC_MSG_RESULT([$enable_legacy])
 AM_CONDITIONAL([DISABLED_LEGACY_ENGINE], test "$enable_legacy" = "no")
 if test "$enable_legacy" = "no"; then
   AC_DEFINE([DISABLED_LEGACY_ENGINE], [1], [Disable legacy OCR engine])
+else
+  AC_DEFINE([DISABLED_LEGACY_ENGINE], [0], [Enable legacy OCR engine])
 fi
 
 # check whether to build OpenMP support
