@@ -114,7 +114,7 @@ Dict::Dict(CCUtil *ccutil)
                     " for each dict char above small word size.",
                     getCCUtil()->params())
     , double_MEMBER(stopper_allowable_character_badness, 3.0,
-                    "Max certaintly variation allowed in a word (in sigma)", getCCUtil()->params())
+                    "Max certainty variation allowed in a word (in sigma)", getCCUtil()->params())
     , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level", getCCUtil()->params())
     , BOOL_MEMBER(stopper_no_acceptable_choices, false,
                   "Make AcceptableChoice() always return false. Useful"
@@ -173,7 +173,7 @@ static DawgCache *cache = nullptr;  // only set it up when needed, via Dict::Glo
 
 DawgCache *Dict::GlobalDawgCache() {
   // This global cache (a singleton) will outlive every Tesseract instance
-  // (even those that someone else might declare as global statics) unless
+  // (even those that someone else might declare as global variables) unless
   // someone calls CleanGlobalDawgCache().
   if (cache == nullptr) {
     cache = new DawgCache();

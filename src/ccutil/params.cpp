@@ -167,19 +167,19 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
 
   sort(param_names.begin(), param_names.end(), [](param_info_t& a, param_info_t& b)
   {
-  int rv = strcmp(b.name, a.name);
-  if (rv == 0)
-  {
-    rv = (int) b.global - (int) a.global;
-  }
+	  int rv = strcmp(b.name, a.name);
+	  if (rv == 0)
+	  {
+	    rv = (int) b.global - (int) a.global;
+	  }
 #if !defined(NDEBUG)
-  if (rv == 0) 
-  {
-  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
-    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
-  }
+	  if (rv == 0) 
+	  {
+	  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
+	    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
+	  }
 #endif
-  return rv >= 0;
+	  return rv >= 0;
   });
 
   static const char* type_map[] = { "[Integer]", "[Boolean]", "[Float]", "[String]" };
@@ -222,7 +222,7 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
   }
   else
   {
-    fflush(stdout);
+    fflush(f);
   }
 }
 
@@ -309,13 +309,13 @@ bool ParamUtils::GetParamAsString(const char *name, const ParamsVectors *member_
   return false;
 }
 
-void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
+void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params, bool print_info) {
   int num_iterations = (member_params == nullptr) ? 1 : 2;
   // When printing to stdout info text is included.
   // Info text is omitted when printing to a file (would result in an invalid config file).
   if (!fp)
 	  fp = stdout;
-  bool print_info = (fp == stdout || fp == stderr);
+  bool printing_to_stdio = (fp == stdout || fp == stderr);
   std::ostringstream stream;
   stream.imbue(std::locale::classic());
   for (int v = 0; v < num_iterations; ++v) {
@@ -353,14 +353,14 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params) {
       }
     }
   }
-#ifdef HAVE_MUPDF
-  if (print_info)
+  if (printing_to_stdio)
   {
 	  tprintf("{}", stream.str().c_str());
-	  return;
   }
-#endif
-  fprintf(fp, "%s", stream.str().c_str());
+  else
+  {
+      fprintf(fp, "%s", stream.str().c_str());
+  }
 }
 
 // Resets all parameters back to default values;

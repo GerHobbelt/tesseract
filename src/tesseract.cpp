@@ -39,6 +39,7 @@
 #endif
 #include <tesseract/renderer.h>
 #include "simddetect.h"
+#include "tesseractclass.h" // for AnyTessLang
 #include "tprintf.h" // for tprintf
 #include "tlog.h"
 
@@ -1013,6 +1014,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
                           (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
                           (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
 
+  if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
+    if (!api.tesseract()->AnyTessLang()) {
+      fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
+      return EXIT_FAILURE;
+    }
+  }
 #if DISABLED_LEGACY_ENGINE
   auto cur_psm = api.GetPageSegMode();
   auto osd_warning = std::string("");
