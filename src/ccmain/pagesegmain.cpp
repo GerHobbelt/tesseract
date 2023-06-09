@@ -375,6 +375,8 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       equ_detect_->LabelSpecialText(to_block);
     }
 
+#endif
+
     BLOBNBOX_CLIST osd_blobs;
     // osd_orientation is the number of 90 degree rotations to make the
     // characters upright. (See tesseract/osdetect.h for precise definition.)
@@ -387,6 +389,9 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       vertical_text = finder->IsVerticallyAlignedText(textord_tabfind_vertical_text_ratio, to_block,
                                                       &osd_blobs);
     }
+
+#if !DISABLED_LEGACY_ENGINE
+
     if (PSM_OSD_ENABLED(pageseg_mode) && osd_tess != nullptr && osr != nullptr) {
       std::vector<int> osd_scripts;
       if (osd_tess != this) {
@@ -437,10 +442,11 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         }
       }
     }
-    osd_blobs.shallow_clear();
-    finder->CorrectOrientation(to_block, vertical_text, osd_orientation);
 
 #endif // !DISABLED_LEGACY_ENGINE
+
+    osd_blobs.shallow_clear();
+    finder->CorrectOrientation(to_block, vertical_text, osd_orientation);
   }
 
   return finder;

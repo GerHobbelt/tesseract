@@ -230,6 +230,10 @@ TESS_API void TessBaseAPIPrintVariables(const TessBaseAPI *handle, FILE *fp);
 TESS_API BOOL TessBaseAPIPrintVariablesToFile(const TessBaseAPI *handle,
                                               const char *filename);
 
+TESS_API void TessBaseAPIDumpVariables(const TessBaseAPI *handle, FILE *fp);
+TESS_API BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle,
+                                              const char *filename);
+
 TESS_API int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode oem,
                               const char **configs, int configs_size);

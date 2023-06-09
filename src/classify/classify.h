@@ -42,6 +42,7 @@ public:
   // Member variables.
 
   INT_VAR_H(classify_debug_level);
+  BOOL_VAR_H(tess_debug_lstm);
   BOOL_VAR_H(classify_bln_numeric_mode);
   double_VAR_H(classify_max_rating_ratio);
   double_VAR_H(classify_max_certainty_margin);

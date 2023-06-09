@@ -978,6 +978,7 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
     window->DrawTo(pos.x(), pos.y());
   }
 }
+#endif
 
 void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const {
   int16_t stepindex; // index to cstep
@@ -1077,6 +1078,7 @@ void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, 
   ptaDestroy(&pta);
 }
 
+#if !GRAPHICS_DISABLED
 /**
  * Draws the outline in the given colour, normalized using the given denorm,
  * making use of sub-pixel accurate information if available.

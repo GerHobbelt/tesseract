@@ -48,6 +48,7 @@
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
 #include "tprintf.h"     // for tprintf
 #include "werd.h"        // for WERD_IT, WERD, WERD_LIST, W_DONT_CHOP
+#include "diagnostics_io.h"
 #include "tesseractclass.h"
 
 #include <allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
@@ -295,23 +296,19 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         auto width = tesseract_->ImageWidth();
         auto height = tesseract_->ImageHeight();
 
-        Image pix = pixCreate(width + 8, height + 8, 32 /* RGBA */);
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
         pixClearAll(pix);
 
-        BOX* border = boxCreate(2, 2, width + 4, height + 4);
-        // boxDestroy(BOX * *pbox);
-        BOXA* boxlist = boxaCreate(1);
-        boxaAddBox(boxlist, border, false);
-        //boxaDestroy(BOXA * *pboxa);
-        l_uint32 bordercolor;
-        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-        boxaDestroy(&boxlist);
+        auto cmap = initDiagPlotColorMap();
 
-        plot_box_list(pix, &block->noise_blobs, ScrollView::WHITE);
-        plot_box_list(pix, &block->small_blobs, ScrollView::WHITE);
-        plot_box_list(pix, &block->large_blobs, ScrollView::WHITE);
-        plot_box_list(pix, &block->blobs, ScrollView::WHITE);
+        int cmap_offset = 0;
+        plot_box_list(pix, &block->noise_blobs, cmap, cmap_offset, true);
+        cmap_offset = 64;
+        plot_box_list(pix, &block->small_blobs, cmap, cmap_offset, false);
+        cmap_offset = 2 * 64;
+        plot_box_list(pix, &block->large_blobs, cmap, cmap_offset, false);
+        cmap_offset = 3 * 64;
+        plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
 
         tesseract_->AddPixDebugPage(pix, name, false);
       }

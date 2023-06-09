@@ -29,6 +29,7 @@
 #include "points.h"  // for operator+=, ICOORD::rotate
 
 #include "helpers.h" // for UpdateRange, IntCastRounded
+#include "diagnostics_io.h"
 
 #include <allheaders.h> // for pixGetHeight, pixGetPixel
 
@@ -438,6 +439,7 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour
     }
   }
 }
+#endif
 
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour.
@@ -449,7 +451,7 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> 
   }
 }
 
-
+#if !GRAPHICS_DISABLED
 ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
@@ -504,13 +506,14 @@ void BLOBNBOX::plot(ScrollView *window,               // window to draw in
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
 }
+#endif
 
 void BLOBNBOX::plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise) {
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(pix, cmap, cmap_offset, noise);
   }
 }
-#endif
+
 /**********************************************************************
  * find_cblob_limits
  *
@@ -525,7 +528,6 @@ void find_cblob_limits( // get y limits
     FCOORD rotation, // for landscape
     float &ymin,     // output y limits
     float &ymax) {
-  int16_t stepindex;  // current point
   ICOORD pos;         // current coords
   ICOORD vec;         // rotated step
   C_OUTLINE *outline; // current outline
@@ -538,7 +540,7 @@ void find_cblob_limits( // get y limits
     outline = out_it.data();
     pos = outline->start_pos(); // get coords
     pos.rotate(rotation);
-    for (stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
+    for (int32_t stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
       // inside
       if (pos.x() >= leftx && pos.x() <= rightx) {
         UpdateRange(pos.y(), &ymin, &ymax);
@@ -1062,50 +1064,6 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
   BLOBNBOX::ComputeEdgeOffsets(thresholds, grey, &noise_blobs);
 }
 
-
-static inline int cmapInterpolate(int factor, int c0, int c1) {
-  int c = c0 * factor + c1 * (256 - factor);
-  return c >> 8;
-}
-
-static void initDiagPlotColorMapColorRange(std::vector<uint32_t>& cmap, int start_index, int h0, int s0, int v0, int h1, int s1, int v1) {
-  for (int i = 0; i < 64; i++) {
-    int h = cmapInterpolate(i, h0, h1);
-    int s = cmapInterpolate(i, s0, s1);
-    int v = cmapInterpolate(i, v0, v1);
-
-    // leptonica uses a HSV unit sets of (240, 255, 255) instead of (360, 100%, 100%) so we must convert to that too:
-    h = (h * 240) / 360;
-    s = (s * 255) / 100;
-    v = (v * 255) / 100;
-
-    int r, g, b;
-    convertHSVToRGB(h, s, v, &r, &g, &b);
-    uint32_t color;
-    composeRGBPixel(r, g, b, &color);
-    cmap.push_back(color);
-  }
-}
-
-static void initDiagPlotColorMap(std::vector<uint32_t> &cmap) {
-
-  // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
-  // --> noise_blobs
-  initDiagPlotColorMapColorRange(cmap, 0, 204, 100, 71, 262, 100, 71);
-
-  // hsv(143, 100%, 64%) - hsv(115, 77%, 71%)
-  // --> small_blobs
-  initDiagPlotColorMapColorRange(cmap, 64, 143, 100, 64, 115, 77, 71);
-
-  // hsv(297, 100%, 81%) - hsv(321, 100%, 82%)
-  // --> large_blobs
-  initDiagPlotColorMapColorRange(cmap, 2 * 64, 297, 100, 81, 321, 100, 82);
-
-  // hsv(61, 100%, 76%) - hsv(26, 100%, 94%)
-  // --> blobs
-  initDiagPlotColorMapColorRange(cmap, 3 * 64, 61, 100, 76, 26, 100, 94);
-}
-
 #if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
 void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
@@ -1123,14 +1081,9 @@ void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
   BLOBNBOX::PlotBlobs(&blobs, ScrollView::WHITE, ScrollView::BROWN, win);
 }
 
-static std::vector<uint32_t> cmap;
-static bool cmap_is_init = false;
-
 // Draw the blobs on the various lists in the block in different colors.
 void TO_BLOCK::plot_graded_blobs(Image &pix) {
-  if (!cmap_is_init) {
-    initDiagPlotColorMap(cmap);
-  }
+  auto cmap = initDiagPlotColorMap();
 
   // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
   BLOBNBOX::PlotBlobs(&noise_blobs, pix, cmap, 0);

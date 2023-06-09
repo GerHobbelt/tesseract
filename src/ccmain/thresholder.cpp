@@ -215,7 +215,7 @@ void ImageThresholder::SetImage(const Image pix, const float angle) {
 Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   l_int32 d, thresh, w1, h1, w2, h2, fgval, bgval;
   //l_uint32 black_val, white_val;
-  l_float32 factor, threshpos, avefg, avebg;
+  l_float32 factor, threshpos, avefg, avebg, numfg, numbg;
   PIX *pixg, *pixd, *pixd2;
   BOX *pixbox;
   NUMA *na;
@@ -264,9 +264,20 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   //  background and foreground value
   pixbox = boxCreate(w1 * 0.1, h1 * 0.1, w1 * 0.9, h1 * 0.9);
   na = pixGetGrayHistogramInRect(pixg, pixbox, 1);
-  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, NULL, NULL, NULL);
+  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, &numfg, &numbg, NULL);
   boxDestroy(&pixbox);
   numaDestroy(&na);
+
+  if (numfg > numbg) {
+    // white = fg --> swap the values produced by numaSplitDistribution()
+    l_float32 tmp = avefg;
+    avefg = avebg;
+    avebg = tmp;
+
+    tmp = numfg;
+    numfg = numbg;
+    numbg = tmp;
+  }
 
   /// Subtract by a foreground value and multiply by factor to
   //  set a background value to 255
@@ -488,7 +499,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double score_fraction = tesseract_->thresholding_score_fraction;
 
     if (tesseract_->thresholding_debug) {
-      tprintf("tile size: {}  smooth_size: {}  score_fraction: {}\n", tile_size, smooth_size, score_fraction);
+      tprintf("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
@@ -504,28 +515,6 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     // Unsupported threshold method.
     r = 1;
   }
-
-#if 0
-  {
-	  std::string debug_output_path = api->GetOutputName();
-    std::string caption = ThresholdMethodName(method);
-	  const int page_number = 0;
-	  bool scribe_save_grey_rotated_image;
-	  api->GetBoolVariable("scribe_save_grey_rotated_image", &scribe_save_grey_rotated_image);
-	  if (scribe_save_grey_rotated_image) {
-		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".grey_image").c_str(), "png");
-		  Pix *p1 = pix_grey;
-		  WritePix(filepath, p1, IFF_PNG);
-	  }
-	  bool scribe_save_binary_rotated_image;
-	  api->GetBoolVariable("scribe_save_binary_rotated_image", &scribe_save_binary_rotated_image);
-	  if (scribe_save_binary_rotated_image) {
-		  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_number, (caption + ".binary_image").c_str(), "png");
-		  Pix *p1 = (PIX*)pix_binary;
-		  WritePix(filepath, p1, IFF_PNG);
-	  }
-  }
-#endif
 
   bool ok = (r == 0) && pix_binary;
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);

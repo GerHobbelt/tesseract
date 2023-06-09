@@ -96,7 +96,7 @@ Tesseract::Tesseract(Tesseract *parent)
                  "adaptive normalized background, 5 = Nlbin",
                  this->params())
     , BOOL_MEMBER(showcase_threshold_methods, false,
-                  "Showcase the avialable threshold methods as part of the thresholding process",
+                  "Showcase the available threshold methods as part of the thresholding process",
                   this->params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process",
@@ -116,7 +116,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method",
                     this->params())
-    , double_MEMBER(thresholding_smooth_kernel_size, 0.0,
+    , double_MEMBER(thresholding_smooth_kernel_size, 0.01,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
@@ -641,7 +641,7 @@ void Tesseract::PrepareForPageseg() {
 // Note that this method resets pix_binary_ to the original binarized image,
 // which may be different from the image actually used for OCR depending on the
 // value of devanagari_ocr_split_strategy.
-void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, OSResults *osr) {
+void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   // Find the max splitter strategy over all langs.
   auto max_ocr_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
       static_cast<int32_t>(ocr_devanagari_split_strategy));

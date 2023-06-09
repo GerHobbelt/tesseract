@@ -100,13 +100,13 @@ public:
   ///@param serial serial number
   ///@param colour colour to draw in
   void plot(ScrollView *window, int32_t serial, ScrollView::Color colour);
+#endif
 
   /// draw histogram
   ///@param pix image to draw in
   ///@param serial serial number
   ///@param colour colour to draw in
   void plot(Image &pix, int32_t serial, uint32_t *data, int wpl, int w, int h);
-#endif // !GRAPHICS_DISABLED
 
   /// assignment
   ///@param source from this

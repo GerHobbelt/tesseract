@@ -123,9 +123,9 @@ ColumnFinder::~ColumnFinder() {
 #endif
   nontext_map_.destroy();
   while (denorm_ != nullptr) {
-    DENORM *dead_denorm = denorm_;
-    denorm_ = const_cast<DENORM *>(denorm_->predecessor());
-    delete dead_denorm;
+    auto *predecessor = const_cast<DENORM *>(denorm_->predecessor());
+    delete denorm_;
+    denorm_ = predecessor;
   }
 
   // The ColPartitions are destroyed automatically, but any boxes in
@@ -391,7 +391,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 
     // Make the column_sets_.
     if (!MakeColumns(false)) {
-      tprintf("WARNING: Empty page!!\n");
+      tprintf("WARNING: Empty page!! tesseract could not detect any text block in the image.\n");
       part_grid_.DeleteParts();
       return 0; // This is an empty page.
     }

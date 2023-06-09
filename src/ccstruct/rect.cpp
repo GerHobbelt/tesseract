@@ -23,6 +23,9 @@
 
 #include "rect.h"
 
+#include <allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
+#include "pix.h"        // for Pix (ptr only), PIX_DST, PIX_NOT
+
 #include "serialis.h" // for TFile
 
 namespace tesseract {
@@ -174,14 +177,42 @@ void TBOX::plot(                    // paint box
 #endif
 
 void TBOX::plot(                  // use current settings
-  Image& pix) const {             // where to paint
+  Image& pix,                     // where to paint
+  std::vector<uint32_t>& cmap, int& cmap_offset, bool noise
+) const {
   //pix->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   auto x = bot_left.x();
   auto y = bot_left.y();
   auto x2 = top_right.x();
   auto y2 = top_right.y();
-}
 
+  // WARNING: leptonica PTA coordinates are vertically flipped vs. tesseract coordinates (?huh?)
+  int img_height = pixGetHeight(pix);
+
+  int color_index = cmap_offset;
+  cmap_offset++;
+  if ((cmap_offset & (64 - 1)) == 0) {
+    cmap_offset--;                  // end of 'local' cmap color range reached: do not overflow the index
+  }
+
+  const int width = 2;
+  PTA* pta = nullptr;
+
+  {
+    BOX* b = boxCreate(x, img_height - y, x2 - x, y2 - y);
+    pta = generatePtaBox(b, width);
+    boxDestroy(&b);
+  }
+
+  int npts = ptaGetCount(pta);
+
+  int r, g, b;
+  uint32_t color = cmap[color_index];
+  extractRGBValues(color, &r, &g, &b);
+  pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
+
+  ptaDestroy(&pta);
+}
 
 // Appends the bounding box as ({},{})->({},{}) to a string.
 void TBOX::print_to_str(std::string &str) const {

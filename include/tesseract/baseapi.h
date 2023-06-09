@@ -194,8 +194,10 @@ public:
 
 #endif
 
-  /**
+  /** 
    * Print Tesseract parameters to the given file (stdout by default).
+   * Cannot be used as Tesseract configuration file due to descriptions 
+   * (use DumpVariables instead to create config files).
    */
   void PrintVariables(FILE *fp = nullptr) const;
 
@@ -209,6 +211,12 @@ public:
   * "Which of all those parameters are actually *relevant* to my use case today?"
   */
   void ReportParamsUsageStatistics() const;
+
+  /** 
+   * Print Tesseract parameters to the given file without descriptions. 
+   * Can be used as Tesseract configuration file.
+  */
+  void DumpVariables(FILE *fp) const;
 
   /**
    * Get value of named variable as a string, if it exists.
@@ -785,7 +793,7 @@ public:
    * Estimates the Orientation And Script of the image.
    * @return true if the image was processed successfully.
    */
-  bool DetectOS(OSResults *);
+  bool DetectOS(OSResults *results);
 
   /**
    * Return text orientation of each block as determined by an earlier run

@@ -115,6 +115,7 @@ static void plot_outline_list(     // draw outlines
     }
   }
 }
+#endif
 
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST* list,          // outline to draw
@@ -138,6 +139,7 @@ static void plot_outline_list(     // draw outlines
   }
 }
 
+#if !GRAPHICS_DISABLED
 // Draws the outlines in the given colour, and child_colour, normalized
 // using the given denorm, making use of sub-pixel accurate information
 // if available.
@@ -337,7 +339,7 @@ int32_t C_BLOB::outer_area() { // area
  * C_BLOB::count_transitions
  *
  * Return the total x and y maxes and mins in the blob.
- * Chlid outlines are not counted.
+ * Child outlines are not counted.
  **********************************************************************/
 
 int32_t C_BLOB::count_transitions( // area
@@ -551,11 +553,13 @@ void C_BLOB::plot(ScrollView *window,               // window to draw in
                   ScrollView::Color child_colour) { // for holes
   plot_outline_list(&outlines, window, blob_colour, child_colour);
 }
+#endif
 
 void C_BLOB::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) {
   plot_outline_list(&outlines, pix, cmap, cmap_offset, noise);
 }
 
+#if !GRAPHICS_DISABLED
 // Draws the blob in the given colour, and child_colour, normalized
 // using the given denorm, making use of sub-pixel accurate information
 // if available.

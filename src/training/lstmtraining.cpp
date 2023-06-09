@@ -22,6 +22,7 @@
 #include <tesseract/debugheap.h>
 
 #include <cerrno>
+#include <locale> // for std::locale::classic
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
 #endif
@@ -252,9 +253,10 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
          iteration = trainer.training_iteration()) {
       trainer.TrainOnLine(&trainer, false);
     }
-    std::string log_str;
+    std::stringstream log_str;
+    log_str.imbue(std::locale::classic());
     trainer.MaintainCheckpoints(tester_callback, log_str);
-    tprintf("{}\n", log_str.c_str());
+    tprintf("{}\n", log_str.str());
   } while (trainer.best_error_rate() > FLAGS_target_error_rate &&
            (trainer.training_iteration() < max_iterations));
   tprintf("Finished! Selected model with minimal training error rate (BCER) = {}\n",

@@ -1,6 +1,6 @@
 ; (C) Copyright 2010, Sergey Bronnikov
 ; (C) Copyright 2010-2012, Zdenko Podobný
-; (C) Copyright 2015-2019 Stefan Weil
+; (C) Copyright 2015-2023 Stefan Weil
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -59,13 +59,17 @@ Unicode true
 !endif
 
 # Name of program and file
-!ifdef VERSION
-OutFile ${SETUP}-${VERSION}.exe
-!else
-OutFile ${SETUP}.exe
+!define OUTFILE "${SETUP}-${VERSION}.exe"
+OutFile ${OUTFILE}
+
+!ifdef SIGNCODE
+!finalize "${SIGNCODE} %1"
+!uninstfinalize "${SIGNCODE} %1"
 !endif
 
-!define PREFIX "../usr/${ARCH}-w64-mingw32"
+!ifndef PREFIX
+!define PREFIX "../mingw64"
+!endif
 !define TRAININGDIR "${PREFIX}/bin"
 
 # General Definitions
@@ -74,6 +78,21 @@ Caption "${PRODUCT_NAME} ${VERSION}"
 !ifndef CROSSBUILD
 BrandingText /TRIMCENTER "(c) 2010-2019 ${PRODUCT_NAME}"
 !endif
+
+; File properties.
+!define /date DATEVERSION "%Y%m%d%H%M%S"
+VIProductVersion "${VERSION}"
+VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
+VIAddVersionKey "Comments" "patched version provided by Stefan Weil"
+VIAddVersionKey "CompanyName" "Universitätsbibliothek Mannheim"
+VIAddVersionKey "FileDescription" "Tesseract OCR"
+!define /date DATETIME "%Y-%m-%d-%H-%M-%S"
+VIAddVersionKey "FileVersion" "${DATETIME}"
+VIAddVersionKey "InternalName" "Tesseract"
+VIAddVersionKey "LegalCopyright" "Apache-2.0"
+#VIAddVersionKey "LegalTrademarks" ""
+VIAddVersionKey "OriginalFilename" "${OUTFILE}"
+VIAddVersionKey "ProductVersion" "${VERSION}"
 
 !define REGKEY "SOFTWARE\${PRODUCT_NAME}"
 ; HKLM (all users) vs HKCU (current user) defines
@@ -139,9 +158,7 @@ Var OLD_KEY
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${SRCDIR}\LICENSE"
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
-!ifdef VERSION
   Page custom PageReinstall PageLeaveReinstall
-!endif
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuGroup
@@ -240,7 +257,7 @@ Section -Main SEC0000
   File ${PREFIX}/bin/tesseract.exe
   File ${PREFIX}/bin/libtesseract-*.dll
 !ifdef CROSSBUILD
-  File ${SRCDIR}\dll\${ARCH}-w64-mingw32\*.dll
+  File ../dll/*.dll
 !endif
   File ${SRCDIR}\nsis\winpath.exe
   File ../doc/*.html

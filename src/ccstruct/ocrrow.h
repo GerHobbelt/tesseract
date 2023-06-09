@@ -142,6 +142,7 @@ public:
     // draw it
     baseline.plot(window, colour);
   }
+#endif // !GRAPHICS_DISABLED
 
   void plot_baseline(             // draw the baseline
       Image &pix, uint32_t *data, int wpl, int w, int h
@@ -149,7 +150,7 @@ public:
     // draw it
     baseline.plot(pix, data, wpl, w, h);
   }
-#endif // !GRAPHICS_DISABLED
+
   ROW &operator=(const ROW &source);
 
 private:

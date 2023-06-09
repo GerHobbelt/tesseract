@@ -304,10 +304,12 @@ public:
       ScrollView *fd) const { // where to paint
     fd->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   }
+#endif
 
   void plot(                  // use current settings
-    Image& pix) const;        // where to paint
+    Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const;        // where to paint
 
+#if !GRAPHICS_DISABLED
   void plot(                                  // paint box
       ScrollView *fd,                         // where to paint
       ScrollView::Color fill_colour,          // colour for inside

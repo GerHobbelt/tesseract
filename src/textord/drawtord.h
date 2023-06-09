@@ -43,7 +43,7 @@ void plot_box_list(               // make gradients win
 void plot_box_list(               // make gradients win
     Image& pix,                   // image to draw in
     BLOBNBOX_LIST* list,          // blob list
-    ScrollView::Color body_colour // colour to draw
+    std::vector<uint32_t>& cmap, int& cmap_offset, bool noise    // colour to draw
 );
 void plot_to_row(             // draw a row
     TO_ROW *row,              // row to draw
@@ -72,12 +72,12 @@ void draw_meanlines(          // draw a block
     FCOORD rotation           // rotation for line
 );
 void plot_word_decisions( // draw words
-    ScrollView *win,      // window tro draw in
+    ScrollView *win,      // window to draw in
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 );
 void plot_fp_cells(           // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
@@ -86,13 +86,13 @@ void plot_fp_cells(           // draw words
     int16_t projection_left,  // edges //scale factor
     int16_t projection_right, float projection_scale);
 void plot_fp_cells2(          // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
 );
 void plot_row_cells(          // draw words
-    ScrollView *win,          // window tro draw in
+    ScrollView *win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift
