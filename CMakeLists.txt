@@ -880,7 +880,7 @@ if(SW_BUILD)
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
     NAMESPACE Tesseract::)
 else()
-  target_link_libraries(libtesseract PUBLIC ${Leptonica_LIBRARIES})
+  target_link_libraries(libtesseract PRIVATE Leptonica::leptonica)
   export(
     TARGETS libtesseract
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
