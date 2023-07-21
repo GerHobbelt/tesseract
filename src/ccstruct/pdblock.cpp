@@ -23,7 +23,7 @@
 
 #include "pdblock.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cinttypes> // for PRId32
 #include <cstdlib>

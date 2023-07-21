@@ -19,7 +19,7 @@
 
 #include "degradeimage.h"
 
-#include <allheaders.h> // from leptonica
+#include <leptonica/allheaders.h> // from leptonica
 #include <cstdlib>
 #include "helpers.h" // For TRand.
 #include "rect.h"

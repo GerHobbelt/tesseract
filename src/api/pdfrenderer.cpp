@@ -23,7 +23,7 @@
 #include "pdf_ttf.h"
 #include "tprintf.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/publictypes.h> // for PTIsTextType()
 #include <tesseract/renderer.h>

@@ -16,7 +16,7 @@
 #include "commandlineflags.h"
 #include "stringrenderer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <memory>
 #include <string>

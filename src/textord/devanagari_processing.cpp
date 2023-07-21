@@ -27,7 +27,7 @@
 #include "statistc.h"
 #include "tordmain.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 namespace tesseract {
 

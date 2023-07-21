@@ -31,7 +31,7 @@
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include "dict.h"
 #if defined(USE_OPENCL)

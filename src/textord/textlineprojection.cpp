@@ -15,7 +15,7 @@
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "bbgrid.h"  // Base class.
 #include "blobbox.h" // BlobNeighourDir.
 #include "blobs.h"

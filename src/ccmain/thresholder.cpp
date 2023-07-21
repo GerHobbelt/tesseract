@@ -29,7 +29,7 @@
 #  include "openclwrapper.h" // for OpenclDevice
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h> // for api->GetIntVariable()
 
 #include <algorithm> // for std::max, std::min
