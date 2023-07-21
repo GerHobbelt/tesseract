@@ -24,7 +24,7 @@
 
 #include "baselinedetect.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <algorithm>
 #include <cfloat> // for FLT_MAX
 #include <cmath>  // for M_PI

@@ -26,7 +26,7 @@
 
 #include "svutil.h" // for SVNetwork
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <algorithm>
 #include <climits>

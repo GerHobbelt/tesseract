@@ -24,13 +24,13 @@
 #include "blobbox.h"
 #include "blobs.h"   // for TPOINT
 #include "coutln.h"  // for C_OUTLINE_IT, C_OUTLINE, C_OUTLINE_LIST
-#include "environ.h" // for l_uint32
+#include "leptonica/environ.h" // for l_uint32
 #include "host.h"    // for NearlyEqual
 #include "points.h"  // for operator+=, ICOORD::rotate
 
 #include "helpers.h" // for UpdateRange, IntCastRounded
 
-#include <allheaders.h> // for pixGetHeight, pixGetPixel
+#include <leptonica/allheaders.h> // for pixGetHeight, pixGetPixel
 
 #include <algorithm> // for max, min
 #include <cmath>
