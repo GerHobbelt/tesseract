@@ -18,7 +18,7 @@
 
 #include <tesseract/baseapi.h>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "gmock/gmock-matchers.h"
 
 #include <memory>
