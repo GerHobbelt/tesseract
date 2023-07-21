@@ -106,6 +106,7 @@ option(DISABLE_TIFF "Disable build with libtiff (if available)" OFF)
 option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" OFF)
 option(DISABLE_CURL "Disable build with libcurl (if available)" OFF)
 option(INSTALL_CONFIGS "Install tesseract configs" ON)
+option(BUILD_EXE "Build tesseract executable, not just the library" OFF)
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.15.0")
   if(WIN32 AND MSVC)
@@ -911,8 +912,10 @@ endif()
 # EXECUTABLE tesseract
 # ##############################################################################
 
+if(BUILD_EXE)
+
 add_executable(tesseract src/tesseract.cpp)
-target_link_libraries(tesseract libtesseract)
+target_link_libraries(tesseract libtesseract Leptonica::leptonica)
 if(HAVE_TIFFIO_H AND WIN32)
   target_link_libraries(tesseract ${TIFF_LIBRARIES})
 endif()
@@ -920,6 +923,8 @@ endif()
 if(OPENMP_BUILD AND UNIX)
   target_link_libraries(tesseract pthread)
 endif()
+
+endif(BUILD_EXE)
 
 # ##############################################################################
 
