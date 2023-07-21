@@ -26,7 +26,7 @@
 #include "normfeat.h"
 #include "shapetable.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cmath> // for M_PI
 

@@ -63,7 +63,7 @@ void ParseArguments(int *argc, char ***argv) {
 
 #else
 
-#  include <allheaders.h>
+#  include <leptonica/allheaders.h>
 #  include "ccutil.h"
 #  include "classify.h"
 #  include "cluster.h"

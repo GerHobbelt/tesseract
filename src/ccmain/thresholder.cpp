@@ -25,7 +25,11 @@
 #include "thresholder.h"
 #include "tprintf.h" // for tprintf
 
-#include <allheaders.h>
+#if defined(USE_OPENCL)
+#  include "openclwrapper.h" // for OpenclDevice
+#endif
+
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h> // for api->GetIntVariable()
 
 #include <algorithm> // for std::max, std::min

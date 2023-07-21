@@ -25,7 +25,7 @@
 #include "tesseractclass.h"
 #include "unicharset.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <set>
 #include <vector>

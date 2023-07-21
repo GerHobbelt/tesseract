@@ -22,7 +22,7 @@
 // expects clone of tessdata_fast repo in ../../tessdata_fast
 
 //#include "log.h"
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <time.h>
 #include <fstream>

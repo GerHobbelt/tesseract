@@ -24,7 +24,7 @@
 #include "tprintf.h"
 #include "helpers.h" // for Swap, copy_string
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/publictypes.h> // for PTIsTextType()
 #include <tesseract/renderer.h>

@@ -19,7 +19,7 @@
 
 #include "stringrenderer.h"
 
-#include <allheaders.h> // from leptonica
+#include <leptonica/allheaders.h> // from leptonica
 #include "boxchar.h"
 #include "helpers.h" // for TRand
 #include "ligature_table.h"

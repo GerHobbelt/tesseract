@@ -28,7 +28,7 @@
 #include "params.h"
 #include "statistc.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <algorithm>
 

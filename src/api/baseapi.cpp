@@ -28,14 +28,14 @@
 #include "dawg_cache.h" // for DawgCache
 #include "dict.h"       // for Dict
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#include "environ.h"    // for l_uint8
+#include "leptonica/environ.h"    // for l_uint8
 #ifndef DISABLED_LEGACY_ENGINE
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
 #endif // ndef DISABLED_LEGACY_ENGINE
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string, copy_string
 #include "host.h"    // for MAX_PATH
-#include "imageio.h" // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
+#include "leptonica/imageio.h" // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #ifndef DISABLED_LEGACY_ENGINE
 #  include "intfx.h" // for INT_FX_RESULT_STRUCT
 #endif
@@ -72,7 +72,7 @@
 #include <sstream>  // for std::stringstream
 #include <vector>   // for std::vector
 
-#include <allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
+#include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
 #endif

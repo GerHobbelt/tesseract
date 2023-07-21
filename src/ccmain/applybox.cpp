@@ -17,7 +17,7 @@
  **********************************************************************/
 
 #ifndef DISABLED_LEGACY_ENGINE
-#  include <allheaders.h>
+#  include <leptonica/allheaders.h>
 #  include <cctype>
 #  include <cerrno>
 #  include <cstring>

@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <cmath>
 #include <ctime>
 #include "boxread.h"

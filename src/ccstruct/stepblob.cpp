@@ -25,7 +25,7 @@
 
 #include "points.h" // for operator+=, FCOORD, ICOORD
 
-#include <allheaders.h> // for pixCreate, pixGetDepth
+#include <leptonica/allheaders.h> // for pixCreate, pixGetDepth
 #include <vector>       // for std::vector
 
 namespace tesseract {

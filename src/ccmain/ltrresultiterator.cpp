@@ -23,7 +23,7 @@
 #include "pageres.h"
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 namespace tesseract {
 

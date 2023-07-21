@@ -19,7 +19,7 @@
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "functions.h"
 #include "statistc.h"
 #include "tprintf.h"

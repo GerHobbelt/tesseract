@@ -14,7 +14,7 @@
 #else
 #  include <unistd.h> // for access
 #endif
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <string>
 #include "helpers.h"
