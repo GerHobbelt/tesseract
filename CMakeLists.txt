@@ -23,6 +23,12 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
       "\n cmake ..")
 endif()
 
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.18.65.tar.gz"
+    SHA1 "59cd3223f10ee630bc3596709a22f2fea4926a7c"
+)
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
@@ -79,7 +85,7 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 message(STATUS "Configuring tesseract version ${PACKAGE_VERSION}...")
 
 if(WIN32)
-  option(SW_BUILD "Build with sw" ON)
+  option(SW_BUILD "Build with sw" OFF)
 else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
@@ -394,7 +400,8 @@ else()
   find_package(PkgConfig)
   # Check for required library. option -DLeptonica_DIR=path => cmake hint where
   # to find leptonica
-  find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
+  hunter_add_package(Leptonica)
+  find_package(Leptonica CONFIG REQUIRED)
   if(NOT Leptonica_FOUND AND PKG_CONFIG_EXECUTABLE)
     pkg_check_modules(Leptonica lept>=${MINIMUM_LEPTONICA_VERSION})
     link_directories(${Leptonica_LIBRARY_DIRS})
