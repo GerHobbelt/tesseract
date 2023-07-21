@@ -32,14 +32,12 @@ function(check_leptonica_tiff_support)
     LEPT_TIFF_RESULT
     LEPT_TIFF_COMPILE 
     SOURCE_FROM_CONTENT tiff_test.cpp "${TIFF_TEST}"
-    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Leptonica_INCLUDE_DIRS}"
-    LINK_LIBRARIES ${Leptonica_LIBRARIES}
+    LINK_LIBRARIES Leptonica::leptonica
     COMPILE_OUTPUT_VARIABLE
     COMPILE_OUTPUT)
   if(NOT LEPT_TIFF_COMPILE)
     message(STATUS "COMPILE_OUTPUT: ${COMPILE_OUTPUT}")
-    message(STATUS "Leptonica_INCLUDE_DIRS: ${Leptonica_INCLUDE_DIRS}")
-    message(STATUS "Leptonica_LIBRARIES: ${Leptonica_LIBRARIES}")
+    message(STATUS "Leptonica_LIBRARIES: Leptonica::leptonica")
     message(STATUS "LEPT_TIFF_RESULT: ${LEPT_TIFF_RESULT}")
     message(STATUS "LEPT_TIFF_COMPILE: ${LEPT_TIFF_COMPILE}")
     message(WARNING "Failed to compile test")
