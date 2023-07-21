@@ -943,10 +943,12 @@ install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract_$<CONFIG>.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   RENAME tesseract.pc)
+if(BUILD_EXE)
 install(TARGETS tesseract DESTINATION bin)
 if (MSVC)
   install(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> DESTINATION bin OPTIONAL)
 endif()
+endif(BUILD_EXE)
 install(
   TARGETS libtesseract
   EXPORT TesseractTargets
