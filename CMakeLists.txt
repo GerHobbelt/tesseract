@@ -99,12 +99,12 @@ option(ENABLE_NATIVE
        "Enable optimization for host CPU (could break HW compatibility)" OFF)
 # see
 # https://stackoverflow.com/questions/52653025/why-is-march-native-used-so-rarely
-option(BUILD_TRAINING_TOOLS "Build training tools" ON)
+option(BUILD_TRAINING_TOOLS "Build training tools" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
 option(DISABLE_TIFF "Disable build with libtiff (if available)" OFF)
-option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" OFF)
-option(DISABLE_CURL "Disable build with libcurl (if available)" OFF)
+option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" ON)
+option(DISABLE_CURL "Disable build with libcurl (if available)" ON)
 option(INSTALL_CONFIGS "Install tesseract configs" ON)
 option(BUILD_EXE "Build tesseract executable, not just the library" OFF)
 
