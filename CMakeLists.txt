@@ -419,6 +419,11 @@ else()
     message(STATUS "Leptonica was build with TIFF support.")
   endif()
 
+  // idscan hunterisation: add ICU as extra dependency because will try to just
+  // pull in otherwise
+  hunter_add_package(ICU)
+  find_package(ICU CONFIG REQUIRED COMPONENTS uc i18n)
+
   # Check for optional libraries.
   if(DISABLE_TIFF)
     set(HAVE_TIFFIO_H OFF)
