@@ -24,6 +24,10 @@ if (HUNTER_ENABLED)
     hunter_add_package(Leptonica)
 endif()
 find_package(Leptonica CONFIG REQUIRED)
+if (HUNTER_ENABLED)
+    hunter_add_package(ICU)
+endif()
+find_package(ICU CONFIG REQUIRED COMPONENTS uc i18n)
 
 include(${CMAKE_CURRENT_LIST_DIR}/TesseractTargets.cmake)
 
