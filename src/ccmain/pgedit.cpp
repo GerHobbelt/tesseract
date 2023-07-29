@@ -22,6 +22,8 @@
 #endif
 
 #include <tesseract/debugheap.h>
+#include <tesseract/fmt-support.h>
+
 #include "pgedit.h"
 
 #include "blread.h"
@@ -83,6 +85,7 @@ enum CMD_EVENTS {
   SHOW_SMALLCAPS_CMD_EVENT,
   SHOW_DROPCAPS_CMD_EVENT,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(CMD_EVENTS);
 
 } // namespace tesseract
 
@@ -90,14 +93,11 @@ namespace fmt {
 
 using namespace tesseract;
 
-template <>
-struct formatter<CMD_EVENTS> : formatter<string_view> {
-  // parse is inherited from formatter<string_view>.
-
-  template <typename FormatContext>
-  auto format(const CMD_EVENTS &c, FormatContext &ctx) const {
-    std::string_view name = "unknown";
-    switch (c) {
+auto fmt::formatter<CMD_EVENTS>::format(CMD_EVENTS c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
       case CMD_EVENTS::NULL_CMD_EVENT:
         name = "null";
         break;
@@ -217,10 +217,15 @@ struct formatter<CMD_EVENTS> : formatter<string_view> {
       case CMD_EVENTS::SHOW_DROPCAPS_CMD_EVENT:
         name = "show_dropcaps";
         break;
-    }
-    return formatter<string_view>::format(name, ctx);
+
+    default:
+      name = "unknown_cmd";
+      break;
   }
-};
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
 
 } // namespace fmt
 

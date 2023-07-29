@@ -28,6 +28,9 @@
 #include <cinttypes>  // for PRId64
 #include <functional> // for std::function
 #include <memory>
+
+#include <tesseract/fmt-support.h>
+
 #include "elst.h"
 #include "params.h"
 #include "ratngs.h"
@@ -69,41 +72,7 @@ enum DawgType {
 
   DAWG_TYPE_COUNT // number of enum entries
 };
-
-} // namespace tesseract
-
-namespace fmt {
-
-using namespace tesseract;
-
-template <>
-struct formatter<DawgType> : formatter<string_view> {
-  // parse is inherited from formatter<string_view>.
-
-  template <typename FormatContext> auto format(const DawgType& c,
-                                                 FormatContext& ctx) const {
-    std::string_view name = "unknown";
-    switch (c) {
-      case DawgType::DAWG_TYPE_PUNCTUATION:
-        name = "punctuation";
-        break;
-      case DawgType::DAWG_TYPE_WORD:
-        name = "word";
-        break;
-      case DawgType::DAWG_TYPE_NUMBER:
-        name = "number";
-        break;
-      case DawgType::DAWG_TYPE_PATTERN:
-        name = "pattern";
-        break;
-    }
-    return formatter<string_view>::format(name, ctx);
-  }
-};
-
-} // namespace fmt
-
-namespace tesseract {
+DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
 
 /*----------------------------------------------------------------------
               C o n s t a n t s

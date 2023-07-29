@@ -20,6 +20,8 @@
 #define TESSERACT_CCMAIN_PARAGRAPHS_INTERNAL_H_
 
 #include <tesseract/publictypes.h> // for ParagraphJustification
+#include <tesseract/fmt-support.h>
+
 #include "paragraphs.h"
 
 // NO CODE OUTSIDE OF paragraphs.cpp AND TESTS SHOULD NEED TO ACCESS
@@ -51,41 +53,7 @@ enum LineType {
   LT_UNKNOWN = 'U',  // No clues.
   LT_MULTIPLE = 'M', // Matches for both LT_START and LT_BODY.
 };
-
-} // namespace tesseract
-
-namespace fmt {
-
-using namespace tesseract;
-
-template <>
-struct formatter<LineType> : formatter<string_view> {
-  // parse is inherited from formatter<string_view>.
-
-  template <typename FormatContext>
-  auto format(const LineType &c, FormatContext &ctx) const {
-    std::string_view name = "unknown";
-    switch (c) {
-      case LineType::LT_START:
-        name = "start";
-        break;
-      case LineType::LT_BODY:
-        name = "body";
-        break;
-      case LineType::LT_UNKNOWN:
-        name = "no_clue/unknown";
-        break;
-      case LineType::LT_MULTIPLE:
-        name = "multiple";
-        break;
-    }
-    return formatter<string_view>::format(name, ctx);
-  }
-};
-
-} // namespace fmt
-
-namespace tesseract {
+DECL_FMT_FORMAT_TESSENUMTYPE(LineType);
 
 // The first paragraph in a page of body text is often un-indented.
 // This is a typographic convention which is common to indicate either that:

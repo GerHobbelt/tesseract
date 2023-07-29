@@ -736,30 +736,12 @@ TO_ROW::TO_ROW(     // constructor
 
 void TO_ROW::print() const {
   tprintf(
-      "fp={}, fps={}, fpns={}, prs={}, prns={},"
-      " spacing={} xh={} y_origin={} xev={}, asc={}, desc={},"
-      " body={}\n",
-      fixed_pitch, fp_space, fp_nonsp, pr_space, pr_nonsp, spacing, xheight,
-      y_origin, xheight_evidence, ascrise, descdrop, body_size);
-  tprintf(
-      "pitch={}, fp={}, fps={}, fpns={}, prs={}, prns={},"
-      " spacing={} xh={} y_origin={} xev={}, asc={}, desc={},"
-      " body={}\n",
-      pitch_decision, fixed_pitch, fp_space, fp_nonsp, pr_space, pr_nonsp,
-      spacing, xheight, y_origin, xheight_evidence, ascrise, descdrop,
-      body_size);
-  tprintf(
-      "minsp={} maxnsp={}, thr={} kern={} sp={}\n",
-      min_space, max_nonspace, space_threshold, kern_size,
-      space_size);
-  tprintf(
       "pitch={}, fp={}, fps={}, fpns={}, prs={}, prns={},"
       " spacing={} xh={} y_origin={} xev={}, asc={}, desc={},"
       " body={}, minsp={} maxnsp={}, thr={} kern={} sp={}\n",
-      pitch_decision, fixed_pitch, fp_space, fp_nonsp, pr_space, pr_nonsp,
-      spacing, xheight, y_origin, xheight_evidence, ascrise, descdrop,
-      body_size, min_space, max_nonspace, space_threshold, kern_size,
-      space_size);
+      pitch_decision, fixed_pitch, fp_space, fp_nonsp, pr_space, pr_nonsp, spacing, xheight,
+      y_origin, xheight_evidence, ascrise, descdrop, body_size, min_space, max_nonspace,
+      space_threshold, kern_size, space_size);
 }
 
 /**********************************************************************

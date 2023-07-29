@@ -26,6 +26,8 @@
 #include "network.h"
 #include "ratngs.h"
 #include "static_shape.h"
+#include "paragraphs_internal.h"
+#include "dawg.h"
 
 #include <algorithm>
 #include <string>
@@ -197,29 +199,50 @@ auto fmt::formatter<PageSegMode>::format(PageSegMode c,
   const char *name;
   // enum PageSegMode:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case PageSegMode::PSM_OSD_ONLY:
+      name = "Orientation_and_Script_Detection_only";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+      case PageSegMode::PSM_AUTO_OSD:
+      name = "Automatic_page_segmentation_with_OSD";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+      case PageSegMode::PSM_AUTO_ONLY:
+      name = "Automatic_page_segmentation_sans_OSD_sans_OCR";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+      case PageSegMode::PSM_AUTO:
+      name = "Fully_automatic_page_segmentation_sans_OSD";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+      case PageSegMode::PSM_SINGLE_COLUMN:
+      name = "Assume_a_single_column_of_text_of_variable_sizes";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+      case PageSegMode::PSM_SINGLE_BLOCK_VERT_TEXT:
+      name = "Assume_a_single_uniform_block_of_vertically_aligned_text";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+      case PageSegMode::PSM_SINGLE_BLOCK:
+      name = "Assume_a_single_uniform_block_of_text";
       break;
-    default:
-      name = "unknown";
+      case PageSegMode::PSM_SINGLE_LINE:
+      name = "Treat_as_a_single_text_line";
+      break;
+      case PageSegMode::PSM_SINGLE_WORD:
+      name = "Treat_as_a_single_word";
+      break;
+      case PageSegMode::PSM_CIRCLE_WORD:
+      name = "Treat_as_a_single_word_in_a_circle";
+      break;
+      case PageSegMode::PSM_SINGLE_CHAR:
+      name = "Treat_as_a_single_character";
+      break;
+      case PageSegMode::PSM_SPARSE_TEXT:
+      name = "Find_as_much_text_as_possible_in_no_particular_order";
+      break;
+      case PageSegMode::PSM_SPARSE_TEXT_OSD:
+      name = "Sparse_text_with_Orientation_and_Script_Detection";
+      break;
+      case PageSegMode::PSM_RAW_LINE:
+      name = "Treat_as_a_single_text_line_bypassing_all_tesseract_hacks";
+      break;
+      default:
+      name = "unknown_page_seg_mode";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -232,29 +255,26 @@ auto fmt::formatter<TabType>::format(TabType c, format_context &ctx) const
   const char *name;
   // enum TabType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case TabType::TT_NONE:
+      name = "not_a_tab";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case TabType::TT_DELETED:
+      name = "deleted_not_a_tab_after_analysis";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case TabType::TT_MAYBE_RAGGED:
+      name = "maybe_ragged";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case TabType::TT_MAYBE_ALIGNED:
+      name = "maybe_aligned";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case TabType::TT_CONFIRMED:
+      name = "aligned_with_neighbours";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case TabType::TT_VLINE:
+      name = "vertical_line";
       break;
     default:
-      name = "unknown";
+      name = "unknown_tab";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -268,29 +288,32 @@ auto fmt::formatter<BlobRegionType>::format(BlobRegionType c,
   const char *name;
   // enum BlobRegionType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobRegionType::BRT_NOISE:
+      name = "neither_text_nor_image";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case BlobRegionType::BRT_HLINE:
+      name = "horizontal_separator_line";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case BlobRegionType::BRT_VLINE:
+      name = "vertical_separator_line";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case BlobRegionType::BRT_RECTIMAGE:
+      name = "rectangular_image";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case BlobRegionType::BRT_POLYIMAGE:
+      name = "nonrectangular_image";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+    case BlobRegionType::BRT_UNKNOWN:
+      name = "not_determined_yet";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case BlobRegionType::BRT_VERT_TEXT:
+      name = "vertical_aligned_text";
+      break;
+    case BlobRegionType::BRT_TEXT:
+      name = "convincing_text";
       break;
     default:
-      name = "unknown";
+      name = "unknown_blob_region";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -304,29 +327,20 @@ auto fmt::formatter<BlobNeighbourDir>::format(BlobNeighbourDir c,
   const char *name;
   // enum BlobNeighbourDir:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobNeighbourDir::BND_LEFT:
+      name = "left";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case BlobNeighbourDir::BND_BELOW:
+      name = "below";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case BlobNeighbourDir::BND_RIGHT:
+      name = "right";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
-      break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case BlobNeighbourDir::BND_ABOVE:
+      name = "above";
       break;
     default:
-      name = "unknown";
+      name = "unknown_neighbour_dir";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -398,7 +412,7 @@ auto fmt::formatter<BlobTextFlowType>::format(BlobTextFlowType c,
       name = "corrected_proportional";
       break;
     default:
-      name = "unknown";
+      name = "unknown_textflow";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -433,6 +447,172 @@ auto fmt::formatter<NetworkType>::format(NetworkType c,
     case PITCH_TYPE::PITCH_CORR_PROP:
       name = "corrected_proportional";
       break;
+    default:
+      name = "unknown_networktype";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<LineType>::format(LineType c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case LineType::LT_START:
+        name = "start";
+        break;
+      case LineType::LT_BODY:
+        name = "body";
+        break;
+      case LineType::LT_UNKNOWN:
+        name = "no_clue/unknown";
+        break;
+      case LineType::LT_MULTIPLE:
+        name = "multiple";
+        break;
+    default:
+      name = "unknown_linetype";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+auto fmt::formatter<BlobChoiceClassifier>::format(BlobChoiceClassifier c,
+                                                  format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case BlobChoiceClassifier::BCC_STATIC_CLASSIFIER:
+        name = "static";
+        break;
+      case BlobChoiceClassifier::BCC_ADAPTED_CLASSIFIER:
+        name = "adapted";
+        break;
+      case BlobChoiceClassifier::BCC_SPECKLE_CLASSIFIER:
+        name = "speckle";
+        break;
+      case BlobChoiceClassifier::BCC_AMBIG:
+        name = "ambiguous";
+        break;
+      case BlobChoiceClassifier::BCC_FAKE:
+        name = "fake";
+        break;
+    default:
+      name = "unknown_blobchoice";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<PermuterType>::format(PermuterType c,
+                                          format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case PermuterType::NO_PERM:
+        name = "none";
+        break;
+      case PermuterType::PUNC_PERM:
+        name = "punctuation";
+        break;
+      case PermuterType::TOP_CHOICE_PERM:
+        name = "top_choice";
+        break;
+      case PermuterType::LOWER_CASE_PERM:
+        name = "lower_case";
+        break;
+      case PermuterType::UPPER_CASE_PERM:
+        name = "upper_case";
+        break;
+      case PermuterType::NGRAM_PERM:
+        name = "ngram";
+        break;
+      case PermuterType::NUMBER_PERM:
+        name = "number";
+        break;
+      case PermuterType::USER_PATTERN_PERM:
+        name = "user_pattern";
+        break;
+      case PermuterType::SYSTEM_DAWG_PERM:
+        name = "system_dawg";
+        break;
+      case PermuterType::DOC_DAWG_PERM:
+        name = "doc_dawg";
+        break;
+      case PermuterType::USER_DAWG_PERM:
+        name = "user_dawg";
+        break;
+      case PermuterType::FREQ_DAWG_PERM:
+        name = "freq_dawg";
+        break;
+      case PermuterType::COMPOUND_PERM:
+        name = "compound";
+        break;
+    default:
+      name = "unknown_permuter";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<DawgType>::format(DawgType c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case DawgType::DAWG_TYPE_PUNCTUATION:
+        name = "punctuation";
+        break;
+      case DawgType::DAWG_TYPE_WORD:
+        name = "word";
+        break;
+      case DawgType::DAWG_TYPE_NUMBER:
+        name = "number";
+        break;
+      case DawgType::DAWG_TYPE_PATTERN:
+        name = "pattern";
+        break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case LossType::LT_NONE:
+        name = "none/undefined";
+        break;
+      case LossType::LT_CTC:
+        name = "CTC";
+        break;
+      case LossType::LT_SOFTMAX:
+        name = "softMax";
+        break;
+      case LossType::LT_LOGISTIC:
+        name = "logistic";
+        break;
     default:
       name = "unknown";
       break;
@@ -478,6 +658,187 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
 
   return formatter<string_view>::format(id, ctx);
 }
+
+
+auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+    case PITCH_TYPE::PITCH_DUNNO:
+      name = "insufficient_data";
+      break;
+    case PITCH_TYPE::PITCH_DEF_FIXED:
+      name = "definitely_fixed";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_FIXED:
+      name = "maybe_fixed";
+      break;
+    case PITCH_TYPE::PITCH_DEF_PROP:
+      name = "definitely_proportional";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_PROP:
+      name = "maybe_proportional";
+      break;
+    case PITCH_TYPE::PITCH_CORR_FIXED:
+      name = "corrected_fixed";
+      break;
+    case PITCH_TYPE::PITCH_CORR_PROP:
+      name = "corrected_proportional";
+      break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+    case PITCH_TYPE::PITCH_DUNNO:
+      name = "insufficient_data";
+      break;
+    case PITCH_TYPE::PITCH_DEF_FIXED:
+      name = "definitely_fixed";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_FIXED:
+      name = "maybe_fixed";
+      break;
+    case PITCH_TYPE::PITCH_DEF_PROP:
+      name = "definitely_proportional";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_PROP:
+      name = "maybe_proportional";
+      break;
+    case PITCH_TYPE::PITCH_CORR_FIXED:
+      name = "corrected_fixed";
+      break;
+    case PITCH_TYPE::PITCH_CORR_PROP:
+      name = "corrected_proportional";
+      break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+    case PITCH_TYPE::PITCH_DUNNO:
+      name = "insufficient_data";
+      break;
+    case PITCH_TYPE::PITCH_DEF_FIXED:
+      name = "definitely_fixed";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_FIXED:
+      name = "maybe_fixed";
+      break;
+    case PITCH_TYPE::PITCH_DEF_PROP:
+      name = "definitely_proportional";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_PROP:
+      name = "maybe_proportional";
+      break;
+    case PITCH_TYPE::PITCH_CORR_FIXED:
+      name = "corrected_fixed";
+      break;
+    case PITCH_TYPE::PITCH_CORR_PROP:
+      name = "corrected_proportional";
+      break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+    case PITCH_TYPE::PITCH_DUNNO:
+      name = "insufficient_data";
+      break;
+    case PITCH_TYPE::PITCH_DEF_FIXED:
+      name = "definitely_fixed";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_FIXED:
+      name = "maybe_fixed";
+      break;
+    case PITCH_TYPE::PITCH_DEF_PROP:
+      name = "definitely_proportional";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_PROP:
+      name = "maybe_proportional";
+      break;
+    case PITCH_TYPE::PITCH_CORR_FIXED:
+      name = "corrected_fixed";
+      break;
+    case PITCH_TYPE::PITCH_CORR_PROP:
+      name = "corrected_proportional";
+      break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+    case PITCH_TYPE::PITCH_DUNNO:
+      name = "insufficient_data";
+      break;
+    case PITCH_TYPE::PITCH_DEF_FIXED:
+      name = "definitely_fixed";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_FIXED:
+      name = "maybe_fixed";
+      break;
+    case PITCH_TYPE::PITCH_DEF_PROP:
+      name = "definitely_proportional";
+      break;
+    case PITCH_TYPE::PITCH_MAYBE_PROP:
+      name = "maybe_proportional";
+      break;
+    case PITCH_TYPE::PITCH_CORR_FIXED:
+      name = "corrected_fixed";
+      break;
+    case PITCH_TYPE::PITCH_CORR_PROP:
+      name = "corrected_proportional";
+      break;
+    default:
+      name = "unknown";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
 
 auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
     -> decltype(ctx.out()) {
