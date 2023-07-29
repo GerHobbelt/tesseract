@@ -84,6 +84,148 @@ enum CMD_EVENTS {
   SHOW_DROPCAPS_CMD_EVENT,
 };
 
+} // namespace tesseract
+
+namespace fmt {
+
+using namespace tesseract;
+
+template <>
+struct formatter<CMD_EVENTS> : formatter<string_view> {
+  // parse is inherited from formatter<string_view>.
+
+  template <typename FormatContext>
+  auto format(const CMD_EVENTS &c, FormatContext &ctx) const {
+    std::string_view name = "unknown";
+    switch (c) {
+      case CMD_EVENTS::NULL_CMD_EVENT:
+        name = "null";
+        break;
+
+      case CMD_EVENTS::CHANGE_DISP_CMD_EVENT:
+        name = "change_disp";
+        break;
+
+      case CMD_EVENTS::DUMP_WERD_CMD_EVENT:
+        name = "dump_werd";
+        break;
+
+      case CMD_EVENTS::SHOW_POINT_CMD_EVENT:
+        name = "show_point";
+        break;
+
+      case CMD_EVENTS::SHOW_BLN_WERD_CMD_EVENT:
+        name = "show_bln_werd";
+        break;
+
+      case CMD_EVENTS::DEBUG_WERD_CMD_EVENT:
+        name = "debug_werd";
+        break;
+
+      case CMD_EVENTS::BLAMER_CMD_EVENT:
+        name = "blamer";
+        break;
+
+      case CMD_EVENTS::BOUNDING_BOX_CMD_EVENT:
+        name = "bounding_box";
+        break;
+
+      case CMD_EVENTS::CORRECT_TEXT_CMD_EVENT:
+        name = "correct_text";
+        break;
+
+      case CMD_EVENTS::POLYGONAL_CMD_EVENT:
+        name = "polygonal";
+        break;
+
+      case CMD_EVENTS::BL_NORM_CMD_EVENT:
+        name = "bl_norm";
+        break;
+
+      case CMD_EVENTS::BITMAP_CMD_EVENT:
+        name = "bitmap";
+        break;
+
+      case CMD_EVENTS::IMAGE_CMD_EVENT:
+        name = "image";
+        break;
+
+      case CMD_EVENTS::BLOCKS_CMD_EVENT:
+        name = "blocks";
+        break;
+
+      case CMD_EVENTS::BASELINES_CMD_EVENT:
+        name = "baselines";
+        break;
+
+      case CMD_EVENTS::UNIFORM_DISP_CMD_EVENT:
+        name = "uniform_disp";
+        break;
+
+      case CMD_EVENTS::REFRESH_CMD_EVENT:
+        name = "refresh";
+        break;
+
+      case CMD_EVENTS::QUIT_CMD_EVENT:
+        name = "quit";
+        break;
+
+      case CMD_EVENTS::RECOG_WERDS:
+        name = "recognize_werds";
+        break;
+
+      case CMD_EVENTS::RECOG_PSEUDO:
+        name = "recognize_peudo";
+        break;
+
+      case CMD_EVENTS::SHOW_BLOB_FEATURES:
+        name = "show_blob_features";
+        break;
+
+      case CMD_EVENTS::SHOW_SUBSCRIPT_CMD_EVENT:
+        name = "show_subscript";
+        break;
+
+      case CMD_EVENTS::SHOW_SUPERSCRIPT_CMD_EVENT:
+        name = "show_superscript";
+        break;
+
+      case CMD_EVENTS::SHOW_ITALIC_CMD_EVENT:
+        name = "show_italic";
+        break;
+
+      case CMD_EVENTS::SHOW_BOLD_CMD_EVENT:
+        name = "show_bold";
+        break;
+
+      case CMD_EVENTS::SHOW_UNDERLINE_CMD_EVENT:
+        name = "show_underline";
+        break;
+
+      case CMD_EVENTS::SHOW_FIXEDPITCH_CMD_EVENT:
+        name = "show_fixed_pitch";
+        break;
+
+      case CMD_EVENTS::SHOW_SERIF_CMD_EVENT:
+        name = "show_serif";
+        break;
+
+      case CMD_EVENTS::SHOW_SMALLCAPS_CMD_EVENT:
+        name = "show_smallcaps";
+        break;
+
+      case CMD_EVENTS::SHOW_DROPCAPS_CMD_EVENT:
+        name = "show_dropcaps";
+        break;
+    }
+    return formatter<string_view>::format(name, ctx);
+  }
+};
+
+} // namespace fmt
+
+namespace tesseract {
+
 enum ColorationMode {
   CM_RAINBOW,
   CM_SUBSCRIPT,

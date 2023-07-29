@@ -19,6 +19,9 @@
 #ifndef TESSERACT_LSTM_STATIC_SHAPE_H_
 #define TESSERACT_LSTM_STATIC_SHAPE_H_
 
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 #include "serialis.h" // for TFile
 #include "tprintf.h"  // for tprintf
 
@@ -32,6 +35,41 @@ enum LossType {
   LT_SOFTMAX,  // Outputs sum to 1 in fixed positions.
   LT_LOGISTIC, // Logistic outputs with independent values.
 };
+
+} // namespace tesseract
+
+namespace fmt {
+
+using namespace tesseract;
+
+template <>
+struct formatter<LossType> : formatter<string_view> {
+  // parse is inherited from formatter<string_view>.
+
+  template <typename FormatContext>
+  auto format(const LossType &c, FormatContext &ctx) const {
+    std::string_view name = "unknown";
+    switch (c) {
+      case LossType::LT_NONE:
+        name = "none/undefined";
+        break;
+      case LossType::LT_CTC:
+        name = "CTC";
+        break;
+      case LossType::LT_SOFTMAX:
+        name = "softMax";
+        break;
+      case LossType::LT_LOGISTIC:
+        name = "logistic";
+        break;
+    }
+    return formatter<string_view>::format(name, ctx);
+  }
+};
+
+} // namespace fmt
+
+namespace tesseract {
 
 // Simple class to hold the tensor shape that is known at network build time
 // and the LossType of the loss function.
