@@ -9,6 +9,10 @@
 #include <vector>
 #include <sstream>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/fitz.h"
+#endif
+
 namespace tesseract {
 
   class TESS_API Tesseract;
@@ -111,6 +115,16 @@ namespace tesseract {
     std::vector<DebugProcessStep> steps;
     std::vector<DebugProcessInfoChunk> info_chunks;
     int active_step_index;
+
+#if defined(HAVE_MUPDF)
+    fz_context *fz_ctx; 
+    fz_error_print_callback *fz_cbs[3];
+    void *fz_cb_userptr[3];
+
+    static void fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+    static void fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+    static void fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+#endif
   };
 
 } // namespace tesseract

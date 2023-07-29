@@ -47,7 +47,7 @@ static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 	const char *s = msg.c_str();
 
   if (!strncmp(s, "ERROR: ", 7))
-	fz_error(NULL, "%s", s + 7);
+    fz_error(NULL, "%s", s + 7);
   else if (!strncmp(s, "WARNING: ", 9))
     fz_warn(NULL, "%s", s + 9);
   else

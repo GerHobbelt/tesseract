@@ -23,24 +23,71 @@
 
 namespace tesseract {
 
+#if defined(HAVE_MUPDF)
+  void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
+  {
+    DebugPixa *self = (DebugPixa *)user;
+    if (self->fz_cbs[0]) {
+      (self->fz_cbs[0])(self->fz_ctx, self->fz_cb_userptr[0], message);
+    }
+  }
+
+  void DebugPixa::fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
+  {
+    DebugPixa *self = (DebugPixa *)user;
+    if (self->fz_cbs[1]) {
+      (self->fz_cbs[1])(self->fz_ctx, self->fz_cb_userptr[1], message);
+    }
+  }
+
+  void DebugPixa::fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
+  {
+    DebugPixa *self = (DebugPixa *)user;
+    if (self->fz_cbs[2]) {
+      (self->fz_cbs[2])(self->fz_ctx, self->fz_cb_userptr[2], message);
+    }
+  }
+#endif
+
   DebugPixa::DebugPixa(Tesseract* tesseract_ref)
     : tesseract_(tesseract_ref)
   {
     pixa_ = pixaCreate(0);
+
+#if defined(HAVE_MUPDF)
+    fz_ctx = fz_get_global_context();
+    fz_get_error_callback(fz_ctx, &fz_cbs[0], &fz_cb_userptr[0]);
+    fz_get_warning_callback(fz_ctx, &fz_cbs[1], &fz_cb_userptr[1]);
+    fz_get_info_callback(fz_ctx, &fz_cbs[2], &fz_cb_userptr[2]);
+
+    fz_set_error_callback(fz_ctx, fz_error_cb_tess_tprintf, this);
+    fz_set_warning_callback(fz_ctx, fz_warn_cb_tess_tprintf, this);
+    fz_set_info_callback(fz_ctx, fz_info_cb_tess_tprintf, this);
+#endif
+
+    // set up the root info section:
+    active_step_index = -1;
+    PushNextSection("Start a tesseract run");
+
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     fonts_ = NULL;
 #else
     fonts_ = bmfCreate(nullptr, 10);
 #endif
-
-    // set up the root info section:
-    active_step_index = -1;
-    PushNextSection("");
   }
 
   // If the filename_ has been set and there are any debug images, they are
   // written to the set filename_.
   DebugPixa::~DebugPixa() {
+#if defined(HAVE_MUPDF)
+    fz_set_error_callback(fz_ctx, fz_cbs[0], fz_cb_userptr[0]);
+    fz_set_warning_callback(fz_ctx, fz_cbs[1], fz_cb_userptr[1]);
+    fz_set_info_callback(fz_ctx, fz_cbs[2], fz_cb_userptr[2]);
+    fz_ctx = nullptr;
+    memset(fz_cbs, 0, sizeof(fz_cbs));
+    memset(fz_cb_userptr, 0, sizeof(fz_cb_userptr));
+#endif
+
     pixaDestroy(&pixa_);
     bmfDestroy(&fonts_);
   }
