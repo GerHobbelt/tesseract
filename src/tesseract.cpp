@@ -1080,12 +1080,17 @@ extern "C" int tesseract_main(int argc, const char** argv)
   const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count,
                                    &vars_vec, &vars_values, false);
 
+  if (!SetVariablesFromCLArgs(api, argc, argv)) {
+      return EXIT_FAILURE;
+  }
+
   // make sure the debug_all preset is set up BEFORE any command-line arguments
   // direct tesseract to set some arbitrary parameters just below,
   // for otherwise those `-c xyz=v` commands may be overruled by the
   // debug_all preset!
   SetupDebugAllPreset(api);
 
+  // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
   if (!SetVariablesFromCLArgs(api, argc, argv)) {
     return EXIT_FAILURE;
   }
