@@ -30,6 +30,8 @@ namespace tesseract {
     if (self->fz_cbs[0]) {
       (self->fz_cbs[0])(self->fz_ctx, self->fz_cb_userptr[0], message);
     }
+    auto& f = self->GetInfoStream();
+    f << "<p class=\"error\">" << message << "</p>\n\n";
   }
 
   void DebugPixa::fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -38,6 +40,8 @@ namespace tesseract {
     if (self->fz_cbs[1]) {
       (self->fz_cbs[1])(self->fz_ctx, self->fz_cb_userptr[1], message);
     }
+    auto& f = self->GetInfoStream();
+    f << "<p class=\"warning\">" << message << "</p>\n\n";
   }
 
   void DebugPixa::fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -46,6 +50,8 @@ namespace tesseract {
     if (self->fz_cbs[2]) {
       (self->fz_cbs[2])(self->fz_ctx, self->fz_cb_userptr[2], message);
     }
+    auto& f = self->GetInfoStream();
+    f << "<p>" << message << "</p>\n\n";
   }
 #endif
 
@@ -106,6 +112,10 @@ namespace tesseract {
     pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif
     captions.push_back(caption);
+
+    // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
+    auto &info_ref = info_chunks.emplace_back();
+    info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
   }
 
   void DebugPixa::AddPix(Image& pix, const char* caption, bool keep_a_copy) {
@@ -121,37 +131,37 @@ namespace tesseract {
     pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif
     captions.push_back(caption);
-  }
 
+    // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
+    auto &info_ref = info_chunks.emplace_back();
+    info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
+  }
 
   // Return true when one or more images have been collected.
   bool DebugPixa::HasPix() const {
     return (pixaGetCount(pixa_) > 0);
   }
 
-  void DebugPixa::PushNextSection(std::string title)
+  int DebugPixa::PushNextSection(const std::string &title)
   {
     // sibling; but accept only one root!
     if (active_step_index < 0)
     {
-      PushSubordinateSection(title);
-      return;
+      return PushSubordinateSection(title);
     }
     ASSERT0(steps.size() >= 1);
     ASSERT0(active_step_index < steps.size());
     auto& prev_step = steps[active_step_index];
     int prev_level = prev_step.level;
-    // accept only one root, so if root is 'active' again...
     if (prev_level == 0)
     {
-      PushSubordinateSection(title);
-      return;
+      return PushSubordinateSection(title);
     }
 
-    PrepNextSection(prev_level, title);
+    return PrepNextSection(prev_level, title);
   }
 
-  void DebugPixa::PushSubordinateSection(std::string title)
+  int DebugPixa::PushSubordinateSection(const std::string &title)
   {
     // child (or root!)
     int prev_level = -1;
@@ -162,10 +172,10 @@ namespace tesseract {
     }
 
     // child
-    PrepNextSection(prev_level + 1, title);
+    return PrepNextSection(prev_level + 1, title);
   }
 
-  void DebugPixa::PrepNextSection(int level, std::string title)
+  int DebugPixa::PrepNextSection(int level, const std::string &title)
   {
     auto& step_ref = steps.emplace_back();
     // sibling
@@ -174,12 +184,16 @@ namespace tesseract {
     step_ref.first_info_chunk = info_chunks.size();
 
     active_step_index = steps.size() - 1;
+    ASSERT0(active_step_index >= 0);
 
     auto& info_ref = info_chunks.emplace_back();
-    info_ref.first_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+    info_ref.appended_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+
+    return active_step_index;
   }
 
-  void DebugPixa::PopSection()
+  // Note: pop(0) pops all the way back up to the root.
+  void DebugPixa::PopSection(int handle)
   {
     int idx = active_step_index;
     ASSERT0(steps.size() >= 1);
@@ -188,22 +202,52 @@ namespace tesseract {
 
     // return to parent
     auto& step = steps[idx];
-    auto level = step.level - 1;    // level we seek
+    step.last_info_chunk = info_chunks.size() - 1;
+    auto level = step.level - 1; // level we seek
+    if (handle > 0) {
+      ASSERT0(handle < steps.size());
+      auto &parent = steps[handle];
+      ASSERT0(parent.level <= level);
+
+      // bingo!
+      active_step_index = handle;
+
+      // now all we need is a fresh info_chunk:
+      auto &info_ref = info_chunks.emplace_back();
+      info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
+      return;
+    }
+
     for (idx--; idx >= 0; idx--)
     {
-      auto& prov_step = steps[idx];
-      if (prov_step.level == level)
+      auto& prev_step = steps[idx];
+      if (prev_step.level == level)
       {
         // bingo!
         active_step_index = idx;
 
         // now all we need is a fresh info_chunk:
         auto& info_ref = info_chunks.emplace_back();
-        info_ref.first_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+        info_ref.appended_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
         return;
       }
     }
-    // when we get here, we're already sitting at root, so nothing changes
+
+    // when we get here, we're aiming below root, so we reset to last root-entry level:
+    idx = steps.size() - 1;
+    for (idx--; idx >= 0; idx--) {
+      auto &prev_step = steps[idx];
+      if (prev_step.level == 0) {
+        // bingo!
+        active_step_index = idx;
+
+        // now all we need is a fresh info_chunk:
+        auto &info_ref = info_chunks.emplace_back();
+        info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
+        return;
+      }
+    }
+    ASSERT0(!"Should never get here!");
   }
 
 #if 0
@@ -453,7 +497,7 @@ namespace tesseract {
     }
 
     fprintf(html, "<section>\n\
-  <h2>image #%02d: %s</h2>\n\
+  <h6>image #%02d: %s</h6>\n\
   <figure>\n\
     <img src=\"%s\" >\n\
     <figcaption>size: %d x %d px; %s</figcaption>\n\
@@ -467,40 +511,108 @@ namespace tesseract {
     );
   }
 
+  void DebugPixa::WriteImageToHTML(int &counter, const std::string &partname, FILE *html, int idx) {
+    counter++;
+    char in[40];
+    snprintf(in, 40, ".img%04d", counter);
+    std::string caption = captions[idx];
+    SanitizeCaptionForFilenamePart(caption);
+    const char *cprefix = (caption.empty() ? "" : ".");
+    std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
+
+    Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
+    if (pixs == nullptr) {
+      tprintf("ERROR: {}: pixs[{}] not retrieved.\n", __func__, idx);
+      return;
+    }
+    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
+                           captions[idx].c_str(),
+                           tesseract_->pix_original());
+
+    pixs.destroy();
+  }
+
+  int DebugPixa::WriteInfoSectionToHTML(int &counter, int &next_image_index, const std::string &partname, FILE *html, int current_section_index) {
+    DebugProcessStep &section_info = steps[current_section_index];
+
+    auto title = section_info.title.c_str();
+    if (!title || !*title)
+      title = "(null)";
+    auto h_level = section_info.level + 1;
+    if (h_level > 5)
+      h_level = 5;
+    fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
+
+    int next_section_index = current_section_index + 1;
+    DebugProcessStep &next_section_info = steps[next_section_index];
+
+    int start_info_chunk_index = section_info.first_info_chunk;
+    int last_info_chunk_index = section_info.last_info_chunk;
+    for (int chunk_idx = start_info_chunk_index; chunk_idx <= last_info_chunk_index; chunk_idx++) {
+      // make sure we don't dump info chunks which belong to sub-sections:
+      if (chunk_idx == next_section_info.first_info_chunk) {
+        next_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, next_section_index);
+        chunk_idx = next_section_info.last_info_chunk;
+        next_section_info = steps[next_section_index];
+        continue;
+      }
+      DebugProcessInfoChunk &info_chunk = info_chunks[chunk_idx];
+      auto v = info_chunk.information.str();
+      auto content = v.c_str();
+      if (content && *content) {
+        fputs(content, html);
+        fputs("\n\n", html);
+      }
+
+      // does this chunk end with an image?
+      DebugProcessInfoChunk &next_info_chunk = info_chunks[chunk_idx + 1];
+      if (info_chunk.appended_image_index != next_info_chunk.appended_image_index) {
+        WriteImageToHTML(counter, partname, html, info_chunk.appended_image_index);
+        if (next_image_index <= info_chunk.appended_image_index)
+          next_image_index = info_chunk.appended_image_index + 1;
+      }
+    }
+
+    fputs("\n</section>\n\n", html);
+
+    return next_section_index;
+  }
+
+
   void DebugPixa::WriteHTML(const char* filename) {
     if (HasPix()) {
-      const char* ext = strrchr(filename, '.');
+      const char *ext = strrchr(filename, '.');
       std::string partname(filename);
       partname = partname.substr(0, ext - filename);
       int counter = 0;
-      const char* label = NULL;
+      const char *label = NULL;
 
-      FILE* html = fopen(filename, "w");
+      FILE *html = fopen(filename, "w");
       if (!html) {
         tprintf("ERROR: cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
         return;
       }
 
-        auto now = std::chrono::system_clock::now();
-        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+      auto now = std::chrono::system_clock::now();
+      auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
-        std::string now_str = ss.str();
+      std::stringstream ss;
+      ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+      std::string now_str = ss.str();
 
-        std::ostringstream languages;
-        int num_subs = tesseract_->num_sub_langs();
-        if (num_subs > 0) {
-          languages << "<p>Language";
-          if (num_subs > 1)
-            languages << "s";
-          languages << ": ";
-          int i;
-          for (i = 0; i < num_subs - 1; ++i) {
-            languages << tesseract_->get_sub_lang(i)->lang << " + ";
-          }
-          languages << tesseract_->get_sub_lang(i)->lang << "</p>";
+      std::ostringstream languages;
+      int num_subs = tesseract_->num_sub_langs();
+      if (num_subs > 0) {
+        languages << "<p>Language";
+        if (num_subs > 1)
+          languages << "s";
+        languages << ": ";
+        int i;
+        for (i = 0; i < num_subs - 1; ++i) {
+          languages << tesseract_->get_sub_lang(i)->lang << " + ";
         }
+        languages << tesseract_->get_sub_lang(i)->lang << "</p>";
+      }
 
       fprintf(html, "<html>\n\
 <head>\n\
@@ -510,6 +622,24 @@ namespace tesseract {
   <style>\n\
     html {\n\
       margin: 1em 2em;\n\
+    }\n\
+    h1 {\n\
+      font-size: 2.5em;\n\
+    }\n\
+    h2 {\n\
+      font-size: 2em;\n\
+    }\n\
+    h3 {\n\
+      font-size: 1.75em;\n\
+    }\n\
+    h4 {\n\
+      font-size: 1.5em;\n\
+    }\n\
+    h5 {\n\
+      font-size: 1.35em;\n\
+    }\n\
+    h6 {\n\
+      font-size: 1.25em;\n\
     }\n\
     h2 {\n\
           margin-top: 4em;\n\
@@ -567,31 +697,34 @@ namespace tesseract {
         write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
       }
 
-      int n = pixaGetCount(pixa_);
+      // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
+      // as we'll have valid slots at size+1:
+      PopSection(0);
+      active_step_index = -1;
+      PushNextSection("");
 
-      for (int i = 0; i < n; i++) {
-        counter++;
-        char in[40];
-        snprintf(in, 40, ".img%04d", counter);
-        std::string caption = captions[i];
-        SanitizeCaptionForFilenamePart(caption);
-        const char* cprefix = (caption.empty() ? "" : ".");
-        std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
+      int section_count = steps.size() - 1;          // adjust size due to sentinel which was pushed at the end just now.
+      int pics_count = pixaGetCount(pixa_);
 
-        Image pixs = pixaGetPix(pixa_, i, L_CLONE);
-        if (pixs == nullptr) {
-          L_ERROR("pixs[%d] not retrieved\n", __func__, i);
-          continue;
-        }
-        write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[i].c_str(), tesseract_->pix_original());
+      int next_image_index = 0;
 
-        pixs.destroy();
+      int current_section_index = 0; 
+      while (current_section_index < section_count) {
+        current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, current_section_index);
+      }
+
+      for (int i = next_image_index; i < pics_count; i++) {
+        WriteImageToHTML(counter, partname, html, i);
       }
       //pixaClear(pixa_);
 
-      fprintf(html, "</body>\n\
-</html>\n"
-);
+      fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html);
+      
+      tesseract::ParamsVectors *vec = tesseract_->params();
+      ParamUtils::ReportParamsUsageStatistics(html, vec);
+
+      fputs("</pre>\n</body>\n</html>\n", html);
+
       fclose(html);
     }
   }

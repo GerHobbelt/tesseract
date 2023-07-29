@@ -1055,6 +1055,16 @@ public:
     AddPixDebugPage(pix, title.c_str(), keep_a_copy);
   }
 
+  void PushNextPixDebugSection(const std::string &title) { // sibling
+    pixa_debug_.PushNextSection(title);
+  }
+  void PushSubordinatePixDebugSection(const std::string &title) { // child
+    pixa_debug_.PushSubordinateSection(title);
+  }
+  void PopPixDebugSection() { // pop active; return focus to parent
+    pixa_debug_.PopSection();
+  }
+
 public:
   // Find connected components in the page and process a subset until finished or
   // a stopping criterion is met.
