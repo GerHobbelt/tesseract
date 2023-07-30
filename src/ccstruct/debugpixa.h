@@ -9,6 +9,10 @@
 #include <vector>
 #include <sstream>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/fitz.h"
+#endif
+
 namespace tesseract {
 
   class TESS_API Tesseract;
@@ -39,13 +43,16 @@ namespace tesseract {
       return info_chunks[info_chunks.size() - 1].information;
     }
 
-    void PushNextSection(std::string title);          // sibling
-    void PushSubordinateSection(std::string title);   // child
-    void PopSection();                                // pop active; return focus to parent
+    int PushNextSection(const std::string &title);        // sibling; return handle for pop()
+    int PushSubordinateSection(const std::string &title); // child; return handle for pop()
+    void PopSection(int handle = -1);                     // pop active; return focus to parent; pop(0) pops all the way back up to the root.
 
   protected:
 
-    void PrepNextSection(int level, std::string title);   // internal use
+    int PrepNextSection(int level, const std::string &title); // internal use
+
+    void WriteImageToHTML(int &counter, const std::string &partname, FILE *html, int idx);
+    int WriteInfoSectionToHTML(int &counter, int &next_image_index, const std::string &partname, FILE *html, int current_section_index);
 
   public:
 
@@ -73,7 +80,7 @@ namespace tesseract {
     struct DebugProcessInfoChunk {
       std::ostringstream information;    // collects the diagnostic information gathered while this section/chunk is the active one.
 
-      int first_image_index;             // index into the DebugPixa image list
+      int appended_image_index { -1 };      // index into the DebugPixa image list
     };
 
     struct DebugProcessStep {
@@ -87,8 +94,6 @@ namespace tesseract {
       // and made the active one.
       // Thus, when this step itself is popped (inactivated), the size of the info_chunks[] array should be one longer than the sublevel_items[]
       // array, as the latter *interleaves* the former.
-      //
-      // Note that we expect a *single* "root" step to carry this hierarchy of diagnostic registered process steps: DebugPixa::info_root
 
       int level;                      // hierarchy depth. 0: root
 
@@ -111,6 +116,16 @@ namespace tesseract {
     std::vector<DebugProcessStep> steps;
     std::vector<DebugProcessInfoChunk> info_chunks;
     int active_step_index;
+
+#if defined(HAVE_MUPDF)
+    fz_context *fz_ctx; 
+    fz_error_print_callback *fz_cbs[3];
+    void *fz_cb_userptr[3];
+
+    static void fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+    static void fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+    static void fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message);
+#endif
   };
 
 } // namespace tesseract

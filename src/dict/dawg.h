@@ -28,6 +28,9 @@
 #include <cinttypes>  // for PRId64
 #include <functional> // for std::function
 #include <memory>
+
+#include <tesseract/fmt-support.h>
+
 #include "elst.h"
 #include "params.h"
 #include "ratngs.h"
@@ -69,6 +72,7 @@ enum DawgType {
 
   DAWG_TYPE_COUNT // number of enum entries
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
 
 /*----------------------------------------------------------------------
               C o n s t a n t s

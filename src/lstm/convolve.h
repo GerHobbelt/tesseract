@@ -22,6 +22,7 @@
 
 #include "matrix.h"
 #include "network.h"
+#include "tprintf.h"
 
 namespace tesseract {
 
