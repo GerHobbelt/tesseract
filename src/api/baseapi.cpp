@@ -489,8 +489,18 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 // "Which of all those parameters are actually *relevant* to my use case today?"
 void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
-
-	ParamUtils::ReportParamsUsageStatistics(vec);
+    auto fpath = tesseract::vars_report_file;
+    FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
+    if (!f) {
+      tprintf("ERROR: Cannot produce parameter usage report file: '{}'\n", fpath.c_str());
+    } else {
+      ParamUtils::ReportParamsUsageStatistics(f, vec);
+      if (f != stdout && f != stderr) {
+        fclose(f);
+      } else {
+        fflush(f);
+      }
+    }
 }
 
 /**
@@ -778,7 +788,9 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   if (tesseract_->pix_binary() == nullptr) {
-	  Image pix = Image();
+    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.");
+
+    Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
 		  return nullptr;
 	  }
@@ -1335,6 +1347,8 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 // processing required due to being in a training mode.
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
+  tesseract_->PushSubordinatePixDebugSection("Process pages");
+  
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
 #if !DISABLED_LEGACY_ENGINE
   if (result) {
@@ -1344,6 +1358,7 @@ bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, i
     }
   }
 #endif // !DISABLED_LEGACY_ENGINE
+  tesseract_->PopPixDebugSection();
   return result;
 }
 
@@ -1518,6 +1533,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
+  tesseract_->PushSubordinatePixDebugSection("Process a single page");
 
   SetInputName(filename);
 
@@ -1535,7 +1551,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     tprintf("Estimated memory pressure: {} for input image size {} x {} px\n", cost_report, pixGetWidth(pix), pixGetHeight(pix));
 
     if (CheckAndReportIfImageTooLarge(pix)) {
-      return false;   // fail early
+      return false; // fail early
     }
   }
 
@@ -1616,6 +1632,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     failed = !renderer->AddImage(this);
   }
   //pixDestroy(&pixs);
+  tesseract_->PopPixDebugSection();
   return !failed;
 }
 
@@ -2435,6 +2452,11 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
   auto thresholding_method = selected_thresholding_method;
 
+  int subsec_handle = -1;
+  if (tesseract_->showcase_threshold_methods) {
+    subsec_handle = tesseract_->PushSubordinatePixDebugSection("Showcase threshold methods...");
+  }
+
   for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
   {
 	  bool go = false;
@@ -2507,6 +2529,10 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     }
   }
 
+  if (subsec_handle != -1) {
+    tesseract_->PopPixDebugSection(subsec_handle);
+  }
+
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
                               &image_height_);
 
@@ -2545,6 +2571,8 @@ int TessBaseAPI::FindLines() {
 #endif
   }
   if (tesseract_->pix_binary() == nullptr) {
+    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.");
+
 	  Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
 		  return -1;

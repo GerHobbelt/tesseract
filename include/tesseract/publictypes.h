@@ -17,6 +17,8 @@
 #ifndef TESSERACT_CCSTRUCT_PUBLICTYPES_H_
 #define TESSERACT_CCSTRUCT_PUBLICTYPES_H_
 
+#include <tesseract/fmt-support.h>
+
 namespace tesseract {
 
 // This file contains types that are used both by the API and internally
@@ -66,6 +68,7 @@ enum PolyBlockType {
   PT_NOISE,           // Lies outside of any column.
   PT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PolyBlockType);
 
 /** Returns true if PolyBlockType is of horizontal line type */
 inline bool PTIsLineType(PolyBlockType type) {
@@ -117,6 +120,7 @@ enum Orientation {
   ORIENTATION_PAGE_DOWN = 2,
   ORIENTATION_PAGE_LEFT = 3,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(Orientation);
 
 /**
  * The grapheme clusters within a line of text are laid out logically
@@ -131,6 +135,7 @@ enum WritingDirection {
   WRITING_DIRECTION_RIGHT_TO_LEFT = 1,
   WRITING_DIRECTION_TOP_TO_BOTTOM = 2,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(WritingDirection);
 
 /**
  * The text lines are read in the given sequence.
@@ -148,6 +153,7 @@ enum TextlineOrder {
   TEXTLINE_ORDER_RIGHT_TO_LEFT = 1,
   TEXTLINE_ORDER_TOP_TO_BOTTOM = 2,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(TextlineOrder);
 
 /**
  * Possible modes for page layout analysis. These *must* be kept in order
@@ -176,6 +182,7 @@ enum PageSegMode {
 
   PSM_COUNT ///< Number of enum entries.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PageSegMode);
 
 /**
  * Inline functions that act on a PageSegMode to determine whether components of

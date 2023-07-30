@@ -165,10 +165,13 @@ public:
   // are actually *used* during your particular usage of the library, ergo
   // answering the question:
   // "Which of all those parameters are actually *relevant* to my use case today?"
-  static void ReportParamsUsageStatistics(const ParamsVectors *member_params);
+  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectors *member_params);
 
   // Resets all parameters back to default values;
   static void ResetToDefaults(ParamsVectors *member_params);
+
+  // Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular file in UTF8 write mode.
+  static FILE* OpenReportFile(const char *path);
 };
 
 // Definition of various parameter types.
