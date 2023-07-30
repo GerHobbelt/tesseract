@@ -674,7 +674,7 @@ namespace tesseract {
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract run @ %s</p>\n\
+<p>tesseract (version: %s) run @ %s</p>\n\
 <p>Input image file path: %s</p>\n\
 <p>Output base: %s</p>\n\
 <p>Input image path: %s</p>\n\
@@ -684,6 +684,7 @@ namespace tesseract {
 <p>Data directory: %s</p>\n\
 <p>Main directory: %s</p>\n\
 ",
+        TESSERACT_VERSION_STR, 
         now_str.c_str(),
         check_unknown(tesseract_->input_file_path).c_str(),
         check_unknown(tesseract_->imagebasename).c_str(),
