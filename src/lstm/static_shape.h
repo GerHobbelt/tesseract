@@ -19,6 +19,8 @@
 #ifndef TESSERACT_LSTM_STATIC_SHAPE_H_
 #define TESSERACT_LSTM_STATIC_SHAPE_H_
 
+#include <tesseract/fmt-support.h>
+
 #include "serialis.h" // for TFile
 #include "tprintf.h"  // for tprintf
 
@@ -32,6 +34,7 @@ enum LossType {
   LT_SOFTMAX,  // Outputs sum to 1 in fixed positions.
   LT_LOGISTIC, // Logistic outputs with independent values.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(LossType);
 
 // Simple class to hold the tensor shape that is known at network build time
 // and the LossType of the loss function.

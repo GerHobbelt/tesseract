@@ -87,32 +87,36 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
   return anyerr;
 }
 
-void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
+FILE* ParamUtils::OpenReportFile(const char* path) 
 {
-  std::string report_path = vars_report_file;
-  FILE* f = nullptr;
+  if (!path || !*path)
+    return NULL;
+
+  std::string report_path = path;
+  FILE *f = nullptr;
 
   if (report_path == "stdout" || report_path == "-" || report_path == "1")
     f = stdout;
   else if (report_path == "stderr" || report_path == "+" || report_path == "2")
     f = stderr;
-  else if (!report_path.empty())
-  {
+  else if (!report_path.empty()) {
 #if defined(HAVE_MUPDF)
-    fz_context* ctx = fz_get_global_context();
+    fz_context *ctx = fz_get_global_context();
     fz_mkdir_for_file(ctx, report_path.c_str());
     f = fz_fopen_utf8(ctx, report_path.c_str(), "w");
 #else
     f = fopen(report_path.c_str(), "w");
 #endif
-    if (!f)
-    {
-      tprintf("ERROR: Cannot produce parameter usage report file: {}\n", report_path);
-    }
   }
+  return f;
+}
 
-  if (!f)
+void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *member_params)
+{
+  if (!f) {
+    tprintf("ERROR: Cannot produce parameter usage report file.\n");
     return;
+  }
 
   fprintf(f, "\n\nTesseract Parameter Usage Statistics: which params have been relevant?\n"
             "----------------------------------------------------------------------\n\n");
@@ -214,15 +218,6 @@ void ParamUtils::ReportParamsUsageStatistics(const ParamsVectors *member_params)
         fmt::print(f, "* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str());
       }
     }
-  }
-
-  if (f != stdout && f != stderr)
-  {
-    fclose(f);
-  }
-  else
-  {
-    fflush(f);
   }
 }
 

@@ -38,6 +38,8 @@
 #include <cmath>     // for std::sqrt
 #include <cstdint>   // for int16_t, int32_t
 
+#include <tesseract/fmt-support.h>
+
 struct Pix;
 
 namespace tesseract {
@@ -53,6 +55,7 @@ enum PITCH_TYPE {
   PITCH_CORR_FIXED,
   PITCH_CORR_PROP
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PITCH_TYPE);
 
 // The possible tab-stop types of each side of a BLOBNBOX.
 // The ordering is important, as it is used for deleting dead-ends in the
@@ -66,6 +69,7 @@ enum TabType {
   TT_CONFIRMED,     // Aligned with neighbours.
   TT_VLINE          // Detected as a vertical line.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(TabType);
 
 // The possible region types of a BLOBNBOX.
 // Note: keep all the text types > BRT_UNKNOWN and all the image types less.
@@ -83,10 +87,18 @@ enum BlobRegionType {
 
   BRT_COUNT // Number of possibilities.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobRegionType);
 
 // enum for elements of arrays that refer to neighbours.
 // NOTE: keep in this order, so ^2 can be used to flip direction.
-enum BlobNeighbourDir { BND_LEFT, BND_BELOW, BND_RIGHT, BND_ABOVE, BND_COUNT };
+enum BlobNeighbourDir {
+  BND_LEFT,
+  BND_BELOW,
+  BND_RIGHT,
+  BND_ABOVE,
+  BND_COUNT
+};
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobNeighbourDir);
 
 // enum for special type of text characters, such as math symbol or italic.
 enum BlobSpecialTextType {
@@ -98,6 +110,7 @@ enum BlobSpecialTextType {
   BSTT_SKIP,    // Characters that we skip labeling (usually too small).
   BSTT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobSpecialTextType);
 
 inline BlobNeighbourDir DirOtherWay(BlobNeighbourDir dir) {
   return static_cast<BlobNeighbourDir>(dir ^ 2);
@@ -117,6 +130,7 @@ enum BlobTextFlowType {
   BTFT_LEADER,        // Leader dots/dashes etc.
   BTFT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobTextFlowType);
 
 // Returns true if type1 dominates type2 in a merge. Mostly determined by the
 // ordering of the enum, LEADER is weak and dominates nothing.

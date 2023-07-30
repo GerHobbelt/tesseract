@@ -28,6 +28,9 @@
 #include <cmath>
 #include <cstdio>
 
+#include <tesseract/fmt-support.h>
+
+
 struct Pix;
 
 namespace tesseract {
@@ -77,6 +80,7 @@ enum NetworkType {
 
   NT_COUNT // Array size.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(NetworkType);
 
 // Enum of Network behavior flags. Can in theory be set for each individual
 // network element.
