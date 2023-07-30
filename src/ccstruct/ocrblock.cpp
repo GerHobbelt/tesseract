@@ -200,18 +200,16 @@ void BLOCK::print( // print list of sides
 
   if (dump) {
     tprintf("Left side coords are:\n");
-    std::string str;
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      str += fmt::format("({},{}) ", it.data()->x(), it.data()->y());
+      tprintf("({},{}) ", it.data()->x(), it.data()->y());
     }
-    tprintf("{}\n", str);
+    tprintf("\n");
     tprintf("Right side coords are:\n");
-    str.clear();
     it.set_to_list(&pdblk.rightside);
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      str += fmt::format("({},{}) ", it.data()->x(), it.data()->y());
+      tprintf("({},{}) ", it.data()->x(), it.data()->y());
     }
-    tprintf("{}\n", str);
+    tprintf("\n");
   }
 }
 
