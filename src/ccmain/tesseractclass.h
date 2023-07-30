@@ -1055,14 +1055,14 @@ public:
     AddPixDebugPage(pix, title.c_str(), keep_a_copy);
   }
 
-  void PushNextPixDebugSection(const std::string &title) { // sibling
-    pixa_debug_.PushNextSection(title);
+  int PushNextPixDebugSection(const std::string &title) { // sibling
+    return pixa_debug_.PushNextSection(title);
   }
-  void PushSubordinatePixDebugSection(const std::string &title) { // child
-    pixa_debug_.PushSubordinateSection(title);
+  int PushSubordinatePixDebugSection(const std::string &title) { // child
+    return pixa_debug_.PushSubordinateSection(title);
   }
-  void PopPixDebugSection() { // pop active; return focus to parent
-    pixa_debug_.PopSection();
+  void PopPixDebugSection(int handle = -1) { // pop active; return focus to parent
+    pixa_debug_.PopSection(handle);
   }
 
 public:

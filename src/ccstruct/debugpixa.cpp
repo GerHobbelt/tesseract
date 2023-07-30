@@ -144,7 +144,7 @@ namespace tesseract {
 
   int DebugPixa::PushNextSection(const std::string &title)
   {
-    // sibling; but accept only one root!
+    // sibling
     if (active_step_index < 0)
     {
       return PushSubordinateSection(title);
@@ -183,13 +183,17 @@ namespace tesseract {
     step_ref.title = title;
     step_ref.first_info_chunk = info_chunks.size();
 
+    int rv = active_step_index;
+    if (rv < 0)
+      rv = 0;
+
     active_step_index = steps.size() - 1;
     ASSERT0(active_step_index >= 0);
 
     auto& info_ref = info_chunks.emplace_back();
     info_ref.appended_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
 
-    return active_step_index;
+    return rv;
   }
 
   // Note: pop(0) pops all the way back up to the root.
@@ -204,7 +208,7 @@ namespace tesseract {
     auto& step = steps[idx];
     step.last_info_chunk = info_chunks.size() - 1;
     auto level = step.level - 1; // level we seek
-    if (handle > 0) {
+    if (handle >= 0) {
       ASSERT0(handle < steps.size());
       auto &parent = steps[handle];
       ASSERT0(parent.level <= level);
@@ -699,7 +703,7 @@ namespace tesseract {
 
       // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
       // as we'll have valid slots at size+1:
-      PopSection(0);
+      PopSection(-2);
       active_step_index = -1;
       PushNextSection("");
 

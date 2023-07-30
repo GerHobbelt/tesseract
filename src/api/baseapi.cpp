@@ -2452,8 +2452,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
   auto thresholding_method = selected_thresholding_method;
 
-  if (!tesseract_->showcase_threshold_methods) {
-    tesseract_->PushSubordinatePixDebugSection("Showcase threshold methods...");
+  int subsec_handle = -1;
+  if (tesseract_->showcase_threshold_methods) {
+    subsec_handle = tesseract_->PushSubordinatePixDebugSection("Showcase threshold methods...");
   }
 
   for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
@@ -2528,8 +2529,8 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     }
   }
 
-  if (!tesseract_->showcase_threshold_methods) {
-    tesseract_->PopPixDebugSection();
+  if (subsec_handle != -1) {
+    tesseract_->PopPixDebugSection(subsec_handle);
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
