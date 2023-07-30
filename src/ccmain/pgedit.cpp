@@ -1030,7 +1030,7 @@ namespace tesseract {
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   if (pr_it->block()->block != nullptr) {
     tprintf("\nBlock data...\n");
-    pr_it->block()->block->print(nullptr, false);
+    pr_it->block()->block->print(nullptr, debug_all);
   }
   tprintf("\nRow data...\n");
   pr_it->row()->row->print(nullptr);
@@ -1110,7 +1110,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   auto width = ImageWidth();
   auto height = ImageHeight();
 
-  Image pix = pixCreate(width, height, 32 /* RGBA */);
+  Image pix(pixCreate(width, height, 32 /* RGBA */));
+
   pixSetAll(pix);
 
   int w, h;
@@ -1128,7 +1129,9 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
 
   //image_win->Clear();
   if (display_image) {
-    pixRasterop(pix, 4, 4, width, height, PIX_SRC, pix_binary_, 0, 0);
+    PIX *po = pixConvertTo32(pix_binary_);
+    pixRasterop(pix, 4, 4, width, height, PIX_SRC, po, 0, 0);
+    pixDestroy(&po);
     //image_win->Draw(pix_binary_, 0, 0);
   }
 
@@ -1152,7 +1155,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
     //image_win->Update();
   }
 
-  this->AddPixDebugPage(pix, "current page results", false);
+  AddPixDebugPage(pix, "current page results");
+  pix.destroy();
 }
 
 } // namespace tesseract

@@ -1045,14 +1045,10 @@ public:
   void AddPixDebugPage(const Image &pix, const std::string& title) {
     AddPixDebugPage(pix, title.c_str());
   }
-  void AddPixDebugPage(Image& pix, const char* title, bool keep_a_copy) {
-    if (pix == nullptr)
-      return;
 
-    pixa_debug_.AddPix(pix, title, keep_a_copy);
-  }
-  void AddPixDebugPage(Image& pix, const std::string& title, bool keep_a_copy) {
-    AddPixDebugPage(pix, title.c_str(), keep_a_copy);
+  void AddClippedPixDebugPage(const Image &pix, const TBOX &bbox, const char *title);
+  void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
+    AddClippedPixDebugPage(pix, bbox, title.c_str());
   }
 
   int PushNextPixDebugSection(const std::string &title) { // sibling

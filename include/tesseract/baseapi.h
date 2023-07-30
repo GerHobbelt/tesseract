@@ -169,6 +169,7 @@ public:
    * (init variables should be passed to Init()).
    */
   bool SetVariable(const char *name, const char *value);
+  bool SetVariable(const char *name, int value);
   bool SetDebugVariable(const char *name, const char *value);
 
   /**

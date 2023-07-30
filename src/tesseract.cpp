@@ -850,8 +850,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("textord_baseline_debug", "Y");
     api.SetVariable("textord_debug_block", "9");
     api.SetVariable("textord_debug_bugs", "9");
-    api.SetVariable("textord_debug_tabfind",
-                    "0" /* "9" */); // very noisy output
+    api.SetVariable("textord_debug_tabfind", "0" /* "9" */); // very noisy output
 
     api.SetVariable("textord_debug_baselines", "Y");
     api.SetVariable("textord_debug_blob", "Y");
@@ -890,13 +889,11 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_bigram_debug", "Y");
 
-    api.SetVariable("tess_debug_lstm",
-                    "N"); // LSTM debug output is extremely noisy
+    api.SetVariable("tess_debug_lstm", debug_all > 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
 
     api.SetVariable("debug_noise_removal", "Y");
 
-    api.SetVariable("classify_debug_level",
-                    "1" /* "9" */); // LSTM debug output is extremely noisy
+    api.SetVariable("classify_debug_level", debug_all); // LSTM debug output is extremely noisy
     api.SetVariable("classify_learning_debug_level", "9");
     api.SetVariable("classify_debug_character_fragments", "Y");
     api.SetVariable("classify_enable_adaptive_debugger", "Y");

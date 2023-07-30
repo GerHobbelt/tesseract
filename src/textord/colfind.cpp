@@ -179,12 +179,13 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
       auto width = tright_.x() - bleft_.x();
       auto height = tright_.y() - bleft_.y();
 
-      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      Image pix(pixCreate(width, height, 32 /* RGBA */));
       pixSetAll(pix);
 
       input_block->plot_graded_blobs(pix);
 
-      tesseract_->AddPixDebugPage(pix, name, false);
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
     }
   }
 #endif // !GRAPHICS_DISABLED
@@ -415,7 +416,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 
         input_block->plot_graded_blobs(pix);
 
-        tesseract_->AddPixDebugPage(pix, name, false);
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
       }
     }
 #endif // !GRAPHICS_DISABLED
@@ -474,7 +476,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
       part_grid_.DisplayBoxes(pix, data, wpl, w, h);
       DisplayTabVectors(pix, data, wpl, w, h);
 
-      tesseract_->AddPixDebugPage(pix, name, false);
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
     }
   }
 #endif
@@ -554,7 +557,8 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         }
 #endif
 
-        tesseract_->AddPixDebugPage(pix, name, false);
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
       }
     }
 #endif // !GRAPHICS_DISABLED
@@ -676,7 +680,8 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
       block->pdblk.plot(pix, serial++, data, wpl, w, h);
     }
 
-    tesseract_->AddPixDebugPage(pix, name, false);
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
   }
 }
 
@@ -728,7 +733,8 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
       }
     }
 
-    tesseract_->AddPixDebugPage(pix, name, false);
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
   }
 }
 

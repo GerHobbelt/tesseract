@@ -20,6 +20,7 @@
 #define TESSERACT_CCMAIN_THRESHOLDER_H_
 
 #include <tesseract/export.h>
+#include <tesseract/fmt-support.h>
 
 #include <vector> // for std::vector
 
@@ -42,6 +43,8 @@ enum class ThresholdMethod {
   Nlbin,         // NLbin
   Max,           // Number of Thresholding methods
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(ThresholdMethod);
+
 
 static inline const char* ThresholdMethodName(ThresholdMethod method)
 {

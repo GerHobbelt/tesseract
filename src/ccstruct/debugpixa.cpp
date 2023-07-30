@@ -100,41 +100,33 @@ namespace tesseract {
 
   // Adds the given pix to the set of pages in the PDF file, with the given
   // caption added to the top.
-  void DebugPixa::AddPix(const Image& pix, const char* caption) {
+  void DebugPixa::AddPix(const Image &pix, const char *caption) {
+    TBOX dummy;
+    AddPixInternal(pix, dummy, caption);
+  }
+
+  void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
     int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
-    Image pix_debug =
-      pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+    Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
 
     pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif
     captions.push_back(caption);
+    cliprects.push_back(bbox);
 
     // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
     auto &info_ref = info_chunks.emplace_back();
     info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
   }
 
-  void DebugPixa::AddPix(Image& pix, const char* caption, bool keep_a_copy) {
-    int depth = pixGetDepth(pix);
-#ifdef TESSERACT_DISABLE_DEBUG_FONTS
-    pixaAddPix(pixa_, pix, keep_a_copy ? L_COPY : L_INSERT);
-#else
-    int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
-    Image pix_debug =
-      pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
-    if (!keep_a_copy)
-      pix.destroy();
-    pixaAddPix(pixa_, pix_debug, L_INSERT);
-#endif
-    captions.push_back(caption);
-
-    // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
-    auto &info_ref = info_chunks.emplace_back();
-    info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
+  // Adds the given pix to the set of pages in the PDF file, with the given
+  // caption added to the top.
+  void DebugPixa::AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption) {
+    AddPixInternal(pix, bbox, caption);
   }
 
   // Return true when one or more images have been collected.
@@ -409,7 +401,13 @@ namespace tesseract {
     })();
 
     if (original_image == nullptr) {
-      pixWrite(img_filename, pix, IFF_PNG);
+      if (depth < 8) {
+        PIX *pix32 = pixConvertTo32(pix);
+        pixWrite(img_filename, pix32, IFF_PNG);
+        pixDestroy(&pix32);
+      } else {
+        pixWrite(img_filename, pix, IFF_PNG);
+      }
     }
     else {
       int ow, oh, od;
@@ -529,9 +527,12 @@ namespace tesseract {
       tprintf("ERROR: {}: pixs[{}] not retrieved.\n", __func__, idx);
       return;
     }
-    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
+    PIX *bgimg = cliprects[idx].area() > 0 ? nullptr : tesseract_->pix_original();
+
+    write_one_pix_for_html(html, counter, fn.c_str(), pixs,
+                           caption.c_str(),
                            captions[idx].c_str(),
-                           tesseract_->pix_original());
+                           bgimg);
 
     pixs.destroy();
   }

@@ -491,7 +491,8 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       block->plot_graded_blobs(pix);
       //block->plot_noise_blobs(pix);
 
-      tesseract_->AddPixDebugPage(pix, name, false);
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
     }
 #endif // !GRAPHICS_DISABLED
   }

@@ -185,7 +185,7 @@ bool TessTsvRenderer::BeginDocumentHandler() {
   // Output TSV column headings
   AppendString(
       "level\tpage_num\tblock_num\tpar_num\tline_num\tword_"
-      "num\tleft\ttop\twidth\theight\tconf\ttext\n");
+      "num\tsymbol_num\tleft\ttop\twidth\theight\tconf\ttext\n");
   return true;
 }
 

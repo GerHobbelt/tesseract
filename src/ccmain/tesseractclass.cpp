@@ -612,6 +612,10 @@ void Tesseract::SetBlackAndWhitelist() {
 // Perform steps to prepare underlying binary image/other data structures for
 // page segmentation.
 void Tesseract::PrepareForPageseg() {
+  if (tessedit_dump_pageseg_images) {
+    AddPixDebugPage(pix_binary(), "Binarized Source Image");
+  }
+
   textord_.set_use_cjk_fp_model(textord_use_cjk_fp_model);
   // Find the max splitter strategy over all langs.
   auto max_pageseg_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
@@ -622,8 +626,7 @@ void Tesseract::PrepareForPageseg() {
     if (pageseg_strategy > max_pageseg_strategy) {
       max_pageseg_strategy = pageseg_strategy;
     }
-    sub_lang->pix_binary_.destroy();
-    sub_lang->pix_binary_ = pix_binary().clone();
+    sub_lang->set_pix_binary(pix_binary().clone());
   }
   // Perform shiro-rekha (top-line) splitting and replace the current image by
   // the newly split image.
@@ -631,8 +634,14 @@ void Tesseract::PrepareForPageseg() {
   splitter_.set_pageseg_split_strategy(max_pageseg_strategy);
   if (splitter_.Split(true)) {
     ASSERT_HOST(splitter_.splitted_image());
-    pix_binary_.destroy();
-    pix_binary_ = splitter_.splitted_image().clone();
+    set_pix_binary(splitter_.splitted_image().clone());
+
+    if (tessedit_dump_pageseg_images) {
+      ASSERT0(max_pageseg_strategy >= 0);
+      ASSERT0(max_pageseg_strategy < 3);
+      static const char *strategies[] = {"NO_SPLIT", "MINIMAL_SPLIT", "MAXIMAL_SPLIT"};
+      AddPixDebugPage(pix_binary(), fmt::format("Source Image as replaced by Splitter mode {}", strategies[max_pageseg_strategy]));
+    }
   }
 }
 
@@ -659,8 +668,7 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   bool split_for_ocr = splitter_.Split(false);
   // Restore pix_binary to the binarized original pix for future reference.
   ASSERT_HOST(splitter_.orig_pix());
-  pix_binary_.destroy();
-  pix_binary_ = splitter_.orig_pix().clone();
+  set_pix_binary(splitter_.orig_pix().clone());
   // If the pageseg and ocr strategies are different, refresh the block list
   // (from the last SegmentImage call) with blobs from the real image to be used
   // for OCR.
@@ -721,6 +729,74 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
     return true;
   }
   return false;
+}
+
+void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
+  // extract part from the source image pix and fade the srroundings,
+  // so a human can easily spot which bbox is the current focus but also
+  // quickly spot where the extracted part originated within the large source image.
+  int iw = pixGetWidth(pix);
+  int ih = pixGetHeight(pix);
+  int pw = bbox.width();
+  int ph = bbox.height();
+  ASSERT0(pw > 0);
+  ASSERT0(ph > 0);
+  ASSERT0(iw >= pw);
+  ASSERT0(ih >= ph);
+  int cw = std::min(iw, std::max(pw + iw / 50 /* 2% of the original size -> 1% + 1% padding */, pw + 50));
+  int ch = std::min(ih, std::max(ph + ih / 50 /* 2% of the original size -> 1% + 1% padding */, ph + 50));
+  BOX *b = boxCreate(bbox.x_middle() - cw / 2, bbox.y_middle() - ch / 2, cw, ch);
+  BOX *b2 = nullptr;
+  PIX *ppix = pixClipRectangle(pix, b, &b2);
+  BOX *focusbox = boxCreate(cw / 2 - pw / 2, ch /2 - ph / 2, pw, ph);
+  //l_uint32 color; 
+  //composeRGBAPixel(255, 0, 0, 128, &color);
+  PIX *ppix32 = pixConvertTo32(ppix);
+  BOXA *blist = boxaCreate(1);
+  l_int32 x, y, w, h;
+  boxGetGeometry(focusbox, &x, &y, &w, &h);
+  BOX *edgebox = boxCreate(0, 0, x, ch);
+  l_int32 valid;
+  boxIsValid(edgebox, &valid);
+  if (valid)
+    boxaAddBox(blist, edgebox, L_INSERT);
+  edgebox = boxCreate(x, 0, w, y);
+  boxIsValid(edgebox, &valid);
+  if (valid)
+    boxaAddBox(blist, edgebox, L_INSERT);
+  edgebox = boxCreate(x + w, 0, cw - (x + w), ch);
+  boxIsValid(edgebox, &valid);
+  if (valid)
+    boxaAddBox(blist, edgebox, L_INSERT);
+  edgebox = boxCreate(x, y + h, w, ch - (y + h));
+  boxIsValid(edgebox, &valid);
+  if (valid)
+    boxaAddBox(blist, edgebox, L_INSERT);
+  pixRenderHashBoxaBlend(ppix32, blist, 3, 2, L_POS_SLOPE_LINE, true, 255, 0, 0, 0.5f);
+  boxaDestroy(&blist);
+  boxDestroy(&focusbox);
+  boxDestroy(&b2);
+  boxDestroy(&b);
+  pixDestroy(&ppix);
+  /*
+  LEPT_DLL extern l_ok pixCombineMasked(PIX * pixd, PIX * pixs, PIX * pixm);
+
+  LEPT_DLL extern PIX *pixClipRectangle(PIX * pixs, BOX * box, BOX * *pboxc);
+  LEPT_DLL extern PIX *pixClipRectangleWithBorder(
+      PIX * pixs, BOX * box, l_int32 maxbord, BOX * *pboxn);
+  LEPT_DLL extern PIX *pixClipMasked(PIX * pixs, PIX * pixm, l_int32 x,
+                                     l_int32 y, l_uint32 outval);
+  LEPT_DLL extern l_ok pixCropToMatch(PIX * pixs1, PIX * pixs2, PIX * *ppixd1,
+                                      PIX * *ppixd2);
+  LEPT_DLL extern PIX *pixCropToSize(PIX * pixs, l_int32 w, l_int32 h);
+  LEPT_DLL extern PIX *pixResizeToMatch(PIX * pixs, PIX * pixt, l_int32 w,
+                                        l_int32 h);
+  */
+  //AddPixDebugPage(ppix32, title);
+  ASSERT0(bbox.area() > 0);
+  pixa_debug_.AddClippedPix(ppix32, bbox, title);
+
+  pixDestroy(&ppix32);
 }
 
 } // namespace tesseract
