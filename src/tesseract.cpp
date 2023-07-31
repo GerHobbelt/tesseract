@@ -850,7 +850,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("textord_baseline_debug", "Y");
     api.SetVariable("textord_debug_block", "9");
     api.SetVariable("textord_debug_bugs", "9");
-    api.SetVariable("textord_debug_tabfind", "0" /* "9" */); // very noisy output
+    api.SetVariable("textord_debug_tabfind", "2" /* "9" */); // very noisy output
 
     api.SetVariable("textord_debug_baselines", "Y");
     api.SetVariable("textord_debug_blob", "Y");
@@ -967,7 +967,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("debug_baseline_fit", "1"); // 0..3
     api.SetVariable("debug_baseline_y_coord", "-2000");
 
-    api.SetVariable("showcase_threshold_methods", "Y");
+    api.SetVariable("showcase_threshold_methods", debug_all > 2 ? "Y" : "N");
 
     api.SetVariable("debug_write_unlv", "Y");
     api.SetVariable("debug_line_finding", "Y");
