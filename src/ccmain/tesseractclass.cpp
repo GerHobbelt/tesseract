@@ -743,39 +743,55 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
   ASSERT0(ph > 0);
   ASSERT0(iw >= pw);
   ASSERT0(ih >= ph);
-  int cw = std::min(iw, std::max(pw + iw / 50 /* 2% of the original size -> 1% + 1% padding */, pw + 50));
-  int ch = std::min(ih, std::max(ph + ih / 50 /* 2% of the original size -> 1% + 1% padding */, ph + 50));
-  BOX *b = boxCreate(bbox.x_middle() - cw / 2, bbox.y_middle() - ch / 2, cw, ch);
-  BOX *b2 = nullptr;
-  PIX *ppix = pixClipRectangle(pix, b, &b2);
-  BOX *focusbox = boxCreate(cw / 2 - pw / 2, ch /2 - ph / 2, pw, ph);
-  //l_uint32 color; 
-  //composeRGBAPixel(255, 0, 0, 128, &color);
-  PIX *ppix32 = pixConvertTo32(ppix);
-  BOXA *blist = boxaCreate(1);
+  int border = std::max(std::max(iw / 50 /* 2% of the original size -> 1% + 1% padding */, ih / 50 /* 2% of the original size -> 1% + 1% padding */), std::max(50, std::max(pw / 2, ph / 2)));
+  BOX *b = boxCreateValid(bbox.left(), bbox.bottom(), pw, ph);
   l_int32 x, y, w, h;
-  boxGetGeometry(focusbox, &x, &y, &w, &h);
-  BOX *edgebox = boxCreate(0, 0, x, ch);
+  boxGetGeometry(b, &x, &y, &w, &h);
+  l_int32 x1 = x - border;
+  l_int32 y1 = y - border;
+  l_int32 w1 = w + 2 * border;
+  l_int32  h1 = h + 2 * border;
+  if (x1 < 0)
+    x1 = 0;
+  if (y1 < 0)
+    y1 = 0;
+  if (w1 > iw)
+    w1 = iw;
+  if (h1 > ih)
+    h1 = ih;
+  BOX *b1 = boxCreateValid(x1, y1, w1, h1);
+  BOX *b2 = nullptr;
+  PIX *ppix = pixClipRectangle(pix, b1, &b2);
+  PIX *ppix32 = pixConvertTo32(ppix);
+  // generate boxes surrounding the focus bbox, covering the surrounding area in ppix32:
+  BOXA *blist = boxaCreate(1);
+  // box(x1, y1, x - x1, h1) - (x1, y1) ==>
+  int w_edge = x - x1;
+  BOX *edgebox = boxCreateValid(0, 0, w_edge, h1);
   l_int32 valid;
   boxIsValid(edgebox, &valid);
   if (valid)
     boxaAddBox(blist, edgebox, L_INSERT);
-  edgebox = boxCreate(x, 0, w, y);
+  // box(x1 + w_edge, y1, w, y - y1) - (x1, y1) ==>
+  int h_edge = y - y1;
+  edgebox = boxCreate(w_edge, 0, w, h_edge);
   boxIsValid(edgebox, &valid);
   if (valid)
     boxaAddBox(blist, edgebox, L_INSERT);
-  edgebox = boxCreate(x + w, 0, cw - (x + w), ch);
+  // box(x1 + w_edge, y + h, w, h1 - (y + h)) - (x1, y1) ==>
+  edgebox = boxCreate(w_edge, h_edge + h, w, h1 - (h_edge + h));
   boxIsValid(edgebox, &valid);
   if (valid)
     boxaAddBox(blist, edgebox, L_INSERT);
-  edgebox = boxCreate(x, y + h, w, ch - (y + h));
+  // box(x1 + w_edge + w, y1, w1 - (x + w), h1) - (x1, y1) ==>
+  edgebox = boxCreate(w_edge + w, 0, w1 - (w_edge + w), h1);
   boxIsValid(edgebox, &valid);
   if (valid)
     boxaAddBox(blist, edgebox, L_INSERT);
-  pixRenderHashBoxaBlend(ppix32, blist, 3, 2, L_POS_SLOPE_LINE, true, 255, 0, 0, 0.5f);
+  pixRenderHashBoxaBlend(ppix32, blist, 2, 1, L_POS_SLOPE_LINE, true, 255, 0, 0, 0.5f);
   boxaDestroy(&blist);
-  boxDestroy(&focusbox);
   boxDestroy(&b2);
+  boxDestroy(&b1);
   boxDestroy(&b);
   pixDestroy(&ppix);
   /*
