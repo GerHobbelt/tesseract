@@ -330,6 +330,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   if (tessedit_dump_pageseg_images) {
     Image pix_no_image_ = nullptr;
     if (*photo_mask_pix != nullptr) {
+      AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
       pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
     } else {
       pix_no_image_ = pix_binary_.clone();
