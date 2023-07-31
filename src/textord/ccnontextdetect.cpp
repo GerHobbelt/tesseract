@@ -119,7 +119,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   }
   ScrollView *win = nullptr;
 #if !GRAPHICS_DISABLED
-  if (debug) {
+  if (debug && !tesseract_->debug_do_not_use_scrollview_app) {
     win = MakeWindow(0, 400, "Photo Mask Blobs");
   }
 #endif // !GRAPHICS_DISABLED
@@ -141,7 +141,9 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::WHITE, pix);
   if (debug) {
 #if !GRAPHICS_DISABLED
-    win->Update();
+    if (win) {
+      win->Update();
+    }
 #endif // !GRAPHICS_DISABLED
 #if 0
     const int page_index = 0;
@@ -150,8 +152,10 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 #endif
     tesseract_->AddPixDebugPage(pix, "nontext.junkccphotomask");
 #if !GRAPHICS_DISABLED
-    win->AwaitEvent(SVET_DESTROY);
-    delete win;
+    if (win) {
+      win->AwaitEvent(SVET_DESTROY);
+      delete win;
+    }
 #endif // !GRAPHICS_DISABLED
   }
   return pix;

@@ -488,7 +488,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     }
 #endif
     if (textord_tabfind_find_tables) {
-      TableFinder table_finder;
+      TableFinder table_finder(tesseract_);
       table_finder.Init(gridsize(), bleft(), tright());
       table_finder.set_resolution(resolution_);
       table_finder.set_left_to_right_language(!input_block->block->right_to_left());
