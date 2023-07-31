@@ -621,6 +621,7 @@ namespace tesseract {
 
       fprintf(html, "<html>\n\
 <head>\n\
+	<meta charset=\"UTF-8\">\n\
   <title>Tesseract diagnostic image set</title>\n\
   <link rel=\"stylesheet\" href=\"https://unpkg.com/normalize.css@8.0.1/normalize.css\" >\n\
   <link rel=\"stylesheet\" href=\"https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css\" >\n\
