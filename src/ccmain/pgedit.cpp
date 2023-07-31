@@ -1130,7 +1130,7 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   //image_win->Clear();
   if (display_image) {
     PIX *po = pixConvertTo32(pix_binary_);
-    pixRasterop(pix, 4, 4, width, height, PIX_SRC, po, 0, 0);
+    pixRasterop(pix, 0, 0, width, height, PIX_SRC, po, 0, 0);
     pixDestroy(&po);
     //image_win->Draw(pix_binary_, 0, 0);
   }
