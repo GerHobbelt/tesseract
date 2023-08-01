@@ -359,7 +359,7 @@ TDimension BLOCK_LINE_IT::get_line( // get a line
   block->bounding_box(bleft, tright);
   if (y < bleft.y() || y >= tright.y()) {
     //              block->print(stderr,false);
-    BADBLOCKLINE.error("BLOCK_LINE_IT::get_line", ABORT, "Y=%d", y);
+    BADBLOCKLINE.abort("BLOCK_LINE_IT::get_line", "Y=%d", y);
   }
 
   // get rectangle box
@@ -380,7 +380,7 @@ TDimension BLOCK_LINE_IT::get_line( // get a line
       return bleft.x(); // start of line
     }
   }
-  LOSTBLOCKLINE.error("BLOCK_LINE_IT::get_line", ABORT, "Y=%d", y);
+  LOSTBLOCKLINE.abort("BLOCK_LINE_IT::get_line", "Y=%d", y);
   return 0; // dummy to stop warning
 }
 

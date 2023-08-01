@@ -73,7 +73,7 @@ void ELIST2::assign_to_sublist( // to this list
   constexpr ERRCODE LIST_NOT_EMPTY("Destination list must be empty before extracting a sublist");
 
   if (!empty()) {
-    LIST_NOT_EMPTY.error("ELIST2.assign_to_sublist", ABORT);
+    LIST_NOT_EMPTY.abort("ELIST2.assign_to_sublist");
   }
 
   last = start_it->extract_sublist(end_it);
@@ -164,7 +164,7 @@ void ELIST2::add_sorted(int comparator(const void *, const void *), ELIST2_LINK 
 ELIST2_LINK *ELIST2_ITERATOR::forward() {
 #ifndef NDEBUG
   if (!list)
-    NO_LIST.error("ELIST2_ITERATOR::forward", ABORT);
+    NO_LIST.abort("ELIST2_ITERATOR::forward");
 #endif
   if (list->empty()) {
     return nullptr;
@@ -185,14 +185,14 @@ ELIST2_LINK *ELIST2_ITERATOR::forward() {
 
 #ifndef NDEBUG
   if (!current)
-    NULL_DATA.error("ELIST2_ITERATOR::forward", ABORT);
+    NULL_DATA.abort("ELIST2_ITERATOR::forward");
 #endif
 
   next = current->next;
 
 #ifndef NDEBUG
   if (!next) {
-    NULL_NEXT.error("ELIST2_ITERATOR::forward", ABORT,
+    NULL_NEXT.abort("ELIST2_ITERATOR::forward",
                     "This is: %p  Current is: %p",
                     static_cast<void *>(this),
                     static_cast<void *>(current));
@@ -212,7 +212,7 @@ ELIST2_LINK *ELIST2_ITERATOR::forward() {
 ELIST2_LINK *ELIST2_ITERATOR::backward() {
 #ifndef NDEBUG
   if (!list)
-    NO_LIST.error("ELIST2_ITERATOR::backward", ABORT);
+    NO_LIST.abort("ELIST2_ITERATOR::backward");
 #endif
   if (list->empty()) {
     return nullptr;
@@ -233,9 +233,9 @@ ELIST2_LINK *ELIST2_ITERATOR::backward() {
 
 #ifndef NDEBUG
   if (!current)
-    NULL_DATA.error("ELIST2_ITERATOR::backward", ABORT);
+    NULL_DATA.abort("ELIST2_ITERATOR::backward");
   if (!prev) {
-    NULL_PREV.error("ELIST2_ITERATOR::backward", ABORT,
+    NULL_PREV.abort("ELIST2_ITERATOR::backward",
                     "This is: %p  Current is: %p",
                     static_cast<void *>(this),
                     static_cast<void *>(current));
@@ -259,9 +259,9 @@ ELIST2_LINK *ELIST2_ITERATOR::data_relative( // get data + or - ..
 
 #ifndef NDEBUG
   if (!list)
-    NO_LIST.error("ELIST2_ITERATOR::data_relative", ABORT);
+    NO_LIST.abort("ELIST2_ITERATOR::data_relative");
   if (list->empty())
-    EMPTY_LIST.error("ELIST2_ITERATOR::data_relative", ABORT);
+    EMPTY_LIST.abort("ELIST2_ITERATOR::data_relative");
 #endif
 
   if (offset < 0) {
@@ -284,7 +284,7 @@ ELIST2_LINK *ELIST2_ITERATOR::data_relative( // get data + or - ..
 
 #ifndef NDEBUG
   if (!ptr)
-    NULL_DATA.error("ELIST2_ITERATOR::data_relative", ABORT);
+    NULL_DATA.abort("ELIST2_ITERATOR::data_relative");
 #endif
 
   return ptr;
@@ -308,11 +308,11 @@ void ELIST2_ITERATOR::exchange(  // positions of 2 links
 
 #ifndef NDEBUG
   if (!list)
-    NO_LIST.error("ELIST2_ITERATOR::exchange", ABORT);
+    NO_LIST.abort("ELIST2_ITERATOR::exchange");
   if (!other_it)
-    BAD_PARAMETER.error("ELIST2_ITERATOR::exchange", ABORT, "other_it nullptr");
+    BAD_PARAMETER.abort("ELIST2_ITERATOR::exchange", "other_it nullptr");
   if (!(other_it->list))
-    NO_LIST.error("ELIST2_ITERATOR::exchange", ABORT, "other_it");
+    NO_LIST.abort("ELIST2_ITERATOR::exchange", "other_it");
 #endif
 
   /* Do nothing if either list is empty or if both iterators reference the same
@@ -325,7 +325,7 @@ link */
   /* Error if either current element is deleted */
 
   if (!current || !other_it->current) {
-    DONT_EXCHANGE_DELETED.error("ELIST2_ITERATOR.exchange", ABORT);
+    DONT_EXCHANGE_DELETED.abort("ELIST2_ITERATOR.exchange");
   }
 
   /* Now handle the 4 cases: doubleton list; non-doubleton adjacent elements
@@ -421,16 +421,16 @@ ELIST2_LINK *ELIST2_ITERATOR::extract_sublist( // from this current
 
 #ifndef NDEBUG
   if (!other_it)
-    BAD_PARAMETER.error("ELIST2_ITERATOR::extract_sublist", ABORT, "other_it nullptr");
+    BAD_PARAMETER.abort("ELIST2_ITERATOR::extract_sublist", "other_it nullptr");
   if (!list)
-    NO_LIST.error("ELIST2_ITERATOR::extract_sublist", ABORT);
+    NO_LIST.abort("ELIST2_ITERATOR::extract_sublist");
   if (list != other_it->list)
-    BAD_EXTRACTION_PTS.error("ELIST2_ITERATOR.extract_sublist", ABORT);
+    BAD_EXTRACTION_PTS.abort("ELIST2_ITERATOR.extract_sublist");
   if (list->empty())
-    EMPTY_LIST.error("ELIST2_ITERATOR::extract_sublist", ABORT);
+    EMPTY_LIST.abort("ELIST2_ITERATOR::extract_sublist");
 
   if (!current || !other_it->current)
-    DONT_EXTRACT_DELETED.error("ELIST2_ITERATOR.extract_sublist", ABORT);
+    DONT_EXTRACT_DELETED.abort("ELIST2_ITERATOR.extract_sublist");
 #endif
 
   ex_current_was_last = other_it->ex_current_was_last = false;
@@ -440,7 +440,7 @@ ELIST2_LINK *ELIST2_ITERATOR::extract_sublist( // from this current
   temp_it.mark_cycle_pt();
   do {                         // walk sublist
     if (temp_it.cycled_list()) { // can't find end pt
-      BAD_SUBLIST.error("ELIST2_ITERATOR.extract_sublist", ABORT);
+      BAD_SUBLIST.abort("ELIST2_ITERATOR.extract_sublist");
     }
 
     if (temp_it.at_last()) {
