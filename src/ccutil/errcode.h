@@ -59,6 +59,13 @@ public:
   }
 
   void error(const char *caller, TessErrorLogCode action) const;
+  
+  [[noreturn]] void abort(     // print function for fatal errors
+      const char *caller,      // function location
+      const char *format, ...  // fprintf format
+  ) const __attribute__((format(printf, 3, 4)));
+  [[noreturn]] void abort(const char *caller) const;
+  
   constexpr ERRCODE(const char *string) : message(string) {} // initialize with string
 };
 
@@ -71,12 +78,12 @@ constexpr ERRCODE ASSERT_FAILED("Assert failed");
 #define DO_NOTHING static_cast<void>(0)
 
 #define ASSERT_HOST(x) \
-  (x) ? DO_NOTHING : ASSERT_FAILED.error(#x, ABORT, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__)
+  (x) ? DO_NOTHING : ASSERT_FAILED.abort(#x, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__)
 
 #define ASSERT_HOST_MSG(x, ...)                                                \
   if (!(x)) {                                                                  \
     tprintError(__VA_ARGS__);                                                  \
-    ASSERT_FAILED.error(#x, ABORT, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__); \
+    ASSERT_FAILED.abort(#x, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__); \
   }
 
 } // namespace tesseract

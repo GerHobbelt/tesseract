@@ -46,9 +46,9 @@ static void error_action(TessErrorLogCode action) {
       *reinterpret_cast<int *>(0) = 0;
 #  endif
 #endif
-      abort();
+      ::abort();
     default:
-      BADERRACTION.error("error", ABORT);
+      BADERRACTION.abort("error");
   }
 }
 
@@ -77,6 +77,49 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
     tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
   }
   error_action(action);
+}
+
+[[noreturn]] void ERRCODE::abort( // handle error
+    const char *caller,      // name of caller
+    const char *format, ...  // special message
+    ) const {
+  va_list args; // variable args
+  std::stringstream msg;
+
+  if (caller != nullptr) {
+    // name of caller
+    msg << caller << ':';
+  }
+  // actual message
+  msg << "Error:" << message;
+  if (format != nullptr) {
+    char str[MAX_MSG];
+    va_start(args, format); // variable list
+    // print remainder
+    std::vsnprintf(str, sizeof(str), format, args);
+    // ensure termination
+    str[sizeof(str) - 1] = '\0';
+    va_end(args);
+    msg << ':' << str;
+  }
+
+  std::cerr << msg.str() << '\n';
+
+#if !defined(NDEBUG)
+  // Create a deliberate abnormal exit as the stack trace is more useful
+  // that way. This is done only in debug builds, because the
+  // error message "segmentation fault" confuses most normal users.
+#  if defined(__GNUC__)
+  __builtin_trap();
+#  else
+  *reinterpret_cast<int *>(0) = 0;
+#  endif
+#endif
+  ::abort();
+}
+
+[[noreturn]] void ERRCODE::abort(const char *caller) const {
+  abort(caller, nullptr);
 }
 
 } // namespace tesseract
