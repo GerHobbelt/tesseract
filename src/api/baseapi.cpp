@@ -774,7 +774,7 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
 
 /**
  * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
- * Each SetRectangle clears the recogntion results so multiple rectangles
+ * Each SetRectangle clears the recognition results so multiple rectangles
  * can be recognized with the same image.
  */
 void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
@@ -2768,7 +2768,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 	  }
 	  tesseract_->set_pix_binary(pix);
 
-	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "DetectOS : Thresholded Image");
   }
 
   return tesseract_->orientation_and_script_detection(tesseract_->input_file_path.c_str(), osr) > 0;
