@@ -506,7 +506,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     }
     pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_closed, "get line masks : closed brick");
+      tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
     }
     if (tesseract_->debug_line_finding) {
       tprintf("PROCESS:"
@@ -517,7 +517,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     }
     Image pix_solid = pixOpenBrick(nullptr, pix_closed, max_line_width, max_line_width);
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_solid, "get line masks : open brick");
+      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (max_line_width = {})", max_line_width));
     }
     pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 

@@ -255,7 +255,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
 
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
-      tprintf("Pass{}: {} [{}]\n", pass_n, word->word->best_choice->unichar_string(),
+      tprintf("Pass{}: word: \"{}\" [{}]\n", pass_n, word->word->best_choice->unichar_string(),
               word->word->best_choice->debug_string());
     }
     pr_it->forward();
@@ -1373,7 +1373,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   }
   clock_t ocr_t = clock();
   if (tessedit_timing_debug) {
-    tprintf("{} (ocr took {} sec)\n", word_data->word->best_choice->unichar_string(),
+    tprintf("classify_word_and_language -> word best choice: \"{}\" (ocr took {} sec)\n",
+            word_data->word->best_choice->unichar_string(),
             static_cast<double>(ocr_t - start_t) / CLOCKS_PER_SEC);
   }
 }
