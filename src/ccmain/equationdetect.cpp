@@ -1427,7 +1427,7 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {
-  Image pix = pixConvertTo32(lang_tesseract_->BestPix());
+  Image pix = lang_tesseract_->GetPixForDebugView();
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
@@ -1445,13 +1445,13 @@ void EquationDetect::PaintColParts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  pix.destroy();
+  lang_tesseract_->ClearPixForDebugView();
 }
 
 void EquationDetect::PrintSpecialBlobsDensity(const ColPartition *part) const {
   ASSERT_HOST(part);
   TBOX box(part->bounding_box());
-  int h = pixGetHeight(lang_tesseract_->BestPix());
+  int h = lang_tesseract_->ImageHeight();
   tprintf("Printing special blobs density values for ColParition (t={},b={}) ", h - box.top(),
           h - box.bottom());
   box.print();

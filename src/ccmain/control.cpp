@@ -169,7 +169,7 @@ void Tesseract::SetupAllWordsPassN(int pass_n, const TBOX *target_word_box, cons
 void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
   if (pass_n == 1 || !word->word->done) {
     if (pass_n == 1) {
-      word->word->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode,
+      word->word->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode,
                                       nullptr, classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                       poly_allow_detailed_fx, word->row, word->block);
     } else if (pass_n == 2) {
@@ -189,7 +189,7 @@ void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
       // LSTM doesn't get setup for pass2.
       if (pass_n == 1 || lang_t->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
         word_res->SetupForRecognition(
-            lang_t->unicharset, lang_t, BestPix(), lang_t->tessedit_ocr_engine_mode, nullptr,
+            lang_t->unicharset, lang_t, lang_t->tessedit_ocr_engine_mode, nullptr,
             lang_t->classify_bln_numeric_mode, lang_t->textord_use_cjk_fp_model,
             lang_t->poly_allow_detailed_fx, word->row, word->block);
       }
@@ -1411,7 +1411,7 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 
 #if !DISABLED_LEGACY_ENGINE
     // Fall back to tesseract for failed words or odd words.
-    (*in_word)->SetupForRecognition(unicharset, this, BestPix(), OEM_TESSERACT_ONLY, nullptr,
+    (*in_word)->SetupForRecognition(unicharset, this, OEM_TESSERACT_ONLY, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
 #endif // !DISABLED_LEGACY_ENGINE
@@ -1505,7 +1505,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
   new_x_ht_word.x_height = new_x_ht;
   new_x_ht_word.baseline_shift = baseline_shift;
   new_x_ht_word.caps_height = 0.0;
-  new_x_ht_word.SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+  new_x_ht_word.SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
   match_word_pass_n(2, &new_x_ht_word, row, block);
