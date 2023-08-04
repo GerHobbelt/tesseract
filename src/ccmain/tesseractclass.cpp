@@ -549,6 +549,7 @@ void Tesseract::Clear() {
   pix_binary_.destroy();
   pix_grey_.destroy();
   pix_thresholds_.destroy();
+  ClearPixForDebugView();
   scaled_color_.destroy();
   deskew_ = FCOORD(1.0f, 0.0f);
   reskew_ = FCOORD(1.0f, 0.0f);
