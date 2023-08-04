@@ -540,7 +540,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
                       const char **configs, int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
                       FileReader reader) {
-  if (language == NULL || language[0] == 0) {
+  if (language == nullptr || language[0] == 0) {
     language = "";
   }
   if (data == nullptr) {
@@ -816,21 +816,15 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   // }
   const int page_number = 0;
   if (tesseract_->scribe_save_grey_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "grey_image", "png");
-	  Pix *p1 = tesseract_->pix_grey();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_grey();
     tesseract_->AddPixDebugPage(p1, "greyscale image");
   }
   if (tesseract_->scribe_save_binary_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "binary_image", "png");
-	  Pix *p1 = tesseract_->pix_binary();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_binary();
     tesseract_->AddPixDebugPage(p1, "binary (black & white) image");
   }
   if (tesseract_->scribe_save_original_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "original_image", "png");
-	  Pix *p1 = tesseract_->pix_original();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_original();
     tesseract_->AddPixDebugPage(p1, "original image");
   }
 
@@ -1566,14 +1560,12 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
     // Write normalized image 
-    //std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "preprocessed", "tiff");
     Pix *p1;
     if (graynorm_mode == 2) {
       p1 = thresholder_->GetPixRect();
     } else {
       p1 = GetInputImage();
     }
-    //WritePix(file_path, p1, IFF_TIFF_G4);
     tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
   }
 
@@ -1765,7 +1757,7 @@ std::vector<std::tuple<int,int,int,int>> TessBaseAPI::GetTableRows(unsigned i)
   return rows;
 }
 
-std::vector<std::tuple<int,int,int,int> > TessBaseAPI::GetTableCols(unsigned i)
+std::vector<std::tuple<int,int,int,int>> TessBaseAPI::GetTableCols(unsigned i)
 {
   const auto &t = constUniqueInstance<std::vector<TessTable>>();
 
