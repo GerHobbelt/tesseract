@@ -1448,17 +1448,16 @@ void EquationDetect::PaintColParts(const std::string &outfile) const {
   lang_tesseract_->ClearPixForDebugView();
 }
 
-void EquationDetect::PrintSpecialBlobsDensity(const ColPartition *part) const {
-  ASSERT_HOST(part);
-  TBOX box(part->bounding_box());
+void EquationDetect::PrintSpecialBlobsDensity(const ColPartition &part) const {
+  TBOX box(part.bounding_box());
   int h = lang_tesseract_->ImageHeight();
   tprintf("Printing special blobs density values for ColPartition (t={},b={}) ", h - box.top(),
           h - box.bottom());
   box.print();
-  tprintf("blobs count = {}, density = ", part->boxes_count());
+  tprintf("blobs count = {}, density = ", part.boxes_count());
   for (int i = 0; i < BSTT_COUNT; ++i) {
     auto type = static_cast<BlobSpecialTextType>(i);
-    tprintf("{}:{} ", i, part->SpecialBlobsDensity(type));
+    tprintf("{}:{} ", i, part.SpecialBlobsDensity(type));
   }
   tprintf("\n");
 }
