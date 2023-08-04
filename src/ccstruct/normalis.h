@@ -25,8 +25,6 @@
 
 #include <vector>
 
-struct Pix;
-
 namespace tesseract {
 
 const int kBlnCellHeight = 256;    // Full-height for baseline normalization.
@@ -234,12 +232,6 @@ public:
   // Prints the content of the DENORM for debug purposes.
   void Print() const;
 
-  Image pix() const {
-    return pix_;
-  }
-  void set_pix(Image pix) {
-    pix_ = pix;
-  }
   bool inverse() const {
     return inverse_;
   }
@@ -275,8 +267,6 @@ private:
   // Setup default values.
   void Init();
 
-  // Best available image.
-  Image pix_;
   // True if the source image is white-on-black.
   bool inverse_;
   // Block the word came from. If not null, block->re_rotation() takes the

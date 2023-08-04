@@ -356,7 +356,7 @@ bool Tesseract::os_detect_blob(BLOBNBOX *bbox, OrientationDetector *o, ScriptDet
     }
     std::unique_ptr<TBLOB> rotated_blob(new TBLOB(*tblob));
     rotated_blob->Normalize(nullptr, &current_rotation, nullptr, x_origin, y_origin, scaling,
-                            scaling, 0.0f, static_cast<float>(kBlnBaselineOffset), false, nullptr);
+                            scaling, 0.0f, static_cast<float>(kBlnBaselineOffset), false);
     AdaptiveClassifier(rotated_blob.get(), ratings + i);
     current_rotation.rotate(rotation90);
   }

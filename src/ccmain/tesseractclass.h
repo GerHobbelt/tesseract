@@ -279,6 +279,7 @@ public:
       return pix_binary_;
     }
   }
+
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();
     pix_thresholds_ = thresholds;

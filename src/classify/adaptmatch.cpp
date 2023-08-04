@@ -1282,7 +1282,7 @@ int Classify::CharNormClassifier(TBLOB *blob, const TrainingSample &sample,
   // This is the length that is used for scaling ratings vs certainty.
   adapt_results->BlobLength = IntCastRounded(sample.outline_length() / kStandardFeatureLength);
   std::vector<UnicharRating> unichar_results;
-  static_classifier_->UnicharClassifySample(sample, blob->denorm().pix(), 0, -1, &unichar_results);
+  static_classifier_->UnicharClassifySample(sample, 0, -1, &unichar_results);
   // Convert results to the format used internally by AdaptiveClassifier.
   for (auto &r : unichar_results) {
     AddNewResult(r, adapt_results);
@@ -1454,7 +1454,7 @@ void Classify::DebugAdaptiveClassifier(TBLOB *blob, ADAPT_RESULTS *Results) {
   if (sample == nullptr) {
     return;
   }
-  static_classifier_->DebugDisplay(*sample, blob->denorm().pix(), Results->best_unichar_id);
+  static_classifier_->DebugDisplay(*sample, Results->best_unichar_id);
 } /* DebugAdaptiveClassifier */
 #endif
 
