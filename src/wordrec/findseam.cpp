@@ -227,7 +227,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
     wordrec_display_splits.set_value(true);
   }
 
-  draw_blob_edges(blob);
+  draw_blob_edges(tesseract_, blob);
 #endif
 
   PointHeap point_heap(MAX_NUM_POINTS);

@@ -44,11 +44,11 @@ ScrollViewReference to_win = nullptr;
  * Create the to window used to show the fit.
  **********************************************************************/
 
-ScrollViewReference create_to_win(ICOORD page_tr) {
+ScrollViewReference create_to_win(Tesseract *tess, ICOORD page_tr) {
   if (to_win) {
     return to_win;
   }
-  to_win = new ScrollView(tesseract_, TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
+  to_win = new ScrollView(tess, TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
                           page_tr.x(), page_tr.y(), true);
   return to_win;
 }

@@ -27,9 +27,9 @@ namespace tesseract {
 #if !GRAPHICS_DISABLED
 extern ScrollViewReference fx_win;
 #endif // !GRAPHICS_DISABLED
-void create_fx_win();      // make features win
-void clear_fx_win();       // make features win
-void create_fxdebug_win(); // make gradients win
+void create_fx_win(Tesseract *tess);      // make features win
+void clear_fx_win();                      
+void create_fxdebug_win(Tesseract *tess); // make gradients win
 
 } // namespace tesseract
 

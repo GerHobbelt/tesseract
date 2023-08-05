@@ -233,14 +233,14 @@ float make_single_row(ICOORD page_tr, bool allow_sub_blobs, TO_BLOCK *block,
  *
  * Arrange the blobs into rows.
  */
-float make_rows(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
+float make_rows(Tesseract *tess, ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
   float port_m;         // global skew
   float port_err;       // global noise
   TO_BLOCK_IT block_it; // iterator
 
   block_it.set_to_list(port_blocks);
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
-    make_initial_textrows(page_tr, block_it.data(), FCOORD(1.0f, 0.0f));
+    make_initial_textrows(tess, page_tr, block_it.data(), FCOORD(1.0f, 0.0f));
   }
   // compute globally
   compute_page_skew(port_blocks, port_m, port_err);
@@ -258,6 +258,7 @@ float make_rows(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
  * Arrange the good blobs into rows of text.
  */
 void make_initial_textrows( // find lines
+    Tesseract *tess, 
     ICOORD page_tr,
     TO_BLOCK *block, // block to do
     FCOORD rotation // for drawing
@@ -268,7 +269,7 @@ void make_initial_textrows( // find lines
   ScrollView::Color colour; // of row
 
   if (textord_show_initial_rows) {
-    create_to_win(page_tr);
+    create_to_win(tess, page_tr);
   }
 #endif
   // guess skew

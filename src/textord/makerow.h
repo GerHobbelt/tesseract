@@ -107,9 +107,11 @@ void fill_heights(TO_ROW *row, float gradient, int min_height, int max_height, S
                   STATS *floating_heights);
 
 float make_single_row(ICOORD page_tr, bool allow_sub_blobs, TO_BLOCK *block, TO_BLOCK_LIST *blocks);
-float make_rows(ICOORD page_tr, // top right
+float make_rows(Tesseract *tess,
+                ICOORD page_tr, // top right
                 TO_BLOCK_LIST *port_blocks);
-void make_initial_textrows(ICOORD page_tr,
+void make_initial_textrows(Tesseract *tess,
+                           ICOORD page_tr,
                            TO_BLOCK* block,  // block to do
                            FCOORD rotation); // for drawing
 void fit_lms_line(TO_ROW *row);

@@ -26,7 +26,8 @@
 
 namespace tesseract {
 Wordrec::Wordrec()
-    : // control parameters
+    :
+    // control parameters
 
     BOOL_MEMBER(wordrec_debug_blamer, false, "Print blamer debug messages", params())
     ,
@@ -44,7 +45,8 @@ Wordrec::Wordrec()
 
 namespace tesseract {
 Wordrec::Wordrec()
-    : // control parameters
+    :
+    // control parameters
     BOOL_MEMBER(merge_fragments_in_matrix, true,
                 "Merge the fragments in the ratings matrix and delete them"
                 " after merging",

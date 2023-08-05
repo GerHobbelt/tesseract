@@ -38,9 +38,9 @@ extern ScrollViewReference edge_window; /* Window for edges */
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ---------------------------------------------------------------------*/
-void display_edgepts(LIST outlines);
+void display_edgepts(Tesseract *tess, LIST outlines);
 
-void draw_blob_edges(TBLOB *blob);
+void draw_blob_edges(Tesseract *tess, TBLOB *blob);
 
 void mark_outline(EDGEPT *edgept);
 

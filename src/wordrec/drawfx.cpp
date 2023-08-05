@@ -47,8 +47,8 @@ ScrollViewReference fx_win = nullptr;
  * Create the fx window used to show the fit.
  **********************************************************************/
 
-void create_fx_win() { // make features win
-  fx_win = new ScrollView(tesseract_, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
+void create_fx_win(Tesseract *tess) { // make features win
+  fx_win = new ScrollView(tess, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
                           WERDWIDTH * 2, BLN_MAX * 2, true);
 }
 
@@ -74,7 +74,7 @@ void clear_fx_win() { // make features win
  * Create the fx window used to show the fit.
  **********************************************************************/
 
-void create_fxdebug_win() { // make gradients win
+void create_fxdebug_win(Tesseract *tess) { // make gradients win
 }
 
 } // namespace tesseract

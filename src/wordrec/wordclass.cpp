@@ -53,7 +53,7 @@ BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, Scroll
                                          BlamerBundle *blamer_bundle) {
 #if !GRAPHICS_DISABLED
   if (wordrec_display_all_blobs) {
-    display_blob(blob, color);
+    display_blob(tesseract_, blob, color);
   }
 #endif
   // TODO(rays) collapse with call_matcher and move all to wordrec.cpp.

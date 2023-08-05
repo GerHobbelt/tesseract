@@ -32,7 +32,7 @@ extern BOOL_VAR_H(textord_show_fixed_cuts);
 extern ScrollViewReference to_win;
 extern FILE *to_debug;
 // Creates a static display window for textord, and returns a pointer to it.
-ScrollViewReference create_to_win(ICOORD page_tr);
+ScrollViewReference create_to_win(Tesseract *tess, ICOORD page_tr);
 void close_to_win();              // Destroy the textord window.
 void create_todebug_win();        // make gradients win
 void plot_box_list(               // make gradients win

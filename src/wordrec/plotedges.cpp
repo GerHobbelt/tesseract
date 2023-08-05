@@ -44,10 +44,10 @@ ScrollViewReference edge_window;
  *
  * Macro to display edge points in a window.
  **********************************************************************/
-void display_edgepts(LIST outlines) {
+void display_edgepts(Tesseract *tess, LIST outlines) {
   /* Set up window */
   if (!edge_window) {
-    edge_window = new ScrollView(tesseract_, "Edges", 750, 150, 400, 128, 800, 256, true);
+    edge_window = new ScrollView(tess, "Edges", 750, 150, 400, 128, 800, 256, true);
   } else {
     edge_window->Clear();
   }
@@ -64,13 +64,13 @@ void display_edgepts(LIST outlines) {
  *
  * Display the edges of this blob in the edges window.
  **********************************************************************/
-void draw_blob_edges(TBLOB *blob) {
+void draw_blob_edges(Tesseract *tess, TBLOB *blob) {
   if (wordrec_display_splits) {
     LIST edge_list = NIL_LIST;
     for (TESSLINE *ol = blob->outlines; ol != nullptr; ol = ol->next) {
       edge_list = push(edge_list, ol->loop);
     }
-    display_edgepts(edge_list);
+    display_edgepts(tess, edge_list);
     destroy(edge_list);
   }
 }

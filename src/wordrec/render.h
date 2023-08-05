@@ -43,7 +43,7 @@ extern BOOL_VAR_H(wordrec_blob_pause);
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-void display_blob(TBLOB *blob, ScrollView::Color color);
+void display_blob(Tesseract *tess, TBLOB *blob, ScrollView::Color color);
 
 void render_blob(ScrollViewReference window, TBLOB *blob, ScrollView::Color color);
 

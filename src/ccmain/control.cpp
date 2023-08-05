@@ -1576,7 +1576,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
 #  if !GRAPHICS_DISABLED
   if (tessedit_display_outwords) {
     if (!fx_win) {
-      create_fx_win();
+      create_fx_win(this);
     }
     clear_fx_win();
     word->rebuild_word->plot(fx_win);
