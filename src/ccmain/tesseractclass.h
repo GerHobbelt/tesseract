@@ -250,6 +250,21 @@ public:
     }
   }
 
+  Image GetPixForDebugView() {
+    if (pix_for_debug_view_ != nullptr)
+      return pix_for_debug_view_;
+
+    pix_for_debug_view_ = pixConvertTo32(pix_binary_);
+    return pix_for_debug_view_;
+  }
+
+  void ClearPixForDebugView() {
+    if (pix_for_debug_view_ != nullptr) {
+      pix_for_debug_view_.destroy();
+      pix_for_debug_view_ = nullptr;
+    }
+  }
+
   // Return a memory capacity cost estimate for the given image / current original image.
   //
   // (unless overridden by the `pix` argument) uses the current original image for the estimate,
@@ -262,23 +277,6 @@ public:
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use pix_original() data */) const;
   bool CheckAndReportIfImageTooLarge(int width, int height) const;
 
-  // Returns a pointer to a Pix representing the best available resolution image
-  // of the page, with best available bit depth as second priority. Result can
-  // be of any bit depth, but never color-mapped, as that has always been
-  // removed. Note that in grey and color, 0 is black and 255 is
-  // white. If the input was binary, then black is 1 and white is 0.
-  // To tell the difference pixGetDepth() will return 32, 8 or 1.
-  // In any case, the return value is a borrowed Pix, and should not be
-  // deleted or pixDestroyed.
-  Image BestPix() const {
-    if (pixGetWidth(pix_original_) == ImageWidth()) {
-      return pix_original_;
-    } else if (pix_grey_ != nullptr) {
-      return pix_grey_;
-    } else {
-      return pix_binary_;
-    }
-  }
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();
     pix_thresholds_ = thresholds;
@@ -1045,14 +1043,10 @@ public:
   void AddPixDebugPage(const Image &pix, const std::string& title) {
     AddPixDebugPage(pix, title.c_str());
   }
-  void AddPixDebugPage(Image& pix, const char* title, bool keep_a_copy) {
-    if (pix == nullptr)
-      return;
 
-    pixa_debug_.AddPix(pix, title, keep_a_copy);
-  }
-  void AddPixDebugPage(Image& pix, const std::string& title, bool keep_a_copy) {
-    AddPixDebugPage(pix, title.c_str(), keep_a_copy);
+  void AddClippedPixDebugPage(const Image &pix, const TBOX &bbox, const char *title);
+  void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
+    AddClippedPixDebugPage(pix, bbox, title.c_str());
   }
 
   int PushNextPixDebugSection(const std::string &title) { // sibling
@@ -1141,6 +1135,8 @@ private:
   Image pix_original_;
   // Thresholds that were used to generate the thresholded image from grey.
   Image pix_thresholds_;
+  // canvas copy of pix_binary for debug view painting; this image is always 32-bit depth RGBA.
+  Image pix_for_debug_view_;
   // Debug images. If non-empty, will be written on destruction.
   DebugPixa pixa_debug_;
   // Input image resolution after any scaling. The resolution is not well

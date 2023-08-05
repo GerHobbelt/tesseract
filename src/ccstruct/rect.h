@@ -213,10 +213,10 @@ public:
   void rotate(const FCOORD &vec) { // by vector
     ICOORD top_left(bot_left.x(), top_right.y());
     bot_left -= top_left;
-    bot_left.rotate(vec);
-    bot_left += top_left;
     top_right -= top_left;
+    bot_left.rotate(vec);
     top_right.rotate(vec);
+    bot_left += top_left;
     top_right += top_left;
   }
   // rotate_large constructs the containing bounding box of all 4

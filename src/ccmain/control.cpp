@@ -169,7 +169,7 @@ void Tesseract::SetupAllWordsPassN(int pass_n, const TBOX *target_word_box, cons
 void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
   if (pass_n == 1 || !word->word->done) {
     if (pass_n == 1) {
-      word->word->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode,
+      word->word->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode,
                                       nullptr, classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                       poly_allow_detailed_fx, word->row, word->block);
     } else if (pass_n == 2) {
@@ -189,7 +189,7 @@ void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
       // LSTM doesn't get setup for pass2.
       if (pass_n == 1 || lang_t->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
         word_res->SetupForRecognition(
-            lang_t->unicharset, lang_t, BestPix(), lang_t->tessedit_ocr_engine_mode, nullptr,
+            lang_t->unicharset, lang_t, lang_t->tessedit_ocr_engine_mode, nullptr,
             lang_t->classify_bln_numeric_mode, lang_t->textord_use_cjk_fp_model,
             lang_t->poly_allow_detailed_fx, word->row, word->block);
       }
@@ -255,7 +255,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
 
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
-      tprintf("Pass{}: {} [{}]\n", pass_n, word->word->best_choice->unichar_string(),
+      tprintf("Pass{}: word: \"{}\" [{}]\n", pass_n, word->word->best_choice->unichar_string(),
               word->word->best_choice->debug_string());
     }
     pr_it->forward();
@@ -1322,7 +1322,9 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   if (debug) {
     tprintf("{} word with lang {} at:", word->done ? "Already done" : "Processing",
             most_recently_used_->lang);
-    word->word->bounding_box().print();
+    auto bbox = word->word->bounding_box();
+    bbox.print();
+    AddClippedPixDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}", most_recently_used_->lang));
   }
   if (word->done) {
     // If done on pass1, leave it as-is.
@@ -1371,7 +1373,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   }
   clock_t ocr_t = clock();
   if (tessedit_timing_debug) {
-    tprintf("{} (ocr took {} sec)\n", word_data->word->best_choice->unichar_string(),
+    tprintf("classify_word_and_language -> word best choice: \"{}\" (ocr took {} sec)\n",
+            word_data->word->best_choice->unichar_string(),
             static_cast<double>(ocr_t - start_t) / CLOCKS_PER_SEC);
   }
 }
@@ -1408,7 +1411,7 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 
 #if !DISABLED_LEGACY_ENGINE
     // Fall back to tesseract for failed words or odd words.
-    (*in_word)->SetupForRecognition(unicharset, this, BestPix(), OEM_TESSERACT_ONLY, nullptr,
+    (*in_word)->SetupForRecognition(unicharset, this, OEM_TESSERACT_ONLY, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
 #endif // !DISABLED_LEGACY_ENGINE
@@ -1502,7 +1505,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
   new_x_ht_word.x_height = new_x_ht;
   new_x_ht_word.baseline_shift = baseline_shift;
   new_x_ht_word.caps_height = 0.0;
-  new_x_ht_word.SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+  new_x_ht_word.SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
   match_word_pass_n(2, &new_x_ht_word, row, block);

@@ -42,7 +42,7 @@ constexpr int kMaxCredibleResolution = 2400;
  * Ratio between median blob size and likely resolution. Used to estimate
  * resolution when none is provided. This is basically 1/usual text size in
  * inches.  */
-constexpr int kResolutionEstimationFactor = 10;
+constexpr int kResolutionEstimationFactor = 6; // 10;
 
 /**
  * Possible types for a POLY_BLOCK or ColPartition.
@@ -219,7 +219,7 @@ inline bool PSM_WORD_FIND_ENABLED(int pageseg_mode) {
  * have 5x as many functions.
  */
 enum PageIteratorLevel {
-  RIL_BLOCK,    // Block of text/image/separator line.
+  RIL_BLOCK,    // Block of text/image/separator lines.
   RIL_PARA,     // Paragraph within a block.
   RIL_TEXTLINE, // Line within a paragraph.
   RIL_WORD,     // Word within a textline.

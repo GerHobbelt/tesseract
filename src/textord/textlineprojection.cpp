@@ -63,7 +63,7 @@ TextlineProjection::~TextlineProjection() {
 // blobs, a rotation to convert to image coords,
 // and a full-resolution nontext_map, marking out areas to avoid.
 // During construction, we have the following assumptions:
-// The rotation is a multiple of 90 degrees, ie no deskew yet.
+// The rotation is a multiple of 90 degrees, i.e. no deskew yet.
 // The blobs have had their left and right rules set to also limit
 // the range of projection.
 void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD &rotation,
@@ -624,7 +624,9 @@ static void TruncateBoxToMissNonText(int x_middle, int y_middle, bool split_on_x
       box2.set_bottom(im_box.top());
     }
   }
-  box1 += box2;
+  if (!box2.null_box()) {
+    box1 += box2;
+  }
   *bbox = box1;
 }
 

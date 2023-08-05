@@ -1866,18 +1866,15 @@ static char kBlobTypes[BRT_COUNT + 1] = "NHSRIUVT";
 // Prints debug information on this.
 void ColPartition::Print() const {
   int y = MidY();
-  tprintf(
-      "ColPart:{}(M{}-{}{}-B{}/{},{}/{})->({}B-{}{}{}M/{},{}/{})"
-      " w-ok={}, v-ok={}, type={}{}{}, fc={}, lc={}, boxes={}"
-      " ts={} bs={} ls={} rs={}\n",
-      boxes_.empty() ? "E" : " ", left_margin_, left_key_tab_ ? "T" : "B",
-      LeftAtY(y), bounding_box_.left(), median_left_, bounding_box_.bottom(),
-      median_bottom_, bounding_box_.right(), RightAtY(y),
-      right_key_tab_ ? "T" : "B", right_margin_, median_right_,
-      bounding_box_.top(), median_top_, good_width_, good_column_, type_,
-      kBlobTypes[blob_type_], flow_, first_column_, last_column_,
-      boxes_.length(), space_above_, space_below_, space_to_left_,
-      space_to_right_);
+  tprintf("ColPartition: {} ", boxes_.empty() ? "(Empty)" : fmt::format("boxcount:{}", boxes_.length()));
+  tprintf("(margin: left:{}, right:{}) ", left_margin_, right_margin_);
+  tprintf("AtY:(left: {}{}, right: {}{}) ", LeftAtY(y), left_key_tab_ ? "(TabVector)" : "(Box)", RightAtY(y), right_key_tab_ ? "(TabVector)" : "(Box)");
+  tprintf("bbox:(l:{},b:{} - r:{},t:{}) ", bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(), bounding_box_.top());
+  tprintf("median:(l:{},b:{} - r:{},t:{}) ", median_left_, median_bottom_, median_right_, median_top_);
+  tprintf("good:(width={}, column={}, score={}, type={} {} {}) ", good_width_, good_column_, good_blob_score_, type_, kBlobTypes[blob_type_], flow_);
+  tprintf("flow={}, column:(first:{}, last:{}) ", flow_, first_column_, last_column_);
+  tprintf("space:(above={}, below={}, left={}, right={}, top={}, bottom={}) ", space_above_, space_below_, space_to_left_, space_to_right_, top_spacing_, bottom_spacing_);
+  tprintf("skew:(x={}, y={})\n", vertical_.x(), vertical_.y());
 }
 
 // Prints debug information on the colors.
