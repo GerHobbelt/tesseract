@@ -124,19 +124,10 @@ int OSResults::get_best_script(int orientation_id) const {
   return max_id;
 }
 
-// Produce the clock-wise rotation (in degrees) for the given orientation ID.
-int OSResults::get_rotation_from_orientation(int orientation_id) {
-  static int orientation_degrees_mapping[4] = {0, 270, 180, 90};
-
-  if (orientation_id < 0 || orientation_id >= 4)
-    return 0;
-  return orientation_degrees_mapping[orientation_id];
-}
-
   // Print the script scores for all possible orientations.
 void OSResults::print_scores(void) const {
   for (int i = 0; i < 4; ++i) {
-    tprintf("Orientation id #{}: {} degrees", i, get_rotation_from_orientation(i));
+    tprintf("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
     print_scores(i);
   }
 }

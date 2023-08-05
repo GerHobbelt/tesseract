@@ -68,9 +68,6 @@ struct OSResults {
   void print_scores(void) const;
   void print_scores(int orientation_id) const;
 
-  // Produce the clock-wise rotation (in degrees) for the given orientation ID.
-  static int get_rotation_from_orientation(int orientation_id);
-
   // Array holding scores for each orientation id [0,3].
   // Orientation ids [0..3] map to [0, 270, 180, 90] degree orientations of the
   // page respectively, where the values refer to the amount of clockwise
