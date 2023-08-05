@@ -116,14 +116,14 @@ bool write_unlv_file(   // print list of sides
         auto pagebounds = pdblk.bounding_box();
 
         x = box.left();
-        width = box.right() - x;
+        width = box.width();
         y = box.bottom();
-        height = box.top() - y;
+        height = box.height();
 
-        auto y2 = ysize - y;
-
-        int l = fprintf(pdfp, "%d %d %d %d\n", x, y, width, height);
-        if (l < 8) { 
+        std::string s = fmt::format("{} {} {} {}\n", x, y, width, height);
+        auto len = s.length();
+        int l = fwrite(s.c_str(), 1, len, pdfp);
+        if (l != len) { 
           tprintf("ERROR: Write error while producing UZN file {}.\n", name);
           fclose(pdfp);
           return false; // didn't write one

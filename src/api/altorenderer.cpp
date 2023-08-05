@@ -260,7 +260,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
            << "\t\t</Page>\n";
   const std::string &text = alto_str.str();
 
-  char* result = new char[text.length() + 1];
+  char *result = new char[text.length() + 1];
   strcpy(result, text.c_str());
   delete res_it;
   return result;

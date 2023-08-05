@@ -435,10 +435,10 @@ bool TabFind::FindTabVectors(TabVector_LIST *hlines, BLOBNBOX_LIST *image_blobs,
   part_grid->Deskew(*deskew);
   ApplyTabConstraints();
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_finaltabs) {
+  if (textord_tabfind_show_finaltabs && !tesseract_->debug_do_not_use_scrollview_app) {
     tab_win = MakeWindow(640, 50, "FinalTabs");
     DisplayBoxes(tab_win);
-    DisplayTabs("FinalTabs", tab_win);
+    tab_win = DisplayTabs("FinalTabs", tab_win);
     tab_win = DisplayTabVectors(tab_win);
   }
 #endif // !GRAPHICS_DISABLED
@@ -491,7 +491,8 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       block->plot_graded_blobs(pix);
       //block->plot_noise_blobs(pix);
 
-      tesseract_->AddPixDebugPage(pix, name, false);
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
     }
 #endif // !GRAPHICS_DISABLED
   }
@@ -539,7 +540,7 @@ void TabFind::DisplayTabVectors(Image &pix, uint32_t* data, int wpl, int w, int 
 ScrollView *TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
                                            double tabfind_aligned_gap_fraction, TO_BLOCK *block) {
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_initialtabs) {
+  if (textord_tabfind_show_initialtabs && !tesseract_->debug_do_not_use_scrollview_app) {
     ScrollView *line_win = MakeWindow(0, 0, "VerticalLines");
     line_win = DisplayTabVectors(line_win);
   }
@@ -609,7 +610,7 @@ ScrollView *TabFind::FindTabBoxes(int min_gutter_width, double tabfind_aligned_g
   std::sort(right_tab_boxes_.begin(), right_tab_boxes_.end(), StdSortRightToLeft<BLOBNBOX>);
   ScrollView *tab_win = nullptr;
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_initialtabs) {
+  if (textord_tabfind_show_initialtabs && !tesseract_->debug_do_not_use_scrollview_app) {
     tab_win = MakeWindow(0, 100, "InitialTabs");
     tab_win->Pen(ScrollView::BLUE);
     tab_win->Brush(ScrollView::NONE);

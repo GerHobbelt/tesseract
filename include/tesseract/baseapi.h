@@ -169,6 +169,7 @@ public:
    * (init variables should be passed to Init()).
    */
   bool SetVariable(const char *name, const char *value);
+  bool SetVariable(const char *name, int value);
   bool SetDebugVariable(const char *name, const char *value);
 
   /**
@@ -243,7 +244,7 @@ public:
    * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
    * with one or more other languages, so the ~ sign is available to override
-   * that. Eg if "hin" were set to load "eng" by default, then "hin+~eng" would force
+   * that. E.g. if "hin" were set to load "eng" by default, then "hin+~eng" would force
    * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
@@ -650,7 +651,7 @@ public:
    */
   char *GetAltoText(int page_number);
 
-   /**
+  /**
    * Make an XML-formatted string with PAGE markup from the internal
    * data structures.
    */

@@ -28,6 +28,7 @@
 #include "static_shape.h"
 #include "paragraphs_internal.h"
 #include "dawg.h"
+#include "thresholder.h"
 
 #include <algorithm>
 #include <string>
@@ -88,26 +89,50 @@ auto fmt::formatter<PolyBlockType>::format(PolyBlockType c,
   const char *name;
   // enum PolyBlockType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case PolyBlockType::PT_UNKNOWN:
+      name = "PT_UNKNOWN";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case PolyBlockType::PT_FLOWING_TEXT:
+      name = "PT_FLOWING_TEXT";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case PolyBlockType::PT_HEADING_TEXT:
+      name = "PT_HEADING_TEXT";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case PolyBlockType::PT_PULLOUT_TEXT:
+      name = "PT_PULLOUT_TEXT";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case PolyBlockType::PT_EQUATION:
+      name = "PT_EQUATION";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+    case PolyBlockType::PT_INLINE_EQUATION:
+      name = "PT_INLINE_EQUATION";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case PolyBlockType::PT_TABLE:
+      name = "PT_TABLE";
+      break;
+    case PolyBlockType::PT_VERTICAL_TEXT:
+      name = "PT_VERTICAL_TEXT";
+      break;
+    case PolyBlockType::PT_CAPTION_TEXT:
+      name = "PT_CAPTION_TEXT";
+      break;
+    case PolyBlockType::PT_FLOWING_IMAGE:
+      name = "PT_FLOWING_IMAGE";
+      break;
+    case PolyBlockType::PT_HEADING_IMAGE:
+      name = "PT_HEADING_IMAGE";
+      break;
+    case PolyBlockType::PT_PULLOUT_IMAGE:
+      name = "PT_PULLOUT_IMAGE";
+      break;
+    case PolyBlockType::PT_HORZ_LINE:
+      name = "PT_HORZ_LINE";
+      break;
+    case PolyBlockType::PT_VERT_LINE:
+      name = "PT_VERT_LINE";
+      break;
+    case PolyBlockType::PT_NOISE:
+      name = "PT_NOISE";
       break;
     default:
       name = "unknown_blocktype";
@@ -354,29 +379,26 @@ auto fmt::formatter<BlobSpecialTextType>::format(BlobSpecialTextType c,
   const char *name;
   // enum BlobSpecialTextType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobSpecialTextType::BSTT_NONE:
+      name = "BSTT_NONE";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case BlobSpecialTextType::BSTT_ITALIC:
+      name = "BSTT_ITALIC";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case BlobSpecialTextType::BSTT_DIGIT:
+      name = "BSTT_DIGIT";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case BlobSpecialTextType::BSTT_MATH:
+      name = "BSTT_MATH";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case BlobSpecialTextType::BSTT_UNCLEAR:
+      name = "BSTT_UNCLEAR";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case BlobSpecialTextType::BSTT_SKIP:
+      name = "BSTT_SKIP";
       break;
     default:
-      name = "unknown";
+      name = "unknown_special_text_type";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -390,26 +412,26 @@ auto fmt::formatter<BlobTextFlowType>::format(BlobTextFlowType c,
   const char *name;
   // enum BlobTextFlowType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobTextFlowType::BTFT_NONE:
+      name = "BTFT_NONE";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case BlobTextFlowType::BTFT_NONTEXT:
+      name = "BTFT_NONTEXT";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case BlobTextFlowType::BTFT_NEIGHBOURS:
+      name = "BTFT_NEIGHBOURS";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case BlobTextFlowType::BTFT_CHAIN:
+      name = "BTFT_CHAIN";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case BlobTextFlowType::BTFT_STRONG_CHAIN:
+      name = "BTFT_STRONG_CHAIN";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+    case BlobTextFlowType::BTFT_TEXT_ON_IMAGE:
+      name = "BTFT_TEXT_ON_IMAGE";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case BlobTextFlowType::BTFT_LEADER:
+      name = "BTFT_LEADER";
       break;
     default:
       name = "unknown_textflow";
@@ -426,26 +448,86 @@ auto fmt::formatter<NetworkType>::format(NetworkType c,
   const char *name;
   // enum NetworkType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case NetworkType::NT_NONE:
+      name = "NT_NONE";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case NetworkType::NT_INPUT:
+      name = "NT_INPUT";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case NetworkType::NT_CONVOLVE:
+      name = "NT_CONVOLVE";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case NetworkType::NT_MAXPOOL:
+      name = "NT_MAXPOOL";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case NetworkType::NT_PARALLEL:
+      name = "NT_PARALLEL";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+    case NetworkType::NT_REPLICATED:
+      name = "NT_REPLICATED";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case NetworkType::NT_PAR_RL_LSTM:
+      name = "NT_PAR_RL_LSTM";
+      break;
+    case NetworkType::NT_PAR_UD_LSTM:
+      name = "NT_PAR_UD_LSTM";
+      break;
+    case NetworkType::NT_PAR_2D_LSTM:
+      name = "NT_PAR_2D_LSTM";
+      break;
+    case NetworkType::NT_SERIES:
+      name = "NT_SERIES";
+      break;
+    case NetworkType::NT_RECONFIG:
+      name = "NT_RECONFIG";
+      break;
+    case NetworkType::NT_XREVERSED:
+      name = "NT_XREVERSED";
+      break;
+    case NetworkType::NT_YREVERSED:
+      name = "NT_YREVERSED";
+      break;
+    case NetworkType::NT_XYTRANSPOSE:
+      name = "NT_XYTRANSPOSE";
+      break;
+    case NetworkType::NT_LSTM:
+      name = "LSTM";
+      break;
+    case NetworkType::NT_LSTM_SUMMARY:
+      name = "LSTM_which_only_keeps_last_output";
+      break;
+    case NetworkType::NT_LOGISTIC:
+      name = "logistic_nonlinearity";
+      break;
+    case NetworkType::NT_POSCLIP:
+      name = "rect_linear_version_of_logistic";
+      break;
+    case NetworkType::NT_SYMCLIP:
+      name = "rect_linear_version_of_tanh";
+      break;
+    case NetworkType::NT_TANH:
+      name = "with_tanh_nonlinearity";
+      break;
+    case NetworkType::NT_RELU:
+      name = "with_rectifier_nonlinearity";
+      break;
+    case NetworkType::NT_LINEAR:
+      name = "fully_connected_with_no_nonlinearity";
+      break;
+    case NetworkType::NT_SOFTMAX:
+      name = "SoftMax_with_CTC";
+      break;
+    case NetworkType::NT_SOFTMAX_NO_CTC:
+      name = "SoftMax_no_CTC";
+      break;
+    case NetworkType::NT_LSTM_SOFTMAX:
+      name = "1D_LSTM_with_softmax";
+      break;
+    case NetworkType::NT_LSTM_SOFTMAX_ENCODED:
+      name = "1D_LSTM_with_binary_encoded_softmax";
+      break;
+    case NetworkType::NT_TENSORFLOW:
+      name = "NT_TENSORFLOW";
       break;
     default:
       name = "unknown_networktype";
@@ -622,36 +704,35 @@ auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
   return formatter<string_view>::format(id, ctx);
 }
 
-#if 0
 
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+auto fmt::formatter<ThresholdMethod>::format(ThresholdMethod c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum PITCH_TYPE:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case ThresholdMethod::Otsu:
+      name = "Otsu";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case ThresholdMethod::LeptonicaOtsu:
+      name = "LeptonicaOtsu";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+    case ThresholdMethod::Sauvola:
+      name = "Sauvola";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+    case ThresholdMethod::OtsuOnNormalizedBackground:
+      name = "OtsuOnNormalizedBackground";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+    case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
+      name = "MaskingAndOtsuOnNormalizedBackground";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+    case ThresholdMethod::Nlbin:
+      name = "Nlbin";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+    case ThresholdMethod::Max:
+      name = "Max";
       break;
     default:
-      name = "unknown";
+      name = "unknown_threshold_method";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -659,6 +740,7 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
   return formatter<string_view>::format(id, ctx);
 }
 
+#if 0
 
 auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
     -> decltype(ctx.out()) {

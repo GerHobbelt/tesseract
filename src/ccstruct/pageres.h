@@ -471,7 +471,7 @@ public:
   // but is declared as int for ease of use with tessedit_ocr_engine_mode.
   // Returns false if the word is empty and sets up fake results.
   bool SetupForRecognition(const UNICHARSET &unicharset_in,
-                           tesseract::Tesseract *tesseract, Image pix,
+                           tesseract::Tesseract *tesseract,
                            int norm_mode, const TBOX *norm_box,
                            bool numeric_mode, bool use_body_size,
                            bool allow_detailed_fx, ROW *row,

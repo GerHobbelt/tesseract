@@ -831,7 +831,7 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   if (word_res->chopped_word == nullptr) {
     // Setup word normalization parameters.
-    word_res->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
@@ -1030,7 +1030,7 @@ namespace tesseract {
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   if (pr_it->block()->block != nullptr) {
     tprintf("\nBlock data...\n");
-    pr_it->block()->block->print(nullptr, false);
+    pr_it->block()->block->print(nullptr, debug_all);
   }
   tprintf("\nRow data...\n");
   pr_it->row()->row->print(nullptr);
@@ -1069,7 +1069,7 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
   if (it != nullptr) {
     WERD_RES *word_res = it->word();
     word_res->x_height = it->row()->row->x_height();
-    word_res->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, it->row()->row, it->block()->block);
     TWERD *bln_word = word_res->chopped_word;
@@ -1110,7 +1110,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
   auto width = ImageWidth();
   auto height = ImageHeight();
 
-  Image pix = pixCreate(width, height, 32 /* RGBA */);
+  Image pix(pixCreate(width, height, 32 /* RGBA */));
+
   pixSetAll(pix);
 
   int w, h;
@@ -1128,7 +1129,9 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
 
   //image_win->Clear();
   if (display_image) {
-    pixRasterop(pix, 4, 4, width, height, PIX_SRC, pix_binary_, 0, 0);
+    PIX *po = pixConvertTo32(pix_binary_);
+    pixRasterop(pix, 0, 0, width, height, PIX_SRC, po, 0, 0);
+    pixDestroy(&po);
     //image_win->Draw(pix_binary_, 0, 0);
   }
 
@@ -1152,7 +1155,8 @@ void Tesseract::display_current_page_result(PAGE_RES* page_res) {
     //image_win->Update();
   }
 
-  this->AddPixDebugPage(pix, "current page results", false);
+  AddPixDebugPage(pix, "current page results");
+  pix.destroy();
 }
 
 } // namespace tesseract

@@ -16,6 +16,7 @@
 namespace tesseract {
 
   class TESS_API Tesseract;
+  class TESS_API TBOX;
 
   // Class to hold a Pixa collection of debug images with captions and save them
   // to a PDF file.
@@ -33,7 +34,7 @@ namespace tesseract {
     // Adds the given pix to the set of pages in the PDF file, with the given
     // caption added to the top.
     void AddPix(const Image& pix, const char* caption);
-    void AddPix(Image& pix, const char* caption, bool keep_a_copy);
+    void AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption);
 
     // Return reference to info stream, where you can collect the diagnostic information gathered.
     //
@@ -48,6 +49,7 @@ namespace tesseract {
     void PopSection(int handle = -1);                     // pop active; return focus to parent; pop(0) pops all the way back up to the root.
 
   protected:
+    void AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption);
 
     int PrepNextSection(int level, const std::string &title); // internal use
 
@@ -111,6 +113,7 @@ namespace tesseract {
     L_Bmf* fonts_;
     // the captions for each image
     std::vector<std::string> captions;
+    std::vector<TBOX> cliprects;
 
     // non-image additional diagnostics information, collected and stored as hierarchy:
     std::vector<DebugProcessStep> steps;

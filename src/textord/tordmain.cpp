@@ -278,7 +278,8 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
 
         block->plot_graded_blobs(pix);
 
-        tesseract_->AddPixDebugPage(pix, name, false);
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
       }
     }
     if (textord_show_boxes) {
@@ -310,7 +311,8 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
         cmap_offset = 3 * 64;
         plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
 
-        tesseract_->AddPixDebugPage(pix, name, false);
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
       }
     }
 #endif // !GRAPHICS_DISABLED

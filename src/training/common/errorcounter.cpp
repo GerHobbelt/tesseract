@@ -62,7 +62,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     // No debug, no keep this.
-    classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID, &results);
+    classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID, &results);
     bool debug_it = false;
     int correct_id = mutable_sample->class_id();
     if (counter.unicharset_.has_special_codes() &&
@@ -79,7 +79,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
       tprintf("Error on sample {}: {} Classifier debug output:\n", it->GlobalSampleIndex(),
               it->sample_set()->SampleToString(*mutable_sample).c_str());
 #if !GRAPHICS_DISABLED
-      classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
+      classifier->DebugDisplay(*mutable_sample, correct_id);
 #endif
       --error_samples;
     }
@@ -108,7 +108,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
 // and a keep_this argument to find out what is going on.
 void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifier *old_classifier,
                                   CountTypes boosting_mode, const FontInfoTable &fontinfo_table,
-                                  const std::vector<Image > &page_images, SampleIterator *it) {
+                                  const std::vector<Image> &page_images, SampleIterator *it) {
   int fontsize = it->sample_set()->NumFonts();
   ErrorCounter old_counter(old_classifier->GetUnicharset(), fontsize);
   ErrorCounter new_counter(new_classifier->GetUnicharset(), fontsize);
@@ -122,23 +122,24 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
     int page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
+    new_classifier->SetPageImageForDebugReport(page_pix);
     // No debug, no keep this.
-    old_classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID,
+    old_classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID,
                                           &results);
     int correct_id = mutable_sample->class_id();
     if (correct_id != 0 && !old_counter.AccumulateErrors(true, boosting_mode, fontinfo_table,
                                                          results, mutable_sample)) {
       // old classifier was correct, check the new one.
-      new_classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID,
+      new_classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID,
                                             &results);
       if (correct_id != 0 && new_counter.AccumulateErrors(true, boosting_mode, fontinfo_table,
                                                           results, mutable_sample)) {
         tprintf("New Error on sample {}: Classifier debug output:\n", it->GlobalSampleIndex());
         ++total_new_errors;
-        new_classifier->UnicharClassifySample(*mutable_sample, page_pix, 1, correct_id, &results);
+        new_classifier->UnicharClassifySample(*mutable_sample, 1, correct_id, &results);
         if (results.size() > 0 && error_samples > 0) {
 #if !GRAPHICS_DISABLED
-          new_classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
+          new_classifier->DebugDisplay(*mutable_sample, correct_id);
 #endif
           --error_samples;
         }

@@ -371,7 +371,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
   FindTextlineFlowDirection(pageseg_mode, false);
   projection_->ConstructProjection(block, rerotation, nontext_map_);
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_strokewidths) {
+  if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
     ScrollView *line_blobs_win = MakeWindow(0, 0, "Initial textline Blobs");
     projection_->PlotGradedBlobs(&block->blobs, line_blobs_win);
     projection_->PlotGradedBlobs(&block->small_blobs, line_blobs_win);
@@ -491,7 +491,7 @@ void StrokeWidth::FindLeadersAndMarkNoise(TO_BLOCK *block, ColPartition_LIST *le
     }
   }
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_strokewidths) {
+  if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
     leaders_win_ = DisplayGoodBlobs("LeaderNeighbours", 0, 0);
   }
 #endif
@@ -846,8 +846,9 @@ void StrokeWidth::FindTextlineFlowDirection(PageSegMode pageseg_mode, bool displ
     }
   }
 #if !GRAPHICS_DISABLED
-  if ((textord_tabfind_show_strokewidths && display_if_debugging) ||
-      textord_tabfind_show_strokewidths > 1) {
+  if (((textord_tabfind_show_strokewidths && display_if_debugging) ||
+      textord_tabfind_show_strokewidths > 1) &&
+     !tesseract_->debug_do_not_use_scrollview_app) {
     initial_widths_win_ = DisplayGoodBlobs("InitialStrokewidths", 400, 0);
   }
 #endif
@@ -867,8 +868,9 @@ void StrokeWidth::FindTextlineFlowDirection(PageSegMode pageseg_mode, bool displ
     SmoothNeighbourTypes(pageseg_mode, true, bbox);
   }
 #if !GRAPHICS_DISABLED
-  if ((textord_tabfind_show_strokewidths && display_if_debugging) ||
-      textord_tabfind_show_strokewidths > 1) {
+  if (((textord_tabfind_show_strokewidths && display_if_debugging) ||
+      textord_tabfind_show_strokewidths > 1) &&
+     !tesseract_->debug_do_not_use_scrollview_app) {
     widths_win_ = DisplayGoodBlobs("ImprovedStrokewidths", 800, 0);
   }
 #endif
@@ -1291,7 +1293,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
     FindHorizontalTextChains(part_grid);
   }
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_strokewidths) {
+  if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
     chains_win_ = MakeWindow(0, 400, "Initial text chains");
     part_grid->DisplayBoxes(chains_win_);
     projection_->DisplayProjection();
@@ -1319,7 +1321,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
     return PFR_NOISE;
   }
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_strokewidths) {
+  if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
     textlines_win_ = MakeWindow(400, 400, "GoodTextline blobs");
     part_grid->DisplayBoxes(textlines_win_);
     diacritics_win_ = DisplayDiacritics("Diacritics", 0, 0, block);
@@ -1339,7 +1341,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
     ;
   }
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_strokewidths) {
+  if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
     smoothed_win_ = MakeWindow(800, 400, "Smoothed blobs");
     part_grid->DisplayBoxes(smoothed_win_);
   }
@@ -1365,7 +1367,7 @@ bool StrokeWidth::DetectAndRemoveNoise(int pre_overlap, const TBOX &grid_box, TO
         post_overlap > grid_box.area() * kNoiseOverlapAreaFactor) {
       // This is noisy enough to fix.
 #if !GRAPHICS_DISABLED
-      if (textord_tabfind_show_strokewidths) {
+      if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
         ScrollView *noise_win = MakeWindow(1000, 500, "Noise Areas");
         noise_grid->DisplayBoxes(noise_win);
       }

@@ -30,6 +30,7 @@ namespace tesseract {
 enum ColSegType { COL_UNKNOWN, COL_TEXT, COL_TABLE, COL_MIXED, COL_COUNT };
 
 class ColPartitionSet;
+class TESS_API Tesseract;
 
 // ColSegment holds rectangular blocks that represent segmentation of a page
 // into regions containing single column text/table.
@@ -123,7 +124,7 @@ using ColSegmentGridSearch =
 class TESS_API TableFinder {
 public:
   // Constructor is simple initializations
-  TableFinder();
+  TableFinder(Tesseract *tess);
   ~TableFinder();
 
   // Set the resolution of the connected components in ppi.
@@ -407,6 +408,9 @@ protected:
   ColSegmentGrid table_grid_;
   // The reading order of text. Defaults to true, for languages such as English.
   bool left_to_right_language_;
+
+protected:
+  Tesseract *tesseract_; // reference to the active instance
 };
 
 } // namespace tesseract.
