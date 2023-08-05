@@ -34,7 +34,7 @@ namespace tesseract {
 
 BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
-ScrollView *to_win = nullptr;
+ScrollViewReference to_win = nullptr;
 
 #if !GRAPHICS_DISABLED
 
@@ -44,21 +44,18 @@ ScrollView *to_win = nullptr;
  * Create the to window used to show the fit.
  **********************************************************************/
 
-ScrollView *create_to_win(ICOORD page_tr) {
-  if (to_win != nullptr) {
+ScrollViewReference create_to_win(ICOORD page_tr) {
+  if (to_win) {
     return to_win;
   }
-  if (1) {
-    return to_win;
-  }
-  to_win = new ScrollView(TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
+  to_win = new ScrollView(tesseract_, TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
                           page_tr.x(), page_tr.y(), true);
   return to_win;
 }
 
 void close_to_win() {
   // to_win is leaked, but this enables the user to view the contents.
-  if (to_win != nullptr) {
+  if (to_win) {
     to_win->Update();
   }
 }
@@ -70,7 +67,7 @@ void close_to_win() {
  **********************************************************************/
 
 void plot_box_list(               // make gradients win
-    ScrollView *win,              // window to draw in
+    ScrollViewReference win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
     ScrollView::Color body_colour // colour to draw
 ) {
@@ -119,7 +116,7 @@ void plot_to_row(             // draw a row
   BLOBNBOX_IT it = row->blob_list();
   float left, right; // end of row
 
-  if (to_win == nullptr)
+  if (!to_win)
     return;
 
   if (it.empty()) {
@@ -158,7 +155,7 @@ void plot_parallel_row(       // draw a row
   auto fleft = static_cast<float>(left); // floating version
   float right;                           // end of row
 
-  if (to_win == nullptr)
+  if (!to_win)
     return;
 
   //      left=it.data()->bounding_box().left();
@@ -198,7 +195,7 @@ void draw_occupation(                    // draw projection
   ScrollView::Color colour;               // of histogram
   auto fleft = static_cast<float>(xleft); // float version
 
-  if (to_win == nullptr)
+  if (!to_win)
     return;
 
   colour = ScrollView::WHITE;
@@ -246,7 +243,7 @@ void draw_meanlines(          // draw a block
   BLOBNBOX_IT blob_it; // blobs
   float right;         // end of row
 
-  if (to_win == nullptr)
+  if (!to_win)
     return;
 
   to_win->Pen(colour);
@@ -272,7 +269,7 @@ void draw_meanlines(          // draw a block
  **********************************************************************/
 
 void plot_word_decisions( // draw words
-    ScrollView *win,      // window to draw in
+    ScrollViewReference win,      // window to draw in
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 ) {
@@ -343,7 +340,7 @@ void plot_word_decisions( // draw words
  **********************************************************************/
 
 void plot_fp_cells(           // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
@@ -387,7 +384,7 @@ void plot_fp_cells(           // draw words
  **********************************************************************/
 
 void plot_fp_cells2(          // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
@@ -421,7 +418,7 @@ void plot_fp_cells2(          // draw words
  **********************************************************************/
 
 void plot_row_cells(          // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift

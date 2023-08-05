@@ -289,10 +289,9 @@ void ParamsEditor::Notify(const SVEvent *sve) {
 // Integrate the parameters editor as popupmenu into the existing scrollview
 // window (usually the pg editor). If sv == null, create a new empty
 // empty window and attach the parameters editor to that window (ugly).
-ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollView *sv) {
-  if (sv == nullptr) {
-    const char *name = "ParamEditorMAIN";
-    sv = new ScrollView(tess, name, 1, 1, 200, 200, 300, 200);
+ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference sv) {
+  if (!sv) {
+    sv = new ScrollView(tess, "ParamEditorMAIN", 1, 1, 200, 200, 300, 200);
   }
 
   sv_window_ = sv;

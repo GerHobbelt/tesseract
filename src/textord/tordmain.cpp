@@ -240,7 +240,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
   TO_BLOCK *block;                                // created block
 
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+  if (to_win) {
     to_win->Clear();
   }
 #endif // !GRAPHICS_DISABLED
@@ -263,7 +263,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
 #if !GRAPHICS_DISABLED
     if (textord_show_blobs) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
-        if (to_win == nullptr) {
+        if (!to_win) {
           create_to_win(page_tr);
         }
         block->plot_graded_blobs(to_win);
@@ -284,7 +284,7 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
     }
     if (textord_show_boxes) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
-        if (to_win == nullptr) {
+        if (!to_win) {
           create_to_win(page_tr);
         }
         plot_box_list(to_win, &block->noise_blobs, ScrollView::WHITE);

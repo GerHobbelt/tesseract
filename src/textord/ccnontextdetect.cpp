@@ -117,7 +117,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 #endif
     tesseract_->AddPixDebugPage(pix, "nontext.junknoisemask");
   }
-  ScrollView *win = nullptr;
+  ScrollViewReference win = nullptr;
 #if !GRAPHICS_DISABLED
   if (debug && !tesseract_->debug_do_not_use_scrollview_app) {
     win = MakeWindow(tesseract_, 0, 400, "Photo Mask Blobs");
@@ -149,7 +149,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 #if !GRAPHICS_DISABLED
     if (win) {
       win->AwaitEvent(SVET_DESTROY);
-      delete win;
+      win = nullptr;
     }
 #endif // !GRAPHICS_DISABLED
   }
@@ -249,7 +249,7 @@ static TBOX AttemptBoxExpansion(const TBOX &box, const IntGrid &noise_density, i
 // If the win is not nullptr, deleted blobs are drawn on it in red, and kept
 // blobs are drawn on it in ok_color.
 void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_blob_overlaps,
-                                                ScrollView *win, ScrollView::Color ok_color,
+                                                ScrollViewReference win, ScrollView::Color ok_color,
                                                 Image nontext_mask) {
   int imageheight = tright().y() - bleft().x();
   BLOBNBOX_IT blob_it(blobs);
@@ -262,7 +262,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
         (max_blob_overlaps < 0 || !BlobOverlapsTooMuch(blob, max_blob_overlaps))) {
       blob->ClearNeighbours();
 #if !GRAPHICS_DISABLED
-      if (win != nullptr) {
+      if (win) {
         blob->plot(win, ok_color, ok_color);
       }
 #endif // !GRAPHICS_DISABLED
@@ -286,7 +286,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
                     PIX_SET, nullptr, 0, 0);
       }
 #if !GRAPHICS_DISABLED
-      if (win != nullptr) {
+      if (win) {
         blob->plot(win, ScrollView::RED, ScrollView::RED);
       }
 #endif // !GRAPHICS_DISABLED

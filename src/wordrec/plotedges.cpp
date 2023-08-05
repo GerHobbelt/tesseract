@@ -34,7 +34,7 @@ namespace tesseract {
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
-ScrollView *edge_window = nullptr;
+ScrollViewReference edge_window;
 
 /*----------------------------------------------------------------------
               F u n c t i o n s
@@ -46,8 +46,8 @@ ScrollView *edge_window = nullptr;
  **********************************************************************/
 void display_edgepts(LIST outlines) {
   /* Set up window */
-  if (edge_window == nullptr) {
-    edge_window = new ScrollView("Edges", 750, 150, 400, 128, 800, 256, true);
+  if (!edge_window) {
+    edge_window = new ScrollView(tesseract_, "Edges", 750, 150, 400, 128, 800, 256, true);
   } else {
     edge_window->Clear();
   }

@@ -276,7 +276,7 @@ int ImageData::MemoryUsed() const {
 #if !GRAPHICS_DISABLED
 
 // Draws the data in a new window.
-void ImageData::Display() const {
+void ImageData::Display(Tesseract *tesseract_) const {
   const int kTextSize = 64;
   // Draw the image.
   Image pix = GetPix();

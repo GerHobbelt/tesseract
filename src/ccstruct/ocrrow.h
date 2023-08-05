@@ -131,13 +131,13 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(                     // draw one
-      ScrollView *window,        // window to draw in
+      ScrollViewReference window,        // window to draw in
       ScrollView::Color colour); // uniform colour
   void plot(                     // draw one
-      ScrollView *window);       // in rainbow colours
+      ScrollViewReference window);       // in rainbow colours
 
   void plot_baseline(             // draw the baseline
-      ScrollView *window,         // window to draw in
+      ScrollViewReference window,         // window to draw in
       ScrollView::Color colour) { // colour to draw
     // draw it
     baseline.plot(window, colour);

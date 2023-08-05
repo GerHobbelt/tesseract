@@ -49,6 +49,26 @@ struct SVPolyLineBuffer;
 
 class TESS_API Tesseract;
 
+class TESS_API ScrollViewReference {
+public:
+  ScrollViewReference();
+  ScrollViewReference(ScrollView *view);
+  ~ScrollViewReference();
+
+  ScrollView *operator->() const {
+    return view_;
+  }
+
+  operator bool() const {
+    return view_ != nullptr;
+  }
+
+  ScrollViewReference &operator=(ScrollView *new_view);
+
+protected:
+  ScrollView *view_; // reference
+};
+
 enum SVEventType {
   SVET_DESTROY,   // Window has been destroyed by user.
   SVET_EXIT,      // User has destroyed the last window by clicking on the 'X'.
@@ -71,7 +91,7 @@ struct SVEvent {
   }
   std::unique_ptr<SVEvent> copy() const;
   SVEventType type = SVET_DESTROY; // What kind of event.
-  ScrollView *window = nullptr;    // Window event relates to.
+  ScrollViewReference window;      // Window event relates to.
   char *parameter = nullptr;       // Any string that might have been passed as argument.
   int x = 0;                       // Coords of click or selection.
   int y = 0;
@@ -167,13 +187,13 @@ public:
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
   // The canvas may not be 0,0 in size!
-  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size);
   // With a flag whether the x axis is reversed.
-  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size, bool y_axis_reversed);
   // Connect to a server other than localhost.
-  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size, bool y_axis_reversed, const char *server_name);
 
 private:
@@ -375,7 +395,7 @@ private:
   void Transfer32bppImage(Image image);
 
   // Sets up ScrollView, depending on the variables from the constructor.
-  void Initialize(const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  void Initialize(Tesseract* tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
                   int y_canvas_size, bool y_axis_reversed, const char *server_name);
 
   // Send the current buffered polygon (if any) and clear it.
@@ -434,6 +454,20 @@ private:
   // Semaphore to the thread belonging to this window.
   SVSemaphore *semaphore_;
 #endif // !GRAPHICS_DISABLED
+};
+
+class TESS_API ScrollViewManager {
+public:
+  ScrollViewManager(Tesseract *tess);
+  ~ScrollViewManager();
+
+private:
+  Tesseract *tesseract_;    // reference to active instance
+
+public:
+
+protected:
+
 };
 
 } // namespace tesseract

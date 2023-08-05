@@ -200,7 +200,7 @@ protected:
   /**
    * Display the tab vectors found in this grid.
    */
-  ScrollView *DisplayTabVectors(ScrollView *tab_win);
+  ScrollViewReference DisplayTabVectors(ScrollViewReference tab_win);
 
   /**
    * Display the tab vectors found in this grid.
@@ -214,7 +214,7 @@ protected:
   // setting this to true will find horizontal lines on the page.
   // tabfind_aligned_gap_fraction should be the value of parameter
   // textord_tabfind_aligned_gap_fraction
-  ScrollView *FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
+  ScrollViewReference FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
                                     double tabfind_aligned_gap_fraction, TO_BLOCK *block);
 
   // Apply the given rotation to the given list of blobs.
@@ -240,7 +240,7 @@ private:
   // and if so add it to the left and right tab boxes.
   // tabfind_aligned_gap_fraction should be the value of parameter
   // textord_tabfind_aligned_gap_fraction
-  ScrollView *FindTabBoxes(int min_gutter_width, double tabfind_aligned_gap_fraction);
+  ScrollViewReference FindTabBoxes(int min_gutter_width, double tabfind_aligned_gap_fraction);
 
   // Return true if this box looks like a candidate tab stop, and set
   // the appropriate tab type(s) to TT_UNCONFIRMED.
@@ -287,7 +287,7 @@ private:
   // Trace textlines from one side to the other of each tab vector, saving
   // the most frequent column widths found in a list so that a given width
   // can be tested for being a common width with a simple callback function.
-  void ComputeColumnWidths(ScrollView *tab_win, ColPartitionGrid *part_grid);
+  void ComputeColumnWidths(ScrollViewReference tab_win, ColPartitionGrid *part_grid);
 
   // Finds column width and:
   //   if col_widths is not null (pass1):

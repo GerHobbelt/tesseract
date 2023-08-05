@@ -99,7 +99,7 @@ static void position_outline( // put in place
 #if !GRAPHICS_DISABLED
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST *list,          // outline to draw
-    ScrollView *window,            // window to draw in
+    ScrollViewReference window,            // window to draw in
     ScrollView::Color colour,      // colour to use
     ScrollView::Color child_colour // colour of children
 ) {
@@ -145,7 +145,7 @@ static void plot_outline_list(     // draw outlines
 // if available.
 static void plot_normed_outline_list(const DENORM &denorm, C_OUTLINE_LIST *list,
                                      ScrollView::Color colour, ScrollView::Color child_colour,
-                                     ScrollView *window) {
+                                     ScrollViewReference window) {
   C_OUTLINE_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     C_OUTLINE *outline = it.data();
@@ -548,7 +548,7 @@ Image C_BLOB::render_outline() {
  **********************************************************************/
 
 #if !GRAPHICS_DISABLED
-void C_BLOB::plot(ScrollView *window,               // window to draw in
+void C_BLOB::plot(ScrollViewReference window,               // window to draw in
                   ScrollView::Color blob_colour,    // main colour
                   ScrollView::Color child_colour) { // for holes
   plot_outline_list(&outlines, window, blob_colour, child_colour);
@@ -564,7 +564,7 @@ void C_BLOB::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, boo
 // using the given denorm, making use of sub-pixel accurate information
 // if available.
 void C_BLOB::plot_normed(const DENORM &denorm, ScrollView::Color blob_colour,
-                         ScrollView::Color child_colour, ScrollView *window) {
+                         ScrollView::Color child_colour, ScrollViewReference window) {
   plot_normed_outline_list(denorm, &outlines, blob_colour, child_colour, window);
 }
 #endif

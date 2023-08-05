@@ -299,10 +299,10 @@ private:
 #if !GRAPHICS_DISABLED
   // Displays the blobs colored according to the number of good neighbours
   // and the vertical/horizontal flow.
-  ScrollView *DisplayGoodBlobs(const char *window_name, int x, int y);
+  ScrollViewReference DisplayGoodBlobs(const char *window_name, int x, int y);
 
   // Displays blobs colored according to whether or not they are diacritics.
-  ScrollView *DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block);
+  ScrollViewReference DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block);
 #endif
 
 private:
@@ -318,13 +318,13 @@ private:
   FCOORD rerotation_;
 #if !GRAPHICS_DISABLED
   // Windows for debug display.
-  std::unique_ptr<ScrollView> leaders_win_;
-  std::unique_ptr<ScrollView> initial_widths_win_;
-  std::unique_ptr<ScrollView> widths_win_;
-  std::unique_ptr<ScrollView> chains_win_;
-  std::unique_ptr<ScrollView> diacritics_win_;
-  std::unique_ptr<ScrollView> textlines_win_;
-  std::unique_ptr<ScrollView> smoothed_win_;
+  ScrollViewReference leaders_win_;
+  ScrollViewReference initial_widths_win_;
+  ScrollViewReference widths_win_;
+  ScrollViewReference chains_win_;
+  ScrollViewReference diacritics_win_;
+  ScrollViewReference textlines_win_;
+  ScrollViewReference smoothed_win_;
 #endif
 };
 

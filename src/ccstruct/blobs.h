@@ -269,7 +269,7 @@ struct TESSLINE {
   }
 
 #if !GRAPHICS_DISABLED
-  void plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color);
+  void plot(ScrollViewReference window, ScrollView::Color color, ScrollView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
   // Returns the first outline point that has a different src_outline to its
@@ -370,7 +370,7 @@ struct TBLOB {
   }
 
 #if !GRAPHICS_DISABLED
-  void plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color);
+  void plot(ScrollViewReference window, ScrollView::Color color, ScrollView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
   int BBArea() const {
@@ -456,7 +456,7 @@ struct TWERD {
   void MergeBlobs(unsigned start, unsigned end);
 
 #if !GRAPHICS_DISABLED
-  void plot(ScrollView *window);
+  void plot(ScrollViewReference window);
 #endif // !GRAPHICS_DISABLED
 
   std::vector<TBLOB *> blobs; // Blobs in word.

@@ -60,7 +60,7 @@ using namespace tesseract;
 -----------------------------------------------------------------------------*/
 #if !GRAPHICS_DISABLED
 static void DisplayProtoList(const char *ch, LIST protolist) {
-  auto window = std::make_unique<ScrollView>("Char samples", 50, 200, 520, 520, 260, 260, true);
+  ScrollViewReference window = new ScrollView(tesseract_, "Char samples", 50, 200, 520, 520, 260, 260, true);
   LIST proto = protolist;
   iterate(proto) {
     auto *prototype = reinterpret_cast<PROTOTYPE *>(proto->first_node());

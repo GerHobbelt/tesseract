@@ -130,7 +130,7 @@ StrokeWidth::StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, con
 
 StrokeWidth::~StrokeWidth() {
 #if !GRAPHICS_DISABLED
-  if (widths_win_ != nullptr) {
+  if (!widths_win_) {
     widths_win_->AwaitEvent(SVET_DESTROY);
     if (textord_tabfind_only_strokewidths) {
       ASSERT0(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
@@ -316,7 +316,7 @@ void StrokeWidth::RemoveLineResidue(ColPartition_LIST *big_part_list) {
     }
     if (max_height * kLineResidueSizeRatio < box.height()) {
 #if !GRAPHICS_DISABLED
-      if (leaders_win_ != nullptr) {
+      if (leaders_win_) {
         // We are debugging, so display deleted in pink blobs in the same
         // window that we use to display leader detection.
         leaders_win_->Pen(ScrollView::PINK);
@@ -365,7 +365,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
   projection_->ConstructProjection(block, rerotation, nontext_map_);
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-    std::unique_ptr<ScrollView> line_blobs_win(MakeWindow(tesseract_, 0, 0, "Initial textline Blobs"));
+    ScrollViewReference line_blobs_win(MakeWindow(tesseract_, 0, 0, "Initial textline Blobs"));
     projection_->PlotGradedBlobs(&block->blobs, line_blobs_win);
     projection_->PlotGradedBlobs(&block->small_blobs, line_blobs_win);
   }
@@ -558,7 +558,7 @@ void StrokeWidth::MarkLeaderNeighbours(const ColPartition *part, LeftOrRight sid
       best_blob->set_leader_on_left(true);
     }
 #if !GRAPHICS_DISABLED
-    if (leaders_win_ != nullptr) {
+    if (leaders_win_) {
       leaders_win_->Pen(side == LR_LEFT ? ScrollView::RED : ScrollView::GREEN);
       const TBOX &blob_box = best_blob->bounding_box();
       leaders_win_->Rectangle(blob_box.left(), blob_box.bottom(), blob_box.right(), blob_box.top());
@@ -1361,7 +1361,7 @@ bool StrokeWidth::DetectAndRemoveNoise(int pre_overlap, const TBOX &grid_box, TO
       // This is noisy enough to fix.
 #if !GRAPHICS_DISABLED
       if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-        ScrollView *noise_win = MakeWindow(tesseract_, 1000, 500, "Noise Areas");
+        ScrollViewReference noise_win(MakeWindow(tesseract_, 1000, 500, "Noise Areas"));
         noise_grid->DisplayBoxes(noise_win);
       }
 #endif
@@ -1954,8 +1954,8 @@ bool StrokeWidth::NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const {
 /** Displays the blobs colored according to the number of good neighbours
  * and the vertical/horizontal flow.
  */
-ScrollView *StrokeWidth::DisplayGoodBlobs(const char *window_name, int x, int y) {
-  std::unique_ptr<ScrollView> window(MakeWindow(tesseract_, x, y, window_name));
+ScrollViewReference StrokeWidth::DisplayGoodBlobs(const char *window_name, int x, int y) {
+  ScrollViewReference window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
   window->Brush(ScrollView::NONE);
 
@@ -1994,7 +1994,7 @@ ScrollView *StrokeWidth::DisplayGoodBlobs(const char *window_name, int x, int y)
   return window;
 }
 
-static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollView *window) {
+static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollViewReference window) {
   const TBOX &blob_box(blob->bounding_box());
   int top = std::max(static_cast<int>(blob_box.top()), blob->base_char_top());
   int bottom = std::min(static_cast<int>(blob_box.bottom()), blob->base_char_bottom());
@@ -2003,8 +2003,8 @@ static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollView *window) {
 }
 
 // Displays blobs colored according to whether or not they are diacritics.
-ScrollView *StrokeWidth::DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block) {
-  std::unique_ptr<ScrollView> window(MakeWindow(tesseract_, x, y, window_name));
+ScrollViewReference StrokeWidth::DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block) {
+  ScrollViewReference window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
   window->Brush(ScrollView::NONE);
 

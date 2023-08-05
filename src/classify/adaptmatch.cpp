@@ -243,19 +243,18 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
 
 // If *win is nullptr, sets it to a new ScrollView() object with title msg.
 // Clears the window and draws baselines.
-void Classify::RefreshDebugWindow(ScrollView **win, const char *msg, int y_offset,
+void Classify::RefreshDebugWindow(ScrollViewReference &win, const char *msg, int y_offset,
                                   const TBOX &wbox) {
   const int kSampleSpaceWidth = 500;
-  if (*win == nullptr) {
-    *win = new ScrollView(msg, 100, y_offset, kSampleSpaceWidth * 2, 200, kSampleSpaceWidth * 2,
-                          200, true);
+  if (!win) {
+    win = new ScrollView(tesseract_, msg, 100, y_offset, kSampleSpaceWidth * 2, 200, kSampleSpaceWidth * 2, 200, true);
   }
-  (*win)->Clear();
-  (*win)->Pen(64, 64, 64);
-  (*win)->Line(-kSampleSpaceWidth, kBlnBaselineOffset, kSampleSpaceWidth, kBlnBaselineOffset);
-  (*win)->Line(-kSampleSpaceWidth, kBlnXHeight + kBlnBaselineOffset, kSampleSpaceWidth,
+  win->Clear();
+  win->Pen(64, 64, 64);
+  win->Line(-kSampleSpaceWidth, kBlnBaselineOffset, kSampleSpaceWidth, kBlnBaselineOffset);
+  win->Line(-kSampleSpaceWidth, kBlnXHeight + kBlnBaselineOffset, kSampleSpaceWidth,
                kBlnXHeight + kBlnBaselineOffset);
-  (*win)->ZoomToRectangle(wbox.left(), wbox.top(), wbox.right(), wbox.bottom());
+  win->ZoomToRectangle(wbox.left(), wbox.top(), wbox.right(), wbox.bottom());
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -289,12 +288,12 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
 
 #if !GRAPHICS_DISABLED
   if (classify_debug_character_fragments) {
-    if (learn_fragmented_word_debug_win_ != nullptr) {
+    if (!learn_fragmented_word_debug_win_) {
       learn_fragmented_word_debug_win_->Wait();
     }
-    RefreshDebugWindow(&learn_fragments_debug_win_, "LearnPieces", 400,
+    RefreshDebugWindow(learn_fragments_debug_win_, "LearnPieces", 400,
                        word->chopped_word->bounding_box());
-    RefreshDebugWindow(&learn_fragmented_word_debug_win_, "LearnWord", 200,
+    RefreshDebugWindow(learn_fragmented_word_debug_win_, "LearnWord", 200,
                        word->chopped_word->bounding_box());
     word->chopped_word->plot(learn_fragmented_word_debug_win_);
     ScrollView::Update();
@@ -410,13 +409,13 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
 #if !GRAPHICS_DISABLED
   // Draw debug windows showing the blob that is being learned if needed.
   if (strcmp(classify_learn_debug_str.c_str(), correct_text) == 0) {
-    RefreshDebugWindow(&learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
+    RefreshDebugWindow(learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
     rotated_blob->plot(learn_debug_win_, ScrollView::GREEN, ScrollView::BROWN);
     learn_debug_win_->Update();
     learn_debug_win_->Wait();
   }
   if (classify_debug_character_fragments && segmentation == CST_FRAGMENT) {
-    ASSERT_HOST(learn_fragments_debug_win_ != nullptr); // set up in LearnWord
+    ASSERT_HOST(!learn_fragments_debug_win_); // set up in LearnWord
     blob->plot(learn_fragments_debug_win_, ScrollView::BLUE, ScrollView::BROWN);
     learn_fragments_debug_win_->Update();
   }

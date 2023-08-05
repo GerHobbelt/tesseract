@@ -168,7 +168,7 @@ void SEAM::PrintSeams(const char *label, const std::vector<SEAM *> &seams) {
 
 #if !GRAPHICS_DISABLED
 // Draws the seam in the given window.
-void SEAM::Mark(ScrollView *window) const {
+void SEAM::Mark(ScrollViewReference window) const {
   for (int s = 0; s < num_splits_; ++s) {
     splits_[s].Mark(window);
   }

@@ -571,7 +571,7 @@ public:
 
   // Displays the segmentation state of *this (if not the same as the last
   // one displayed) and waits for a click in the window.
-  void DisplaySegmentation(TWERD *word);
+  void DisplaySegmentation(Tesseract *tesseract_, TWERD *word);
 
   WERD_CHOICE &operator+=(        // concatanate
       const WERD_CHOICE &second); // second on first

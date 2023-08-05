@@ -335,7 +335,7 @@ TFloat Network::Random(TFloat range) {
 // Displays the image of the matrix to the forward window.
 void Network::DisplayForward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
-  ClearWindow(false, name_.c_str(), pixGetWidth(image), pixGetHeight(image), &forward_win_);
+  ClearWindow(false, name_.c_str(), pixGetWidth(image), pixGetHeight(image), forward_win_);
   DisplayImage(image, forward_win_);
   forward_win_->Update();
 }
@@ -344,15 +344,14 @@ void Network::DisplayForward(const NetworkIO &matrix) {
 void Network::DisplayBackward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
   std::string window_name = name_ + "-back";
-  ClearWindow(false, window_name.c_str(), pixGetWidth(image), pixGetHeight(image), &backward_win_);
+  ClearWindow(false, window_name.c_str(), pixGetWidth(image), pixGetHeight(image), backward_win_);
   DisplayImage(image, backward_win_);
   backward_win_->Update();
 }
 
 // Creates the window if needed, otherwise clears it.
-void Network::ClearWindow(bool tess_coords, const char *window_name, int width, int height,
-                          ScrollView **window) {
-  if (*window == nullptr) {
+void Network::ClearWindow(bool tess_coords, const char *window_name, int width, int height, ScrollViewReference &window) {
+  if (!window) {
     int min_size = std::min(width, height);
     if (min_size < kMinWinSize) {
       if (min_size < 1) {
@@ -369,16 +368,16 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
     if (height > kMaxWinSize) {
       height = kMaxWinSize;
     }
-    *window = new ScrollView(window_name, 80, 100, width, height, width, height, tess_coords);
+    window = new ScrollView(tesseract_, window_name, 80, 100, width, height, width, height, tess_coords);
     tprintf("Created window {} of size {}, {}\n", window_name, width, height);
   } else {
-    (*window)->Clear();
+    window->Clear();
   }
 }
 
 // Displays the pix in the given window. and returns the height of the pix.
 // The pix is pixDestroyed.
-int Network::DisplayImage(Image pix, ScrollView *window) {
+int Network::DisplayImage(Image pix, ScrollViewReference window) {
   int height = pixGetHeight(pix);
   window->Draw(pix, 0, 0);
   pix.destroy();

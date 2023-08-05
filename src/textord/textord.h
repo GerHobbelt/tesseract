@@ -142,7 +142,7 @@ private:
                 TO_BLOCK_LIST *to_blocks);
   // Make the textlines inside a single block.
   void MakeBlockRows(int min_spacing, int max_spacing, const FCOORD &skew, TO_BLOCK *block,
-                     ScrollView *win);
+                     ScrollViewReference win);
 
 public:
   void compute_block_xheight(TO_BLOCK *block, float gradient);

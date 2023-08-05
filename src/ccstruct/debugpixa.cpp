@@ -55,8 +55,8 @@ namespace tesseract {
   }
 #endif
 
-  DebugPixa::DebugPixa(Tesseract* tesseract_ref)
-    : tesseract_(tesseract_ref)
+  DebugPixa::DebugPixa(Tesseract* tess)
+    : tesseract_(tess)
   {
     pixa_ = pixaCreate(0);
 

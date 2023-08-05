@@ -57,7 +57,7 @@ private:
   SVMenuNode *BuildMenuBar();
 
   // Our window.
-  ScrollView *window_;
+  ScrollViewReference window_;
 
   // The mode we are in when an SVET_CLICK or an SVET_SELECTION event occurs.
   int click_mode_;
@@ -186,7 +186,8 @@ void SVPaint::Notify(const SVEvent *sv_event) {
 // Builds a new window, initializes the variables and event handler and builds
 // the menu.
 SVPaint::SVPaint(const char *server_name) {
-  window_ = new ScrollView("ScrollView Paint Example", // window caption
+  window_ = new ScrollView(tesseract_,
+                           "ScrollView Paint Example", // window caption
                            0, 0,                       // x,y window position
                            500, 500,                   // window size
                            500, 500,                   // canvas size

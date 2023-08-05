@@ -301,7 +301,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(                  // use current settings
-      ScrollView *fd) const { // where to paint
+      ScrollViewReference fd) const { // where to paint
     fd->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   }
 #endif
@@ -311,7 +311,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(                                  // paint box
-      ScrollView *fd,                         // where to paint
+      ScrollViewReference fd,                         // where to paint
       ScrollView::Color fill_colour,          // colour for inside
       ScrollView::Color border_colour) const; // colour for border
 #endif

@@ -338,7 +338,7 @@ void QSPLINE::extrapolate( // linear extrapolation
 
 #if !GRAPHICS_DISABLED
 void QSPLINE::plot(          // draw it
-    ScrollView *window,      // window to draw in
+    ScrollViewReference window,      // window to draw in
     ScrollView::Color colour // colour to draw in
     ) const {
   int32_t segment;  // index of segment

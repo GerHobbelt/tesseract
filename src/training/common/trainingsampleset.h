@@ -206,7 +206,7 @@ public:
   // the given shape.
   void DisplaySamplesWithFeature(int f_index, const Shape &shape,
                                  const IntFeatureSpace &feature_space, ScrollView::Color color,
-                                 ScrollView *window) const;
+                                 ScrollViewReference window) const;
 
 private:
   // Struct to store a triplet of unichar, font, distance in the distance cache.

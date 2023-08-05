@@ -25,6 +25,7 @@
 #include <tesseract/debugheap.h>
 
 #include "scrollview.h"
+#include "bbgrid.h"
 
 #include "svutil.h" // for SVNetwork
 
@@ -58,10 +59,10 @@ struct SVPolyLineBuffer {
 };
 
 // A map between the window IDs and their corresponding pointers.
-static std::map<int, ScrollView *> svmap;
+static std::map<int, ScrollViewReference > svmap;
 static std::mutex *svmap_mu;
 // A map of all semaphores waiting for a specific event on a specific window.
-static std::map<std::pair<ScrollView *, SVEventType>,
+static std::map<std::pair<ScrollViewReference , SVEventType>,
                 std::pair<SVSemaphore *, std::unique_ptr<SVEvent>>> waiting_for_events;
 static std::mutex *waiting_for_events_mu;
 
@@ -121,7 +122,7 @@ void ScrollView::MessageReceiver() {
     svmap_mu->lock();
     cur->window = svmap[window_id];
 
-    if (cur->window != nullptr) {
+    if (cur->window) {
       auto length = strlen(p);
       cur->parameter = new char[length + 1];
       strcpy(cur->parameter, p);
@@ -160,9 +161,9 @@ void ScrollView::MessageReceiver() {
       cur->window->SetEvent(cur.get());
 
       // Check if any of the threads currently waiting want it.
-      std::pair<ScrollView *, SVEventType> awaiting_list(cur->window, cur->type);
-      std::pair<ScrollView *, SVEventType> awaiting_list_any(cur->window, SVET_ANY);
-      std::pair<ScrollView *, SVEventType> awaiting_list_any_window((ScrollView *)nullptr,
+      std::pair<ScrollViewReference , SVEventType> awaiting_list(cur->window, cur->type);
+      std::pair<ScrollViewReference , SVEventType> awaiting_list_any(cur->window, SVET_ANY);
+      std::pair<ScrollViewReference , SVEventType> awaiting_list_any_window((ScrollViewReference )nullptr,
                                                                     SVET_ANY);
       waiting_for_events_mu->lock();
       if (waiting_for_events.count(awaiting_list) > 0) {
@@ -177,8 +178,8 @@ void ScrollView::MessageReceiver() {
       }
       waiting_for_events_mu->unlock();
       // Signal the corresponding semaphore twice (for both copies).
-      ScrollView *sv = svmap[window_id];
-      if (sv != nullptr) {
+      ScrollViewReference sv = svmap[window_id];
+      if (sv) {
         sv->Signal();
         sv->Signal();
       }
@@ -254,31 +255,31 @@ int ScrollView::nr_created_windows_ = 0;
 int ScrollView::image_index_ = 0;
 
 /// Calls Initialize with all arguments given.
-ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
                        const char *server_name) {
-  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
              server_name);
 }
 
 /// Calls Initialize with default argument for server_name_.
-ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size, bool y_axis_reversed) {
-  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
              "localhost");
 }
 
 /// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size) {
-  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, false, "localhost");
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, false, "localhost");
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
-void ScrollView::Initialize(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
+void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                             int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
                             const char *server_name) {
-  tesseract_ = tesseract_ref;
+  tesseract_ = tess;
 
   // If this is the first ScrollView Window which gets created, there is no
   // network connection yet and we have to set it up in a different thread.
@@ -366,7 +367,7 @@ void ScrollView::StartEventHandler() {
 ScrollView::~ScrollView() {
 #if !GRAPHICS_DISABLED
   svmap_mu->lock();
-  if (svmap[window_id_] != nullptr) {
+  if (svmap[window_id_]) {
     svmap_mu->unlock();
     // So the event handling thread can quit.
     SendMsg("destroy()");
@@ -438,7 +439,7 @@ void ScrollView::SetEvent(const SVEvent *svevent) {
 std::unique_ptr<SVEvent> ScrollView::AwaitEvent(SVEventType type) {
   // Initialize the waiting semaphore.
   auto *sem = new SVSemaphore();
-  std::pair<ScrollView *, SVEventType> ea(this, type);
+  std::pair<ScrollViewReference , SVEventType> ea(this, type);
   waiting_for_events_mu->lock();
   waiting_for_events[ea] = {sem, nullptr};
   waiting_for_events_mu->unlock();
@@ -697,7 +698,7 @@ void ScrollView::UpdateWindow() {
 void ScrollView::Update() {
   std::lock_guard<std::mutex> guard(*svmap_mu);
   for (auto &iter : svmap) {
-    if (iter.second != nullptr) {
+    if (iter.second) {
       iter.second->UpdateWindow();
     }
   }
@@ -823,6 +824,26 @@ char ScrollView::Wait() {
     }
   } while (ev_type != SVET_INPUT && ev_type != SVET_CLICK);
   return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ScrollViewReference::ScrollViewReference()
+  : view_(nullptr) {}
+
+ScrollViewReference::ScrollViewReference(ScrollView* view)
+  : view_(view) {}
+
+ScrollViewReference::~ScrollViewReference() {
+  delete view_;
+}
+
+ScrollViewReference& ScrollViewReference::operator=(ScrollView* new_view) {
+  if (view_ != nullptr) {
+    delete view_;
+  }
+  view_ = new_view;
+  return *this;
 }
 
 #endif // !GRAPHICS_DISABLED

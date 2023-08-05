@@ -727,10 +727,10 @@ void WERD_CHOICE::print_state(const char *msg) const {
 
 // Displays the segmentation state of *this (if not the same as the last
 // one displayed) and waits for a click in the window.
-void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
+void WERD_CHOICE::DisplaySegmentation(Tesseract *tesseract_, TWERD *word) {
   // Number of different colors to draw with.
   const int kNumColors = 6;
-  static ScrollView *segm_window = nullptr;
+  static ScrollViewReference segm_window = nullptr;
   // Check the state against the static prev_drawn_state.
   static std::vector<int> prev_drawn_state;
   bool already_done = prev_drawn_state.size() == length_;
@@ -749,7 +749,7 @@ void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
   }
 
   // Create the window if needed.
-  if (segm_window == nullptr) {
+  if (!segm_window) {
     segm_window = new ScrollView(tesseract_, "Segmentation", 5, 10, 500, 256, 2000.0, 256.0, true);
   } else {
     segm_window->Clear();

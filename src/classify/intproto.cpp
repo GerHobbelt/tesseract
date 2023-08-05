@@ -134,10 +134,10 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
                      TABLE_FILLER *Filler);
 
 #if !GRAPHICS_DISABLED
-void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
+void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);
 
-void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
+void RenderIntProto(ScrollViewReference window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
 #endif // !GRAPHICS_DISABLED
 
 /*-----------------------------------------------------------------------------
@@ -148,9 +148,9 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 #if !GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
-static ScrollView *IntMatchWindow = nullptr;
-static ScrollView *FeatureDisplayWindow = nullptr;
-static ScrollView *ProtoDisplayWindow = nullptr;
+static ScrollViewReference IntMatchWindow = nullptr;
+static ScrollViewReference FeatureDisplayWindow = nullptr;
+static ScrollViewReference ProtoDisplayWindow = nullptr;
 #endif
 
 /*-----------------------------------------------------------------------------
@@ -421,7 +421,7 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
  * - ProtoShapes display list for protos
  */
 void UpdateMatchDisplay() {
-  if (IntMatchWindow != nullptr) {
+  if (IntMatchWindow) {
     IntMatchWindow->Update();
   }
 } /* ClearMatchDisplay */
@@ -917,7 +917,7 @@ void Classify::ShowMatchDisplay() {
 
 /// Clears the given window and draws the featurespace guides for the
 /// appropriate normalization method.
-void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
+void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference window) {
   window->Clear();
 
   window->Pen(ScrollView::GREY);
@@ -1544,7 +1544,7 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
  * @return New shape list with rendering of Feature added.
  * @note Globals: none
  */
-void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
+void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color) {
   float X, Y, Dx, Dy, Length;
 
@@ -1578,7 +1578,7 @@ void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
  *
  * @return New shape list with a rendering of one proto added.
  */
-void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
+void RenderIntProto(ScrollViewReference window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
                     ScrollView::Color color) {
   INT_PROTO_STRUCT *Proto;
   int ProtoSetIndex;
@@ -1635,8 +1635,8 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
  * initialized.
  */
 void InitIntMatchWindowIfReqd() {
-  if (IntMatchWindow == nullptr) {
-    IntMatchWindow = CreateFeatureSpaceWindow("IntMatchWindow", 50, 200);
+  if (!IntMatchWindow) {
+    IntMatchWindow = CreateFeatureSpaceWindow(tesseract_, "IntMatchWindow", 50, 200);
     auto *popup_menu = new SVMenuNode();
 
     popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
@@ -1652,8 +1652,8 @@ void InitIntMatchWindowIfReqd() {
  * initialized.
  */
 void InitProtoDisplayWindowIfReqd() {
-  if (ProtoDisplayWindow == nullptr) {
-    ProtoDisplayWindow = CreateFeatureSpaceWindow("ProtoDisplayWindow", 550, 200);
+  if (!ProtoDisplayWindow) {
+    ProtoDisplayWindow = CreateFeatureSpaceWindow(tesseract_, "ProtoDisplayWindow", 550, 200);
   }
 }
 
@@ -1662,15 +1662,15 @@ void InitProtoDisplayWindowIfReqd() {
  * initialized.
  */
 void InitFeatureDisplayWindowIfReqd() {
-  if (FeatureDisplayWindow == nullptr) {
-    FeatureDisplayWindow = CreateFeatureSpaceWindow("FeatureDisplayWindow", 50, 700);
+  if (!FeatureDisplayWindow) {
+    FeatureDisplayWindow = CreateFeatureSpaceWindow(tesseract_, "FeatureDisplayWindow", 50, 700);
   }
 }
 
 /// Creates a window of the appropriate size for displaying elements
 /// in feature space.
-ScrollView *CreateFeatureSpaceWindow(const char *name, int xpos, int ypos) {
-  return new ScrollView(name, xpos, ypos, 520, 520, 260, 260, true);
+ScrollViewReference CreateFeatureSpaceWindow(Tesseract* tesseract_, const char *name, int xpos, int ypos) {
+  return new ScrollView(tesseract_, name, xpos, ypos, 520, 520, 260, 260, true);
 }
 
 #endif // !GRAPHICS_DISABLED

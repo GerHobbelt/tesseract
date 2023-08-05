@@ -215,12 +215,12 @@ public:
 #if !GRAPHICS_DISABLED
 
   // Make a window of an appropriate size to display things in the grid.
-  ScrollView *MakeWindow(Tesseract *tesseract_ref, int x, int y, const char *window_name);
+  ScrollViewReference MakeWindow(Tesseract *tess, int x, int y, const char *window_name);
 
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
   // ScrollView::Color BBC::BoxColor() const.
-  void DisplayBoxes(ScrollView *window);
+  void DisplayBoxes(ScrollViewReference window);
 
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
@@ -645,9 +645,9 @@ private:
 // Make a window of an appropriate size to display things in the grid.
 // Position the window at the given x,y.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-ScrollView *BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tesseract_ref, int x, int y, const char *window_name) {
+ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess, int x, int y, const char *window_name) {
   auto tab_win =
-      new ScrollView(tesseract_ref, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
+      new ScrollView(tess, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
                      tright_.x() - bleft_.x(), tright_.y() - bleft_.y(), true);
   auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
   tab_win->AddEventHandler(handler);
@@ -661,7 +661,7 @@ ScrollView *BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tesseract_re
 // Use of this function requires an additional member of the BBC class:
 // ScrollView::Color BBC::BoxColor() const.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollView *tab_win) {
+void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference tab_win) {
   tab_win->Pen(ScrollView::BLUE);
   tab_win->Brush(ScrollView::NONE);
 

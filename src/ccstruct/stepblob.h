@@ -97,7 +97,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(                           // draw one
-      ScrollView *window,              // window to draw in
+      ScrollViewReference window,              // window to draw in
       ScrollView::Color blob_colour,   // for outer bits
       ScrollView::Color child_colour); // for holes
 #endif // !GRAPHICS_DISABLED
@@ -109,7 +109,7 @@ public:
   // using the given denorm, making use of sub-pixel accurate information
   // if available.
   void plot_normed(const DENORM &denorm, ScrollView::Color blob_colour,
-                   ScrollView::Color child_colour, ScrollView *window);
+                   ScrollView::Color child_colour, ScrollViewReference window);
 #endif // !GRAPHICS_DISABLED
 
   C_BLOB &operator=(const C_BLOB &source) {

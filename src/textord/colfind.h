@@ -346,8 +346,8 @@ private:
 
 #if !GRAPHICS_DISABLED
   // Various debug windows that automatically go away on completion.
-  ScrollView *input_blobs_win_ = nullptr;
-  ScrollView *blocks_win_ = nullptr;
+  ScrollViewReference input_blobs_win_;
+  ScrollViewReference blocks_win_;
 #endif
 };
 

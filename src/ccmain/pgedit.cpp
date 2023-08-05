@@ -252,11 +252,11 @@ enum ColorationMode {
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-static ScrollView *image_win;
+static ScrollViewReference image_win;
 static ParamsEditor *pe;
 static bool stillRunning = false;
 
-static ScrollView *bln_word_window = nullptr; // baseline norm words
+static ScrollViewReference bln_word_window; // baseline norm words
 
 static CMD_EVENTS mode = CHANGE_DISP_CMD_EVENT; // selected words op
 
@@ -348,11 +348,11 @@ public:
  *
  *  @return a WINDOW for the word window, creating it if necessary
  */
-static ScrollView *bln_word_window_handle() { // return handle
+static ScrollViewReference bln_word_window_handle(Tesseract *tess) { // return handle
                                               // not opened yet
-  if (bln_word_window == nullptr) {
+  if (!bln_word_window) {
     pgeditor_msg("Creating BLN word window...");
-    bln_word_window = new ScrollView(editor_word_name.c_str(), editor_word_xpos, editor_word_ypos,
+    bln_word_window = new ScrollView(tess, editor_word_name.c_str(), editor_word_xpos, editor_word_ypos,
                                      editor_word_width, editor_word_height, 4000, 4000, true);
     auto *a = new BlnEventHandler();
     bln_word_window->AddEventHandler(a);
@@ -368,9 +368,8 @@ static ScrollView *bln_word_window_handle() { // return handle
  *  new window needs to be. Create it and re-display.
  */
 
-static void build_image_window(int width, int height) {
-  delete image_win;
-  image_win = new ScrollView(editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
+static void build_image_window(Tesseract *tess, int width, int height) {
+  image_win = new ScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
                              width + 1, height + editor_image_menuheight + 1, width, height, true);
 }
 
@@ -380,7 +379,7 @@ static void build_image_window(int width, int height) {
  *  Display normalized baseline, x-height, ascender limit and descender limit
  */
 
-static void display_bln_lines(ScrollView *window, ScrollView::Color colour, float scale_factor,
+static void display_bln_lines(ScrollViewReference window, ScrollView::Color colour, float scale_factor,
                               float y_offset, float minx, float maxx) {
   window->Pen(colour);
   window->Line(minx, y_offset + scale_factor * DESC_HEIGHT, maxx,
@@ -516,7 +515,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   recog_done = false;
   stillRunning = true;
 
-  build_image_window(width, height);
+  build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
   do_re_display(&tesseract::Tesseract::word_set_display);
 #if !GRAPHICS_DISABLED
@@ -835,15 +834,15 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
-  bln_word_window_handle()->Clear();
-  display_bln_lines(bln_word_window_handle(), ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
+  bln_word_window_handle(this)->Clear();
+  display_bln_lines(bln_word_window_handle(this), ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
   C_BLOB_IT it(word_res->word->cblob_list());
   ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, bln_word_window_handle());
+    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, bln_word_window_handle(this));
     color = WERD::NextColor(color);
   }
-  bln_word_window_handle()->Update();
+  bln_word_window_handle(this)->Update();
   return true;
 }
 
@@ -1080,14 +1079,14 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     Classify::ExtractFeatures(*bln_blob, classify_nonlinear_norm, &bl_features, &cn_features,
                               &fx_info, nullptr);
     // Display baseline features.
-    ScrollView *bl_win = CreateFeatureSpaceWindow("BL Features", 512, 0);
+    ScrollViewReference bl_win = CreateFeatureSpaceWindow(this, "BL Features", 512, 0);
     ClearFeatureSpaceWindow(baseline, bl_win);
     for (auto &bl_feature : bl_features) {
       RenderIntFeature(bl_win, &bl_feature, ScrollView::GREEN);
     }
     bl_win->Update();
     // Display cn features.
-    ScrollView *cn_win = CreateFeatureSpaceWindow("CN Features", 512, 0);
+    ScrollViewReference cn_win = CreateFeatureSpaceWindow(this, "CN Features", 512, 0);
     ClearFeatureSpaceWindow(character, cn_win);
     for (auto &cn_feature : cn_features) {
       RenderIntFeature(cn_win, &cn_feature, ScrollView::GREEN);

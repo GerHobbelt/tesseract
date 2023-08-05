@@ -155,16 +155,16 @@ public:
 
 #if !GRAPHICS_DISABLED
   // plot word on window in a uniform colour
-  void plot(ScrollView *window, ScrollView::Color colour);
+  void plot(ScrollViewReference window, ScrollView::Color colour);
 
   // Get the next color in the (looping) rainbow.
   static ScrollView::Color NextColor(ScrollView::Color colour);
 
   // plot word on window in a rainbow of colours
-  void plot(ScrollView *window);
+  void plot(ScrollViewReference window);
 
   // plot rejected blobs in a rainbow of colours
-  void plot_rej_blobs(ScrollView *window);
+  void plot_rej_blobs(ScrollViewReference window);
 #endif // !GRAPHICS_DISABLED
 
   // Removes noise from the word by moving small outlines to the rej_cblobs

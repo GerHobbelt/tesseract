@@ -25,7 +25,7 @@ namespace tesseract {
   class DebugPixa {
   public:
     // TODO(rays) add another constructor with size control.
-    DebugPixa(Tesseract* tesseract_ref);
+    DebugPixa(Tesseract* tess);
 
     // If the filename_ has been set and there are any debug images, they are
     // written to the set filename_.

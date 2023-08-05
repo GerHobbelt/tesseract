@@ -169,8 +169,8 @@ bool AlignedBlob::WithinTestRegion(int detail_level, int x, int y) {
 #if !GRAPHICS_DISABLED
 
 // Display the tab codes of the BLOBNBOXes in this grid.
-ScrollView *AlignedBlob::DisplayTabs(const char *window_name, ScrollView *tab_win) {
-  if (tab_win == nullptr) {
+ScrollViewReference AlignedBlob::DisplayTabs(const char *window_name, ScrollViewReference tab_win) {
+  if (!tab_win) {
     tab_win = MakeWindow(tesseract_, 0, 50, window_name);
   }
   // For every tab in the grid, display it.
