@@ -47,7 +47,7 @@ ScrollViewReference edge_window;
 void display_edgepts(LIST outlines) {
   /* Set up window */
   if (!edge_window) {
-    edge_window = new ScrollView(tesseract_, "Edges", 750, 150, 400, 128, 800, 256, true);
+    edge_window = new ScrollView(TESSERACT_NULLPTR, "Edges", 750, 150, 400, 128, 800, 256, true);
   } else {
     edge_window->Clear();
   }

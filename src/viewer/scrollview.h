@@ -49,6 +49,8 @@ struct SVPolyLineBuffer;
 
 class TESS_API Tesseract;
 
+#define TESSERACT_NULLPTR     nullptr
+
 class TESS_API ScrollViewReference {
 public:
   ScrollViewReference();

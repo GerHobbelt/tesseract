@@ -1335,7 +1335,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
   }
 #if !GRAPHICS_DISABLED
   if (wordrec_display_segmentations && word_res->chopped_word != nullptr) {
-    word->DisplaySegmentation(tesseract_, word_res->chopped_word);
+    word->DisplaySegmentation(word_res->chopped_word);
   }
 #endif
 }

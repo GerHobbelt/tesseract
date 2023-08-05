@@ -1636,7 +1636,7 @@ void RenderIntProto(ScrollViewReference window, INT_CLASS_STRUCT *Class, PROTO_I
  */
 void InitIntMatchWindowIfReqd() {
   if (!IntMatchWindow) {
-    IntMatchWindow = CreateFeatureSpaceWindow(tesseract_, "IntMatchWindow", 50, 200);
+    IntMatchWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "IntMatchWindow", 50, 200);
     auto *popup_menu = new SVMenuNode();
 
     popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
@@ -1653,7 +1653,7 @@ void InitIntMatchWindowIfReqd() {
  */
 void InitProtoDisplayWindowIfReqd() {
   if (!ProtoDisplayWindow) {
-    ProtoDisplayWindow = CreateFeatureSpaceWindow(tesseract_, "ProtoDisplayWindow", 550, 200);
+    ProtoDisplayWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "ProtoDisplayWindow", 550, 200);
   }
 }
 
@@ -1663,7 +1663,7 @@ void InitProtoDisplayWindowIfReqd() {
  */
 void InitFeatureDisplayWindowIfReqd() {
   if (!FeatureDisplayWindow) {
-    FeatureDisplayWindow = CreateFeatureSpaceWindow(tesseract_, "FeatureDisplayWindow", 50, 700);
+    FeatureDisplayWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "FeatureDisplayWindow", 50, 700);
   }
 }
 

@@ -368,7 +368,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
     if (height > kMaxWinSize) {
       height = kMaxWinSize;
     }
-    window = new ScrollView(tesseract_, window_name, 80, 100, width, height, width, height, tess_coords);
+    window = new ScrollView(TESSERACT_NULLPTR, window_name, 80, 100, width, height, width, height, tess_coords);
     tprintf("Created window {} of size {}, {}\n", window_name, width, height);
   } else {
     window->Clear();

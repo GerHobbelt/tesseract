@@ -54,7 +54,7 @@ BOOL_VAR(wordrec_blob_pause, 0, "Blob pause");
 void display_blob(TBLOB *blob, ScrollView::Color color) {
   /* Size of drawable */
   if (!blob_window) {
-    blob_window = new ScrollView(tesseract_, "Blobs", 520, 10, 500, 256, 2000, 256, true);
+    blob_window = new ScrollView(TESSERACT_NULLPTR, "Blobs", 520, 10, 500, 256, 2000, 256, true);
   } else {
     blob_window->Clear();
   }

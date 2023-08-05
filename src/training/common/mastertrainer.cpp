@@ -770,7 +770,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
                                    int canonical_font) {
   const IntFeatureMap &feature_map = feature_map_;
   const IntFeatureSpace &feature_space = feature_map.feature_space();
-  ScrollViewReference f_window = CreateFeatureSpaceWindow(tesseract_, "Features", 100, 500);
+  ScrollViewReference f_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Features", 100, 500);
   ClearFeatureSpaceWindow(norm_mode_ == NM_BASELINE ? baseline : character,
                           f_window);
   int class_id2 = samples_.unicharset().unichar_to_id(unichar_str2);
@@ -792,7 +792,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     }
   }
   f_window->Update();
-  ScrollViewReference s_window = CreateFeatureSpaceWindow(tesseract_, "Samples", 100, 500);
+  ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
   SVEventType ev_type;
   do {
     // Wait until a click or popup event.

@@ -247,7 +247,7 @@ void Classify::RefreshDebugWindow(ScrollViewReference &win, const char *msg, int
                                   const TBOX &wbox) {
   const int kSampleSpaceWidth = 500;
   if (!win) {
-    win = new ScrollView(tesseract_, msg, 100, y_offset, kSampleSpaceWidth * 2, 200, kSampleSpaceWidth * 2, 200, true);
+    win = new ScrollView(TESSERACT_NULLPTR, msg, 100, y_offset, kSampleSpaceWidth * 2, 200, kSampleSpaceWidth * 2, 200, true);
   }
   win->Clear();
   win->Pen(64, 64, 64);

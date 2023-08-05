@@ -149,7 +149,7 @@ void TextlineProjection::DisplayProjection() const {
       col_data[x] = result;
     }
   }
-  ScrollViewReference win = new ScrollView(tesseract_, "Projection", 0, 0, width, height, width, height);
+  ScrollViewReference win = new ScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
   win->Draw(pixc, 0, 0);
   win->Update();
   pixc.destroy();

@@ -60,7 +60,7 @@ using namespace tesseract;
 -----------------------------------------------------------------------------*/
 #if !GRAPHICS_DISABLED
 static void DisplayProtoList(const char *ch, LIST protolist) {
-  ScrollViewReference window = new ScrollView(tesseract_, "Char samples", 50, 200, 520, 520, 260, 260, true);
+  ScrollViewReference window = new ScrollView(TESSERACT_NULLPTR, "Char samples", 50, 200, 520, 520, 260, 260, true);
   LIST proto = protolist;
   iterate(proto) {
     auto *prototype = reinterpret_cast<PROTOTYPE *>(proto->first_node());
@@ -284,7 +284,7 @@ extern "C" int tesseract_mf_training_main(int argc, const char** argv)
 
 #else
 
-TESS_API int tesseract_mf_training_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_mf_training_main(int argc, const char **argv)
 {
 	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
 	return 1;

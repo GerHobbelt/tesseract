@@ -39,7 +39,7 @@ static int rgb[3] = {255, 255, 255};
 
 class SVPaint : public SVEventHandler {
 public:
-  explicit SVPaint(const char *server_name);
+  explicit SVPaint(Tesseract *tess, const char *server_name);
   // This is the main event handling function that we need to overwrite, defined
   // in SVEventHandler.
   void Notify(const SVEvent *sv_event) override;
@@ -185,8 +185,8 @@ void SVPaint::Notify(const SVEvent *sv_event) {
 
 // Builds a new window, initializes the variables and event handler and builds
 // the menu.
-SVPaint::SVPaint(const char *server_name) {
-  window_ = new ScrollView(tesseract_,
+SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
+  window_ = new ScrollView(tess,
                            "ScrollView Paint Example", // window caption
                            0, 0,                       // x,y window position
                            500, 500,                   // window size
@@ -241,11 +241,11 @@ SVPaint::SVPaint(const char *server_name) {
 // This enables us to test the remote capabilities of ScrollView.
 
 
-#if defined(BUILD_MONOLITHIC)
-#define main(a, b)      tesseract_svpaint_main(a, b)
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char **argv)
+#else
+extern "C" int tesseract_svpaint_main(int argc, const char **argv)
 #endif
-
-int main(int argc, const char** argv)
 {
   const char *server_name;
   if (argc > 1) {
@@ -253,7 +253,7 @@ int main(int argc, const char** argv)
   } else {
     server_name = "localhost";
   }
-  tesseract::SVPaint svp(server_name);
+  tesseract::SVPaint svp(nullptr, server_name);
   return EXIT_SUCCESS;
 }
 
