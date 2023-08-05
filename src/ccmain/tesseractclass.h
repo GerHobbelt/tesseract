@@ -588,7 +588,7 @@ public:
       const SVEvent &event);
   bool process_cmd_win_event( // UI command semantics
       int32_t cmd_event,      // which menu item?
-      char *new_value         // any prompt data
+      const char *new_value   // any prompt data
   );
 #endif // !GRAPHICS_DISABLED
   void debug_word(PAGE_RES *page_res, const TBOX &selection_box);

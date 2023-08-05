@@ -546,7 +546,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
 
 bool Tesseract::process_cmd_win_event( // UI command semantics
     int32_t cmd_event,                 // which menu item?
-    char *new_value                    // any prompt data
+    const char *new_value              // any prompt data
 ) {
   bool exit = false;
 
