@@ -366,7 +366,6 @@ static void PrintLangsList(tesseract::TessBaseAPI &api) {
   for (const auto &language : languages) {
     tprintInfo("{}\n", language);
   }
-  api.End();
 }
 
 /**
@@ -944,6 +943,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       if (list_langs) {
         PrintLangsList(api);
+        api.End();
         return EXIT_SUCCESS;
       }
 
