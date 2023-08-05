@@ -162,7 +162,7 @@ protected:
   const ICOORD &tright() const;
 
   // Makes a window for debugging, see BBGrid
-  ScrollView *MakeWindow(int x, int y, const char *window_name);
+  ScrollView *MakeWindow(Tesseract *tesseract_ref, int x, int y, const char *window_name);
 
   //////// Functions to insert objects from the grid into the table finder.
   //////// In all cases, ownership is transferred to the table finder.

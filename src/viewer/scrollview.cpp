@@ -254,30 +254,32 @@ int ScrollView::nr_created_windows_ = 0;
 int ScrollView::image_index_ = 0;
 
 /// Calls Initialize with all arguments given.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
                        const char *server_name) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
+  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
              server_name);
 }
 
 /// Calls Initialize with default argument for server_name_.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size, bool y_axis_reversed) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
+  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
              "localhost");
 }
 
 /// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
+ScrollView::ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                        int x_canvas_size, int y_canvas_size) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, false, "localhost");
+  Initialize(tesseract_ref, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, false, "localhost");
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
-void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, int y_size,
+void ScrollView::Initialize(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size,
                             int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
                             const char *server_name) {
+  tesseract_ = tesseract_ref;
+
   // If this is the first ScrollView Window which gets created, there is no
   // network connection yet and we have to set it up in a different thread.
   if (stream_ == nullptr) {

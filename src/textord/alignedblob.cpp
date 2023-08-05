@@ -171,7 +171,7 @@ bool AlignedBlob::WithinTestRegion(int detail_level, int x, int y) {
 // Display the tab codes of the BLOBNBOXes in this grid.
 ScrollView *AlignedBlob::DisplayTabs(const char *window_name, ScrollView *tab_win) {
   if (tab_win == nullptr) {
-    tab_win = MakeWindow(0, 50, window_name);
+    tab_win = MakeWindow(tesseract_, 0, 50, window_name);
   }
   // For every tab in the grid, display it.
   GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> gsearch(this);

@@ -47,6 +47,8 @@ class SVNetwork;
 class SVSemaphore;
 struct SVPolyLineBuffer;
 
+class TESS_API Tesseract;
+
 enum SVEventType {
   SVET_DESTROY,   // Window has been destroyed by user.
   SVET_EXIT,      // User has destroyed the last window by clicking on the 'X'.
@@ -165,14 +167,19 @@ public:
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
   // The canvas may not be 0,0 in size!
-  ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size);
   // With a flag whether the x axis is reversed.
-  ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size, bool y_axis_reversed);
   // Connect to a server other than localhost.
-  ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
+  ScrollView(Tesseract *tesseract_ref, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size, bool y_axis_reversed, const char *server_name);
+
+private:
+  Tesseract *tesseract_; // reference to the driving tesseract instance
+
+public:
   /*******************************************************************************
    * Event handling
    * To register as listener, the class has to derive from the SVEventHandler

@@ -120,7 +120,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   ScrollView *win = nullptr;
 #if !GRAPHICS_DISABLED
   if (debug && !tesseract_->debug_do_not_use_scrollview_app) {
-    win = MakeWindow(0, 400, "Photo Mask Blobs");
+    win = MakeWindow(tesseract_, 0, 400, "Photo Mask Blobs");
   }
 #endif // !GRAPHICS_DISABLED
   // Large and medium blobs are not text if they overlap with "a lot" of small
@@ -145,11 +145,6 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
       win->Update();
     }
 #endif // !GRAPHICS_DISABLED
-#if 0
-    const int page_index = 0;
-    std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "nontext.junkccphotomask", "png");
-    WritePix(filepath, pix, IFF_PNG);
-#endif
     tesseract_->AddPixDebugPage(pix, "nontext.junkccphotomask");
 #if !GRAPHICS_DISABLED
     if (win) {

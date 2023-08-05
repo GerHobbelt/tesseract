@@ -347,10 +347,7 @@ private:
 #if !GRAPHICS_DISABLED
   // Various debug windows that automatically go away on completion.
   ScrollView *input_blobs_win_ = nullptr;
-
-  // Allow a subsequent instance to reuse the blocks window.
-  // Not thread-safe, but multiple threads shouldn't be using windows anyway.
-  static ScrollView *blocks_win_;
+  ScrollView *blocks_win_ = nullptr;
 #endif
 };
 

@@ -120,6 +120,7 @@ ColumnFinder::~ColumnFinder() {
   delete stroke_width_;
 #if !GRAPHICS_DISABLED
   delete input_blobs_win_;
+  input_blobs_win_ = nullptr;
 #endif
   nontext_map_.destroy();
   while (denorm_ != nullptr) {
@@ -170,8 +171,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   input_block->ReSetAndReFilterBlobs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_blocks) {
-    if (!tesseract_->debug_do_not_use_scrollview_app) {
-      input_blobs_win_ = MakeWindow(0, 0, "Filtered Input Blobs");
+      input_blobs_win_ = MakeWindow(tesseract_, 0, 0, "Filtered Input Blobs");
       input_block->plot_graded_blobs(input_blobs_win_);
     }
     else {
@@ -403,7 +403,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 #if !GRAPHICS_DISABLED
     if (textord_tabfind_show_reject_blobs) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
-        ScrollView *rej_win = MakeWindow(500, 300, "Rejected blobs");
+        std::unique_ptr<ScrollView> rej_win(MakeWindow(tesseract_, 500, 300, "Rejected blobs"));
         input_block->plot_graded_blobs(rej_win);
       }
       else {
@@ -444,7 +444,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initial_partitions) {
     if (!tesseract_->debug_do_not_use_scrollview_app) {
-      ScrollView* part_win = MakeWindow(100, 300, "InitialPartitions");
+      std::unique_ptr<ScrollView> part_win(MakeWindow(tesseract_, 100, 300, "InitialPartitions"));
       part_grid_.DisplayBoxes(part_win);
       DisplayTabVectors(part_win);
     }
@@ -511,7 +511,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
 #if !GRAPHICS_DISABLED
     if (textord_tabfind_show_partitions) {
       if (!tesseract_->debug_do_not_use_scrollview_app) {
-        ScrollView* window = MakeWindow(400, 300, "Partitions");
+        std::unique_ptr<ScrollView> window(MakeWindow(tesseract_, 400, 300, "Partitions"));
         if (window != nullptr) {
           part_grid_.DisplayBoxes(window);
           if (!textord_debug_printable) {
@@ -590,22 +590,26 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   int result = 0;
 #if !GRAPHICS_DISABLED
   if (blocks_win_ != nullptr) {
-    bool waiting = false;
-    do {
-      waiting = false;
-      auto event = blocks_win_->AwaitEvent(SVET_ANY);
-      if (event->type == SVET_INPUT && event->parameter != nullptr) {
-        if (*event->parameter == 'd') {
-          result = -1;
+    if (!tesseract_->debug_do_not_use_scrollview_app) {
+      bool waiting = false;
+      do {
+        waiting = false;
+        auto event = blocks_win_->AwaitEvent(SVET_ANY);
+        if (event->type == SVET_INPUT && event->parameter != nullptr) {
+          if (*event->parameter == 'd') {
+            result = -1;
+          } else {
+            blocks->clear();
+          }
+        } else if (event->type == SVET_DESTROY) {
+          blocks_win_->Clear();
+          delete blocks_win_;
+          blocks_win_ = nullptr;
         } else {
-          blocks->clear();
+          waiting = true;
         }
-      } else if (event->type == SVET_DESTROY) {
-        blocks_win_ = nullptr;
-      } else {
-        waiting = true;
-      }
-    } while (waiting);
+      } while (waiting);
+    }
   }
 #endif // !GRAPHICS_DISABLED
   return result;
@@ -632,7 +636,7 @@ void ColumnFinder::SetEquationDetect(EquationDetectBase *detect) {
 void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
   if (!tesseract_->debug_do_not_use_scrollview_app) {
     if (blocks_win_ == nullptr) {
-      blocks_win_ = MakeWindow(700, 300, "Blocks");
+      blocks_win_ = MakeWindow(tesseract_, 700, 300, "Blocks");
     }
     else {
       blocks_win_->Clear();
@@ -689,7 +693,7 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
 // best_columns_.
 void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
   if (!tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView* col_win = MakeWindow(50, 300, "Columns");
+    std::unique_ptr<ScrollView> col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
     DisplayBoxes(col_win);
     col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
     for (int i = 0; i < gridheight_; ++i) {

@@ -292,7 +292,7 @@ void ParamsEditor::Notify(const SVEvent *sve) {
 ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollView *sv) {
   if (sv == nullptr) {
     const char *name = "ParamEditorMAIN";
-    sv = new ScrollView(name, 1, 1, 200, 200, 300, 200);
+    sv = new ScrollView(tess, name, 1, 1, 200, 200, 300, 200);
   }
 
   sv_window_ = sv;

@@ -318,13 +318,13 @@ private:
   FCOORD rerotation_;
 #if !GRAPHICS_DISABLED
   // Windows for debug display.
-  ScrollView *leaders_win_ = nullptr;
-  ScrollView *initial_widths_win_ = nullptr;
-  ScrollView *widths_win_ = nullptr;
-  ScrollView *chains_win_ = nullptr;
-  ScrollView *diacritics_win_ = nullptr;
-  ScrollView *textlines_win_ = nullptr;
-  ScrollView *smoothed_win_ = nullptr;
+  std::unique_ptr<ScrollView> leaders_win_;
+  std::unique_ptr<ScrollView> initial_widths_win_;
+  std::unique_ptr<ScrollView> widths_win_;
+  std::unique_ptr<ScrollView> chains_win_;
+  std::unique_ptr<ScrollView> diacritics_win_;
+  std::unique_ptr<ScrollView> textlines_win_;
+  std::unique_ptr<ScrollView> smoothed_win_;
 #endif
 };
 

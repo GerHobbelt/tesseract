@@ -95,8 +95,6 @@ protected:
   int gridbuckets_; // Total cells in grid.
   ICOORD bleft_;    // Pixel coords of bottom-left of grid.
   ICOORD tright_;   // Pixel coords of top-right of grid.
-
-private:
 };
 
 // The IntGrid maintains a single int for each cell in a grid.
@@ -217,7 +215,7 @@ public:
 #if !GRAPHICS_DISABLED
 
   // Make a window of an appropriate size to display things in the grid.
-  ScrollView *MakeWindow(int x, int y, const char *window_name);
+  ScrollView *MakeWindow(Tesseract *tesseract_ref, int x, int y, const char *window_name);
 
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
@@ -647,9 +645,9 @@ private:
 // Make a window of an appropriate size to display things in the grid.
 // Position the window at the given x,y.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-ScrollView *BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(int x, int y, const char *window_name) {
+ScrollView *BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tesseract_ref, int x, int y, const char *window_name) {
   auto tab_win =
-      new ScrollView(window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
+      new ScrollView(tesseract_ref, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
                      tright_.x() - bleft_.x(), tright_.y() - bleft_.y(), true);
   auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
   tab_win->AddEventHandler(handler);

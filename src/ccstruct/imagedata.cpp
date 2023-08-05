@@ -285,7 +285,7 @@ void ImageData::Display() const {
   }
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
-  auto *win = new ScrollView("Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
+  auto *win = new ScrollView(tesseract_, "Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
                              2 * (height + 4 * kTextSize), width + 10,
                              height + 3 * kTextSize, true);
   win->Draw(pix, 0, height - 1);

@@ -136,14 +136,7 @@ StrokeWidth::~StrokeWidth() {
       ASSERT0(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
       exit(1);
     }
-    delete widths_win_;
   }
-  delete leaders_win_;
-  delete initial_widths_win_;
-  delete chains_win_;
-  delete textlines_win_;
-  delete smoothed_win_;
-  delete diacritics_win_;
 #endif
 }
 
@@ -372,7 +365,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(PageSegMode pageseg_mode, const FCOOR
   projection_->ConstructProjection(block, rerotation, nontext_map_);
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *line_blobs_win = MakeWindow(0, 0, "Initial textline Blobs");
+    std::unique_ptr<ScrollView> line_blobs_win(MakeWindow(tesseract_, 0, 0, "Initial textline Blobs"));
     projection_->PlotGradedBlobs(&block->blobs, line_blobs_win);
     projection_->PlotGradedBlobs(&block->small_blobs, line_blobs_win);
   }
@@ -1294,7 +1287,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
   }
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-    chains_win_ = MakeWindow(0, 400, "Initial text chains");
+    chains_win_ = MakeWindow(tesseract_, 0, 400, "Initial text chains");
     part_grid->DisplayBoxes(chains_win_);
     projection_->DisplayProjection();
   }
@@ -1322,7 +1315,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
   }
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-    textlines_win_ = MakeWindow(400, 400, "GoodTextline blobs");
+    textlines_win_ = MakeWindow(tesseract_, 400, 400, "GoodTextline blobs");
     part_grid->DisplayBoxes(textlines_win_);
     diacritics_win_ = DisplayDiacritics("Diacritics", 0, 0, block);
   }
@@ -1342,7 +1335,7 @@ PartitionFindResult StrokeWidth::FindInitialPartitions(
   }
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-    smoothed_win_ = MakeWindow(800, 400, "Smoothed blobs");
+    smoothed_win_ = MakeWindow(tesseract_, 800, 400, "Smoothed blobs");
     part_grid->DisplayBoxes(smoothed_win_);
   }
 #endif
@@ -1368,7 +1361,7 @@ bool StrokeWidth::DetectAndRemoveNoise(int pre_overlap, const TBOX &grid_box, TO
       // This is noisy enough to fix.
 #if !GRAPHICS_DISABLED
       if (textord_tabfind_show_strokewidths && !tesseract_->debug_do_not_use_scrollview_app) {
-        ScrollView *noise_win = MakeWindow(1000, 500, "Noise Areas");
+        ScrollView *noise_win = MakeWindow(tesseract_, 1000, 500, "Noise Areas");
         noise_grid->DisplayBoxes(noise_win);
       }
 #endif
@@ -1962,7 +1955,7 @@ bool StrokeWidth::NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const {
  * and the vertical/horizontal flow.
  */
 ScrollView *StrokeWidth::DisplayGoodBlobs(const char *window_name, int x, int y) {
-  auto window = MakeWindow(x, y, window_name);
+  std::unique_ptr<ScrollView> window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
   window->Brush(ScrollView::NONE);
 
@@ -2011,7 +2004,7 @@ static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollView *window) {
 
 // Displays blobs colored according to whether or not they are diacritics.
 ScrollView *StrokeWidth::DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block) {
-  auto window = MakeWindow(x, y, window_name);
+  std::unique_ptr<ScrollView> window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
   window->Brush(ScrollView::NONE);
 

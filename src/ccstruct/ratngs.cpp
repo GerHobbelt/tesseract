@@ -750,7 +750,7 @@ void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
 
   // Create the window if needed.
   if (segm_window == nullptr) {
-    segm_window = new ScrollView("Segmentation", 5, 10, 500, 256, 2000.0, 256.0, true);
+    segm_window = new ScrollView(tesseract_, "Segmentation", 5, 10, 500, 256, 2000.0, 256.0, true);
   } else {
     segm_window->Clear();
   }
