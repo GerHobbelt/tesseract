@@ -217,6 +217,9 @@ public:
   const FCOORD &reskew() const {
     return reskew_;
   }
+  float gradient() const {
+    return gradient_;
+  }
   // Destroy any existing pix and return a pointer to the pointer.
   void set_pix_binary(Image pix) {
     pix_binary_.destroy();
@@ -1163,6 +1166,7 @@ private:
   int scaled_factor_;
   FCOORD deskew_;
   FCOORD reskew_;
+  float gradient_;
   TesseractStats stats_;
   // Sub-languages to be tried in addition to this.
   std::vector<Tesseract *> sub_langs_;
