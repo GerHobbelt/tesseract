@@ -65,7 +65,8 @@ const double kMaxNonLineDensity = 0.25;
 const double kMaxStaveHeight = 1.0;
 // Minimum fraction of pixels in a music rectangle connected to the staves.
 const double kMinMusicPixelFraction = 0.75;
-
+// Reduction factor from line width to dilate/erode brick kernel size
+const double kBrickToLineWidthFraction = 2.0;  // original: 3;
 
 LineFinder::LineFinder(Tesseract* tess) :
   tesseract_(tess) {
@@ -476,11 +477,13 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
 
   int max_line_width = resolution / kThinLineFraction;
   int min_line_length = resolution / kMinLineLengthFraction;
+  int closing_brick = round(max_line_width / kBrickToLineWidthFraction);
   if (tesseract_->debug_line_finding) {
-    tprintf("Image resolution = {}, max line width = {}, min length={}\n", resolution,
-            max_line_width, min_line_length);
+    tprintf("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), closing-brick hole size = {}\n", resolution,
+        max_line_width, resolution, kThinLineFraction,
+        min_line_length, resolution, kMinLineLengthFraction,
+        closing_brick);
   }
-  int closing_brick = max_line_width / 3;
 
 // only use opencl if compiled w/ OpenCL and selected device is opencl
 #ifdef USE_OPENCL
@@ -494,27 +497,36 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
                                 min_line_length, min_line_length);
   } else {
 #endif
-    // Close up small holes, making it less likely that false alarms are found
-    // in thickened text (as it will become more solid) and also smoothing over
-    // some line breaks and nicks in the edges of the lines.
+    if (tesseract_->debug_line_finding) {
+      tprintf("PROCESS:"
+      " Close up small holes (size <= {}px), making it less likely that false alarms are found"
+      " in thickened text (as it will become more solid) and also smoothing over"
+      " some line breaks and nicks in the edges of the lines.\n",
+      closing_brick);
+    }
     pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_closed, "get line masks : closed brick");
+      tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
     }
-    // Open up with a big box to detect solid areas, which can then be
-    // subtracted. This is very generous and will leave in even quite wide
-    // lines.
+    if (tesseract_->debug_line_finding) {
+      tprintf("PROCESS:"
+        " Open up with a big box to detect solid areas, which can then be"
+        " subtracted. This is very generous and will leave in even quite wide"
+        " lines. (max_line_width = {})\n",
+        max_line_width);
+    }
     Image pix_solid = pixOpenBrick(nullptr, pix_closed, max_line_width, max_line_width);
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_solid, "get line masks : open brick");
+      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (max_line_width = {})", max_line_width));
     }
     pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
     pix_solid.destroy();
 
-    // Now open up in both directions independently to find lines of at least
-    // 1 inch/kMinLineLengthFraction in length.
     if (tesseract_->debug_line_finding) {
+      tprintf("PROCESS:"
+        " Now open up in both directions independently to find lines of at least"
+        " 1 inch/kMinLineLengthFraction in length.\n");
       tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, min_line_length);

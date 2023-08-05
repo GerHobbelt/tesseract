@@ -56,7 +56,7 @@ public class ScrollView {
   /** Prints all received messages to the console if true. */
   static boolean debugViewNetworkTraffic = false;
 
-  /** Add a new message to the outgoing queue */
+  /** Add a new message to the outgoing queue. */
   public static void addMessage(SVEvent e) {
     if (debugViewNetworkTraffic) {
       System.out.println("(S->c) " + e.toString());
@@ -390,8 +390,7 @@ public class ScrollView {
               "UTF8"));
     } catch (IOException e) {
       // Something went wrong and we were unable to set up a connection. This is
-      // pretty
-      // much a fatal error.
+      // pretty much a fatal error.
       // Note: The server does not get restarted automatically if this happens.
       e.printStackTrace();
       System.exit(1);

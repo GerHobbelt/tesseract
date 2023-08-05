@@ -1214,7 +1214,7 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
   pixaDestroy(&pixa);
   DeleteSmallImages(part_grid);
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_images) {
+  if (textord_tabfind_show_images && !tesseract_->debug_do_not_use_scrollview_app) {
     ScrollView *images_win_ = part_grid->MakeWindow(1000, 400, "With Images");
     part_grid->DisplayBoxes(images_win_);
   }

@@ -77,7 +77,7 @@ codes into Unicode values. If its not present then the reader will
 fall back through a series of heuristics to try and guess the
 result. This is, as you would expect, prone to failure.
 
-This doesn't concern you of course, since you always writing a ToUnicode
+This doesn't concern you of course, since you always write a ToUnicode
 CMap, so because you are writing the text in text rendering mode 3 it
 would seem that you don't really need to worry about this, but in the
 PDF spec you cannot have an isolated ToUnicode CMap, it has to be
@@ -488,7 +488,7 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
     }
   }
   const std::string &text = pdf_str.str();
-  char* result = new char[text.length() + 1];
+  char *result = new char[text.length() + 1];
   strcpy(result, text.c_str());
   return result;
 }
@@ -801,7 +801,7 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix, const char *filename, long int obj
   size_t colorspace_len = colorspace.str().size();
 
   *pdf_object_size = b1_len + colorspace_len + b2_len + cid->nbytescomp + b3_len;
-  * pdf_object = new char[*pdf_object_size];
+  *pdf_object = new char[*pdf_object_size];
 
   char *p = *pdf_object;
   memcpy(p, b1.str().c_str(), b1_len);

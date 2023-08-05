@@ -82,7 +82,7 @@ char *TessBaseAPI::GetWordStrBoxText(int page_number = 0) {
     wordstr_box_str += " " + std::to_string(page_number); // row for tab for EOL
     wordstr_box_str += "\n";
   }
-  char* ret = new char[wordstr_box_str.length() + 1];
+  char *ret = new char[wordstr_box_str.length() + 1];
   strcpy(ret, wordstr_box_str.c_str());
   delete res_it;
   return ret;

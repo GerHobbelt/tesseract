@@ -42,9 +42,16 @@ namespace tesseract {
 
 #ifdef HAVE_MUPDF
 
+// Warning: tprintf() is invoked in tesseract for PARTIAL lines, so we SHOULD gather these fragments
+// here before dispatching the gathered lines to the appropriate back-end API!
 static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 	auto msg = fmt::vformat(format, args);
-	const char *s = msg.c_str();
+
+  static std::string msg_buffer;
+  msg_buffer += msg;
+  if (!msg_buffer.ends_with('\n'))
+    return;
+  const char *s = msg_buffer.c_str();
 
   if (!strncmp(s, "ERROR: ", 7))
     fz_error(NULL, "%s", s + 7);
@@ -52,6 +59,7 @@ static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
     fz_warn(NULL, "%s", s + 9);
   else
     fz_info(NULL, "%s", s);
+  msg_buffer.clear();
 }
 
 #endif

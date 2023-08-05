@@ -112,7 +112,7 @@ STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF 
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
 #endif
-BOOL_VAR(debug_all, false, "Turn on all the debugging features");
+INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
 BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
 double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
@@ -371,8 +371,14 @@ bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract;
   }
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY,
-                              tesseract_->params());
+  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
+}
+bool TessBaseAPI::SetVariable(const char *name, int value) {
+  if (tesseract_ == nullptr) {
+    tesseract_ = new Tesseract;
+  }
+  std::string v = fmt::format("{}", value);
+  return ParamUtils::SetParam(name, v.c_str(), SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
 }
 
 bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
@@ -534,7 +540,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
                       const char **configs, int configs_size, const std::vector<std::string> *vars_vec,
                       const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
                       FileReader reader) {
-  if (language == NULL || language[0] == 0) {
+  if (language == nullptr || language[0] == 0) {
     language = "";
   }
   if (data == nullptr) {
@@ -768,7 +774,7 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
 
 /**
  * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
- * Each SetRectangle clears the recogntion results so multiple rectangles
+ * Each SetRectangle clears the recognition results so multiple rectangles
  * can be recognized with the same image.
  */
 void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
@@ -788,7 +794,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   if (tesseract_->pix_binary() == nullptr) {
-    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.");
+    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 
     Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
@@ -810,21 +816,15 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   // }
   const int page_number = 0;
   if (tesseract_->scribe_save_grey_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "grey_image", "png");
-	  Pix *p1 = tesseract_->pix_grey();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_grey();
     tesseract_->AddPixDebugPage(p1, "greyscale image");
   }
   if (tesseract_->scribe_save_binary_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "binary_image", "png");
-	  Pix *p1 = tesseract_->pix_binary();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_binary();
     tesseract_->AddPixDebugPage(p1, "binary (black & white) image");
   }
   if (tesseract_->scribe_save_original_rotated_image) {
-	  //std::string file_path = mkUniqueOutputFilePath(debug_output_path, page_number, "original_image", "png");
-	  Pix *p1 = tesseract_->pix_original();
-	  //WritePix(file_path, p1, IFF_PNG);
+    Pix *p1 = tesseract_->pix_original();
     tesseract_->AddPixDebugPage(p1, "original image");
   }
 
@@ -1560,14 +1560,12 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
     // Write normalized image 
-    //std::string file_path = mkUniqueOutputFilePath(output_file_.c_str(), page_index, "preprocessed", "tiff");
     Pix *p1;
     if (graynorm_mode == 2) {
       p1 = thresholder_->GetPixRect();
     } else {
       p1 = GetInputImage();
     }
-    //WritePix(file_path, p1, IFF_TIFF_G4);
     tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
   }
 
@@ -1759,7 +1757,7 @@ std::vector<std::tuple<int,int,int,int>> TessBaseAPI::GetTableRows(unsigned i)
   return rows;
 }
 
-std::vector<std::tuple<int,int,int,int> > TessBaseAPI::GetTableCols(unsigned i)
+std::vector<std::tuple<int,int,int,int>> TessBaseAPI::GetTableCols(unsigned i)
 {
   const auto &t = constUniqueInstance<std::vector<TessTable>>();
 
@@ -1805,6 +1803,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   int par_num = 0;
   int line_num = 0;
   int word_num = 0;
+  int symbol_num = 0;
 
   std::string tsv_str;
   tsv_str += "1\t" + std::to_string(page_num); // level 1 - page
@@ -1812,6 +1811,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   tsv_str += "\t" + std::to_string(par_num);
   tsv_str += "\t" + std::to_string(line_num);
   tsv_str += "\t" + std::to_string(word_num);
+  tsv_str += "\t" + std::to_string(symbol_num);
   tsv_str += "\t" + std::to_string(rect_left_);
   tsv_str += "\t" + std::to_string(rect_top_);
   tsv_str += "\t" + std::to_string(rect_width_);
@@ -1831,11 +1831,13 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       par_num = 0;
       line_num = 0;
       word_num = 0;
+      symbol_num = 0;
       tsv_str += "2\t" + std::to_string(page_num); // level 2 - block
       tsv_str += "\t" + std::to_string(block_num);
       tsv_str += "\t" + std::to_string(par_num);
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
+      tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_BLOCK, tsv_str);
       tsv_str += "\t-1\t\n"; // end of row for block
     }
@@ -1843,22 +1845,26 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       par_num++;
       line_num = 0;
       word_num = 0;
+      symbol_num = 0;
       tsv_str += "3\t" + std::to_string(page_num); // level 3 - paragraph
       tsv_str += "\t" + std::to_string(block_num);
       tsv_str += "\t" + std::to_string(par_num);
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
+      tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_PARA, tsv_str);
       tsv_str += "\t-1\t\n"; // end of row for para
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       line_num++;
       word_num = 0;
+      symbol_num = 0;
       tsv_str += "4\t" + std::to_string(page_num); // level 4 - line
       tsv_str += "\t" + std::to_string(block_num);
       tsv_str += "\t" + std::to_string(par_num);
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
+      tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_TEXTLINE, tsv_str);
       tsv_str += "\t-1\t\n"; // end of row for line
     }
@@ -1867,11 +1873,13 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     int left, top, right, bottom;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
     word_num++;
+    symbol_num = 0;
     tsv_str += "5\t" + std::to_string(page_num); // level 5 - word
     tsv_str += "\t" + std::to_string(block_num);
     tsv_str += "\t" + std::to_string(par_num);
     tsv_str += "\t" + std::to_string(line_num);
     tsv_str += "\t" + std::to_string(word_num);
+    tsv_str += "\t" + std::to_string(symbol_num);
     tsv_str += "\t" + std::to_string(left);
     tsv_str += "\t" + std::to_string(top);
     tsv_str += "\t" + std::to_string(right - left);
@@ -1879,11 +1887,33 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_WORD));
     tsv_str += "\t";
 
+    std::string tsv_symbol_lines;
+
     do {
       tsv_str += std::unique_ptr<const char[]>(res_it->GetUTF8Text(RIL_SYMBOL)).get();
+
+      res_it->BoundingBox(RIL_SYMBOL, &left, &top, &right, &bottom);
+      symbol_num++;
+      tsv_symbol_lines += "6\t" + std::to_string(page_num); // level 6 - symbol
+      tsv_symbol_lines += "\t" + std::to_string(block_num);
+      tsv_symbol_lines += "\t" + std::to_string(par_num);
+      tsv_symbol_lines += "\t" + std::to_string(line_num);
+      tsv_symbol_lines += "\t" + std::to_string(word_num);
+      tsv_symbol_lines += "\t" + std::to_string(symbol_num);
+      tsv_symbol_lines += "\t" + std::to_string(left);
+      tsv_symbol_lines += "\t" + std::to_string(top);
+      tsv_symbol_lines += "\t" + std::to_string(right - left);
+      tsv_symbol_lines += "\t" + std::to_string(bottom - top);
+      tsv_symbol_lines += "\t" + std::to_string(res_it->Confidence(RIL_SYMBOL));
+      tsv_symbol_lines += "\t";
+      tsv_symbol_lines += std::unique_ptr<const char[]>(res_it->GetUTF8Text(RIL_SYMBOL)).get();
+      tsv_symbol_lines += "\n";
+
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
     tsv_str += "\n"; // end of row
+
+    tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are consioered to a part of.
   }
 
   char *ret = new char[tsv_str.length() + 1];
@@ -2461,7 +2491,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   {
 	  bool go = false;
 
-    // debug_all: assist diagnostics by cycling through all thresholding methods and applying each,
+    // debug_all/showcase_threshold_methods: assist diagnostics by cycling through all thresholding methods and applying each,
     // saving each result to a separate diagnostic image for later evaluation, before commencing
     // and finally applying the *user-selected* threshold method and continue with the OCR process:
 	  if (m != (int)ThresholdMethod::Max)
@@ -2473,7 +2503,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 	  }
 	  else
 	  {
-		  // on last round, we reset to the selected threshold method
+      if (subsec_handle != -1) {
+        tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
+      } else {
+        subsec_handle = tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
+      }
+
+      // on last round, we reset to the selected threshold method
 		  thresholding_method = selected_thresholding_method;
 		  go = true;
 	  }
@@ -2571,18 +2607,20 @@ int TessBaseAPI::FindLines() {
 #endif
   }
   if (tesseract_->pix_binary() == nullptr) {
-    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.");
+    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 
 	  Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
 		  return -1;
 	  }
 	  tesseract_->set_pix_binary(pix);
-
-    if (tesseract_->tessedit_dump_pageseg_images) {
-      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image");
-    }
   }
+
+  if (tesseract_->tessedit_dump_pageseg_images) {
+    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image");
+  }
+
+  int section_handle = tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation");
 
   tesseract_->PrepareForPageseg();
 
@@ -2634,12 +2672,15 @@ int TessBaseAPI::FindLines() {
 #endif // !DISABLED_LEGACY_ENGINE
 
   if (tesseract_->SegmentPage(tesseract_->input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
+    tesseract_->PopPixDebugSection(section_handle);
     return -1;
   }
 
   // If Devanagari is being recognized, we use different images for page seg
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, &osr);
+
+  tesseract_->PopPixDebugSection(section_handle);
   return 0;
 }
 
@@ -2719,7 +2760,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 	  }
 	  tesseract_->set_pix_binary(pix);
 
-	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image");
+	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "DetectOS : Thresholded Image");
   }
 
   return tesseract_->orientation_and_script_detection(tesseract_->input_file_path.c_str(), osr) > 0;

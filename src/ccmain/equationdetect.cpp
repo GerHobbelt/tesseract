@@ -176,7 +176,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
   const float x_orig = (box.left() + box.right()) / 2.0f, y_orig = box.bottom();
   std::unique_ptr<TBLOB> normed_blob(new TBLOB(*tblob));
   normed_blob->Normalize(nullptr, nullptr, nullptr, x_orig, y_orig, scaling, scaling, 0.0f,
-                         static_cast<float>(kBlnBaselineOffset), false, nullptr);
+                         static_cast<float>(kBlnBaselineOffset), false);
   equ_tesseract_.AdaptiveClassifier(normed_blob.get(), &ratings_equ);
   lang_tesseract_->AdaptiveClassifier(normed_blob.get(), &ratings_lang);
   delete tblob;
@@ -1427,7 +1427,7 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {
-  Image pix = pixConvertTo32(lang_tesseract_->BestPix());
+  Image pix = lang_tesseract_->GetPixForDebugView();
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
@@ -1445,20 +1445,19 @@ void EquationDetect::PaintColParts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  pix.destroy();
+  lang_tesseract_->ClearPixForDebugView();
 }
 
-void EquationDetect::PrintSpecialBlobsDensity(const ColPartition *part) const {
-  ASSERT_HOST(part);
-  TBOX box(part->bounding_box());
-  int h = pixGetHeight(lang_tesseract_->BestPix());
-  tprintf("Printing special blobs density values for ColParition (t={},b={}) ", h - box.top(),
+void EquationDetect::PrintSpecialBlobsDensity(const ColPartition &part) const {
+  TBOX box(part.bounding_box());
+  int h = lang_tesseract_->ImageHeight();
+  tprintf("Printing special blobs density values for ColPartition (t={},b={}) ", h - box.top(),
           h - box.bottom());
   box.print();
-  tprintf("blobs count = {}, density = ", part->boxes_count());
+  tprintf("blobs count = {}, density = ", part.boxes_count());
   for (int i = 0; i < BSTT_COUNT; ++i) {
     auto type = static_cast<BlobSpecialTextType>(i);
-    tprintf("{}:{} ", i, part->SpecialBlobsDensity(type));
+    tprintf("{}:{} ", i, part.SpecialBlobsDensity(type));
   }
   tprintf("\n");
 }

@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 #if defined(_WIN32)
-// :-(( Can't include just minwindef.h or windeef.h here as then we'll be treated to this error:
+// :-(( Can't include just minwindef.h or windef.h here as then we'll be treated to this error:
 // winnt.h(169,1): fatal error C1189: #error:  "No Target Architecture"
 //
 // The next thing you know will happen then is us getting loads of collisions due to windows.h
