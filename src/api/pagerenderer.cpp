@@ -133,17 +133,17 @@ DestroyAndCreatePta(Pta *pts) {
 Pta*
 RecalcPolygonline(Pta *pts, bool upper) {
   int num_pts, num_bin, index = 0;
-  float x, y, x0, y0, x1, y1;
+  float y, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   NUMA *bin_line;
   Pta *pts_recalc;
 
   ptaGetMinMax(pts, &x_min, &y_min, &x_max, &y_max);
-  num_bin =  x_max-x_min; 
-  bin_line = numaCreate(num_bin+1);
+  num_bin =  x_max - x_min; 
+  bin_line = numaCreate(num_bin + 1);
 
   for (int p = 0; p <= num_bin; ++p) {
-	  numaAddNumber(bin_line, -1.);
+    numaAddNumber(bin_line, -1.);
   }
 
   num_pts = ptaGetCount(pts);
@@ -158,42 +158,42 @@ RecalcPolygonline(Pta *pts, bool upper) {
     ptaGetPt(pts, index, &x0, &y0);
     ptaGetPt(pts, index+1, &x1, &y1);
     // TODO add +1?
-    for (int p = x0-x_min; p <= x1-x_min; ++p) {
-	  l_float32 val;
-	  numaGetFValue(bin_line, p, &val);
+    for (int p = x0 - x_min; p <= x1 - x_min; ++p) {
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
       if (!upper) {
         if ( val == -1. || y0 > val)
-			numaReplaceNumber(bin_line, p, y0);
+        numaReplaceNumber(bin_line, p, y0);
       } else {
         if ( val == -1. || y0 < val)
-			numaReplaceNumber(bin_line, p, y0);
+        numaReplaceNumber(bin_line, p, y0);
       }
     }
     index += 2;
-  } while(index < num_pts-1);
+  } while(index < num_pts - 1);
   
   pts_recalc = ptaCreate(0);
 
   for (int p = 0; p <= num_bin; ++p) {
     if (p == 0) {
-	  numaGetFValue(bin_line, p, &y);
-      ptaAddPt(pts_recalc, x_min+p, y);
+      numaGetFValue(bin_line, p, &y);
+      ptaAddPt(pts_recalc, x_min + p, y);
     }
     else if (p == num_bin) {
-      ptaAddPt(pts_recalc, x_min+p, y);
+      ptaAddPt(pts_recalc, x_min + p, y);
       break;
     }
-	else {
-		l_float32 val;
-		numaGetFValue(bin_line, p, &val);
-		if (y != val) {
-			if (y != -1.)
-				ptaAddPt(pts_recalc, x_min+p, y);
-			numaGetFValue(bin_line, p, &y);
-			if (y != -1.)
-				ptaAddPt(pts_recalc, x_min+p, y);
-		}
-	}
+    else {
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
+      if (y != val) {
+        if (y != -1.)
+          ptaAddPt(pts_recalc, x_min + p, y);
+        numaGetFValue(bin_line, p, &y);
+        if (y != -1.)
+          ptaAddPt(pts_recalc, x_min + p, y);
+      }
+    }
   }
   
   ptaDestroy(&pts);
@@ -307,7 +307,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_min = std::min(y0, y1);
         GetSlopeAndOffset(x0, y_min, x2, y2, &m, &b);
         if ((m*x1+b) <= y1) {
-		  ptaUpdatePtYCoord(polyline, index-1, std::min(y0, y1));
+      ptaUpdatePtYCoord(polyline, index-1, std::min(y0, y1));
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -316,7 +316,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_max = std::max(y0, y1);
         GetSlopeAndOffset(x0, y_max, x2, y2, &m, &b);
         if ((m*x1+b) >= y1) {
-		  ptaUpdatePtYCoord(polyline, index-1, y_max);
+      ptaUpdatePtYCoord(polyline, index-1, y_max);
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -409,7 +409,7 @@ SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
     ptaGetPt(sorted_baseline_pts, index, &x0, &y0);
     ptaGetPt(sorted_baseline_pts, index+1, &x1, &y1);
     if (x0 >= x1) {
-	  ptaUpdatePtYCoord(sorted_baseline_pts, index, std::min(y0, y1));
+    ptaUpdatePtYCoord(sorted_baseline_pts, index, std::min(y0, y1));
       ptaRemovePt(sorted_baseline_pts, index+1);
     } else {
       index++;
@@ -427,7 +427,7 @@ SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
 Pta*
 ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDirection writing_direction) {
   int num_pts;
-  float m, b, x, y, x0, y0, x1, y1;
+  float m, b, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   Pta *baseline_clipped_pts;  
   
@@ -478,7 +478,6 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   int num_pts, num_bin, index = 0;
   float m, b, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
-  float x_min_bl, y_min_bl, x_max_bl, y_max_bl;
   float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
   NUMA *bin_line, *poly_bl_delta;
   Pta* baseline_recalc_pts = NULL;
@@ -489,7 +488,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   bin_line = numaCreate(num_bin+1);
 
   for (int p = 0; p < num_bin+1; ++p) {
-	  numaReplaceNumber(bin_line, p, -1.);
+    numaReplaceNumber(bin_line, p, -1.);
   }
   
   num_pts = ptaGetCount(bottom_pts);
@@ -500,16 +499,16 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
     if (x0 >= x1) continue;
     if (y0==y1) {
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-		  l_float32 val;
-		  numaGetFValue(bin_line, p, &val);
-		  if (val == -1. || y0 > val) numaSetValue(bin_line, p, y0);
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
+      if (val == -1. || y0 > val) numaSetValue(bin_line, p, y0);
         }
     } else {
       GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-		  l_float32 val;
-		  numaGetFValue(bin_line, p, &val);
-		  if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
+      if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
       }
     }
   }
@@ -539,17 +538,17 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
         y0 = int (x_max*m+b);
         x0 = x_max;
         int x_val = x0-x_min;
-		l_float32 val;
-		numaGetFValue(bin_line, x_val, &val);
-		numaAddNumber(poly_bl_delta, abs(val-y0));
+        l_float32 val;
+        numaGetFValue(bin_line, x_val, &val);
+        numaAddNumber(poly_bl_delta, abs(val-y0));
         ptaAddPt(baseline_clipped_pts, x0, y0);
         break;
       }
     }
     int x_val = x0-x_min;
-	l_float32 val;
-	numaGetFValue(bin_line, x_val, &val);
-	numaAddNumber(poly_bl_delta, abs(val-y0));
+    l_float32 val;
+    numaGetFValue(bin_line, x_val, &val);
+    numaAddNumber(poly_bl_delta, abs(val-y0));
     ptaAddPt(baseline_clipped_pts, x0, y0); 
   }
   
@@ -568,9 +567,9 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   for (int p = 0; p < num_pts; ++p) {
     ptaGetPt(baseline_clipped_pts, p, &x0, &y0);
     int x_val = x0-x_min;
-	l_float32 x_coord;
-	numaGetFValue(bin_line, p, &x_coord);
-	// Delete outliers with IQR
+    l_float32 x_coord;
+    numaGetFValue(bin_line, p, &x_coord);
+    // Delete outliers with IQR
     if (abs(y0-x_coord) > 1.5*delta_median_Q3+delta_median && p != 0 && p != num_pts-1) {
       // If it's the starting or end point adjust the y value in the median delta range
       if (p == 0 || p == num_pts-1) {
