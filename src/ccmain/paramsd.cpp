@@ -291,7 +291,7 @@ void ParamsEditor::Notify(const SVEvent *sve) {
 // empty window and attach the parameters editor to that window (ugly).
 ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference sv) {
   if (!sv) {
-    sv = new ScrollView(tess, "ParamEditorMAIN", 1, 1, 200, 200, 300, 200);
+    sv = ScrollViewManager::MakeScrollView(tess, "ParamEditorMAIN", 1, 1, 200, 200, 300, 200);
   }
 
   sv_window_ = sv;

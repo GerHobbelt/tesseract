@@ -1670,7 +1670,7 @@ void InitFeatureDisplayWindowIfReqd() {
 /// Creates a window of the appropriate size for displaying elements
 /// in feature space.
 ScrollViewReference CreateFeatureSpaceWindow(Tesseract* tesseract_, const char *name, int xpos, int ypos) {
-  return new ScrollView(tesseract_, name, xpos, ypos, 520, 520, 260, 260, true);
+  return ScrollViewManager::MakeScrollView(tesseract_, name, xpos, ypos, 520, 520, 260, 260, true);
 }
 
 #endif // !GRAPHICS_DISABLED

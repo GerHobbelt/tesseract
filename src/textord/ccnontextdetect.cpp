@@ -119,7 +119,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   }
   ScrollViewReference win = nullptr;
 #if !GRAPHICS_DISABLED
-  if (debug && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (debug) {
     win = MakeWindow(tesseract_, 0, 400, "Photo Mask Blobs");
   }
 #endif // !GRAPHICS_DISABLED

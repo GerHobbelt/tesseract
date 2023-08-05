@@ -500,12 +500,15 @@ Tesseract::Tesseract(Tesseract *parent)
     , equ_detect_(nullptr)
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
-    , train_line_page_num_(0) {}
+    , train_line_page_num_(0) {
+  ScrollViewManager::AddActiveTesseractInstance(this);
+}
 
 Tesseract::~Tesseract() {
   Clear();
   end_tesseract();
-  for (auto *lang : sub_langs_) {
+  std::vector<Tesseract *> langs = std::move(sub_langs_);
+  for (auto *lang : langs) {
     delete lang;
   }
 #if !DISABLED_LEGACY_ENGINE
@@ -514,6 +517,7 @@ Tesseract::~Tesseract() {
 #endif // !DISABLED_LEGACY_ENGINE
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
+  ScrollViewManager::RemoveActiveTesseractInstance(this);
 }
 
 Dict &Tesseract::getDict() {

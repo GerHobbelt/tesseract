@@ -646,8 +646,8 @@ private:
 // Position the window at the given x,y.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
 ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess, int x, int y, const char *window_name) {
-  auto tab_win =
-      new ScrollView(tess, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
+  ScrollViewReference tab_win = ScrollViewManager::
+      MakeScrollView(tess, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
                      tright_.x() - bleft_.x(), tright_.y() - bleft_.y(), true);
   auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
   tab_win->AddEventHandler(handler);

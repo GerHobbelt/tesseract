@@ -276,7 +276,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   InitializePartitions(all_columns);
 
 #if !GRAPHICS_DISABLED
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_show_tables) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 0, 300, "Step 1: Column Partitions & Neighbors"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
@@ -318,7 +318,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   GetTableRegions(&table_columns, &table_regions);
 
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 7: Table Columns and Regions"));
     DisplayColSegments(table_win, &table_columns, ScrollView::DARK_TURQUOISE);
     DisplayColSegments(table_win, &table_regions, ScrollView::YELLOW);
@@ -340,7 +340,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     DeleteSingleColumnTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+    if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 8: Detected Table Locations"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
       DisplayColSegments(table_win, &table_columns, ScrollView::KHAKI);
@@ -354,7 +354,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     RecognizeTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+    if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1400, 600, "Step 10: Recognized Tables"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
                            ScrollView::BLUE);
@@ -369,7 +369,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     DeleteSingleColumnTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+    if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1500, 300, "Step 11: Detected Tables"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
                            ScrollView::BLUE);
@@ -761,7 +761,7 @@ void TableFinder::SetGlobalSpacings(ColPartitionGrid *grid) {
   set_global_median_blob_width(static_cast<int>(width_stats.median() + 0.5));
   set_global_median_ledding(static_cast<int>(ledding_stats.median() + 0.5));
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_stats && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_stats) {
     const char *kWindowName = "X-height (R), X-width (G), and ledding (B)";
     ScrollViewReference stats_win(MakeWindow(tesseract_, 500, 10, kWindowName));
     xheight_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::RED);
@@ -809,7 +809,7 @@ void TableFinder::FindNeighbors() {
 void TableFinder::MarkTablePartitions() {
   MarkPartitionsUsingLocalInformation();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 300, 300, "Step 3: Initial Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
@@ -818,7 +818,7 @@ void TableFinder::MarkTablePartitions() {
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 600, 300, "Step 4: Filtered Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
@@ -827,7 +827,7 @@ void TableFinder::MarkTablePartitions() {
 #endif
   SmoothTablePartitionRuns();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 5: Smoothed Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
@@ -836,7 +836,7 @@ void TableFinder::MarkTablePartitions() {
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
-  if ((textord_tablefind_show_mark || textord_show_tables) && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_mark || textord_show_tables) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 6: Final Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
@@ -1901,7 +1901,7 @@ bool TableFinder::GapInXProjection(int *xprojection, int length) {
 void TableFinder::RecognizeTables() {
 #if !GRAPHICS_DISABLED
   ScrollViewReference table_win = nullptr;
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_show_tables) {
     table_win = MakeWindow(tesseract_, 0, 0, "Step 9: Table Structure");
     DisplayColPartitions(table_win, &fragmented_text_grid_, ScrollView::BLUE,
                          ScrollView::LIGHT_BLUE);
@@ -2059,7 +2059,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
                                   const WidthCallback &width_cb) {
 #if !GRAPHICS_DISABLED
   ScrollViewReference table_win;
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_show_tables) {
     table_win = MakeWindow(tesseract_, 0, 0, "Step 12: Final tables");
     DisplayColPartitions(table_win, &fragmented_text_grid_,
                          ScrollView::BLUE, ScrollView::LIGHT_BLUE);

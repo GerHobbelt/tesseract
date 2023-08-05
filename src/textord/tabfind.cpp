@@ -435,7 +435,7 @@ bool TabFind::FindTabVectors(TabVector_LIST *hlines, BLOBNBOX_LIST *image_blobs,
   part_grid->Deskew(*deskew);
   ApplyTabConstraints();
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_finaltabs && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tabfind_show_finaltabs) {
     tab_win = MakeWindow(tesseract_, 640, 50, "FinalTabs");
     DisplayBoxes(tab_win);
     tab_win = DisplayTabs("FinalTabs", tab_win);
@@ -474,26 +474,10 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
   if (textord_debug_tabfind) {
     tprintf("Moved {} large blobs to normal list\n", b_count);
 #if !GRAPHICS_DISABLED
-    if (!tesseract_->debug_do_not_use_scrollview_app) {
       ScrollViewReference rej_win(MakeWindow(tesseract_, 500, 300, "Image blobs"));
       block->plot_graded_blobs(rej_win);
       block->plot_noise_blobs(rej_win);
       rej_win->Update();
-    }
-    else {
-      const char* name = "Image blobs";
-      auto width = tright_.x() - bleft_.x();
-      auto height = tright_.y() - bleft_.y();
-
-      Image pix = pixCreate(width, height, 32 /* RGBA */);
-      pixSetAll(pix);
-
-      block->plot_graded_blobs(pix);
-      //block->plot_noise_blobs(pix);
-
-      tesseract_->AddPixDebugPage(pix, name);
-      pix.destroy();
-    }
 #endif // !GRAPHICS_DISABLED
   }
   block->DeleteUnownedNoise();
@@ -540,7 +524,7 @@ void TabFind::DisplayTabVectors(Image &pix, uint32_t* data, int wpl, int w, int 
 ScrollViewReference TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
                                            double tabfind_aligned_gap_fraction, TO_BLOCK *block) {
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_initialtabs && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tabfind_show_initialtabs) {
     ScrollViewReference line_win(MakeWindow(tesseract_, 0, 0, "VerticalLines"));
     line_win = DisplayTabVectors(line_win);
   }
@@ -610,7 +594,7 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   std::sort(right_tab_boxes_.begin(), right_tab_boxes_.end(), StdSortRightToLeft<BLOBNBOX>);
   ScrollViewReference tab_win;
 #if !GRAPHICS_DISABLED
-  if (textord_tabfind_show_initialtabs && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(tesseract_, 0, 100, "InitialTabs");
     tab_win->Pen(ScrollView::BLUE);
     tab_win->Brush(ScrollView::NONE);

@@ -186,7 +186,7 @@ void SVPaint::Notify(const SVEvent *sv_event) {
 // Builds a new window, initializes the variables and event handler and builds
 // the menu.
 SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
-  window_ = new ScrollView(tess,
+  window_ = ScrollViewManager::MakeScrollView(tess,
                            "ScrollView Paint Example", // window caption
                            0, 0,                       // x,y window position
                            500, 500,                   // window size

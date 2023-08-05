@@ -262,58 +262,21 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
 
 #if !GRAPHICS_DISABLED
     if (textord_show_blobs) {
-      if (!tesseract_->debug_do_not_use_scrollview_app) {
         if (!to_win) {
           create_to_win(page_tr);
         }
+        to_win->Comment("filter_blobs: Rejected blobs");
         block->plot_graded_blobs(to_win);
-      }
-      else {
-        const char* name = "filter_blobs: Rejected blobs";
-        auto width = tesseract_->ImageWidth();
-        auto height = tesseract_->ImageHeight();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixSetAll(pix);
-
-        block->plot_graded_blobs(pix);
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
     }
     if (textord_show_boxes) {
-      if (!tesseract_->debug_do_not_use_scrollview_app) {
         if (!to_win) {
           create_to_win(page_tr);
         }
+        to_win->Comment("filter_blobs: Rejected blobs");
         plot_box_list(to_win, &block->noise_blobs, ScrollView::WHITE);
         plot_box_list(to_win, &block->small_blobs, ScrollView::WHITE);
         plot_box_list(to_win, &block->large_blobs, ScrollView::WHITE);
         plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
-      }
-      else {
-        const char* name = "filter_blobs: Rejected blobs";
-        auto width = tesseract_->ImageWidth();
-        auto height = tesseract_->ImageHeight();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixClearAll(pix);
-
-        auto cmap = initDiagPlotColorMap();
-
-        int cmap_offset = 0;
-        plot_box_list(pix, &block->noise_blobs, cmap, cmap_offset, true);
-        cmap_offset = 64;
-        plot_box_list(pix, &block->small_blobs, cmap, cmap_offset, false);
-        cmap_offset = 2 * 64;
-        plot_box_list(pix, &block->large_blobs, cmap, cmap_offset, false);
-        cmap_offset = 3 * 64;
-        plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
     }
 #endif // !GRAPHICS_DISABLED
   }

@@ -488,6 +488,10 @@ void ScrollView::SendPolygon() {
  * LUA "API" functions.
  *******************************************************************************/
 
+void ScrollView::Comment(std::string text) {
+  // NO-OP for ScrollView JAVA app
+}
+
 // Sets the position from which to draw to (x,y).
 void ScrollView::SetCursor(int x, int y) {
   SendPolygon();
@@ -845,6 +849,395 @@ ScrollViewReference& ScrollViewReference::operator=(ScrollView* new_view) {
   view_ = new_view;
   return *this;
 }
+
+////////////////////////////////////////////////////////////////////////
+
+// if (tesseract_->interactive_display_mode && !tesseract_->debug_do_not_use_scrollview_app) ...
+
+
+ScrollViewManager::ScrollViewManager() {
+  active = nullptr;
+}
+
+ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
+  static ScrollViewManager mgr;
+
+  return mgr;
+}
+
+ScrollViewManager::~ScrollViewManager() {
+}
+
+ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size) {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  mgr.SetActiveTesseractInstance(tess);
+  tess = mgr.GetActiveTesseractInstance();
+  return new ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size);
+}
+
+// With a flag whether the x axis is reversed.
+ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed) {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  mgr.SetActiveTesseractInstance(tess);
+  tess = mgr.GetActiveTesseractInstance();
+  return new ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed);
+}
+
+// Connect to a server other than localhost.
+ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  mgr.SetActiveTesseractInstance(tess);
+  tess = mgr.GetActiveTesseractInstance();
+  return new ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed, server_name);
+}
+
+  // set this instance to be the latest active one
+void ScrollViewManager::SetActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  mgr.AddActiveTesseractInstance(tess);
+}
+
+// add this instance to the list of active tesseract instance but don't put it on top yet...
+void ScrollViewManager::AddActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  auto it = std::find(mgr.active_set.begin(), mgr.active_set.end(), tess);
+  if (it == mgr.active_set.end()) {
+    mgr.active_set.push_back(tess);
+    mgr.active = mgr.active_set.front();
+  }
+}
+
+// remove the given instance from the active set as its object is currently
+// being destroyed.
+void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  auto it = std::find(mgr.active_set.begin(), mgr.active_set.end(), tess);
+  if (it != mgr.active_set.end()) {
+    mgr.active_set.erase(it);
+    mgr.active = nullptr;
+  }
+}
+
+Tesseract *ScrollViewManager::GetActiveTesseractInstance() {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  if (mgr.active)
+    return mgr.active;
+  if (mgr.active_set.empty())
+    return nullptr;
+  mgr.active = mgr.active_set.front();
+  return mgr.active;
+}
+
+
+
+
+#if 0
+
+      XXXXXXXXXXXX {
+        const char* name = "filter_blobs: Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+        block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+              XXXXXXXXXXXXXXX {
+        const char* name = "filter_blobs: Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        auto cmap = initDiagPlotColorMap();
+
+        int cmap_offset = 0;
+        plot_box_list(pix, &block->noise_blobs, cmap, cmap_offset, true);
+        cmap_offset = 64;
+        plot_box_list(pix, &block->small_blobs, cmap, cmap_offset, false);
+        cmap_offset = 2 * 64;
+        plot_box_list(pix, &block->large_blobs, cmap, cmap_offset, false);
+        cmap_offset = 3 * 64;
+        plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+          XXXXXXXXXXXXXXX {
+      const char* name = "Image blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
+
+      block->plot_graded_blobs(pix);
+      //block->plot_noise_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+              XXXXX {
+      const char* name = "Filtered Input Blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix(pixCreate(width, height, 32 /* RGBA */));
+      pixSetAll(pix);
+
+      input_block->plot_graded_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+
+
+      XXXXXX {
+        const char* name = "FindBlocks: Rejected blobs";
+        auto width = tright_.x() - bleft_.x();
+        auto height = tright_.y() - bleft_.y();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+        input_block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+
+
+
+
+
+
+
+    XXXXXXXXXXXX {
+      const char* name = "InitialPartitions";
+      auto width = tesseract_->ImageWidth();
+      auto height = tesseract_->ImageHeight();
+
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
+
+#    if 0
+      BOX* border = boxCreate(2, 2, width + 4, height + 4);
+      // boxDestroy(BOX * *pbox);
+      BOXA* boxlist = boxaCreate(1);
+      boxaAddBox(boxlist, border, false);
+      //boxaDestroy(BOXA * *pboxa);
+      l_uint32 bordercolor;
+      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      boxaDestroy(&boxlist);
+#    endif
+
+      int w, h;
+      pixGetDimensions(pix, &w, &h, NULL);
+      l_uint32* data = pixGetData(pix);
+      int wpl = pixGetWpl(pix);
+
+      part_grid_.DisplayBoxes(pix, data, wpl, w, h);
+      DisplayTabVectors(pix, data, wpl, w, h);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+
+
+
+
+
+          XXXXXXX {
+        const char* name = "Partitions";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+#    if 0
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
+#    endif
+
+        int w, h;
+        pixGetDimensions(pix, &w, &h, NULL);
+        l_uint32* data = pixGetData(pix);
+        int wpl = pixGetWpl(pix);
+
+        part_grid_.DisplayBoxes(pix, data, wpl, w, h);
+        if (!textord_debug_printable) {
+          DisplayTabVectors(pix, data, wpl, w, h);
+        }
+#    if 0
+        if (textord_tabfind_show_partitions > 1) {
+          window->AwaitEvent(SVET_DESTROY);
+        }
+#    endif
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+            XXXXXXXXXXXXX {
+    const char* name = "Blocks";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
+
+#    if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#    endif
+
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
+    BLOCK_IT block_it(blocks);
+    int serial = 1;
+    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
+      BLOCK* block = block_it.data();
+      block->pdblk.plot(pix, serial++, data, wpl, w, h);
+    }
+
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  XXXXXXXXXXXXXXXXX {
+    const char* name = "Columns";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
+
+#    if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#    endif
+
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
+    //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    for (int i = 0; i < gridheight_; ++i) {
+      ColPartitionSet* columns = best_columns_[i];
+      if (columns != nullptr) {
+        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix, data, wpl, w, h);
+      }
+    }
+
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif
+
 
 #endif // !GRAPHICS_DISABLED
 

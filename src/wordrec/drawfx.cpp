@@ -48,7 +48,7 @@ ScrollViewReference fx_win = nullptr;
  **********************************************************************/
 
 void create_fx_win() { // make features win
-  fx_win = new ScrollView(TESSERACT_NULLPTR, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
+  fx_win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
                           WERDWIDTH * 2, BLN_MAX * 2, true);
 }
 

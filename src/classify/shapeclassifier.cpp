@@ -100,7 +100,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
                                    UNICHAR_ID unichar_id) {
   static ScrollViewReference terminator = nullptr;
   if (!terminator) {
-    terminator = new ScrollView(TESSERACT_NULLPTR, "XIT", 0, 0, 50, 50, 50, 50, true);
+    terminator = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "XIT", 0, 0, 50, 50, 50, 50, true);
   }
   ScrollViewReference debug_win = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "ClassifierDebug", 0, 0);
   // Provide a right-click menu to choose the class.
