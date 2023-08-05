@@ -895,7 +895,6 @@ void IntegerMatcher::DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT
   uint16_t ProtoNum;
   uint8_t ProtoWordNum;
   PROTO_SET_STRUCT *ProtoSet;
-  uint16_t ActualProtoNum;
 
   if (PrintMatchSummaryOn(Debug)) {
     tprintDebug("Configuration Mask:\n");
@@ -915,9 +914,8 @@ void IntegerMatcher::DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT
   if (PrintMatchSummaryOn(Debug)) {
     tprintDebug("Proto Mask:\n");
     for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
-      ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
       for (ProtoWordNum = 0; ProtoWordNum < 2; ProtoWordNum++, ProtoMask++) {
-        ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
+        uint16_t ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
         for (ProtoNum = 0; ((ProtoNum < (PROTOS_PER_PROTO_SET >> 1)) &&
                             (ActualProtoNum < ClassTemplate->NumProtos));
              ProtoNum++, ActualProtoNum++) {
@@ -937,7 +935,7 @@ void IntegerMatcher::DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT
     tprintDebug("Proto Evidence:\n");
     for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
       ProtoSet = ClassTemplate->ProtoSets[ProtoSetIndex];
-      ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
+      uint16_t ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
       for (ProtoNum = 0;
            ((ProtoNum < PROTOS_PER_PROTO_SET) && (ActualProtoNum < ClassTemplate->NumProtos));
            ProtoNum++, ActualProtoNum++) {
