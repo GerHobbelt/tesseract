@@ -367,7 +367,6 @@ static ScrollViewReference bln_word_window_handle(Tesseract *tess) { // return h
  *  Destroy the existing image window if there is one.  Work out how big the
  *  new window needs to be. Create it and re-display.
  */
-
 static void build_image_window(Tesseract *tess, int width, int height) {
   image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
                              width + 1, height + editor_image_menuheight + 1, width, height, true);
@@ -378,7 +377,6 @@ static void build_image_window(Tesseract *tess, int width, int height) {
  *
  *  Display normalized baseline, x-height, ascender limit and descender limit
  */
-
 static void display_bln_lines(ScrollViewReference window, ScrollView::Color colour, float scale_factor,
                               float y_offset, float minx, float maxx) {
   window->Pen(colour);
@@ -396,9 +394,7 @@ static void display_bln_lines(ScrollViewReference window, ScrollView::Color colo
  *
  *  Event handler that processes incoming events, either forwarding
  *  them to process_cmd_win_event or process_image_event.
- *
  */
-
 void PGEventHandler::Notify(const SVEvent *event) {
   char myval = '0';
   if (event->type == SVET_POPUP) {
@@ -500,9 +496,7 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
  *
  *  Top level editor operation:
  *  Setup a new window and an according event handler
- *
  */
-
 void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   current_page_res = page_res;
   if (current_page_res->block_res_list.empty()) {
@@ -518,6 +512,12 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
   do_re_display(&tesseract::Tesseract::word_set_display);
+
+  ASSERT0(image_win);
+  if (!image_win->HasInteractiveFeature()) {
+    return;
+  }
+
 #if !GRAPHICS_DISABLED
   pe = new ParamsEditor(this, image_win);
 #endif
@@ -543,7 +543,6 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
  *  Process a command returned from the command window
  * (Just call the appropriate command handler)
  */
-
 bool Tesseract::process_cmd_win_event( // UI command semantics
     int32_t cmd_event,                 // which menu item?
     const char *new_value              // any prompt data

@@ -59,6 +59,10 @@ public:
   ScrollViewReference(ScrollView *view);
   ~ScrollViewReference();
 
+  ScrollView *GetRef() const {
+    return view_;
+  }
+
   ScrollView *operator->() const {
     return view_;
   }
@@ -211,6 +215,10 @@ public:
    * overwritten to process the event the way you want.
    *******************************************************************************/
 
+  virtual bool HasInteractiveFeature() const {
+    return false;
+  }
+
   // Add an Event Listener to this ScrollView Window.
   virtual void AddEventHandler(SVEventHandler *listener) = 0;
 
@@ -253,6 +261,9 @@ public:
 
   // Exit the program.
   static void Exit();
+
+  // Helper function to exit the program.
+  virtual void ExitHelper() = 0;
 
   // Update the contents of a specific window.
   virtual void UpdateWindow() = 0;
@@ -480,6 +491,10 @@ public:
    * overwritten to process the event the way you want.
    *******************************************************************************/
 
+  virtual bool HasInteractiveFeature() const {
+    return true;
+  }
+
   // Add an Event Listener to this ScrollView Window.
   virtual void AddEventHandler(SVEventHandler *listener);
 
@@ -498,6 +513,9 @@ public:
 
   // Draw an image on (x,y).
   virtual void Draw(Image image, int x_pos, int y_pos);
+
+  // Helper function to exit the program.
+  virtual void ExitHelper();
 
   // Update the contents of a specific window.
   virtual void UpdateWindow();
@@ -671,6 +689,7 @@ protected:
 #endif // !GRAPHICS_DISABLED
 };
 
+/////////////////////////////////////////////////////////////////////////
 
 // The BackgroundScrollView class provides the external API to the scrollview-to-DebugPIXA logging path.
 class TESS_API BackgroundScrollView : public ScrollView {
@@ -721,6 +740,9 @@ public:
 
   // Draw an image on (x,y).
   virtual void Draw(Image image, int x_pos, int y_pos);
+
+  // Helper function to exit the program.
+  virtual void ExitHelper();
 
   // Update the contents of a specific window.
   virtual void UpdateWindow();

@@ -119,7 +119,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
   const UNICHARSET &unicharset = GetUnicharset();
   SVEventType ev_type;
   do {
-    std::vector<ScrollViewReference > windows;
+    std::vector<ScrollViewReference> windows;
     if (unichar_id >= 0) {
       tprintf("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
       UnicharClassifySample(sample, 1, unichar_id, &results);

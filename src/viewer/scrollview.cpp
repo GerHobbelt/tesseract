@@ -626,9 +626,8 @@ void InteractiveScrollView::AddMessageBox() {
 }
 
 // Exit the client completely (and notify the server of it).
-void ScrollView::Exit() {
+void InteractiveScrollView::ExitHelper() {
   SendRawMessage("svmain:exit()");
-  exit(0);
 }
 
 // Clear the canvas.
@@ -783,6 +782,20 @@ void ScrollView::Update() {
   }
 }
 
+// 
+void ScrollView::Exit() {
+  // limit scope of lock
+  {
+    std::lock_guard<std::mutex> guard(*svmap_mu);
+    for (auto &iter : svmap) {
+      if (iter.second) {
+        iter.second->ExitHelper();
+      }
+    }
+  }
+  exit(667);
+}
+
 // Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
 void InteractiveScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
@@ -893,6 +906,500 @@ int InteractiveScrollView::TranslateYCoordinate(int y) {
 }
 
 char InteractiveScrollView::Wait() {
+  // Wait till an input or click event (all others are thrown away)
+  char ret = '\0';
+  SVEventType ev_type = SVET_ANY;
+  do {
+    std::unique_ptr<SVEvent> ev(AwaitEvent(SVET_ANY));
+    ev_type = ev->type;
+    if (ev_type == SVET_INPUT) {
+      ret = ev->parameter[0];
+    }
+  } while (ev_type != SVET_INPUT && ev_type != SVET_CLICK);
+  return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Calls Initialize with all arguments given.
+BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
+                                             int x_pos, int y_pos, int x_size,
+                                             int y_size, int x_canvas_size,
+                                             int y_canvas_size,
+                                             bool y_axis_reversed,
+                                             const char *server_name)
+    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+                 y_canvas_size, y_axis_reversed, server_name) {
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, y_axis_reversed, server_name);
+}
+
+/// Calls Initialize with default argument for server_name_.
+BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
+                                             int x_pos, int y_pos, int x_size,
+                                             int y_size, int x_canvas_size,
+                                             int y_canvas_size,
+                                             bool y_axis_reversed)
+    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+                 y_canvas_size, y_axis_reversed) {
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, y_axis_reversed, "localhost");
+}
+
+/// Calls Initialize with default argument for server_name_ & y_axis_reversed.
+BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
+                                             int x_pos, int y_pos, int x_size,
+                                             int y_size, int x_canvas_size,
+                                             int y_canvas_size)
+    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+                 y_canvas_size) {
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, false, "localhost");
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
+                                       int x_pos, int y_pos, int x_size,
+                                       int y_size, int x_canvas_size,
+                                       int y_canvas_size, bool y_axis_reversed,
+                                       const char *server_name) {
+
+  // Set up the variables on the clientside.
+  nr_created_windows_++;
+  window_id_ = nr_created_windows_;
+
+  svmap_mu->lock();
+  svmap[window_id_] = this;
+  svmap_mu->unlock();
+
+  std::thread t(&BackgroundScrollView::StartEventHandler, this);
+  t.detach();
+}
+
+/// Sits and waits for events on this window.
+void BackgroundScrollView::StartEventHandler() {
+  ASSERT0(!"Should never get here!");
+}
+#endif // !GRAPHICS_DISABLED
+
+BackgroundScrollView::~BackgroundScrollView() {
+#if !GRAPHICS_DISABLED
+  svmap_mu->lock();
+    svmap[window_id_] = nullptr;
+    svmap_mu->unlock();
+#endif // !GRAPHICS_DISABLED
+}
+
+#if !GRAPHICS_DISABLED
+/// Send a message to the server, attaching the window id.
+void BackgroundScrollView::vSendMsg(fmt::string_view format,
+                                    fmt::format_args args) {
+    auto message = fmt::vformat(format, args);
+}
+
+/// Add an Event Listener to this ScrollView Window
+void BackgroundScrollView::AddEventHandler(SVEventHandler *listener) {
+  event_handler_ = listener;
+}
+
+void BackgroundScrollView::Signal() {
+  semaphore_->Signal();
+}
+
+void BackgroundScrollView::SetEvent(const SVEvent *svevent) {
+  // Copy event
+  auto any = svevent->copy();
+  auto specific = svevent->copy();
+  any->counter = specific->counter + 1;
+
+  // Place both events into the queue.
+  std::lock_guard<std::mutex> guard(mutex_);
+
+  event_table_[specific->type] = std::move(specific);
+  event_table_[SVET_ANY] = std::move(any);
+}
+
+/// Block until an event of the given type is received.
+/// Note: The calling function is responsible for deleting the returned
+/// SVEvent afterwards!
+std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
+  // Initialize the waiting semaphore.
+  auto *sem = new SVSemaphore();
+  std::pair<ScrollViewReference, SVEventType> ea(this, type);
+  waiting_for_events_mu->lock();
+  waiting_for_events[ea] = {sem, nullptr};
+  waiting_for_events_mu->unlock();
+  sem->Wait();
+  // Process the event we got woken up for (it's in waiting_for_events pair).
+  waiting_for_events_mu->lock();
+  auto ret = std::move(waiting_for_events[ea].second);
+  waiting_for_events.erase(ea);
+  delete sem;
+  waiting_for_events_mu->unlock();
+  return ret;
+}
+
+// Send the current buffered polygon (if any) and clear it.
+void BackgroundScrollView::SendPolygon() {
+  if (!points_->empty) {
+    points_->empty = true; // Allows us to use SendMsg.
+    int length = points_->xcoords.size();
+    // length == 1 corresponds to 2 SetCursors in a row and only the
+    // last setCursor has any effect.
+    if (length == 2) {
+      // An isolated line!
+      SendMsg("drawLine(%d,%d,%d,%d)", points_->xcoords[0], points_->ycoords[0],
+              points_->xcoords[1], points_->ycoords[1]);
+    } else if (length > 2) {
+      // A polyline.
+      SendMsg("createPolyline(%d)", length);
+      char coordpair[kMaxIntPairSize];
+      std::string decimal_coords;
+      for (int i = 0; i < length; ++i) {
+        snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i],
+                 points_->ycoords[i]);
+        decimal_coords += coordpair;
+      }
+      decimal_coords += '\n';
+      SendMsg(decimal_coords.c_str());
+      SendMsg("drawPolyline()");
+    }
+    points_->xcoords.clear();
+    points_->ycoords.clear();
+  }
+}
+
+/*******************************************************************************
+ * LUA "API" functions.
+ *******************************************************************************/
+
+void BackgroundScrollView::Comment(std::string text) {
+  // NO-OP for ScrollView JAVA app
+}
+
+// Sets the position from which to draw to (x,y).
+void BackgroundScrollView::SetCursor(int x, int y) {
+  SendPolygon();
+  DrawTo(x, y);
+}
+
+// Draws from the current position to (x,y) and sets the new position to it.
+void BackgroundScrollView::DrawTo(int x, int y) {
+  points_->xcoords.push_back(x);
+  points_->ycoords.push_back(TranslateYCoordinate(y));
+  points_->empty = false;
+}
+
+// Draw a line using the current pen color.
+void BackgroundScrollView::Line(int x1, int y1, int x2, int y2) {
+  if (!points_->xcoords.empty() && x1 == points_->xcoords.back() &&
+      TranslateYCoordinate(y1) == points_->ycoords.back()) {
+    // We are already at x1, y1, so just draw to x2, y2.
+    DrawTo(x2, y2);
+  } else if (!points_->xcoords.empty() && x2 == points_->xcoords.back() &&
+             TranslateYCoordinate(y2) == points_->ycoords.back()) {
+    // We are already at x2, y2, so just draw to x1, y1.
+    DrawTo(x1, y1);
+  } else {
+    // This is a new line.
+    SetCursor(x1, y1);
+    DrawTo(x2, y2);
+  }
+}
+
+// Set the visibility of the window.
+void BackgroundScrollView::SetVisible(bool visible) {
+  if (visible) {
+    SendMsg("setVisible(true)");
+  } else {
+    SendMsg("setVisible(false)");
+  }
+}
+
+// Set the alwaysOnTop flag.
+void BackgroundScrollView::AlwaysOnTop(bool b) {
+  if (b) {
+    SendMsg("setAlwaysOnTop(true)");
+  } else {
+    SendMsg("setAlwaysOnTop(false)");
+  }
+}
+
+// Adds a message entry to the message box.
+void BackgroundScrollView::vAddMessage(fmt::string_view format,
+                                        fmt::format_args args) {
+  auto message = fmt::vformat(format, args);
+
+  char form[kMaxMsgSize];
+  snprintf(form, sizeof(form), "w%u:%s", window_id_, message.c_str());
+
+  char *esc = AddEscapeChars(form);
+  SendMsg("addMessage(\"{}\")", esc);
+  delete[] esc;
+}
+
+// Set a messagebox.
+void BackgroundScrollView::AddMessageBox() {
+  SendMsg("addMessageBox()");
+}
+
+// Exit the client completely (and notify the server of it).
+void BackgroundScrollView::ExitHelper() {
+  SendMsg("svmain:exit()");
+}
+
+// Clear the canvas.
+void BackgroundScrollView::Clear() {
+  SendMsg("clear()");
+}
+
+// Set the stroke width.
+void BackgroundScrollView::Stroke(float width) {
+  SendMsg("setStrokeWidth({})", width);
+}
+
+// Draw a rectangle using the current pen color.
+// The rectangle is filled with the current brush color.
+void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
+  if (x1 == x2 && y1 == y2) {
+    return; // Scrollviewer locks up.
+  }
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
+          TranslateYCoordinate(y2));
+}
+
+// Draw an ellipse using the current pen color.
+// The ellipse is filled with the current brush color.
+void BackgroundScrollView::Ellipse(int x1, int y1, int width, int height) {
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
+          height);
+}
+
+// Set the pen color to the given RGB values.
+void BackgroundScrollView::Pen(int red, int green, int blue) {
+  SendMsg("pen({},{},{})", red, green, blue);
+}
+
+// Set the pen color to the given RGB values.
+void BackgroundScrollView::Pen(int red, int green, int blue, int alpha) {
+  SendMsg("pen({},{},{},{})", red, green, blue, alpha);
+}
+
+// Set the brush color to the given RGB values.
+void BackgroundScrollView::Brush(int red, int green, int blue) {
+  SendMsg("brush({},{},{})", red, green, blue);
+}
+
+// Set the brush color to the given RGB values.
+void BackgroundScrollView::Brush(int red, int green, int blue, int alpha) {
+  SendMsg("brush({},{},{},{})", red, green, blue, alpha);
+}
+
+// Set the attributes for future Text(..) calls.
+void BackgroundScrollView::TextAttributes(const char *font, int pixel_size,
+                                           bool bold, bool italic,
+                                           bool underlined) {
+  const char *b;
+  const char *i;
+  const char *u;
+
+  if (bold) {
+    b = "true";
+  } else {
+    b = "false";
+  }
+  if (italic) {
+    i = "true";
+  } else {
+    i = "false";
+  }
+  if (underlined) {
+    u = "true";
+  } else {
+    u = "false";
+  }
+  SendMsg("textAttributes('{}',{},{},{},{})", font, pixel_size, b, i, u);
+}
+
+// Draw text at the given coordinates.
+void BackgroundScrollView::Text(int x, int y, const char *mystring) {
+  SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
+}
+
+// Open and draw an image given a name at (x,y).
+void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
+  SendMsg("openImage('{}')", image);
+  SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
+}
+
+// Add new checkboxmenuentry to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent, bool flag) {
+  if (parent == nullptr) {
+    parent = "";
+  }
+  if (flag) {
+    SendMsg("addMenuBarItem('{}','{}',{},true)", parent, name, cmdEvent);
+  } else {
+    SendMsg("addMenuBarItem('{}','{}',{},false)", parent, name, cmdEvent);
+  }
+}
+
+// Add new menuentry to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent) {
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addMenuBarItem('{}','{}',{})", parent, name, cmdEvent);
+}
+
+// Add new submenu to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name) {
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addMenuBarItem('{}','{}')", parent, name);
+}
+
+// Add new submenu to popupmenu.
+void BackgroundScrollView::PopupItem(const char *parent, const char *name) {
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addPopupMenuItem('{}','{}')", parent, name);
+}
+
+// Add new submenuentry to popupmenu.
+void BackgroundScrollView::PopupItem(const char *parent, const char *name,
+                                      int cmdEvent, const char *value,
+                                      const char *desc) {
+  if (parent == nullptr) {
+    parent = "";
+  }
+  char *esc = AddEscapeChars(value);
+  char *esc2 = AddEscapeChars(desc);
+  SendMsg("addPopupMenuItem('{}','{}',{},'{}','{}')", parent, name, cmdEvent,
+          esc, esc2);
+  delete[] esc;
+  delete[] esc2;
+}
+
+// Send an update message for a single window.
+void BackgroundScrollView::UpdateWindow() {
+  SendMsg("update()");
+}
+
+// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+void BackgroundScrollView::Pen(Color color) {
+  Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
+      table_colors[color][3]);
+}
+
+// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+void BackgroundScrollView::Brush(Color color) {
+  Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
+        table_colors[color][3]);
+}
+
+// Shows a modal Input Dialog which can return any kind of String
+char *BackgroundScrollView::ShowInputDialog(const char *msg) {
+  SendMsg("showInputDialog(\"{}\")", msg);
+  // wait till an input event (all others are thrown away)
+  auto ev = AwaitEvent(SVET_INPUT);
+  char *p = new char[strlen(ev->parameter) + 1];
+  strcpy(p, ev->parameter);
+  return p;
+}
+
+// Shows a modal Yes/No Dialog which will return 'y' or 'n'
+int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
+  SendMsg("showYesNoDialog(\"{}\")", msg);
+  // Wait till an input event (all others are thrown away)
+  auto ev = AwaitEvent(SVET_INPUT);
+  int a = ev->parameter[0];
+  return a;
+}
+
+// Zoom the window to the rectangle given upper left corner and
+// lower right corner.
+void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+  y1 = TranslateYCoordinate(y1);
+  y2 = TranslateYCoordinate(y2);
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
+          std::max(x1, x2), std::max(y1, y2));
+}
+
+// Send an image of type Pix.
+void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos) {
+  l_uint8 *data;
+  size_t size;
+  pixWriteMem(&data, &size, image, IFF_PNG);
+  int base64_len = (size + 2) / 3 * 4;
+  y_pos = TranslateYCoordinate(y_pos);
+  SendMsg("readImage({},{},{})", x_pos, y_pos, base64_len);
+  // Base64 encode the data.
+  const char kBase64Table[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
+  };
+  char *base64 = new char[base64_len + 1];
+  memset(base64, '=', base64_len);
+  base64[base64_len] = '\0';
+  int remainder = 0;
+  int bits_left = 0;
+  int code_len = 0;
+  for (size_t i = 0; i < size; ++i) {
+    int code = (data[i] >> (bits_left + 2)) | remainder;
+    base64[code_len++] = kBase64Table[code & 63];
+    bits_left += 2;
+    remainder = data[i] << (6 - bits_left);
+    if (bits_left == 6) {
+      base64[code_len++] = kBase64Table[remainder & 63];
+      bits_left = 0;
+      remainder = 0;
+    }
+  }
+  if (bits_left > 0) {
+    base64[code_len++] = kBase64Table[remainder & 63];
+  }
+  SendMsg(base64);
+  delete[] base64;
+  lept_free(data);
+}
+
+// Escapes the ' character with a \, so it can be processed by LUA.
+// Note: The caller will have to make sure it deletes the newly allocated item.
+char *BackgroundScrollView::AddEscapeChars(const char *input) {
+  const char *nextptr = strchr(input, '\'');
+  const char *lastptr = input;
+  char *message = new char[kMaxMsgSize];
+  int pos = 0;
+  while (nextptr != nullptr) {
+    strncpy(message + pos, lastptr, nextptr - lastptr);
+    pos += nextptr - lastptr;
+    message[pos] = '\\';
+    pos += 1;
+    lastptr = nextptr;
+    nextptr = strchr(nextptr + 1, '\'');
+  }
+  strcpy(message + pos, lastptr);
+  return message;
+}
+
+// Inverse the Y axis if the coordinates are actually inversed.
+int BackgroundScrollView::TranslateYCoordinate(int y) {
+  if (!y_axis_is_reversed_) {
+    return y;
+  } else {
+    return y_size_ - y;
+  }
+}
+
+char BackgroundScrollView::Wait() {
   // Wait till an input or click event (all others are thrown away)
   char ret = '\0';
   SVEventType ev_type = SVET_ANY;
