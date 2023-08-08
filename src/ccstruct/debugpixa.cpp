@@ -107,6 +107,7 @@ namespace tesseract {
 
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
+    ASSERT0(depth >= 1 && depth <= 32);
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else

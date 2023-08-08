@@ -2341,6 +2341,7 @@ void TessBaseAPI::End() {
   delete equ_detect_;
   equ_detect_ = nullptr;
 #endif // !DISABLED_LEGACY_ENGINE
+
   delete tesseract_;
   tesseract_ = nullptr;
   pixDestroy(&pix_visible_image_);

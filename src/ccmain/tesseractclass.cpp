@@ -505,6 +505,8 @@ Tesseract::Tesseract(Tesseract *parent)
 }
 
 Tesseract::~Tesseract() {
+  ScrollViewManager::RemoveActiveTesseractInstance(this);
+
   Clear();
   end_tesseract();
   std::vector<Tesseract *> langs = std::move(sub_langs_);
@@ -517,7 +519,6 @@ Tesseract::~Tesseract() {
 #endif // !DISABLED_LEGACY_ENGINE
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
-  ScrollViewManager::RemoveActiveTesseractInstance(this);
 }
 
 Dict &Tesseract::getDict() {

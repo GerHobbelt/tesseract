@@ -39,7 +39,7 @@ namespace tesseract {
 // title of window
 #  define DEBUG_WIN_NAME "FXDebug"
 
-ScrollViewReference fx_win = nullptr;
+ScrollViewReference fx_win;
 
 /**********************************************************************
  * create_fx_win
@@ -50,6 +50,7 @@ ScrollViewReference fx_win = nullptr;
 void create_fx_win() { // make features win
   fx_win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
                           WERDWIDTH * 2, BLN_MAX * 2, true);
+  fx_win->RegisterGlobalRefToMe(&fx_win);
 }
 
 /**********************************************************************

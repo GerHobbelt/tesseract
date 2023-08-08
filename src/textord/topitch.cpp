@@ -1355,14 +1355,14 @@ float compute_pitch_sd(        // find fp cells
                                    projection, &seg_list);
     }
     if (1) {
-      tprintf("Word ending at ({},{}), len={}, sync rating={}, ", prev_box.right(), prev_box.top(),
+      tprintf("Word ending at ({},{}), len={}, sync rating={}, positions: ", prev_box.right(), prev_box.top(),
               seg_list.length() - 1, word_sync);
       seg_it.set_to_list(&seg_list);
       for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
         if (seg_it.data()->faked) {
           tprintf("(F)");
         }
-        tprintf("{}, ", seg_it.data()->position());
+        tprintf("x={}, ", seg_it.data()->position());
         //                              tprintf("C={}, s={}, sq={}\n",
         //                                      seg_it.data()->cost_function(),
         //                                      seg_it.data()->sum(),

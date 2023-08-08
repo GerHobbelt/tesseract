@@ -33,7 +33,7 @@ namespace tesseract {
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
-ScrollViewReference blob_window = nullptr;
+ScrollViewReference blob_window;
 
 ScrollView::Color color_list[] = {ScrollView::RED,  ScrollView::CYAN,  ScrollView::YELLOW,
                                   ScrollView::BLUE, ScrollView::GREEN, ScrollView::WHITE};
@@ -55,6 +55,7 @@ void display_blob(TBLOB *blob, ScrollView::Color color) {
   /* Size of drawable */
   if (!blob_window) {
     blob_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Blobs", 520, 10, 500, 256, 2000, 256, true);
+    blob_window->RegisterGlobalRefToMe(&blob_window);
   } else {
     blob_window->Clear();
   }

@@ -34,7 +34,7 @@ namespace tesseract {
 
 BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
-ScrollViewReference to_win = nullptr;
+ScrollViewReference to_win;
 
 #if !GRAPHICS_DISABLED
 
@@ -50,6 +50,7 @@ ScrollViewReference &create_to_win(ICOORD page_tr) {
   }
   to_win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, TO_WIN_NAME, TO_WIN_XPOS, TO_WIN_YPOS, page_tr.x() + 1, page_tr.y() + 1,
                           page_tr.x(), page_tr.y(), true);
+  to_win->RegisterGlobalRefToMe(&to_win);
   return to_win;
 }
 
@@ -57,6 +58,8 @@ void close_to_win() {
   // to_win is leaked, but this enables the user to view the contents.
   if (to_win) {
     to_win->Update();
+    //to_win->ExitHelper();
+    to_win = nullptr;
   }
 }
 

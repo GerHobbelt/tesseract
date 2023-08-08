@@ -48,6 +48,7 @@ void display_edgepts(LIST outlines) {
   /* Set up window */
   if (!edge_window) {
     edge_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Edges", 750, 150, 400, 128, 800, 256, true);
+    edge_window->RegisterGlobalRefToMe(&edge_window);
   } else {
     edge_window->Clear();
   }

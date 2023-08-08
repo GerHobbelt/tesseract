@@ -240,6 +240,13 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
     std::stringstream stream(value);
     stream.imbue(std::locale::classic());
     stream >> intval;
+    if (intval == 0) {
+      std::string sv(stream.str());
+      if (!sv.empty() &&
+          (sv[0] == 'T' || sv[0] == 't' || sv[0] == 'Y' || sv[0] == 'y')) {
+        intval = 1;
+      }
+    }
     if (intval != INT_MIN) {
       ip->set_value(intval);
     }

@@ -344,7 +344,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   *scale_factor = min_width / *scale_factor;
   inputs->set_int_mode(IsIntMode());
   if (HasDebug()) {
-    tprintf("Scale_factor:{}, int_mode:{}\n", *scale_factor, inputs->int_mode());
+    tprintf("Scale_factor:{}, upside_down:{}, invert_threshold:{}, int_mode:{}\n",
+        *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
@@ -353,6 +354,10 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   if (invert_threshold > 0.0f) {
     float pos_min, pos_mean, pos_sd;
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
+    if (HasDebug()) {
+      tprintf("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
+          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
+    }
     if (pos_mean < invert_threshold) {
       // Run again inverted and see if it is any better.
       NetworkIO inv_inputs, inv_outputs;
@@ -363,12 +368,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
+      if (HasDebug()) {
+        tprintf("Inverting image: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
+            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
+            pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
+      }
       if (inv_mean > pos_mean) {
         // Inverted did better. Use inverted data.
-        if (HasDebug()) {
-          tprintf("Inverting image: old min={}, mean={}, sd={}, inv {},{},{}\n", pos_min, pos_mean,
-                  pos_sd, inv_min, inv_mean, inv_sd);
-        }
         *outputs = inv_outputs;
         *inputs = inv_inputs;
       } else if (re_invert) {
@@ -416,7 +422,7 @@ void LSTMRecognizer::DisplayForward(const NetworkIO &inputs, const std::vector<i
                                     ScrollViewReference &window) {
   Image input_pix = inputs.ToPix();
   Network::ClearWindow(false, window_name, pixGetWidth(input_pix), pixGetHeight(input_pix), window);
-  int line_height = Network::DisplayImage(input_pix, window);
+  int line_height = Network::DisplayImage(input_pix, "LSTMRecognizer::DisplayForward", window);
   DisplayLSTMOutput(labels, label_coords, line_height, window);
 }
 

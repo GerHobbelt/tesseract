@@ -215,6 +215,16 @@ protected:
   Tesseract *tesseract_; // reference to the driving tesseract instance
 
 public:
+  // Add a handler to help with the exit process, i.e. nuking the global
+  // reference to this ScrollView, IFF there's any.
+  // 
+  // `ref2ref` must point to an instance that has a near-infinite scope/lifetime or Bad Things Will Happen(tm)!
+  void RegisterGlobalRefToMe(ScrollViewReference *ref_of_ref);
+
+private:
+  ScrollViewReference *ref_of_ref_;
+
+public:
   /*******************************************************************************
    * Event handling
    * To register as listener, the class has to derive from the SVEventHandler
@@ -261,7 +271,7 @@ public:
   virtual void Comment(std::string msg) = 0;
 
   // Draw an image on (x,y).
-  virtual void Draw(Image image, int x_pos, int y_pos) = 0;
+  virtual void Draw(Image image, int x_pos, int y_pos, const char *title) = 0;
 
   // Flush buffers and update display.
   static void Update();
@@ -270,7 +280,7 @@ public:
   static void Exit();
 
   // Helper function to exit the program.
-  virtual void ExitHelper() = 0;
+  virtual void ExitHelper();
 
   // Update the contents of a specific window.
   virtual void UpdateWindow() = 0;
@@ -426,8 +436,11 @@ public:
   virtual void StartEventHandler() = 0;
 
 protected:
-  // Escapes the ' character with a \, so it can be processed by LUA.
-  virtual char *AddEscapeChars(const char *input) = 0;
+  // Escapes each of the given characters with a \, so it can be processed by LUA.
+  static std::string AddEscapeChars(const char *input, const char *chars_to_escape);
+  static std::string AddEscapeChars(const std::string &input, const char *chars_to_escape) {
+    return std::move(AddEscapeChars(input.c_str(), chars_to_escape));
+  }
 
 protected:
   // The name of the window.
@@ -501,7 +514,7 @@ public:
   virtual void Comment(std::string msg);
 
   // Draw an image on (x,y).
-  virtual void Draw(Image image, int x_pos, int y_pos);
+  virtual void Draw(Image image, int x_pos, int y_pos, const char *title);
 
   // Helper function to exit the program.
   virtual void ExitHelper();
@@ -669,9 +682,6 @@ protected:
   // Called asynchronously whenever a new window is created.
   virtual void StartEventHandler();
 
-  // Escapes the ' character with a \, so it can be processed by LUA.
-  virtual char *AddEscapeChars(const char *input);
-
 protected:
   // The event handler for this window.
   SVEventHandler *event_handler_;
@@ -737,7 +747,7 @@ public:
   virtual void Comment(std::string msg);
 
   // Draw an image on (x,y).
-  virtual void Draw(Image image, int x_pos, int y_pos);
+  virtual void Draw(Image image, int x_pos, int y_pos, const char *title);
 
   // Helper function to exit the program.
   virtual void ExitHelper();
@@ -890,13 +900,13 @@ protected:
   // Called asynchronously whenever a new window is created.
   virtual void StartEventHandler();
 
-  // Escapes the ' character with a \, so it can be processed by LUA.
-  virtual char *AddEscapeChars(const char *input);
+  void PrepCanvas(void);
 
 protected:
   Image pix;
   l_uint32 pen_color;
   l_uint32 brush_color;
+  bool dirty;
 
 #endif // !GRAPHICS_DISABLED
 };
