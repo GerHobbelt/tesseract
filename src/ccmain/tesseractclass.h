@@ -51,7 +51,7 @@
 #include <tesseract/unichar.h>     // for UNICHAR_ID
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 
-#include <allheaders.h> // for pixDestroy, pixGetWidth, pixGetHe...
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetWidth, pixGetHe...
 
 #include <cstdint> // for int16_t, int32_t, uint16_t
 #include <cstdio>  // for FILE
@@ -216,6 +216,9 @@ public:
   // Simple accessors.
   const FCOORD &reskew() const {
     return reskew_;
+  }
+  float gradient() const {
+    return gradient_;
   }
   // Destroy any existing pix and return a pointer to the pointer.
   void set_pix_binary(Image pix) {
@@ -585,7 +588,7 @@ public:
       const SVEvent &event);
   bool process_cmd_win_event( // UI command semantics
       int32_t cmd_event,      // which menu item?
-      char *new_value         // any prompt data
+      const char *new_value   // any prompt data
   );
 #endif // !GRAPHICS_DISABLED
   void debug_word(PAGE_RES *page_res, const TBOX &selection_box);
@@ -1044,9 +1047,13 @@ public:
     AddPixDebugPage(pix, title.c_str());
   }
 
-  void AddClippedPixDebugPage(const Image &pix, const TBOX &bbox, const char *title);
+  void AddClippedPixDebugPage(const Image &pix, const TBOX& bbox, const char *title);
   void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
     AddClippedPixDebugPage(pix, bbox, title.c_str());
+  }
+  void AddClippedPixDebugPage(const Image &pix, const char *title);
+  void AddClippedPixDebugPage(const Image &pix, const std::string &title) {
+    AddClippedPixDebugPage(pix, title.c_str());
   }
 
   int PushNextPixDebugSection(const std::string &title) { // sibling
@@ -1163,6 +1170,7 @@ private:
   int scaled_factor_;
   FCOORD deskew_;
   FCOORD reskew_;
+  float gradient_;
   TesseractStats stats_;
   // Sub-languages to be tried in addition to this.
   std::vector<Tesseract *> sub_langs_;

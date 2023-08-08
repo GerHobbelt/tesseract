@@ -28,7 +28,7 @@
 #include <string>
 #include "lstmtrainer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "boxread.h"
 #include "../common/ctc.h"
 #include "imagedata.h"
@@ -92,12 +92,6 @@ LSTMTrainer::LSTMTrainer(const char *model_base, const char *checkpoint_name,
 }
 
 LSTMTrainer::~LSTMTrainer() {
-#if !GRAPHICS_DISABLED
-  delete align_win_;
-  delete target_win_;
-  delete ctc_win_;
-  delete recon_win_;
-#endif
 }
 
 // Tries to deserialize a trainer from the given file and silently returns
@@ -893,7 +887,7 @@ Trainability LSTMTrainer::TrainOnLine(const ImageData *trainingdata,
                      training_iteration_ + 1);
   }
 #if !GRAPHICS_DISABLED
-  if (debug_interval_ == 1 && debug_win_ != nullptr) {
+  if (debug_interval_ == 1 && debug_win_ && debug_win_->HasInteractiveFeature()) {
     debug_win_->AwaitEvent(SVET_CLICK);
   }
 #endif // !GRAPHICS_DISABLED
@@ -1181,10 +1175,10 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
               truth_text);
       DebugActivationPath(outputs, labels, xcoords);
 #if !GRAPHICS_DISABLED
-      DisplayForward(inputs, labels, xcoords, "LSTMTraining", &align_win_);
+      DisplayForward(inputs, labels, xcoords, "LSTMTraining", align_win_);
       if (OutputLossType() == LT_CTC) {
-        DisplayTargets(fwd_outputs, "CTC Outputs", &ctc_win_);
-        DisplayTargets(outputs, "CTC Targets", &target_win_);
+        DisplayTargets(fwd_outputs, "CTC Outputs", ctc_win_);
+        DisplayTargets(outputs, "CTC Targets", target_win_);
       }
 #endif
     }
@@ -1196,36 +1190,35 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
 
 // Displays the network targets as line a line graph.
 void LSTMTrainer::DisplayTargets(const NetworkIO &targets,
-                                 const char *window_name, ScrollView **window) {
+                                 const char *window_name, ScrollViewReference &window) {
   int width = targets.Width();
   int num_features = targets.NumFeatures();
-  Network::ClearWindow(true, window_name, width * kTargetXScale, kTargetYScale,
-                       window);
+  Network::ClearWindow(true, window_name, width * kTargetXScale, kTargetYScale, window);
   for (int c = 0; c < num_features; ++c) {
     int color = c % (ScrollView::GREEN_YELLOW - 1) + 2;
-    (*window)->Pen(static_cast<ScrollView::Color>(color));
+    window->Pen(static_cast<ScrollView::Color>(color));
     int start_t = -1;
     for (int t = 0; t < width; ++t) {
       double target = targets.f(t)[c];
       target *= kTargetYScale;
       if (target >= 1) {
         if (start_t < 0) {
-          (*window)->SetCursor(t - 1, 0);
+          window->SetCursor(t - 1, 0);
           start_t = t;
         }
-        (*window)->DrawTo(t, target);
+        window->DrawTo(t, target);
       } else if (start_t >= 0) {
-        (*window)->DrawTo(t, 0);
-        (*window)->DrawTo(start_t - 1, 0);
+        window->DrawTo(t, 0);
+        window->DrawTo(start_t - 1, 0);
         start_t = -1;
       }
     }
     if (start_t >= 0) {
-      (*window)->DrawTo(width, 0);
-      (*window)->DrawTo(start_t - 1, 0);
+      window->DrawTo(width, 0);
+      window->DrawTo(start_t - 1, 0);
     }
   }
-  (*window)->Update();
+  window->Update();
 }
 
 #endif // !GRAPHICS_DISABLED

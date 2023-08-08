@@ -158,7 +158,7 @@ public:
   static void PrintSeams(const char *label, const std::vector<SEAM *> &seams);
 #if !GRAPHICS_DISABLED
   // Draws the seam in the given window.
-  void Mark(ScrollView *window) const;
+  void Mark(ScrollViewReference &window) const;
 #endif
 
   // Break up the blobs in this chain so that they are all independent.

@@ -286,7 +286,7 @@ void WERD::print() const {
  */
 
 #if !GRAPHICS_DISABLED
-void WERD::plot(ScrollView *window, ScrollView::Color colour) {
+void WERD::plot(ScrollViewReference &window, ScrollView::Color colour) {
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, colour);
@@ -309,7 +309,7 @@ ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
  * Draw the WERD in rainbow colours in window.
  */
 
-void WERD::plot(ScrollView *window) {
+void WERD::plot(ScrollViewReference &window) {
   ScrollView::Color colour = FIRST_COLOUR;
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
@@ -325,7 +325,7 @@ void WERD::plot(ScrollView *window) {
  * Draw the WERD rejected blobs in window - ALWAYS GREY
  */
 
-void WERD::plot_rej_blobs(ScrollView *window) {
+void WERD::plot_rej_blobs(ScrollViewReference &window) {
   C_BLOB_IT it = &rej_cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, ScrollView::GREY, ScrollView::GREY);

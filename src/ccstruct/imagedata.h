@@ -131,7 +131,7 @@ public:
   int MemoryUsed() const;
 
   // Draws the data in a new window.
-  void Display() const;
+  void Display(Tesseract *tesseract_) const;
 
   // Adds the supplied boxes and transcriptions that correspond to the correct
   // page number.

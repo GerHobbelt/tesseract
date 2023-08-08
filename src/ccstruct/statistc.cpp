@@ -593,7 +593,7 @@ void STATS::print_summary() const {
  **********************************************************************/
 
 #if !GRAPHICS_DISABLED
-void STATS::plot(ScrollView *window, // to draw in
+void STATS::plot(ScrollViewReference &window, // to draw in
                  float xorigin,      // bottom left
                  float yorigin,
                  float xscale,                     // one x unit
@@ -618,7 +618,7 @@ void STATS::plot(ScrollView *window, // to draw in
  **********************************************************************/
 
 #if !GRAPHICS_DISABLED
-void STATS::plotline(ScrollView *window, // to draw in
+void STATS::plotline(ScrollViewReference &window, // to draw in
                      float xorigin,      // bottom left
                      float yorigin,
                      float xscale,                     // one x unit

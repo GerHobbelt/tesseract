@@ -730,7 +730,7 @@ void WERD_CHOICE::print_state(const char *msg) const {
 void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
   // Number of different colors to draw with.
   const int kNumColors = 6;
-  static ScrollView *segm_window = nullptr;
+  static ScrollViewReference segm_window = nullptr;
   // Check the state against the static prev_drawn_state.
   static std::vector<int> prev_drawn_state;
   bool already_done = prev_drawn_state.size() == length_;
@@ -749,8 +749,9 @@ void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
   }
 
   // Create the window if needed.
-  if (segm_window == nullptr) {
-    segm_window = new ScrollView("Segmentation", 5, 10, 500, 256, 2000.0, 256.0, true);
+  if (!segm_window) {
+    segm_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Segmentation", 5, 10, 500, 256, 2000.0, 256.0, true);
+    segm_window->RegisterGlobalRefToMe(&segm_window);
   } else {
     segm_window->Clear();
   }

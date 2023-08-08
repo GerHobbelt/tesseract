@@ -17,7 +17,7 @@
 
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "boxread.h"
 #include "imagedata.h" // for ImageData
 #include "lstmrecognizer.h"
@@ -250,6 +250,13 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
 
   bool do_invert = tessedit_do_invert;
   float threshold = do_invert ? double(invert_threshold) : 0.0f;
+
+  {
+    Image dbg_pix = im_data->GetPix();
+    AddClippedPixDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: do_invert:{}, threshold:{}", do_invert, threshold));
+    dbg_pix.destroy();
+  }
+
   lstm_recognizer_->SetDebug(classify_debug_level > 0 && tess_debug_lstm);
   lstm_recognizer_->RecognizeLine(*im_data, threshold, 
                                   kWorstDictCertainty / kCertaintyScale, word_box, words,

@@ -76,7 +76,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   void plot(                           // draw it
-      ScrollView *window,              // in window
+      ScrollViewReference &window,     // in window
       ScrollView::Color colour) const; // in colour
 #endif
 

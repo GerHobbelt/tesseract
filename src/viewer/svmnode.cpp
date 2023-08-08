@@ -117,7 +117,7 @@ void SVMenuNode::AddChild(SVMenuNode *svmn) {
 // is built (e.g. on top of the window), if it is false a popup menu is
 // built which gets shown by right clicking on the window.
 // Deletes itself afterwards.
-void SVMenuNode::BuildMenu(ScrollView *sv, bool menu_bar) {
+void SVMenuNode::BuildMenu(ScrollViewReference &sv, bool menu_bar) {
   if ((parent_ != nullptr) && (menu_bar)) {
     if (is_check_box_entry_) {
       sv->MenuItem(parent_->text_.c_str(), text_.c_str(), cmd_event_, toggle_value_);

@@ -35,6 +35,8 @@
 
 #include <string>
 
+#include "scrollview.h"
+
 namespace tesseract {
 
 class ScrollView;
@@ -68,7 +70,7 @@ public:
   // Should be called on the root node. If menu_bar is true, a menu_bar menu
   // is built (e.g. on top of the window), if it is false a popup menu is
   // built which gets shown by right clicking on the window.
-  void BuildMenu(ScrollView *sv, bool menu_bar = true);
+  void BuildMenu(ScrollViewReference &sv, bool menu_bar = true);
 
 private:
   // Constructor holding the actual node data.

@@ -33,7 +33,7 @@ namespace tesseract {
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
-ScrollView *blob_window = nullptr;
+ScrollViewReference blob_window;
 
 ScrollView::Color color_list[] = {ScrollView::RED,  ScrollView::CYAN,  ScrollView::YELLOW,
                                   ScrollView::BLUE, ScrollView::GREEN, ScrollView::WHITE};
@@ -53,8 +53,9 @@ BOOL_VAR(wordrec_blob_pause, 0, "Blob pause");
  **********************************************************************/
 void display_blob(TBLOB *blob, ScrollView::Color color) {
   /* Size of drawable */
-  if (blob_window == nullptr) {
-    blob_window = new ScrollView("Blobs", 520, 10, 500, 256, 2000, 256, true);
+  if (!blob_window) {
+    blob_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Blobs", 520, 10, 500, 256, 2000, 256, true);
+    blob_window->RegisterGlobalRefToMe(&blob_window);
   } else {
     blob_window->Clear();
   }
@@ -68,7 +69,7 @@ void display_blob(TBLOB *blob, ScrollView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_blob(ScrollView *window, TBLOB *blob, ScrollView::Color color) {
+void render_blob(ScrollViewReference &window, TBLOB *blob, ScrollView::Color color) {
   /* No outline */
   if (!blob) {
     return;
@@ -83,7 +84,7 @@ void render_blob(ScrollView *window, TBLOB *blob, ScrollView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_edgepts(ScrollView *window, EDGEPT *edgept, ScrollView::Color color) {
+void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, ScrollView::Color color) {
   if (!edgept) {
     return;
   }
@@ -108,7 +109,7 @@ void render_edgepts(ScrollView *window, EDGEPT *edgept, ScrollView::Color color)
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_outline(ScrollView *window, TESSLINE *outline, ScrollView::Color color) {
+void render_outline(ScrollViewReference &window, TESSLINE *outline, ScrollView::Color color) {
   /* No outline */
   if (!outline) {
     return;

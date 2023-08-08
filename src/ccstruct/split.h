@@ -91,7 +91,7 @@ struct SPLIT {
   void Print() const;
 #if !GRAPHICS_DISABLED
   // Draws the split in the given window.
-  void Mark(ScrollView *window) const;
+  void Mark(ScrollViewReference &window) const;
 #endif
 
   // Creates two outlines out of one by splitting the original one in half.

@@ -278,7 +278,7 @@ void make_initial_textrows( // find lines
     fit_lms_line(row_it.data());
   }
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr && textord_show_initial_rows) {
+  if (to_win && textord_show_initial_rows) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_to_row(row_it.data(), colour, rotation);
@@ -671,7 +671,7 @@ void delete_non_dropout_rows( // find lines
     if (find_best_dropout_row(row, distance, block->line_spacing / 2, line_index, &row_it
                               )) {
 #if !GRAPHICS_DISABLED
-      if (to_win != nullptr) {
+      if (to_win) {
         plot_parallel_row(row, gradient, block_edge, ScrollView::WHITE, rotation);
       }
 #endif
@@ -987,7 +987,7 @@ void expand_rows(       // find lines
 
 #if !GRAPHICS_DISABLED
   if (textord_show_expanded_rows) {
-    if (to_win == nullptr) {
+    if (!to_win) {
       create_to_win(page_tr);
     }
   }
@@ -1037,7 +1037,7 @@ void expand_rows(       // find lines
             }
             row_it.forward();
 #if !GRAPHICS_DISABLED
-            if (to_win != nullptr && textord_show_expanded_rows) {
+            if (to_win && textord_show_expanded_rows) {
               plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
             }
 #endif
@@ -1082,7 +1082,7 @@ void expand_rows(       // find lines
             row_it.backward();
             blob_it.set_to_list(row->blob_list());
 #if !GRAPHICS_DISABLED
-            if (to_win != nullptr && textord_show_expanded_rows) {
+            if (to_win && textord_show_expanded_rows) {
               plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
             }
 #endif
@@ -1891,7 +1891,7 @@ void pre_associate_blobs( // make rough chars
     }
 #if !GRAPHICS_DISABLED
     if (textord_show_final_blobs) {
-      if (to_win == nullptr) {
+      if (!to_win) {
         create_to_win(page_tr);
       }
       to_win->Pen(colour);
@@ -1937,7 +1937,7 @@ void fit_parallel_rows( // find lines
     }
   }
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+  if (to_win) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, block_edge, colour, rotation);
@@ -1991,7 +1991,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
 ) {
 #if !GRAPHICS_DISABLED
   ScrollView::Color colour; // of row
-  if (to_win == nullptr) {
+  if (!to_win) {
     create_to_win(page_tr_);
   }
 #endif
@@ -2007,7 +2007,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
   }
   if (textord_old_baselines) {
 #if !GRAPHICS_DISABLED
-    if (to_win != nullptr) {
+    if (to_win) {
       colour = ScrollView::RED;
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
         row_it.data()->baseline.plot(to_win, colour);
@@ -2021,7 +2021,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
     make_old_baselines(block, gradient);
   }
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+  if (to_win) {
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row_it.data()->baseline.plot(to_win, colour);
@@ -2293,7 +2293,7 @@ void assign_blobs_to_rows( // find lines
     g_length = std::sqrt(1 + *gradient * *gradient);
   }
 #if !GRAPHICS_DISABLED
-  if (drawing_skew && to_win != nullptr) {
+  if (drawing_skew && to_win) {
     to_win->SetCursor(block->block->pdblk.bounding_box().left(), ycoord);
   }
 #endif
@@ -2323,7 +2323,7 @@ void assign_blobs_to_rows( // find lines
     top = blob->bounding_box().top() - block_skew;
     bottom = blob->bounding_box().bottom() - block_skew;
 #if !GRAPHICS_DISABLED
-    if (drawing_skew && to_win != nullptr) {
+    if (drawing_skew && to_win) {
       to_win->DrawTo(blob->bounding_box().left(), ycoord + block_skew);
     }
 #endif

@@ -27,8 +27,8 @@
 #include "quadlsq.h"  // for QLSQ
 #include "quadratc.h" // for QUAD_COEFFS
 
-#include <allheaders.h> // for pixRenderPolyline, pixGetDepth, pixGetHeight
-#include "pix.h"        // for L_CLEAR_PIXELS, L_SET_PIXELS, Pix (ptr only)
+#include <leptonica/allheaders.h> // for pixRenderPolyline, pixGetDepth, pixGetHeight
+#include <leptonica/pix.h>        // for L_CLEAR_PIXELS, L_SET_PIXELS, Pix (ptr only)
 
 namespace tesseract {
 
@@ -337,9 +337,9 @@ void QSPLINE::extrapolate( // linear extrapolation
  **********************************************************************/
 
 #if !GRAPHICS_DISABLED
-void QSPLINE::plot(          // draw it
-    ScrollView *window,      // window to draw in
-    ScrollView::Color colour // colour to draw in
+void QSPLINE::plot(                   // draw it
+    ScrollViewReference &window,      // window to draw in
+    ScrollView::Color colour          // colour to draw in
     ) const {
   int32_t segment;  // index of segment
   int16_t step;     // index of poly piece

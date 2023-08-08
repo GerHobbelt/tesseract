@@ -31,7 +31,7 @@
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
 
-#include <allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm> // for max, min
 #include <cinttypes> // for PRId64
@@ -219,8 +219,8 @@ Image ImageData::GetPix() const {
 Image ImageData::PreScale(int target_height, int max_height,
                           float *scale_factor, int *scaled_width,
                           int *scaled_height, std::vector<TBOX> *boxes) const {
-  int input_width = 0;
-  int input_height = 0;
+  int input_width;
+  int input_height;
   Image src_pix = GetPix();
   ASSERT_HOST(src_pix != nullptr);
   input_width = pixGetWidth(src_pix);
@@ -276,7 +276,7 @@ int ImageData::MemoryUsed() const {
 #if !GRAPHICS_DISABLED
 
 // Draws the data in a new window.
-void ImageData::Display() const {
+void ImageData::Display(Tesseract *tesseract_) const {
   const int kTextSize = 64;
   // Draw the image.
   Image pix = GetPix();
@@ -285,10 +285,10 @@ void ImageData::Display() const {
   }
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
-  auto *win = new ScrollView("Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
+  ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
                              2 * (height + 4 * kTextSize), width + 10,
                              height + 3 * kTextSize, true);
-  win->Draw(pix, 0, height - 1);
+  win->Draw(pix, 0, height - 1, "ImageData::Display");
   pix.destroy();
   // Draw the boxes.
   win->Pen(ScrollView::RED);

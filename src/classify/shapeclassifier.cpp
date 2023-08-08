@@ -34,6 +34,7 @@
 #endif
 #include "tprintf.h"
 #include "trainingsample.h"
+#include "tesseractclass.h"
 
 namespace tesseract {
 
@@ -97,12 +98,20 @@ const UNICHARSET &ShapeClassifier::GetUnicharset() const {
 // Probably doesn't need to be overridden if the subclass provides
 // DisplayClassifyAs.
 void ShapeClassifier::DebugDisplay(const TrainingSample &sample, 
-                                   UNICHAR_ID unichar_id) {
-  static ScrollView *terminator = nullptr;
-  if (terminator == nullptr) {
-    terminator = new ScrollView("XIT", 0, 0, 50, 50, 50, 50, true);
+                                   UNICHAR_ID unichar_id)
+{
+  {
+    Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
+    if (!tess || !tess->interactive_display_mode || tess->debug_do_not_use_scrollview_app) 
+      return;
   }
-  ScrollView *debug_win = CreateFeatureSpaceWindow("ClassifierDebug", 0, 0);
+
+  static ScrollViewReference terminator = nullptr;
+  if (!terminator) {
+    terminator = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "XIT", 0, 0, 50, 50, 50, 50, true);
+    terminator->RegisterGlobalRefToMe(&terminator);
+  }
+  ScrollViewReference debug_win = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "ClassifierDebug", 0, 0);
   // Provide a right-click menu to choose the class.
   auto *popup_menu = new SVMenuNode();
   popup_menu->AddChild("Choose class to debug", 0, "x", "Class to debug");
@@ -119,7 +128,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
   const UNICHARSET &unicharset = GetUnicharset();
   SVEventType ev_type;
   do {
-    std::vector<ScrollView *> windows;
+    std::vector<ScrollViewReference> windows;
     if (unichar_id >= 0) {
       tprintf("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
       UnicharClassifySample(sample, 1, unichar_id, &results);
@@ -146,11 +155,11 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
         }
       }
     } while (unichar_id == old_unichar_id && ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
-    for (auto window : windows) {
-      delete window;
+    for (int i = windows.size() - 1; i >= 0; i--) {
+      windows[i] = nullptr;
     }
   } while (ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
-  delete debug_win;
+  debug_win = nullptr;
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -162,7 +171,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
 // then destroys the windows by clearing the vector.
 int ShapeClassifier::DisplayClassifyAs(const TrainingSample &sample,
                                        UNICHAR_ID unichar_id, int index,
-                                       std::vector<ScrollView *> &windows) {
+                                       std::vector<ScrollViewReference > &windows) {
   // Does nothing in the default implementation.
   return index;
 }
