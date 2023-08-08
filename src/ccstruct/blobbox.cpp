@@ -24,14 +24,14 @@
 #include "blobbox.h"
 #include "blobs.h"   // for TPOINT
 #include "coutln.h"  // for C_OUTLINE_IT, C_OUTLINE, C_OUTLINE_LIST
-#include "environ.h" // for l_uint32
+#include <leptonica/environ.h> // for l_uint32
 #include "host.h"    // for NearlyEqual
 #include "points.h"  // for operator+=, ICOORD::rotate
 
 #include "helpers.h" // for UpdateRange, IntCastRounded
 #include "diagnostics_io.h"
 
-#include <allheaders.h> // for pixGetHeight, pixGetPixel
+#include <leptonica/allheaders.h> // for pixGetHeight, pixGetPixel
 
 #include <algorithm> // for max, min
 #include <cmath>
@@ -419,7 +419,7 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour.
 void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                         ScrollView::Color child_colour, ScrollViewReference win) {
+                         ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);
@@ -430,7 +430,7 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
 // given list in the given body_colour, with child outlines in the
 // child_colour.
 void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                              ScrollView::Color child_colour, ScrollViewReference win) {
+                              ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
@@ -499,7 +499,7 @@ ScrollView::Color BLOBNBOX::BoxColor() const {
   return TextlineColor(region_type_, flow_);
 }
 
-void BLOBNBOX::plot(ScrollViewReference window,               // window to draw in
+void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
                     ScrollView::Color blob_colour,    // for outer bits
                     ScrollView::Color child_colour) { // for holes
   if (cblob_ptr != nullptr) {
@@ -1066,7 +1066,7 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
 
 #if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
-void TO_BLOCK::plot_noise_blobs(ScrollViewReference win) {
+void TO_BLOCK::plot_noise_blobs(ScrollViewReference &win) {
   BLOBNBOX::PlotNoiseBlobs(&noise_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&small_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&large_blobs, ScrollView::RED, ScrollView::RED, win);
@@ -1074,7 +1074,7 @@ void TO_BLOCK::plot_noise_blobs(ScrollViewReference win) {
 }
 
 // Draw the blobs on the various lists in the block in different colors.
-void TO_BLOCK::plot_graded_blobs(ScrollViewReference win) {
+void TO_BLOCK::plot_graded_blobs(ScrollViewReference &win) {
   BLOBNBOX::PlotBlobs(&noise_blobs, ScrollView::CORAL, ScrollView::BLUE, win);
   BLOBNBOX::PlotBlobs(&small_blobs, ScrollView::GOLDENROD, ScrollView::YELLOW, win);
   BLOBNBOX::PlotBlobs(&large_blobs, ScrollView::DARK_GREEN, ScrollView::YELLOW, win);
@@ -1102,7 +1102,7 @@ void TO_BLOCK::plot_graded_blobs(Image &pix) {
  * Draw a list of blobs.
  **********************************************************************/
 
-void plot_blob_list(ScrollViewReference win,                  // window to draw in
+void plot_blob_list(ScrollViewReference &win,                  // window to draw in
                     BLOBNBOX_LIST *list,              // blob list
                     ScrollView::Color body_colour,    // colour to draw
                     ScrollView::Color child_colour) { // colour of child

@@ -97,7 +97,7 @@ public:
     int new_size = size1 * size2 + pad;
     if (new_size > size_allocated_) {
       delete[] array_;
-	  array_ = new T[new_size];
+  	  array_ = new T[new_size];
       size_allocated_ = new_size;
     }
     dim1_ = size1;

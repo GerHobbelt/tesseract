@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "boxread.h"
 #include "fontinfo.h"
 //#include "helpers.h"
@@ -792,7 +792,7 @@ void TrainingSampleSet::AddAllFontsForClass(int class_id, Shape *shape) const {
 void TrainingSampleSet::DisplaySamplesWithFeature(int f_index, const Shape &shape,
                                                   const IntFeatureSpace &space,
                                                   ScrollView::Color color,
-                                                  ScrollViewReference window) const {
+                                                  ScrollViewReference &window) const {
   for (int s = 0; s < num_raw_samples(); ++s) {
     const TrainingSample *sample = GetSample(s);
     if (shape.ContainsUnichar(sample->class_id())) {

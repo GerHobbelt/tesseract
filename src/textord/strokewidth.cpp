@@ -130,11 +130,11 @@ StrokeWidth::StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, con
 
 StrokeWidth::~StrokeWidth() {
 #if !GRAPHICS_DISABLED
-  if (!widths_win_) {
+  if (widths_win_ && widths_win_->HasInteractiveFeature()) {
     widths_win_->AwaitEvent(SVET_DESTROY);
     if (textord_tabfind_only_strokewidths) {
       ASSERT0(!"unexpected textord_tabfind_only_strokewidths. code damaged?");
-      exit(1);
+      exit(7);
     }
   }
 #endif
@@ -1992,7 +1992,7 @@ ScrollViewReference StrokeWidth::DisplayGoodBlobs(const char *window_name, int x
   return window;
 }
 
-static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollViewReference window) {
+static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollViewReference &window) {
   const TBOX &blob_box(blob->bounding_box());
   int top = std::max(static_cast<int>(blob_box.top()), blob->base_char_top());
   int bottom = std::min(static_cast<int>(blob_box.bottom()), blob->base_char_bottom());

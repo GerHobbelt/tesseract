@@ -24,7 +24,7 @@
 
 #include "baselinedetect.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <algorithm>
 #include <cfloat> // for FLT_MAX
 #include <cmath>  // for M_PI
@@ -618,7 +618,7 @@ void BaselineBlock::DrawFinalRows(const ICOORD &page_tr) {
   double gradient = tan(skew_angle_);
   FCOORD rotation(1.0f, 0.0f);
   int left_edge = block_->block->pdblk.bounding_box().left();
-  ScrollViewReference win = create_to_win(page_tr);
+  ScrollViewReference &win = create_to_win(page_tr);
   if (win) {
     ScrollView::Color colour = ScrollView::RED;
     TO_ROW_IT row_it = block_->get_rows();

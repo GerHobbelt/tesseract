@@ -209,13 +209,13 @@ void ShowMatchDisplay();
 // Clears the given window and draws the featurespace guides for the
 // appropriate normalization method.
 TESS_API
-void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference window);
+void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &window);
 #endif // !GRAPHICS_DISABLED
 
 /*----------------------------------------------------------------------------*/
 #if !GRAPHICS_DISABLED
 TESS_API
-void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feature,
+void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);
 
 void InitIntMatchWindowIfReqd();

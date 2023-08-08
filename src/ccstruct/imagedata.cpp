@@ -31,7 +31,7 @@
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
 
-#include <allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm> // for max, min
 #include <cinttypes> // for PRId64
@@ -219,8 +219,8 @@ Image ImageData::GetPix() const {
 Image ImageData::PreScale(int target_height, int max_height,
                           float *scale_factor, int *scaled_width,
                           int *scaled_height, std::vector<TBOX> *boxes) const {
-  int input_width = 0;
-  int input_height = 0;
+  int input_width;
+  int input_height;
   Image src_pix = GetPix();
   ASSERT_HOST(src_pix != nullptr);
   input_width = pixGetWidth(src_pix);

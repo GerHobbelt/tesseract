@@ -26,7 +26,7 @@
 
 // This base class needs to know about all its sub-classes because of the
 // factory deserializing method: CreateFromFile.
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "convolve.h"
 #include "fullyconnected.h"
 #include "input.h"
@@ -337,7 +337,7 @@ void Network::DisplayForward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
   ClearWindow(false, name_.c_str(), pixGetWidth(image), pixGetHeight(image), forward_win_);
   DisplayImage(image, forward_win_);
-  forward_win_->Update();
+  forward_win_->UpdateWindow();
 }
 
 // Displays the image of the matrix to the backward window.
@@ -346,7 +346,7 @@ void Network::DisplayBackward(const NetworkIO &matrix) {
   std::string window_name = name_ + "-back";
   ClearWindow(false, window_name.c_str(), pixGetWidth(image), pixGetHeight(image), backward_win_);
   DisplayImage(image, backward_win_);
-  backward_win_->Update();
+  backward_win_->UpdateWindow();
 }
 
 // Creates the window if needed, otherwise clears it.
@@ -377,7 +377,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
 
 // Displays the pix in the given window. and returns the height of the pix.
 // The pix is pixDestroyed.
-int Network::DisplayImage(Image pix, ScrollViewReference window) {
+int Network::DisplayImage(Image pix, ScrollViewReference &window) {
   int height = pixGetHeight(pix);
   window->Draw(pix, 0, 0);
   pix.destroy();

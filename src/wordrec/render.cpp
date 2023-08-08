@@ -68,7 +68,7 @@ void display_blob(TBLOB *blob, ScrollView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_blob(ScrollViewReference window, TBLOB *blob, ScrollView::Color color) {
+void render_blob(ScrollViewReference &window, TBLOB *blob, ScrollView::Color color) {
   /* No outline */
   if (!blob) {
     return;
@@ -83,7 +83,7 @@ void render_blob(ScrollViewReference window, TBLOB *blob, ScrollView::Color colo
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_edgepts(ScrollViewReference window, EDGEPT *edgept, ScrollView::Color color) {
+void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, ScrollView::Color color) {
   if (!edgept) {
     return;
   }
@@ -108,7 +108,7 @@ void render_edgepts(ScrollViewReference window, EDGEPT *edgept, ScrollView::Colo
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_outline(ScrollViewReference window, TESSLINE *outline, ScrollView::Color color) {
+void render_outline(ScrollViewReference &window, TESSLINE *outline, ScrollView::Color color) {
   /* No outline */
   if (!outline) {
     return;

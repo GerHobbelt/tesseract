@@ -169,10 +169,8 @@ bool AlignedBlob::WithinTestRegion(int detail_level, int x, int y) {
 #if !GRAPHICS_DISABLED
 
 // Display the tab codes of the BLOBNBOXes in this grid.
-ScrollViewReference AlignedBlob::DisplayTabs(const char *window_name, ScrollViewReference tab_win) {
-  if (!tab_win) {
-    tab_win = MakeWindow(tesseract_, 0, 50, window_name);
-  }
+void AlignedBlob::DisplayTabs(ScrollViewReference &tab_win) {
+  ASSERT0(tab_win);
   // For every tab in the grid, display it.
   GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> gsearch(this);
   gsearch.StartFullSearch();
@@ -211,7 +209,7 @@ ScrollViewReference AlignedBlob::DisplayTabs(const char *window_name, ScrollView
     }
   }
   tab_win->Update();
-  return tab_win;
+  return;
 }
 
 #endif // !GRAPHICS_DISABLED

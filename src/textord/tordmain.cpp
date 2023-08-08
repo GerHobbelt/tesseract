@@ -24,7 +24,7 @@
 
 #include "tordmain.h"
 
-#include "arrayaccess.h" // for GET_DATA_BYTE
+#include <leptonica/arrayaccess.h> // for GET_DATA_BYTE
 #include "blobbox.h"     // for BLOBNBOX_IT, BLOBNBOX, TO_BLOCK, TO_B...
 #include "ccstruct.h"    // for CCStruct, CCStruct::kXHeightFraction
 #include "clst.h"        // for CLISTIZE
@@ -51,7 +51,7 @@
 #include "diagnostics_io.h"
 #include "tesseractclass.h"
 
-#include <allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
 
 #include <cfloat>  // for FLT_MAX
 #include <cmath>   // for ceil, floor, M_PI

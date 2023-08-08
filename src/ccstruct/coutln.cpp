@@ -23,17 +23,17 @@
 
 #include "coutln.h"
 
-#include "arrayaccess.h" // for GET_DATA_BYTE
+#include <leptonica/arrayaccess.h> // for GET_DATA_BYTE
 #include "blobs.h"       // for TPOINT
 #include "crakedge.h"    // for CRACKEDGE
-#include "environ.h"     // for l_uint32
+#include <leptonica/environ.h>     // for l_uint32
 #include "errcode.h"     // for ASSERT_HOST
 #include "normalis.h"    // for DENORM
 
 #include "helpers.h" // for ClipToRange, IntCastRounded, Modulo
 
-#include <allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
-#include "pix.h"        // for Pix (ptr only), PIX_DST, PIX_NOT
+#include <leptonica/allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
+#include <leptonica/pix.h>        // for Pix (ptr only), PIX_DST, PIX_NOT
 
 #include <algorithm> // for max, min
 #include <cmath>     // for abs
@@ -952,7 +952,7 @@ void C_OUTLINE::render_outline(int left, int top, Image pix) const {
  */
 
 #if !GRAPHICS_DISABLED
-void C_OUTLINE::plot(ScrollViewReference window, ScrollView::Color colour) const {
+void C_OUTLINE::plot(ScrollViewReference &window, ScrollView::Color colour) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step
@@ -1084,7 +1084,7 @@ void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, 
  * making use of sub-pixel accurate information if available.
  */
 void C_OUTLINE::plot_normed(const DENORM &denorm, ScrollView::Color colour,
-                            ScrollViewReference window) const {
+                            ScrollViewReference &window) const {
   window->Pen(colour);
   if (stepcount == 0) {
     window->Rectangle(box.left(), box.top(), box.right(), box.bottom());

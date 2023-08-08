@@ -200,7 +200,7 @@ protected:
   /**
    * Display the tab vectors found in this grid.
    */
-  ScrollViewReference DisplayTabVectors(ScrollViewReference tab_win);
+  void DisplayTabVectors(ScrollViewReference &tab_win);
 
   /**
    * Display the tab vectors found in this grid.
@@ -287,7 +287,7 @@ private:
   // Trace textlines from one side to the other of each tab vector, saving
   // the most frequent column widths found in a list so that a given width
   // can be tested for being a common width with a simple callback function.
-  void ComputeColumnWidths(ScrollViewReference tab_win, ColPartitionGrid *part_grid);
+  void ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid *part_grid);
 
   // Finds column width and:
   //   if col_widths is not null (pass1):

@@ -295,7 +295,7 @@ protected:
   // Displays the labels and cuts at the corresponding xcoords.
   // Size of labels should match xcoords.
   void DisplayLSTMOutput(const std::vector<int> &labels, const std::vector<int> &xcoords,
-                         int height, ScrollViewReference window);
+                         int height, ScrollViewReference &window);
 
   // Prints debug output detailing the activation path that is implied by the
   // xcoords.

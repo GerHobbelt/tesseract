@@ -44,7 +44,7 @@ ScrollViewReference to_win = nullptr;
  * Create the to window used to show the fit.
  **********************************************************************/
 
-ScrollViewReference create_to_win(ICOORD page_tr) {
+ScrollViewReference &create_to_win(ICOORD page_tr) {
   if (to_win) {
     return to_win;
   }
@@ -67,7 +67,7 @@ void close_to_win() {
  **********************************************************************/
 
 void plot_box_list(               // make gradients win
-    ScrollViewReference win,              // window to draw in
+    ScrollViewReference &win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
     ScrollView::Color body_colour // colour to draw
 ) {
@@ -269,7 +269,7 @@ void draw_meanlines(          // draw a block
  **********************************************************************/
 
 void plot_word_decisions( // draw words
-    ScrollViewReference win,      // window to draw in
+    ScrollViewReference &win,      // window to draw in
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 ) {
@@ -340,7 +340,7 @@ void plot_word_decisions( // draw words
  **********************************************************************/
 
 void plot_fp_cells(           // draw words
-    ScrollViewReference win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
@@ -384,7 +384,7 @@ void plot_fp_cells(           // draw words
  **********************************************************************/
 
 void plot_fp_cells2(          // draw words
-    ScrollViewReference win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
@@ -418,7 +418,7 @@ void plot_fp_cells2(          // draw words
  **********************************************************************/
 
 void plot_row_cells(          // draw words
-    ScrollViewReference win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift

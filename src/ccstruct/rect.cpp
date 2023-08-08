@@ -23,8 +23,8 @@
 
 #include "rect.h"
 
-#include <allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
-#include "pix.h"        // for Pix (ptr only), PIX_DST, PIX_NOT
+#include <leptonica/allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
+#include <leptonica/pix.h>        // for Pix (ptr only), PIX_DST, PIX_NOT
 
 #include "serialis.h" // for TFile
 
@@ -56,6 +56,12 @@ TBOX::TBOX(           // constructor
       top_right = pt1;
     }
   }
+}
+
+TBOX::TBOX(const Image &pix) : bot_left(0, 0) {
+  int w = pixGetWidth(pix);
+  int h = pixGetHeight(pix);
+  top_right = ICOORD(w, h);
 }
 
 bool TBOX::DeSerialize(TFile *f) {
@@ -166,7 +172,7 @@ TBOX TBOX::bounding_union( // box enclosing both
 
 #if !GRAPHICS_DISABLED
 void TBOX::plot(                    // paint box
-    ScrollViewReference fd,                 // where to paint
+    ScrollViewReference &fd,                 // where to paint
     ScrollView::Color fill_colour,  // colour for inside
     ScrollView::Color border_colour // colour for border
     ) const {

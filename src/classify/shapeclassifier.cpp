@@ -34,6 +34,7 @@
 #endif
 #include "tprintf.h"
 #include "trainingsample.h"
+#include "tesseractclass.h"
 
 namespace tesseract {
 
@@ -97,7 +98,14 @@ const UNICHARSET &ShapeClassifier::GetUnicharset() const {
 // Probably doesn't need to be overridden if the subclass provides
 // DisplayClassifyAs.
 void ShapeClassifier::DebugDisplay(const TrainingSample &sample, 
-                                   UNICHAR_ID unichar_id) {
+                                   UNICHAR_ID unichar_id)
+{
+  {
+    Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
+    if (!tess || !tess->interactive_display_mode || tess->debug_do_not_use_scrollview_app) 
+      return;
+  }
+
   static ScrollViewReference terminator = nullptr;
   if (!terminator) {
     terminator = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "XIT", 0, 0, 50, 50, 50, 50, true);
@@ -146,8 +154,8 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
         }
       }
     } while (unichar_id == old_unichar_id && ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
-    for (auto window : windows) {
-      window = nullptr;
+    for (int i = windows.size() - 1; i >= 0; i--) {
+      windows[i] = nullptr;
     }
   } while (ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
   debug_win = nullptr;

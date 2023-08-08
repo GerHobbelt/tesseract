@@ -361,18 +361,18 @@ protected:
 
   // Displays Colpartitions marked as table row. Overlays them on top of
   // part_grid_.
-  void DisplayColSegments(ScrollViewReference win, ColSegment_LIST *cols,
+  void DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *cols,
                           ScrollView::Color color);
 
   // Displays the colpartitions using a new coloring on an existing window.
   // Note: This method is only for debug purpose during development and
   // would not be part of checked in code
-  void DisplayColPartitions(ScrollViewReference win, ColPartitionGrid *grid,
+  void DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                             ScrollView::Color text_color,
                             ScrollView::Color table_color);
-  void DisplayColPartitions(ScrollViewReference win, ColPartitionGrid *grid,
+  void DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                             ScrollView::Color default_color);
-  void DisplayColPartitionConnections(ScrollViewReference win, ColPartitionGrid *grid,
+  void DisplayColPartitionConnections(ScrollViewReference &win, ColPartitionGrid *grid,
                                       ScrollView::Color default_color);
 
   // Merge all colpartitions in table regions to make them a single

@@ -97,7 +97,7 @@ public:
   ColPartitionSet *Copy(bool good_only);
 
   // Display the edges of the columns at the given y coords.
-  void DisplayColumnEdges(int y_bottom, int y_top, ScrollViewReference win);
+  void DisplayColumnEdges(int y_bottom, int y_top, ScrollViewReference &win);
 
   // Display the edges of the columns at the given y coords.
   void DisplayColumnEdges(int y_bottom, int y_top, Image &pix, uint32_t* data, int wpl, int w, int h);

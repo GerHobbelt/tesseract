@@ -28,7 +28,7 @@
 #include <string>
 #include "lstmtrainer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "boxread.h"
 #include "../common/ctc.h"
 #include "imagedata.h"
@@ -887,7 +887,7 @@ Trainability LSTMTrainer::TrainOnLine(const ImageData *trainingdata,
                      training_iteration_ + 1);
   }
 #if !GRAPHICS_DISABLED
-  if (debug_interval_ == 1 && debug_win_) {
+  if (debug_interval_ == 1 && debug_win_ && debug_win_->HasInteractiveFeature()) {
     debug_win_->AwaitEvent(SVET_CLICK);
   }
 #endif // !GRAPHICS_DISABLED

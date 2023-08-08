@@ -36,6 +36,8 @@
 #include <fmt/format.h>
 #include <tesseract/export.h>
 
+#include <leptonica/environ.h>  /* leptonica */
+
 #include <cstdio>
 #include <memory>
 #include <mutex>
@@ -58,6 +60,12 @@ public:
   ScrollViewReference();
   ScrollViewReference(ScrollView *view);
   ~ScrollViewReference();
+ 
+  ScrollViewReference(const ScrollViewReference &o) /* = delete */ ;
+  ScrollViewReference(ScrollViewReference &&o);
+
+  ScrollViewReference &operator=(const ScrollViewReference &other) /* = delete */ ;
+  ScrollViewReference &operator=(ScrollViewReference &&other);
 
   ScrollView *GetRef() const {
     return view_;
@@ -74,7 +82,10 @@ public:
   ScrollViewReference &operator=(ScrollView *new_view);
 
 protected:
+  void cleanup_before_delete();
+
   ScrollView *view_; // reference
+  int *counter_;
 };
 
 enum SVEventType {
@@ -195,11 +206,7 @@ public:
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
   // The canvas may not be 0,0 in size!
-  ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
-             int y_canvas_size);
   // With a flag whether the x axis is reversed.
-  ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
-             int y_canvas_size, bool y_axis_reversed);
   // Connect to a server other than localhost.
   ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size,
              int y_canvas_size, bool y_axis_reversed, const char *server_name);
@@ -423,8 +430,6 @@ protected:
   virtual char *AddEscapeChars(const char *input) = 0;
 
 protected:
-  // The event handler for this window.
-  SVEventHandler *event_handler_;
   // The name of the window.
   const char *window_name_;
   // The id of the window.
@@ -433,8 +438,6 @@ protected:
   SVPolyLineBuffer *points_;
   // Whether the axis is reversed.
   bool y_axis_is_reversed_;
-  // Set to true only after the event handler has terminated.
-  bool event_handler_ended_;
   // If the y axis is reversed, flip all y values by ySize.
   int y_size_;
   // # of created windows (used to assign an id to each ScrollView* for svmap).
@@ -442,15 +445,6 @@ protected:
   // Serial number of sent images to ensure that the viewer knows they
   // are distinct.
   static int image_index_;
-
-  // Table of all the currently queued events.
-  std::unique_ptr<SVEvent> event_table_[SVET_COUNT];
-
-  // Mutex to access the event_table_ in a synchronized fashion.
-  std::mutex mutex_;
-
-  // Semaphore to the thread belonging to this window.
-  SVSemaphore *semaphore_;
 #endif // !GRAPHICS_DISABLED
 };
 
@@ -472,12 +466,7 @@ public:
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
   // The canvas may not be 0,0 in size!
-  InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-             int x_size, int y_size, int x_canvas_size, int y_canvas_size);
   // With a flag whether the x axis is reversed.
-  InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-             int x_size, int y_size, int x_canvas_size, int y_canvas_size,
-             bool y_axis_reversed);
   // Connect to a server other than localhost.
   InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
              int x_size, int y_size, int x_canvas_size, int y_canvas_size,
@@ -684,8 +673,22 @@ protected:
   virtual char *AddEscapeChars(const char *input);
 
 protected:
+  // The event handler for this window.
+  SVEventHandler *event_handler_;
+  // Set to true only after the event handler has terminated.
+  bool event_handler_ended_;
+
+  // Table of all the currently queued events.
+  std::unique_ptr<SVEvent> event_table_[SVET_COUNT];
+
+  // Mutex to access the event_table_ in a synchronized fashion.
+  std::mutex mutex_;
+
   // The stream through which the c++ client is connected to the server.
   static SVNetwork *stream_;
+
+  // Semaphore to the thread belonging to this window.
+  SVSemaphore *semaphore_;
 #endif // !GRAPHICS_DISABLED
 };
 
@@ -703,12 +706,7 @@ public:
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
   // The canvas may not be 0,0 in size!
-  BackgroundScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-             int x_size, int y_size, int x_canvas_size, int y_canvas_size);
   // With a flag whether the x axis is reversed.
-  BackgroundScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-             int x_size, int y_size, int x_canvas_size, int y_canvas_size,
-             bool y_axis_reversed);
   // Connect to a server other than localhost.
   BackgroundScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
              int x_size, int y_size, int x_canvas_size, int y_canvas_size,
@@ -896,6 +894,9 @@ protected:
   virtual char *AddEscapeChars(const char *input);
 
 protected:
+  Image pix;
+  l_uint32 pen_color;
+  l_uint32 brush_color;
 
 #endif // !GRAPHICS_DISABLED
 };
@@ -909,11 +910,7 @@ protected:
 public:
   ~ScrollViewManager();
 
-  static ScrollViewReference MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size);
-  // With a flag whether the x axis is reversed.
-  static ScrollViewReference MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed);
-  // Connect to a server other than localhost.
-  static ScrollViewReference MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name);
+  static ScrollViewReference MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed = false, const char *server_name = "localhost");
 
   // set this instance to be the latest active one
   static void SetActiveTesseractInstance(Tesseract *tess);

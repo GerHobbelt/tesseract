@@ -52,7 +52,7 @@ void display_edgepts(LIST outlines) {
     edge_window->Clear();
   }
   /* Render the outlines */
-  auto window = edge_window;
+  ScrollViewReference &window = edge_window;
   /* Reclaim old memory */
   iterate(outlines) {
     render_edgepts(window, reinterpret_cast<EDGEPT *>(outlines->first_node()), ScrollView::WHITE);
@@ -81,7 +81,7 @@ void draw_blob_edges(TBLOB *blob) {
  * Make a mark on the edges window at a particular location.
  **********************************************************************/
 void mark_outline(EDGEPT *edgept) { /* Start of point list */
-  auto window = edge_window;
+  ScrollViewReference &window = edge_window;
   float x = edgept->pos.x;
   float y = edgept->pos.y;
 

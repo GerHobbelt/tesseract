@@ -253,7 +253,7 @@ enum ColorationMode {
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static ScrollViewReference image_win;
-static ParamsEditor *pe;
+static ParamsEditor *pe = nullptr;
 static bool stillRunning = false;
 
 static ScrollViewReference bln_word_window; // baseline norm words
@@ -348,7 +348,7 @@ public:
  *
  *  @return a WINDOW for the word window, creating it if necessary
  */
-static ScrollViewReference bln_word_window_handle(Tesseract *tess) { // return handle
+static ScrollViewReference &bln_word_window_handle(Tesseract *tess) { // return handle
                                               // not opened yet
   if (!bln_word_window) {
     pgeditor_msg("Creating BLN word window...");
@@ -377,7 +377,7 @@ static void build_image_window(Tesseract *tess, int width, int height) {
  *
  *  Display normalized baseline, x-height, ascender limit and descender limit
  */
-static void display_bln_lines(ScrollViewReference window, ScrollView::Color colour, float scale_factor,
+static void display_bln_lines(ScrollViewReference &window, ScrollView::Color colour, float scale_factor,
                               float y_offset, float minx, float maxx) {
   window->Pen(colour);
   window->Line(minx, y_offset + scale_factor * DESC_HEIGHT, maxx,
@@ -833,15 +833,16 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
-  bln_word_window_handle(this)->Clear();
-  display_bln_lines(bln_word_window_handle(this), ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
+  ScrollViewReference win = bln_word_window_handle(this);
+  win->Clear();
+  display_bln_lines(win, ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
   C_BLOB_IT it(word_res->word->cblob_list());
   ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, bln_word_window_handle(this));
+    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, win);
     color = WERD::NextColor(color);
   }
-  bln_word_window_handle(this)->Update();
+  win->Update();
   return true;
 }
 

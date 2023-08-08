@@ -98,7 +98,7 @@ public:
   // Integrate the parameters editor as popupmenu into the existing scrollview
   // window (usually the pg editor). If sv == null, create a new empty
   // empty window and attach the parameter editor to that window (ugly).
-  explicit ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference sv = nullptr);
+  explicit ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference &sv);
 
   // Event listener. Waits for SVET_POPUP events and processes them.
   void Notify(const SVEvent *sve) override;

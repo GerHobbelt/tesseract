@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cmath>
 #include <ctime>
@@ -792,25 +792,26 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     }
   }
   f_window->Update();
-  ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
-  SVEventType ev_type;
-  do {
-    // Wait until a click or popup event.
-    auto ev = f_window->AwaitEvent(SVET_ANY);
-    ev_type = ev->type;
-    if (ev_type == SVET_CLICK) {
-      int feature_index = feature_space.XYToFeatureIndex(ev->x, ev->y);
-      if (feature_index >= 0) {
-        // Iterate samples and display those with the feature.
-        Shape shape;
-        shape.AddToShape(class_id1, cloud_font);
-        s_window->Clear();
-        samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space,
-                                           ScrollView::GREEN, s_window);
-        s_window->Update();
+  if (f_window->HasInteractiveFeature()) {
+    ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
+    SVEventType ev_type;
+    do {
+      // Wait until a click or popup event.
+      auto ev = f_window->AwaitEvent(SVET_ANY);
+      ev_type = ev->type;
+      if (ev_type == SVET_CLICK) {
+        int feature_index = feature_space.XYToFeatureIndex(ev->x, ev->y);
+        if (feature_index >= 0) {
+          // Iterate samples and display those with the feature.
+          Shape shape;
+          shape.AddToShape(class_id1, cloud_font);
+          s_window->Clear();
+          samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, ScrollView::GREEN, s_window);
+          s_window->Update();
+        }
       }
-    }
-  } while (ev_type != SVET_DESTROY);
+    } while (ev_type != SVET_DESTROY);
+  }
 }
 
 #endif // !GRAPHICS_DISABLED

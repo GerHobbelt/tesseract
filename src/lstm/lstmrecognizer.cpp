@@ -22,7 +22,7 @@
 
 #include "lstmrecognizer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "dict.h"
 #include "genericheap.h"
 #include "helpers.h"
@@ -249,7 +249,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
                                    PointerVector<WERD_RES> *words, int lstm_choice_mode,
                                    int lstm_choice_amount) {
   NetworkIO outputs;
-  float scale_factor;
+  float scale_factor = 0.0;
   NetworkIO inputs;
   if (!RecognizeLine(image_data, invert_threshold, false, false, &scale_factor, &inputs, &outputs)) {
     return;
@@ -343,6 +343,9 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   // Reduction factor from image to coords.
   *scale_factor = min_width / *scale_factor;
   inputs->set_int_mode(IsIntMode());
+  if (HasDebug()) {
+    tprintf("Scale_factor:{}, int_mode:{}\n", *scale_factor, inputs->int_mode());
+  }
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
@@ -421,7 +424,7 @@ void LSTMRecognizer::DisplayForward(const NetworkIO &inputs, const std::vector<i
 // Size of labels should match xcoords.
 void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
                                        const std::vector<int> &xcoords, int height,
-                                       ScrollViewReference window) {
+                                       ScrollViewReference &window) {
   int x_scale = network_->XScaleFactor();
   window->TextAttributes("Arial", height / 4, false, false, false);
   unsigned end = 1;

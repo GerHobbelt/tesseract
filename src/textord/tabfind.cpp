@@ -438,8 +438,8 @@ bool TabFind::FindTabVectors(TabVector_LIST *hlines, BLOBNBOX_LIST *image_blobs,
   if (textord_tabfind_show_finaltabs) {
     tab_win = MakeWindow(tesseract_, 640, 50, "FinalTabs");
     DisplayBoxes(tab_win);
-    tab_win = DisplayTabs("FinalTabs", tab_win);
-    tab_win = DisplayTabVectors(tab_win);
+    DisplayTabs(tab_win);
+    DisplayTabVectors(tab_win);
   }
 #endif // !GRAPHICS_DISABLED
   return true;
@@ -493,7 +493,7 @@ void TabFind::SetupTabSearch(int x, int y, int *min_key, int *max_key) {
 
 #if !GRAPHICS_DISABLED
 
-ScrollViewReference TabFind::DisplayTabVectors(ScrollViewReference tab_win) {
+void TabFind::DisplayTabVectors(ScrollViewReference &tab_win) {
   // For every vector, display it.
   TabVector_IT it(&vectors_);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
@@ -501,7 +501,7 @@ ScrollViewReference TabFind::DisplayTabVectors(ScrollViewReference tab_win) {
     vector->Display(tab_win);
   }
   tab_win->Update();
-  return tab_win;
+  return;
 }
 
 void TabFind::DisplayTabVectors(Image &pix, uint32_t* data, int wpl, int w, int h) {
@@ -526,7 +526,7 @@ ScrollViewReference TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, i
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs) {
     ScrollViewReference line_win(MakeWindow(tesseract_, 0, 0, "VerticalLines"));
-    line_win = DisplayTabVectors(line_win);
+    DisplayTabVectors(line_win);
   }
 #endif
   // Prepare the grid.
@@ -542,7 +542,7 @@ ScrollViewReference TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, i
   EvaluateTabs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs && initial_win) {
-    initial_win = DisplayTabVectors(initial_win);
+    DisplayTabVectors(initial_win);
   }
 #endif
   MarkVerticalText();
@@ -552,7 +552,7 @@ ScrollViewReference TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, i
 #if !GRAPHICS_DISABLED
 
 // Helper displays all the boxes in the given vector on the given window.
-static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollViewReference win) {
+static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollViewReference &win) {
   for (auto boxe : boxes) {
     TBOX box = boxe->bounding_box();
     int left_x = box.left();
@@ -601,7 +601,7 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
     // Display the left and right tab boxes.
     DisplayBoxVector(left_tab_boxes_, tab_win);
     DisplayBoxVector(right_tab_boxes_, tab_win);
-    tab_win = DisplayTabs("Tabs", tab_win);
+    DisplayTabs(tab_win);
   }
 #endif // !GRAPHICS_DISABLED
   return tab_win;
@@ -975,7 +975,7 @@ void TabFind::EvaluateTabs() {
 // Trace textlines from one side to the other of each tab vector, saving
 // the most frequent column widths found in a list so that a given width
 // can be tested for being a common width with a simple callback function.
-void TabFind::ComputeColumnWidths(ScrollViewReference tab_win, ColPartitionGrid *part_grid) {
+void TabFind::ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid *part_grid) {
 #if !GRAPHICS_DISABLED
   if (tab_win) {
     tab_win->Pen(ScrollView::WHITE);

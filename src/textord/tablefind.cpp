@@ -27,7 +27,7 @@
 #include <utility>
 #include "tablefind.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include "colpartitionset.h"
 #include "tablerecog.h"
@@ -1958,7 +1958,7 @@ void TableFinder::RecognizeTables() {
 #if !GRAPHICS_DISABLED
 
 // Displays the column segments in some window.
-void TableFinder::DisplayColSegments(ScrollViewReference win, ColSegment_LIST *segments,
+void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *segments,
                                      ScrollView::Color color) {
   win->Pen(color);
   win->Brush(ScrollView::NONE);
@@ -1978,7 +1978,7 @@ void TableFinder::DisplayColSegments(ScrollViewReference win, ColSegment_LIST *s
 // Displays the colpartitions using a new coloring on an existing window.
 // Note: This method is only for debug purpose during development and
 // would not be part of checked in code
-void TableFinder::DisplayColPartitions(ScrollViewReference win, ColPartitionGrid *grid,
+void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                                        ScrollView::Color default_color,
                                        ScrollView::Color table_color) {
   ScrollView::Color color = default_color;
@@ -2004,12 +2004,12 @@ void TableFinder::DisplayColPartitions(ScrollViewReference win, ColPartitionGrid
   win->UpdateWindow();
 }
 
-void TableFinder::DisplayColPartitions(ScrollViewReference win, ColPartitionGrid *grid,
+void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                                        ScrollView::Color default_color) {
   DisplayColPartitions(win, grid, default_color, ScrollView::YELLOW);
 }
 
-void TableFinder::DisplayColPartitionConnections(ScrollViewReference win,
+void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
                                                  ColPartitionGrid *grid,
                                                  ScrollView::Color color) {
   // Iterate the ColPartitions in the grid.

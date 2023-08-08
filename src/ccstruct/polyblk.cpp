@@ -243,7 +243,7 @@ void POLY_BLOCK::move(ICOORD shift) {
 }
 
 #if !GRAPHICS_DISABLED
-void POLY_BLOCK::plot(ScrollViewReference window, int32_t num) {
+void POLY_BLOCK::plot(ScrollViewReference &window, int32_t num) {
   ICOORDELT_IT v = &vertices;
 
   window->Pen(ColorForPolyBlockType(type));
@@ -304,7 +304,7 @@ void POLY_BLOCK::plot(Image &pix, int32_t num) {
 }
 
 #if !GRAPHICS_DISABLED
-void POLY_BLOCK::fill(ScrollViewReference window, ScrollView::Color colour) {
+void POLY_BLOCK::fill(ScrollViewReference &window, ScrollView::Color colour) {
   ICOORDELT_IT s_it;
 
   std::unique_ptr<PB_LINE_IT> lines(new PB_LINE_IT(this));

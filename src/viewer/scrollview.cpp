@@ -30,7 +30,7 @@
 
 #include "svutil.h" // for SVNetwork
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <algorithm>
 #include <climits>
@@ -267,22 +267,6 @@ ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
              y_canvas_size, y_axis_reversed, server_name);
 }
 
-/// Calls Initialize with default argument for server_name_.
-ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-                       int x_size, int y_size, int x_canvas_size,
-                       int y_canvas_size, bool y_axis_reversed) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, y_axis_reversed, "localhost");
-}
-
-/// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-                       int x_size, int y_size, int x_canvas_size,
-                       int y_canvas_size) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, false, "localhost");
-}
-
 /// Sets up a ScrollView window, depending on the constructor variables.
 void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
                             int y_pos, int x_size, int y_size,
@@ -290,30 +274,25 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
                             bool y_axis_reversed, const char *server_name) {
   tesseract_ = tess;
 
-  nr_created_windows_ = 0;
-  waiting_for_events_mu = new std::mutex();
   svmap_mu = new std::mutex();
 
   // Set up the variables on the clientside.
-  event_handler_ = nullptr;
-  event_handler_ended_ = false;
   y_axis_is_reversed_ = y_axis_reversed;
   y_size_ = y_canvas_size;
   window_name_ = name;
+
   window_id_ = nr_created_windows_;
+  nr_created_windows_++;
+
   // Set up polygon buffering.
   points_ = new SVPolyLineBuffer;
   points_->empty = true;
 
+#if 0
   svmap_mu->lock();
-  svmap[window_id_] = this;
+  svmap[GetId()] = this;
   svmap_mu->unlock();
-
-  for (auto &i : event_table_) {
-    i = nullptr;
-  }
-
-  semaphore_ = new SVSemaphore();
+#endif
 }
 
 /// Calls Initialize with all arguments given.
@@ -327,37 +306,28 @@ InteractiveScrollView::InteractiveScrollView(Tesseract *tess, const char *name, 
              y_canvas_size, y_axis_reversed, server_name);
 }
 
-/// Calls Initialize with default argument for server_name_.
-InteractiveScrollView::InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-                       int x_size, int y_size, int x_canvas_size,
-                       int y_canvas_size, bool y_axis_reversed) :
-    ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, y_axis_reversed, "localhost");
-}
-
-/// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-InteractiveScrollView::InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
-                       int x_size, int y_size, int x_canvas_size,
-                       int y_canvas_size) :
-    ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, false, "localhost");
-}
-
 /// Sets up a ScrollView window, depending on the constructor variables.
 void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
                                        int x_pos, int y_pos, int x_size,
                                        int y_size, int x_canvas_size,
                                        int y_canvas_size, bool y_axis_reversed,
                                        const char *server_name) {
+  waiting_for_events_mu = new std::mutex();
+
+  event_handler_ = nullptr;
+  event_handler_ended_ = false;
+
+  for (auto &i : event_table_) {
+    i = nullptr;
+  }
+
+  semaphore_ = new SVSemaphore();
+
   // If this is the first ScrollView Window which gets created, there is no
   // network connection yet and we have to set it up in a different thread.
   if (stream_ == nullptr) {
-    nr_created_windows_ = 0;
+    //nr_created_windows_ = 0;
     stream_ = new SVNetwork(server_name, kSvPort);
-    waiting_for_events_mu = new std::mutex();
-    svmap_mu = new std::mutex();
     SendRawMessage(
         "svmain = luajava.bindClass('com.google.scrollview.ScrollView')\n");
     std::thread t(&InteractiveScrollView::MessageReceiver);
@@ -365,12 +335,6 @@ void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
   }
 
   // Set up the variables on the clientside.
-  nr_created_windows_++;
-  window_id_ = nr_created_windows_;
-
-  svmap_mu->lock();
-  svmap[window_id_] = this;
-  svmap_mu->unlock();
 
   // Set up an actual Window on the client side.
   char message[kMaxMsgSize];
@@ -424,9 +388,14 @@ void InteractiveScrollView::StartEventHandler() {
 
 ScrollView::~ScrollView() {
 #if !GRAPHICS_DISABLED
+#if 0    // Cannot invoke virtual method any more as the derived instane has already finished delete-ing by now: we're delete-ing the base class right now! This is taken care of instead by calling Update() from the ScrollViewReference BEFORE invoking the destructor of the derived class!
   Update();
+#endif
 
-  delete semaphore_;
+  svmap_mu->lock();
+  ASSERT0(!svmap[GetId()]);
+  svmap_mu->unlock();
+
   delete points_;
 #endif // !GRAPHICS_DISABLED
 }
@@ -434,15 +403,13 @@ ScrollView::~ScrollView() {
 InteractiveScrollView::~InteractiveScrollView() {
 #if !GRAPHICS_DISABLED
   svmap_mu->lock();
-  if (svmap[window_id_]) {
+  if (svmap[GetId()]) {
     svmap_mu->unlock();
     // So the event handling thread can quit.
     SendMsg("destroy()");
 
     AwaitEvent(SVET_DESTROY);
-    svmap_mu->lock();
-    svmap[window_id_] = nullptr;
-    svmap_mu->unlock();
+
     // The event handler thread for this window *must* receive the
     // destroy event and set its pointer to this to nullptr before we allow
     // the destructor to exit.
@@ -452,6 +419,9 @@ InteractiveScrollView::~InteractiveScrollView() {
   } else {
     svmap_mu->unlock();
   }
+
+  delete semaphore_;
+  semaphore_ = nullptr;
 #endif // !GRAPHICS_DISABLED
 }
 
@@ -530,11 +500,10 @@ void InteractiveScrollView::SendPolygon() {
     // last setCursor has any effect.
     if (length == 2) {
       // An isolated line!
-      SendMsg("drawLine(%d,%d,%d,%d)", points_->xcoords[0], points_->ycoords[0],
-              points_->xcoords[1], points_->ycoords[1]);
+      SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
     } else if (length > 2) {
       // A polyline.
-      SendMsg("createPolyline(%d)", length);
+      SendMsg("createPolyline({})", length);
       char coordpair[kMaxIntPairSize];
       std::string decimal_coords;
       for (int i = 0; i < length; ++i) {
@@ -556,6 +525,7 @@ void InteractiveScrollView::SendPolygon() {
  *******************************************************************************/
 
 void InteractiveScrollView::Comment(std::string text) {
+  SendPolygon();
   // NO-OP for ScrollView JAVA app
 }
 
@@ -934,46 +904,34 @@ BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
              y_canvas_size, y_axis_reversed, server_name);
 }
 
-/// Calls Initialize with default argument for server_name_.
-BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
-                                             int x_pos, int y_pos, int x_size,
-                                             int y_size, int x_canvas_size,
-                                             int y_canvas_size,
-                                             bool y_axis_reversed)
-    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-                 y_canvas_size, y_axis_reversed) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, y_axis_reversed, "localhost");
-}
-
-/// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
-                                             int x_pos, int y_pos, int x_size,
-                                             int y_size, int x_canvas_size,
-                                             int y_canvas_size)
-    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-                 y_canvas_size) {
-  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
-             y_canvas_size, false, "localhost");
-}
-
 /// Sets up a ScrollView window, depending on the constructor variables.
 void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
                                        int x_pos, int y_pos, int x_size,
                                        int y_size, int x_canvas_size,
                                        int y_canvas_size, bool y_axis_reversed,
                                        const char *server_name) {
+  composeRGBPixel(255, 50, 255, &pen_color);
+  composeRGBPixel(50, 255, 255, &brush_color);
 
-  // Set up the variables on the clientside.
-  nr_created_windows_++;
-  window_id_ = nr_created_windows_;
+  auto width = tesseract_->ImageWidth();
+  auto height = tesseract_->ImageHeight();
 
-  svmap_mu->lock();
-  svmap[window_id_] = this;
-  svmap_mu->unlock();
+  Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
+  pixSetAll(wh_pix);
+  pix = MixWithLightRedTintedBackground(wh_pix, tess->pix_binary());
+  wh_pix.destroy();
 
-  std::thread t(&BackgroundScrollView::StartEventHandler, this);
-  t.detach();
+#  if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#  endif
 }
 
 /// Sits and waits for events on this window.
@@ -983,60 +941,35 @@ void BackgroundScrollView::StartEventHandler() {
 #endif // !GRAPHICS_DISABLED
 
 BackgroundScrollView::~BackgroundScrollView() {
-#if !GRAPHICS_DISABLED
-  svmap_mu->lock();
-    svmap[window_id_] = nullptr;
-    svmap_mu->unlock();
-#endif // !GRAPHICS_DISABLED
 }
 
 #if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
-    auto message = fmt::vformat(format, args);
+  auto message = fmt::vformat(format, args);
+  tprintf("DEBUG-DRAW: {}\n", message);
 }
 
 /// Add an Event Listener to this ScrollView Window
 void BackgroundScrollView::AddEventHandler(SVEventHandler *listener) {
-  event_handler_ = listener;
+  ASSERT0(!"Should never get here!");
 }
 
 void BackgroundScrollView::Signal() {
-  semaphore_->Signal();
+    ASSERT0(!"Should never get here!");
 }
 
 void BackgroundScrollView::SetEvent(const SVEvent *svevent) {
-  // Copy event
-  auto any = svevent->copy();
-  auto specific = svevent->copy();
-  any->counter = specific->counter + 1;
-
-  // Place both events into the queue.
-  std::lock_guard<std::mutex> guard(mutex_);
-
-  event_table_[specific->type] = std::move(specific);
-  event_table_[SVET_ANY] = std::move(any);
+    ASSERT0(!"Should never get here!");
 }
 
 /// Block until an event of the given type is received.
 /// Note: The calling function is responsible for deleting the returned
 /// SVEvent afterwards!
 std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
-  // Initialize the waiting semaphore.
-  auto *sem = new SVSemaphore();
-  std::pair<ScrollViewReference, SVEventType> ea(this, type);
-  waiting_for_events_mu->lock();
-  waiting_for_events[ea] = {sem, nullptr};
-  waiting_for_events_mu->unlock();
-  sem->Wait();
-  // Process the event we got woken up for (it's in waiting_for_events pair).
-  waiting_for_events_mu->lock();
-  auto ret = std::move(waiting_for_events[ea].second);
-  waiting_for_events.erase(ea);
-  delete sem;
-  waiting_for_events_mu->unlock();
-  return ret;
+  ASSERT0(!"Should never get here!");
+  return std::make_unique<SVEvent>();
 }
 
 // Send the current buffered polygon (if any) and clear it.
@@ -1048,21 +981,37 @@ void BackgroundScrollView::SendPolygon() {
     // last setCursor has any effect.
     if (length == 2) {
       // An isolated line!
-      SendMsg("drawLine(%d,%d,%d,%d)", points_->xcoords[0], points_->ycoords[0],
-              points_->xcoords[1], points_->ycoords[1]);
+      SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
     } else if (length > 2) {
       // A polyline.
-      SendMsg("createPolyline(%d)", length);
-      char coordpair[kMaxIntPairSize];
-      std::string decimal_coords;
-      for (int i = 0; i < length; ++i) {
-        snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i],
-                 points_->ycoords[i]);
-        decimal_coords += coordpair;
+      bool done = false;
+      if (length == 5) {
+        // A rectangle?
+        if (points_->xcoords[0] == points_->xcoords[4] &&
+            points_->ycoords[0] == points_->ycoords[4]) {
+          if (points_->xcoords[0] == points_->xcoords[1] &&
+              points_->xcoords[2] == points_->xcoords[3] &&
+              points_->ycoords[0] == points_->ycoords[3] &&
+              points_->ycoords[1] == points_->ycoords[2]) {
+            SendMsg("drawRectangle({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[2], points_->ycoords[2]);
+            done = true;
+          }
+        }
       }
-      decimal_coords += '\n';
-      SendMsg(decimal_coords.c_str());
-      SendMsg("drawPolyline()");
+      if (!done) {
+#if 0
+        SendMsg("createPolyline({})", length);
+#endif
+        char coordpair[kMaxIntPairSize];
+        std::string decimal_coords;
+        for (int i = 0; i < length; ++i) {
+          snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i], points_->ycoords[i]);
+          decimal_coords += coordpair;
+        }
+        // erase trailing ',':
+        decimal_coords.pop_back();
+        SendMsg("drawPolyline({})", decimal_coords.c_str());
+      }
     }
     points_->xcoords.clear();
     points_->ycoords.clear();
@@ -1074,7 +1023,8 @@ void BackgroundScrollView::SendPolygon() {
  *******************************************************************************/
 
 void BackgroundScrollView::Comment(std::string text) {
-  // NO-OP for ScrollView JAVA app
+  SendPolygon();
+  SendMsg("comment(\"{}\")", text.c_str());
 }
 
 // Sets the position from which to draw to (x,y).
@@ -1177,22 +1127,30 @@ void BackgroundScrollView::Ellipse(int x1, int y1, int width, int height) {
 
 // Set the pen color to the given RGB values.
 void BackgroundScrollView::Pen(int red, int green, int blue) {
-  SendMsg("pen({},{},{})", red, green, blue);
+  SendPolygon();
+  composeRGBPixel(red, green, blue, &pen_color);
+  //SendMsg("pen({},{},{})", red, green, blue);
 }
 
 // Set the pen color to the given RGB values.
 void BackgroundScrollView::Pen(int red, int green, int blue, int alpha) {
-  SendMsg("pen({},{},{},{})", red, green, blue, alpha);
+  SendPolygon();
+  composeRGBAPixel(red, green, blue, 255 - alpha, &pen_color);
+  //SendMsg("pen({},{},{},{})", red, green, blue, alpha);
 }
 
 // Set the brush color to the given RGB values.
 void BackgroundScrollView::Brush(int red, int green, int blue) {
-  SendMsg("brush({},{},{})", red, green, blue);
+  SendPolygon();
+  composeRGBPixel(red, green, blue, &brush_color);
+  //SendMsg("brush({},{},{})", red, green, blue);
 }
 
 // Set the brush color to the given RGB values.
 void BackgroundScrollView::Brush(int red, int green, int blue, int alpha) {
-  SendMsg("brush({},{},{},{})", red, green, blue, alpha);
+  SendPolygon();
+  composeRGBAPixel(red, green, blue, 255 - alpha, &brush_color);
+  //SendMsg("brush({},{},{},{})", red, green, blue, alpha);
 }
 
 // Set the attributes for future Text(..) calls.
@@ -1304,21 +1262,14 @@ void BackgroundScrollView::Brush(Color color) {
 
 // Shows a modal Input Dialog which can return any kind of String
 char *BackgroundScrollView::ShowInputDialog(const char *msg) {
-  SendMsg("showInputDialog(\"{}\")", msg);
-  // wait till an input event (all others are thrown away)
-  auto ev = AwaitEvent(SVET_INPUT);
-  char *p = new char[strlen(ev->parameter) + 1];
-  strcpy(p, ev->parameter);
-  return p;
+  ASSERT0(!"Should never get here!");
+  return nullptr;
 }
 
 // Shows a modal Yes/No Dialog which will return 'y' or 'n'
 int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
-  SendMsg("showYesNoDialog(\"{}\")", msg);
-  // Wait till an input event (all others are thrown away)
-  auto ev = AwaitEvent(SVET_INPUT);
-  int a = ev->parameter[0];
-  return a;
+  ASSERT0(!"Should never get here!");
+  return 0;
 }
 
 // Zoom the window to the rectangle given upper left corner and
@@ -1338,36 +1289,6 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos) {
   int base64_len = (size + 2) / 3 * 4;
   y_pos = TranslateYCoordinate(y_pos);
   SendMsg("readImage({},{},{})", x_pos, y_pos, base64_len);
-  // Base64 encode the data.
-  const char kBase64Table[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
-  };
-  char *base64 = new char[base64_len + 1];
-  memset(base64, '=', base64_len);
-  base64[base64_len] = '\0';
-  int remainder = 0;
-  int bits_left = 0;
-  int code_len = 0;
-  for (size_t i = 0; i < size; ++i) {
-    int code = (data[i] >> (bits_left + 2)) | remainder;
-    base64[code_len++] = kBase64Table[code & 63];
-    bits_left += 2;
-    remainder = data[i] << (6 - bits_left);
-    if (bits_left == 6) {
-      base64[code_len++] = kBase64Table[remainder & 63];
-      bits_left = 0;
-      remainder = 0;
-    }
-  }
-  if (bits_left > 0) {
-    base64[code_len++] = kBase64Table[remainder & 63];
-  }
-  SendMsg(base64);
-  delete[] base64;
   lept_free(data);
 }
 
@@ -1400,34 +1321,114 @@ int BackgroundScrollView::TranslateYCoordinate(int y) {
 }
 
 char BackgroundScrollView::Wait() {
-  // Wait till an input or click event (all others are thrown away)
-  char ret = '\0';
-  SVEventType ev_type = SVET_ANY;
-  do {
-    std::unique_ptr<SVEvent> ev(AwaitEvent(SVET_ANY));
-    ev_type = ev->type;
-    if (ev_type == SVET_INPUT) {
-      ret = ev->parameter[0];
-    }
-  } while (ev_type != SVET_INPUT && ev_type != SVET_CLICK);
-  return ret;
+  ASSERT0(!"Should never get here!");
+  return '\0';
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScrollViewReference::ScrollViewReference() : view_(nullptr) {}
+ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr) {
+}
 
-ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view) {}
+ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr) {
+  if (view_ != nullptr) {
+    counter_ = new int();
+    *counter_ = 1;
+  }
+}
+
+void ScrollViewReference::cleanup_before_delete() {
+  if (counter_) {
+    switch (--*counter_) {
+    case 1:
+      // NOTE: Cannot invoke virtual method UpdateWindow() et al from the
+      // Scrollview destructor any more as the derived instance has already
+      // finished delete-ing by then: we're delete-ing the base class by then!
+      // Hence we take care of this problem by calling Update() from the
+      // ScrollViewReference destructor right here, BEFORE invoking the
+      // destructor of the ScrollView and its derived class!
+      if (view_ != nullptr) {
+        view_->UpdateWindow();
+
+        svmap_mu->lock();
+        svmap[GetRef()->GetId()] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+        svmap_mu->unlock();
+
+        delete view_;
+        ASSERT0(*counter_ == 0);
+        delete counter_;
+      }
+      break;
+
+    case 0:
+      //delete view_;
+      //delete counter_;
+      break;
+    }
+  }
+  
+  view_ = nullptr;
+  counter_ = nullptr;
+}
 
 ScrollViewReference::~ScrollViewReference() {
-  delete view_;
+  cleanup_before_delete();
 }
 
 ScrollViewReference &ScrollViewReference::operator=(ScrollView *new_view) {
-  if (view_ != nullptr) {
-    delete view_;
+  if (view_ != new_view) {
+    cleanup_before_delete();
+
+    view_ = new_view;
+    if (view_ != nullptr) {
+      counter_ = new int();
+      *counter_ = 1;
+    }
   }
-  view_ = new_view;
+  return *this;
+}
+
+ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
+  tprintf("copy constructor failed!\n");
+  view_ = o.view_;
+  counter_ = o.counter_;
+  if (counter_ != nullptr) {
+    ++*counter_;
+  }
+}
+
+ScrollViewReference::ScrollViewReference(ScrollViewReference &&o) {
+  tprintf("move failed!\n");
+  view_ = o.view_;
+  counter_ = o.counter_;
+  o.view_ = nullptr;
+  o.counter_ = nullptr;
+}
+
+ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &other) {
+  tprintf("copy assigned\n");
+  if (&other != this) {
+    cleanup_before_delete();
+
+    view_ = other.view_;
+    counter_ = other.counter_;
+    if (counter_ != nullptr) {
+      ++*counter_;
+    }
+  }
+  return *this;
+}
+
+ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other) {
+  tprintf("move assigned\n");
+  if (&other != this) {
+    cleanup_before_delete();
+
+    view_ = other.view_;
+    counter_ = other.counter_;
+    other.view_ = nullptr;
+    other.counter_ = nullptr;
+  }
   return *this;
 }
 
@@ -1446,54 +1447,37 @@ ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
   return mgr;
 }
 
-ScrollViewManager::~ScrollViewManager() {}
+ScrollViewManager::~ScrollViewManager() {
 
-ScrollViewReference ScrollViewManager::MakeScrollView(
-    Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size,
-    int y_size, int x_canvas_size, int y_canvas_size) {
-  ScrollViewManager &mgr = GetScrollViewManager();
-  mgr.SetActiveTesseractInstance(tess);
-  tess = mgr.GetActiveTesseractInstance();
-  if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
-    return new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
-                                     x_canvas_size, y_canvas_size);
-  }
-  else {
-    return new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
-                                     x_canvas_size, y_canvas_size);
-  }
 }
 
-// With a flag whether the x axis is reversed.
-ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed) {
-  ScrollViewManager &mgr = GetScrollViewManager();
-  mgr.SetActiveTesseractInstance(tess);
-  tess = mgr.GetActiveTesseractInstance();
-  if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
-    return new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
-                                     x_canvas_size, y_canvas_size,
-                                     y_axis_reversed);
-  } else {
-    return new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
-                                     x_canvas_size, y_canvas_size,
-                                     y_axis_reversed);
-  }
-}
-
-// Connect to a server other than localhost.
 ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
   ScrollViewManager &mgr = GetScrollViewManager();
   mgr.SetActiveTesseractInstance(tess);
   tess = mgr.GetActiveTesseractInstance();
+
+  ScrollViewReference rv; 
+
   if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
-      return new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
+      rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
                                        x_canvas_size, y_canvas_size,
                                        y_axis_reversed, server_name);
   } else {
-      return new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
+      rv = new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
                                        x_canvas_size, y_canvas_size,
                                        y_axis_reversed, server_name);
   }
+
+  // Only update the global svmap[] table here, as we want to keep a reference count of the number of references to ScrollView instances via ScrollViewReference
+  // and the old code would produce two INDEPENDENT ScrollViewReference instances instead, causing havoc: one used by the application, plus one created implicitly
+  // by the `svmap[rv->GetId()] = this;` statement in the `Scrollview::Initialize()` method.
+  // 
+  // That's why we #if0-ed that chunk of code further above!
+  svmap_mu->lock();
+  svmap[rv->GetId()] = rv;
+  svmap_mu->unlock();
+
+  return rv;
 }
 
   // set this instance to be the latest active one
@@ -1501,7 +1485,9 @@ void ScrollViewManager::SetActiveTesseractInstance(Tesseract *tess) {
   if (!tess)
     return;
   ScrollViewManager &mgr = GetScrollViewManager();
-  mgr.AddActiveTesseractInstance(tess);
+  if (mgr.active != tess) {
+    mgr.AddActiveTesseractInstance(tess);
+  }
 }
 
 // add this instance to the list of active tesseract instance but don't put it on top yet...

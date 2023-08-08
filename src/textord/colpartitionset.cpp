@@ -402,7 +402,7 @@ void ColPartitionSet::GetColumnBoxes(int y_bottom, int y_top,
 
 // Display the edges of the columns at the given y coords.
 void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
-                                         ScrollViewReference win) {
+                                         ScrollViewReference &win) {
   ColPartition_IT it(&parts_);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     ColPartition *part = it.data();

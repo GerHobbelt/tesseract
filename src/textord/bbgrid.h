@@ -27,7 +27,7 @@
 #include "rect.h"
 #include "scrollview.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/assertions.h"     // for ASSERT
@@ -220,7 +220,7 @@ public:
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
   // ScrollView::Color BBC::BoxColor() const.
-  void DisplayBoxes(ScrollViewReference window);
+  void DisplayBoxes(ScrollViewReference &window);
 
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
@@ -649,8 +649,10 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
   ScrollViewReference tab_win = ScrollViewManager::
       MakeScrollView(tess, window_name, x, y, tright_.x() - bleft_.x(), tright_.y() - bleft_.y(),
                      tright_.x() - bleft_.x(), tright_.y() - bleft_.y(), true);
-  auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
-  tab_win->AddEventHandler(handler);
+  if (tab_win->HasInteractiveFeature()) {
+    auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
+    tab_win->AddEventHandler(handler);
+  }
   tab_win->Pen(ScrollView::GREY);
   tab_win->Rectangle(0, 0, tright_.x() - bleft_.x(), tright_.y() - bleft_.y());
   return tab_win;
@@ -661,7 +663,7 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
 // Use of this function requires an additional member of the BBC class:
 // ScrollView::Color BBC::BoxColor() const.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
-void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference tab_win) {
+void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win) {
   tab_win->Pen(ScrollView::BLUE);
   tab_win->Brush(ScrollView::NONE);
 

@@ -31,7 +31,7 @@
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include "dict.h"
 #if defined(USE_OPENCL)
@@ -889,7 +889,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_bigram_debug", "Y");
 
-    api.SetVariable("tess_debug_lstm", debug_all > 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
+    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
 
     api.SetVariable("debug_noise_removal", "Y");
 

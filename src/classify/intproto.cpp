@@ -134,10 +134,10 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
                      TABLE_FILLER *Filler);
 
 #if !GRAPHICS_DISABLED
-void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feature,
+void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color);
 
-void RenderIntProto(ScrollViewReference window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
+void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
 #endif // !GRAPHICS_DISABLED
 
 /*-----------------------------------------------------------------------------
@@ -917,7 +917,7 @@ void Classify::ShowMatchDisplay() {
 
 /// Clears the given window and draws the featurespace guides for the
 /// appropriate normalization method.
-void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference window) {
+void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &window) {
   window->Clear();
 
   window->Pen(ScrollView::GREY);
@@ -1206,6 +1206,9 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
  */
 CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *pretrained_on,
                                    int *shape_id) {
+  if (!IntMatchWindow->HasInteractiveFeature())
+    return 0;
+
   tprintf("{}\n", Prompt);
   SVEventType ev_type;
   int unichar_id = INVALID_UNICHAR_ID;
@@ -1544,7 +1547,7 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
  * @return New shape list with rendering of Feature added.
  * @note Globals: none
  */
-void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feature,
+void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
                       ScrollView::Color color) {
   float X, Y, Dx, Dy, Length;
 
@@ -1578,7 +1581,7 @@ void RenderIntFeature(ScrollViewReference window, const INT_FEATURE_STRUCT *Feat
  *
  * @return New shape list with a rendering of one proto added.
  */
-void RenderIntProto(ScrollViewReference window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
+void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
                     ScrollView::Color color) {
   INT_PROTO_STRUCT *Proto;
   int ProtoSetIndex;

@@ -15,7 +15,7 @@
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "bbgrid.h"  // Base class.
 #include "blobbox.h" // BlobNeighourDir.
 #include "blobs.h"
@@ -87,7 +87,7 @@ void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD
 #if !GRAPHICS_DISABLED
 
 // Display the blobs in the window colored according to textline quality.
-void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReference win) {
+void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReference &win) {
   BLOBNBOX_IT it(blobs);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();

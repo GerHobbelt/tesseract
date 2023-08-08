@@ -51,7 +51,7 @@
 #include <tesseract/unichar.h>     // for UNICHAR_ID
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 
-#include <allheaders.h> // for pixDestroy, pixGetWidth, pixGetHe...
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetWidth, pixGetHe...
 
 #include <cstdint> // for int16_t, int32_t, uint16_t
 #include <cstdio>  // for FILE
@@ -1047,9 +1047,13 @@ public:
     AddPixDebugPage(pix, title.c_str());
   }
 
-  void AddClippedPixDebugPage(const Image &pix, const TBOX &bbox, const char *title);
+  void AddClippedPixDebugPage(const Image &pix, const TBOX& bbox, const char *title);
   void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
     AddClippedPixDebugPage(pix, bbox, title.c_str());
+  }
+  void AddClippedPixDebugPage(const Image &pix, const char *title);
+  void AddClippedPixDebugPage(const Image &pix, const std::string &title) {
+    AddClippedPixDebugPage(pix, title.c_str());
   }
 
   int PushNextPixDebugSection(const std::string &title) { // sibling

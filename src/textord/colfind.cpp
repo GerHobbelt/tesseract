@@ -449,7 +449,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
         if (!textord_debug_printable) {
           DisplayTabVectors(window);
         }
-        if (window && textord_tabfind_show_partitions > 1) {
+        if (window && textord_tabfind_show_partitions > 1 && window->HasInteractiveFeature()) {
           window->AwaitEvent(SVET_DESTROY);
         }
     }
@@ -482,7 +482,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   int result = 0;
 #if !GRAPHICS_DISABLED
   if (blocks_win_) {
-    if (!tesseract_->debug_do_not_use_scrollview_app) {
+    if (blocks_win_->HasInteractiveFeature()) {
       bool waiting = false;
       do {
         waiting = false;
