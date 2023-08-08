@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/pageiterator.h>
 #include "helpers.h"
 #include "pageres.h"

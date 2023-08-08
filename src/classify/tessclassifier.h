@@ -54,7 +54,7 @@ public:
   // by any subsequent classifiers. Caller waits for the user to view and
   // then destroys the windows by clearing the vector.
   int DisplayClassifyAs(const TrainingSample &sample, int unichar_id, int index,
-                        std::vector<ScrollView *> &windows) override;
+                        std::vector<ScrollViewReference > &windows) override;
 
 private:
   // Indicates that this classifier is to use just the ClassPruner, or the

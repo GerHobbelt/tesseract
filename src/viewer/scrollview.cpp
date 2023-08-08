@@ -25,10 +25,14 @@
 #include <tesseract/debugheap.h>
 
 #include "scrollview.h"
+#include "bbgrid.h"
+#include "tesseractclass.h"
 
 #include "svutil.h" // for SVNetwork
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
+
+#include "drawtord.h"
 
 #include <algorithm>
 #include <climits>
@@ -58,11 +62,12 @@ struct SVPolyLineBuffer {
 };
 
 // A map between the window IDs and their corresponding pointers.
-static std::map<int, ScrollView *> svmap;
+static std::map<int, ScrollViewReference> svmap;
 static std::mutex *svmap_mu;
 // A map of all semaphores waiting for a specific event on a specific window.
-static std::map<std::pair<ScrollView *, SVEventType>,
-                std::pair<SVSemaphore *, std::unique_ptr<SVEvent>>> waiting_for_events;
+static std::map<std::pair<ScrollViewReference, SVEventType>,
+                std::pair<SVSemaphore *, std::unique_ptr<SVEvent>>>
+    waiting_for_events;
 static std::mutex *waiting_for_events_mu;
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
@@ -93,12 +98,12 @@ SVEventHandler::~SVEventHandler() = default;
 /// to the client. It basically loops through messages, parses them to events
 /// and distributes it to the waiting handlers.
 /// It is run from a different thread and synchronizes via SVSync.
-void ScrollView::MessageReceiver() {
+void InteractiveScrollView::MessageReceiver() {
   int counter_event_id = 0; // ongoing counter
   char *message = nullptr;
   // Wait until a new message appears in the input stream_.
   do {
-    message = ScrollView::GetStream()->Receive();
+    message = InteractiveScrollView::GetStream()->Receive();
   } while (message == nullptr);
 
   // This is the main loop which iterates until the server is dead (strlen =
@@ -114,14 +119,14 @@ void ScrollView::MessageReceiver() {
 
     int n;
     // Fill the new SVEvent properly.
-    sscanf(message, "%d,%d,%d,%d,%d,%d,%d,%n", &window_id, &ev_type, &cur->x, &cur->y, &cur->x_size,
-           &cur->y_size, &cur->command_id, &n);
+    sscanf(message, "%d,%d,%d,%d,%d,%d,%d,%n", &window_id, &ev_type, &cur->x,
+           &cur->y, &cur->x_size, &cur->y_size, &cur->command_id, &n);
     char *p = (message + n);
 
     svmap_mu->lock();
     cur->window = svmap[window_id];
 
-    if (cur->window != nullptr) {
+    if (cur->window) {
       auto length = strlen(p);
       cur->parameter = new char[length + 1];
       strcpy(cur->parameter, p);
@@ -141,7 +146,7 @@ void ScrollView::MessageReceiver() {
         cur->y_size = -cur->y_size;
       }
       // Returned y will be the bottom-left if y is reversed.
-      if (cur->window->y_axis_is_reversed_) {
+      if (cur->window->is_y_axis_reversed()) {
         cur->y = cur->window->TranslateYCoordinate(cur->y + cur->y_size);
       }
       cur->counter = counter_event_id;
@@ -160,10 +165,12 @@ void ScrollView::MessageReceiver() {
       cur->window->SetEvent(cur.get());
 
       // Check if any of the threads currently waiting want it.
-      std::pair<ScrollView *, SVEventType> awaiting_list(cur->window, cur->type);
-      std::pair<ScrollView *, SVEventType> awaiting_list_any(cur->window, SVET_ANY);
-      std::pair<ScrollView *, SVEventType> awaiting_list_any_window((ScrollView *)nullptr,
+      std::pair<ScrollViewReference, SVEventType> awaiting_list(cur->window,
+                                                                cur->type);
+      std::pair<ScrollViewReference, SVEventType> awaiting_list_any(cur->window,
                                                                     SVET_ANY);
+      std::pair<ScrollViewReference, SVEventType> awaiting_list_any_window(
+          (ScrollViewReference) nullptr, SVET_ANY);
       waiting_for_events_mu->lock();
       if (waiting_for_events.count(awaiting_list) > 0) {
         waiting_for_events[awaiting_list].second = std::move(cur);
@@ -177,8 +184,8 @@ void ScrollView::MessageReceiver() {
       }
       waiting_for_events_mu->unlock();
       // Signal the corresponding semaphore twice (for both copies).
-      ScrollView *sv = svmap[window_id];
-      if (sv != nullptr) {
+      ScrollViewReference sv = svmap[window_id];
+      if (sv) {
         sv->Signal();
         sv->Signal();
       }
@@ -187,7 +194,7 @@ void ScrollView::MessageReceiver() {
 
     // Wait until a new message appears in the input stream_.
     do {
-      message = ScrollView::GetStream()->Receive();
+      message = InteractiveScrollView::GetStream()->Receive();
     } while (message == nullptr);
   }
 }
@@ -249,62 +256,84 @@ static const uint8_t table_colors[ScrollView::GREEN_YELLOW + 1][4] = {
  * Scrollview implementation.
  *******************************************************************************/
 
-SVNetwork *ScrollView::stream_ = nullptr;
+SVNetwork *InteractiveScrollView::stream_ = nullptr;
 int ScrollView::nr_created_windows_ = 0;
 int ScrollView::image_index_ = 0;
 
 /// Calls Initialize with all arguments given.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
-                       int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
+ScrollView::ScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
+                       int x_size, int y_size, int x_canvas_size,
+                       int y_canvas_size, bool y_axis_reversed,
                        const char *server_name) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
-             server_name);
-}
-
-/// Calls Initialize with default argument for server_name_.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
-                       int x_canvas_size, int y_canvas_size, bool y_axis_reversed) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed,
-             "localhost");
-}
-
-/// Calls Initialize with default argument for server_name_ & y_axis_reversed.
-ScrollView::ScrollView(const char *name, int x_pos, int y_pos, int x_size, int y_size,
-                       int x_canvas_size, int y_canvas_size) {
-  Initialize(name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, false, "localhost");
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, y_axis_reversed, server_name);
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
-void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, int y_size,
-                            int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
-                            const char *server_name) {
-  // If this is the first ScrollView Window which gets created, there is no
-  // network connection yet and we have to set it up in a different thread.
-  if (stream_ == nullptr) {
-    nr_created_windows_ = 0;
-    stream_ = new SVNetwork(server_name, kSvPort);
-    waiting_for_events_mu = new std::mutex();
+void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
+                            int y_pos, int x_size, int y_size,
+                            int x_canvas_size, int y_canvas_size,
+                            bool y_axis_reversed, const char *server_name) {
+  tesseract_ = tess;
+  ref_of_ref_ = nullptr;
+
+  if (!svmap_mu) {
     svmap_mu = new std::mutex();
-    SendRawMessage("svmain = luajava.bindClass('com.google.scrollview.ScrollView')\n");
-    std::thread t(&ScrollView::MessageReceiver);
-    t.detach();
   }
 
   // Set up the variables on the clientside.
-  nr_created_windows_++;
-  event_handler_ = nullptr;
-  event_handler_ended_ = false;
   y_axis_is_reversed_ = y_axis_reversed;
   y_size_ = y_canvas_size;
   window_name_ = name;
+
   window_id_ = nr_created_windows_;
+  nr_created_windows_++;
+
   // Set up polygon buffering.
   points_ = new SVPolyLineBuffer;
   points_->empty = true;
 
+#if 0
   svmap_mu->lock();
-  svmap[window_id_] = this;
+  svmap[GetId()] = this;
   svmap_mu->unlock();
+#endif
+}
+
+
+void ScrollView::ExitHelper() {
+  tprintf("Nuking ScrollView #{}.\n", GetId());
+
+  if (ref_of_ref_) {
+    *ref_of_ref_ = nullptr;
+  }
+}
+
+void ScrollView::RegisterGlobalRefToMe(ScrollViewReference* ref2ref) {
+  ref_of_ref_ = ref2ref;
+}
+
+/// Calls Initialize with all arguments given.
+InteractiveScrollView::InteractiveScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
+                       int x_size, int y_size, int x_canvas_size,
+                       int y_canvas_size, bool y_axis_reversed,
+                       const char *server_name) :
+    ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size, y_canvas_size, y_axis_reversed, server_name) 
+{
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, y_axis_reversed, server_name);
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
+                                       int x_pos, int y_pos, int x_size,
+                                       int y_size, int x_canvas_size,
+                                       int y_canvas_size, bool y_axis_reversed,
+                                       const char *server_name) {
+  waiting_for_events_mu = new std::mutex();
+
+  event_handler_ = nullptr;
+  event_handler_ended_ = false;
 
   for (auto &i : event_table_) {
     i = nullptr;
@@ -312,21 +341,34 @@ void ScrollView::Initialize(const char *name, int x_pos, int y_pos, int x_size, 
 
   semaphore_ = new SVSemaphore();
 
+  // If this is the first ScrollView Window which gets created, there is no
+  // network connection yet and we have to set it up in a different thread.
+  if (stream_ == nullptr) {
+    //nr_created_windows_ = 0;
+    stream_ = new SVNetwork(server_name, kSvPort);
+    SendRawMessage(
+        "svmain = luajava.bindClass('com.google.scrollview.ScrollView')\n");
+    std::thread t(&InteractiveScrollView::MessageReceiver);
+    t.detach();
+  }
+
+  // Set up the variables on the clientside.
+
   // Set up an actual Window on the client side.
   char message[kMaxMsgSize];
   snprintf(message, sizeof(message),
            "w%u = luajava.newInstance('com.google.scrollview.ui"
            ".SVWindow','%s',%u,%u,%u,%u,%u,%u,%u)\n",
-           window_id_, window_name_, window_id_, x_pos, y_pos, x_size, y_size, x_canvas_size,
-           y_canvas_size);
+           window_id_, window_name_, window_id_, x_pos, y_pos, x_size, y_size,
+           x_canvas_size, y_canvas_size);
   SendRawMessage(message);
 
-  std::thread t(&ScrollView::StartEventHandler, this);
+  std::thread t(&InteractiveScrollView::StartEventHandler, this);
   t.detach();
 }
 
 /// Sits and waits for events on this window.
-void ScrollView::StartEventHandler() {
+void InteractiveScrollView::StartEventHandler() {
   for (;;) {
     stream_->Flush();
     semaphore_->Wait();
@@ -336,7 +378,8 @@ void ScrollView::StartEventHandler() {
     // Check every table entry if it is valid and not already processed.
 
     for (int i = 0; i < SVET_COUNT; i++) {
-      if (event_table_[i] != nullptr && (serial < 0 || event_table_[i]->counter < serial)) {
+      if (event_table_[i] != nullptr &&
+          (serial < 0 || event_table_[i]->counter < serial)) {
         serial = event_table_[i]->counter;
         k = i;
       }
@@ -363,16 +406,28 @@ void ScrollView::StartEventHandler() {
 
 ScrollView::~ScrollView() {
 #if !GRAPHICS_DISABLED
+#if 0    // Cannot invoke virtual method any more as the derived instane has already finished delete-ing by now: we're delete-ing the base class right now! This is taken care of instead by calling Update() from the ScrollViewReference BEFORE invoking the destructor of the derived class!
+  Update();
+#endif
+
   svmap_mu->lock();
-  if (svmap[window_id_] != nullptr) {
+  ASSERT0(!svmap[GetId()]);
+  svmap_mu->unlock();
+
+  delete points_;
+#endif // !GRAPHICS_DISABLED
+}
+
+InteractiveScrollView::~InteractiveScrollView() {
+#if !GRAPHICS_DISABLED
+  svmap_mu->lock();
+  if (svmap[GetId()]) {
     svmap_mu->unlock();
     // So the event handling thread can quit.
     SendMsg("destroy()");
 
     AwaitEvent(SVET_DESTROY);
-    svmap_mu->lock();
-    svmap[window_id_] = nullptr;
-    svmap_mu->unlock();
+
     // The event handler thread for this window *must* receive the
     // destroy event and set its pointer to this to nullptr before we allow
     // the destructor to exit.
@@ -382,42 +437,45 @@ ScrollView::~ScrollView() {
   } else {
     svmap_mu->unlock();
   }
+
   delete semaphore_;
-  delete points_;
+  semaphore_ = nullptr;
 #endif // !GRAPHICS_DISABLED
 }
 
 #if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
-void ScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
+void InteractiveScrollView::vSendMsg(fmt::string_view format,
+                                     fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   if (!points_->empty) {
     SendPolygon();
   }
 
-  char form[kMaxMsgSize];
-  snprintf(form, sizeof(form), "w%u:%s\n", window_id_, message.c_str());
-
-  stream_->Send(form);
+  char winidstr[kMaxIntPairSize];
+  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  std::string form(winidstr);
+  form += message;
+  stream_->Send(form.c_str());
 }
 
 /// Send a message to the server without a
 /// window id. Used for global events like exit().
-void ScrollView::SendRawMessage(const char *msg) {
+void InteractiveScrollView::SendRawMessage(const char *msg) {
   stream_->Send(msg);
 }
 
 /// Add an Event Listener to this ScrollView Window
-void ScrollView::AddEventHandler(SVEventHandler *listener) {
+void InteractiveScrollView::AddEventHandler(SVEventHandler *listener) {
   event_handler_ = listener;
 }
 
-void ScrollView::Signal() {
+void InteractiveScrollView::Signal() {
   semaphore_->Signal();
 }
 
-void ScrollView::SetEvent(const SVEvent *svevent) {
+void InteractiveScrollView::SetEvent(const SVEvent *svevent) {
   // Copy event
   auto any = svevent->copy();
   auto specific = svevent->copy();
@@ -433,10 +491,10 @@ void ScrollView::SetEvent(const SVEvent *svevent) {
 /// Block until an event of the given type is received.
 /// Note: The calling function is responsible for deleting the returned
 /// SVEvent afterwards!
-std::unique_ptr<SVEvent> ScrollView::AwaitEvent(SVEventType type) {
+std::unique_ptr<SVEvent> InteractiveScrollView::AwaitEvent(SVEventType type) {
   // Initialize the waiting semaphore.
   auto *sem = new SVSemaphore();
-  std::pair<ScrollView *, SVEventType> ea(this, type);
+  std::pair<ScrollViewReference, SVEventType> ea(this, type);
   waiting_for_events_mu->lock();
   waiting_for_events[ea] = {sem, nullptr};
   waiting_for_events_mu->unlock();
@@ -453,7 +511,7 @@ std::unique_ptr<SVEvent> ScrollView::AwaitEvent(SVEventType type) {
 }
 
 // Send the current buffered polygon (if any) and clear it.
-void ScrollView::SendPolygon() {
+void InteractiveScrollView::SendPolygon() {
   if (!points_->empty) {
     points_->empty = true; // Allows us to use SendMsg.
     int length = points_->xcoords.size();
@@ -461,15 +519,15 @@ void ScrollView::SendPolygon() {
     // last setCursor has any effect.
     if (length == 2) {
       // An isolated line!
-      SendMsg("drawLine(%d,%d,%d,%d)", points_->xcoords[0], points_->ycoords[0],
-              points_->xcoords[1], points_->ycoords[1]);
+      SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
     } else if (length > 2) {
       // A polyline.
-      SendMsg("createPolyline(%d)", length);
+      SendMsg("createPolyline({})", length);
       char coordpair[kMaxIntPairSize];
       std::string decimal_coords;
       for (int i = 0; i < length; ++i) {
-        snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i], points_->ycoords[i]);
+        snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i],
+                 points_->ycoords[i]);
         decimal_coords += coordpair;
       }
       decimal_coords += '\n';
@@ -485,21 +543,26 @@ void ScrollView::SendPolygon() {
  * LUA "API" functions.
  *******************************************************************************/
 
+void InteractiveScrollView::Comment(std::string text) {
+  SendPolygon();
+  // NO-OP for ScrollView JAVA app
+}
+
 // Sets the position from which to draw to (x,y).
-void ScrollView::SetCursor(int x, int y) {
+void InteractiveScrollView::SetCursor(int x, int y) {
   SendPolygon();
   DrawTo(x, y);
 }
 
 // Draws from the current position to (x,y) and sets the new position to it.
-void ScrollView::DrawTo(int x, int y) {
+void InteractiveScrollView::DrawTo(int x, int y) {
   points_->xcoords.push_back(x);
   points_->ycoords.push_back(TranslateYCoordinate(y));
   points_->empty = false;
 }
 
 // Draw a line using the current pen color.
-void ScrollView::Line(int x1, int y1, int x2, int y2) {
+void InteractiveScrollView::Line(int x1, int y1, int x2, int y2) {
   if (!points_->xcoords.empty() && x1 == points_->xcoords.back() &&
       TranslateYCoordinate(y1) == points_->ycoords.back()) {
     // We are already at x1, y1, so just draw to x2, y2.
@@ -516,7 +579,7 @@ void ScrollView::Line(int x1, int y1, int x2, int y2) {
 }
 
 // Set the visibility of the window.
-void ScrollView::SetVisible(bool visible) {
+void InteractiveScrollView::SetVisible(bool visible) {
   if (visible) {
     SendMsg("setVisible(true)");
   } else {
@@ -525,7 +588,7 @@ void ScrollView::SetVisible(bool visible) {
 }
 
 // Set the alwaysOnTop flag.
-void ScrollView::AlwaysOnTop(bool b) {
+void InteractiveScrollView::AlwaysOnTop(bool b) {
   if (b) {
     SendMsg("setAlwaysOnTop(true)");
   } else {
@@ -534,76 +597,80 @@ void ScrollView::AlwaysOnTop(bool b) {
 }
 
 // Adds a message entry to the message box.
-void ScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
+void InteractiveScrollView::vAddMessage(fmt::string_view format,
+                                        fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
-  char form[kMaxMsgSize];
-  snprintf(form, sizeof(form), "w%u:%s", window_id_, message.c_str());
+  char winidstr[kMaxIntPairSize];
+  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  std::string form(winidstr);
+  form += message;
 
-  char *esc = AddEscapeChars(form);
-  SendMsg("addMessage(\"{}\")", esc);
-  delete[] esc;
+  auto s = AddEscapeChars(form, "'");
+  SendMsg("addMessage(\"{}\")", s);
 }
 
 // Set a messagebox.
-void ScrollView::AddMessageBox() {
+void InteractiveScrollView::AddMessageBox() {
   SendMsg("addMessageBox()");
 }
 
 // Exit the client completely (and notify the server of it).
-void ScrollView::Exit() {
+void InteractiveScrollView::ExitHelper() {
   SendRawMessage("svmain:exit()");
-  exit(0);
 }
 
 // Clear the canvas.
-void ScrollView::Clear() {
+void InteractiveScrollView::Clear() {
   SendMsg("clear()");
 }
 
 // Set the stroke width.
-void ScrollView::Stroke(float width) {
+void InteractiveScrollView::Stroke(float width) {
   SendMsg("setStrokeWidth({})", width);
 }
 
 // Draw a rectangle using the current pen color.
 // The rectangle is filled with the current brush color.
-void ScrollView::Rectangle(int x1, int y1, int x2, int y2) {
+void InteractiveScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   if (x1 == x2 && y1 == y2) {
     return; // Scrollviewer locks up.
   }
-  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
+          TranslateYCoordinate(y2));
 }
 
 // Draw an ellipse using the current pen color.
 // The ellipse is filled with the current brush color.
-void ScrollView::Ellipse(int x1, int y1, int width, int height) {
-  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width, height);
+void InteractiveScrollView::Ellipse(int x1, int y1, int width, int height) {
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
+          height);
 }
 
 // Set the pen color to the given RGB values.
-void ScrollView::Pen(int red, int green, int blue) {
+void InteractiveScrollView::Pen(int red, int green, int blue) {
   SendMsg("pen({},{},{})", red, green, blue);
 }
 
 // Set the pen color to the given RGB values.
-void ScrollView::Pen(int red, int green, int blue, int alpha) {
+void InteractiveScrollView::Pen(int red, int green, int blue, int alpha) {
   SendMsg("pen({},{},{},{})", red, green, blue, alpha);
 }
 
 // Set the brush color to the given RGB values.
-void ScrollView::Brush(int red, int green, int blue) {
+void InteractiveScrollView::Brush(int red, int green, int blue) {
   SendMsg("brush({},{},{})", red, green, blue);
 }
 
 // Set the brush color to the given RGB values.
-void ScrollView::Brush(int red, int green, int blue, int alpha) {
+void InteractiveScrollView::Brush(int red, int green, int blue, int alpha) {
   SendMsg("brush({},{},{},{})", red, green, blue, alpha);
 }
 
 // Set the attributes for future Text(..) calls.
-void ScrollView::TextAttributes(const char *font, int pixel_size, bool bold, bool italic,
-                                bool underlined) {
+void InteractiveScrollView::TextAttributes(const char *font, int pixel_size,
+                                           bool bold, bool italic,
+                                           bool underlined) {
   const char *b;
   const char *i;
   const char *u;
@@ -627,18 +694,19 @@ void ScrollView::TextAttributes(const char *font, int pixel_size, bool bold, boo
 }
 
 // Draw text at the given coordinates.
-void ScrollView::Text(int x, int y, const char *mystring) {
+void InteractiveScrollView::Text(int x, int y, const char *mystring) {
   SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
 }
 
 // Open and draw an image given a name at (x,y).
-void ScrollView::Draw(const char *image, int x_pos, int y_pos) {
+void InteractiveScrollView::Draw(const char *image, int x_pos, int y_pos) {
   SendMsg("openImage('{}')", image);
   SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
 }
 
 // Add new checkboxmenuentry to menubar.
-void ScrollView::MenuItem(const char *parent, const char *name, int cmdEvent, bool flag) {
+void InteractiveScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent, bool flag) {
   if (parent == nullptr) {
     parent = "";
   }
@@ -650,7 +718,8 @@ void ScrollView::MenuItem(const char *parent, const char *name, int cmdEvent, bo
 }
 
 // Add new menuentry to menubar.
-void ScrollView::MenuItem(const char *parent, const char *name, int cmdEvent) {
+void InteractiveScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent) {
   if (parent == nullptr) {
     parent = "";
   }
@@ -658,7 +727,7 @@ void ScrollView::MenuItem(const char *parent, const char *name, int cmdEvent) {
 }
 
 // Add new submenu to menubar.
-void ScrollView::MenuItem(const char *parent, const char *name) {
+void InteractiveScrollView::MenuItem(const char *parent, const char *name) {
   if (parent == nullptr) {
     parent = "";
   }
@@ -666,7 +735,7 @@ void ScrollView::MenuItem(const char *parent, const char *name) {
 }
 
 // Add new submenu to popupmenu.
-void ScrollView::PopupItem(const char *parent, const char *name) {
+void InteractiveScrollView::PopupItem(const char *parent, const char *name) {
   if (parent == nullptr) {
     parent = "";
   }
@@ -674,47 +743,68 @@ void ScrollView::PopupItem(const char *parent, const char *name) {
 }
 
 // Add new submenuentry to popupmenu.
-void ScrollView::PopupItem(const char *parent, const char *name, int cmdEvent, const char *value,
-                           const char *desc) {
+void InteractiveScrollView::PopupItem(const char *parent, const char *name,
+                                      int cmdEvent, const char *value,
+                                      const char *desc) {
   if (parent == nullptr) {
     parent = "";
   }
-  char *esc = AddEscapeChars(value);
-  char *esc2 = AddEscapeChars(desc);
+  auto esc = AddEscapeChars(value, "'");
+  auto esc2 = AddEscapeChars(desc, "'");
   SendMsg("addPopupMenuItem('{}','{}',{},'{}','{}')", parent, name, cmdEvent, esc, esc2);
-  delete[] esc;
-  delete[] esc2;
 }
 
 // Send an update message for a single window.
-void ScrollView::UpdateWindow() {
+void InteractiveScrollView::UpdateWindow() {
   SendMsg("update()");
 }
 
 // Note: this is an update to all windows
 void ScrollView::Update() {
+  if (!svmap_mu) {
+    svmap_mu = new std::mutex();
+  }
+
   std::lock_guard<std::mutex> guard(*svmap_mu);
   for (auto &iter : svmap) {
-    if (iter.second != nullptr) {
+    if (iter.second) {
       iter.second->UpdateWindow();
     }
   }
 }
 
+// 
+void ScrollView::Exit() {
+  if (!svmap_mu) {
+    svmap_mu = new std::mutex();
+  }
+
+  // limit scope of lock
+  {
+    std::lock_guard<std::mutex> guard(*svmap_mu);
+    for (auto &iter : svmap) {
+      if (iter.second) {
+        iter.second->ExitHelper();
+      }
+    }
+  }
+  exit(667);
+}
+
 // Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
-void ScrollView::Pen(Color color) {
+void InteractiveScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
       table_colors[color][3]);
 }
 
 // Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
-void ScrollView::Brush(Color color) {
+void InteractiveScrollView::Brush(Color color) {
   Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
         table_colors[color][3]);
 }
 
 // Shows a modal Input Dialog which can return any kind of String
-char *ScrollView::ShowInputDialog(const char *msg) {
+char *InteractiveScrollView::ShowInputDialog(const char *msg) {
   SendMsg("showInputDialog(\"{}\")", msg);
   // wait till an input event (all others are thrown away)
   auto ev = AwaitEvent(SVET_INPUT);
@@ -724,7 +814,7 @@ char *ScrollView::ShowInputDialog(const char *msg) {
 }
 
 // Shows a modal Yes/No Dialog which will return 'y' or 'n'
-int ScrollView::ShowYesNoDialog(const char *msg) {
+int InteractiveScrollView::ShowYesNoDialog(const char *msg) {
   SendMsg("showYesNoDialog(\"{}\")", msg);
   // Wait till an input event (all others are thrown away)
   auto ev = AwaitEvent(SVET_INPUT);
@@ -734,15 +824,15 @@ int ScrollView::ShowYesNoDialog(const char *msg) {
 
 // Zoom the window to the rectangle given upper left corner and
 // lower right corner.
-void ScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+void InteractiveScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
   y1 = TranslateYCoordinate(y1);
   y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2),
-          std::max(y1, y2));
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
+          std::max(x1, x2), std::max(y1, y2));
 }
 
 // Send an image of type Pix.
-void ScrollView::Draw(Image image, int x_pos, int y_pos) {
+void InteractiveScrollView::Draw(Image image, int x_pos, int y_pos, const char *title) {
   l_uint8 *data;
   size_t size;
   pixWriteMem(&data, &size, image, IFF_PNG);
@@ -751,10 +841,11 @@ void ScrollView::Draw(Image image, int x_pos, int y_pos) {
   SendMsg("readImage({},{},{})", x_pos, y_pos, base64_len);
   // Base64 encode the data.
   const char kBase64Table[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-      'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-      'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-      'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
   };
   char *base64 = new char[base64_len + 1];
   memset(base64, '=', base64_len);
@@ -783,25 +874,29 @@ void ScrollView::Draw(Image image, int x_pos, int y_pos) {
 
 // Escapes the ' character with a \, so it can be processed by LUA.
 // Note: The caller will have to make sure it deletes the newly allocated item.
-char *ScrollView::AddEscapeChars(const char *input) {
-  const char *nextptr = strchr(input, '\'');
-  const char *lastptr = input;
-  char *message = new char[kMaxMsgSize];
-  int pos = 0;
-  while (nextptr != nullptr) {
-    strncpy(message + pos, lastptr, nextptr - lastptr);
-    pos += nextptr - lastptr;
-    message[pos] = '\\';
-    pos += 1;
-    lastptr = nextptr;
-    nextptr = strchr(nextptr + 1, '\'');
+std::string ScrollView::AddEscapeChars(const char *input, const char *chars_to_escape) {
+  size_t len = strlen(input);
+  char *message = new char[len * 2 + 1];
+  char *d = message;
+  const char *s = input;
+  while (*s) {
+    size_t pos = strcspn(s, chars_to_escape);
+    if (pos) {
+      memcpy(d, s, pos);
+      d += pos;
+      s += pos;
+    }
+    *d++ = '\\';
+    *d++ = *s++;
   }
-  strcpy(message + pos, lastptr);
-  return message;
+  *d = 0;
+  std::string rv(message);
+  delete[] message;
+  return std::move(rv);
 }
 
 // Inverse the Y axis if the coordinates are actually inversed.
-int ScrollView::TranslateYCoordinate(int y) {
+int InteractiveScrollView::TranslateYCoordinate(int y) {
   if (!y_axis_is_reversed_) {
     return y;
   } else {
@@ -809,7 +904,7 @@ int ScrollView::TranslateYCoordinate(int y) {
   }
 }
 
-char ScrollView::Wait() {
+char InteractiveScrollView::Wait() {
   // Wait till an input or click event (all others are thrown away)
   char ret = '\0';
   SVEventType ev_type = SVET_ANY;
@@ -822,6 +917,1070 @@ char ScrollView::Wait() {
   } while (ev_type != SVET_INPUT && ev_type != SVET_CLICK);
   return ret;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Calls Initialize with all arguments given.
+BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
+                                             int x_pos, int y_pos, int x_size,
+                                             int y_size, int x_canvas_size,
+                                             int y_canvas_size,
+                                             bool y_axis_reversed,
+                                             const char *server_name)
+    : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+                 y_canvas_size, y_axis_reversed, server_name)
+    , dirty(false) {
+  Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+             y_canvas_size, y_axis_reversed, server_name);
+}
+
+void BackgroundScrollView::PrepCanvas(void) {
+  auto width = tesseract_->ImageWidth();
+  auto height = tesseract_->ImageHeight();
+
+  Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
+  pixSetAll(wh_pix);
+  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  wh_pix.destroy();
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
+                                       int x_pos, int y_pos, int x_size,
+                                       int y_size, int x_canvas_size,
+                                       int y_canvas_size, bool y_axis_reversed,
+                                       const char *server_name) {
+  composeRGBPixel(255, 50, 255, &pen_color);
+  composeRGBPixel(50, 255, 255, &brush_color);
+
+  PrepCanvas();
+
+#  if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#  endif
+}
+
+/// Sits and waits for events on this window.
+void BackgroundScrollView::StartEventHandler() {
+  ASSERT0(!"Should never get here!");
+}
+#endif // !GRAPHICS_DISABLED
+
+BackgroundScrollView::~BackgroundScrollView() {
+  // we ASSUME the gathered content has been pushed off before we get here!
+  ASSERT0(!dirty);
+}
+
+#if !GRAPHICS_DISABLED
+/// Send a message to the server, attaching the window id.
+void BackgroundScrollView::vSendMsg(fmt::string_view format,
+                                    fmt::format_args args) {
+  auto message = fmt::vformat(format, args);
+  tprintf("DEBUG-DRAW: {}\n", message);
+}
+
+/// Add an Event Listener to this ScrollView Window
+void BackgroundScrollView::AddEventHandler(SVEventHandler *listener) {
+  ASSERT0(!"Should never get here!");
+}
+
+void BackgroundScrollView::Signal() {
+    ASSERT0(!"Should never get here!");
+}
+
+void BackgroundScrollView::SetEvent(const SVEvent *svevent) {
+    ASSERT0(!"Should never get here!");
+}
+
+/// Block until an event of the given type is received.
+/// Note: The calling function is responsible for deleting the returned
+/// SVEvent afterwards!
+std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
+  ASSERT0(!"Should never get here!");
+  return std::make_unique<SVEvent>();
+}
+
+const float kMixFactor = 0.75;
+
+    // Send the current buffered polygon (if any) and clear it.
+void BackgroundScrollView::SendPolygon() {
+  if (!points_->empty) {
+    dirty = true;
+
+    points_->empty = true; // Allows us to use SendMsg.
+    int length = points_->xcoords.size();
+    // length == 1 corresponds to 2 SetCursors in a row and only the
+    // last setCursor has any effect.
+    if (length == 2) {
+      // An isolated line!
+      SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
+
+      PTA *ptas = ptaCreate(2);
+      ptaAddPt(ptas, points_->xcoords[0], points_->ycoords[0]);
+      ptaAddPt(ptas, points_->xcoords[1], points_->ycoords[1]);
+
+      const int width = 1;
+      l_int32 r, g, b, a;
+      extractRGBAValues(pen_color, &r, &g, &b, &a);
+      pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+      ptaDestroy(&ptas);
+    } else if (length > 2) {
+      // A polyline.
+      bool done = false;
+      if (length == 5) {
+        // A rectangle?
+        if (points_->xcoords[0] == points_->xcoords[4] &&
+            points_->ycoords[0] == points_->ycoords[4]) {
+          if (points_->xcoords[0] == points_->xcoords[1] &&
+              points_->xcoords[2] == points_->xcoords[3] &&
+              points_->ycoords[0] == points_->ycoords[3] &&
+              points_->ycoords[1] == points_->ycoords[2]) {
+            SendMsg("drawRectangle({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[2], points_->ycoords[2]);
+
+            PTA *ptas = ptaCreate(4);
+            ptaAddPt(ptas, points_->xcoords[0], points_->ycoords[0]);
+            ptaAddPt(ptas, points_->xcoords[1], points_->ycoords[1]);
+            ptaAddPt(ptas, points_->xcoords[2], points_->ycoords[2]);
+            ptaAddPt(ptas, points_->xcoords[3], points_->ycoords[3]);
+
+            const int width = 1;
+            l_int32 r, g, b, a;
+            extractRGBAValues(pen_color, &r, &g, &b, &a);
+            pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 1 /* closed */, 1 /* removedups */);
+            ptaDestroy(&ptas);
+
+            done = true;
+          }
+        }
+      }
+      if (!done) {
+#if 0
+        SendMsg("createPolyline({})", length);
+#endif
+        char coordpair[kMaxIntPairSize];
+        std::string decimal_coords;
+        for (int i = 0; i < length; ++i) {
+          snprintf(coordpair, kMaxIntPairSize, "%d,%d,", points_->xcoords[i], points_->ycoords[i]);
+          decimal_coords += coordpair;
+        }
+        // erase trailing ',':
+        decimal_coords.pop_back();
+        SendMsg("drawPolyline({})", decimal_coords.c_str());
+
+        PTA *ptas = ptaCreate(length);
+        for (int i = 0; i < length; ++i) {
+          ptaAddPt(ptas, points_->xcoords[i], points_->ycoords[i]);
+        }
+
+        const int width = 1;
+        l_int32 r, g, b, a;
+        extractRGBAValues(pen_color, &r, &g, &b, &a);
+        pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0 /* closed */, 1 /* removedups */);
+        ptaDestroy(&ptas);
+      }
+    }
+    points_->xcoords.clear();
+    points_->ycoords.clear();
+  }
+}
+
+/*******************************************************************************
+ * LUA "API" functions.
+ *******************************************************************************/
+
+void BackgroundScrollView::Comment(std::string text) {
+  SendPolygon();
+  SendMsg("comment(\"{}\")", text.c_str());
+}
+
+// Sets the position from which to draw to (x,y).
+void BackgroundScrollView::SetCursor(int x, int y) {
+  SendPolygon();
+  DrawTo(x, y);
+}
+
+// Draws from the current position to (x,y) and sets the new position to it.
+void BackgroundScrollView::DrawTo(int x, int y) {
+  points_->xcoords.push_back(x);
+  points_->ycoords.push_back(TranslateYCoordinate(y));
+  points_->empty = false;
+}
+
+// Draw a line using the current pen color.
+void BackgroundScrollView::Line(int x1, int y1, int x2, int y2) {
+  if (!points_->xcoords.empty() && x1 == points_->xcoords.back() &&
+      TranslateYCoordinate(y1) == points_->ycoords.back()) {
+    // We are already at x1, y1, so just draw to x2, y2.
+    DrawTo(x2, y2);
+  } else if (!points_->xcoords.empty() && x2 == points_->xcoords.back() &&
+             TranslateYCoordinate(y2) == points_->ycoords.back()) {
+    // We are already at x2, y2, so just draw to x1, y1.
+    DrawTo(x1, y1);
+  } else {
+    // This is a new line.
+    SetCursor(x1, y1);
+    DrawTo(x2, y2);
+  }
+}
+
+// Set the visibility of the window.
+void BackgroundScrollView::SetVisible(bool visible) {
+  ASSERT0(!"Should never get here!");
+  if (visible) {
+    SendMsg("setVisible(true)");
+  } else {
+    SendMsg("setVisible(false)");
+  }
+}
+
+// Set the alwaysOnTop flag.
+void BackgroundScrollView::AlwaysOnTop(bool b) {
+  ASSERT0(!"Should never get here!");
+  if (b) {
+    SendMsg("setAlwaysOnTop(true)");
+  } else {
+    SendMsg("setAlwaysOnTop(false)");
+  }
+}
+
+// Adds a message entry to the message box.
+void BackgroundScrollView::vAddMessage(fmt::string_view format,
+                                        fmt::format_args args) {
+  auto message = fmt::vformat(format, args);
+
+  char winidstr[kMaxIntPairSize];
+  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  std::string form(winidstr);
+  form += message;
+
+  auto esc = AddEscapeChars(form, "'\"");
+  SendMsg("addMessage(\"{}\")", esc);
+}
+
+// Set a messagebox.
+void BackgroundScrollView::AddMessageBox() {
+  ASSERT0(!"Should never get here!");
+  SendMsg("addMessageBox()");
+}
+
+// Exit the client completely (and notify the server of it).
+void BackgroundScrollView::ExitHelper() {
+  SendMsg("svmain:exit()");
+
+  // invoke super::ExitHelper():
+  ScrollView::ExitHelper();
+}
+
+// Clear the canvas.
+void BackgroundScrollView::Clear() {
+  SendMsg("clear()");
+  SendPolygon();
+  if (dirty) {
+    tesseract_->AddClippedPixDebugPage(pix, GetName());
+    PrepCanvas();
+
+    dirty = false;
+  }
+}
+
+// Set the stroke width.
+void BackgroundScrollView::Stroke(float width) {
+  SendPolygon();
+  SendMsg("setStrokeWidth({})", width);
+}
+
+// Draw a rectangle using the current pen color.
+// The rectangle is filled with the current brush color.
+void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
+  SendPolygon();
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
+          TranslateYCoordinate(y2));
+
+  PTA *ptas = ptaCreate(5);
+  ptaAddPt(ptas, x1, TranslateYCoordinate(y1));
+  ptaAddPt(ptas, x2, TranslateYCoordinate(y1));
+  ptaAddPt(ptas, x2, TranslateYCoordinate(y2));
+  ptaAddPt(ptas, x1, TranslateYCoordinate(y2));
+  ptaAddPt(ptas, x1, TranslateYCoordinate(y1));
+
+  const int width = 1;
+  l_int32 r, g, b, a;
+  extractRGBAValues(pen_color, &r, &g, &b, &a);
+  pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+  ptaDestroy(&ptas);
+}
+
+// Draw an ellipse using the current pen color.
+// The ellipse is filled with the current brush color.
+void BackgroundScrollView::Ellipse(int x1, int y1, int width, int height) {
+  SendPolygon();
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
+          height);
+}
+
+// Set the pen color to the given RGB values.
+void BackgroundScrollView::Pen(int red, int green, int blue) {
+  SendPolygon();
+  composeRGBPixel(red, green, blue, &pen_color);
+  //SendMsg("pen({},{},{})", red, green, blue);
+}
+
+// Set the pen color to the given RGB values.
+void BackgroundScrollView::Pen(int red, int green, int blue, int alpha) {
+  SendPolygon();
+  composeRGBAPixel(red, green, blue, 255 - alpha, &pen_color);
+  //SendMsg("pen({},{},{},{})", red, green, blue, alpha);
+}
+
+// Set the brush color to the given RGB values.
+void BackgroundScrollView::Brush(int red, int green, int blue) {
+  SendPolygon();
+  composeRGBPixel(red, green, blue, &brush_color);
+  //SendMsg("brush({},{},{})", red, green, blue);
+}
+
+// Set the brush color to the given RGB values.
+void BackgroundScrollView::Brush(int red, int green, int blue, int alpha) {
+  SendPolygon();
+  composeRGBAPixel(red, green, blue, 255 - alpha, &brush_color);
+  //SendMsg("brush({},{},{},{})", red, green, blue, alpha);
+}
+
+// Set the attributes for future Text(..) calls.
+void BackgroundScrollView::TextAttributes(const char *font, int pixel_size,
+                                           bool bold, bool italic,
+                                           bool underlined) {
+  SendPolygon();
+
+  const char *b;
+  const char *i;
+  const char *u;
+
+  if (bold) {
+    b = "true";
+  } else {
+    b = "false";
+  }
+  if (italic) {
+    i = "true";
+  } else {
+    i = "false";
+  }
+  if (underlined) {
+    u = "true";
+  } else {
+    u = "false";
+  }
+  SendMsg("textAttributes('{}',{},{},{},{})", font, pixel_size, b, i, u);
+}
+
+// Draw text at the given coordinates.
+void BackgroundScrollView::Text(int x, int y, const char *mystring) {
+  SendPolygon();
+  SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
+
+  BOX *box = boxCreate(x, TranslateYCoordinate(y), 5, 20);
+  const int width = 1;
+  l_int32 r, g, b, a;
+  extractRGBAValues(pen_color, &r, &g, &b, &a);
+  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
+  pixBlendInRect(pix, box, pen_color, 0.33);
+  boxDestroy(&box);
+}
+
+// Open and draw an image given a name at (x,y).
+void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
+  SendPolygon();
+  SendMsg("openImage('{}')", image);
+  SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
+
+  BOX *box = boxCreate(x_pos, TranslateYCoordinate(y_pos), 5, 20);
+  const int width = 1;
+  l_int32 r, g, b, a;
+  extractRGBAValues(pen_color, &r, &g, &b, &a);
+  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
+  pixBlendInRect(pix, box, pen_color, 0.33);
+  boxDestroy(&box);
+}
+
+// Add new checkboxmenuentry to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent, bool flag) {
+  ASSERT0(!"Should never get here!");
+  if (parent == nullptr) {
+    parent = "";
+  }
+  if (flag) {
+    SendMsg("addMenuBarItem('{}','{}',{},true)", parent, name, cmdEvent);
+  } else {
+    SendMsg("addMenuBarItem('{}','{}',{},false)", parent, name, cmdEvent);
+  }
+}
+
+// Add new menuentry to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name,
+                                     int cmdEvent) {
+  ASSERT0(!"Should never get here!");
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addMenuBarItem('{}','{}',{})", parent, name, cmdEvent);
+}
+
+// Add new submenu to menubar.
+void BackgroundScrollView::MenuItem(const char *parent, const char *name) {
+  ASSERT0(!"Should never get here!");
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addMenuBarItem('{}','{}')", parent, name);
+}
+
+// Add new submenu to popupmenu.
+void BackgroundScrollView::PopupItem(const char *parent, const char *name) {
+  ASSERT0(!"Should never get here!");
+  if (parent == nullptr) {
+    parent = "";
+  }
+  SendMsg("addPopupMenuItem('{}','{}')", parent, name);
+}
+
+// Add new submenuentry to popupmenu.
+void BackgroundScrollView::PopupItem(const char *parent, const char *name,
+                                      int cmdEvent, const char *value,
+                                      const char *desc) {
+  ASSERT0(!"Should never get here!");
+  if (parent == nullptr) {
+    parent = "";
+  }
+  auto esc = AddEscapeChars(value, "'\"");
+  auto esc2 = AddEscapeChars(desc, "'\"");
+  SendMsg("addPopupMenuItem('{}','{}',{},'{}','{}')", parent, name, cmdEvent, esc, esc2);
+}
+
+// Send an update message for a single window.
+void BackgroundScrollView::UpdateWindow() {
+  SendMsg("update()");
+  SendPolygon();
+  if (dirty) {
+    tesseract_->AddClippedPixDebugPage(pix, fmt::format("{}::update", GetName()));
+    // DO NOT clear the canvas!
+
+    dirty = false;
+  }
+}
+
+// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+void BackgroundScrollView::Pen(Color color) {
+  Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
+      table_colors[color][3]);
+}
+
+// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+void BackgroundScrollView::Brush(Color color) {
+  Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
+        table_colors[color][3]);
+}
+
+// Shows a modal Input Dialog which can return any kind of String
+char *BackgroundScrollView::ShowInputDialog(const char *msg) {
+  ASSERT0(!"Should never get here!");
+  return nullptr;
+}
+
+// Shows a modal Yes/No Dialog which will return 'y' or 'n'
+int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
+  ASSERT0(!"Should never get here!");
+  return 0;
+}
+
+// Zoom the window to the rectangle given upper left corner and
+// lower right corner.
+void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+  y1 = TranslateYCoordinate(y1);
+  y2 = TranslateYCoordinate(y2);
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
+          std::max(x1, x2), std::max(y1, y2));
+}
+
+// Send an image of type Pix.
+void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *title) {
+  SendPolygon();
+  y_pos = TranslateYCoordinate(y_pos);
+  SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
+  tesseract_->AddClippedPixDebugPage(image, title);
+
+  int w = pixGetWidth(image);
+  int h = pixGetHeight(image);
+  BOX *box = boxCreate(x_pos, y_pos, w, h);
+  const int width = 1;
+  l_int32 r, g, b, a;
+  extractRGBAValues(pen_color, &r, &g, &b, &a);
+  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
+  pixBlendInRect(pix, box, pen_color, 0.33);
+  boxDestroy(&box);
+}
+
+// Inverse the Y axis if the coordinates are actually inversed.
+int BackgroundScrollView::TranslateYCoordinate(int y) {
+  if (!y_axis_is_reversed_) {
+    return y;
+  } else {
+    return y_size_ - y;
+  }
+}
+
+char BackgroundScrollView::Wait() {
+  ASSERT0(!"Should never get here!");
+  return '\0';
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr) {
+}
+
+ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr) {
+  if (view_ != nullptr) {
+    counter_ = new int();
+    *counter_ = 1;
+  }
+}
+
+void ScrollViewReference::cleanup_before_delete() {
+  if (counter_) {
+    switch (--*counter_) {
+    case 1:
+      // NOTE: Cannot invoke virtual method UpdateWindow() et al from the
+      // Scrollview destructor any more as the derived instance has already
+      // finished delete-ing by then: we're delete-ing the base class by then!
+      // Hence we take care of this problem by calling Update() from the
+      // ScrollViewReference destructor right here, BEFORE invoking the
+      // destructor of the ScrollView and its derived class!
+      if (view_ != nullptr) {
+        view_->UpdateWindow();
+
+        svmap_mu->lock();
+        svmap[GetRef()->GetId()] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+        svmap_mu->unlock();
+
+        delete view_;
+        ASSERT0(counter_ ? * counter_ == 0 : true);
+        delete counter_;
+      }
+      break;
+
+    case 0:
+      //delete view_;
+      //delete counter_;
+      break;
+    }
+  }
+  
+  view_ = nullptr;
+  counter_ = nullptr;
+}
+
+ScrollViewReference::~ScrollViewReference() {
+  cleanup_before_delete();
+}
+
+ScrollViewReference &ScrollViewReference::operator=(ScrollView *new_view) {
+  if (view_ != new_view) {
+    cleanup_before_delete();
+
+    view_ = new_view;
+    if (view_ != nullptr) {
+      counter_ = new int();
+      *counter_ = 1;
+    }
+  }
+  return *this;
+}
+
+ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
+  tprintf("copy constructor failed!\n");
+  view_ = o.view_;
+  counter_ = o.counter_;
+  if (counter_ != nullptr) {
+    ++*counter_;
+  }
+}
+
+ScrollViewReference::ScrollViewReference(ScrollViewReference &&o) {
+  tprintf("move failed!\n");
+  view_ = o.view_;
+  counter_ = o.counter_;
+  o.view_ = nullptr;
+  o.counter_ = nullptr;
+}
+
+ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &other) {
+  tprintf("copy assigned\n");
+  if (&other != this) {
+    cleanup_before_delete();
+
+    view_ = other.view_;
+    counter_ = other.counter_;
+    if (counter_ != nullptr) {
+      ++*counter_;
+    }
+  }
+  return *this;
+}
+
+ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other) {
+  tprintf("move assigned\n");
+  if (&other != this) {
+    cleanup_before_delete();
+
+    view_ = other.view_;
+    counter_ = other.counter_;
+    other.view_ = nullptr;
+    other.counter_ = nullptr;
+  }
+  return *this;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+// if (tesseract_->interactive_display_mode &&
+// !tesseract_->debug_do_not_use_scrollview_app) ...
+
+ScrollViewManager::ScrollViewManager() {
+  active = nullptr;
+}
+
+ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
+  static ScrollViewManager mgr;
+
+  return mgr;
+}
+
+ScrollViewManager::~ScrollViewManager() {
+
+}
+
+ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  mgr.SetActiveTesseractInstance(tess);
+  tess = mgr.GetActiveTesseractInstance();
+
+  ScrollViewReference rv; 
+
+  if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
+      rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
+                                       x_canvas_size, y_canvas_size,
+                                       y_axis_reversed, server_name);
+  } else {
+      rv = new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
+                                       x_canvas_size, y_canvas_size,
+                                       y_axis_reversed, server_name);
+  }
+
+  // Only update the global svmap[] table here, as we want to keep a reference count of the number of references to ScrollView instances via ScrollViewReference
+  // and the old code would produce two INDEPENDENT ScrollViewReference instances instead, causing havoc: one used by the application, plus one created implicitly
+  // by the `svmap[rv->GetId()] = this;` statement in the `Scrollview::Initialize()` method.
+  // 
+  // That's why we #if0-ed that chunk of code further above!
+  auto wi = rv->GetId();
+  //ASSERT0(wi != 18);
+  svmap_mu->lock();
+  svmap[wi] = rv;
+  svmap_mu->unlock();
+
+  return rv;
+}
+
+  // set this instance to be the latest active one
+void ScrollViewManager::SetActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  if (mgr.active != tess) {
+    mgr.AddActiveTesseractInstance(tess);
+  }
+}
+
+// add this instance to the list of active tesseract instance but don't put it on top yet...
+void ScrollViewManager::AddActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  auto it = std::find(mgr.active_set.begin(), mgr.active_set.end(), tess);
+  if (it == mgr.active_set.end()) {
+    mgr.active_set.push_back(tess);
+    mgr.active = mgr.active_set.front();
+  }
+}
+
+// remove the given instance from the active set as its object is currently
+// being destroyed.
+void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
+  if (!tess)
+    return;
+  ScrollViewManager &mgr = GetScrollViewManager();
+  auto it = std::find(mgr.active_set.begin(), mgr.active_set.end(), tess);
+  if (it != mgr.active_set.end()) {
+    mgr.active_set.erase(it);
+    mgr.active = nullptr;
+    if (mgr.active_set.empty()) {
+      // flush all debug windows first
+      ScrollView::Update();
+
+      // and nuke 'em all, next:
+      for (;;) {
+      // limit scope of lock
+      std::vector<int> delset;
+      {
+        std::lock_guard<std::mutex> guard(*svmap_mu);
+        for (auto &iter : svmap) {
+            if (iter.second) {
+              delset.push_back(iter.first);
+            }
+        }
+      }
+
+      if (delset.size() == 0)
+        break;
+
+      svmap_mu->lock();
+      for (int index = delset.size() - 1; index >= 0; index--) {
+        auto win_id = delset[index];
+        if (svmap[win_id]) {
+            svmap[win_id]->ExitHelper();
+            // ASSERT0(svmap[win_id].GetRef() == nullptr);
+        }
+      }
+      svmap_mu->unlock();
+      break;
+      }
+    }
+  }
+}
+
+Tesseract *ScrollViewManager::GetActiveTesseractInstance() {
+  ScrollViewManager &mgr = GetScrollViewManager();
+  if (mgr.active)
+    return mgr.active;
+  if (mgr.active_set.empty())
+    return nullptr;
+  mgr.active = mgr.active_set.front();
+  return mgr.active;
+}
+
+
+
+
+#if 0
+
+      XXXXXXXXXXXX {
+        const char* name = "filter_blobs: Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+        block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+              XXXXXXXXXXXXXXX {
+        const char* name = "filter_blobs: Rejected blobs";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixClearAll(pix);
+
+        auto cmap = initDiagPlotColorMap();
+
+        int cmap_offset = 0;
+        plot_box_list(pix, &block->noise_blobs, cmap, cmap_offset, true);
+        cmap_offset = 64;
+        plot_box_list(pix, &block->small_blobs, cmap, cmap_offset, false);
+        cmap_offset = 2 * 64;
+        plot_box_list(pix, &block->large_blobs, cmap, cmap_offset, false);
+        cmap_offset = 3 * 64;
+        plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+          XXXXXXXXXXXXXXX {
+      const char* name = "Image blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
+
+      block->plot_graded_blobs(pix);
+      //block->plot_noise_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+              XXXXX {
+      const char* name = "Filtered Input Blobs";
+      auto width = tright_.x() - bleft_.x();
+      auto height = tright_.y() - bleft_.y();
+
+      Image pix(pixCreate(width, height, 32 /* RGBA */));
+      pixSetAll(pix);
+
+      input_block->plot_graded_blobs(pix);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+
+
+      XXXXXX {
+        const char* name = "FindBlocks: Rejected blobs";
+        auto width = tright_.x() - bleft_.x();
+        auto height = tright_.y() - bleft_.y();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+        input_block->plot_graded_blobs(pix);
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+
+
+
+
+
+
+
+    XXXXXXXXXXXX {
+      const char* name = "InitialPartitions";
+      auto width = tesseract_->ImageWidth();
+      auto height = tesseract_->ImageHeight();
+
+      Image pix = pixCreate(width, height, 32 /* RGBA */);
+      pixSetAll(pix);
+
+#    if 0
+      BOX* border = boxCreate(2, 2, width + 4, height + 4);
+      // boxDestroy(BOX * *pbox);
+      BOXA* boxlist = boxaCreate(1);
+      boxaAddBox(boxlist, border, false);
+      //boxaDestroy(BOXA * *pboxa);
+      l_uint32 bordercolor;
+      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+      boxaDestroy(&boxlist);
+#    endif
+
+      int w, h;
+      pixGetDimensions(pix, &w, &h, NULL);
+      l_uint32* data = pixGetData(pix);
+      int wpl = pixGetWpl(pix);
+
+      part_grid_.DisplayBoxes(pix, data, wpl, w, h);
+      DisplayTabVectors(pix, data, wpl, w, h);
+
+      tesseract_->AddPixDebugPage(pix, name);
+      pix.destroy();
+    }
+
+
+
+
+
+
+
+
+          XXXXXXX {
+        const char* name = "Partitions";
+        auto width = tesseract_->ImageWidth();
+        auto height = tesseract_->ImageHeight();
+
+        Image pix = pixCreate(width, height, 32 /* RGBA */);
+        pixSetAll(pix);
+
+#    if 0
+        BOX* border = boxCreate(2, 2, width + 4, height + 4);
+        // boxDestroy(BOX * *pbox);
+        BOXA* boxlist = boxaCreate(1);
+        boxaAddBox(boxlist, border, false);
+        //boxaDestroy(BOXA * *pboxa);
+        l_uint32 bordercolor;
+        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+        boxaDestroy(&boxlist);
+#    endif
+
+        int w, h;
+        pixGetDimensions(pix, &w, &h, NULL);
+        l_uint32* data = pixGetData(pix);
+        int wpl = pixGetWpl(pix);
+
+        part_grid_.DisplayBoxes(pix, data, wpl, w, h);
+        if (!textord_debug_printable) {
+          DisplayTabVectors(pix, data, wpl, w, h);
+        }
+#    if 0
+        if (textord_tabfind_show_partitions > 1) {
+          window->AwaitEvent(SVET_DESTROY);
+        }
+#    endif
+
+        tesseract_->AddPixDebugPage(pix, name);
+        pix.destroy();
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+            XXXXXXXXXXXXX {
+    const char* name = "Blocks";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
+
+#    if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#    endif
+
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
+    BLOCK_IT block_it(blocks);
+    int serial = 1;
+    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
+      BLOCK* block = block_it.data();
+      block->pdblk.plot(pix, serial++, data, wpl, w, h);
+    }
+
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  XXXXXXXXXXXXXXXXX {
+    const char* name = "Columns";
+    auto width = tesseract_->ImageWidth();
+    auto height = tesseract_->ImageHeight();
+
+    Image pix = pixCreate(width, height, 32 /* RGBA */);
+    pixSetAll(pix);
+
+#    if 0
+    BOX* border = boxCreate(2, 2, width + 4, height + 4);
+    // boxDestroy(BOX * *pbox);
+    BOXA* boxlist = boxaCreate(1);
+    boxaAddBox(boxlist, border, false);
+    //boxaDestroy(BOXA * *pboxa);
+    l_uint32 bordercolor;
+    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
+    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
+    boxaDestroy(&boxlist);
+#    endif
+
+    int w, h;
+    pixGetDimensions(pix, &w, &h, NULL);
+    l_uint32* data = pixGetData(pix);
+    int wpl = pixGetWpl(pix);
+
+    DisplayBoxes(pix, data, wpl, w, h);
+    //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    for (int i = 0; i < gridheight_; ++i) {
+      ColPartitionSet* columns = best_columns_[i];
+      if (columns != nullptr) {
+        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix, data, wpl, w, h);
+      }
+    }
+
+    tesseract_->AddPixDebugPage(pix, name);
+    pix.destroy();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif
+
 
 #endif // !GRAPHICS_DISABLED
 

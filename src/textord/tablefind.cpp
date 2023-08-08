@@ -27,7 +27,7 @@
 #include <utility>
 #include "tablefind.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include "colpartitionset.h"
 #include "tablerecog.h"
@@ -276,15 +276,15 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   InitializePartitions(all_columns);
 
 #if !GRAPHICS_DISABLED
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(0, 300, "Step 1: Column Partitions & Neighbors");
+  if (textord_show_tables) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 0, 300, "Step 1: Column Partitions & Neighbors"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
                          ScrollView::AQUAMARINE);
     DisplayColPartitionConnections(table_win, &clean_part_grid_,
                                    ScrollView::ORANGE);
 
-    table_win = MakeWindow(100, 300, "Step 2: Fragmented Text");
+    table_win = MakeWindow(tesseract_, 100, 300, "Step 2: Fragmented Text");
     DisplayColPartitions(table_win, &fragmented_text_grid_, ScrollView::BLUE);
   }
 #endif // !GRAPHICS_DISABLED
@@ -318,8 +318,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   GetTableRegions(&table_columns, &table_regions);
 
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(1200, 300, "Step 7: Table Columns and Regions");
+  if (textord_tablefind_show_mark) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 7: Table Columns and Regions"));
     DisplayColSegments(table_win, &table_columns, ScrollView::DARK_TURQUOISE);
     DisplayColSegments(table_win, &table_regions, ScrollView::YELLOW);
   }
@@ -340,8 +340,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     DeleteSingleColumnTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-      ScrollView *table_win = MakeWindow(1200, 300, "Step 8: Detected Table Locations");
+    if (textord_show_tables) {
+      ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 8: Detected Table Locations"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
       DisplayColSegments(table_win, &table_columns, ScrollView::KHAKI);
       table_grid_.DisplayBoxes(table_win);
@@ -354,8 +354,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     RecognizeTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-      ScrollView *table_win = MakeWindow(1400, 600, "Step 10: Recognized Tables");
+    if (textord_show_tables) {
+      ScrollViewReference table_win(MakeWindow(tesseract_, 1400, 600, "Step 10: Recognized Tables"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
                            ScrollView::BLUE);
       table_grid_.DisplayBoxes(table_win);
@@ -369,8 +369,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
     DeleteSingleColumnTables();
 
 #if !GRAPHICS_DISABLED
-    if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-      ScrollView *table_win = MakeWindow(1500, 300, "Step 11: Detected Tables");
+    if (textord_show_tables) {
+      ScrollViewReference table_win(MakeWindow(tesseract_, 1500, 300, "Step 11: Detected Tables"));
       DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
                            ScrollView::BLUE);
       table_grid_.DisplayBoxes(table_win);
@@ -527,8 +527,8 @@ bool TableFinder::AllowBlob(const BLOBNBOX &blob) const {
 // clean_part_grid_ instead of a useful object. This is a temporary solution
 // for the debug windows created by the TableFinder.
 #if !GRAPHICS_DISABLED
-ScrollView *TableFinder::MakeWindow(int x, int y, const char *window_name) {
-  return clean_part_grid_.MakeWindow(x, y, window_name);
+ScrollViewReference TableFinder::MakeWindow(Tesseract* tess, int x, int y, const char *window_name) {
+  return clean_part_grid_.MakeWindow(tess, x, y, window_name);
 }
 #endif
 
@@ -761,9 +761,9 @@ void TableFinder::SetGlobalSpacings(ColPartitionGrid *grid) {
   set_global_median_blob_width(static_cast<int>(width_stats.median() + 0.5));
   set_global_median_ledding(static_cast<int>(ledding_stats.median() + 0.5));
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_stats && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (textord_tablefind_show_stats) {
     const char *kWindowName = "X-height (R), X-width (G), and ledding (B)";
-    ScrollView *stats_win = MakeWindow(500, 10, kWindowName);
+    ScrollViewReference stats_win(MakeWindow(tesseract_, 500, 10, kWindowName));
     xheight_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::RED);
     width_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::GREEN);
     ledding_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::BLUE);
@@ -809,8 +809,8 @@ void TableFinder::FindNeighbors() {
 void TableFinder::MarkTablePartitions() {
   MarkPartitionsUsingLocalInformation();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(300, 300, "Step 3: Initial Table Partitions");
+  if (textord_tablefind_show_mark) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 300, 300, "Step 3: Initial Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
                          ScrollView::AQUAMARINE);
@@ -818,8 +818,8 @@ void TableFinder::MarkTablePartitions() {
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(600, 300, "Step 4: Filtered Table Partitions");
+  if (textord_tablefind_show_mark) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 600, 300, "Step 4: Filtered Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
                          ScrollView::AQUAMARINE);
@@ -827,8 +827,8 @@ void TableFinder::MarkTablePartitions() {
 #endif
   SmoothTablePartitionRuns();
 #if !GRAPHICS_DISABLED
-  if (textord_tablefind_show_mark && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(900, 300, "Step 5: Smoothed Table Partitions");
+  if (textord_tablefind_show_mark) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 5: Smoothed Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
                          ScrollView::AQUAMARINE);
@@ -836,8 +836,8 @@ void TableFinder::MarkTablePartitions() {
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
-  if ((textord_tablefind_show_mark || textord_show_tables) && !tesseract_->debug_do_not_use_scrollview_app) {
-    ScrollView *table_win = MakeWindow(900, 300, "Step 6: Final Table Partitions");
+  if (textord_tablefind_show_mark || textord_show_tables) {
+    ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 6: Final Table Partitions"));
     DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
                          ScrollView::AQUAMARINE);
@@ -1900,9 +1900,9 @@ bool TableFinder::GapInXProjection(int *xprojection, int length) {
 // Overall, this just needs some more work.
 void TableFinder::RecognizeTables() {
 #if !GRAPHICS_DISABLED
-  ScrollView *table_win = nullptr;
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-    table_win = MakeWindow(0, 0, "Step 9: Table Structure");
+  ScrollViewReference table_win = nullptr;
+  if (textord_show_tables) {
+    table_win = MakeWindow(tesseract_, 0, 0, "Step 9: Table Structure");
     DisplayColPartitions(table_win, &fragmented_text_grid_, ScrollView::BLUE,
                          ScrollView::LIGHT_BLUE);
     // table_grid_.DisplayBoxes(table_win);
@@ -1958,7 +1958,7 @@ void TableFinder::RecognizeTables() {
 #if !GRAPHICS_DISABLED
 
 // Displays the column segments in some window.
-void TableFinder::DisplayColSegments(ScrollView *win, ColSegment_LIST *segments,
+void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *segments,
                                      ScrollView::Color color) {
   win->Pen(color);
   win->Brush(ScrollView::NONE);
@@ -1978,7 +1978,7 @@ void TableFinder::DisplayColSegments(ScrollView *win, ColSegment_LIST *segments,
 // Displays the colpartitions using a new coloring on an existing window.
 // Note: This method is only for debug purpose during development and
 // would not be part of checked in code
-void TableFinder::DisplayColPartitions(ScrollView *win, ColPartitionGrid *grid,
+void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                                        ScrollView::Color default_color,
                                        ScrollView::Color table_color) {
   ScrollView::Color color = default_color;
@@ -2004,12 +2004,12 @@ void TableFinder::DisplayColPartitions(ScrollView *win, ColPartitionGrid *grid,
   win->UpdateWindow();
 }
 
-void TableFinder::DisplayColPartitions(ScrollView *win, ColPartitionGrid *grid,
+void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                                        ScrollView::Color default_color) {
   DisplayColPartitions(win, grid, default_color, ScrollView::YELLOW);
 }
 
-void TableFinder::DisplayColPartitionConnections(ScrollView *win,
+void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
                                                  ColPartitionGrid *grid,
                                                  ScrollView::Color color) {
   // Iterate the ColPartitions in the grid.
@@ -2058,9 +2058,9 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
                                   ColPartitionSet **all_columns,
                                   const WidthCallback &width_cb) {
 #if !GRAPHICS_DISABLED
-  ScrollView* table_win = nullptr;
-  if (textord_show_tables && !tesseract_->debug_do_not_use_scrollview_app) {
-    table_win = MakeWindow(0, 0, "Step 12: Final tables");
+  ScrollViewReference table_win;
+  if (textord_show_tables) {
+    table_win = MakeWindow(tesseract_, 0, 0, "Step 12: Final tables");
     DisplayColPartitions(table_win, &fragmented_text_grid_,
                          ScrollView::BLUE, ScrollView::LIGHT_BLUE);
   }

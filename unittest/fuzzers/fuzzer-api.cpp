@@ -1,4 +1,4 @@
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
 #include <libgen.h> // for dirname

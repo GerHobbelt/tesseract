@@ -543,7 +543,7 @@ void TabVector::Debug(const char *prefix) {
 #if !GRAPHICS_DISABLED
 
 // Draw this tabvector in place in the given window.
-void TabVector::Display(ScrollView *tab_win) {
+void TabVector::Display(ScrollViewReference tab_win) {
   if (textord_debug_printable) {
     tab_win->Pen(ScrollView::BLUE);
   } else if (alignment_ == TA_LEFT_ALIGNED) {

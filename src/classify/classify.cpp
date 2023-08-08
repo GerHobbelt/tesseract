@@ -147,11 +147,6 @@ Classify::Classify()
 
 Classify::~Classify() {
   EndAdaptiveClassifier();
-#if !GRAPHICS_DISABLED
-  delete learn_debug_win_;
-  delete learn_fragmented_word_debug_win_;
-  delete learn_fragments_debug_win_;
-#endif
 }
 
 // Takes ownership of the given classifier, and uses it for future calls

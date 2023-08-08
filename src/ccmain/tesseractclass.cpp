@@ -40,7 +40,7 @@
 
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "edgblob.h"
 #if !DISABLED_LEGACY_ENGINE
 #  include "equationdetect.h"
@@ -493,18 +493,24 @@ Tesseract::Tesseract(Tesseract *parent)
     , scaled_factor_(-1)
     , deskew_(1.0f, 0.0f)
     , reskew_(1.0f, 0.0f)
+    , gradient_(0.0f)
     , most_recently_used_(this)
     , font_table_size_(0)
 #if !DISABLED_LEGACY_ENGINE
     , equ_detect_(nullptr)
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
-    , train_line_page_num_(0) {}
+    , train_line_page_num_(0) {
+  ScrollViewManager::AddActiveTesseractInstance(this);
+}
 
 Tesseract::~Tesseract() {
+  ScrollViewManager::RemoveActiveTesseractInstance(this);
+
   Clear();
   end_tesseract();
-  for (auto *lang : sub_langs_) {
+  std::vector<Tesseract *> langs = std::move(sub_langs_);
+  for (auto *lang : langs) {
     delete lang;
   }
 #if !DISABLED_LEGACY_ENGINE
@@ -531,18 +537,9 @@ void Tesseract::Clear() {
 #if defined(HAVE_MUPDF)
     fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
-#if 0
-    //pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", file_path.c_str());
-    pixa_debug_.WritePDF(file_path.c_str());
-#endif
 
     file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "html");
     pixa_debug_.WriteHTML(file_path.c_str());
-
-#if 0
-    file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "", "png");
-    pixa_debug_.WritePNGs(file_path.c_str());
-#endif
   }
   pix_original_.destroy();
   pixa_debug_.Clear();
@@ -553,6 +550,7 @@ void Tesseract::Clear() {
   scaled_color_.destroy();
   deskew_ = FCOORD(1.0f, 0.0f);
   reskew_ = FCOORD(1.0f, 0.0f);
+  gradient_ = 0.0f;
   splitter_.Clear();
   scaled_factor_ = -1;
   for (auto &sub_lang : sub_langs_) {
@@ -795,25 +793,14 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
   boxDestroy(&b1);
   boxDestroy(&b);
   pixDestroy(&ppix);
-  /*
-  LEPT_DLL extern l_ok pixCombineMasked(PIX * pixd, PIX * pixs, PIX * pixm);
-
-  LEPT_DLL extern PIX *pixClipRectangle(PIX * pixs, BOX * box, BOX * *pboxc);
-  LEPT_DLL extern PIX *pixClipRectangleWithBorder(
-      PIX * pixs, BOX * box, l_int32 maxbord, BOX * *pboxn);
-  LEPT_DLL extern PIX *pixClipMasked(PIX * pixs, PIX * pixm, l_int32 x,
-                                     l_int32 y, l_uint32 outval);
-  LEPT_DLL extern l_ok pixCropToMatch(PIX * pixs1, PIX * pixs2, PIX * *ppixd1,
-                                      PIX * *ppixd2);
-  LEPT_DLL extern PIX *pixCropToSize(PIX * pixs, l_int32 w, l_int32 h);
-  LEPT_DLL extern PIX *pixResizeToMatch(PIX * pixs, PIX * pixt, l_int32 w,
-                                        l_int32 h);
-  */
-  //AddPixDebugPage(ppix32, title);
   ASSERT0(bbox.area() > 0);
   pixa_debug_.AddClippedPix(ppix32, bbox, title);
 
   pixDestroy(&ppix32);
+}
+
+void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
+  pixa_debug_.AddClippedPix(pix, title);
 }
 
 } // namespace tesseract

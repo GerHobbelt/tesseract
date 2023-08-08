@@ -29,14 +29,14 @@ namespace tesseract {
 #define NO_SMD "none"
 
 extern BOOL_VAR_H(textord_show_fixed_cuts);
-extern ScrollView *to_win;
+extern ScrollViewReference to_win;
 extern FILE *to_debug;
 // Creates a static display window for textord, and returns a pointer to it.
-ScrollView *create_to_win(ICOORD page_tr);
+ScrollViewReference &create_to_win(ICOORD page_tr);
 void close_to_win();              // Destroy the textord window.
 void create_todebug_win();        // make gradients win
 void plot_box_list(               // make gradients win
-    ScrollView *win,              // window to draw in
+    ScrollViewReference &win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
     ScrollView::Color body_colour // colour to draw
 );
@@ -72,12 +72,12 @@ void draw_meanlines(          // draw a block
     FCOORD rotation           // rotation for line
 );
 void plot_word_decisions( // draw words
-    ScrollView *win,      // window to draw in
+    ScrollViewReference &win,      // window to draw in
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 );
 void plot_fp_cells(           // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
@@ -86,13 +86,13 @@ void plot_fp_cells(           // draw words
     int16_t projection_left,  // edges //scale factor
     int16_t projection_right, float projection_scale);
 void plot_fp_cells2(          // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
 );
 void plot_row_cells(          // draw words
-    ScrollView *win,          // window to draw in
+    ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift

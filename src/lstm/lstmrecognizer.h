@@ -276,7 +276,7 @@ public:
   // boundaries as determined by the labels and label_coords.
   void DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
                       const std::vector<int> &label_coords, const char *window_name,
-                      ScrollView **window);
+                      ScrollViewReference &window);
   // Converts the network output to a sequence of labels. Outputs labels, scores
   // and start xcoords of each char, and each null_char_, with an additional
   // final xcoord for the end of the output.
@@ -295,7 +295,7 @@ protected:
   // Displays the labels and cuts at the corresponding xcoords.
   // Size of labels should match xcoords.
   void DisplayLSTMOutput(const std::vector<int> &labels, const std::vector<int> &xcoords,
-                         int height, ScrollView *window);
+                         int height, ScrollViewReference &window);
 
   // Prints debug output detailing the activation path that is implied by the
   // xcoords.
@@ -375,7 +375,7 @@ public:
 
 protected:
   // Recognition debug display window.
-  ScrollView *debug_win_;
+  ScrollViewReference debug_win_;
 };
 
 } // namespace tesseract.

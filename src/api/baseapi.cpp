@@ -29,12 +29,12 @@
 #include "dawg_cache.h" // for DawgCache
 #include "dict.h"       // for Dict
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#include "environ.h"    // for l_uint8
+#include <leptonica/environ.h>    // for l_uint8
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string
 #include "host.h"    // for MAX_PATH
-#include "imageio.h" // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
+#include <leptonica/imageio.h> // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #if !DISABLED_LEGACY_ENGINE
 #  include "intfx.h" // for INT_FX_RESULT_STRUCT
 #endif
@@ -77,7 +77,7 @@
 #include <vector>   // for std::vector
 #include <cfloat>
 
-#include <allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
+#include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
 #endif
@@ -2341,6 +2341,7 @@ void TessBaseAPI::End() {
   delete equ_detect_;
   equ_detect_ = nullptr;
 #endif // !DISABLED_LEGACY_ENGINE
+
   delete tesseract_;
   tesseract_ = nullptr;
   pixDestroy(&pix_visible_image_);
@@ -2682,6 +2683,13 @@ int TessBaseAPI::FindLines() {
 
   tesseract_->PopPixDebugSection(section_handle);
   return 0;
+}
+
+/**
+ * Return average gradient of lines on page.
+ */
+float TessBaseAPI::GetGradient() {
+  return tesseract_->gradient();
 }
 
 /** Delete the pageres and clear the block list ready for a new page. */
