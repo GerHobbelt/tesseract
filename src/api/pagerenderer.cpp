@@ -177,7 +177,7 @@ RecalcPolygonline(Pta *pts, bool upper) {
 
   for (int p = 0; p <= num_bin; ++p) {
     if (p == 0) {
-      numaGetFValue(bin_line, p, &y);
+      numaGetIValue(bin_line, p, &y);
       ptaAddPt(pts_recalc, x_min + p, y);
     }
     else if (p == num_bin) {
@@ -185,13 +185,13 @@ RecalcPolygonline(Pta *pts, bool upper) {
       break;
     }
     else {
-      l_float32 val;
-      numaGetFValue(bin_line, p, &val);
+      l_int32 val;
+      numaGetIValue(bin_line, p, &val);
       if (y != val) {
-        if (y != -1.)
+        if (y != -1)
           ptaAddPt(pts_recalc, x_min + p, y);
-        numaGetFValue(bin_line, p, &y);
-        if (y != -1.)
+        numaGetIValue(bin_line, p, &y);
+        if (y != -1)
           ptaAddPt(pts_recalc, x_min + p, y);
       }
     }
