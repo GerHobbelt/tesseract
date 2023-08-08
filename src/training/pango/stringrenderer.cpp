@@ -19,7 +19,7 @@
 
 #include "stringrenderer.h"
 
-#include <allheaders.h> // from leptonica
+#include <leptonica/allheaders.h> // from leptonica
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include "boxchar.h"
 #include "fileio.h"

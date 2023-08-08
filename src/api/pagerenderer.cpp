@@ -26,8 +26,8 @@
 #include <regex>
 #include <unordered_set>
 
-#include <allheaders.h>
-#include <pix_internal.h>
+#include <leptonica/allheaders.h>
+#include <leptonica/pix_internal.h>
 
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract

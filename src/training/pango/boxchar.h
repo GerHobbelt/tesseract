@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include <allheaders.h>   // for Leptonica API
+#include <leptonica/allheaders.h>   // for Leptonica API
 #include <tesseract/export.h>
 
 #if defined(PANGO_ENABLE_ENGINE)

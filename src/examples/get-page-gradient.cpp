@@ -1,6 +1,6 @@
 // example as part of https://github.com/tesseract-ocr/tesseract/pull/4070
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
 

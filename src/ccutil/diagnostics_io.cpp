@@ -10,7 +10,7 @@
 
 #include "diagnostics_io.h"
 
-#include <allheaders.h> // for pixGetHeight, pixGetPixel
+#include <leptonica/allheaders.h> // for pixGetHeight, pixGetPixel
 
 #include <algorithm> // for max, min
 #include <cmath>
