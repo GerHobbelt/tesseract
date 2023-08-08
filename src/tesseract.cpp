@@ -31,7 +31,7 @@
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include "dict.h"
 #if defined(USE_OPENCL)
@@ -889,7 +889,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_bigram_debug", "Y");
 
-    api.SetVariable("tess_debug_lstm", debug_all > 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
+    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
 
     api.SetVariable("debug_noise_removal", "Y");
 
@@ -1073,13 +1073,13 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   api.SetOutputName(outputbase);
 
+  if (!SetVariablesFromCLArgs(api, argc, argv)) {
+    return EXIT_FAILURE;
+  }
+
   int config_count = argc - arg_i;
   const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count,
                                    &vars_vec, &vars_values, false);
-
-  if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
-  }
 
   // make sure the debug_all preset is set up BEFORE any command-line arguments
   // direct tesseract to set some arbitrary parameters just below,

@@ -35,7 +35,7 @@
 #include "unicharset/normstrngs.h"
 #include "unicharset.h"
 
-#include <allheaders.h> // from leptonica
+#include <leptonica/allheaders.h> // from leptonica
 
 #include <algorithm>
 #include <cstdlib>

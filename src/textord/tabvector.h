@@ -349,7 +349,7 @@ public:
   void Debug(const char *prefix);
 
   // Draw this tabvector in place in the given window.
-  void Display(ScrollView *tab_win);
+  void Display(ScrollViewReference tab_win);
 
   // Draw this tabvector in place in the given window.
   void Display(Image &pix, uint32_t* data, int wpl, int w, int h);

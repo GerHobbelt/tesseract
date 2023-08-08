@@ -23,7 +23,7 @@
 
 #include "pdblock.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cinttypes> // for PRId32
 #include <cstdlib>
@@ -183,7 +183,7 @@ Image PDBLK::render_mask(const FCOORD &rerotation, TBOX *mask_box) {
 
 #if !GRAPHICS_DISABLED
 void PDBLK::plot(            // draw outline
-    ScrollView *window,      // window to draw in
+    ScrollViewReference &window,      // window to draw in
     int32_t serial,          // serial number
     ScrollView::Color colour // colour to draw in
 ) {

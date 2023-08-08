@@ -19,7 +19,7 @@
 #ifndef TESSERACT_TRAINING_DEGRADEIMAGE_H_
 #define TESSERACT_TRAINING_DEGRADEIMAGE_H_
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "helpers.h" // For TRand.
 #include "rect.h"
 

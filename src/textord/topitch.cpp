@@ -85,7 +85,7 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
 
 #if !GRAPHICS_DISABLED
   if (textord_show_initial_words) {
-    if (to_win == nullptr) {
+    if (!to_win) {
       create_to_win(page_tr);
     }
   }
@@ -450,7 +450,7 @@ bool try_doc_fixed(             // determine pitch
   row_it.set_to_list(block_it.data()->get_rows());
   row = row_it.data();
 #if !GRAPHICS_DISABLED
-  if (textord_show_page_cuts && to_win != nullptr) {
+  if (textord_show_page_cuts && to_win) {
     projection.plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
 #endif
@@ -468,7 +468,7 @@ bool try_doc_fixed(             // determine pitch
   }
 
 #if !GRAPHICS_DISABLED
-  if (textord_show_page_cuts && to_win != nullptr) {
+  if (textord_show_page_cuts && to_win) {
     float row_shift;              // shift for row
     ICOORDELT_LIST *master_cells; // cells for page
     master_cells = &row->char_cells;
@@ -1326,7 +1326,7 @@ float compute_pitch_sd(        // find fp cells
     return space_size * 10;
   }
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+  if (to_win) {
     blob_box = blob_it.data()->bounding_box();
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
@@ -1355,14 +1355,14 @@ float compute_pitch_sd(        // find fp cells
                                    projection, &seg_list);
     }
     if (1) {
-      tprintf("Word ending at ({},{}), len={}, sync rating={}, ", prev_box.right(), prev_box.top(),
+      tprintf("Word ending at ({},{}), len={}, sync rating={}, positions: ", prev_box.right(), prev_box.top(),
               seg_list.length() - 1, word_sync);
       seg_it.set_to_list(&seg_list);
       for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
         if (seg_it.data()->faked) {
           tprintf("(F)");
         }
-        tprintf("{}, ", seg_it.data()->position());
+        tprintf("x={}, ", seg_it.data()->position());
         //                              tprintf("C={}, s={}, sq={}\n",
         //                                      seg_it.data()->cost_function(),
         //                                      seg_it.data()->sum(),
@@ -1371,7 +1371,7 @@ float compute_pitch_sd(        // find fp cells
       tprintf("\n");
     }
 #if !GRAPHICS_DISABLED
-    if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
+    if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
       plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
     }
 #endif
@@ -1459,7 +1459,7 @@ float compute_pitch_sd2(       // find fp cells
     return initial_pitch * 10;
   }
 #if !GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+  if (to_win) {
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
 #endif
@@ -1491,7 +1491,7 @@ float compute_pitch_sd2(       // find fp cells
     tprintf("\n");
   }
 #if !GRAPHICS_DISABLED
-  if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
+  if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
     plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
   }
 #endif
@@ -1613,7 +1613,7 @@ void print_pitch_sd(         // find fp cells
   word_sync = sqrt(word_sync);
 
 #if !GRAPHICS_DISABLED
-  if (textord_show_row_cuts && to_win != nullptr) {
+  if (textord_show_row_cuts && to_win) {
     plot_fp_cells2(to_win, ScrollView::CORAL, row, &seg_list);
   }
 #endif

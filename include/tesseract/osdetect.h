@@ -21,6 +21,7 @@
 #include "export.h" // for TESS_API
 
 #include <vector> // for std::vector
+#include <cmath>
 
 namespace tesseract {
 
@@ -45,7 +46,7 @@ struct OSBestResult {
 };
 
 struct OSResults {
-  OSResults() : unicharset(nullptr) {
+  OSResults() : unicharset(nullptr), gradient(NAN) {
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < kMaxNumberOfScripts; ++j) {
         scripts_na[i][j] = 0;

@@ -3,7 +3,7 @@
 
 #include "image.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <string>
 #include <vector>
@@ -25,7 +25,7 @@ namespace tesseract {
   class DebugPixa {
   public:
     // TODO(rays) add another constructor with size control.
-    DebugPixa(Tesseract* tesseract_ref);
+    DebugPixa(Tesseract* tess);
 
     // If the filename_ has been set and there are any debug images, they are
     // written to the set filename_.
@@ -35,6 +35,7 @@ namespace tesseract {
     // caption added to the top.
     void AddPix(const Image& pix, const char* caption);
     void AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption);
+    void AddClippedPix(const Image &pix, const char *caption);
 
     // Return reference to info stream, where you can collect the diagnostic information gathered.
     //
@@ -60,16 +61,6 @@ namespace tesseract {
 
     // Return true when one or more images have been collected.
     bool HasPix() const;
-
-#if 0
-    // Sets the destination filename and enables images to be written to a PDF
-    // on destruction.
-    void WritePDF(const char* filename);
-
-    // Sets the destination filename and enables images to be written as a set of PNGs
-    // on destruction.
-    void WritePNGs(const char* filename);
-#endif
 
     // Sets the destination filename and outputs the collective of images and textual info as a HTML file (+ PNGs)
     // on destruction.
@@ -131,6 +122,12 @@ namespace tesseract {
 #endif
   };
 
-} // namespace tesseract
+  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+                                  float r_factor, float g_factor, float b_factor,
+                                  float src_factor, float background_factor);
+
+  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image);
+
+  } // namespace tesseract
 
 #endif // TESSERACT_CCSTRUCT_DEBUGPIXA_H_

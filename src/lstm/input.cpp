@@ -17,10 +17,11 @@
 
 #include "input.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "imagedata.h"
 #include "pageres.h"
 #include "scrollview.h"
+#include "tesseractclass.h"
 
 namespace tesseract {
 
@@ -82,7 +83,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
                               TRand *randomizer, float *image_scale) {
   // Note that NumInputs() is defined as input image height.
   int target_height = network->NumInputs();
-  int width, height;
+  int width = 0, height = 0;
   Image pix =
       image_data.PreScale(target_height, kMaxInputHeight, image_scale, &width, &height, nullptr);
   if (pix == nullptr) {
@@ -90,7 +91,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
     return nullptr;
   }
   if (width < min_width || height < min_width) {
-    tprintf("ERROR: Image too small to scale!! ({}x{} vs min width of {})\n", width, height, min_width);
+    tprintf("ERROR: Image too small to scale!! ({}x{} vs minimum width of {})\n", width, height, min_width);
     pix.destroy();
     return nullptr;
   }
@@ -138,6 +139,10 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
     Image scaled_pix = pixScale(normed_pix, im_factor, im_factor);
     normed_pix.destroy();
     normed_pix = scaled_pix;
+  }
+  {
+    Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
+    tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
   }
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();

@@ -23,6 +23,7 @@
 #include "networkio.h"
 #include "serialis.h"
 #include "static_shape.h"
+#include "scrollview.h"
 #include "tprintf.h"
 
 #include <cmath>
@@ -289,12 +290,17 @@ public:
   void DisplayBackward(const NetworkIO &matrix);
 
   // Creates the window if needed, otherwise clears it.
-  static void ClearWindow(bool tess_coords, const char *window_name, int width,
-                          int height, ScrollView **window);
+  static void ClearWindow(bool tess_coords, const char *window_name, int width, int height, ScrollViewReference &window);
+  static void ClearWindow(bool tess_coords, const std::string& window_name, int width, int height, ScrollViewReference& window) {
+    ClearWindow(tess_coords, window_name.c_str(), width, height, window);
+  }
 
   // Displays the pix in the given window. and returns the height of the pix.
   // The pix is pixDestroyed.
-  static int DisplayImage(Image pix, ScrollView *window);
+  static int DisplayImage(Image pix, const char *title, ScrollViewReference &window);
+  static int DisplayImage(Image pix, const std::string& title, ScrollViewReference& window) {
+    return DisplayImage(pix, title.c_str(), window);
+  }
 
 protected:
   // Returns a random number in [-range, range].
@@ -311,8 +317,8 @@ protected:
   std::string name_;       // A unique name for this layer.
 
   // NOT-serialized debug data.
-  ScrollView *forward_win_;  // Recognition debug display window.
-  ScrollView *backward_win_; // Training debug display window.
+  ScrollViewReference forward_win_;  // Recognition debug display window.
+  ScrollViewReference backward_win_; // Training debug display window.
   TRand *randomizer_;        // Random number generator.
 };
 

@@ -271,7 +271,7 @@ public:
   }
   bool LooksLikeGarbage(TBLOB *blob);
 #if !GRAPHICS_DISABLED
-  void RefreshDebugWindow(ScrollView **win, const char *msg, int y_offset, const TBOX &wbox);
+  void RefreshDebugWindow(ScrollViewReference &win, const char *msg, int y_offset, const TBOX &wbox);
 #endif
   // intfx.cpp
   // Computes the DENORMS for bl(baseline) and cn(character) normalization
@@ -456,9 +456,9 @@ private:
   // The currently active static classifier.
   ShapeClassifier *static_classifier_ = nullptr;
 #if !GRAPHICS_DISABLED
-  ScrollView *learn_debug_win_ = nullptr;
-  ScrollView *learn_fragmented_word_debug_win_ = nullptr;
-  ScrollView *learn_fragments_debug_win_ = nullptr;
+  ScrollViewReference learn_debug_win_ = nullptr;
+  ScrollViewReference learn_fragmented_word_debug_win_ = nullptr;
+  ScrollViewReference learn_fragments_debug_win_ = nullptr;
 #endif
 
   // Training data gathered here for all the images in a document.

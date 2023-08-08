@@ -21,6 +21,7 @@
 #define TESSERACT_CLASSIFY_SHAPECLASSIFIER_H_
 
 #include "image.h"
+#include "scrollview.h"
 
 #include <tesseract/unichar.h>
 
@@ -108,7 +109,7 @@ public:
   // by any subsequent classifiers. Caller waits for the user to view and
   // then destroys the windows by clearing the vector.
   virtual int DisplayClassifyAs(const TrainingSample &sample, UNICHAR_ID unichar_id,
-                                int index, std::vector<ScrollView *> &windows);
+                                int index, std::vector<ScrollViewReference> &windows);
 
   // Prints debug information on the results. context is some introductory/title
   // message.

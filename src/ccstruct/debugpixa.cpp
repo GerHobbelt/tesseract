@@ -4,7 +4,7 @@
 #include "tprintf.h"
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <string>
 #include <vector>
@@ -55,8 +55,8 @@ namespace tesseract {
   }
 #endif
 
-  DebugPixa::DebugPixa(Tesseract* tesseract_ref)
-    : tesseract_(tesseract_ref)
+  DebugPixa::DebugPixa(Tesseract* tess)
+    : tesseract_(tess)
   {
     pixa_ = pixaCreate(0);
 
@@ -107,6 +107,7 @@ namespace tesseract {
 
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
+    ASSERT0(depth >= 1 && depth <= 32);
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
@@ -126,6 +127,11 @@ namespace tesseract {
   // Adds the given pix to the set of pages in the PDF file, with the given
   // caption added to the top.
   void DebugPixa::AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption) {
+    AddPixInternal(pix, bbox, caption);
+  }
+
+  void DebugPixa::AddClippedPix(const Image &pix, const char *caption) {
+    TBOX bbox(pix);
     AddPixInternal(pix, bbox, caption);
   }
 
@@ -246,19 +252,6 @@ namespace tesseract {
     ASSERT0(!"Should never get here!");
   }
 
-#if 0
-  // Sets the destination filename and enables images to be written to a PDF
-  // on destruction.
-  void DebugPixa::WritePDF(const char* filename) {
-    if (HasPix()) {
-      // TODO: add the captions to the PDF as well, but in TEXT format, not as part of the pix (i.e. not using the bitmap `fonts_`)
-
-      pixaConvertToPdf(pixa_, 300, 1.0f, 0, 0, "AllDebugImages", filename);
-      //pixaClear(pixa_);
-    }
-  }
-#endif
-
   static char* strnrpbrk(char* base, const char* breakset, size_t len)
   {
     for (size_t i = len; i > 0; ) {
@@ -338,38 +331,6 @@ namespace tesseract {
     str.resize(len);
   }
 
-#if 0
-  void DebugPixa::WritePNGs(const char* filename) {
-    if (HasPix()) {
-      const char* ext = strrchr(filename, '.');
-      std::string partname(filename);
-      partname = partname.substr(0, ext - filename);
-      int counter = 0;
-      const char* label = NULL;
-      int n = pixaGetCount(pixa_);
-
-      for (int i = 0; i < n; i++) {
-        counter++;
-        char in[40];
-        snprintf(in, 40, ".img%04d", counter);
-        std::string caption = captions[i];
-        SanitizeCaptionForFilenamePart(caption);
-        const char* cprefix = (caption.empty() ? "" : ".");
-        std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
-
-        auto pixs = pixaGetPix(pixa_, i, L_CLONE);
-        if (pixs == nullptr) {
-          L_ERROR("pixs[%d] not retrieved\n", __func__, i);
-          continue;
-        }
-        pixWrite(fn.c_str(), pixs, IFF_PNG);
-        pixDestroy(&pixs);
-      }
-      //pixaClear(pixa_);
-    }
-  }
-#endif
-
   static inline int FADE(int val, const int factor) {
     return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
   }
@@ -378,58 +339,36 @@ namespace tesseract {
     return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
-  {
-    const char* pixfname = fz_basename(img_filename);
+  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+                                  float r_factor, float g_factor, float b_factor,
+                                  float src_factor, float background_factor) {
     int w, h, depth;
-    pixGetDimensions(pix, &w, &h, &depth);
-    const char* depth_str = ([depth]() {
-      switch (depth) {
-      default:
-        return "unidentified color depth (probably color paletted)";
-      case 1:
-        return "monochrome (binary)";
-      case 32:
-        return "full color + alpha";
-      case 24:
-        return "full color";
-      case 8:
-        return "color palette (256 colors)";
-      case 4:
-        return "color palette (16 colors)";
-      }
-    })();
+    ASSERT0(src != nullptr);
+    pixGetDimensions(src, &w, &h, &depth);
 
-    if (original_image == nullptr) {
-      if (depth < 8) {
-        PIX *pix32 = pixConvertTo32(pix);
-        pixWrite(img_filename, pix32, IFF_PNG);
-        pixDestroy(&pix32);
-      } else {
-        pixWrite(img_filename, pix, IFF_PNG);
-      }
-    }
-    else {
+    if (background == nullptr) {
+      return pixConvertTo32(src);
+    } else {
       int ow, oh, od;
-      pixGetDimensions(original_image, &ow, &oh, &od);
+      pixGetDimensions(background, &ow, &oh, &od);
 
-      Image toplayer = pixConvertTo32(pix);
-      Image botlayer = pixConvertTo32(original_image);
+      Image toplayer = pixConvertTo32(src);
+      Image botlayer = pixConvertTo32(background);
 
-      if (w != ow || h != oh)
-      {
-        // smaller images are generally masks, etc. and we DO NOT want to be confused by the smoothness
-        // introduced by regular scaling, so we apply brutal sampled scale then:
+      if (w != ow || h != oh) {
+        // smaller images are generally masks, etc. and we DO NOT want to be
+        // confused by the smoothness introduced by regular scaling, so we apply
+        // brutal sampled scale then:
         if (w < ow && h < oh) {
-          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
-        }
-        else if (w > ow && h > oh) {
-          // the new image has been either scaled up vs. the original OR a border was added (TODO)
+          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w,
+                                                 oh * 1.0f / h, 0.0f, 0.0f);
+        } else if (w > ow && h > oh) {
+          // the new image has been either scaled up vs. the original OR a border
+          // was added (TODO)
           //
           // for now, we simply apply regular smooth scaling
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
-        }
-        else {
+        } else {
           // non-uniform scaling...
           ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
@@ -446,15 +385,15 @@ namespace tesseract {
         auto lined = (datad + i * wpld);
         for (j = 0; j < ow; j++) {
           // if top(SRC) is black, use that.
-          // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use that.
-          // if top(SRC) is white, and bot(DST) is white, use white.
+          // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use
+          // that. if top(SRC) is white, and bot(DST) is white, use white.
 
           // constant fade factors:
-          const int red_factor = 0.1 * 256;
-          const int green_factor = 0.5 * 256;
-          const int blue_factor = 0.5 * 256;
-          const int base_mix_factor = 0.90 * 256;
-          const int bottom_mix_factor = 0.085 * 256;
+          const int red_factor = r_factor * 256;
+          const int green_factor = g_factor * 256;
+          const int blue_factor = g_factor * 256;
+          const int base_mix_factor = src_factor * 256;
+          const int bottom_mix_factor = background_factor * 256;
 
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
@@ -484,19 +423,50 @@ namespace tesseract {
             bval = MIX(bvals, bval, base_mix_factor);
 
           // A
-          //avald = 0;
+          // avald = 0;
 
           composeRGBPixel(rval, gval, bval, lined + j);
         }
       }
-      //pixCopyResolution(pixd, pixs);
-      //pixCopyInputFormat(pixd, pixs);
+      // pixCopyResolution(pixd, pixs);
+      // pixCopyInputFormat(pixd, pixs);
 
-      pixWrite(img_filename, botlayer, IFF_PNG);
-
-      botlayer.destroy();
+      // botlayer.destroy();
       toplayer.destroy();
+
+      return botlayer;
     }
+  }
+
+  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image) {
+    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085);
+  }
+
+  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
+  {
+    const char* pixfname = fz_basename(img_filename);
+    int w, h, depth;
+    pixGetDimensions(pix, &w, &h, &depth);
+    const char* depth_str = ([depth]() {
+      switch (depth) {
+      default:
+        return "unidentified color depth (probably color paletted)";
+      case 1:
+        return "monochrome (binary)";
+      case 32:
+        return "full color + alpha";
+      case 24:
+        return "full color";
+      case 8:
+        return "color palette (256 colors)";
+      case 4:
+        return "color palette (16 colors)";
+      }
+    })();
+
+    Image img = MixWithLightRedTintedBackground(pix, original_image);
+    pixWrite(img_filename, img, IFF_PNG);
+    img.destroy();
 
     fprintf(html, "<section>\n\
   <h6>image #%02d: %s</h6>\n\

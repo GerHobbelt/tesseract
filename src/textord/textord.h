@@ -97,7 +97,8 @@ public:
   // to the appropriate word(s) in case they are really diacritics.
   void TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
                    Image binary_pix, Image thresholds_pix, Image grey_pix, bool use_box_bottoms,
-                   BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks, float &gradient);
+                   BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks,
+                   float &gradient);
 
   // If we were supposed to return only a single textline, and there is more
   // than one, clean up and leave only the best.
@@ -141,7 +142,7 @@ private:
                 TO_BLOCK_LIST *to_blocks);
   // Make the textlines inside a single block.
   void MakeBlockRows(int min_spacing, int max_spacing, const FCOORD &skew, TO_BLOCK *block,
-                     ScrollView *win);
+                     ScrollViewReference &win);
 
 public:
   void compute_block_xheight(TO_BLOCK *block, float gradient);

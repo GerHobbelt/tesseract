@@ -31,7 +31,7 @@
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "blobbox.h"
 #include "blread.h"
 #include "colfind.h"
@@ -188,11 +188,17 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   }
 
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
-                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, osr->gradient);
+                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, gradient_);
   
-  if ( max_page_gradient_recognize != 100 && abs(osr->gradient) > abs(max_page_gradient_recognize) ) {
+  tprintf("Page Gradient OSR estimate: {}\n", osr->gradient);
+  tprintf("Page Gradient TextOrd estimate: {}\n", gradient_);
+
+  if (isnan(osr->gradient)) {
+    osr->gradient = gradient_;
+  }
+  
+  if ( max_page_gradient_recognize != 100 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
     tprintf("Returning early due to high page gradient.\n");
-    tprintf("Page Gradient: {}\n", osr->gradient);
     return -1; 
   }
 

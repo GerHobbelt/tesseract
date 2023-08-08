@@ -185,7 +185,7 @@ void ROW::print( // print
 
 #if !GRAPHICS_DISABLED
 void ROW::plot(              // draw it
-    ScrollView *window,      // window to draw in
+    ScrollViewReference &window,      // window to draw in
     ScrollView::Color colour // colour to draw in
 ) {
   WERD *word;          // current word
@@ -204,7 +204,7 @@ void ROW::plot(              // draw it
  **********************************************************************/
 
 void ROW::plot(        // draw it
-    ScrollView *window // window to draw in
+    ScrollViewReference &window // window to draw in
 ) {
   WERD *word;          // current word
   WERD_IT it = &words; // words of ROW

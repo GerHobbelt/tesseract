@@ -19,7 +19,7 @@
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "functions.h"
 #include "statistc.h"
 #include "tprintf.h"
@@ -198,6 +198,7 @@ void NetworkIO::FromPixes(const StaticShape &shape, const std::vector<Image> &pi
     if (contrast <= 0.0f) {
       contrast = 1.0f;
     }
+    tprintf("NetworkIO::FromPixes: pix[{}]: black:{}, white:{}, contrast:{}, depth:{}, target_width:{}, target_height:{}, width:{}, height:{}\n", b, black, white, contrast, shape.depth(), target_width, target_height, pixGetWidth(pix), pixGetHeight(pix));
     if (shape.height() == 1) {
       Copy1DGreyImage(b, pix, black, contrast, randomizer);
     } else {
