@@ -27,9 +27,9 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango-font.h"
-#include "pango.h"
-#include "pangocairo.h"
+#include "pango/pango-font.h"
+#include "pango/pango.h"
+#include "pango/pangocairo.h"
 
 #include <string>
 #include <unordered_map>

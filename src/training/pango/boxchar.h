@@ -31,7 +31,7 @@
 #if defined(PANGO_ENABLE_ENGINE)
 
 #if (LIBLEPT_MAJOR_VERSION == 1 && LIBLEPT_MINOR_VERSION >= 83) || LIBLEPT_MAJOR_VERSION > 1
-#include <pix_internal.h> // for fast access to Box geometry
+#include <leptonica/pix_internal.h> // for fast access to Box geometry
 #endif
 
 namespace tesseract {
