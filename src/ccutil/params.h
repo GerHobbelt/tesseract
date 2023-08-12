@@ -119,7 +119,7 @@ public:
 			  return false;
 		  }
 	  }
-	  return true;
+	  return (*db_key == *user_key);
   }
 
   // Returns the pointer to the parameter with the given name (of the
