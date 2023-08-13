@@ -165,12 +165,26 @@ public:
   // are actually *used* during your particular usage of the library, ergo
   // answering the question:
   // "Which of all those parameters are actually *relevant* to my use case today?"
-  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectors *member_params);
+  // 
+  // When `section_title` is NULL, this will report the lump sum parameter usage
+  // for the entire run. When `section_title` is NOT NULL, this will only report
+  // the parameters that were actually used (R/W) during the last section of the
+  // run, i.e. since the previous invocation of this reporting method (or when
+  // it hasn't been called before: the start of the application).
+  //
+  // Thismethod ALWAYS reports via `tprintf()` at least; when `f` is a valid, non-stdio
+  // handle, then the report is *additionally* written to the given FILE.
+  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectors *member_params, const char *section_title);
 
   // Resets all parameters back to default values;
   static void ResetToDefaults(ParamsVectors *member_params);
 
   // Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular file in UTF8 write mode.
+  //
+  // MAY return NULL, e.g. when path is empty. This is considered a legal/valid use & behaviour.
+  // On the other hand, a error line is printed via `tprintf()` when the given path is non-empty and
+  // turns out not to be valid.
+  // Either way, a return value of NULL implies that default behaviour (output via `tprintf()` is assumed.
   static FILE* OpenReportFile(const char *path);
 };
 
@@ -199,12 +213,25 @@ public:
   }
 
   typedef struct access_counts {
-	  int reading;
+    // the current section's counts
+	  int reading;  
 	  int writing;
+
+    // the sum of the previous section's counts
+    int prev_sum_reading;
+    int prev_sum_writing;
   } access_counts_t;
 
   access_counts_t access_counts() const {
 	  return access_counts_;
+  }
+
+  void reset_access_counts() {
+    access_counts_.prev_sum_reading += access_counts_.reading;
+    access_counts_.prev_sum_writing += access_counts_.writing;
+
+    access_counts_.reading = 0;
+    access_counts_.writing = 0;
   }
 
   virtual std::string formatted_value_str() const = 0;
@@ -229,7 +256,7 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-	access_counts_.writing++;
+	  access_counts_.writing++;
     params_vec_ = vec;
     vec->int_params().push_back(this);
   }
@@ -249,8 +276,8 @@ public:
 	  value_ = value;
   }
   void ResetToDefault() {
-      access_counts_.writing++;
-      value_ = default_;
+    access_counts_.writing++;
+    value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->int_params_c()) {
