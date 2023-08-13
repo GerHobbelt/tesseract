@@ -41,8 +41,8 @@ class TESS_API TBOX { // bounding box
 public:
   TBOX()
       : // empty constructor making a null box
-      bot_left(INT16_MAX, INT16_MAX)
-      , top_right(-INT16_MAX, -INT16_MAX) {}
+        bot_left(TDIMENSION_MAX, TDIMENSION_MAX),
+        top_right(TDIMENSION_MIN, TDIMENSION_MIN) {}
 
   TBOX(                  // constructor
       const ICOORD pt1,  // one corner

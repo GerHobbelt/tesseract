@@ -172,44 +172,44 @@ private:
   // DEBUG USE ONLY
   void block_spacing_stats(TO_BLOCK *block, GAPMAP *gapmap, bool &old_text_ord_proportional,
                            // resulting estimate
-                           int16_t &block_space_gap_width,
+                           TDimension &block_space_gap_width,
                            // resulting estimate
-                           int16_t &block_non_space_gap_width);
+                           TDimension &block_non_space_gap_width);
   void row_spacing_stats(TO_ROW *row, GAPMAP *gapmap, int16_t block_idx, int16_t row_idx,
                          // estimate for block
-                         int16_t block_space_gap_width,
+                         TDimension block_space_gap_width,
                          // estimate for block
-                         int16_t block_non_space_gap_width);
+                         TDimension block_non_space_gap_width);
   void old_to_method(TO_ROW *row, STATS *all_gap_stats, STATS *space_gap_stats,
-                     STATS *small_gap_stats, int16_t block_space_gap_width,
+                     STATS *small_gap_stats, TDimension block_space_gap_width,
                      // estimate for block
-                     int16_t block_non_space_gap_width);
+                     TDimension block_non_space_gap_width);
   bool isolated_row_stats(TO_ROW *row, GAPMAP *gapmap, STATS *all_gap_stats, bool suspected_table,
                           int16_t block_idx, int16_t row_idx);
   int16_t stats_count_under(STATS *stats, int16_t threshold);
   void improve_row_threshold(TO_ROW *row, STATS *all_gap_stats);
   bool make_a_word_break(TO_ROW *row,   // row being made
                          TBOX blob_box, // for next_blob // how many blanks?
-                         int16_t prev_gap, TBOX prev_blob_box, int16_t real_current_gap,
-                         int16_t within_xht_current_gap, TBOX next_blob_box, int16_t next_gap,
+                         TDimension prev_gap, TBOX prev_blob_box, TDimension real_current_gap,
+                         TDimension within_xht_current_gap, TBOX next_blob_box, TDimension next_gap,
                          uint8_t &blanks, bool &fuzzy_sp, bool &fuzzy_non,
                          bool &prev_gap_was_a_space, bool &break_at_next_gap);
   bool narrow_blob(TO_ROW *row, TBOX blob_box);
   bool wide_blob(TO_ROW *row, TBOX blob_box);
   bool suspected_punct_blob(TO_ROW *row, TBOX box);
-  void peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_box, int16_t &next_gap,
-                        int16_t &next_within_xht_gap);
+  void peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_box, TDimension &next_gap,
+                        TDimension &next_within_xht_gap);
   void mark_gap(TBOX blob,    // blob following gap
                 int16_t rule, // heuristic id
-                int16_t prev_gap, int16_t prev_blob_width, int16_t current_gap,
-                int16_t next_blob_width, int16_t next_gap);
+                TDimension prev_gap, TDimension prev_blob_width, TDimension current_gap,
+                TDimension next_blob_width, TDimension next_gap);
   float find_mean_blob_spacing(WERD *word);
-  bool ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, int16_t left, int16_t right);
+  bool ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, TDimension left, TDimension right);
   // get bounding box
   TBOX reduced_box_next(TO_ROW *row,    // current row
                         BLOBNBOX_IT *it // iterator to blobds
   );
-  TBOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, int16_t *left_above_xht);
+  TBOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, TDimension *left_above_xht);
   // tordmain.cpp ///////////////////////////////////////////
   float filter_noise_blobs(BLOBNBOX_LIST *src_list, BLOBNBOX_LIST *noise_list,
                            BLOBNBOX_LIST *small_list, BLOBNBOX_LIST *large_list);

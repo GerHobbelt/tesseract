@@ -52,8 +52,8 @@ GAPMAP::GAPMAP(     // Constructor
   Find left and right extremes and bucket size
 */
   map = nullptr;
-  min_left = INT16_MAX;
-  max_right = -INT16_MAX;
+  min_left = TDIMENSION_MAX;
+  max_right = TDIMENSION_MIN;
   total_rows = 0;
   any_tabs = false;
 
