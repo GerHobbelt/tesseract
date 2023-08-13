@@ -1592,7 +1592,6 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
   // 
   // That's why we #if0-ed that chunk of code further above!
   auto wi = rv->GetId();
-  //ASSERT0(wi != 18);
   svmap_mu->lock();
   svmap[wi] = rv;
   svmap_mu->unlock();
