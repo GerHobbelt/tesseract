@@ -416,16 +416,16 @@ void transform_to_next_perm(WERD_RES_LIST &words) {
   WERD_RES *prev_word;
   WERD_RES *combo;
   WERD *copy_word;
-  int16_t prev_right = -INT16_MAX;
+  TDimension prev_right = TDIMENSION_MIN;
   TBOX box;
-  int16_t gap;
-  int16_t min_gap = INT16_MAX;
+  TDimension gap;
+  TDimension min_gap = TDIMENSION_MAX;
 
   for (word_it.mark_cycle_pt(); !word_it.cycled_list(); word_it.forward()) {
     word = word_it.data();
     if (!word->part_of_combo) {
       box = word->word->bounding_box();
-      if (prev_right > -INT16_MAX) {
+      if (prev_right > TDIMENSION_MIN) {
         gap = box.left() - prev_right;
         if (gap < min_gap) {
           min_gap = gap;
@@ -434,15 +434,15 @@ void transform_to_next_perm(WERD_RES_LIST &words) {
       prev_right = box.right();
     }
   }
-  if (min_gap < INT16_MAX) {
-    prev_right = -INT16_MAX; // back to start
+  if (min_gap < TDIMENSION_MAX) {
+    prev_right = TDIMENSION_MIN; // back to start
     word_it.set_to_list(&words);
     // Note: we can't use cycle_pt due to inserted combos at start of list.
-    for (; (prev_right == -INT16_MAX) || !word_it.at_first(); word_it.forward()) {
+    for (; (prev_right == TDIMENSION_MIN) || !word_it.at_first(); word_it.forward()) {
       word = word_it.data();
       if (!word->part_of_combo) {
         box = word->word->bounding_box();
-        if (prev_right > -INT16_MAX) {
+        if (prev_right > TDIMENSION_MIN) {
           gap = box.left() - prev_right;
           if (gap <= min_gap) {
             prev_word = prev_word_it.data();
@@ -793,8 +793,8 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
 float Tesseract::blob_noise_score(TBLOB *blob) {
   TBOX box; // BB of outline
   int16_t outline_count = 0;
-  int16_t max_dimension;
-  int16_t largest_outline_dimension = 0;
+  TDimension max_dimension;
+  TDimension largest_outline_dimension = 0;
 
   for (TESSLINE *ol = blob->outlines; ol != nullptr; ol = ol->next) {
     outline_count++;

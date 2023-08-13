@@ -177,7 +177,7 @@ void BLOBNBOX::chop(       // chop blobs
 // indexed by BlobNeighbourDir.
 void BLOBNBOX::NeighbourGaps(int gaps[BND_COUNT]) const {
   for (int dir = 0; dir < BND_COUNT; ++dir) {
-    gaps[dir] = INT16_MAX;
+    gaps[dir] = TDIMENSION_MAX;
     BLOBNBOX *neighbour = neighbours_[dir];
     if (neighbour != nullptr) {
       const TBOX &n_box = neighbour->bounding_box();

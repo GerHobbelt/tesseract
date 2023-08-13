@@ -408,7 +408,7 @@ bool try_doc_fixed(             // determine pitch
   TO_ROW_IT row_it(block_it.data()->get_rows());
   master_x = row_it.data()->projection_left;
   master_y = row_it.data()->baseline.y(master_x);
-  projection_left = INT16_MAX;
+  projection_left = TDIMENSION_MAX;
   projection_right = TDIMENSION_MIN;
   prop_blocks = 0;
   fixed_blocks = 0;

@@ -111,7 +111,7 @@ struct LMConsistencyInfo {
   }
   float BodyMaxXHeight() const {
     if (InconsistentXHeight()) {
-      return static_cast<float>(INT16_MAX);
+      return static_cast<float>(TDIMENSION_MAX);
     }
     return xht_hi[kNORM];
   }
