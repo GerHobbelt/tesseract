@@ -760,7 +760,7 @@ void Tesseract::ApplyBoxTraining(const std::string &fontname, PAGE_RES *page_res
 
 #endif // !DISABLED_LEGACY_ENGINE
 
-/** Creates a fake best_choice entry in each WERD_RES with the correct text.*/
+/** Creates a fake best_choice entry in each WERD_RES with the correct text. */
 void Tesseract::CorrectClassifyWords(PAGE_RES *page_res) {
   PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word_res = pr_it.word(); word_res != nullptr; word_res = pr_it.forward()) {

@@ -83,7 +83,7 @@ Tesseract::Tesseract(Tesseract *parent)
                " (Values from PageSegMode enum in tesseract/publictypes.h)",
                this->params())
     , INT_MEMBER(preprocess_graynorm_mode, 0, 
-                "Grayscale normalization mode: 0=no normalization, 1=tresholding + recognition (i.e. apply to all tasks), "
+                "Grayscale normalization mode: 0=no normalization, 1=thresholding + recognition (i.e. apply to all tasks), "
                 "2=thresholding tasks (layout analysis) only, 3=character recognition only. "
                 "The modes 1–3 apply non-linear normalization (nlnorm) on a grayscale version "
                 "of the input image and replace it for the specified tasks.", 
@@ -235,8 +235,8 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(test_pt, false, "Test for point", this->params())
     , double_MEMBER(test_pt_x, 99999.99, "xcoord", this->params())
     , double_MEMBER(test_pt_y, 99999.99, "ycoord", this->params())
-    , INT_MEMBER(multilang_debug_level, 0, "Print multilang debug info.", this->params())
-    , INT_MEMBER(paragraph_debug_level, 0, "Print paragraph debug info.", this->params())
+    , INT_MEMBER(multilang_debug_level, 0, "Print multilang debug info. (0..1)", this->params())
+    , INT_MEMBER(paragraph_debug_level, 0, "Print paragraph debug info. (0..3)", this->params())
     , BOOL_MEMBER(paragraph_text_based, true,
                   "Run paragraph detection on the post-text-recognition "
                   "(more accurate)",
@@ -315,7 +315,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , double_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this", this->params())
     , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins", this->params())
     , INT_MEMBER(fixsp_done_mode, 1, "What constitutes done for spacing", this->params())
-    , INT_MEMBER(debug_fix_space_level, 0, "Contextual fixspace debug", this->params())
+    , INT_MEMBER(debug_fix_space_level, 0, "Contextual fixspace debug (0..3)", this->params())
     , STRING_MEMBER(numeric_punctuation, ".,", "Punct. chs expected WITHIN numbers", this->params())
     , INT_MEMBER(x_ht_acceptance_tolerance, 8,
                  "Max allowed deviation of blob top outside of font data", this->params())
@@ -371,7 +371,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD",
                  this->params())
     , STRING_MEMBER(unrecognised_char, "|", "Output char for unidentified blobs", this->params())
-    , INT_MEMBER(suspect_level, 99, "Suspect marker level", this->params())
+    , INT_MEMBER(suspect_level, 99, "Suspect marker level (0..4)", this->params())
     , INT_MEMBER(suspect_short_words, 2, "Don't suspect dict wds longer than this", this->params())
     , BOOL_MEMBER(suspect_constrain_1Il, false, "UNLV keep 1Il chars rejected", this->params())
     , double_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit", this->params())

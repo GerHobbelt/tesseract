@@ -616,7 +616,7 @@ bool StrokeWidth::FixBrokenCJK(TO_BLOCK *block) {
       if (bbox.width() > bbox.height() * kCJKAspectRatio ||
           bbox.height() > bbox.width() * kCJKAspectRatio) {
         if (debug) {
-          tprintf("Bad final aspectratio:");
+          tprintf("Bad final aspect ratio:");
           bbox.print();
         }
         continue;

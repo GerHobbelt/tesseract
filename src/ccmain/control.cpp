@@ -202,7 +202,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
                                    std::vector<WordData> *words) {
   // TODO(rays) Before this loop can be parallelized (it would yield a massive
   // speed-up) all remaining member globals need to be converted to local/heap
-  // (eg set_pass1 and set_pass2) and an intermediate adaption pass needs to be
+  // (e.g. set_pass1 and set_pass2) and an intermediate adaption pass needs to be
   // added. The results will be significantly different with adaption on, and
   // deterioration will need investigation.
   pr_it->restart_page();
@@ -1318,7 +1318,7 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
   clock_t start_t = clock();
-  const bool debug = classify_debug_level > 0 || multilang_debug_level > 0;
+  const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
     tprintf("{} word with lang {} at:", word->done ? "Already done" : "Processing",
             most_recently_used_->lang);

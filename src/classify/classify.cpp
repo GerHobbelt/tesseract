@@ -25,7 +25,7 @@
 namespace tesseract {
 
 Classify::Classify()
-    : INT_MEMBER(classify_debug_level, 0, "Classify debug level", this->params())
+    : INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
     , BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
 
     , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
@@ -59,7 +59,7 @@ Classify::Classify()
     , BOOL_MEMBER(prioritize_division, false, "Prioritize blob division over chopping",
                   this->params())
     , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", this->params())
-    , INT_MEMBER(classify_debug_level, 0, "Classify debug level", this->params())
+    , INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
 	, BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
 	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
     , double_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
@@ -78,9 +78,9 @@ Classify::Classify()
     , BOOL_MEMBER(classify_enable_adaptive_debugger, 0, "Enable match debugger", this->params())
     , BOOL_MEMBER(classify_nonlinear_norm, 0, "Non-linear stroke-density normalization",
                   this->params())
-    , INT_MEMBER(matcher_debug_level, 0, "Matcher Debug Level", this->params())
+    , INT_MEMBER(matcher_debug_level, 0, "Matcher Debug Level (0..3)", this->params())
     , INT_MEMBER(matcher_debug_flags, 0, "Matcher Debug Flags", this->params())
-    , INT_MEMBER(classify_learning_debug_level, 0, "Learning Debug Level: ", this->params())
+    , INT_MEMBER(classify_learning_debug_level, 0, "Learning Debug Level (0..4)", this->params())
     , double_MEMBER(matcher_good_threshold, 0.125, "Good Match (0-1)", this->params())
     , double_MEMBER(matcher_reliable_adaptive_result, 0.0, "Great Match (0-1)", this->params())
     , double_MEMBER(matcher_perfect_threshold, 0.02, "Perfect Match (0-1)", this->params())
