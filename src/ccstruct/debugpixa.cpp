@@ -1,3 +1,4 @@
+// UTF-8: ö,ä,💩
 
 #include "debugpixa.h"
 #include "image.h"
@@ -372,7 +373,7 @@ namespace tesseract {
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
         } else {
           // scale a clipped partial to about match the size of the original/base image, 
-		  // so the generated HTML + image sequence is more, �h, uniform/readable.
+		  // so the generated HTML + image sequence is more, äh, uniform/readable.
           ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
         }
