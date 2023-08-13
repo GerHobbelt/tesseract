@@ -726,7 +726,7 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
     /* Get the noise scores for all blobs */
 
 #ifndef SECURE_NAMES
-  if (debug_fix_space_level > 5) {
+  if (debug_fix_space_level > 2) {
     tprintf("FP fixspace Noise metrics for \"{}\": ",
             word_res->best_choice->unichar_string());
   }
@@ -740,11 +740,11 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
       noise_score[i] = blob_noise_score(blob);
     }
 
-    if (debug_fix_space_level > 5) {
+    if (debug_fix_space_level > 2) {
       tprintf("{} ", noise_score[i]);
     }
   }
-  if (debug_fix_space_level > 5) {
+  if (debug_fix_space_level > 2) {
     tprintf("\n");
   }
 
