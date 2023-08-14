@@ -411,25 +411,6 @@ void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
   }
 }
 
-// Display the edges of the columns at the given y coords.
-void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
-                                         Image &pix, uint32_t *data, int wpl, int w, int h) {
-  ColPartition_IT it(&parts_);
-  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    ColPartition* part = it.data();
-    auto x1 = part->LeftAtY(y_top);
-    auto y1 = y_top;
-    auto x2 = part->LeftAtY(y_bottom);
-    auto y2 = y_bottom;
-    auto x3 = part->RightAtY(y_top);
-    auto y3 = y_top;
-    auto x4 = part->RightAtY(y_bottom);
-    auto y4 = y_bottom;
-    //win->Line(part->LeftAtY(y_top), y_top, part->LeftAtY(y_bottom), y_bottom);
-    //win->Line(part->RightAtY(y_top), y_top, part->RightAtY(y_bottom), y_bottom);
-  }
-}
-
 #endif // !GRAPHICS_DISABLED
 
 // Return the ColumnSpanningType that best explains the columns overlapped

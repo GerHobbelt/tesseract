@@ -566,42 +566,6 @@ void TabVector::Display(ScrollViewReference tab_win) {
   tab_win->Text(startpt_.x(), startpt_.y(), score_string.c_str());
 }
 
-// Draw this tabvector in place in the given window.
-void TabVector::Display(Image &pix, uint32_t* data, int wpl, int w, int h) {
-  if (textord_debug_printable) {
-    //tab_win->Pen(ScrollView::BLUE);
-  }
-  else if (alignment_ == TA_LEFT_ALIGNED) {
-    //tab_win->Pen(ScrollView::LIME_GREEN);
-  }
-  else if (alignment_ == TA_LEFT_RAGGED) {
-    //tab_win->Pen(ScrollView::DARK_GREEN);
-  }
-  else if (alignment_ == TA_RIGHT_ALIGNED) {
-    //tab_win->Pen(ScrollView::PINK);
-  }
-  else if (alignment_ == TA_RIGHT_RAGGED) {
-    //tab_win->Pen(ScrollView::CORAL);
-  }
-  else {
-    //tab_win->Pen(ScrollView::WHITE);
-  }
-  auto x1 = startpt_.x();
-  auto y1 = startpt_.y();
-  auto x2 = endpt_.x();
-  auto y2 = endpt_.y();
-  //tab_win->Line(startpt_.x(), startpt_.y(), endpt_.x(), endpt_.y());
-  //tab_win->Pen(ScrollView::GREY);
-#if 0
-  tab_win->Line(startpt_.x(), startpt_.y(), startpt_.x(), extended_ymin_);
-  tab_win->Line(endpt_.x(), extended_ymax_, endpt_.x(), endpt_.y());
-#endif
-  auto score_string = std::to_string(percent_score_);
-  //tab_win->TextAttributes("Times", 50, false, false, false);
-  auto txt = score_string.c_str();
-  //tab_win->Text(startpt_.x(), startpt_.y(), score_string.c_str());
-}
-
 #endif
 
 // Refit the line and/or re-evaluate the vector if the dirty flags are set.

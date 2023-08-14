@@ -1108,7 +1108,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition"));
 
     if (debug_all) {
-      tesseract_->display_current_page_result(page_res_);
+      tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
 
     // Now run the main recognition.
@@ -1116,21 +1116,21 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
       AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
       if (debug_all) {
-        tesseract_->display_current_page_result(page_res_);
+        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
     }
 
     AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
       if (debug_all) {
-        tesseract_->display_current_page_result(page_res_);
+        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
       subsection_handle2.pop();
       if (tesseract_->paragraph_text_based) {
         AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
         if (debug_all) {
-          tesseract_->display_current_page_result(page_res_);
+          tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
       }
     } else {

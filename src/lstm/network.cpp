@@ -337,7 +337,7 @@ void Network::DisplayForward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
   ClearWindow(false, name_, pixGetWidth(image), pixGetHeight(image), forward_win_);
   DisplayImage(image, fmt::format("DisplayForward({})", name_), forward_win_);
-  forward_win_->UpdateWindow();
+  forward_win_->Update();
 }
 
 // Displays the image of the matrix to the backward window.
@@ -346,7 +346,7 @@ void Network::DisplayBackward(const NetworkIO &matrix) {
   std::string window_name = name_ + "-back";
   ClearWindow(false, window_name, pixGetWidth(image), pixGetHeight(image), backward_win_);
   DisplayImage(image, fmt::format("DisplayBackward({})", name_), backward_win_);
-  backward_win_->UpdateWindow();
+  backward_win_->Update();
 }
 
 // Creates the window if needed, otherwise clears it.
@@ -379,7 +379,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
 // The pix is pixDestroyed.
 int Network::DisplayImage(Image pix, const char *title, ScrollViewReference &window) {
   int height = pixGetHeight(pix);
-  window->Draw(pix, 0, 0, title);
+  window->Draw(pix, 0, window->TranslateYCoordinate(0), title);
   pix.destroy();
   return height;
 }

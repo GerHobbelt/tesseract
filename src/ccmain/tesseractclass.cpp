@@ -227,7 +227,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     this->params())
     , double_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit", this->params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word", this->params())
-    , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tess",
+    , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract (bit set where bit 0 = ADAPTABLE_WERD, bit 1 = ACCEPTABLE_WERD, bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, bit 5 = CHECK_AMBIG_WERD)",
                  this->params())
     , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output",
                   this->params())

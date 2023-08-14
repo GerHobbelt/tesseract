@@ -182,6 +182,7 @@ namespace tesseract {
     step_ref.level = level;
     step_ref.title = title;
     step_ref.first_info_chunk = info_chunks.size();
+    //ASSERT0(!title.empty());
 
     int rv = active_step_index;
     if (rv < 0)
@@ -211,7 +212,7 @@ namespace tesseract {
     if (handle >= 0) {
       ASSERT0(handle < steps.size());
       auto &parent = steps[handle];
-      ASSERT0(parent.level <= level);
+      //ASSERT0(parent.level <= std::max(0, level));
 
       // bingo!
       active_step_index = handle;
@@ -238,7 +239,7 @@ namespace tesseract {
     }
 
     // when we get here, we're aiming below root, so we reset to last root-entry level:
-    idx = steps.size() - 1;
+    idx = steps.size();
     for (idx--; idx >= 0; idx--) {
       auto &prev_step = steps[idx];
       if (prev_step.level == 0) {
@@ -732,6 +733,8 @@ namespace tesseract {
   {
     pixaClear(pixa_);
     captions.clear();
+    steps.clear();
+    active_step_index = -1;
   }
 
 

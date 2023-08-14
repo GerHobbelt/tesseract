@@ -34,13 +34,12 @@ namespace tesseract {
 bool Tesseract::word_adaptable( // should we adapt?
     WERD_RES *word, uint16_t mode) {
   if (tessedit_adaption_debug) {
-    tprintf("Running word_adaptable() for {} rating {} certainty {}\n",
+    tprintf("Running word_adaptable() for {}, rating {}, certainty {}, mode {}\n",
             word->best_choice->unichar_string(), word->best_choice->rating(),
-            word->best_choice->certainty());
+            word->best_choice->certainty(), mode);
   }
 
   bool status = false;
-  std::bitset<16> flags(mode);
 
   enum MODES {
     ADAPTABLE_WERD,
@@ -48,8 +47,13 @@ bool Tesseract::word_adaptable( // should we adapt?
     CHECK_DAWGS,
     CHECK_SPACES,
     CHECK_ONE_ELL_CONFLICT,
-    CHECK_AMBIG_WERD
+    CHECK_AMBIG_WERD,
+
+    MODES_COUNT
   };
+
+  mode &= ((1 << MODES_COUNT) - 1);  // mask the bits to only pass the ones that are currently known
+  std::bitset<MODES_COUNT> flags(mode);
 
   /*
 0: NO adaption

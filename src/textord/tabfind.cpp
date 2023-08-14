@@ -504,17 +504,6 @@ void TabFind::DisplayTabVectors(ScrollViewReference &tab_win) {
   return;
 }
 
-void TabFind::DisplayTabVectors(Image &pix, uint32_t* data, int wpl, int w, int h) {
-  // For every vector, display it.
-  TabVector_IT it(&vectors_);
-  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    TabVector* vector = it.data();
-    vector->Display(pix, data, wpl, w, h);
-  }
-  //tab_win->Update();
-  return;
-}
-
 #endif
 
 // PRIVATE CODE.

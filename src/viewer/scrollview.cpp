@@ -63,7 +63,8 @@ struct SVPolyLineBuffer {
 
 // A map between the window IDs and their corresponding pointers.
 static std::map<int, ScrollViewReference> svmap;
-static std::mutex *svmap_mu;
+static std::mutex *svmap_mu;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
+
 // A map of all semaphores waiting for a specific event on a specific window.
 static std::map<std::pair<ScrollViewReference, SVEventType>,
                 std::pair<SVSemaphore *, std::unique_ptr<SVEvent>>>
@@ -125,6 +126,7 @@ void InteractiveScrollView::MessageReceiver() {
 
     svmap_mu->lock();
     cur->window = svmap[window_id];
+    svmap_mu->unlock();
 
     if (cur->window) {
       auto length = strlen(p);
@@ -184,13 +186,9 @@ void InteractiveScrollView::MessageReceiver() {
       }
       waiting_for_events_mu->unlock();
       // Signal the corresponding semaphore twice (for both copies).
-      ScrollViewReference sv = svmap[window_id];
-      if (sv) {
-        sv->Signal();
-        sv->Signal();
-      }
+      cur->window->Signal();
+      cur->window->Signal();
     }
-    svmap_mu->unlock();
 
     // Wait until a new message appears in the input stream_.
     do {
@@ -277,9 +275,11 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
   tesseract_ = tess;
   ref_of_ref_ = nullptr;
 
+#if 0
   if (!svmap_mu) {
     svmap_mu = new std::mutex();
   }
+#endif
 
   // Set up the variables on the clientside.
   y_axis_is_reversed_ = y_axis_reversed;
@@ -410,9 +410,10 @@ ScrollView::~ScrollView() {
   Update();
 #endif
 
-  svmap_mu->lock();
-  ASSERT0(!svmap[GetId()]);
-  svmap_mu->unlock();
+  //svmap_mu->lock();
+  auto &ref = svmap[GetId()];
+  ASSERT0(ref.GetRef() == nullptr);
+  //svmap_mu->unlock();
 
   delete points_;
 #endif // !GRAPHICS_DISABLED
@@ -420,9 +421,10 @@ ScrollView::~ScrollView() {
 
 InteractiveScrollView::~InteractiveScrollView() {
 #if !GRAPHICS_DISABLED
-  svmap_mu->lock();
-  if (svmap[GetId()]) {
-    svmap_mu->unlock();
+  //svmap_mu->lock();
+  if (semaphore_ /* !exit_handler_has_been_invoked */) {
+    //svmap_mu->unlock();
+
     // So the event handling thread can quit.
     SendMsg("destroy()");
 
@@ -434,8 +436,6 @@ InteractiveScrollView::~InteractiveScrollView() {
     while (!event_handler_ended_) {
       Update();
     }
-  } else {
-    svmap_mu->unlock();
   }
 
   delete semaphore_;
@@ -765,11 +765,17 @@ void ScrollView::Update() {
     svmap_mu = new std::mutex();
   }
 
-  std::lock_guard<std::mutex> guard(*svmap_mu);
-  for (auto &iter : svmap) {
-    if (iter.second) {
-      iter.second->UpdateWindow();
-    }
+  std::vector<ScrollViewReference> worklist;
+  {
+      std::lock_guard<std::mutex> guard(*svmap_mu);
+      for (auto &iter : svmap) {
+        if (iter.second) {
+          worklist.push_back(iter.second);
+        }
+      }
+  }
+  for (auto &iter : worklist) {
+      iter->UpdateWindow();
   }
 }
 
@@ -1445,13 +1451,14 @@ char BackgroundScrollView::Wait() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr) {
+ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr), id(-1) {
 }
 
-ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr) {
+ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr), id(-1) {
   if (view_ != nullptr) {
     counter_ = new int();
     *counter_ = 1;
+    id = view_->GetId();
   }
 }
 
@@ -1469,24 +1476,28 @@ void ScrollViewReference::cleanup_before_delete() {
         view_->UpdateWindow();
 
         svmap_mu->lock();
-        svmap[GetRef()->GetId()] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+        int id = GetRef()->GetId();
+        svmap[id] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
         svmap_mu->unlock();
 
         delete view_;
-        ASSERT0(counter_ ? * counter_ == 0 : true);
+        ASSERT0(*counter_ == 0);
         delete counter_;
+
+        view_ = nullptr;
+        counter_ = nullptr;
       }
       break;
 
     case 0:
       //delete view_;
       //delete counter_;
+
+      //view_ = nullptr;
+      //counter_ = nullptr;
       break;
     }
   }
-  
-  view_ = nullptr;
-  counter_ = nullptr;
 }
 
 ScrollViewReference::~ScrollViewReference() {
@@ -1501,6 +1512,12 @@ ScrollViewReference &ScrollViewReference::operator=(ScrollView *new_view) {
     if (view_ != nullptr) {
       counter_ = new int();
       *counter_ = 1;
+
+      id = new_view->GetId();
+    }
+    else {
+      counter_ = nullptr;
+      id = -1;
     }
   }
   return *this;
@@ -1510,6 +1527,7 @@ ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
   tprintf("copy constructor failed!\n");
   view_ = o.view_;
   counter_ = o.counter_;
+  id = o.id;
   if (counter_ != nullptr) {
     ++*counter_;
   }
@@ -1519,8 +1537,10 @@ ScrollViewReference::ScrollViewReference(ScrollViewReference &&o) {
   tprintf("move failed!\n");
   view_ = o.view_;
   counter_ = o.counter_;
+  id = o.id;
   o.view_ = nullptr;
   o.counter_ = nullptr;
+  o.id = -1;
 }
 
 ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &other) {
@@ -1530,6 +1550,7 @@ ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &
 
     view_ = other.view_;
     counter_ = other.counter_;
+    id = other.id;
     if (counter_ != nullptr) {
       ++*counter_;
     }
@@ -1544,8 +1565,10 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
 
     view_ = other.view_;
     counter_ = other.counter_;
+    id = other.id;
     other.view_ = nullptr;
     other.counter_ = nullptr;
+    other.id = -1;
   }
   return *this;
 }
@@ -1594,6 +1617,7 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
   auto wi = rv->GetId();
   svmap_mu->lock();
   svmap[wi] = rv;
+  rv.id = wi;
   svmap_mu->unlock();
 
   return rv;
@@ -1638,12 +1662,12 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
       // and nuke 'em all, next:
       for (;;) {
       // limit scope of lock
-      std::vector<int> delset;
+      std::vector<ScrollViewReference> delset;
       {
         std::lock_guard<std::mutex> guard(*svmap_mu);
         for (auto &iter : svmap) {
             if (iter.second) {
-              delset.push_back(iter.first);
+              delset.push_back(iter.second);
             }
         }
       }
@@ -1651,15 +1675,12 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
       if (delset.size() == 0)
         break;
 
-      svmap_mu->lock();
       for (int index = delset.size() - 1; index >= 0; index--) {
-        auto win_id = delset[index];
-        if (svmap[win_id]) {
-            svmap[win_id]->ExitHelper();
-            // ASSERT0(svmap[win_id].GetRef() == nullptr);
+        ScrollViewReference win_ref = delset[index];
+        if (win_ref) {
+            win_ref->ExitHelper();
         }
       }
-      svmap_mu->unlock();
       break;
       }
     }
@@ -1675,311 +1696,6 @@ Tesseract *ScrollViewManager::GetActiveTesseractInstance() {
   mgr.active = mgr.active_set.front();
   return mgr.active;
 }
-
-
-
-
-#if 0
-
-      XXXXXXXXXXXX {
-        const char* name = "filter_blobs: Rejected blobs";
-        auto width = tesseract_->ImageWidth();
-        auto height = tesseract_->ImageHeight();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixSetAll(pix);
-
-        block->plot_graded_blobs(pix);
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
-
-
-
-              XXXXXXXXXXXXXXX {
-        const char* name = "filter_blobs: Rejected blobs";
-        auto width = tesseract_->ImageWidth();
-        auto height = tesseract_->ImageHeight();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixClearAll(pix);
-
-        auto cmap = initDiagPlotColorMap();
-
-        int cmap_offset = 0;
-        plot_box_list(pix, &block->noise_blobs, cmap, cmap_offset, true);
-        cmap_offset = 64;
-        plot_box_list(pix, &block->small_blobs, cmap, cmap_offset, false);
-        cmap_offset = 2 * 64;
-        plot_box_list(pix, &block->large_blobs, cmap, cmap_offset, false);
-        cmap_offset = 3 * 64;
-        plot_box_list(pix, &block->blobs, cmap, cmap_offset, false);
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
-
-
-          XXXXXXXXXXXXXXX {
-      const char* name = "Image blobs";
-      auto width = tright_.x() - bleft_.x();
-      auto height = tright_.y() - bleft_.y();
-
-      Image pix = pixCreate(width, height, 32 /* RGBA */);
-      pixSetAll(pix);
-
-      block->plot_graded_blobs(pix);
-      //block->plot_noise_blobs(pix);
-
-      tesseract_->AddPixDebugPage(pix, name);
-      pix.destroy();
-    }
-
-
-
-              XXXXX {
-      const char* name = "Filtered Input Blobs";
-      auto width = tright_.x() - bleft_.x();
-      auto height = tright_.y() - bleft_.y();
-
-      Image pix(pixCreate(width, height, 32 /* RGBA */));
-      pixSetAll(pix);
-
-      input_block->plot_graded_blobs(pix);
-
-      tesseract_->AddPixDebugPage(pix, name);
-      pix.destroy();
-    }
-
-
-
-
-
-      XXXXXX {
-        const char* name = "FindBlocks: Rejected blobs";
-        auto width = tright_.x() - bleft_.x();
-        auto height = tright_.y() - bleft_.y();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixSetAll(pix);
-
-        input_block->plot_graded_blobs(pix);
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
-
-
-
-
-
-
-
-
-
-
-    XXXXXXXXXXXX {
-      const char* name = "InitialPartitions";
-      auto width = tesseract_->ImageWidth();
-      auto height = tesseract_->ImageHeight();
-
-      Image pix = pixCreate(width, height, 32 /* RGBA */);
-      pixSetAll(pix);
-
-#    if 0
-      BOX* border = boxCreate(2, 2, width + 4, height + 4);
-      // boxDestroy(BOX * *pbox);
-      BOXA* boxlist = boxaCreate(1);
-      boxaAddBox(boxlist, border, false);
-      //boxaDestroy(BOXA * *pboxa);
-      l_uint32 bordercolor;
-      composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-      pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-      boxaDestroy(&boxlist);
-#    endif
-
-      int w, h;
-      pixGetDimensions(pix, &w, &h, NULL);
-      l_uint32* data = pixGetData(pix);
-      int wpl = pixGetWpl(pix);
-
-      part_grid_.DisplayBoxes(pix, data, wpl, w, h);
-      DisplayTabVectors(pix, data, wpl, w, h);
-
-      tesseract_->AddPixDebugPage(pix, name);
-      pix.destroy();
-    }
-
-
-
-
-
-
-
-
-          XXXXXXX {
-        const char* name = "Partitions";
-        auto width = tesseract_->ImageWidth();
-        auto height = tesseract_->ImageHeight();
-
-        Image pix = pixCreate(width, height, 32 /* RGBA */);
-        pixSetAll(pix);
-
-#    if 0
-        BOX* border = boxCreate(2, 2, width + 4, height + 4);
-        // boxDestroy(BOX * *pbox);
-        BOXA* boxlist = boxaCreate(1);
-        boxaAddBox(boxlist, border, false);
-        //boxaDestroy(BOXA * *pboxa);
-        l_uint32 bordercolor;
-        composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-        pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-        boxaDestroy(&boxlist);
-#    endif
-
-        int w, h;
-        pixGetDimensions(pix, &w, &h, NULL);
-        l_uint32* data = pixGetData(pix);
-        int wpl = pixGetWpl(pix);
-
-        part_grid_.DisplayBoxes(pix, data, wpl, w, h);
-        if (!textord_debug_printable) {
-          DisplayTabVectors(pix, data, wpl, w, h);
-        }
-#    if 0
-        if (textord_tabfind_show_partitions > 1) {
-          window->AwaitEvent(SVET_DESTROY);
-        }
-#    endif
-
-        tesseract_->AddPixDebugPage(pix, name);
-        pix.destroy();
-      }
-
-
-
-
-
-
-
-
-
-
-
-
-
-            XXXXXXXXXXXXX {
-    const char* name = "Blocks";
-    auto width = tesseract_->ImageWidth();
-    auto height = tesseract_->ImageHeight();
-
-    Image pix = pixCreate(width, height, 32 /* RGBA */);
-    pixSetAll(pix);
-
-#    if 0
-    BOX* border = boxCreate(2, 2, width + 4, height + 4);
-    // boxDestroy(BOX * *pbox);
-    BOXA* boxlist = boxaCreate(1);
-    boxaAddBox(boxlist, border, false);
-    //boxaDestroy(BOXA * *pboxa);
-    l_uint32 bordercolor;
-    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-    boxaDestroy(&boxlist);
-#    endif
-
-    int w, h;
-    pixGetDimensions(pix, &w, &h, NULL);
-    l_uint32* data = pixGetData(pix);
-    int wpl = pixGetWpl(pix);
-
-    DisplayBoxes(pix, data, wpl, w, h);
-    BLOCK_IT block_it(blocks);
-    int serial = 1;
-    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
-      BLOCK* block = block_it.data();
-      block->pdblk.plot(pix, serial++, data, wpl, w, h);
-    }
-
-    tesseract_->AddPixDebugPage(pix, name);
-    pix.destroy();
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  XXXXXXXXXXXXXXXXX {
-    const char* name = "Columns";
-    auto width = tesseract_->ImageWidth();
-    auto height = tesseract_->ImageHeight();
-
-    Image pix = pixCreate(width, height, 32 /* RGBA */);
-    pixSetAll(pix);
-
-#    if 0
-    BOX* border = boxCreate(2, 2, width + 4, height + 4);
-    // boxDestroy(BOX * *pbox);
-    BOXA* boxlist = boxaCreate(1);
-    boxaAddBox(boxlist, border, false);
-    //boxaDestroy(BOXA * *pboxa);
-    l_uint32 bordercolor;
-    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-    boxaDestroy(&boxlist);
-#    endif
-
-    int w, h;
-    pixGetDimensions(pix, &w, &h, NULL);
-    l_uint32* data = pixGetData(pix);
-    int wpl = pixGetWpl(pix);
-
-    DisplayBoxes(pix, data, wpl, w, h);
-    //col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
-    for (int i = 0; i < gridheight_; ++i) {
-      ColPartitionSet* columns = best_columns_[i];
-      if (columns != nullptr) {
-        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, pix, data, wpl, w, h);
-      }
-    }
-
-    tesseract_->AddPixDebugPage(pix, name);
-    pix.destroy();
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif
-
 
 #endif // !GRAPHICS_DISABLED
 
