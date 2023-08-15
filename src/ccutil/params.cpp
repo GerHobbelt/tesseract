@@ -38,6 +38,14 @@
 #include "mupdf/assertions.h"
 #endif
 
+#ifdef _WIN32
+#  include <windows.h>
+#  define strcasecmp _stricmp
+#  define strncasecmp _strnicmp
+#else
+#  include <strings.h>
+#endif
+
 
 namespace tesseract {
 
@@ -87,39 +95,99 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
   return anyerr;
 }
 
+static bool strieq(const char *s1, const char *s2) {
+  return strcasecmp(s1, s2) == 0;
+}
+
 FILE* ParamUtils::OpenReportFile(const char* path) 
 {
   if (!path || !*path)
     return NULL;
 
-  std::string report_path = path;
   FILE *f = nullptr;
 
-  if (report_path == "stdout" || report_path == "-" || report_path == "1")
+  if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
     f = stdout;
-  else if (report_path == "stderr" || report_path == "+" || report_path == "2")
+  else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
     f = stderr;
-  else if (!report_path.empty()) {
+  else {
 #if defined(HAVE_MUPDF)
     fz_context *ctx = fz_get_global_context();
-    fz_mkdir_for_file(ctx, report_path.c_str());
-    f = fz_fopen_utf8(ctx, report_path.c_str(), "w");
+    fz_mkdir_for_file(ctx, path);
+    f = fz_fopen_utf8(ctx, path, "w");
 #else
-    f = fopen(report_path.c_str(), "w");
+    f = fopen(path, "w");
 #endif
+    if (!f) {
+      tprintf("ERROR: Cannot produce parameter usage report file: '{}'\n", path);
+    }
   }
   return f;
 }
 
-void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *member_params)
-{
-  if (!f) {
-    tprintf("ERROR: Cannot produce parameter usage report file.\n");
-    return;
+class ParamsReportWriter {
+public:
+  ParamsReportWriter(FILE *f)
+      : file_(f) {}
+
+  virtual void Write(const std::string message) = 0;
+
+protected:
+  FILE *file_;
+};
+
+class ParamsReportDefaultWriter : public ParamsReportWriter {
+public:
+  ParamsReportDefaultWriter() : ParamsReportWriter(nullptr) {}
+
+  virtual void Write(const std::string message) {
+    tprintf("{}", message);
   }
 
-  fprintf(f, "\n\nTesseract Parameter Usage Statistics: which params have been relevant?\n"
-            "----------------------------------------------------------------------\n\n");
+protected:
+};
+
+class ParamsReportFileDuoWriter : public ParamsReportWriter {
+public:
+  ParamsReportFileDuoWriter(FILE *f) : ParamsReportWriter(f) {
+    is_separate_file_ = (f != nullptr && f != stderr && f != stdout);
+  }
+
+  virtual void Write(const std::string message) {
+    // only write via tprintf() -- which usually logs to stderr -- when the `f` file destination is an actual file, rather than stderr or stdout.
+    // This prevents these report lines showing up in duplicate on the console.
+    if (is_separate_file_) {
+      tprintf("{}", message);
+    }
+    size_t len = message.length();
+    if (fwrite(message.c_str(), 1, len, file_) != len) {
+      tprintf("ERROR: failed to write params-report line to file. {}\n", strerror(errno));
+    }
+  }
+
+protected:
+  bool is_separate_file_;
+};
+
+
+// When `section_title` is NULL, this will report the lump sum parameter usage for the entire run.
+// When `section_title` is NOT NULL, this will only report the parameters that were actually used (R/W) during the last section of the run, i.e.
+// since the previous invocation of this reporting method (or when it hasn't been called before: the start of the application).
+void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *member_params, const char *section_title)
+{
+  bool is_section_subreport = (section_title != nullptr);
+
+  ParamsReportWriter *writer;
+
+  if (f != nullptr) {
+    writer = new ParamsReportFileDuoWriter(f);
+  } else {
+    writer = new ParamsReportDefaultWriter();
+  }
+
+  writer->Write(fmt::format("\n\nTesseract Parameter Usage Statistics{}: which params have been relevant?\n"
+                            "----------------------------------------------------------------------\n\n",
+                            (section_title != nullptr ? fmt::format(" for section: {}", section_title) : "")));
 
   // first collect all parameter names:
 
@@ -134,7 +202,7 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
     const char* name;
     bool global;
     param_type_t type;
-    const Param* ref;
+    Param* ref;
   } param_info_t;
 
   std::vector<param_info_t> param_names;
@@ -197,26 +265,53 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
     return access;
   };
 
-  for (auto item : param_names) {
-    const Param* p = item.ref;
-    auto stats = p->access_counts();
-    if (stats.reading > 0)
-    {
-      fmt::print(f, "* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str());
-    }
-  }
+  if (!is_section_subreport) {
+    // produce the final lump-sum overview report
 
-  if (report_all_variables)
-  {
-    fprintf(f, "\n\nUnused parameters:\n\n");
+    for (auto item : param_names) {
+      Param *p = item.ref;
+      p->reset_access_counts();
+    }
 
     for (auto item : param_names) {
       const Param* p = item.ref;
       auto stats = p->access_counts();
-      if (stats.reading <= 0)
+      if (stats.prev_sum_reading > 0)
       {
-        fmt::print(f, "* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str());
+        writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_map[item.type], p->formatted_value_str()));
       }
+    }
+
+    if (report_all_variables)
+    {
+      writer->Write("\n\nUnused parameters:\n\n");
+
+      for (auto item : param_names) {
+        const Param* p = item.ref;
+        auto stats = p->access_counts();
+        if (stats.prev_sum_reading <= 0)
+        {
+          writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_map[item.type], p->formatted_value_str()));
+        }
+      }
+    }
+  }
+  else {
+    // produce the section-local report of used parameters
+
+    for (auto item : param_names) {
+      const Param* p = item.ref;
+      auto stats = p->access_counts();
+      if (stats.reading > 0)
+      {
+        writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str()));
+      }
+    }
+
+    // reset the access counts for the next section:
+    for (auto item : param_names) {
+      Param* p = item.ref;
+      p->reset_access_counts();
     }
   }
 }

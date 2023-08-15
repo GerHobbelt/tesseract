@@ -642,16 +642,6 @@ void BaselineBlock::DrawFinalRows(const ICOORD &page_tr) {
 
 #endif // !GRAPHICS_DISABLED
 
-void BaselineBlock::DrawPixSpline(Image pix_in, uint32_t* data, int wpl, int w, int h) {
-  if (non_text_block_) {
-    return;
-  }
-  TO_ROW_IT row_it = block_->get_rows();
-  for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
-    row_it.data()->baseline.plot(pix_in, data, wpl, w, h);
-  }
-}
-
 // Top-level line-spacing calculation. Computes an estimate of the line-
 // spacing, using the current baselines in the TO_ROWS of the block, and
 // then refines it by fitting a regression line to the baseline positions

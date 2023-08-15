@@ -150,7 +150,7 @@ void TextlineProjection::DisplayProjection() const {
     }
   }
   ScrollViewReference win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
-  win->Draw(pixc, 0, 0, "TextlineProjection::DisplayProjection");
+  win->Draw(pixc, 0, win->TranslateYCoordinate(0), "TextlineProjection::DisplayProjection");
   win->Update();
   pixc.destroy();
 }

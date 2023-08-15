@@ -178,9 +178,6 @@ public:
   // what was discarded as noise and what is associated with each row.
   void DrawFinalRows(const ICOORD &page_tr);
 
-  // Render the generated spline baselines for this block on pix_in.
-  void DrawPixSpline(Image pix_in, uint32_t* data, int wpl, int w, int h);
-
 private:
   // Top-level line-spacing calculation. Computes an estimate of the line-
   // spacing, using the current baselines in the TO_ROWS of the block, and

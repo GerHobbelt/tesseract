@@ -433,7 +433,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
     UNICHAR_ID class_id = unicharset.unichar_to_id(correct_text);
     int font_id = word->fontinfo != nullptr ? fontinfo_table_.get_index(*word->fontinfo) : 0;
     if (classify_learning_debug_level >= 1) {
-      tprintf("Adapting to char = {}, thr= {} font_id= {}\n", unicharset.id_to_unichar(class_id),
+      tprintf("Adapting to char = '{}', threshold = {} font_id = {}\n", unicharset.id_to_unichar(class_id),
               threshold, font_id);
     }
     // If filename is not nullptr we are doing recognition
@@ -445,7 +445,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
       AdaptToChar(rotated_blob, class_id, font_id, threshold, BackupAdaptedTemplates);
     }
   } else if (classify_debug_level >= 1) {
-    tprintf("WARNING: Can't adapt to {} not in unicharset\n", correct_text);
+    tprintf("WARNING: Can't adapt to '{}' not in unicharset\n", correct_text);
   }
   if (rotated_blob != blob) {
     delete rotated_blob;

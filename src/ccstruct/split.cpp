@@ -224,7 +224,7 @@ void SPLIT::Print() const {
 void SPLIT::Mark(ScrollViewReference &window) const {
   window->Pen(ScrollView::GREEN);
   window->Line(point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
-  window->UpdateWindow();
+  window->Update();
 }
 #endif
 

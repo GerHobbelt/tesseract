@@ -222,11 +222,6 @@ public:
   // ScrollView::Color BBC::BoxColor() const.
   void DisplayBoxes(ScrollViewReference &window);
 
-  // Display the bounding boxes of the BLOBNBOXes in this grid.
-  // Use of this function requires an additional member of the BBC class:
-  // ScrollView::Color BBC::BoxColor() const.
-  void DisplayBoxes(Image &pix, uint32_t* data, int wpl, int w, int h);
-
 #endif // !GRAPHICS_DISABLED
 
   // ASSERT_HOST that every cell contains no more than one copy of each entry.
@@ -682,32 +677,6 @@ void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win
     tab_win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
   tab_win->Update();
-}
-
-// Create a window at (x,y) and display the bounding boxes of the
-// BLOBNBOXes in this grid.
-// Use of this function requires an additional member of the BBC class:
-// ScrollView::Color BBC::BoxColor() const.
-template <class BBC, class BBC_CLIST, class BBC_C_IT>
-void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(Image &pix, uint32_t *data, int wpl, int w, int h) {
-  //tab_win->Pen(ScrollView::BLUE);
-  //tab_win->Brush(ScrollView::NONE);
-
-  // For every bbox in the grid, display it.
-  GridSearch<BBC, BBC_CLIST, BBC_C_IT> gsearch(this);
-  gsearch.StartFullSearch();
-  BBC* bbox;
-  while ((bbox = gsearch.NextFullSearch()) != nullptr) {
-    const TBOX& box = bbox->bounding_box();
-    int left_x = box.left();
-    int right_x = box.right();
-    int top_y = box.top();
-    int bottom_y = box.bottom();
-    ScrollView::Color box_color = bbox->BoxColor();
-    //tab_win->Pen(box_color);
-    //tab_win->Rectangle(left_x, bottom_y, right_x, top_y);
-  }
-  //tab_win->Update();
 }
 
 #endif // !GRAPHICS_DISABLED

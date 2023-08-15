@@ -75,7 +75,7 @@ public:
   bool rword_likely_ends_idea;
 };
 
-#if 0
+#if 0  // moved to tesseractclass.h
 
 // Main entry point for Paragraph Detection Algorithm.
 //
