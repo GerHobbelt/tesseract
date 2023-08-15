@@ -66,6 +66,8 @@ namespace tesseract {
     // on destruction.
     void WriteHTML(const char* filename);
 
+    void WriteSectionParamsUsageReport();
+
     void Clear();
 
   protected:
@@ -127,6 +129,22 @@ namespace tesseract {
                                   float src_factor, float background_factor);
 
   Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image);
+
+  class AutoPopDebugSectionLevel {
+  public:
+    AutoPopDebugSectionLevel(Tesseract *tess, int section_handle)
+        : section_handle_(section_handle), tesseract_(tess) {}
+
+    // auto-pop via end-of-scope i.e. object destructor:
+    ~AutoPopDebugSectionLevel();
+
+    // forced (early) pop by explicit pop() call:
+    void pop();
+
+  protected:
+    Tesseract *tesseract_;
+    int section_handle_;
+  };
 
   } // namespace tesseract
 

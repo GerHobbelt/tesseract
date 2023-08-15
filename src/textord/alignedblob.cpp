@@ -146,8 +146,8 @@ AlignedBlobParams::AlignedBlobParams(int vertical_x, int vertical_y, int width)
 // Fit the vertical vector into an ICOORD, which is 16 bit.
 void AlignedBlobParams::set_vertical(int vertical_x, int vertical_y) {
   int factor = 1;
-  if (vertical_y > INT16_MAX) {
-    factor = vertical_y / INT16_MAX + 1;
+  if (vertical_y > TDIMENSION_MAX) {
+    factor = vertical_y / TDIMENSION_MAX + 1;
   }
   vertical.set_x(vertical_x / factor);
   vertical.set_y(vertical_y / factor);

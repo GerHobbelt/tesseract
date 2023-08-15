@@ -916,7 +916,7 @@ private:
                                  int tessedit_page_number);
 }; // class TessBaseAPI.
 
-/** Escape a char string - remove &<>"' with HTML codes. */
+/** Escape a char string - replace &<>"' with HTML codes. */
 std::string HOcrEscape(const char *text);
 
 std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);

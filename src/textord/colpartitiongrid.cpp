@@ -1148,7 +1148,7 @@ void ColPartitionGrid::FindFigureCaptions() {
         // or a big gap that indicates a separation from the body text.
         int line_count = 0;
         int biggest_gap = 0;
-        int smallest_gap = INT16_MAX;
+        int smallest_gap = TDIMENSION_MAX;
         int total_height = 0;
         int mean_height = 0;
         ColPartition *end_partner = nullptr;

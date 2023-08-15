@@ -264,7 +264,7 @@ static bool recog_done = false; // recog_all_words was called
 
 // These variables should remain global, since they are only used for the
 // debug mode (in which only a single Tesseract thread/instance will exist).
-static std::bitset<16> word_display_mode;
+static std::bitset<DF_COUNT> word_display_mode;
 static ColorationMode color_mode = CM_RAINBOW;
 
 static PAGE_RES *current_page_res = nullptr;
@@ -369,9 +369,13 @@ static ScrollViewReference &bln_word_window_handle(Tesseract *tess) { // return 
  *  new window needs to be. Create it and re-display.
  */
 static void build_image_window(Tesseract *tess, int width, int height) {
-  image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
-                             width + 1, height + editor_image_menuheight + 1, width, height, true);
-  image_win->RegisterGlobalRefToMe(&image_win);
+  if (!image_win) {
+      image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
+                                 width + 1, height + editor_image_menuheight + 1, width, height, true);
+      image_win->RegisterGlobalRefToMe(&image_win);
+  } else {
+      image_win->Clear();
+  }
 }
 
 /**
@@ -471,16 +475,24 @@ SVMenuNode *Tesseract::build_menu_new() {
  *
  *  Redisplay page
  */
-void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it)) {
+void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it)) {
+  current_page_res = page_res;
+
   int block_count = 1;
 
   image_win->Clear();
   if (debug_display_page) {
-    image_win->Draw(pix_binary(), 0, 0, "Tesseract::do_re_display B&W source image");
+    image_win->Draw(pix_binary(), 0, image_win->TranslateYCoordinate(0), "Tesseract::do_re_display B&W source image");
   }
 
+  {
+    PAGE_RES_IT pr_it(page_res);
+    word_dumper(&pr_it);
+  }
+
+
   image_win->Brush(ScrollView::NONE);
-  PAGE_RES_IT pr_it(current_page_res);
+  PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     (this->*word_painter)(&pr_it);
     if (debug_display_page_baselines && pr_it.row() != pr_it.prev_row()) {
@@ -501,10 +513,7 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
  */
 void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   current_page_res = page_res;
-  if (current_page_res->block_res_list.empty()) {
-    return;
-  }
-  if (debug_do_not_use_scrollview_app) {
+  if (page_res->block_res_list.empty()) {
     return;
   }
 
@@ -513,7 +522,15 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
 
   build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
-  do_re_display(&tesseract::Tesseract::word_set_display);
+  if (debug_all) {
+    word_display_mode.set(DF_BOX);
+    word_display_mode.set(DF_TEXT);
+    word_display_mode.set(DF_POLYGONAL);
+    word_display_mode.set(DF_EDGE_STEP);
+    word_display_mode.set(DF_BN_POLYGONAL);
+    word_display_mode.set(DF_BLAMER);
+  }
+  do_re_display(page_res, &tesseract::Tesseract::word_set_display);
 
   ASSERT0(image_win);
   if (!image_win->HasInteractiveFeature()) {
@@ -609,7 +626,7 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       } else {
         word_display_mode.reset(DF_BLAMER);
       }
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       mode = CHANGE_DISP_CMD_EVENT;
       break;
     case CORRECT_TEXT_CMD_EVENT:
@@ -645,58 +662,58 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       mode = CHANGE_DISP_CMD_EVENT;
       break;
     case UNIFORM_DISP_CMD_EVENT:
-      do_re_display(&tesseract::Tesseract::word_set_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_set_display);
       break;
     case IMAGE_CMD_EVENT:
       debug_display_page = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case BLOCKS_CMD_EVENT:
       debug_display_page_blocks = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case BASELINES_CMD_EVENT:
       debug_display_page_baselines = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SUBSCRIPT_CMD_EVENT:
       color_mode = CM_SUBSCRIPT;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SUPERSCRIPT_CMD_EVENT:
       color_mode = CM_SUPERSCRIPT;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_ITALIC_CMD_EVENT:
       color_mode = CM_ITALIC;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_BOLD_CMD_EVENT:
       color_mode = CM_BOLD;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_UNDERLINE_CMD_EVENT:
       color_mode = CM_UNDERLINE;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_FIXEDPITCH_CMD_EVENT:
       color_mode = CM_FIXEDPITCH;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SERIF_CMD_EVENT:
       color_mode = CM_SERIF;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SMALLCAPS_CMD_EVENT:
       color_mode = CM_SMALLCAPS;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_DROPCAPS_CMD_EVENT:
       color_mode = CM_DROPCAPS;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case REFRESH_CMD_EVENT:
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case QUIT_CMD_EVENT:
       exit = true;
@@ -1102,62 +1119,5 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
 }
 
 #endif // !GRAPHICS_DISABLED
-
-
-/**
- *  display_current_page_result()
- */
-void Tesseract::display_current_page_result(PAGE_RES* page_res) {
-  auto width = ImageWidth();
-  auto height = ImageHeight();
-
-  Image pix(pixCreate(width, height, 32 /* RGBA */));
-
-  pixSetAll(pix);
-
-  int w, h;
-  pixGetDimensions(pix, &w, &h, NULL);
-  l_uint32* data = pixGetData(pix);
-  int wpl = pixGetWpl(pix);
-
-  int block_count = 1;
-
-  bool display_image = debug_display_page;
-  bool display_blocks = debug_display_page_blocks;
-  bool display_baselines = debug_display_page_baselines;
-
-  // bool (tesseract::Tesseract:: * word_painter)(PAGE_RES_IT * pr_it)
-
-  //image_win->Clear();
-  if (display_image) {
-    PIX *po = pixConvertTo32(pix_binary_);
-    pixRasterop(pix, 0, 0, width, height, PIX_SRC, po, 0, 0);
-    pixDestroy(&po);
-    //image_win->Draw(pix_binary_, 0, 0);
-  }
-
-  {
-    PAGE_RES_IT pr_it(page_res);
-    word_dumper(&pr_it);
-  }
-
-  //image_win->Brush(ScrollView::NONE);
-  if (page_res != nullptr) {
-    PAGE_RES_IT pr_it(page_res);
-    for (WERD_RES* word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
-      //(this->*word_painter)(&pr_it);
-      if (display_baselines && pr_it.row() != pr_it.prev_row()) {
-        pr_it.row()->row->plot_baseline(pix, data, wpl, w, h);
-      }
-      if (display_blocks && pr_it.block() != pr_it.prev_block()) {
-        pr_it.block()->block->pdblk.plot(pix, block_count++, data, wpl, w, h);
-      }
-    }
-    //image_win->Update();
-  }
-
-  AddPixDebugPage(pix, "current page results");
-  pix.destroy();
-}
 
 } // namespace tesseract

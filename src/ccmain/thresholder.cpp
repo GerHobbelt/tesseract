@@ -209,7 +209,7 @@ void ImageThresholder::SetImage(const Image pix, const float angle) {
  *      (1) This composite operation is good for adaptively removing
  *          dark background. Adaption of Thomas Breuel's nlbin version
  *          from ocropus.
- *      (2) A good thresholder together NLNorm is WAN
+ *      (2) A good thresholder together with NLNorm is WAN
  * </pre>
  */
 Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
