@@ -106,8 +106,8 @@ void Textord::to_spacing(ICOORD page_tr,       // topright of page
  *************************************************************************/
 
 void Textord::block_spacing_stats(TO_BLOCK *block, GAPMAP *gapmap, bool &old_text_ord_proportional,
-                                  int16_t &block_space_gap_width,    // resulting estimate
-                                  int16_t &block_non_space_gap_width // resulting estimate
+                                  TDimension &block_space_gap_width,    // resulting estimate
+                                  TDimension &block_non_space_gap_width // resulting estimate
 ) {
   TO_ROW *row;         // current row
   BLOBNBOX_IT blob_it; // iterator
@@ -116,11 +116,11 @@ void Textord::block_spacing_stats(TO_BLOCK *block, GAPMAP *gapmap, bool &old_tex
   // DEBUG USE ONLY
   STATS all_gap_stats(0, MAXSPACING - 1);
   STATS space_gap_stats(0, MAXSPACING - 1);
-  int16_t minwidth = MAXSPACING; // narrowest blob
+  TDimension minwidth = MAXSPACING; // narrowest blob
   TBOX blob_box;
   TBOX prev_blob_box;
-  int16_t centre_to_centre;
-  int16_t gap_width;
+  TDimension centre_to_centre;
+  TDimension gap_width;
   float real_space_threshold;
   float iqr_centre_to_centre; // DEBUG USE ONLY
   float iqr_all_gap_stats;    // DEBUG USE ONLY
@@ -269,8 +269,8 @@ suspect 1's or punctuation that is sometimes widely spaced.
  * If failure - return 0 values.
  *************************************************************************/
 void Textord::row_spacing_stats(TO_ROW *row, GAPMAP *gapmap, int16_t block_idx, int16_t row_idx,
-                                int16_t block_space_gap_width,    // estimate for block
-                                int16_t block_non_space_gap_width // estimate for block
+                                TDimension block_space_gap_width,    // estimate for block
+                                TDimension block_non_space_gap_width // estimate for block
 ) {
   // iterator
   BLOBNBOX_IT blob_it = row->blob_list();
@@ -280,8 +280,8 @@ void Textord::row_spacing_stats(TO_ROW *row, GAPMAP *gapmap, int16_t block_idx, 
   STATS small_gap_stats(0, MAXSPACING - 1);
   TBOX blob_box;
   TBOX prev_blob_box;
-  int16_t gap_width;
-  int16_t real_space_threshold = 0;
+  TDimension gap_width;
+  TDimension real_space_threshold = 0;
   int16_t max = 0;
   int16_t large_gap_count = 0;
   bool suspected_table;
@@ -542,8 +542,8 @@ dubious breaks. */
 
 void Textord::old_to_method(TO_ROW *row, STATS *all_gap_stats, STATS *space_gap_stats,
                             STATS *small_gap_stats,
-                            int16_t block_space_gap_width,    // estimate for block
-                            int16_t block_non_space_gap_width // estimate for block
+                            TDimension block_space_gap_width,    // estimate for block
+                            TDimension block_non_space_gap_width // estimate for block
 ) {
   /* First, estimate row space size */
   /* Old to condition was > 2 */
@@ -867,13 +867,13 @@ the gap between the word being built and the next one. */
   BLOBNBOX_IT box_it;       // iterator
   TBOX prev_blob_box;
   TBOX next_blob_box;
-  int16_t prev_gap = INT16_MAX;
-  int16_t current_gap = INT16_MAX;
-  int16_t next_gap = INT16_MAX;
-  int16_t prev_within_xht_gap = INT16_MAX;
-  int16_t current_within_xht_gap = INT16_MAX;
-  int16_t next_within_xht_gap = INT16_MAX;
-  int16_t word_count = 0;
+  TDimension prev_gap = TDIMENSION_MAX;
+  TDimension current_gap = TDIMENSION_MAX;
+  TDimension next_gap = TDIMENSION_MAX;
+  TDimension prev_within_xht_gap = TDIMENSION_MAX;
+  TDimension current_within_xht_gap = TDIMENSION_MAX;
+  TDimension next_within_xht_gap = TDIMENSION_MAX;
+  TDimension word_count = 0;
 
   // repeated char words
   WERD_IT rep_char_it(&(row->rep_words));
@@ -881,7 +881,7 @@ the gap between the word being built and the next one. */
     next_rep_char_word_right = rep_char_it.data()->bounding_box().right();
   }
 
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   cblob_it.set_to_list(&cblobs);
   box_it.set_to_list(row->blob_list());
   // new words
@@ -1187,9 +1187,9 @@ ROW *Textord::make_blob_words(TO_ROW *row,    // row to make
 
 bool Textord::make_a_word_break(TO_ROW *row,   // row being made
                                 TBOX blob_box, // for next_blob // how many blanks?
-                                int16_t prev_gap, TBOX prev_blob_box, int16_t real_current_gap,
-                                int16_t within_xht_current_gap, TBOX next_blob_box,
-                                int16_t next_gap, uint8_t &blanks, bool &fuzzy_sp, bool &fuzzy_non,
+                                TDimension prev_gap, TBOX prev_blob_box, TDimension real_current_gap,
+                                TDimension within_xht_current_gap, TBOX next_blob_box,
+                                TDimension next_gap, uint8_t &blanks, bool &fuzzy_sp, bool &fuzzy_non,
                                 bool &prev_gap_was_a_space, bool &break_at_next_gap) {
   bool space;
   int16_t current_gap;
@@ -1221,7 +1221,7 @@ OR  The real gap is less than the kerning estimate
   if (tosp_old_to_method) {
     // Boring old method
     space = current_gap > row->max_nonspace;
-    if (space && (current_gap < INT16_MAX)) {
+    if (space && (current_gap < TDIMENSION_MAX)) {
       if (current_gap < row->min_space) {
         if (current_gap > row->space_threshold) {
           blanks = 1;
@@ -1391,9 +1391,9 @@ a narrow blob then this gap is a kern as well */
     } else if ((current_gap > row->max_nonspace) && (current_gap <= row->space_threshold)) {
       /* Heuristics to turn dubious kerns to spaces */
       /* TRIED THIS BUT IT MADE THINGS WORSE
-    if (prev_gap == INT16_MAX)
+    if (prev_gap == TDIMENSION_MAX)
       prev_gap = 0;  // start of row
-    if (next_gap == INT16_MAX)
+    if (next_gap == TDIMENSION_MAX)
       next_gap = 0;  // end of row
 */
       if ((prev_blob_box.width() > 0) && (next_blob_box.width() > 0) &&
@@ -1488,7 +1488,7 @@ bool Textord::suspected_punct_blob(TO_ROW *row, TBOX box) {
 }
 
 void Textord::peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_box,
-                               int16_t &next_gap, int16_t &next_within_xht_gap) {
+                               TDimension &next_gap, TDimension &next_within_xht_gap) {
   TBOX next_reduced_blob_box;
   TBOX bit_beyond;
   BLOBNBOX_IT reduced_box_it = box_it;
@@ -1496,8 +1496,8 @@ void Textord::peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_
   next_blob_box = box_next(&box_it);
   next_reduced_blob_box = reduced_box_next(row, &reduced_box_it);
   if (box_it.at_first()) {
-    next_gap = INT16_MAX;
-    next_within_xht_gap = INT16_MAX;
+    next_gap = TDIMENSION_MAX;
+    next_within_xht_gap = TDIMENSION_MAX;
   } else {
     bit_beyond = box_it.data()->bounding_box();
     next_gap = bit_beyond.left() - next_blob_box.right();
@@ -1509,8 +1509,8 @@ void Textord::peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_
 #if !GRAPHICS_DISABLED
 void Textord::mark_gap(TBOX blob,    // blob following gap
                        int16_t rule, // heuristic id
-                       int16_t prev_gap, int16_t prev_blob_width, int16_t current_gap,
-                       int16_t next_blob_width, int16_t next_gap) {
+                       TDimension prev_gap, TDimension prev_blob_width, TDimension current_gap,
+                       TDimension next_blob_width, TDimension next_gap) {
   ScrollView::Color col; // of ellipse marking flipped gap
 
   switch (rule) {
@@ -1603,9 +1603,9 @@ float Textord::find_mean_blob_spacing(WERD *word) {
   }
 }
 
-bool Textord::ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, int16_t left,
-                             int16_t right) {
-  int16_t gap = right - left + 1;
+bool Textord::ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, TDimension left,
+                             TDimension right) {
+  TDimension gap = right - left + 1;
 
   if (tosp_ignore_big_gaps > 999) {
     return false; // Don't ignore
@@ -1713,7 +1713,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
  * NOTE that we need to rotate all the coordinates as
  * find_blob_limits finds the y min and max within a specified x band
  *************************************************************************/
-TBOX Textord::reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, int16_t *left_above_xht) {
+TBOX Textord::reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, TDimension *left_above_xht) {
   float baseline;
   float blob_x_centre;
   float left_limit;
@@ -1733,10 +1733,10 @@ caps ht chars which should NOT have their box reduced: T, Y, V, W etc
 */
   left_limit = static_cast<float>(INT32_MAX);
   junk = static_cast<float>(-INT32_MAX);
-  find_cblob_hlimits(blob->cblob(), (baseline + 1.1 * row->xheight), static_cast<float>(INT16_MAX),
+  find_cblob_hlimits(blob->cblob(), (baseline + 1.1 * row->xheight), static_cast<float>(TDIMENSION_MAX),
                      left_limit, junk);
   if (left_limit > junk) {
-    *left_above_xht = INT16_MAX; // No area above xht
+    *left_above_xht = TDIMENSION_MAX; // No area above xht
   } else {
     *left_above_xht = static_cast<int16_t>(std::floor(left_limit));
   }
@@ -1746,7 +1746,7 @@ baseline.
 */
   left_limit = static_cast<float>(INT32_MAX);
   junk = static_cast<float>(-INT32_MAX);
-  find_cblob_hlimits(blob->cblob(), baseline, static_cast<float>(INT16_MAX), left_limit, junk);
+  find_cblob_hlimits(blob->cblob(), baseline, static_cast<float>(TDIMENSION_MAX), left_limit, junk);
 
   if (left_limit > junk) {
     return TBOX(); // no area within xht so return empty box
@@ -1756,7 +1756,7 @@ Find reduced RH limit of blob - the right extent of the region BELOW the xht.
 */
   junk = static_cast<float>(INT32_MAX);
   right_limit = static_cast<float>(-INT32_MAX);
-  find_cblob_hlimits(blob->cblob(), static_cast<float>(-INT16_MAX), (baseline + row->xheight), junk,
+  find_cblob_hlimits(blob->cblob(), static_cast<float>(TDIMENSION_MIN), (baseline + row->xheight), junk,
                      right_limit);
   if (junk > right_limit) {
     return TBOX(); // no area within xht so return empty box

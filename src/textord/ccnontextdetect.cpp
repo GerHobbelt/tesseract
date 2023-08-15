@@ -115,7 +115,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 	  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "nontext.junknoisemask", "png");
 	  WritePix(filepath, pix, IFF_PNG);
 #endif
-    tesseract_->AddPixDebugPage(pix, "nontext.junknoisemask");
+    tesseract_->AddPixDebugPage(pix, "ComputeNonTextMask:nontext.junknoisemask");
   }
   ScrollViewReference win = nullptr;
 #if !GRAPHICS_DISABLED
@@ -127,7 +127,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   // blobs.
   MarkAndDeleteNonTextBlobs(&blob_block->large_blobs, kMaxLargeOverlapsWithSmall, win,
                             ScrollView::DARK_GREEN, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, ScrollView::WHITE,
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, ScrollView::AQUAMARINE,
                             pix);
   // Clear the grid of small blobs and insert the medium blobs.
   Clear();
@@ -138,14 +138,14 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   Clear();
   MarkAndDeleteNonTextBlobs(&blob_block->noise_blobs, -1, win, ScrollView::CORAL, pix);
   MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, ScrollView::GOLDENROD, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::WHITE, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::AQUAMARINE, pix);
   if (debug) {
 #if !GRAPHICS_DISABLED
     if (win) {
-      win->UpdateWindow();
+      win->Update();
     }
 #endif // !GRAPHICS_DISABLED
-    tesseract_->AddPixDebugPage(pix, "nontext.junkccphotomask");
+    tesseract_->AddPixDebugPage(pix, "nontext.junk.ComputeNonTextMask.photomask");
 #if !GRAPHICS_DISABLED
     if (win && win->HasInteractiveFeature()) {
       win->AwaitEvent(SVET_DESTROY);

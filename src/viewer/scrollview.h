@@ -86,6 +86,9 @@ protected:
 
   ScrollView *view_; // reference
   int *counter_;
+
+public:
+  int id;
 };
 
 enum SVEventType {
@@ -686,7 +689,7 @@ protected:
   // The event handler for this window.
   SVEventHandler *event_handler_;
   // Set to true only after the event handler has terminated.
-  bool event_handler_ended_;
+  volatile bool event_handler_ended_;
 
   // Table of all the currently queued events.
   std::unique_ptr<SVEvent> event_table_[SVET_COUNT];

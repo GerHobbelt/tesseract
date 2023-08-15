@@ -355,7 +355,7 @@ int32_t row_words2(   // compute space size
   //      if (testing_on)
   //              tprintf("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   const bool testing_row = false;
   // min blob size
   min_width = static_cast<int32_t>(block->pr_space);
@@ -376,7 +376,7 @@ int32_t row_words2(   // compute space size
   valid_count = gap_stats.get_total();
   if (valid_count < total_count * textord_words_minlarge) {
     gap_stats.clear();
-    prev_x = -INT16_MAX;
+    prev_x = TDIMENSION_MIN;
     for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
       blob = blob_it.data();
       if (!blob->joined_to_prev()) {

@@ -65,8 +65,6 @@ public:
   void plot(ScrollViewReference &window, int32_t num);
 #endif
 
-  void plot(Image &pix, int32_t num);
-
 #if !GRAPHICS_DISABLED
   void fill(ScrollViewReference &window, ScrollView::Color colour);
 #endif // !GRAPHICS_DISABLED

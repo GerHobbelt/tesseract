@@ -168,7 +168,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   if (textord_tabfind_show_blocks) {
     input_blobs_win_ = MakeWindow(tesseract_, 0, 0, "Filtered Input Blobs");
     input_block->plot_graded_blobs(input_blobs_win_);
-    input_blobs_win_->UpdateWindow();
+    input_blobs_win_->Update();
   }
 #endif // !GRAPHICS_DISABLED
   SetBlockRuleEdges(input_block);

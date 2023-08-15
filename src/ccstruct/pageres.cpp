@@ -67,6 +67,7 @@ const double kMaxWordGapRatio = 2.0;
 
 // Computes and returns a threshold of certainty difference used to determine
 // which words to keep, based on the adjustment factors of the two words.
+// 
 // TODO(rays) This is horrible. Replace with an enhance params training model.
 static double StopperAmbigThreshold(double f1, double f2) {
   return (f2 - f1) * kStopperAmbiguityThresholdGain -

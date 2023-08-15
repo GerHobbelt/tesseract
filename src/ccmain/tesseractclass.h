@@ -592,13 +592,11 @@ public:
   );
 #endif // !GRAPHICS_DISABLED
   void debug_word(PAGE_RES *page_res, const TBOX &selection_box);
-  void do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it));
+  void do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it));
   bool word_display(PAGE_RES_IT *pr_it);
   bool word_bln_display(PAGE_RES_IT *pr_it);
   bool word_blank_and_set_display(PAGE_RES_IT *pr_its);
   bool word_set_display(PAGE_RES_IT *pr_it);
-
-  void display_current_page_result(PAGE_RES* page_res);
 
   // #if !GRAPHICS_DISABLED
   bool word_dumper(PAGE_RES_IT *pr_it);
@@ -1063,6 +1061,8 @@ public:
     return pixa_debug_.PushSubordinateSection(title);
   }
   void PopPixDebugSection(int handle = -1) { // pop active; return focus to parent
+    pixa_debug_.WriteSectionParamsUsageReport();
+
     pixa_debug_.PopSection(handle);
   }
 

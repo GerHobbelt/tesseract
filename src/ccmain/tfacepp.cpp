@@ -45,7 +45,7 @@ void Tesseract::recog_word(WERD_RES *word) {
   if (wordrec_skip_no_truth_words &&
       (word->blamer_bundle == nullptr ||
        word->blamer_bundle->incorrect_result_reason() == IRR_NO_TRUTH)) {
-    if (classify_debug_level) {
+    if (classify_debug_level > 0) {
       tprintf("No truth for word - skipping\n");
     }
     word->tess_failed = true;

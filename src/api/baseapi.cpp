@@ -497,10 +497,8 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     auto fpath = tesseract::vars_report_file;
     FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
-    if (!f) {
-      tprintf("ERROR: Cannot produce parameter usage report file: '{}'\n", fpath.c_str());
-    } else {
-      ParamUtils::ReportParamsUsageStatistics(f, vec);
+    ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
+    if (f) {
       if (f != stdout && f != stderr) {
         fclose(f);
       } else {
@@ -1008,6 +1006,8 @@ PageIterator *TessBaseAPI::AnalyseLayout() {
 
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
   if (FindLines() == 0) {
+    AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Analyse Layout"));
+
     if (block_list_->empty()) {
       return nullptr; // The page was empty.
     }
@@ -1031,6 +1031,9 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   if (FindLines() != 0) {
     return -1;
   }
+
+  AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize (OCR)"));
+
   delete page_res_;
   if (block_list_->empty()) {
     page_res_ = new PAGE_RES(false, block_list_, &tesseract_->prev_word_best_choice_);
@@ -1041,14 +1044,19 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   recognition_done_ = true;
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
+    if (debug_all)
+      tprintf("PROCESS: Re-segment from line boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
+    if (debug_all)
+      tprintf("PROCESS: Re-segment from page boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
-    page_res_ =
-        new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
+    if (debug_all)
+      tprintf("PROCESS: Re-segment from LSTM / previous word best choice.\n");
+    page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
   }
 
   if (page_res_ == nullptr) {
@@ -1056,6 +1064,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 
   if (tesseract_->tessedit_train_line_recognizer) {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
     if (!tesseract_->TrainLineRecognizer(tesseract_->input_file_path.c_str(), output_file_, block_list_)) {
       return -1;
     }
@@ -1064,6 +1073,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_make_boxes_from_boxes) {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
@@ -1071,6 +1081,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   int result = 0;
   if (tesseract_->interactive_display_mode && !tesseract_->debug_do_not_use_scrollview_app) {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
 #endif // !GRAPHICS_DISABLED
@@ -1081,10 +1092,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     return -1;
 #if !DISABLED_LEGACY_ENGINE
   } else if (tesseract_->tessedit_train_from_boxes) {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train From Boxes"));
     std::string fontname;
     ExtractFontName(output_file_.c_str(), &fontname);
     tesseract_->ApplyBoxTraining(fontname, page_res_);
   } else if (tesseract_->tessedit_ambigs_training) {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train Ambigs"));
     FILE *training_output_file = tesseract_->init_recog_training(tesseract_->input_file_path.c_str());
     // OCR the page segmented into words by tesseract.
     tesseract_->recog_training_segmented(tesseract_->input_file_path.c_str(), page_res_, monitor,
@@ -1092,26 +1105,32 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition"));
+
     if (debug_all) {
-      tesseract_->display_current_page_result(page_res_);
+      tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
 
     // Now run the main recognition.
     if (!tesseract_->paragraph_text_based) {
+      AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
       if (debug_all) {
-        tesseract_->display_current_page_result(page_res_);
+        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
     }
 
+    AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
       if (debug_all) {
-        tesseract_->display_current_page_result(page_res_);
+        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
+      subsection_handle2.pop();
       if (tesseract_->paragraph_text_based) {
+        AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
         if (debug_all) {
-          tesseract_->display_current_page_result(page_res_);
+          tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
       }
     } else {
@@ -1157,17 +1176,17 @@ static const char* NormalizationModeName(int mode) {
 }
 
 // Grayscale normalization (preprocessing)
-bool TessBaseAPI::NormalizeImage(int mode){
-  if (!GetInputImage()){
+bool TessBaseAPI::NormalizeImage(int mode) {
+  AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Normalize Image"));
+
+  if (!GetInputImage()) {
     tprintf("Please use SetImage before applying the image pre-processing steps.");
     return false;
   }
-  std::string caption = fmt::format("Grayscale normalization based on nlbin(Thomas Breuel) mode = {} ({})",
-    mode, NormalizationModeName(mode));
 
   Image pix = thresholder_->GetPixNormRectGrey();
   if (tesseract_->debug_image_normalization) {
-    tesseract_->AddPixDebugPage(pix, caption);
+    tesseract_->AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin(Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
   }
   if (mode == 1) {
     SetInputImage(pix);
@@ -1347,7 +1366,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 // processing required due to being in a training mode.
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
-  tesseract_->PushSubordinatePixDebugSection("Process pages");
+  AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Process pages"));
   
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
 #if !DISABLED_LEGACY_ENGINE
@@ -1358,7 +1377,6 @@ bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, i
     }
   }
 #endif // !DISABLED_LEGACY_ENGINE
-  tesseract_->PopPixDebugSection();
   return result;
 }
 
@@ -1533,7 +1551,8 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
-  tesseract_->PushSubordinatePixDebugSection("Process a single page");
+  AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Process a single page"));
+  //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
   SetInputName(filename);
 
@@ -1558,7 +1577,10 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
   // Image preprocessing on image
   // Grayscale normalization
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
-  if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
+  {
+    Image input_img = GetInputImage();
+
+  if ((graynorm_mode > 0 || tesseract_->showcase_threshold_methods) && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
     // Write normalized image 
     Pix *p1;
     if (graynorm_mode == 2) {
@@ -1567,6 +1589,12 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
       p1 = GetInputImage();
     }
     tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
+  }
+    // rewind the normalize operation as it was only showcased, but not intended for use by the remainder of the process:
+    if (tesseract_->showcase_threshold_methods && (graynorm_mode <= 0)) {
+      SetInputImage(input_img);
+      SetImage(pix);
+    }
   }
 
   // Recognition
@@ -1630,7 +1658,6 @@ bool TessBaseAPI::ProcessPage(Pix *pix, int page_index, const char *filename,
     failed = !renderer->AddImage(this);
   }
   //pixDestroy(&pixs);
-  tesseract_->PopPixDebugSection();
   return !failed;
 }
 
@@ -2483,10 +2510,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
   auto thresholding_method = selected_thresholding_method;
 
-  int subsec_handle = -1;
-  if (tesseract_->showcase_threshold_methods) {
-    subsec_handle = tesseract_->PushSubordinatePixDebugSection("Showcase threshold methods...");
-  }
+  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(tesseract_->showcase_threshold_methods ? "Showcase threshold methods..." : fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
 
   for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
   {
@@ -2504,13 +2528,11 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 	  }
 	  else
 	  {
-      if (subsec_handle != -1) {
-        tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-      } else {
-        subsec_handle = tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-      }
+          if (tesseract_->showcase_threshold_methods) {
+            tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
+          }
 
-      // on last round, we reset to the selected threshold method
+          // on last round, we reset to the selected threshold method
 		  thresholding_method = selected_thresholding_method;
 		  go = true;
 	  }
@@ -2566,10 +2588,6 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     }
   }
 
-  if (subsec_handle != -1) {
-    tesseract_->PopPixDebugSection(subsec_handle);
-  }
-
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
                               &image_height_);
 
@@ -2621,7 +2639,7 @@ int TessBaseAPI::FindLines() {
     tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image");
   }
 
-  int section_handle = tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation");
+  AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation"));
 
   tesseract_->PrepareForPageseg();
 
@@ -2673,7 +2691,6 @@ int TessBaseAPI::FindLines() {
 #endif // !DISABLED_LEGACY_ENGINE
 
   if (tesseract_->SegmentPage(tesseract_->input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
-    tesseract_->PopPixDebugSection(section_handle);
     return -1;
   }
 
@@ -2681,7 +2698,6 @@ int TessBaseAPI::FindLines() {
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, &osr);
 
-  tesseract_->PopPixDebugSection(section_handle);
   return 0;
 }
 
@@ -2868,7 +2884,7 @@ int TessBaseAPI::NumDawgs() const {
   return tesseract_ == nullptr ? 0 : tesseract_->getDict().NumDawgs();
 }
 
-/** Escape a char string - remove <>&"' with HTML codes. */
+/** Escape a char string - replace <>&"' with HTML codes. */
 std::string HOcrEscape(const char *text) {
   std::string ret;
   const char *ptr;

@@ -1069,204 +1069,204 @@ extern "C" int tesseract_main(int argc, const char** argv)
   tesseract::Dict::GlobalDawgCache();
 
   {
-  TessBaseAPI api;
+      TessBaseAPI api;
 
-  api.SetOutputName(outputbase);
+      api.SetOutputName(outputbase);
 
-  if (!SetVariablesFromCLArgs(api, argc, argv)) {
-    return EXIT_FAILURE;
-  }
+      if (!SetVariablesFromCLArgs(api, argc, argv)) {
+        return EXIT_FAILURE;
+      }
 
-  int config_count = argc - arg_i;
-  const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count,
-                                   &vars_vec, &vars_values, false);
+      int config_count = argc - arg_i;
+      const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count,
+                                       &vars_vec, &vars_values, false);
 
-  // make sure the debug_all preset is set up BEFORE any command-line arguments
-  // direct tesseract to set some arbitrary parameters just below,
-  // for otherwise those `-c xyz=v` commands may be overruled by the
-  // debug_all preset!
-  SetupDebugAllPreset(api);
+      // make sure the debug_all preset is set up BEFORE any command-line arguments
+      // direct tesseract to set some arbitrary parameters just below,
+      // for otherwise those `-c xyz=v` commands may be overruled by the
+      // debug_all preset!
+      SetupDebugAllPreset(api);
 
-  // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
-  if (!SetVariablesFromCLArgs(api, argc, argv)) {
-    return EXIT_FAILURE;
-  }
+      // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
+      if (!SetVariablesFromCLArgs(api, argc, argv)) {
+        return EXIT_FAILURE;
+      }
 
-  // SIMD settings might be overridden by config variable.
-  tesseract::SIMDDetect::Update();
+      // SIMD settings might be overridden by config variable.
+      tesseract::SIMDDetect::Update();
 
-  if (list_langs) {
-    PrintLangsList(api);
-    return EXIT_SUCCESS;
-  }
+      if (list_langs) {
+        PrintLangsList(api);
+        return EXIT_SUCCESS;
+      }
 
-  if (init_failed) {
-    tprintf("ERROR: Could not initialize tesseract.\n");
-    return EXIT_FAILURE;
-  }
+      if (init_failed) {
+        tprintf("ERROR: Could not initialize tesseract.\n");
+        return EXIT_FAILURE;
+      }
 
-  if (print_parameters) {
-    tprintf("Tesseract parameters:\n");
-    api.PrintVariables();
-    api.End();
-    return EXIT_SUCCESS;
-  }
+      if (print_parameters) {
+        tprintf("Tesseract parameters:\n");
+        api.PrintVariables();
+        api.End();
+        return EXIT_SUCCESS;
+      }
 
 #if !DISABLED_LEGACY_ENGINE
-  if (print_fonts_table) {
-    tprintf("Tesseract fonts table:\n");
-    api.PrintFontsTable();
-    api.End();
-    return EXIT_SUCCESS;
-  }
+      if (print_fonts_table) {
+        tprintf("Tesseract fonts table:\n");
+        api.PrintFontsTable();
+        api.End();
+        return EXIT_SUCCESS;
+      }
 #endif  // !DISABLED_LEGACY_ENGINE
 
-  // record the currently active input image path as soon as possible:
-  // this path is also used to construct the destination path for 
-  // various debug output files.
-  api.SetInputName(image);
+      // record the currently active input image path as soon as possible:
+      // this path is also used to construct the destination path for 
+      // various debug output files.
+      api.SetInputName(image);
 
-  FixPageSegMode(api, pagesegmode);
+      FixPageSegMode(api, pagesegmode);
 
-  if (dpi) {
-    auto dpi_string = std::to_string(dpi);
-    api.SetVariable("user_defined_dpi", dpi_string.c_str());
-  }
+      if (dpi) {
+        auto dpi_string = std::to_string(dpi);
+        api.SetVariable("user_defined_dpi", dpi_string.c_str());
+      }
 
-  if (visible_pdf_image_file) {
-    api.SetVisibleImageFilename(visible_pdf_image_file);
-  }
+      if (visible_pdf_image_file) {
+        api.SetVisibleImageFilename(visible_pdf_image_file);
+      }
 
-  if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
-    Pix *pixs = pixRead(image);
-    if (!pixs) {
-      tprintf("ERROR: Leptonica can't process input file: {}\n", image);
-      return 2;
-    }
-
-    api.SetImage(pixs);
-
-    tesseract::Orientation orientation;
-    tesseract::WritingDirection direction;
-    tesseract::TextlineOrder order;
-    float deskew_angle;
-
-    const std::unique_ptr<const tesseract::PageIterator> it(api.AnalyseLayout());
-    if (it) {
-      // TODO: Implement output of page segmentation, see documentation
-      // ("Automatic page segmentation, but no OSD, or OCR").
-      it->Orientation(&orientation, &direction, &order, &deskew_angle);
-      tprintf(
-          "Orientation: {}\nWritingDirection: {}\nTextlineOrder: {}\n"
-          "Deskew angle: {}\n",
-          orientation, direction, order, deskew_angle);
-    } else {
-      ret_val = EXIT_FAILURE;
-    }
-
-    pixDestroy(&pixs);
-  }
-  else {
-  // Set in_training_mode to true when using one of these configs:
-  // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
-  // In this mode no other OCR result files are written.
-  bool b = false;
-  bool in_training_mode = (api.GetBoolVariable("tessedit_ambigs_training", &b) && b) ||
-                          (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
-                          (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
-                          (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
-
-  if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
-    if (!api.tesseract()->AnyTessLang()) {
-      fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
-      return EXIT_FAILURE;
-    }
-  }
-#if DISABLED_LEGACY_ENGINE
-  auto cur_psm = api.GetPageSegMode();
-  auto osd_warning = std::string("");
-  if (cur_psm == tesseract::PSM_OSD_ONLY) {
-    const char *disabled_osd_msg =
-        "\nERROR: The page segmentation mode 0 (OSD Only) is currently "
-        "disabled.\n\n";
-    tprintf("{}",  disabled_osd_msg);
-    return EXIT_FAILURE;
-  } else if (cur_psm == tesseract::PSM_AUTO_OSD) {
-    api.SetPageSegMode(tesseract::PSM_AUTO);
-    osd_warning +=
-        "\nWARNING: The page segmentation mode 1 (Auto+OSD) is currently "
-        "disabled. "
-        "Using PSM 3 (Auto) instead.\n\n";
-  } else if (cur_psm == tesseract::PSM_SPARSE_TEXT_OSD) {
-    api.SetPageSegMode(tesseract::PSM_SPARSE_TEXT);
-    osd_warning +=
-        "\nWARNING: The page segmentation mode 12 (Sparse text + OSD) is "
-        "currently disabled. "
-        "Using PSM 11 (Sparse text) instead.\n\n";
-  }
-#endif // DISABLED_LEGACY_ENGINE
-
-  std::vector<std::unique_ptr<TessResultRenderer>> renderers;
-
-  if (in_training_mode) {
-    renderers.push_back(nullptr);
-  } else if (outputbase != nullptr) {
-    PreloadRenderers(api, renderers, pagesegmode, outputbase);
-  }
-
-  if (!renderers.empty()) {
-#if DISABLED_LEGACY_ENGINE
-    if (!osd_warning.empty()) {
-      tprintf("{}", osd_warning);
-    }
-#endif
-
-    bool succeed;
-
-    if (!twopass) {
-        succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
-    } else {
-        Pix *pix = pixRead(image);
-        auto renderer = renderers[0].get();
-        renderer->BeginDocument("");
-        //document_title.c_str());
-
-        succeed = api.ProcessPage(pix, 0, image, NULL, 0, renderers[0].get());
-
-        {
-            Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
-
-            //pixWrite("/tmp/out.png", pix, IFF_PNG);
-            //Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-            Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
-            //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
-
-            api.SetPageSegMode(PSM_SINGLE_BLOCK);
-            //api.SetPageSegMode(PSM_SPARSE_TEXT);
-            api.SetImage(newpix);
-
-            succeed = succeed && !api.Recognize(NULL);
-            renderer->AddImage(&api);
-
-            boxaDestroy(&default_boxes);
-            pixDestroy(&newpix);
+      if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
+        Pix *pixs = pixRead(image);
+        if (!pixs) {
+          tprintf("ERROR: Leptonica can't process input file: {}\n", image);
+          return 2;
         }
 
-        pixDestroy(&pix);
+        api.SetImage(pixs);
 
-        renderer->EndDocument();
+        tesseract::Orientation orientation;
+        tesseract::WritingDirection direction;
+        tesseract::TextlineOrder order;
+        float deskew_angle;
+
+        const std::unique_ptr<const tesseract::PageIterator> it(api.AnalyseLayout());
+        if (it) {
+          // TODO: Implement output of page segmentation, see documentation
+          // ("Automatic page segmentation, but no OSD, or OCR").
+          it->Orientation(&orientation, &direction, &order, &deskew_angle);
+          tprintf(
+              "Orientation: {}\nWritingDirection: {}\nTextlineOrder: {}\n"
+              "Deskew angle: {}\n",
+              orientation, direction, order, deskew_angle);
+        } else {
+          ret_val = EXIT_FAILURE;
+        }
+
+        pixDestroy(&pixs);
+      }
+      else {
+      // Set in_training_mode to true when using one of these configs:
+      // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
+      // In this mode no other OCR result files are written.
+      bool b = false;
+      bool in_training_mode = (api.GetBoolVariable("tessedit_ambigs_training", &b) && b) ||
+                              (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
+                              (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
+                              (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
+
+      if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
+        if (!api.tesseract()->AnyTessLang()) {
+          fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
+          return EXIT_FAILURE;
+        }
+      }
+#if DISABLED_LEGACY_ENGINE
+      auto cur_psm = api.GetPageSegMode();
+      auto osd_warning = std::string("");
+      if (cur_psm == tesseract::PSM_OSD_ONLY) {
+        const char *disabled_osd_msg =
+            "\nERROR: The page segmentation mode 0 (OSD Only) is currently "
+            "disabled.\n\n";
+        tprintf("{}",  disabled_osd_msg);
+        return EXIT_FAILURE;
+      } else if (cur_psm == tesseract::PSM_AUTO_OSD) {
+        api.SetPageSegMode(tesseract::PSM_AUTO);
+        osd_warning +=
+            "\nWARNING: The page segmentation mode 1 (Auto+OSD) is currently "
+            "disabled. "
+            "Using PSM 3 (Auto) instead.\n\n";
+      } else if (cur_psm == tesseract::PSM_SPARSE_TEXT_OSD) {
+        api.SetPageSegMode(tesseract::PSM_SPARSE_TEXT);
+        osd_warning +=
+            "\nWARNING: The page segmentation mode 12 (Sparse text + OSD) is "
+            "currently disabled. "
+            "Using PSM 11 (Sparse text) instead.\n\n";
+      }
+#endif // DISABLED_LEGACY_ENGINE
+
+      std::vector<std::unique_ptr<TessResultRenderer>> renderers;
+
+      if (in_training_mode) {
+        renderers.push_back(nullptr);
+      } else if (outputbase != nullptr) {
+        PreloadRenderers(api, renderers, pagesegmode, outputbase);
+      }
+
+      if (!renderers.empty()) {
+#if DISABLED_LEGACY_ENGINE
+        if (!osd_warning.empty()) {
+          tprintf("{}", osd_warning);
+        }
+#endif
+
+        bool succeed;
+
+        if (!twopass) {
+            succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
+        } else {
+            Pix *pix = pixRead(image);
+            auto renderer = renderers[0].get();
+            renderer->BeginDocument("");
+            //document_title.c_str());
+
+            succeed = api.ProcessPage(pix, 0, image, NULL, 0, renderers[0].get());
+
+            {
+                Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
+
+                //pixWrite("/tmp/out.png", pix, IFF_PNG);
+                //Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
+                Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+                //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
+
+                api.SetPageSegMode(PSM_SINGLE_BLOCK);
+                //api.SetPageSegMode(PSM_SPARSE_TEXT);
+                api.SetImage(newpix);
+
+                succeed = succeed && !api.Recognize(NULL);
+                renderer->AddImage(&api);
+
+                boxaDestroy(&default_boxes);
+                pixDestroy(&newpix);
+            }
+
+            pixDestroy(&pix);
+
+            renderer->EndDocument();
+        }
+
+        if (!succeed) {
+          tprintf("ERROR: Error during page processing. File: {}\n", image);
+          ret_val = EXIT_FAILURE;
+        }
+      }
     }
 
-    if (!succeed) {
-      tprintf("ERROR: Error during page processing. File: {}\n", image);
-      ret_val = EXIT_FAILURE;
+    if (ret_val == EXIT_SUCCESS) {
+      api.ReportParamsUsageStatistics();
     }
-  }
-  }
-
-  if (ret_val == EXIT_SUCCESS) {
-    api.ReportParamsUsageStatistics();
-  }
   }
   // ^^^ end of scope for the Tesseract api instance
   // --> cache occupancy is removed, so the next call will succeed without fail (due to internal sanity checks)

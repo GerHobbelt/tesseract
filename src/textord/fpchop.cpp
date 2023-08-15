@@ -95,11 +95,11 @@ ROW *fixed_pitch_words( // find lines
   }
 #endif
 
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   bol = true;
   blanks = 0;
   if (rep_it.empty()) {
-    rep_left = INT16_MAX;
+    rep_left = TDIMENSION_MAX;
   } else {
     rep_left = rep_it.data()->bounding_box().left();
   }
@@ -242,7 +242,7 @@ static WERD *add_repeated_word( // move repeated word
   word->set_blanks(blanks);
   rep_it->forward();
   if (rep_it->empty()) {
-    rep_left = INT16_MAX;
+    rep_left = TDIMENSION_MAX;
   } else {
     rep_left = rep_it->data()->bounding_box().left();
   }

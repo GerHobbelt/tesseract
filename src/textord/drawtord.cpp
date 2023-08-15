@@ -287,7 +287,7 @@ void plot_word_decisions( // draw words
   BLOBNBOX_IT start_it = blob_it; // word start
 
   rect_colour = ScrollView::BLACK;
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   blob_count = 0;
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     blob = blob_it.data();

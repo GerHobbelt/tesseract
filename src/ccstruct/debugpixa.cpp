@@ -1,3 +1,4 @@
+// UTF-8: ö,ä,💩
 
 #include "debugpixa.h"
 #include "image.h"
@@ -18,8 +19,9 @@
 #include "mupdf/fitz.h"
 #endif
 
-#undef TESSERACT_DISABLE_DEBUG_FONTS 
+#ifndef TESSERACT_DISABLE_DEBUG_FONTS 
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
+#endif
 
 namespace tesseract {
 
@@ -180,6 +182,7 @@ namespace tesseract {
     step_ref.level = level;
     step_ref.title = title;
     step_ref.first_info_chunk = info_chunks.size();
+    //ASSERT0(!title.empty());
 
     int rv = active_step_index;
     if (rv < 0)
@@ -209,7 +212,7 @@ namespace tesseract {
     if (handle >= 0) {
       ASSERT0(handle < steps.size());
       auto &parent = steps[handle];
-      ASSERT0(parent.level <= level);
+      //ASSERT0(parent.level <= std::max(0, level));
 
       // bingo!
       active_step_index = handle;
@@ -236,7 +239,7 @@ namespace tesseract {
     }
 
     // when we get here, we're aiming below root, so we reset to last root-entry level:
-    idx = steps.size() - 1;
+    idx = steps.size();
     for (idx--; idx >= 0; idx--) {
       auto &prev_step = steps[idx];
       if (prev_step.level == 0) {
@@ -250,6 +253,7 @@ namespace tesseract {
       }
     }
     ASSERT0(!"Should never get here!");
+    return;
   }
 
   static char* strnrpbrk(char* base, const char* breakset, size_t len)
@@ -369,7 +373,8 @@ namespace tesseract {
           // for now, we simply apply regular smooth scaling
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
         } else {
-          // non-uniform scaling...
+          // scale a clipped partial to about match the size of the original/base image, 
+		  // so the generated HTML + image sequence is more, äh, uniform/readable.
           ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
           toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
         }
@@ -514,6 +519,7 @@ namespace tesseract {
     if (!title || !*title)
       title = "(null)";
     auto h_level = section_info.level + 1;
+    ASSERT0(h_level >= 1);
     if (h_level > 5)
       h_level = 5;
     fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
@@ -553,7 +559,7 @@ namespace tesseract {
     return next_section_index;
   }
 
-
+  
   void DebugPixa::WriteHTML(const char* filename) {
     if (HasPix()) {
       const char *ext = strrchr(filename, '.');
@@ -698,7 +704,7 @@ namespace tesseract {
       fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html);
       
       tesseract::ParamsVectors *vec = tesseract_->params();
-      ParamUtils::ReportParamsUsageStatistics(html, vec);
+      ParamUtils::ReportParamsUsageStatistics(html, vec, nullptr);
 
       fputs("</pre>\n</body>\n</html>\n", html);
 
@@ -706,10 +712,43 @@ namespace tesseract {
     }
   }
 
+
+  void DebugPixa::WriteSectionParamsUsageReport()
+  {
+    DebugProcessStep &section_info = steps[active_step_index];
+
+    auto title = section_info.title.c_str();
+    if (!title || !*title)
+      title = "(null)";
+    auto level = section_info.level;
+
+    if (level == 3) {
+      tesseract::ParamsVectors *vec = tesseract_->params();
+      ParamUtils::ReportParamsUsageStatistics(nullptr, vec, title);
+    }
+  }
+
+
   void DebugPixa::Clear()
   {
     pixaClear(pixa_);
     captions.clear();
+    steps.clear();
+    active_step_index = -1;
   }
 
-} // namespace tesseract
+
+  AutoPopDebugSectionLevel::~AutoPopDebugSectionLevel() {
+    if (section_handle_ >= 0) {
+      tesseract_->PopPixDebugSection(section_handle_);
+    }
+  }
+
+  void AutoPopDebugSectionLevel::pop() {
+    if (section_handle_ >= 0) {
+      tesseract_->PopPixDebugSection(section_handle_);
+      section_handle_ = -2;
+    }
+  }
+
+  } // namespace tesseract

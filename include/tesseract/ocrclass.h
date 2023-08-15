@@ -96,8 +96,8 @@ struct EANYCODE_CHAR { /*single character */
 class ETEXT_DESC;
 
 using CANCEL_FUNC = bool (*)(void *, int);
-using PROGRESS_FUNC = bool (*)(int, int, int, int, int);
-using PROGRESS_FUNC2 = bool (*)(ETEXT_DESC *, int, int, int, int);
+using PROGRESS_FUNC = bool (*)(int progress, int left, int right, int top, int bottom);
+using PROGRESS_FUNC2 = bool (*)(ETEXT_DESC *self, int left, int right, int top, int bottom);
 
 class ETEXT_DESC { // output header
 public:
@@ -127,15 +127,13 @@ public:
   // Sets the end time to be deadline_msecs milliseconds from now.
   void set_deadline_msecs(int32_t deadline_msecs) {
     if (deadline_msecs > 0) {
-      end_time = std::chrono::steady_clock::now() +
-                 std::chrono::milliseconds(deadline_msecs);
+      end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadline_msecs);
     }
   }
 
   // Returns false if we've not passed the end_time, or have not set a deadline.
   bool deadline_exceeded() const {
-    if (end_time.time_since_epoch() ==
-        std::chrono::steady_clock::duration::zero()) {
+    if (end_time.time_since_epoch() == std::chrono::steady_clock::duration::zero()) {
       return false;
     }
     auto now = std::chrono::steady_clock::now();
@@ -143,11 +141,9 @@ public:
   }
 
 private:
-  static bool default_progress_func(ETEXT_DESC *ths, int left, int right,
-                                    int top, int bottom) {
+  static bool default_progress_func(ETEXT_DESC *ths, int left, int right, int top, int bottom) {
     if (ths->progress_callback != nullptr) {
-      return (*(ths->progress_callback))(ths->progress, left, right, top,
-                                         bottom);
+      return (*(ths->progress_callback))(ths->progress, left, right, top, bottom);
     }
     return true;
   }

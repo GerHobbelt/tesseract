@@ -43,7 +43,9 @@ class DENORM;
 #define STEP_MASK 3
 
 enum C_OUTLINE_FLAGS {
-  COUT_INVERSE // White on black blob
+  COUT_INVERSE, // White on black blob
+
+  COUT_COUNT
 };
 
 // Simple struct to hold the 3 values needed to compute a more precise edge
@@ -292,7 +294,7 @@ private:
   TBOX box;                // bounding box
   ICOORD start;            // start coord
   int16_t stepcount;       // no of steps
-  std::bitset<16> flags;   // flags about outline
+  std::bitset<COUT_COUNT> flags;   // flags about outline
   std::vector<uint8_t> steps; // step array
   EdgeOffset *offsets;     // Higher precision edge.
   C_OUTLINE_LIST children; // child elements
