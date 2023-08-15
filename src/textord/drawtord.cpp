@@ -278,7 +278,7 @@ void plot_word_decisions( // draw words
 ) {
   ScrollView::Color colour = ScrollView::MAGENTA; // current colour
   ScrollView::Color rect_colour;                  // fuzzy colour
-  int32_t prev_x;                                 // end of prev blob
+  TDimension prev_x;                              // end of prev blob
   int16_t blob_count;                             // blobs in word
   BLOBNBOX *blob;                                 // current blob
   TBOX blob_box;                                  // bounding box

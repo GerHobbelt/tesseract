@@ -178,7 +178,7 @@ int32_t row_words(    // compute space size
 ) {
   bool testing_row;      // contains testpt
   bool prev_valid;       // if decent size
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;        // end of prev blob
   int32_t cluster_count; // no of clusters
   int32_t gap_index;     // which cluster
   int32_t smooth_factor; // for smoothing stats
@@ -330,7 +330,7 @@ int32_t row_words2(   // compute space size
 ) {
   bool prev_valid;       // if decent size
   bool this_valid;       // current blob big enough
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;     // end of prev blob
   int32_t min_width;     // min interesting width
   int32_t valid_count;   // good gaps
   int32_t total_count;   // total gaps

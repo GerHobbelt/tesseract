@@ -378,10 +378,10 @@ bool try_doc_fixed(             // determine pitch
   TO_BLOCK_IT block_it = port_blocks;
   TO_BLOCK *block;         // current block;
   TO_ROW *row;             // current row
-  int16_t projection_left; // edges
-  int16_t projection_right;
-  int16_t row_left; // edges of row
-  int16_t row_right;
+  TDimension projection_left; // edges
+  TDimension projection_right;
+  TDimension row_left; // edges of row
+  TDimension row_right;
   float master_y;     // uniform shifts
   float shift_factor; // page skew correction
   float final_pitch;  // output pitch
@@ -419,8 +419,8 @@ bool try_doc_fixed(             // determine pitch
       }
       // find median
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
-      row_right = static_cast<int16_t>(row->projection_right - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
+      row_right = static_cast<TDimension>(row->projection_right - shift_factor * (master_y - row_y));
       if (row_left < projection_left) {
         projection_left = row_left;
       }
@@ -440,7 +440,7 @@ bool try_doc_fixed(             // determine pitch
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row = row_it.data();
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
       for (x = row->projection_left; x < row->projection_right; x++, row_left++) {
         projection.add(row_left, row->projection.pile_count(x));
       }
@@ -1085,8 +1085,8 @@ bool count_pitch_stats(  // find lines
 float tune_row_pitch(           // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
@@ -1183,8 +1183,8 @@ float tune_row_pitch(           // find fp cells
 float tune_row_pitch2(          // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
@@ -1275,8 +1275,8 @@ float tune_row_pitch2(          // find fp cells
 float compute_pitch_sd(        // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float space_size,          // size of blank
     float initial_pitch,       // guess at pitch
     float &sp_sd,              // space sd
@@ -1431,8 +1431,8 @@ float compute_pitch_sd(        // find fp cells
 float compute_pitch_sd2(       // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float initial_pitch,       // guess at pitch
     int16_t &occupation,       // no of occupied cells
     int16_t &mid_cuts,         // no of free cuts
@@ -1519,8 +1519,9 @@ float compute_pitch_sd2(       // find fp cells
 void print_pitch_sd(         // find fp cells
     TO_ROW *row,             // row to do
     STATS *projection,       // vertical projection
-    int16_t projection_left, // edges //size of blank
-    int16_t projection_right, float space_size,
+    TDimension projection_left, // edges //size of blank
+    TDimension projection_right, 
+	float space_size,
     float initial_pitch // guess at pitch
 ) {
   const char *res2;   // pitch result

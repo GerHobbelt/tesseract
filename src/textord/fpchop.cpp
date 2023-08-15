@@ -83,7 +83,7 @@ ROW *fixed_pitch_words( // find lines
   WERD_IT rep_it = &row->rep_words;
   WERD *word;         // new word
   int32_t xstarts[2]; // row ends
-  int32_t prev_x;     // end of prev blob
+  TDimension prev_x;     // end of prev blob
                       // iterator
   BLOBNBOX_IT box_it = row->blob_list();
   // boundaries

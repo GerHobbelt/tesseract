@@ -126,7 +126,7 @@ void BLOBNBOX::chop(       // chop blobs
   BLOBNBOX *newblob;          // fake blob
   BLOBNBOX *blob;             // current blob
   int16_t blobindex;          // number of chop
-  int16_t leftx;              // left edge of blob
+  TDimension leftx;           // left edge of blob
   float blobwidth;            // width of each
   float rightx;               // right edge to scan
   float ymin, ymax;           // limits of new blob
@@ -152,12 +152,12 @@ void BLOBNBOX::chop(       // chop blobs
         UpdateRange(test_ymin, test_ymax, &ymin, &ymax);
       } while (blob != end_it->data());
       if (ymin < ymax) {
-        leftx = static_cast<int16_t>(std::floor(rightx - blobwidth));
+        leftx = static_cast<TDimension>(std::floor(rightx - blobwidth));
         if (leftx < box.left()) {
           leftx = box.left(); // clip to real box
         }
-        bl = ICOORD(leftx, static_cast<int16_t>(std::floor(ymin)));
-        tr = ICOORD(static_cast<int16_t>(std::ceil(rightx)), static_cast<int16_t>(std::ceil(ymax)));
+        bl = ICOORD(leftx, static_cast<TDimension>(std::floor(ymin)));
+        tr = ICOORD(static_cast<TDimension>(std::ceil(rightx)), static_cast<TDimension>(std::ceil(ymax)));
         if (blobindex == 0) {
           box = TBOX(bl, tr); // change box
         } else {
