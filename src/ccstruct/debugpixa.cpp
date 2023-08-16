@@ -25,6 +25,11 @@
 
 namespace tesseract {
 
+static void ASSERTPIXVALID(Image pix) {
+  int depth = pixGetDepth(pix);
+  ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+}
+
 #if defined(HAVE_MUPDF)
   void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
   {
@@ -58,7 +63,7 @@ namespace tesseract {
 #endif
 
   DebugPixa::DebugPixa(Tesseract* tess)
-    : tesseract_(tess)
+      : tesseract_(tess), content_has_been_written_to_file(false)
   {
     pixa_ = pixaCreate(0);
 
@@ -87,6 +92,8 @@ namespace tesseract {
   // If the filename_ has been set and there are any debug images, they are
   // written to the set filename_.
   DebugPixa::~DebugPixa() {
+    Clear(true);
+
 #if defined(HAVE_MUPDF)
     fz_set_error_callback(fz_ctx, fz_cbs[0], fz_cb_userptr[0]);
     fz_set_warning_callback(fz_ctx, fz_cbs[1], fz_cb_userptr[1]);
@@ -110,6 +117,7 @@ namespace tesseract {
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
+    ASSERTPIXVALID(pix);
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
@@ -138,8 +146,8 @@ namespace tesseract {
   }
 
   // Return true when one or more images have been collected.
-  bool DebugPixa::HasPix() const {
-    return (pixaGetCount(pixa_) > 0);
+  bool DebugPixa::HasContent() const {
+    return (pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
   }
 
   int DebugPixa::PushNextSection(const std::string &title)
@@ -449,12 +457,14 @@ namespace tesseract {
 
   static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
   {
+    if (!!pix) {
     const char* pixfname = fz_basename(img_filename);
     int w, h, depth;
     pixGetDimensions(pix, &w, &h, &depth);
     const char* depth_str = ([depth]() {
       switch (depth) {
       default:
+        ASSERT0(!"Should never get here!");
         return "unidentified color depth (probably color paletted)";
       case 1:
         return "monochrome (binary)";
@@ -486,6 +496,7 @@ namespace tesseract {
       (int) w, (int) h, depth_str,
       description
     );
+    }
   }
 
   void DebugPixa::WriteImageToHTML(int &counter, const std::string &partname, FILE *html, int idx) {
@@ -502,6 +513,7 @@ namespace tesseract {
       tprintf("ERROR: {}: pixs[{}] not retrieved.\n", __func__, idx);
       return;
     }
+    ASSERTPIXVALID(pixs);
     PIX *bgimg = cliprects[idx].area() > 0 ? nullptr : tesseract_->pix_original();
 
     write_one_pix_for_html(html, counter, fn.c_str(), pixs,
@@ -561,12 +573,14 @@ namespace tesseract {
 
   
   void DebugPixa::WriteHTML(const char* filename) {
-    if (HasPix()) {
+    if (HasContent()) {
       const char *ext = strrchr(filename, '.');
       std::string partname(filename);
       partname = partname.substr(0, ext - filename);
       int counter = 0;
       const char *label = NULL;
+
+      content_has_been_written_to_file = true;
 
       FILE *html = fopen(filename, "w");
       if (!html) {
@@ -729,12 +743,17 @@ namespace tesseract {
   }
 
 
-  void DebugPixa::Clear()
+  void DebugPixa::Clear(bool final_cleanup)
   {
+    final_cleanup |= content_has_been_written_to_file;
     pixaClear(pixa_);
     captions.clear();
-    steps.clear();
-    active_step_index = -1;
+    // NOTE: we only clean the steps[] logging blocks when we've been ascertained that 
+    // this info has been pumped into a logfile (or stdio stream) via our WriteHTML() method....
+    if (final_cleanup) {
+        steps.clear();
+        active_step_index = -1;
+    }
   }
 
 

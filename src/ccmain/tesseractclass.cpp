@@ -507,7 +507,7 @@ Tesseract::Tesseract(Tesseract *parent)
 Tesseract::~Tesseract() {
   ScrollViewManager::RemoveActiveTesseractInstance(this);
 
-  Clear();
+  Clear(true);
   end_tesseract();
   std::vector<Tesseract *> langs = std::move(sub_langs_);
   for (auto *lang : langs) {
@@ -530,8 +530,9 @@ Dict &Tesseract::getDict() {
   return Classify::getDict();
 }
 
-void Tesseract::Clear() {
-  if (!debug_output_path.empty() && pixa_debug_.HasPix()) {
+void Tesseract::Clear(bool invoked_by_destructor) {
+  bool clear_loglines = invoked_by_destructor;
+  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     const int page_index = 0;
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, page_index, "page", "pdf");
 #if defined(HAVE_MUPDF)
@@ -542,7 +543,7 @@ void Tesseract::Clear() {
     pixa_debug_.WriteHTML(file_path.c_str());
   }
   pix_original_.destroy();
-  pixa_debug_.Clear();
+  pixa_debug_.Clear(clear_loglines);
   pix_binary_.destroy();
   pix_grey_.destroy();
   pix_thresholds_.destroy();

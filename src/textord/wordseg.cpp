@@ -197,7 +197,7 @@ int32_t row_words(    // compute space size
   //      if (testing_on)
   //              tprintf("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
-  prev_x = -INT32_MAX;
+  prev_x = TDIMENSION_MIN;
   testing_row = false;
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     blob = blob_it.data();

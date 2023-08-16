@@ -202,7 +202,7 @@ public:
 
   // Clear as much used memory as possible without resetting the adaptive
   // classifier or losing any other classifier data.
-  void Clear();
+  void Clear(bool invoked_by_destructor = false);
   // Clear all memory of adaption for this and all subclassifiers.
   void ResetAdaptiveClassifier();
   // Clear the document dictionary for this and all subclassifiers.
