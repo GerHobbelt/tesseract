@@ -67,6 +67,8 @@ public:
   ScrollViewReference &operator=(const ScrollViewReference &other) /* = delete */ ;
   ScrollViewReference &operator=(ScrollViewReference &&other);
 
+  void clear();
+
   ScrollView *GetRef() const {
     return view_;
   }

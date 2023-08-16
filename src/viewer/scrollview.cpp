@@ -295,7 +295,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
 
 #if 0
   svmap_mu->lock();
-  svmap[GetId()] = this;
+  svmap.insert_or_assign(GetId(), this);
   svmap_mu->unlock();
 #endif
 }
@@ -768,9 +768,11 @@ void ScrollView::Update() {
   std::vector<ScrollViewReference> worklist;
   {
       std::lock_guard<std::mutex> guard(*svmap_mu);
-      for (auto &iter : svmap) {
-        if (iter.second) {
-          worklist.push_back(iter.second);
+      for (auto it = svmap.begin(); 
+          it != svmap.end(); 
+          ++it) {
+        if (it->second) {
+          worklist.push_back(it->second);
         }
       }
   }
@@ -1477,11 +1479,13 @@ void ScrollViewReference::cleanup_before_delete() {
 
         svmap_mu->lock();
         int id = GetRef()->GetId();
-        svmap[id] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+        svmap.insert_or_assign(id, nullptr); // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+        auto &ref = svmap[id];
+        ref.clear();
         svmap_mu->unlock();
 
         delete view_;
-        ASSERT0(*counter_ == 0);
+        ASSERT0(counter_ == nullptr || *counter_ == 0);
         delete counter_;
 
         view_ = nullptr;
@@ -1521,6 +1525,16 @@ ScrollViewReference &ScrollViewReference::operator=(ScrollView *new_view) {
     }
   }
   return *this;
+}
+
+void ScrollViewReference::clear() {
+  if (view_ != nullptr) {
+    cleanup_before_delete();
+
+    view_ = nullptr;
+    counter_ = nullptr;
+    id = -1;
+  }
 }
 
 ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
@@ -1616,7 +1630,7 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
   // That's why we #if0-ed that chunk of code further above!
   auto wi = rv->GetId();
   svmap_mu->lock();
-  svmap[wi] = rv;
+  svmap.insert_or_assign(wi, rv);
   rv.id = wi;
   svmap_mu->unlock();
 
