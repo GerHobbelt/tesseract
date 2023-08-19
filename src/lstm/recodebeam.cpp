@@ -1032,7 +1032,7 @@ void RecodeBeamSearch::ContinueUnichar(int code, int unichar_id, float cert,
     if (dict_ != nullptr &&
         ((unichar_id == UNICHAR_SPACE && cert > worst_dict_cert) ||
          !dict_->getUnicharset().IsSpaceDelimited(unichar_id))) {
-      // Any top choice position that can start a new word, ie a space or
+      // Any top choice position that can start a new word, i.e. a space or
       // any non-space-delimited character, should also be considered
       // by the dawg search, so push initial dawg to the dawg heap.
       float dawg_cert = cert;

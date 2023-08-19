@@ -248,7 +248,9 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 	  if (rv == 0) 
 	  {
 	  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
-	    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
+	    //ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
+
+        rv = a.ref - b.ref;
 	  }
 #endif
 	  return rv >= 0;

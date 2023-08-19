@@ -421,11 +421,11 @@ BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename, const ch
   return static_cast<int>(handle->ProcessPages(filename, retry_config, timeout_millisec, renderer));
 }
 
-BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix, int page_index,
+BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                             const char *filename, const char *retry_config, int timeout_millisec,
                             TessResultRenderer *renderer) {
   return static_cast<int>(
-      handle->ProcessPage(pix, page_index, filename, retry_config, timeout_millisec, renderer));
+      handle->ProcessPage(pix, filename, retry_config, timeout_millisec, renderer));
 }
 
 TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle) {

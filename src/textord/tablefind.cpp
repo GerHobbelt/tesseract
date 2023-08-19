@@ -1972,7 +1972,7 @@ void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *
     int bottom_y = box.bottom();
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 // Displays the colpartitions using a new coloring on an existing window.
@@ -2001,7 +2001,7 @@ void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGri
     win->Pen(color);
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
@@ -2046,7 +2046,7 @@ void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
       win->Line(mid_x, mid_y, other_x, other_y);
     }
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 #endif

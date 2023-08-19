@@ -22,8 +22,10 @@
 
 namespace tesseract {
 
+#ifndef _MSC_VER
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverlength-strings"
+#endif
 inline const char kUniversalAmbigsFile[] = {
     "v2\n"
     "'' \" 1\n"
@@ -7205,7 +7207,7 @@ inline const char kUniversalAmbigsFile[] = {
     "oZc ch 1\n"
     "jRm ij 1\n"
     "wXl le 1\n"
-#ifndef _MSC_VER // TODO: Hack to avoid unsupported long string for MS VC.
+#ifndef _MSC_VER // TODO: Hack to avoid unsupported long string for MSVC.
     "iyD in 1\n"
     "fvL va 1\n"
     "rPw er 1\n"
@@ -19035,7 +19037,9 @@ inline const char kUniversalAmbigsFile[] = {
     "iXl in 1\n"
 #endif
 };
+#ifndef _MSC_VER
 #pragma GCC diagnostic pop
+#endif
 
 inline const int ksizeofUniversalAmbigsFile = sizeof(kUniversalAmbigsFile);
 

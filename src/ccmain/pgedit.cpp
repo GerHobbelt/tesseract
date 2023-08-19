@@ -502,7 +502,7 @@ void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*w
       pr_it.block()->block->pdblk.plot(image_win, block_count++, ScrollView::RED);
     }
   }
-  image_win->Update();
+  image_win->UpdateWindow();
 }
 
 /**
@@ -861,7 +861,7 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
     it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, win);
     color = WERD::NextColor(color);
   }
-  win->Update();
+  win->UpdateWindow();
   return true;
 }
 
@@ -1046,18 +1046,28 @@ namespace tesseract {
  * Dump members to the debug window
  */
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
-  if (pr_it->block()->block != nullptr) {
+  BLOCK_RES *block = pr_it->block();
+  if (block != nullptr && block->block != nullptr) {
     tprintf("\nBlock data...\n");
-    pr_it->block()->block->print(nullptr, debug_all);
+    block->block->print(nullptr, debug_all);
   }
   tprintf("\nRow data...\n");
-  pr_it->row()->row->print(nullptr);
+  ROW_RES *row = pr_it->row();
+  if (row != nullptr) {
+    row->row->print(nullptr);
+  } else {
+    tprintf("  (empty / nil)\n");
+  }
   tprintf("\nWord data...\n");
   WERD_RES *word_res = pr_it->word();
-  word_res->word->print();
-  if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
-      word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
-    tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
+  if (word_res != nullptr) {
+      word_res->word->print();
+      if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
+          word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
+        tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
+      }
+  } else {
+      tprintf("  (empty / nil)\n");
   }
   return true;
 }
@@ -1103,14 +1113,14 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     for (auto &bl_feature : bl_features) {
       RenderIntFeature(bl_win, &bl_feature, ScrollView::GREEN);
     }
-    bl_win->Update();
+    bl_win->UpdateWindow();
     // Display cn features.
     ScrollViewReference cn_win = CreateFeatureSpaceWindow(this, "CN Features", 512, 0);
     ClearFeatureSpaceWindow(character, cn_win);
     for (auto &cn_feature : cn_features) {
       RenderIntFeature(cn_win, &cn_feature, ScrollView::GREEN);
     }
-    cn_win->Update();
+    cn_win->UpdateWindow();
 
     it->DeleteCurrentWord();
     delete it;

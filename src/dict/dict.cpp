@@ -92,10 +92,10 @@ Dict::Dict(CCUtil *ccutil)
                     " better).",
                     getCCUtil()->params())
     , STRING_MEMBER(output_ambig_words_file, "",
-                    "Output file for ambiguities found in the dictionary", getCCUtil()->params())
+                    "Output file for ambiguities found in the dictionary.", getCCUtil()->params())
     , INT_MEMBER(dawg_debug_level, 0,
                  "Set to 1 for general debug info"
-                 ", to 2 for more details, to 3 to see all the debug messages",
+                 ", to 2 for more details, to 3 to see all the debug messages.",
                  getCCUtil()->params())
     , INT_MEMBER(hyphen_debug_level, 0, "Debug level for hyphenated words.", getCCUtil()->params())
     , BOOL_MEMBER(use_only_first_uft8_step, false,
@@ -103,40 +103,40 @@ Dict::Dict(CCUtil *ccutil)
                   " when computing log probabilities.",
                   getCCUtil()->params())
     , double_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
-    , double_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words",
+    , double_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words.",
                     getCCUtil()->params())
-    , double_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset",
+    , double_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset.",
                     getCCUtil()->params())
-    , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word",
+    , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word.",
                  getCCUtil()->params())
     , double_MEMBER(stopper_certainty_per_char, -0.50,
                     "Certainty to add"
                     " for each dict char above small word size.",
                     getCCUtil()->params())
     , double_MEMBER(stopper_allowable_character_badness, 3.0,
-                    "Max certainty variation allowed in a word (in sigma)", getCCUtil()->params())
-    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level", getCCUtil()->params())
+                    "Max certainty variation allowed in a word (in sigma).", getCCUtil()->params())
+    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level. (0..3)", getCCUtil()->params())
     , BOOL_MEMBER(stopper_no_acceptable_choices, false,
                   "Make AcceptableChoice() always return false. Useful"
-                  " when there is a need to explore all segmentations",
+                  " when there is a need to explore all segmentations.",
                   getCCUtil()->params())
-    , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list",
+    , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list.",
                  getCCUtil()->params())
     , STRING_MEMBER(word_to_debug, "",
                     "Word for which stopper debug"
-                    " information should be printed to stdout",
+                    " information should be printed to stdout.",
                     getCCUtil()->params())
     , BOOL_MEMBER(segment_nonalphabetic_script, false,
                   "Don't use any alphabetic-specific tricks."
                   " Set to true in the traineddata config file for"
-                  " scripts that are cursive or inherently fixed-pitch",
+                  " scripts that are cursive or inherently fixed-pitch.",
                   getCCUtil()->params())
     , BOOL_MEMBER(save_doc_words, 0, "Save Document Words", getCCUtil()->params())
-    , double_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary",
+    , double_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary.",
                     getCCUtil()->params())
     , double_MEMBER(doc_dict_certainty_threshold, -2.25,
                     "Worst certainty for words that can be inserted into the"
-                    " document dictionary",
+                    " document dictionary.",
                     getCCUtil()->params())
     , INT_MEMBER(max_permuter_attempts, 10000,
                  "Maximum number of different"
@@ -431,19 +431,19 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
                              UNICHAR_ID unichar_id, bool word_end) const {
   auto *dawg_args = static_cast<DawgArgs *>(void_dawg_args);
 
-  ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
+  //ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
 
   if (dawg_debug_level >= 3) {
     tprintf(
         "def_letter_is_okay: current unichar={} word_end={}"
-        " num active dawgs={}\n",
-        getUnicharset().debug_str(unichar_id).c_str(), word_end, dawg_args->active_dawgs->size());
+        " num active dawgs={} unicharset.contains_unichar_id={}\n",
+        getUnicharset().debug_str(unichar_id).c_str(), word_end, dawg_args->active_dawgs->size(), unicharset.contains_unichar_id(unichar_id));
   }
 
   // Do not accept words that contain kPatternUnicharID.
   // (otherwise pattern dawgs would not function correctly).
   // Do not accept words containing INVALID_UNICHAR_IDs.
-  if (unichar_id == Dawg::kPatternUnicharID || unichar_id == INVALID_UNICHAR_ID) {
+  if (unichar_id == Dawg::kPatternUnicharID || unichar_id == INVALID_UNICHAR_ID || !unicharset.contains_unichar_id(unichar_id)) {
     dawg_args->permuter = NO_PERM;
     return NO_PERM;
   }

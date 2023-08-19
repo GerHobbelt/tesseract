@@ -308,7 +308,7 @@ void ImageData::Display(Tesseract *tesseract_) const {
     win->Pen(ScrollView::CYAN);
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
-  win->Update();
+  win->UpdateWindow();
   win->Wait();
 }
 

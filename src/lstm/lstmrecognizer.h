@@ -51,8 +51,7 @@ enum TrainingFlags {
 // Note that a sub-class, LSTMTrainer is used for training.
 class TESS_API LSTMRecognizer {
 public:
-  LSTMRecognizer();
-  LSTMRecognizer(const std::string &language_data_path_prefix);
+  LSTMRecognizer(CCUtil &ccutil_ref);
   ~LSTMRecognizer();
 
   int NumOutputs() const {
@@ -230,10 +229,12 @@ public:
   // If mgr contains a unicharset and recoder, then they are taken from there,
   // otherwise, they are part of the serialization in fp.
   bool DeSerialize(const TessdataManager *mgr, TFile *fp);
+  
   // Loads the charsets from mgr.
   bool LoadCharsets(const TessdataManager *mgr);
   // Loads the Recoder.
   bool LoadRecoder(TFile *fp);
+
   // Loads the dictionary if possible from the traineddata file.
   // Prints a warning message, and returns false but otherwise fails silently
   // and continues to work without it if loading fails.
@@ -256,6 +257,7 @@ public:
 
   // Helper computes min and mean best results in the output.
   void OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output, float *sd);
+
   // Recognizes the image_data, returning the labels,
   // scores, and corresponding pairs of start, end x-coords in coords.
   // Returned in scale_factor is the reduction factor
@@ -330,7 +332,7 @@ protected:
   Network *network_;
   // The unicharset. Only the unicharset element is serialized.
   // Has to be a CCUtil, so Dict can point to it.
-  CCUtil ccutil_;
+  CCUtil& ccutil_;
   // For backward compatibility, recoder_ is serialized iff
   // training_flags_ & TF_COMPRESS_UNICHARSET.
   // Further encode/decode ccutil_.unicharset's ids to simplify the unicharset.

@@ -477,7 +477,7 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       ScrollViewReference rej_win(MakeWindow(tesseract_, 500, 300, "Image blobs"));
       block->plot_graded_blobs(rej_win);
       block->plot_noise_blobs(rej_win);
-      rej_win->Update();
+      rej_win->UpdateWindow();
 #endif // !GRAPHICS_DISABLED
   }
   block->DeleteUnownedNoise();
@@ -500,7 +500,7 @@ void TabFind::DisplayTabVectors(ScrollViewReference &tab_win) {
     TabVector *vector = it.data();
     vector->Display(tab_win);
   }
-  tab_win->Update();
+  tab_win->UpdateWindow();
   return;
 }
 
@@ -552,7 +552,7 @@ static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollViewRef
     win->Pen(box_color);
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -976,7 +976,7 @@ void TabFind::ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid
   ApplyPartitionsToColumnWidths(part_grid, &col_widths);
 #if !GRAPHICS_DISABLED
   if (tab_win) {
-    tab_win->Update();
+    tab_win->UpdateWindow();
   }
 #endif // !GRAPHICS_DISABLED
   if (textord_debug_tabfind > 1) {

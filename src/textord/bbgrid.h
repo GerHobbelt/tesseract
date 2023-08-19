@@ -676,7 +676,7 @@ void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win
     tab_win->Pen(box_color);
     tab_win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
-  tab_win->Update();
+  tab_win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED

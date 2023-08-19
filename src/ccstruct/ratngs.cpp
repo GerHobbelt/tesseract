@@ -767,7 +767,7 @@ void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
     }
   }
   segm_window->ZoomToRectangle(bbox.left(), bbox.top(), bbox.right(), bbox.bottom());
-  segm_window->Update();
+  segm_window->UpdateWindow();
   segm_window->Wait();
 }
 

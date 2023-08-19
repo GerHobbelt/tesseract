@@ -582,7 +582,14 @@ static void ASSERTPIXVALID(Image pix) {
 
       content_has_been_written_to_file = true;
 
-      FILE *html = fopen(filename, "w");
+      FILE *html;
+
+#if defined(HAVE_MUPDF)
+      fz_mkdir_for_file(fz_get_global_context(), filename);
+      html = fz_fopen_utf8(fz_get_global_context(), filename, "w");
+#else
+      html = fopen(filename, "w");
+#endif
       if (!html) {
         tprintf("ERROR: cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
         return;

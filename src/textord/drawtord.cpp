@@ -57,7 +57,7 @@ ScrollViewReference &create_to_win(ICOORD page_tr) {
 void close_to_win() {
   // to_win is leaked, but this enables the user to view the contents.
   if (to_win) {
-    to_win->Update();
+    to_win->UpdateWindow();
     //to_win->ExitHelper();
     to_win = nullptr;
   }

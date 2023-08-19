@@ -29,6 +29,7 @@
 
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
+#include <tesseract/autosupressor.h>     // for AutoSupressDatum
 
 #include <cstdio>
 #include <tuple>  // for std::tuple
@@ -57,6 +58,7 @@ class ResultIterator;
 class MutableIterator;
 class TessResultRenderer;
 class Tesseract;
+class AutoSupressDatum;
 
 // Function to read a std::vector<char> from a whole file.
 // Returns false on failure.
@@ -151,6 +153,14 @@ public:
   */
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
 
+  AutoSupressDatum& GetLogReportingHoldoffMarkerRef() {
+      return reporting_holdoff_;
+  };
+
+protected:
+  AutoSupressDatum reporting_holdoff_;
+
+public:
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
   const std::string &GetOutputName();
@@ -557,20 +567,23 @@ public:
    */
   bool ProcessPages(const char *filename, const char *retry_config,
                     int timeout_millisec, TessResultRenderer *renderer);
+
+protected:
   // Does the real work of ProcessPages.
   bool ProcessPagesInternal(const char *filename, const char *retry_config,
                             int timeout_millisec, TessResultRenderer *renderer);
 
+public:
   /**
    * Turn a single image into symbolic text.
    *
-   * The pix is the image processed. filename and page_index are
+   * The pix is the image processed. filename and page_number are
    * metadata used by side-effect processes, such as reading a box
    * file or formatting as hOCR.
    *
    * See ProcessPages for descriptions of other parameters.
    */
-  bool ProcessPage(Pix *pix, int page_index, const char *filename,
+  bool ProcessPage(Pix *pix, const char *filename,
                    const char *retry_config, int timeout_millisec,
                    TessResultRenderer *renderer);
 
@@ -904,16 +917,20 @@ protected:
 
 private:
   // A list of image filenames gets special consideration
+  //
+  // If tessedit_page_number is non-negative, will only process that
+  // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesFileList(FILE *fp, std::string *buf,
                             const char *retry_config, int timeout_millisec,
-                            TessResultRenderer *renderer,
-                            int tessedit_page_number);
+                            TessResultRenderer *renderer);
   // TIFF supports multipage so gets special consideration.
+  //
+  // If tessedit_page_number is non-negative, will only process that
+  // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesMultipageTiff(const unsigned char *data, size_t size,
                                  const char *filename, const char *retry_config,
                                  int timeout_millisec,
-                                 TessResultRenderer *renderer,
-                                 int tessedit_page_number);
+                                 TessResultRenderer *renderer);
 }; // class TessBaseAPI.
 
 /** Escape a char string - replace &<>"' with HTML codes. */

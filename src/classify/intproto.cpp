@@ -422,7 +422,7 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
  */
 void UpdateMatchDisplay() {
   if (IntMatchWindow) {
-    IntMatchWindow->Update();
+    IntMatchWindow->UpdateWindow();
   }
 } /* ClearMatchDisplay */
 #endif

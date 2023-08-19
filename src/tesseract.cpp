@@ -1070,6 +1070,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   {
       TessBaseAPI api;
+      AutoSupressMarker supress_premature_log_reporting(api.GetLogReportingHoldoffMarkerRef());
 
       api.SetOutputName(outputbase);
 
@@ -1231,7 +1232,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
             renderer->BeginDocument("");
             //document_title.c_str());
 
-            succeed = api.ProcessPage(pix, 0, image, NULL, 0, renderers[0].get());
+            succeed = api.ProcessPage(pix, image, NULL, 0, renderers[0].get());
 
             {
                 Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
@@ -1267,6 +1268,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
     if (ret_val == EXIT_SUCCESS) {
       api.ReportParamsUsageStatistics();
     }
+
+    supress_premature_log_reporting.stepdown();
+    api.Clear();
   }
   // ^^^ end of scope for the Tesseract api instance
   // --> cache occupancy is removed, so the next call will succeed without fail (due to internal sanity checks)

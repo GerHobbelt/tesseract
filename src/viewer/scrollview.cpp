@@ -62,7 +62,7 @@ struct SVPolyLineBuffer {
 };
 
 // A map between the window IDs and their corresponding pointers.
-static std::map<int, ScrollViewReference> svmap;
+static std::vector<ScrollViewReference> svmap;
 static std::mutex *svmap_mu;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
 
 // A map of all semaphores waiting for a specific event on a specific window.
@@ -124,9 +124,10 @@ void InteractiveScrollView::MessageReceiver() {
            &cur->y, &cur->x_size, &cur->y_size, &cur->command_id, &n);
     char *p = (message + n);
 
-    svmap_mu->lock();
-    cur->window = svmap[window_id];
-    svmap_mu->unlock();
+    {
+      std::lock_guard<std::mutex> guard(*svmap_mu);
+      cur->window = svmap[window_id];
+    }
 
     if (cur->window) {
       auto length = strlen(p);
@@ -410,10 +411,10 @@ ScrollView::~ScrollView() {
   Update();
 #endif
 
-  //svmap_mu->lock();
+#if !defined(NO_ASSERTIONS)
   auto &ref = svmap[GetId()];
   ASSERT0(ref.GetRef() == nullptr);
-  //svmap_mu->unlock();
+#endif
 
   delete points_;
 #endif // !GRAPHICS_DISABLED
@@ -766,13 +767,12 @@ void ScrollView::Update() {
   }
 
   std::vector<ScrollViewReference> worklist;
+  // limit scope of lock
   {
       std::lock_guard<std::mutex> guard(*svmap_mu);
-      for (auto it = svmap.begin(); 
-          it != svmap.end(); 
-          ++it) {
-        if (it->second) {
-          worklist.push_back(it->second);
+      for (auto &iter : svmap) {
+        if (iter) {
+          worklist.push_back(iter);
         }
       }
   }
@@ -787,15 +787,20 @@ void ScrollView::Exit() {
     svmap_mu = new std::mutex();
   }
 
+  std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
     std::lock_guard<std::mutex> guard(*svmap_mu);
     for (auto &iter : svmap) {
-      if (iter.second) {
-        iter.second->ExitHelper();
-      }
+        if (iter) {
+          worklist.push_back(iter);
+        }
     }
   }
+  for (auto &iter : worklist) {
+    iter->ExitHelper();
+  }
+
   exit(667);
 }
 
@@ -1477,12 +1482,16 @@ void ScrollViewReference::cleanup_before_delete() {
       if (view_ != nullptr) {
         view_->UpdateWindow();
 
-        svmap_mu->lock();
-        int id = GetRef()->GetId();
-        svmap.insert_or_assign(id, nullptr); // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
-        auto &ref = svmap[id];
-        ref.clear();
-        svmap_mu->unlock();
+        {
+          std::lock_guard<std::mutex> guard(*svmap_mu);
+          int id = GetRef()->GetId();
+          while (svmap.size() <= id) {
+            svmap.push_back(nullptr);
+          }
+          svmap[id] = nullptr; // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+          auto &ref = svmap[id];
+          ref.clear();
+        }
 
         delete view_;
         ASSERT0(counter_ == nullptr || *counter_ == 0);
@@ -1629,10 +1638,14 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
   // 
   // That's why we #if0-ed that chunk of code further above!
   auto wi = rv->GetId();
-  svmap_mu->lock();
-  svmap.insert_or_assign(wi, rv);
   rv.id = wi;
-  svmap_mu->unlock();
+  {
+    std::lock_guard<std::mutex> guard(*svmap_mu);
+    while (svmap.size() <= wi) {
+      svmap.push_back(nullptr);
+    }
+    svmap[wi] = rv;
+  }
 
   return rv;
 }
@@ -1680,8 +1693,8 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
       {
         std::lock_guard<std::mutex> guard(*svmap_mu);
         for (auto &iter : svmap) {
-            if (iter.second) {
-              delset.push_back(iter.second);
+            if (iter) {
+              delset.push_back(iter);
             }
         }
       }

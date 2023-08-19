@@ -791,7 +791,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
       }
     }
   }
-  f_window->Update();
+  f_window->UpdateWindow();
   if (f_window->HasInteractiveFeature()) {
     ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
     SVEventType ev_type;
@@ -807,7 +807,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
           shape.AddToShape(class_id1, cloud_font);
           s_window->Clear();
           samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, ScrollView::GREEN, s_window);
-          s_window->Update();
+          s_window->UpdateWindow();
         }
       }
     } while (ev_type != SVET_DESTROY);

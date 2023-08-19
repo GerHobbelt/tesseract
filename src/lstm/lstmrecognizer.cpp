@@ -48,12 +48,7 @@ const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
 const double kCertOffset = -0.085;
 
-LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
-    : LSTMRecognizer::LSTMRecognizer() {
-  ccutil_.language_data_path_prefix = language_data_path_prefix;
-}
-
-LSTMRecognizer::LSTMRecognizer()
+LSTMRecognizer::LSTMRecognizer(CCUtil &ccutil_ref)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -64,7 +59,8 @@ LSTMRecognizer::LSTMRecognizer()
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
-    , debug_win_(nullptr) {}
+    , debug_win_(nullptr)
+    , ccutil_(ccutil_ref) {}
 
 LSTMRecognizer::~LSTMRecognizer() {
   delete network_;
@@ -363,13 +359,14 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       NetworkIO inv_inputs, inv_outputs;
       inv_inputs.set_int_mode(IsIntMode());
       SetRandomSeed();
-      pixInvert(pix, pix);
-      Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, &inv_inputs);
+      Image inv_pix = pixClone(pix);
+      pixInvert(inv_pix, pix);
+      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (HasDebug()) {
-        tprintf("Inverting image: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
+        tprintf("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
@@ -383,6 +380,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         SetRandomSeed();
         network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
       }
+      inv_pix.destroy();
     }
   }
 
@@ -450,7 +448,7 @@ void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
     }
     window->Line(xpos, 0, xpos, height * 3 / 2);
   }
-  window->Update();
+  window->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
