@@ -51,7 +51,8 @@ enum TrainingFlags {
 // Note that a sub-class, LSTMTrainer is used for training.
 class TESS_API LSTMRecognizer {
 public:
-  LSTMRecognizer(CCUtil &ccutil_ref);
+  LSTMRecognizer();
+  //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
   int NumOutputs() const {
@@ -286,6 +287,9 @@ public:
   void LabelsFromOutputs(const NetworkIO &outputs, std::vector<int> *labels,
                          std::vector<int> *xcoords);
 
+  void SetDataPathPrefix(const std::string &language_data_path_prefix);
+  void CopyDebugParameters(CCUtil *src, Dict *dict_src);
+
 protected:
   // Sets the random seed from the sample_iteration_;
   void SetRandomSeed() {
@@ -332,7 +336,7 @@ protected:
   Network *network_;
   // The unicharset. Only the unicharset element is serialized.
   // Has to be a CCUtil, so Dict can point to it.
-  CCUtil& ccutil_;
+  CCUtil ccutil_;
   // For backward compatibility, recoder_ is serialized iff
   // training_flags_ & TF_COMPRESS_UNICHARSET.
   // Further encode/decode ccutil_.unicharset's ids to simplify the unicharset.

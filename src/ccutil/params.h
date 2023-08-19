@@ -236,6 +236,12 @@ public:
 
   virtual std::string formatted_value_str() const = 0;
 
+  Param(const Param &o) = delete;
+  Param(Param &&o) = delete;
+
+  Param &operator=(const Param &other) = delete;
+  Param &operator=(Param &&other) = delete;
+
 protected:
   Param(const char *name, const char *comment, bool init)
       : name_(name), info_(comment), init_(init) {
@@ -295,6 +301,12 @@ public:
       return std::to_string(value_);
   }
 
+  IntParam(const IntParam &o) = delete;
+  IntParam(IntParam &&o) = delete;
+
+  IntParam &operator=(const IntParam &other) = delete;
+  IntParam &operator=(IntParam &&other) = delete;
+
 private:
   int32_t value_;
   int32_t default_;
@@ -347,6 +359,12 @@ public:
   virtual std::string formatted_value_str() const override {
       return std::to_string(value_);
   }
+
+  BoolParam(const BoolParam &o) = delete;
+  BoolParam(BoolParam &&o) = delete;
+
+  BoolParam &operator=(const BoolParam &other) = delete;
+  BoolParam &operator=(BoolParam &&other) = delete;
 
 private:
   bool value_;
@@ -425,6 +443,12 @@ public:
       return rv;
   }
 
+  StringParam(const StringParam &o) = delete;
+  StringParam(StringParam &&o) = delete;
+
+  StringParam &operator=(const StringParam &other) = delete;
+  StringParam &operator=(StringParam &&other) = delete;
+
 private:
   std::string value_;
   std::string default_;
@@ -483,6 +507,12 @@ public:
       return sbuf;
 #endif
   }
+
+  DoubleParam(const DoubleParam &o) = delete;
+  DoubleParam(DoubleParam &&o) = delete;
+
+  DoubleParam &operator=(const DoubleParam &other) = delete;
+  DoubleParam &operator=(DoubleParam &&other) = delete;
 
 private:
   double value_;

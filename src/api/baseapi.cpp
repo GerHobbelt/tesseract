@@ -510,7 +510,7 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 // "Which of all those parameters are actually *relevant* to my use case today?"
 void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
-    auto fpath = tesseract::vars_report_file;
+    std::string fpath = tesseract::vars_report_file;
     FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
     ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
     if (f) {
@@ -2567,14 +2567,20 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 			  tesseract_->set_pix_grey(nullptr);
 		  }
 
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-      }
+          if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods) {
+            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
+            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
+            tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
 
-      if (!go)
-        pix_binary.destroy();
+            const char *sequence = "c1.1 + d3.3";
+            int dispsep = 5;
+            Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
+            pix_post.destroy();
+          }
+
+          if (!go)
+            pix_binary.destroy();
 	  } else {
 		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
 
@@ -2588,17 +2594,23 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 		  tesseract_->set_pix_thresholds(pix_thresholds);
 		  tesseract_->set_pix_grey(pix_grey);
 
-      std::string caption = ThresholdMethodName(thresholding_method);
+          std::string caption = ThresholdMethodName(thresholding_method);
 
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + " : Grey = pre-image").c_str());
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + " : Thresholds").c_str());
-        tesseract_->AddPixDebugPage(pix_binary, (caption + " : Binary = post-image").c_str());
+          if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods) {
+            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + " : Grey = pre-image").c_str());
+            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + " : Thresholds").c_str());
+            tesseract_->AddPixDebugPage(pix_binary, (caption + " : Binary = post-image").c_str());
+
+            const char *sequence = "c1.1 + d3.3";
+            int dispsep = 5;
+            Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
+            pix_post.destroy();
+          }
+
+          if (!go)
+            pix_binary.destroy();
       }
-
-      if (!go)
-        pix_binary.destroy();
-    }
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,

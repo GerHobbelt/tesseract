@@ -208,6 +208,8 @@ public:
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
 
+  void ResyncVariablesInternally();
+
 #if !DISABLED_LEGACY_ENGINE
   // Set the equation detector.
   void SetEquationDetect(EquationDetect *detector);

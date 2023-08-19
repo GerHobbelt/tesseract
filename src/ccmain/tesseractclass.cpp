@@ -53,20 +53,20 @@ namespace tesseract {
 Tesseract::Tesseract(Tesseract *parent)
     : parent_instance_(parent)
     , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
-                  "Take segmentation and labeling from box file", this->params())
+                  "Take segmentation and labeling from box file", params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
-                  "Conversion of word/line box file to char box file", this->params())
+                  "Conversion of word/line box file to char box file", params())
     , BOOL_MEMBER(tessedit_train_from_boxes, false, "Generate training data from boxed chars",
-                  this->params())
+                  params())
     , BOOL_MEMBER(tessedit_make_boxes_from_boxes, false, "Generate more boxes from boxed chars",
-                  this->params())
+                  params())
     , BOOL_MEMBER(tessedit_train_line_recognizer, false,
-                  "Break input into lines and remap boxes if present", this->params())
+                  "Break input into lines and remap boxes if present", params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
-                  "Dump intermediate images made during page segmentation", this->params())
+                  "Dump intermediate images made during page segmentation", params())
     , double_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
-                    this->params())
+                    params())
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
@@ -76,369 +76,369 @@ Tesseract::Tesseract(Tesseract *parent)
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
                "11=sparse_text, 12=sparse_text+osd, 13=raw_line. "
                "(Values from PageSegMode enum in tesseract/publictypes.h)",
-               this->params())
+               params())
     , INT_MEMBER(preprocess_graynorm_mode, 0, 
                 "Grayscale normalization mode: 0=no normalization, 1=thresholding + recognition (i.e. apply to all tasks), "
                 "2=thresholding tasks (layout analysis) only, 3=character recognition only. "
                 "The modes 1–3 apply non-linear normalization (nlnorm) on a grayscale version "
                 "of the input image and replace it for the specified tasks.", 
-                this->params())
+                params())
     , INT_MEMBER(thresholding_method,
                  static_cast<int>(ThresholdMethod::Otsu),
                  "Thresholding method: 0 = Legacy Otsu, 1 = Adaptive Otsu, 2 = "
                  "Sauvola, 3 = Otsu on "
                  "adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background, 5 = Nlbin.",
-                 this->params())
+                 params())
     , BOOL_MEMBER(showcase_threshold_methods, false,
                   "Showcase the available threshold methods as part of the thresholding process.",
-                  this->params())
+                  params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process.",
-                  this->params())
+                  params())
     , double_MEMBER(thresholding_window_size, 0.33,
                     "Window size for measuring local statistics (to be "
                     "multiplied by image DPI). "
                     "This parameter is used by the Sauvola thresholding method.",
-                    this->params())
+                    params())
     , double_MEMBER(thresholding_kfactor, 0.34,
                     "Factor for reducing threshold due to variance. "
                     "This parameter is used by the Sauvola thresholding method. "
                     "Normal range: 0.2-0.5.",
-                    this->params())
+                    params())
     , double_MEMBER(thresholding_tile_size, 0.33,
                     "Desired tile size (to be multiplied by image DPI). "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method.",
-                    this->params())
+                    params())
     , double_MEMBER(thresholding_smooth_kernel_size, 0.01,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method.",
-                    this->params())
+                    params())
     , double_MEMBER(thresholding_score_fraction, 0.1,
                     "Fraction of the max Otsu score. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
-                    this->params())
+                    params())
     , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
                       "Which OCR engine(s) to run (Tesseract, LSTM, both). "
                       "Defaults to loading and running the most accurate "
                       "available.",
-                      this->params())
+                      params())
     , STRING_MEMBER(tessedit_char_blacklist, "", "Blacklist of chars not to recognize.",
-                    this->params())
-    , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", this->params())
+                    params())
+    , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", params())
     , STRING_MEMBER(tessedit_char_unblacklist, "",
-                    "List of chars to override tessedit_char_blacklist.", this->params())
+                    "List of chars to override tessedit_char_blacklist.", params())
     , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.",
-                  this->params())
+                  params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
                  "Whether to use the top-line splitting process for Devanagari "
                  "documents while performing page-segmentation.",
-                 this->params())
+                 params())
     , INT_MEMBER(ocr_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
                  "Whether to use the top-line splitting process for Devanagari "
                  "documents while performing ocr.",
-                 this->params())
+                 params())
     , STRING_MEMBER(tessedit_write_params_to_file, "", "Write all parameters to the given file.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(tessedit_adaption_debug, false,
                   "Generate and print debug "
                   "information for adaption.",
-                  this->params())
-    , INT_MEMBER(bidi_debug, 0, "Debug level for BiDi.", this->params())
-    , INT_MEMBER(applybox_debug, 1, "Debug level for apply boxes.", this->params())
-    , INT_MEMBER(applybox_page, 0, "Page number to apply boxes from.", this->params())
+                  params())
+    , INT_MEMBER(bidi_debug, 0, "Debug level for BiDi.", params())
+    , INT_MEMBER(applybox_debug, 1, "Debug level for apply boxes.", params())
+    , INT_MEMBER(applybox_page, 0, "Page number to apply boxes from.", params())
     , STRING_MEMBER(applybox_exposure_pattern, ".exp",
                     "Exposure value follows "
                     "this pattern in the image filename. The name of the image "
                     "files are expected to be in the form "
                     "[lang].[fontname].exp[num].tif.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(applybox_learn_chars_and_char_frags_mode, false,
                   "Learn both character fragments (as is done in the "
                   "special low exposure mode) as well as unfragmented "
                   "characters.",
-                  this->params())
+                  params())
     , BOOL_MEMBER(applybox_learn_ngrams_mode, false,
                   "Each bounding box "
                   "is assumed to contain ngrams. Only learn the ngrams "
                   "whose outlines overlap horizontally.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_display_outwords, false, "Draw output words.", this->params())
-    , BOOL_MEMBER(tessedit_dump_choices, false, "Dump char choices.", this->params())
-    , BOOL_MEMBER(tessedit_timing_debug, false, "Print timing stats.", this->params())
-    , BOOL_MEMBER(tessedit_fix_fuzzy_spaces, true, "Try to improve fuzzy spaces.", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_display_outwords, false, "Draw output words.", params())
+    , BOOL_MEMBER(tessedit_dump_choices, false, "Dump char choices.", params())
+    , BOOL_MEMBER(tessedit_timing_debug, false, "Print timing stats.", params())
+    , BOOL_MEMBER(tessedit_fix_fuzzy_spaces, true, "Try to improve fuzzy spaces.", params())
     , BOOL_MEMBER(tessedit_unrej_any_wd, false, "Don't bother with word plausibility.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_fix_hyphens, true, "Crunch double hyphens?", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_fix_hyphens, true, "Crunch double hyphens?", params())
     , BOOL_MEMBER(tessedit_enable_doc_dict, true, "Add discovered words to the document dictionary when found to be non-ambiguous through internal heuristic.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_debug_fonts, false, "Output font info per char.", this->params())
-    , INT_MEMBER(tessedit_font_id, 0, "Font ID to use or zero.", this->params())
-    , BOOL_MEMBER(tessedit_debug_block_rejection, false, "Block and Row stats.", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_debug_fonts, false, "Output font info per char.", params())
+    , INT_MEMBER(tessedit_font_id, 0, "Font ID to use or zero.", params())
+    , BOOL_MEMBER(tessedit_debug_block_rejection, false, "Block and Row stats.", params())
     , BOOL_MEMBER(tessedit_enable_bigram_correction, true,
-                  "Enable correction based on the word bigram dictionary.", this->params())
+                  "Enable correction based on the word bigram dictionary.", params())
     , BOOL_MEMBER(tessedit_enable_dict_correction, false,
-                  "Enable single word correction based on the dictionary.", this->params())
+                  "Enable single word correction based on the dictionary.", params())
     , INT_MEMBER(tessedit_bigram_debug, 0, "Amount of debug output for bigram correction.",
-                 this->params())
+                 params())
     , BOOL_MEMBER(enable_noise_removal, true,
                   "Remove and conditionally reassign small outlines when they "
                   "confuse layout analysis, determining diacritics vs noise.",
-                  this->params())
-    , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", this->params())
+                  params())
+    , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", params())
     , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.",
-                    this->params())
+                    params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
     // character worse and still be included.
-    double_MEMBER(noise_cert_basechar, -8.0, "Hingepoint for base char certainty.", this->params())
+    double_MEMBER(noise_cert_basechar, -8.0, "Hingepoint for base char certainty.", params())
     ,
     // Worst (min) certainty, for which a non-overlapping diacritic is allowed
     // to make the base character worse and still be included.
-    double_MEMBER(noise_cert_disjoint, -1.0, "Hingepoint for disjoint certainty.", this->params())
+    double_MEMBER(noise_cert_disjoint, -1.0, "Hingepoint for disjoint certainty.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make a new
     // stand-alone blob.
-    double_MEMBER(noise_cert_punc, -3.0, "Threshold for new punc char certainty.", this->params())
+    double_MEMBER(noise_cert_punc, -3.0, "Threshold for new punc char certainty.", params())
     ,
     // Factor of certainty margin for adding diacritics to not count as worse.
     double_MEMBER(noise_cert_factor, 0.375, "Scaling on certainty diff from Hingepoint.",
-                  this->params())
-    , INT_MEMBER(noise_maxperblob, 8, "Max diacritics to apply to a blob.", this->params())
-    , INT_MEMBER(noise_maxperword, 16, "Max diacritics to apply to a word.", this->params())
-    , INT_MEMBER(debug_x_ht_level, 0, "Reestimate x-height debug level (0..2).", this->params())
-    , STRING_MEMBER(chs_leading_punct, "('`\"", "Leading punctuation.", this->params())
-    , STRING_MEMBER(chs_trailing_punct1, ").,;:?!", "1st Trailing punctuation.", this->params())
-    , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", this->params())
-    , double_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", this->params())
-    , double_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", this->params())
+                  params())
+    , INT_MEMBER(noise_maxperblob, 8, "Max diacritics to apply to a blob.", params())
+    , INT_MEMBER(noise_maxperword, 16, "Max diacritics to apply to a word.", params())
+    , INT_MEMBER(debug_x_ht_level, 0, "Reestimate x-height debug level (0..2).", params())
+    , STRING_MEMBER(chs_leading_punct, "('`\"", "Leading punctuation.", params())
+    , STRING_MEMBER(chs_trailing_punct1, ").,;:?!", "1st Trailing punctuation.", params())
+    , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
+    , double_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
+    , double_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
     , double_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
-                    this->params())
-    , double_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", this->params())
-    , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", this->params())
+                    params())
+    , double_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
+    , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
                  "(bit set where bit 0 = ADAPTABLE_WERD, bit 1 = ACCEPTABLE_WERD, "
                  "bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, "
                  "bit 5 = CHECK_AMBIG_WERD)",
-                 this->params())
+                 params())
     , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", this->params())
-    , BOOL_MEMBER(test_pt, false, "Test for point.", this->params())
-    , double_MEMBER(test_pt_x, 99999.99, "xcoord.", this->params())
-    , double_MEMBER(test_pt_y, 99999.99, "ycoord.", this->params())
-    , INT_MEMBER(multilang_debug_level, 0, "Print multilang debug info. (0..1)", this->params())
-    , INT_MEMBER(paragraph_debug_level, 0, "Print paragraph debug info. (0..3)", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
+    , BOOL_MEMBER(test_pt, false, "Test for point.", params())
+    , double_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
+    , double_MEMBER(test_pt_y, 99999.99, "ycoord.", params())
+    , INT_MEMBER(multilang_debug_level, 0, "Print multilang debug info. (0..1)", params())
+    , INT_MEMBER(paragraph_debug_level, 0, "Print paragraph debug info. (0..3)", params())
     , BOOL_MEMBER(paragraph_text_based, true,
                   "Run paragraph detection on the post-text-recognition "
                   "(more accurate).",
-                  this->params())
-    , BOOL_MEMBER(lstm_use_matrix, 1, "Use ratings matrix/beam search with lstm.", this->params())
-    , STRING_MEMBER(outlines_odd, "%| ", "Non standard number of outlines.", this->params())
-    , STRING_MEMBER(outlines_2, "ij!?%\":;", "Non standard number of outlines.", this->params())
+                  params())
+    , BOOL_MEMBER(lstm_use_matrix, 1, "Use ratings matrix/beam search with lstm.", params())
+    , STRING_MEMBER(outlines_odd, "%| ", "Non standard number of outlines.", params())
+    , STRING_MEMBER(outlines_2, "ij!?%\":;", "Non standard number of outlines.", params())
     , BOOL_MEMBER(tessedit_good_quality_unrej, true, "Reduce rejection on good docs.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_use_reject_spaces, true, "Reject spaces?", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_use_reject_spaces, true, "Reject spaces?", params())
     , double_MEMBER(tessedit_reject_doc_percent, 65.00, "%rej allowed before rej whole doc.",
-                    this->params())
+                    params())
     , double_MEMBER(tessedit_reject_block_percent, 45.00, "%rej allowed before rej whole block.",
-                    this->params())
+                    params())
     , double_MEMBER(tessedit_reject_row_percent, 40.00, "%rej allowed before rej whole row.",
-                    this->params())
+                    params())
     , double_MEMBER(tessedit_whole_wd_rej_row_percent, 70.00,
                     "Number of row rejects in whole word rejects "
                     "which prevents whole row rejection.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(tessedit_preserve_blk_rej_perfect_wds, true,
-                  "Only rej partially rejected words in block rejection.", this->params())
+                  "Only rej partially rejected words in block rejection.", params())
     , BOOL_MEMBER(tessedit_preserve_row_rej_perfect_wds, true,
-                  "Only rej partially rejected words in row rejection.", this->params())
+                  "Only rej partially rejected words in row rejection.", params())
     , BOOL_MEMBER(tessedit_dont_blkrej_good_wds, false, "Use word segmentation quality metric.",
-                  this->params())
+                  params())
     , BOOL_MEMBER(tessedit_dont_rowrej_good_wds, false, "Use word segmentation quality metric.",
-                  this->params())
+                  params())
     , INT_MEMBER(tessedit_preserve_min_wd_len, 2, "Only preserve wds longer than this.",
-                 this->params())
+                 params())
     , BOOL_MEMBER(tessedit_row_rej_good_docs, true, "Apply row rejection to good docs.",
-                  this->params())
+                  params())
     , double_MEMBER(tessedit_good_doc_still_rowrej_wd, 1.1,
-                    "rej good doc wd if more than this fraction rejected.", this->params())
-    , BOOL_MEMBER(tessedit_reject_bad_qual_wds, true, "Reject all bad quality wds.", this->params())
-    , BOOL_MEMBER(tessedit_debug_doc_rejection, false, "Print doc and Block character rejection page stats.", this->params())
+                    "rej good doc wd if more than this fraction rejected.", params())
+    , BOOL_MEMBER(tessedit_reject_bad_qual_wds, true, "Reject all bad quality wds.", params())
+    , BOOL_MEMBER(tessedit_debug_doc_rejection, false, "Print doc and Block character rejection page stats.", params())
     , BOOL_MEMBER(tessedit_debug_quality_metrics, false, "Print recognition quality report to debug channel.",
-                  this->params())
-    , BOOL_MEMBER(bland_unrej, false, "unrej potential with no checks.", this->params())
-    , double_MEMBER(quality_rowrej_pc, 1.1, "good_quality_doc gte good char limit.", this->params())
-    , BOOL_MEMBER(unlv_tilde_crunching, false, "Mark v.bad words for tilde crunch.", this->params())
-    , BOOL_MEMBER(hocr_font_info, false, "Add font info to hocr output.", this->params())
+                  params())
+    , BOOL_MEMBER(bland_unrej, false, "unrej potential with no checks.", params())
+    , double_MEMBER(quality_rowrej_pc, 1.1, "good_quality_doc gte good char limit.", params())
+    , BOOL_MEMBER(unlv_tilde_crunching, false, "Mark v.bad words for tilde crunch.", params())
+    , BOOL_MEMBER(hocr_font_info, false, "Add font info to hocr output.", params())
     , BOOL_MEMBER(hocr_char_boxes, false, "Add coordinates for each character to hocr output.",
-                  this->params())
-    , BOOL_MEMBER(hocr_images, false, "Add images to hocr output.", this->params())
-    , BOOL_MEMBER(crunch_early_merge_tess_fails, true, "Before word crunch?", this->params())
-    , BOOL_MEMBER(crunch_early_convert_bad_unlv_chs, false, "Take out ~^ early?", this->params())
-    , double_MEMBER(crunch_terrible_rating, 80.0, "crunch rating lt this.", this->params())
-    , BOOL_MEMBER(crunch_terrible_garbage, true, "As it says.", this->params())
-    , double_MEMBER(crunch_poor_garbage_cert, -9.0, "crunch garbage cert lt this.", this->params())
-    , double_MEMBER(crunch_poor_garbage_rate, 60, "crunch garbage rating lt this.", this->params())
-    , double_MEMBER(crunch_pot_poor_rate, 40, "POTENTIAL crunch rating lt this.", this->params())
-    , double_MEMBER(crunch_pot_poor_cert, -8.0, "POTENTIAL crunch cert lt this.", this->params())
-    , double_MEMBER(crunch_del_rating, 60, "POTENTIAL crunch rating lt this.", this->params())
-    , double_MEMBER(crunch_del_cert, -10.0, "POTENTIAL crunch cert lt this.", this->params())
-    , double_MEMBER(crunch_del_min_ht, 0.7, "Del if word ht lt xht x this.", this->params())
-    , double_MEMBER(crunch_del_max_ht, 3.0, "Del if word ht gt xht x this.", this->params())
-    , double_MEMBER(crunch_del_min_width, 3.0, "Del if word width lt xht x this.", this->params())
-    , double_MEMBER(crunch_del_high_word, 1.5, "Del if word gt xht x this above bl.", this->params())
-    , double_MEMBER(crunch_del_low_word, 0.5, "Del if word gt xht x this below bl.", this->params())
-    , double_MEMBER(crunch_small_outlines_size, 0.6, "Small if lt xht x this.", this->params())
-    , INT_MEMBER(crunch_rating_max, 10, "For adj length in rating per ch.", this->params())
-    , INT_MEMBER(crunch_pot_indicators, 1, "How many potential indicators needed.", this->params())
-    , BOOL_MEMBER(crunch_leave_ok_strings, true, "Don't touch sensible strings.", this->params())
-    , BOOL_MEMBER(crunch_accept_ok, true, "Use acceptability in okstring.", this->params())
+                  params())
+    , BOOL_MEMBER(hocr_images, false, "Add images to hocr output.", params())
+    , BOOL_MEMBER(crunch_early_merge_tess_fails, true, "Before word crunch?", params())
+    , BOOL_MEMBER(crunch_early_convert_bad_unlv_chs, false, "Take out ~^ early?", params())
+    , double_MEMBER(crunch_terrible_rating, 80.0, "crunch rating lt this.", params())
+    , BOOL_MEMBER(crunch_terrible_garbage, true, "As it says.", params())
+    , double_MEMBER(crunch_poor_garbage_cert, -9.0, "crunch garbage cert lt this.", params())
+    , double_MEMBER(crunch_poor_garbage_rate, 60, "crunch garbage rating lt this.", params())
+    , double_MEMBER(crunch_pot_poor_rate, 40, "POTENTIAL crunch rating lt this.", params())
+    , double_MEMBER(crunch_pot_poor_cert, -8.0, "POTENTIAL crunch cert lt this.", params())
+    , double_MEMBER(crunch_del_rating, 60, "POTENTIAL crunch rating lt this.", params())
+    , double_MEMBER(crunch_del_cert, -10.0, "POTENTIAL crunch cert lt this.", params())
+    , double_MEMBER(crunch_del_min_ht, 0.7, "Del if word ht lt xht x this.", params())
+    , double_MEMBER(crunch_del_max_ht, 3.0, "Del if word ht gt xht x this.", params())
+    , double_MEMBER(crunch_del_min_width, 3.0, "Del if word width lt xht x this.", params())
+    , double_MEMBER(crunch_del_high_word, 1.5, "Del if word gt xht x this above bl.", params())
+    , double_MEMBER(crunch_del_low_word, 0.5, "Del if word gt xht x this below bl.", params())
+    , double_MEMBER(crunch_small_outlines_size, 0.6, "Small if lt xht x this.", params())
+    , INT_MEMBER(crunch_rating_max, 10, "For adj length in rating per ch.", params())
+    , INT_MEMBER(crunch_pot_indicators, 1, "How many potential indicators needed.", params())
+    , BOOL_MEMBER(crunch_leave_ok_strings, true, "Don't touch sensible strings.", params())
+    , BOOL_MEMBER(crunch_accept_ok, true, "Use acceptability in okstring.", params())
     , BOOL_MEMBER(crunch_leave_accept_strings, false, "Don't pot crunch sensible strings.",
-                  this->params())
-    , BOOL_MEMBER(crunch_include_numerals, false, "Fiddle alpha figures.", this->params())
+                  params())
+    , BOOL_MEMBER(crunch_include_numerals, false, "Fiddle alpha figures.", params())
     , INT_MEMBER(crunch_leave_lc_strings, 4, "Don't crunch words with long lower case strings.",
-                 this->params())
+                 params())
     , INT_MEMBER(crunch_leave_uc_strings, 4, "Don't crunch words with long lower case strings.",
-                 this->params())
-    , INT_MEMBER(crunch_long_repetitions, 3, "Crunch words with long repetitions.", this->params())
-    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch.", this->params())
-    , INT_MEMBER(fixsp_non_noise_limit, 1, "How many non-noise blobs either side?", this->params())
-    , double_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", this->params())
-    , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins.", this->params())
-    , INT_MEMBER(fixsp_done_mode, 1, "What constitutes done for spacing.", this->params())
-    , INT_MEMBER(debug_fix_space_level, 0, "Contextual fixspace debug (0..3).", this->params())
-    , STRING_MEMBER(numeric_punctuation, ".,", "Punct. chs expected WITHIN numbers.", this->params())
+                 params())
+    , INT_MEMBER(crunch_long_repetitions, 3, "Crunch words with long repetitions.", params())
+    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch.", params())
+    , INT_MEMBER(fixsp_non_noise_limit, 1, "How many non-noise blobs either side?", params())
+    , double_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", params())
+    , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins.", params())
+    , INT_MEMBER(fixsp_done_mode, 1, "What constitutes done for spacing.", params())
+    , INT_MEMBER(debug_fix_space_level, 0, "Contextual fixspace debug (0..3).", params())
+    , STRING_MEMBER(numeric_punctuation, ".,", "Punct. chs expected WITHIN numbers.", params())
     , INT_MEMBER(x_ht_acceptance_tolerance, 8,
-                 "Max allowed deviation of blob top outside of font data.", this->params())
-    , INT_MEMBER(x_ht_min_change, 8, "Min change in xht before actually trying it.", this->params())
-    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer.", this->params())
+                 "Max allowed deviation of blob top outside of font data.", params())
+    , INT_MEMBER(x_ht_min_change, 8, "Min change in xht before actually trying it.", params())
+    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer.", params())
     , double_MEMBER(superscript_worse_certainty, 2.0,
                     "How many times worse "
                     "certainty does a superscript position glyph need to be for "
                     "us to try classifying it as a char with a different "
                     "baseline?",
-                    this->params())
+                    params())
     , double_MEMBER(superscript_bettered_certainty, 0.97,
                     "What reduction in "
                     "badness do we think sufficient to choose a superscript "
                     "over what we'd thought.  For example, a value of 0.6 means "
                     "we want to reduce badness of certainty by at least 40%.",
-                    this->params())
+                    params())
     , double_MEMBER(superscript_scaledown_ratio, 0.4,
                     "A superscript scaled down more than this is unbelievably "
                     "small.  For example, 0.3 means we expect the font size to "
                     "be no smaller than 30% of the text line font size.",
-                    this->params())
+                    params())
     , double_MEMBER(subscript_max_y_top, 0.5,
                     "Maximum top of a character measured as a multiple of "
                     "x-height above the baseline for us to reconsider whether "
                     "it's a subscript.",
-                    this->params())
+                    params())
     , double_MEMBER(superscript_min_y_bottom, 0.3,
                     "Minimum bottom of a character measured as a multiple of "
                     "x-height above the baseline for us to reconsider whether "
                     "it's a superscript.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(tessedit_write_block_separators, false, "Write block separators in output.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_write_rep_codes, false, "Write repetition char code.", this->params())
-    , BOOL_MEMBER(tessedit_write_unlv, false, "Write .unlv output file.", this->params())
-    , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", this->params())
-    , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", this->params())
-    , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", this->params())
-    , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file.", this->params())
-    , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values.", this->params())
-    , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel.", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_write_rep_codes, false, "Write repetition char code.", params())
+    , BOOL_MEMBER(tessedit_write_unlv, false, "Write .unlv output file.", params())
+    , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
+    , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", params())
+    , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", params())
+    , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file.", params())
+    , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values.", params())
+    , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel.", params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.",
-                  this->params())
-    , BOOL_MEMBER(tessedit_create_pdf, false, "Write .pdf output file.", this->params())
+                  params())
+    , BOOL_MEMBER(tessedit_create_pdf, false, "Write .pdf output file.", params())
     , BOOL_MEMBER(textonly_pdf, false, "Create PDF with only one invisible text layer.",
-                  this->params())
-    , INT_MEMBER(jpg_quality, 85, "Set JPEG quality level.", this->params())
-    , INT_MEMBER(user_defined_dpi, 0, "Specify DPI for input image.", this->params())
+                  params())
+    , INT_MEMBER(jpg_quality, 85, "Set JPEG quality level.", params())
+    , INT_MEMBER(user_defined_dpi, 0, "Specify DPI for input image.", params())
     , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD.",
-                 this->params())
-    , STRING_MEMBER(unrecognised_char, "|", "Output char for unidentified blobs.", this->params())
-    , INT_MEMBER(suspect_level, 99, "Suspect marker level (0..4)", this->params())
-    , INT_MEMBER(suspect_short_words, 2, "Don't suspect dict wds longer than this.", this->params())
-    , BOOL_MEMBER(suspect_constrain_1Il, false, "UNLV keep 1Il chars rejected.", this->params())
-    , double_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit.", this->params())
-    , double_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit.", this->params())
-    , BOOL_MEMBER(tessedit_minimal_rejection, false, "Only reject tess failures.", this->params())
-    , BOOL_MEMBER(tessedit_zero_rejection, false, "Don't reject ANYTHING.", this->params())
+                 params())
+    , STRING_MEMBER(unrecognised_char, "|", "Output char for unidentified blobs.", params())
+    , INT_MEMBER(suspect_level, 99, "Suspect marker level (0..4)", params())
+    , INT_MEMBER(suspect_short_words, 2, "Don't suspect dict wds longer than this.", params())
+    , BOOL_MEMBER(suspect_constrain_1Il, false, "UNLV keep 1Il chars rejected.", params())
+    , double_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit.", params())
+    , double_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit.", params())
+    , BOOL_MEMBER(tessedit_minimal_rejection, false, "Only reject tess failures.", params())
+    , BOOL_MEMBER(tessedit_zero_rejection, false, "Don't reject ANYTHING.", params())
     , BOOL_MEMBER(tessedit_word_for_word, false, "Make output have exactly one word per WERD.",
-                  this->params())
+                  params())
     , BOOL_MEMBER(tessedit_zero_kelvin_rejection, false, "Don't reject ANYTHING AT ALL.",
-                  this->params())
-    , INT_MEMBER(tessedit_reject_mode, 0, "Rejection algorithm.", this->params())
-    , BOOL_MEMBER(tessedit_rejection_debug, false, "Debug adaption/rejection.", this->params())
-    , BOOL_MEMBER(tessedit_flip_0O, true, "Contextual 0O O0 flips.", this->params())
-    , double_MEMBER(tessedit_lower_flip_hyphen, 1.5, "Aspect ratio dot/hyphen test.", this->params())
-    , double_MEMBER(tessedit_upper_flip_hyphen, 1.8, "Aspect ratio dot/hyphen test.", this->params())
-    , BOOL_MEMBER(rej_trust_doc_dawg, false, "Use DOC dawg in 11l conf. detector.", this->params())
-    , BOOL_MEMBER(rej_1Il_use_dict_word, false, "Use dictword test.", this->params())
-    , BOOL_MEMBER(rej_1Il_trust_permuter_type, true, "Don't double check.", this->params())
-    , BOOL_MEMBER(rej_use_tess_accepted, true, "Individual rejection control.", this->params())
-    , BOOL_MEMBER(rej_use_tess_blanks, true, "Individual rejection control.", this->params())
-    , BOOL_MEMBER(rej_use_good_perm, true, "Individual rejection control.", this->params())
-    , BOOL_MEMBER(rej_use_sensible_wd, false, "Extend permuter check.", this->params())
-    , BOOL_MEMBER(rej_alphas_in_number_perm, false, "Extend permuter check.", this->params())
-    , double_MEMBER(rej_whole_of_mostly_reject_word_fract, 0.85, "reject whole of word if > this fract.", this->params())
-    , INT_MEMBER(tessedit_image_border, 2, "Rej blbs near image edge limit.", this->params())
-    , STRING_MEMBER(ok_repeated_ch_non_alphanum_wds, "-?*\075", "Allow NN to unrej.", this->params())
-    , STRING_MEMBER(conflict_set_I_l_1, "Il1[]", "Il1 conflict set.", this->params())
-    , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", this->params())
-    , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", this->params())
+                  params())
+    , INT_MEMBER(tessedit_reject_mode, 0, "Rejection algorithm.", params())
+    , BOOL_MEMBER(tessedit_rejection_debug, false, "Debug adaption/rejection.", params())
+    , BOOL_MEMBER(tessedit_flip_0O, true, "Contextual 0O O0 flips.", params())
+    , double_MEMBER(tessedit_lower_flip_hyphen, 1.5, "Aspect ratio dot/hyphen test.", params())
+    , double_MEMBER(tessedit_upper_flip_hyphen, 1.8, "Aspect ratio dot/hyphen test.", params())
+    , BOOL_MEMBER(rej_trust_doc_dawg, false, "Use DOC dawg in 11l conf. detector.", params())
+    , BOOL_MEMBER(rej_1Il_use_dict_word, false, "Use dictword test.", params())
+    , BOOL_MEMBER(rej_1Il_trust_permuter_type, true, "Don't double check.", params())
+    , BOOL_MEMBER(rej_use_tess_accepted, true, "Individual rejection control.", params())
+    , BOOL_MEMBER(rej_use_tess_blanks, true, "Individual rejection control.", params())
+    , BOOL_MEMBER(rej_use_good_perm, true, "Individual rejection control.", params())
+    , BOOL_MEMBER(rej_use_sensible_wd, false, "Extend permuter check.", params())
+    , BOOL_MEMBER(rej_alphas_in_number_perm, false, "Extend permuter check.", params())
+    , double_MEMBER(rej_whole_of_mostly_reject_word_fract, 0.85, "reject whole of word if > this fract.", params())
+    , INT_MEMBER(tessedit_image_border, 2, "Rej blbs near image edge limit.", params())
+    , STRING_MEMBER(ok_repeated_ch_non_alphanum_wds, "-?*\075", "Allow NN to unrej.", params())
+    , STRING_MEMBER(conflict_set_I_l_1, "Il1[]", "Il1 conflict set.", params())
+    , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", params())
+    , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.",
-                 this->params())
-    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", this->params())
-    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", this->params())
-    , STRING_MEMBER(file_type, ".tif", "Filename extension.", this->params())
-    , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", this->params())
+                 params())
+    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", params())
+    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", params())
+    , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
+    , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
-                  this->params())
+                  params())
     , double_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
-                    this->params())
-    , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", this->params())
-    , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", this->params())
+                    params())
+    , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())
+    , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
-                  "Allow feature extractors to see the original outline.", this->params())
+                  "Allow feature extractors to see the original outline.", params())
     , BOOL_INIT_MEMBER(tessedit_init_config_only, false,
                        "Only initialize with the config file. Useful if the "
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",
-                       this->params())
+                       params())
 #if !DISABLED_LEGACY_ENGINE
-    , BOOL_MEMBER(textord_equation_detect, false, "Turn on equation detector.", this->params())
+    , BOOL_MEMBER(textord_equation_detect, false, "Turn on equation detector.", params())
 #endif // !DISABLED_LEGACY_ENGINE
-    , BOOL_MEMBER(textord_tabfind_vertical_text, true, "Enable vertical detection.", this->params())
+    , BOOL_MEMBER(textord_tabfind_vertical_text, true, "Enable vertical detection.", params())
     , BOOL_MEMBER(textord_tabfind_force_vertical_text, false, "Force using vertical text page mode.",
-                  this->params())
+                  params())
     , double_MEMBER(textord_tabfind_vertical_text_ratio, 0.5,
                     "Fraction of textlines deemed vertical to use vertical page "
                     "mode",
-                    this->params())
+                    params())
     , double_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
-                    "Fraction of height used as a minimum gap for aligned blobs.", this->params())
-    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", this->params())
+                    "Fraction of height used as a minimum gap for aligned blobs.", params())
+    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params())
     , BOOL_MEMBER(preserve_interword_spaces, false, "Preserve multiple interword spaces.",
-                  this->params())
+                  params())
     , STRING_MEMBER(page_separator, "\f", "Page separator (default is form feed control character)",
-                    this->params())
+                    params())
     , INT_MEMBER(lstm_choice_mode, 0,
                  "Allows to include alternative symbols choices in the hOCR output. "
                  "Valid input values are 0, 1 and 2. 0 is the default value. "
@@ -446,34 +446,34 @@ Tesseract::Tesseract(Tesseract *parent)
                  "With 2 alternative symbol choices are extracted from the CTC "
                  "process instead of the lattice. The choices are mapped per "
                  "character.",
-                 this->params())
+                 params())
     , INT_MEMBER(lstm_choice_iterations, 5,
                  "Sets the number of cascading iterations for the Beamsearch in "
                  "lstm_choice_mode. Note that lstm_choice_mode must be set to a "
                  "value greater than 0 to produce results.",
-                 this->params())
+                 params())
     , double_MEMBER(lstm_rating_coefficient, 5,
                     "Sets the rating coefficient for the lstm choices. The smaller the "
                     "coefficient, the better are the ratings for each choice and less "
                     "information is lost due to the cut off at 0. The standard value is "
                     "5.",
-                    this->params())
+                    params())
     , BOOL_MEMBER(pageseg_apply_music_mask, false,
-                  "Detect music staff and remove intersecting components.", this->params())
+                  "Detect music staff and remove intersecting components.", params())
     , double_MEMBER(max_page_gradient_recognize, 100,
-                  "Exit early (without running recognition) if page gradient is above this amount.", this->params())
-    , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", this->params())
-    , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", this->params())
-    , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", this->params())
-    , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", this->params())
-    , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", this->params())
-    , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", this->params())
-    , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", this->params())
-    , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", this->params())
-    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", this->params())
-    , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", this->params())
-    , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", this->params())
-    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", this->params())
+                  "Exit early (without running recognition) if page gradient is above this amount.", params())
+    , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
+    , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
+    , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", params())
+    , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", params())
+    , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
+    , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
+    , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
+    , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
+    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params())
+    , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())
+    , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", params())
+    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params())
 
     , pixa_debug_(this)
     , splitter_(this)
@@ -798,6 +798,15 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
 
 void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
   pixa_debug_.AddClippedPix(pix, title);
+}
+
+
+void Tesseract::ResyncVariablesInternally() {
+    if (lstm_recognizer_ != nullptr) {
+        lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
+        lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
+        lstm_recognizer_->SetDebug(tess_debug_lstm);
+    }
 }
 
 } // namespace tesseract

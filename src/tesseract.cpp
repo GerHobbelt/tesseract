@@ -979,6 +979,10 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("debug_display_page", "Y");
     api.SetVariable("debug_display_page_blocks", "Y");
     api.SetVariable("debug_display_page_baselines", "Y");
+
+    if (api.tesseract() != nullptr) {
+      api.tesseract()->ResyncVariablesInternally();
+    }
   }
 }
 

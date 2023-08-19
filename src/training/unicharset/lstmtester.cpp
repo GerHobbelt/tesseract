@@ -80,8 +80,7 @@ std::string LSTMTester::RunEvalAsync(int iteration, const double *training_error
 std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors,
                                     const TessdataManager &model_mgr, int training_stage,
                                     int verbosity) {
-  CCUtil ccutil;
-  LSTMTrainer trainer(ccutil);
+  LSTMTrainer trainer;
   trainer.SetDebug(HasDebug());
   trainer.InitCharSet(model_mgr);
   TFile fp;

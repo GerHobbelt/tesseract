@@ -74,18 +74,17 @@ const int kTargetXScale = 5;
 const int kTargetYScale = 100;
 #endif // !GRAPHICS_DISABLED
 
-LSTMTrainer::LSTMTrainer(CCUtil &ccutil_ref)
-    : randomly_rotate_(false), training_data_(0), sub_trainer_(nullptr), LSTMRecognizer(ccutil_ref) {
+LSTMTrainer::LSTMTrainer()
+    : randomly_rotate_(false), training_data_(0), sub_trainer_(nullptr) {
   EmptyConstructor();
   debug_interval_ = 0;
 }
 
-LSTMTrainer::LSTMTrainer(CCUtil &ccutil_ref, const char *model_base, const char *checkpoint_name,
+LSTMTrainer::LSTMTrainer(const char *model_base, const char *checkpoint_name,
                          int debug_interval, int64_t max_memory)
     : randomly_rotate_(false),
       training_data_(max_memory),
-      sub_trainer_(nullptr),
-      LSTMRecognizer(ccutil_ref) {
+      sub_trainer_(nullptr) {
   EmptyConstructor();
   debug_interval_ = debug_interval;
   model_base_ = model_base;
@@ -582,7 +581,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   if (sub_data.empty()) {
     sub_trainer_ = nullptr;
   } else {
-    sub_trainer_ = std::make_unique<LSTMTrainer>(ccutil_);
+    sub_trainer_ = std::make_unique<LSTMTrainer>();
     if (!ReadTrainingDump(sub_data, *sub_trainer_)) {
       return false;
     }
@@ -600,7 +599,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
 // learning rates (by scaling reduction, or layer specific, according to
 // NF_LAYER_SPECIFIC_LR).
 void LSTMTrainer::StartSubtrainer(std::stringstream &log_msg) {
-  sub_trainer_ = std::make_unique<LSTMTrainer>(ccutil_);
+  sub_trainer_ = std::make_unique<LSTMTrainer>();
   if (!ReadTrainingDump(best_trainer_, *sub_trainer_)) {
     log_msg << " Failed to revert to previous best for trial!";
     sub_trainer_.reset();
@@ -721,7 +720,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
         ww_factor *= factor;
       }
       // Make a copy of *this, so we can mess about without damaging anything.
-      LSTMTrainer copy_trainer(ccutil_);
+      LSTMTrainer copy_trainer;
 	  copy_trainer.SetDebug(samples_trainer->HasDebug());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
@@ -748,7 +747,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
         if (num_weights[i] == 0) {
           continue;
         }
-        LSTMTrainer layer_trainer(ccutil_);
+        LSTMTrainer layer_trainer;
 		layer_trainer.SetDebug(samples_trainer->HasDebug());
 		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);

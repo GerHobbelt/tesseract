@@ -48,7 +48,12 @@ const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
 const double kCertOffset = -0.085;
 
-LSTMRecognizer::LSTMRecognizer(CCUtil &ccutil_ref)
+//LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
+//    : LSTMRecognizer::LSTMRecognizer() {
+//  ccutil_.language_data_path_prefix = language_data_path_prefix;
+//}
+
+LSTMRecognizer::LSTMRecognizer()
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -59,8 +64,7 @@ LSTMRecognizer::LSTMRecognizer(CCUtil &ccutil_ref)
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
-    , debug_win_(nullptr)
-    , ccutil_(ccutil_ref) {}
+    , debug_win_(nullptr) {}
 
 LSTMRecognizer::~LSTMRecognizer() {
   delete network_;
@@ -634,6 +638,57 @@ const char *LSTMRecognizer::DecodeSingleLabel(int label) {
     return " ";
   }
   return GetUnicharset().get_normed_unichar(label);
+}
+
+
+void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_prefix) {
+  ccutil_.language_data_path_prefix = language_data_path_prefix;
+}
+
+void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
+  if (src != nullptr && &ccutil_ != src) {
+      ccutil_.ambigs_debug_level = (int)src->ambigs_debug_level;
+      ccutil_.use_ambigs_for_adaption = (bool)src->use_ambigs_for_adaption;
+  }
+
+  if (dict_ != nullptr && dict_ != dict_src) {
+      dict_->user_words_file = dict_src->user_words_file.c_str();
+      dict_->user_words_suffix = dict_src->user_words_suffix.c_str();
+      dict_->user_patterns_file = dict_src->user_patterns_file.c_str();
+      dict_->user_patterns_suffix = dict_src->user_patterns_suffix.c_str();
+      dict_->load_system_dawg = (bool)dict_src->load_system_dawg;
+      dict_->load_freq_dawg = (bool)dict_src->load_freq_dawg;
+      dict_->load_unambig_dawg = (bool)dict_src->load_unambig_dawg;
+      dict_->load_punc_dawg = (bool)dict_src->load_punc_dawg;
+      dict_->load_number_dawg = (bool)dict_src->load_number_dawg;
+      dict_->load_bigram_dawg = (bool)dict_src->load_bigram_dawg;
+      dict_->xheight_penalty_subscripts = (double)dict_src->xheight_penalty_subscripts;
+      dict_->xheight_penalty_inconsistent = (double)dict_src->xheight_penalty_inconsistent;
+      dict_->segment_penalty_dict_frequent_word = (double)dict_src->segment_penalty_dict_frequent_word;
+      dict_->segment_penalty_dict_case_ok = (double)dict_src->segment_penalty_dict_case_ok;
+      dict_->segment_penalty_dict_case_bad = (double)dict_src->segment_penalty_dict_case_bad;
+      dict_->segment_penalty_dict_nonword = (double)dict_src->segment_penalty_dict_nonword;
+      dict_->segment_penalty_garbage = (double)dict_src->segment_penalty_garbage;
+      dict_->output_ambig_words_file = dict_src->output_ambig_words_file.c_str();
+      dict_->dawg_debug_level = (int)dict_src->dawg_debug_level;
+      dict_->hyphen_debug_level = (int)dict_src->hyphen_debug_level;
+      dict_->use_only_first_uft8_step = (bool)dict_src->use_only_first_uft8_step;
+      dict_->certainty_scale = (double)dict_src->certainty_scale;
+      dict_->stopper_nondict_certainty_base = (double)dict_src->stopper_nondict_certainty_base;
+      dict_->stopper_phase2_certainty_rejection_offset = (double)dict_src->stopper_phase2_certainty_rejection_offset;
+      dict_->stopper_smallword_size = (int)dict_src->stopper_smallword_size;
+      dict_->stopper_certainty_per_char = (double)dict_src->stopper_certainty_per_char;
+      dict_->stopper_allowable_character_badness = (double)dict_src->stopper_allowable_character_badness;
+      dict_->stopper_debug_level = (int)dict_src->stopper_debug_level;
+      dict_->stopper_no_acceptable_choices = (bool)dict_src->stopper_no_acceptable_choices;
+      dict_->tessedit_truncate_wordchoice_log = (int)dict_src->tessedit_truncate_wordchoice_log;
+      dict_->word_to_debug = dict_src->word_to_debug.c_str();
+      dict_->segment_nonalphabetic_script = (bool)dict_src->segment_nonalphabetic_script;
+      dict_->save_doc_words = (bool)dict_src->save_doc_words;
+      dict_->doc_dict_pending_threshold = (double)dict_src->doc_dict_pending_threshold;
+      dict_->doc_dict_certainty_threshold = (double)dict_src->doc_dict_certainty_threshold;
+      dict_->max_permuter_attempts = (int)dict_src->max_permuter_attempts;
+  }
 }
 
 } // namespace tesseract.
