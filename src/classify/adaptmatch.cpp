@@ -1405,7 +1405,8 @@ void Classify::ConvertMatchesToChoices(const DENORM &denorm, const TBOX &box,
     } else {
       Rating = Certainty = (1.0f - result.rating);
       Rating *= rating_scale * Results->BlobLength;
-      Certainty *= -(getDict().certainty_scale);
+      float certainty_scale = getDict().certainty_scale;
+      Certainty *= -certainty_scale;
     }
     // Adapted results, by their very nature, should have good certainty.
     // Those that don't are at best misleading, and often lead to errors,

@@ -657,19 +657,19 @@ auto fmt::formatter<DawgType>::format(DawgType c, format_context &ctx) const
   // enum PITCH_TYPE:
   switch (c) {
       case DawgType::DAWG_TYPE_PUNCTUATION:
-        name = "punctuation";
+        name = "Punctuation";
         break;
       case DawgType::DAWG_TYPE_WORD:
-        name = "word";
+        name = "Word";
         break;
       case DawgType::DAWG_TYPE_NUMBER:
-        name = "number";
+        name = "Number";
         break;
       case DawgType::DAWG_TYPE_PATTERN:
-        name = "pattern";
+        name = "Pattern";
         break;
     default:
-      name = "unknown";
+      name = "Unknown";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -684,19 +684,19 @@ auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
   // enum PITCH_TYPE:
   switch (c) {
       case LossType::LT_NONE:
-        name = "none/undefined";
+        name = "None/Undefined";
         break;
       case LossType::LT_CTC:
         name = "CTC";
         break;
       case LossType::LT_SOFTMAX:
-        name = "softMax";
+        name = "SoftMax";
         break;
       case LossType::LT_LOGISTIC:
-        name = "logistic";
+        name = "Logistic";
         break;
     default:
-      name = "unknown";
+      name = "Unknown";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -714,22 +714,22 @@ auto fmt::formatter<ThresholdMethod>::format(ThresholdMethod c, format_context &
       name = "Otsu";
       break;
     case ThresholdMethod::LeptonicaOtsu:
-      name = "LeptonicaOtsu";
+      name = "Leptonica_Otsu";
       break;
     case ThresholdMethod::Sauvola:
       name = "Sauvola";
       break;
     case ThresholdMethod::OtsuOnNormalizedBackground:
-      name = "OtsuOnNormalizedBackground";
+      name = "Otsu_On_Normalized_Background";
       break;
     case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
-      name = "MaskingAndOtsuOnNormalizedBackground";
+      name = "Masking_And_Otsu_On_Normalized_Background";
       break;
     case ThresholdMethod::Nlbin:
       name = "Nlbin";
       break;
     case ThresholdMethod::Max:
-      name = "Max";
+      name = "MaxThreshold";
       break;
     default:
       name = "unknown_threshold_method";
