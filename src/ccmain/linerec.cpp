@@ -177,8 +177,9 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
   } else if (block.re_rotation().y() < 0.0f) {
     num_rotations = 3;
   }
-  // Handle two cases automatically: 1 the box came from the block, 2 the box
-  // came from a box file, and refers to the image, which the block may not.
+  // Handle two cases automatically: 
+  // 1) the box came from the block, 
+  // 2) the box came from a box file, and refers to the image, which the block may not.
   if (block.pdblk.bounding_box().major_overlap(*revised_box)) {
     revised_box->rotate(block.re_rotation());
   }
