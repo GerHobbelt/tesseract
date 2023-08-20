@@ -417,7 +417,8 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
 
 #if !GRAPHICS_DISABLED
 // Helper to draw all the blobs on the list in the given body_colour,
-// with child outlines in the child_colour.
+// with child outlines in the child_colour: outer bits are done in body_colour,
+// while holes will be done in child_colour.
 void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
                          ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
@@ -500,8 +501,8 @@ ScrollView::Color BLOBNBOX::BoxColor() const {
 }
 
 void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
-                    ScrollView::Color blob_colour,    // for outer bits
-                    ScrollView::Color child_colour) { // for holes
+                    ScrollView::Color blob_colour,             // for outer bits
+                    ScrollView::Color child_colour) {          // for holes
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
