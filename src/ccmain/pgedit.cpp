@@ -985,6 +985,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   if (word->display_flag(DF_TEXT) && word->text() != nullptr) {
     text = word->text();
   }
+  
   if (word->display_flag(DF_BLAMER) &&
       !(word_res->blamer_bundle != nullptr &&
         word_res->blamer_bundle->incorrect_result_reason() == IRR_CORRECT)) {
@@ -1002,7 +1003,11 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     } else {
       word_res->best_choice->string_and_lengths(&best_choice_str, nullptr);
     }
-    text += best_choice_str;
+    if (blamer_bundle == nullptr && word_res->best_choice == nullptr) {
+      text = "";
+    } else {
+      text += best_choice_str;
+    }
     IncorrectResultReason reason =
         (blamer_bundle == nullptr) ? IRR_PAGE_LAYOUT : blamer_bundle->incorrect_result_reason();
     ASSERT_HOST(reason < IRR_NUM_REASONS);
@@ -1010,6 +1015,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     blame += BlamerBundle::IncorrectReasonName(reason);
     blame += "]";
   }
+
   if (text.length() > 0) {
     word_bb = word->bounding_box();
     image_win->Pen(ScrollView::RED);
