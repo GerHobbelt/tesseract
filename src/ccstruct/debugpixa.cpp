@@ -25,11 +25,6 @@
 
 namespace tesseract {
 
-static void ASSERTPIXVALID(Image pix) {
-  int depth = pixGetDepth(pix);
-  ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
-}
-
 #if defined(HAVE_MUPDF)
   void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
   {
@@ -117,7 +112,10 @@ static void ASSERTPIXVALID(Image pix) {
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
-    ASSERTPIXVALID(pix);
+    {
+      int depth = pixGetDepth(pix);
+      ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+    }
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
@@ -513,7 +511,10 @@ static void ASSERTPIXVALID(Image pix) {
       tprintf("ERROR: {}: pixs[{}] not retrieved.\n", __func__, idx);
       return;
     }
-    ASSERTPIXVALID(pixs);
+    {
+      int depth = pixGetDepth(pixs);
+      ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+    }
     PIX *bgimg = cliprects[idx].area() > 0 ? nullptr : tesseract_->pix_original();
 
     write_one_pix_for_html(html, counter, fn.c_str(), pixs,
