@@ -193,13 +193,13 @@ const char *WERD_CHOICE::permuter_name(uint8_t permuter) {
 const char *ScriptPosToString(enum ScriptPos script_pos) {
   switch (script_pos) {
     case SP_NORMAL:
-      return "NORM";
+      return "NORMAL";
     case SP_SUBSCRIPT:
-      return "SUB";
+      return "SUBSCRIPT";
     case SP_SUPERSCRIPT:
-      return "SUPER";
+      return "SUPERSCRIPT";
     case SP_DROPCAP:
-      return "DROPC";
+      return "DROPCAP";
   }
   return "SP_UNKNOWN";
 }
@@ -549,7 +549,7 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
         blob_box += tblob->bounding_box();
       }
     }
-    script_pos_[blob_index] = ScriptPositionOf(false, *unicharset_, blob_box, uni_id);
+    script_pos_[blob_index] = ScriptPositionOf((debug > 6), *unicharset_, blob_box, uni_id);
     if (small_caps && script_pos_[blob_index] != tesseract::SP_DROPCAP) {
       script_pos_[blob_index] = tesseract::SP_NORMAL;
     }
@@ -620,8 +620,8 @@ ScriptPos WERD_CHOICE::ScriptPositionOf(bool print_debug, const UNICHARSET &unic
   if (print_debug) {
     const char *pos = ScriptPosToString(retval);
     tprintf(
-        "{} Character {}[bot:{} top: {}]  "
-        "bot_range[{},{}]  top_range[{}, {}] "
+        "{} Character '{}' [bottom:{} top:{}]  "
+        "bot_range[{}, {}]  top_range[{}, {}] "
         "sub_thresh[bot:{} top:{}]  sup_thresh_bot {}\n",
         pos, unicharset.id_to_unichar(unichar_id), bottom, top, min_bottom, max_bottom, min_top,
         max_top, sub_thresh_bot, sub_thresh_top, sup_thresh_bot);
@@ -689,29 +689,32 @@ unsigned WERD_CHOICE::TotalOfStates() const {
  * Print WERD_CHOICE to stdout.
  */
 void WERD_CHOICE::print(const char *msg) const {
-  tprintf("{} : ", msg);
+  std::string s = fmt::format("{} : ", msg);
   for (unsigned i = 0; i < length_; ++i) {
-    tprintf("{}", unicharset_->id_to_unichar(unichar_ids_[i]));
+    s += fmt::format("'{}' ", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
-  tprintf(" : R={}, C={}, F={}, Perm={}, xht=[{},{}], ambig={}\n", rating_, certainty_,
+  tprintf("{}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
+          s, length_, rating_, certainty_,
           adjust_factor_, permuter_, min_x_height_, max_x_height_, dangerous_ambig_found_);
-  tprintf("pos");
-  for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t{}", ScriptPosToString(script_pos_[i]));
+  if (length_ > 0) {
+      s = "pos:      ";
+      for (unsigned i = 0; i < length_; ++i) {
+        s += fmt::format("\t{}", ScriptPosToString(script_pos_[i]));
+      }
+      s += "\nstr:      ";
+      for (unsigned i = 0; i < length_; ++i) {
+        s += fmt::format("\t{}", unicharset_->id_to_unichar(unichar_ids_[i]));
+      }
+      s += "\nstate:    ";
+      for (unsigned i = 0; i < length_; ++i) {
+        s += fmt::format("\t{}", state_[i]);
+      }
+      s += "\nCertainty:";
+      for (unsigned i = 0; i < length_; ++i) {
+        s += fmt::format("\t{}", certainties_[i]);
+      }
+      tprintf("{}\n", s);
   }
-  tprintf("\nstr");
-  for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t{}", unicharset_->id_to_unichar(unichar_ids_[i]));
-  }
-  tprintf("\nstate:");
-  for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t{} ", state_[i]);
-  }
-  tprintf("\nC");
-  for (unsigned i = 0; i < length_; ++i) {
-    tprintf("\t{}", certainties_[i]);
-  }
-  tprintf("\n");
 }
 
 // Prints the segmentation state with an introductory message.

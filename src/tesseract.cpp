@@ -923,7 +923,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("hyphen_debug_level", "3");
 
-    api.SetVariable("language_model_debug_level", "3");
+    api.SetVariable("language_model_debug_level", "7");
 
     api.SetVariable("tosp_debug_level", "3");
 
