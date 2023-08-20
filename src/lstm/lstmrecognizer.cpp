@@ -251,7 +251,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   NetworkIO outputs;
   float scale_factor = 0.0;
   NetworkIO inputs;
-  if (!RecognizeLine(image_data, invert_threshold, false, false, &scale_factor, &inputs, &outputs)) {
+  if (!RecognizeLine(image_data, invert_threshold, false, false, line_box, &scale_factor, &inputs, &outputs)) {
     return;
   }
   if (search_ == nullptr) {
@@ -320,7 +320,9 @@ void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, fl
 // scores, and corresponding pairs of start, end x-coords in coords.
 bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
                                    float invert_threshold,
-                                   bool re_invert, bool upside_down, float *scale_factor,
+                                   bool re_invert, bool upside_down, 
+                                   const TBOX &line_box, 
+                                   float *scale_factor,
                                    NetworkIO *inputs, NetworkIO *outputs) {
   // This ensures consistent recognition results.
   SetRandomSeed();
@@ -393,7 +395,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     std::vector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
 #if !GRAPHICS_DISABLED
-    DisplayForward(*inputs, labels, coords, "LSTMForward", debug_win_);
+    DisplayForward(*inputs, labels, coords, line_box, "LSTMForward", debug_win_);
 #endif
     DebugActivationPath(*outputs, labels, coords);
   }
@@ -420,23 +422,28 @@ std::string LSTMRecognizer::DecodeLabels(const std::vector<int> &labels) {
 // Displays the forward results in a window with the characters and
 // boundaries as determined by the labels and label_coords.
 void LSTMRecognizer::DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
-                                    const std::vector<int> &label_coords, const char *window_name,
+                                    const std::vector<int> &label_coords,
+                                    const TBOX &line_box, const char *window_name,
                                     ScrollViewReference &window) {
   Image input_pix = inputs.ToPix();
   Network::ClearWindow(false, window_name, pixGetWidth(input_pix), pixGetHeight(input_pix), window);
   int line_height = Network::DisplayImage(input_pix, "LSTMRecognizer::DisplayForward", window);
-  DisplayLSTMOutput(labels, label_coords, line_height, window);
+  DisplayLSTMOutput(labels, label_coords, line_height, line_box, window);
 }
 
 // Displays the labels and cuts at the corresponding xcoords.
 // Size of labels should match xcoords.
 void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
-                                       const std::vector<int> &xcoords, int height,
+                                       const std::vector<int> &xcoords,
+                                       int height, const TBOX &line_box, 
                                        ScrollViewReference &window) {
   int x_scale = network_->XScaleFactor();
   window->TextAttributes("Arial", height / 4, false, false, false);
-  unsigned end = 1;
-  for (unsigned start = 0; start < labels.size(); start = end) {
+  int x_offset = line_box.left();
+  int y_offset = line_box.bottom();
+  window->SetXYOffset(x_offset, y_offset);
+  unsigned int end = 1;
+  for (unsigned int start = 0; start < labels.size(); start = end) {
     int xpos = xcoords[start] * x_scale;
     if (labels[start] == null_char_) {
       end = start + 1;
@@ -452,6 +459,7 @@ void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
     }
     window->Line(xpos, 0, xpos, height * 3 / 2);
   }
+  window->SetXYOffset(0, 0);
   window->UpdateWindow();
 }
 

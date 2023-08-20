@@ -316,6 +316,9 @@ public:
   // Note: The underlined flag is currently not supported
   virtual void TextAttributes(const char *font, int pixel_size, bool bold, bool italic, bool underlined) = 0;
 
+  // Set up a X/Y offset for the subsequent drawing primitives.
+  virtual void SetXYOffset(int x, int y) = 0;
+
   // Draw line from (x1,y1) to (x2,y2) with the current pencolor.
   virtual void Line(int x1, int y1, int x2, int y2) = 0;
 
@@ -554,6 +557,9 @@ public:
   virtual void TextAttributes(const char *font, int pixel_size, bool bold,
                               bool italic, bool underlined);
 
+  // Set up a X/Y offset for the subsequent drawing primitives.
+  virtual void SetXYOffset(int x, int y);
+
   // Draw line from (x1,y1) to (x2,y2) with the current pencolor.
   virtual void Line(int x1, int y1, int x2, int y2);
 
@@ -787,6 +793,9 @@ public:
   virtual void TextAttributes(const char *font, int pixel_size, bool bold,
                               bool italic, bool underlined);
 
+  // Set up a X/Y offset for the subsequent drawing primitives.
+  virtual void SetXYOffset(int x, int y);
+
   // Draw line from (x1,y1) to (x2,y2) with the current pencolor.
   virtual void Line(int x1, int y1, int x2, int y2);
 
@@ -911,6 +920,8 @@ protected:
   Image pix;
   l_uint32 pen_color;
   l_uint32 brush_color;
+  int x_offset;
+  int y_offset;
   bool dirty;
 
 #endif // !GRAPHICS_DISABLED

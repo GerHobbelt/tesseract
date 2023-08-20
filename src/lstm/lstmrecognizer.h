@@ -269,7 +269,7 @@ public:
   // forward outputs for the best photometric interpretation.
   // inputs is filled with the used inputs to the network.
   bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool re_invert,
-                     bool upside_down, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
+                     bool upside_down, const TBOX &line_box, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
 
   // Converts an array of labels to utf-8, whether or not the labels are
   // augmented with character boundaries.
@@ -278,7 +278,8 @@ public:
   // Displays the forward results in a window with the characters and
   // boundaries as determined by the labels and label_coords.
   void DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
-                      const std::vector<int> &label_coords, const char *window_name,
+                      const std::vector<int> &label_coords,
+                      const TBOX &line_box, const char *window_name,
                       ScrollViewReference &window);
   // Converts the network output to a sequence of labels. Outputs labels, scores
   // and start xcoords of each char, and each null_char_, with an additional
@@ -301,7 +302,7 @@ protected:
   // Displays the labels and cuts at the corresponding xcoords.
   // Size of labels should match xcoords.
   void DisplayLSTMOutput(const std::vector<int> &labels, const std::vector<int> &xcoords,
-                         int height, ScrollViewReference &window);
+                         int height, const TBOX &line_box, ScrollViewReference &window);
 
   // Prints debug output detailing the activation path that is implied by the
   // xcoords.
