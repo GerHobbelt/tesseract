@@ -259,15 +259,12 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
 	search_->SetDebug(HasDebug());
   }
   search_->excludedUnichars.clear();
-  search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(),
-                  lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words,
-                                  lstm_choice_mode);
+  search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words, lstm_choice_mode);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
     for (int i = 0; i < lstm_choice_amount; ++i) {
-      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert,
-                                    &GetUnicharset(), lstm_choice_mode);
+      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
       search_->extractSymbolChoices(&GetUnicharset());
     }
     search_->segmentTimestepsByCharacters();
@@ -292,8 +289,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
 }
 
 // Helper computes min and mean best results in the output.
-void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output,
-                                 float *sd) {
+void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output, float *sd) {
   const int kOutputScale = INT8_MAX;
   STATS stats(0, kOutputScale);
   for (int t = 0; t < outputs.Width(); ++t) {

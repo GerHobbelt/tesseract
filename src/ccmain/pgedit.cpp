@@ -1003,13 +1003,14 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     } else {
       word_res->best_choice->string_and_lengths(&best_choice_str, nullptr);
     }
+
     if (blamer_bundle == nullptr && word_res->best_choice == nullptr) {
       text = "";
     } else {
       text += best_choice_str;
     }
-    IncorrectResultReason reason =
-        (blamer_bundle == nullptr) ? IRR_PAGE_LAYOUT : blamer_bundle->incorrect_result_reason();
+
+    IncorrectResultReason reason = (blamer_bundle == nullptr) ? IRR_PAGE_LAYOUT : blamer_bundle->incorrect_result_reason();
     ASSERT_HOST(reason < IRR_NUM_REASONS);
     blame += " [";
     blame += BlamerBundle::IncorrectReasonName(reason);
@@ -1028,8 +1029,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     shift = (word_height < word_bb.width()) ? 0.25 * word_height : 0.0f;
     image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height, text.c_str());
     if (blame.length() > 0) {
-      image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height,
-                      blame.c_str());
+      image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height, blame.c_str());
     }
 
     displayed_something = true;

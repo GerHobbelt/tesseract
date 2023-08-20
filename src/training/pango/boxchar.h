@@ -98,8 +98,7 @@ public:
   void ReverseUnicodesInBox();
 
   static void TranslateBoxes(int xshift, int yshift, std::vector<BoxChar *> *boxes);
-  static void TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box,
-                            std::vector<BoxChar *> *boxes);
+  static void TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box, std::vector<BoxChar *> *boxes);
   // Prepares for writing the boxes to a file by inserting newlines, spaces,
   // and re-ordering so the boxes are strictly left-to-right.
   static void PrepareToWrite(std::vector<BoxChar *> *boxes);
