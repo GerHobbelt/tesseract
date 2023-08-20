@@ -1026,8 +1026,8 @@ std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
   return std::make_unique<SVEvent>();
 }
 
-const float kMixFactor = 0.75;
-const float kBlendPaintLayerFactor = 0.75;
+const float kMixFactor = 0.65;
+const float kBlendPaintLayerFactor = 0.65;
 
     // Send the current buffered polygon (if any) and clear it.
 void BackgroundScrollView::SendPolygon() {
@@ -1374,7 +1374,7 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
     l_int32 cw, ch, cd;
     pixGetDimensions(tpix3, &cw, &ch, &cd);
     //pixRasterop(pix, x, y - baseline * scale, cw, ch, PIX_XOR, tpix3, 0, 0);
-    pixBlendColorByChannel(pix, pix, tpix3, x, y - baseline * scale, kBlendPaintLayerFactor, kBlendPaintLayerFactor, kBlendPaintLayerFactor + 0.2, 1, 0xFFFFFF00u);
+    pixBlendColorByChannel(pix, pix, tpix3, x, y - baseline * scale, 1.0, 0.0, 1.0, 1, 0xFFFFFF00u);
     x += (w + bmf->kernwidth) * scale;
     pixDestroy(&tpix);
     pixDestroy(&tpix2);
