@@ -4,3 +4,6 @@
 [submodule "test"]
 	path = test
 	url = https://github.com/tesseract-ocr/test.git
+[submodule "debian"]
+	path = debian
+	url = https://git.archive.org/merlijn/tesseract-debian
