@@ -206,8 +206,7 @@ ROW *fixed_pitch_words( // find lines
     prev_x = prev_chop_coord;
   }
   xstarts[1] = prev_x + 1;
-  real_row =
-      new ROW(row, static_cast<int16_t>(row->kern_size), static_cast<int16_t>(row->space_size));
+  real_row = new ROW(row, static_cast<TDimension>(row->kern_size), static_cast<TDimension>(row->space_size));
   word_it.set_to_list(real_row->word_list());
   // put words in row
   word_it.add_list_after(&words);

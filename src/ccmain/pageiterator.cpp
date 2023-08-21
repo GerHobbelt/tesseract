@@ -540,9 +540,9 @@ bool PageIterator::Baseline(PageIteratorLevel level, int *x1, int *y1, int *x2,
   TBOX box = (level == RIL_WORD || level == RIL_SYMBOL) ? word->bounding_box()
                                                         : row->bounding_box();
   int left = box.left();
-  ICOORD startpt(left, static_cast<int16_t>(row->base_line(left) + 0.5));
+  ICOORD startpt(left, static_cast<TDimension>(row->base_line(left) + 0.5));
   int right = box.right();
-  ICOORD endpt(right, static_cast<int16_t>(row->base_line(right) + 0.5));
+  ICOORD endpt(right, static_cast<TDimension>(row->base_line(right) + 0.5));
   // Rotate to image coordinates and convert to global image coords.
   startpt.rotate(it_->block()->block->re_rotation());
   endpt.rotate(it_->block()->block->re_rotation());

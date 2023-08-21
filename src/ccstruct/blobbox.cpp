@@ -122,10 +122,10 @@ void BLOBNBOX::chop(       // chop blobs
     FCOORD rotation,       // for landscape
     float xheight          // of line
 ) {
-  int16_t blobcount;          // no of blobs
+  int blobcount;              // no of blobs
   BLOBNBOX *newblob;          // fake blob
   BLOBNBOX *blob;             // current blob
-  int16_t blobindex;          // number of chop
+  int blobindex;              // number of chop
   TDimension leftx;           // left edge of blob
   float blobwidth;            // width of each
   float rightx;               // right edge to scan
@@ -135,14 +135,14 @@ void BLOBNBOX::chop(       // chop blobs
   BLOBNBOX_IT blob_it;        // blob iterator
 
   // get no of chops
-  blobcount = static_cast<int16_t>(std::floor(box.width() / xheight));
+  blobcount = static_cast<int>(std::floor(box.width() / xheight));
   if (blobcount > 1 && cblob_ptr != nullptr) {
     // width of each
     blobwidth = static_cast<float>(box.width() + 1) / blobcount;
     for (blobindex = blobcount - 1, rightx = box.right(); blobindex >= 0;
          blobindex--, rightx -= blobwidth) {
-      ymin = static_cast<float>(INT32_MAX);
-      ymax = static_cast<float>(-INT32_MAX);
+      ymin = static_cast<float>(TDIMENSION_MAX);
+      ymax = static_cast<float>(TDIMENSION_MIN);
       blob_it = *start_it;
       do {
         blob = blob_it.data();
@@ -151,6 +151,7 @@ void BLOBNBOX::chop(       // chop blobs
         blob_it.forward();
         UpdateRange(test_ymin, test_ymax, &ymin, &ymax);
       } while (blob != end_it->data());
+
       if (ymin < ymax) {
         leftx = static_cast<TDimension>(std::floor(rightx - blobwidth));
         if (leftx < box.left()) {

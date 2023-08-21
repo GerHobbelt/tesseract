@@ -1298,8 +1298,8 @@ float compute_pitch_sd(        // find fp cells
   int32_t sp_count;      // spaces
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
-  int16_t cellpos;       // previous cell boundary
+  TDimension segpos;     // position of segment
+  TDimension cellpos;    // previous cell boundary
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;     // new cell
@@ -1388,9 +1388,9 @@ float compute_pitch_sd(        // find fp cells
       if (cell_it.empty() || segpos > cellpos + initial_pitch / 2) {
         // big gap
         while (!cell_it.empty() && segpos > cellpos + initial_pitch * 3 / 2) {
-          cell = new ICOORDELT(cellpos + static_cast<int16_t>(initial_pitch), 0);
+          cell = new ICOORDELT(cellpos + static_cast<TDimension>(initial_pitch), 0);
           cell_it.add_after_then_move(cell);
-          cellpos += static_cast<int16_t>(initial_pitch);
+          cellpos += static_cast<TDimension>(initial_pitch);
         }
         // make new one
         cell = new ICOORDELT(segpos, 0);
@@ -1447,7 +1447,7 @@ float compute_pitch_sd2(       // find fp cells
   TBOX blob_box;         // bounding box
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
+  TDimension segpos;     // position of segment
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;  // new cell
@@ -1472,7 +1472,7 @@ float compute_pitch_sd2(       // find fp cells
   } while (!blob_it.cycled_list());
   plot_it = blob_it;
   word_sync = check_pitch_sync2(
-      &blob_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+      &blob_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
       projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, start, end);
   if (1) {
     tprintf("Row ending at ({},{}), len={}, sync rating={}, ", blob_box.right(), blob_box.top(),
@@ -1572,7 +1572,7 @@ void print_pitch_sd(         // find fp cells
       blob_box = box_next(&blob_it);
     } while (!blob_it.cycled_list() && blob_box.left() - prev_box.right() < space_size);
     word_sync = check_pitch_sync2(
-        &start_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+        &start_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
         projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
     total_blob_count += blob_count;
     seg_it.set_to_list(&seg_list);
@@ -1605,7 +1605,7 @@ void print_pitch_sd(         // find fp cells
   start_it = row_start;
   blob_it = row_start;
   word_sync =
-      check_pitch_sync2(&blob_it, total_blob_count, static_cast<int16_t>(initial_pitch), 2,
+      check_pitch_sync2(&blob_it, total_blob_count, static_cast<TDimension>(initial_pitch), 2,
                         projection, projection_left, projection_right,
                         row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
   if (occupation > 1) {
@@ -1725,7 +1725,7 @@ void plot_fp_word(   // draw block of words
     row->min_space = static_cast<int32_t>((pitch + nonspace) / 2);
     row->max_nonspace = row->min_space;
     row->space_threshold = row->min_space;
-    plot_word_decisions(to_win, static_cast<int16_t>(pitch), row);
+    plot_word_decisions(to_win, static_cast<TDimension>(pitch), row);
   }
 }
 #endif

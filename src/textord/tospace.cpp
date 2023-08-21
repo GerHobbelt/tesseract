@@ -92,7 +92,7 @@ void Textord::to_spacing(ICOORD page_tr,       // topright of page
       }
 #if !GRAPHICS_DISABLED
       if (textord_show_initial_words) {
-        plot_word_decisions(to_win, static_cast<int16_t>(row->fixed_pitch), row);
+        plot_word_decisions(to_win, static_cast<TDimension>(row->fixed_pitch), row);
       }
 #endif
       row_index++;
@@ -257,7 +257,7 @@ suspect 1's or punctuation that is sometimes widely spaced.
     if (space_gap_stats.get_total() <= 2) {
       block_space_gap_width = -1; // No est. space width
     } else {
-      block_space_gap_width = std::max(static_cast<int16_t>(floor(space_gap_stats.median())),
+      block_space_gap_width = std::max(static_cast<TDimension>(floor(space_gap_stats.median())),
                                        static_cast<TDimension>(3 * block_non_space_gap_width));
     }
   }

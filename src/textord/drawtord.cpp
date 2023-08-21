@@ -271,10 +271,10 @@ void draw_meanlines(          // draw a block
  * highlighted.
  **********************************************************************/
 
-void plot_word_decisions( // draw words
+void plot_word_decisions(          // draw words
     ScrollViewReference &win,      // window to draw in
-    int16_t pitch,        // of block
-    TO_ROW *row           // row to draw
+    TDimension pitch,              // of block
+    TO_ROW *row                    // row to draw
 ) {
   ScrollView::Color colour = ScrollView::MAGENTA; // current colour
   ScrollView::Color rect_colour;                  // fuzzy colour

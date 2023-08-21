@@ -637,11 +637,11 @@ WERD_RES *RecodeBeamSearch::InitializeWord(bool leading_space,
   C_BLOB_IT b_it(&blobs);
   for (int i = word_start; i < word_end; ++i) {
     if (static_cast<unsigned>(i + 1) < character_boundaries_.size()) {
-      TBOX box(static_cast<int16_t>(
+      TBOX box(static_cast<TDimension>(
                    std::floor(character_boundaries_[i] * scale_factor)) +
                    line_box.left(),
                line_box.bottom(),
-               static_cast<int16_t>(
+               static_cast<TDimension>(
                    std::ceil(character_boundaries_[i + 1] * scale_factor)) +
                    line_box.left(),
                line_box.top());
