@@ -142,8 +142,10 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   const char *paragraph_lang = nullptr;
   bool font_info = false;
   bool hocr_boxes = false;
+  bool hocr_images = false;
   GetBoolVariable("hocr_font_info", &font_info);
   GetBoolVariable("hocr_char_boxes", &hocr_boxes);
+  GetBoolVariable("hocr_images", &hocr_images);
 
   if (input_file_.empty()) {
     SetInputName(nullptr);
@@ -261,9 +263,13 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
           ASSERT_HOST(false);
+          if (hocr_images) {
+            hocr_str << "ocr_photo";
+          }
           break;
         default:
           hocr_str << "ocr_line";
+		  break;
       }
       hocr_str << "' id='"
                << "line_" << page_id << "_" << lcnt << "'";
