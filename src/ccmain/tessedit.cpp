@@ -267,6 +267,11 @@ static bool IsStrInList(const std::string &str, const std::vector<std::string> &
 void Tesseract::ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,
                                     std::vector<std::string> *not_to_load) {
   std::string remains(lang_str);
+
+  // replace ',' and ';' with '+', in case user used one of those separators instead of '+':
+  std::replace(remains.begin(), remains.end(), ',', '+');
+  std::replace(remains.begin(), remains.end(), ';', '+');
+
   // Look whether the model file uses a prefix which must be applied to
   // included model files as well.
   std::string prefix;
@@ -317,7 +322,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   std::vector<std::string> langs_not_to_load;
   ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
 
-  for (auto *lang : sub_langs_) {
+  for (auto &lang : sub_langs_) {
     delete lang;
   }
 
@@ -360,8 +365,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         if (result < 0) {
           tprintf("ERROR: Failed loading language '{}'\n", lang_str);
         } else {
-          ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load,
-                              &langs_not_to_load);
+          ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
           loaded_primary = true;
         }
       } else {
@@ -371,8 +375,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         } else {
           sub_langs_.push_back(tess_to_init);
           // Add any languages that this language requires
-          ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load,
-                              &langs_not_to_load);
+          ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
         }
       }
     }
@@ -381,7 +384,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     tprintf("ERROR: Tesseract couldn't load any languages!\n");
     return -1; // Couldn't load any language!
   }
-#if !DISABLED_LEGACY_ENGINE
+
   if (!sub_langs_.empty()) {
     // In multilingual mode word ratings have to be directly comparable,
     // so use the same language model weights for all languages:
@@ -392,7 +395,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       for (auto &sub_lang : sub_langs_) {
         sub_lang->language_model_->getParamsModel().Copy(this->language_model_->getParamsModel());
       }
-      tprintf("Using params model of the primary language\n");
+      tprintf("Using params model of the primary language.\n");
     } else {
       this->language_model_->getParamsModel().Clear();
       for (auto &sub_lang : sub_langs_) {
@@ -402,7 +405,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   }
 
   SetupUniversalFontIds();
-#endif // !DISABLED_LEGACY_ENGINE
+
   return 0;
 }
 
