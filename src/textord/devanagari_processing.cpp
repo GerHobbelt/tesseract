@@ -28,7 +28,7 @@
 #include "tordmain.h"
 
 #include <allheaders.h>
-#if LIBLEPT_MINOR_VERSION > 82
+#if (LIBLEPT_MAJOR_VERSION == 1 && LIBLEPT_MINOR_VERSION >= 83) || LIBLEPT_MAJOR_VERSION > 1
 #include "pix_internal.h"
 #endif
 
