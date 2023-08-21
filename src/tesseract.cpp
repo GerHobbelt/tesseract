@@ -246,6 +246,8 @@ static void PrintHelpExtra(const char *program) {
       "  --dpi VALUE           Specify DPI for input image.\n"
       "  --loglevel LEVEL      Specify logging level. LEVEL can be\n"
       "                        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL or OFF.\n"
+      "  -rectangle RECT       Specify rectangle(s) used for OCR\n"
+      "                        format: l173t257w2094h367[+l755t815w594h820]\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
       "  -c VAR=VALUE          Set value for config variables.\n"
       "                        Multiple -c arguments are allowed.\n"
@@ -277,6 +279,7 @@ static void PrintHelpExtra(const char *program) {
       "  --help-oem            Show OCR Engine modes.\n"
 #endif
       "  -v, --version         Show version information.\n"
+      "  -rectangle            Specify rectangle(s) used for OCR\n"
       "  --list-langs          List available languages for tesseract engine.\n"
 #ifndef DISABLED_LEGACY_ENGINE
       "  --print-fonts-table   Print tesseract fonts table.\n"
@@ -292,6 +295,7 @@ static void PrintHelpMessage(const char *program) {
       "  %s imagename outputbase [options...] [configfile...]\n"
       "\n"
       "OCR options:\n"
+      "  -rectangle            Specify rectangle(s) used for OCR\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
       "NOTE: These options must occur before any configfile.\n"
       "\n"
@@ -375,7 +379,9 @@ static bool ParseArgs(int argc, char **argv, const char **lang, const char **ima
                       bool *list_langs, bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
                       l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
-                      tesseract::OcrEngineMode *enginemode) {
+                      tesseract::OcrEngineMode *enginemode,
+                      bool *rectangle_mode, char* *rectangle_str
+                      ) {
   bool noocr = false;
   int i;
   for (i = 1; i < argc && (*outputbase == nullptr || argv[i][0] == '-'); i++) {
@@ -440,7 +446,13 @@ static bool ParseArgs(int argc, char **argv, const char **lang, const char **ima
     } else if (strcmp(argv[i], "--list-langs") == 0) {
       noocr = true;
       *list_langs = true;
-    } else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
+    }
+		else if (strcmp(argv[i], "-rectangle") == 0 && i + 1 < argc) {
+			*rectangle_mode = true;
+			*rectangle_str = argv[i + 1];
+			++i;
+		}
+    else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
       if (!checkArgValues(atoi(argv[i + 1]), "PSM", tesseract::PSM_COUNT)) {
         return false;
       }
@@ -647,6 +659,8 @@ int main(int argc, char **argv) {
   const char *image = nullptr;
   const char *outputbase = nullptr;
   const char *datapath = nullptr;
+	bool rectangle_mode = false;
+	char* rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
@@ -677,7 +691,9 @@ int main(int argc, char **argv) {
 
   if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
-                 &pagesegmode, &enginemode)) {
+                 &pagesegmode, &enginemode,
+                 &rectangle_mode, &rectangle_str
+                 )) {
     return EXIT_FAILURE;
   }
 
@@ -728,6 +744,98 @@ int main(int argc, char **argv) {
     api.End();
     return EXIT_SUCCESS;
   }
+
+	if (rectangle_mode){
+
+		Pix* pixs = pixRead(image);
+		if (!pixs) {
+			fprintf(stderr, "Cannot open input file: %s\n", image);
+			exit(2);
+		}
+
+		api.SetImage(pixs);
+
+		std::string outfile = std::string(outputbase) + std::string(".txt");
+
+		FILE* fout = NULL;
+		
+		if (strcmp(outputbase, "stdout")){
+			fout=fopen(outfile.c_str(), "wb");
+		}
+		else{
+			fout = stdout;
+		}
+
+		if (fout == NULL){
+			fprintf(stderr, "Cannot open output file: %s\n", outfile.c_str());
+			pixDestroy(&pixs);
+			exit(2);
+		}
+
+		// for each rectangle
+		const char *delim="+";
+		char *token;
+
+		token = strtok(rectangle_str, delim);
+		
+		while (token != NULL) {
+			
+			int left = 0;
+			int top = 0;
+			int width = 0;
+			int height = 0;
+			char *utf8 = NULL;
+
+			// syntax = x30y60w50h100
+			int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
+			if (params == 4){
+				
+				//clamp this rectangle
+				if (left < 0){
+					left = 0;
+				}
+				
+				if (top < 0){
+					top = 0;
+				}
+				
+				if (width <= 0){
+					width = 1;
+				}
+				
+				if (height <= 0){
+					height = 1;
+				}
+
+				if (left + width > pixs->w){
+					width = pixs->w - left;
+				}
+
+				if (top + height > pixs->h){
+					height = pixs->h - top;
+				}
+
+				api.SetRectangle(left, top, width, height);
+				utf8 = api.GetUTF8Text();
+				if (utf8){
+					fwrite(utf8, 1, strlen(utf8), fout);
+					delete[] utf8;
+					utf8 = NULL;
+				}
+			}
+			else{
+				fprintf(stderr, "incorrect rectangle syntax, waiting l30t60w50h100 \n");
+				fclose(fout);
+				pixDestroy(&pixs);
+				exit(1);
+			}
+			token = strtok(NULL, delim);
+		}
+
+		fclose(fout);
+		pixDestroy(&pixs);
+		exit(0);
+	}
 
 #ifndef DISABLED_LEGACY_ENGINE
   if (print_fonts_table) {
