@@ -169,6 +169,11 @@ public:
   */
   void DumpVariables(FILE *fp) const;
 
+  // Functions added by Tesseract.js-core to save and restore parameters
+  void SaveParameters();
+  void RestoreParameters();
+
+
   /**
    * Get value of named variable as a string, if it exists.
    */
@@ -322,7 +327,7 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line);
+                int bytes_per_pixel, int bytes_per_line, int exif = 1, const float angle = 0);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -332,7 +337,9 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix);
+  void SetImage(Pix *pix, int exif = 1, const float angle = 0);
+
+  int SetImageFile(int exif = 1, const float angle = 0);
 
   /**
    * Set the resolution of the source image in pixels per inch so font size
@@ -353,6 +360,17 @@ public:
    * May be called any time after SetImage, or after TesseractRect.
    */
   Pix *GetThresholdedImage();
+
+  /**
+ * Function added by Tesseract.js.
+ * Saves a .png image of the type specified by `type` to the file `filename`
+ */
+  void WriteImage(const int type);
+
+  /** Function added by Tesseract.js.
+   * Return gradient of page.
+   */
+  float GetGradient();
 
   /**
    * Return average gradient of lines on page.
@@ -729,6 +747,13 @@ public:
     return last_oem_requested_;
   }
 
+  /**
+   * Find lines from the image making the BLOCK_LIST.
+   * @return 0 on success.
+   */
+  int FindLines();
+
+
   void set_min_orientation_margin(double margin);
   /* @} */
 
@@ -742,12 +767,6 @@ protected:
    * the source is thresholded to pix instead of the internal IMAGE.
    */
   virtual bool Threshold(Pix **pix);
-
-  /**
-   * Find lines from the image making the BLOCK_LIST.
-   * @return 0 on success.
-   */
-  int FindLines();
 
   /** Delete the pageres and block list ready for a new page. */
   void ClearResults();

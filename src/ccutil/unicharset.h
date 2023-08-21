@@ -433,6 +433,9 @@ public:
   void set_black_and_whitelist(const char *blacklist, const char *whitelist,
                                const char *unblacklist);
 
+  // Enables or disables all punctuation unichars
+  void set_enable_punctuation(bool enable);
+
   // Set the isalpha property of the given unichar to the given value.
   void set_isalpha(UNICHAR_ID unichar_id, bool value) {
     unichars[unichar_id].properties.isalpha = value;

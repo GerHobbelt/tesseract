@@ -64,16 +64,6 @@ static int c_blob_comparator( // sort blobs
   return blob1->bounding_box().left() - blob2->bounding_box().left();
 }
 
-/**
- * @name fix_fuzzy_spaces()
- * Walk over the page finding sequences of words joined by fuzzy spaces. Extract
- * them as a sublist, process the sublist to find the optimal arrangement of
- * spaces then replace the sublist in the ROW_RES.
- *
- * @param monitor progress monitor
- * @param word_count count of words in doc
- * @param[out] page_res
- */
 void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_RES *page_res) {
   BLOCK_RES_IT block_res_it;
   ROW_RES_IT row_res_it;
@@ -99,6 +89,12 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
                  word_res_it_from.data_relative(1)->word->flag(W_FUZZY_SP))) {
           fix_sp_fp_word(word_res_it_from, row_res_it.data()->row, block_res_it.data()->block);
           word_res = word_res_it_from.forward();
+          if (word_res->fontinfo_id_count == 0) {
+            word_res->fontinfo = word_res_it_from.data()->fontinfo;
+            word_res->fontinfo2 = word_res_it_from.data()->fontinfo2;
+            word_res->fontinfo_id_count = word_res_it_from.data()->fontinfo_id_count;
+            word_res->fontinfo_id2_count = word_res_it_from.data()->fontinfo_id2_count;
+          }
           word_index++;
           if (monitor != nullptr) {
             monitor->ocr_alive = true;
@@ -119,6 +115,12 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
           }
           word_res_it_to.forward();
           word_index++;
+          if (word_res_it_to.data()->fontinfo_id_count == 0) {
+            word_res_it_to.data()->fontinfo = word_res_it_from.data()->fontinfo;
+            word_res_it_to.data()->fontinfo2 = word_res_it_from.data()->fontinfo2;
+            word_res_it_to.data()->fontinfo_id_count = word_res_it_from.data()->fontinfo_id_count;
+            word_res_it_to.data()->fontinfo_id2_count = word_res_it_from.data()->fontinfo_id2_count;
+          }
           if (monitor != nullptr) {
             monitor->ocr_alive = true;
             monitor->progress = 90 + 5 * word_index / word_count;
@@ -138,6 +140,13 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
               prevent_null_wd_fixsp = true;
             }
             word_res = word_res_it_to.forward();
+            // Update prev_word_best_choice pointer.
+            if (word_res->fontinfo_id_count == 0) {
+              word_res->fontinfo = word_res_it_from.data()->fontinfo;
+              word_res->fontinfo2 = word_res_it_from.data()->fontinfo2;
+              word_res->fontinfo_id_count = word_res_it_from.data()->fontinfo_id_count;
+              word_res->fontinfo_id2_count = word_res_it_from.data()->fontinfo_id2_count;
+            }
           }
           if (check_debug_pt(word_res, 60)) {
             debug_fix_space_level.set_value(10);

@@ -23,10 +23,12 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
       "\n cmake ..")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -84,7 +86,7 @@ else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
-option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
+option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" ON)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
@@ -362,7 +364,23 @@ if(CYGWIN)
   add_definitions(-D__CYGWIN__)
 elseif(UNIX)
   if(NOT ANDROID)
-    set(LIB_pthread pthread)
+        #
+        # Check link below for detail explanation:
+        # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
+        # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+        #
+        # Use c++11 standard
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+        # Optimize code for size reduction
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
+        # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
+        # Do not emit a separate memory initialization file
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+        # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
+        set(LIB_pthread pthread)
   endif()
 elseif(WIN32)
   set(LIB_Ws2_32 Ws2_32)
@@ -692,8 +710,10 @@ if(DISABLED_LEGACY_ENGINE)
   list(REMOVE_ITEM TESSERACT_SRC ${TESSERACT_SRC_LEGACY})
 endif(DISABLED_LEGACY_ENGINE)
 
-list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
-     src/arch/intsimdmatrix.cpp)
+if(NOT HAVE_SSE4_1)
+  list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
+      src/arch/intsimdmatrix.cpp)
+endif(NOT HAVE_SSE4_1)
 
 if(DOTPRODUCT_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
@@ -809,6 +829,7 @@ target_include_directories(
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch_sse>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccmain>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccstruct>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccutil>

@@ -40,36 +40,27 @@ static STRING_VAR(debug_file, "", "File to send tprintf output to");
 // Trace printf
 void tprintf(const char *format, ...) {
   const char *debug_file_name = debug_file.c_str();
-  static FILE *debugfp = nullptr; // debug file
+  FILE *debugfp = nullptr; // debug file
 
   if (debug_file_name == nullptr) {
     // This should not happen.
     return;
   }
 
-#ifdef _WIN32
-  // Replace /dev/null by nul for Windows.
-  if (strcmp(debug_file_name, "/dev/null") == 0) {
-    debug_file_name = "nul";
-    debug_file.set_value(debug_file_name);
-  }
-#endif
-
-  if (debugfp == nullptr && debug_file_name[0] != '\0') {
-    debugfp = fopen(debug_file_name, "wb");
-  } else if (debugfp != nullptr && debug_file_name[0] == '\0') {
-    fclose(debugfp);
-    debugfp = nullptr;
-  }
-
   va_list args;           // variable args
   va_start(args, format); // variable list
-  if (debugfp != nullptr) {
+  if (debug_file_name[0] != '\0') {
+    debugfp = fopen(debug_file_name, "a+");
     vfprintf(debugfp, format, args);
+    // Webassembly build does not always flush properly if not explicitly called for. 
+    // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
+    fclose(debugfp);
   } else {
     vfprintf(stderr, format, args);
   }
   va_end(args);
+
+
 }
 
 } // namespace tesseract

@@ -791,6 +791,39 @@ bool EqualIgnoringCaseAndTerminalPunct(const WERD_CHOICE &word1, const WERD_CHOI
   return true;
 }
 
+bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1,
+                                       const WERD_CHOICE &word2) {
+  const UNICHARSET *uchset = word1.unicharset();
+  if (word2.unicharset() != uchset) {
+    return false;
+  }
+  std::vector<int> w1nonpunct;
+  std::vector<int> w2nonpunct;
+
+  for (int i = 0; i < word1.length(); i++) {
+    if (!uchset->get_ispunctuation(word1.unichar_id(i))) {
+      w1nonpunct.push_back(i);
+    }
+  }
+
+  for (int i = 0; i < word2.length(); i++) {
+    if (!uchset->get_ispunctuation(word2.unichar_id(i))) {
+      w2nonpunct.push_back(i);
+    }
+  }
+
+  if (w1nonpunct.size() != w2nonpunct.size()) {
+    return false;
+  }
+  for (unsigned i = 0; i < w1nonpunct.size(); i++) {
+    if (uchset->to_lower(word1.unichar_id(w1nonpunct[i])) !=
+        uchset->to_lower(word2.unichar_id(w2nonpunct[i]))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * print_ratings_list
  *

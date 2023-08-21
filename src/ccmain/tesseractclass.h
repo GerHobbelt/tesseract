@@ -51,6 +51,7 @@
 
 #include <cstdint> // for int16_t, int32_t, uint16_t
 #include <cstdio>  // for FILE
+#include <map> 
 
 namespace tesseract {
 
@@ -200,9 +201,11 @@ public:
   const FCOORD &reskew() const {
     return reskew_;
   }
+
   float gradient() const {
     return gradient_;
   }
+
   // Destroy any existing pix and return a pointer to the pointer.
   Image *mutable_pix_binary() {
     pix_binary_.destroy();
@@ -458,7 +461,9 @@ public:
   bool recog_interactive(PAGE_RES_IT *pr_it);
 
   // Set fonts of this word.
-  void set_word_fonts(WERD_RES *word);
+  void set_word_fonts(WERD_RES *word, std::vector<int> font_choices = std::vector<int>());
+  std::vector<int> score_word_fonts(WERD_RES *word);
+  void score_word_fonts_by_letter(WERD_RES *word, std::map<int, std::map<int, std::map<int, int>>> & page_fonts_letter, int font_id);
   void font_recognition_pass(PAGE_RES *page_res);
   void dictionary_correction_pass(PAGE_RES *page_res);
   bool check_debug_pt(WERD_RES *word, int location);

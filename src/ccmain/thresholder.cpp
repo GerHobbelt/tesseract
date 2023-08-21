@@ -74,7 +74,7 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line) {
+                                int bytes_per_pixel, int bytes_per_line, int exif, const float angle) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
@@ -128,7 +128,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
     default:
       tprintf("Cannot convert RAW image to Pix with bpp = %d\n", bpp);
   }
-  SetImage(pix);
+  SetImage(pix, exif, angle);
   pix.destroy();
 }
 
@@ -160,11 +160,36 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix) {
+void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
-  Image src = pix;
+
+  // Rotate if specified by exif orientation value
+  Image src, temp1, temp2;
+  if (exif == 3 || exif == 4) {
+    temp1 = pixRotateOrth(pix, 2);
+  } else if (exif == 5 || exif == 6) {
+    temp1 = pixRotateOrth(pix, 1);
+  } else if (exif == 7 || exif == 8) {
+    temp1 = pixRotateOrth(pix, 3);
+  } else {
+    temp1 = pix.clone();
+  }
+
+  // Mirror if specified by exif orientation value
+  if (exif == 2 || exif == 4 || exif == 5 || exif == 7) {
+    temp2 = pixFlipLR(NULL, temp1);
+  } else {
+    temp2 = temp1.clone();
+  }
+
+  // Rotate if additional rotation angle is specified
+  src = pixRotate(temp2, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+
+  temp1.destroy();
+  temp2.destroy();
+
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -175,6 +200,7 @@ void ImageThresholder::SetImage(const Image pix) {
   } else {
     pix_ = src.copy();
   }
+  src.destroy();
   depth = pixGetDepth(pix_);
   pix_channels_ = depth / 8;
   pix_wpl_ = pixGetWpl(pix_);
