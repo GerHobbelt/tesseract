@@ -959,19 +959,8 @@ void BackgroundScrollView::PrepCanvas(void) {
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  ASSERT0(pix.pix_ != wh_pix.pix_);
   wh_pix.destroy();
-}
-
-/// Sets up a ScrollView window, depending on the constructor variables.
-void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
-                                       int x_pos, int y_pos, int x_size,
-                                       int y_size, int x_canvas_size,
-                                       int y_canvas_size, bool y_axis_reversed,
-                                       const char *server_name) {
-  composeRGBPixel(255, 50, 255, &pen_color);
-  composeRGBPixel(50, 255, 255, &brush_color);
-
-  PrepCanvas();
 
 #  if 0
     BOX* border = boxCreate(2, 2, width + 4, height + 4);
@@ -984,6 +973,18 @@ void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
     pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
     boxaDestroy(&boxlist);
 #  endif
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
+                                       int x_pos, int y_pos, int x_size,
+                                       int y_size, int x_canvas_size,
+                                       int y_canvas_size, bool y_axis_reversed,
+                                       const char *server_name) {
+  composeRGBPixel(255, 50, 255, &pen_color);
+  composeRGBPixel(50, 255, 255, &brush_color);
+
+  PrepCanvas();
 }
 
 /// Sits and waits for events on this window.

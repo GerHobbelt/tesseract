@@ -2573,7 +2573,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
             tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
 
             const char *sequence = "c1.1 + d3.3";
-            int dispsep = 5;
+            const int dispsep = 0;
             Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
             tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
             pix_post.destroy();
@@ -2597,14 +2597,14 @@ bool TessBaseAPI::Threshold(Pix **pix) {
           std::string caption = ThresholdMethodName(thresholding_method);
 
           if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods) {
-            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), (caption + " : Grey = pre-image").c_str());
-            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), (caption + " : Thresholds").c_str());
-            tesseract_->AddPixDebugPage(pix_binary, (caption + " : Binary = post-image").c_str());
+            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+            tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
 
             const char *sequence = "c1.1 + d3.3";
-            int dispsep = 5;
+            const int dispsep = 0;
             Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
+            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
             pix_post.destroy();
           }
 
