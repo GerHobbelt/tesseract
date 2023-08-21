@@ -43,7 +43,9 @@
 #include "tesseractclass.h"
 #include "tessvars.h"
 #include "werdit.h"
-#include <emscripten.h>
+#ifdef WASM_BUILD
+#   include <emscripten.h>
+#endif
 const char *const kBackUpConfigFile = "tempconfigdata.config";
 #ifndef DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
@@ -229,9 +231,11 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
       }
     }
 
-    EM_ASM_ARGS({
-      if(Module['TesseractProgress']) Module['TesseractProgress']($0);
-    }, pass_n == 1 ? (30 + 50 * w / words->size()) : (80 + 10 * w / words->size()));
+    #ifdef WASM_BUILD
+      EM_ASM_ARGS({
+        if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+      }, pass_n == 1 ? (30 + 50 * w / words->size()) : (80 + 10 * w / words->size()));
+    #endif
 
     if (word->word->tess_failed) {
       unsigned s;
@@ -454,9 +458,11 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
     monitor->progress = 100;
   }
 
-  EM_ASM_ARGS({
-    if(Module['TesseractProgress']) Module['TesseractProgress']($0);
-  }, 100);
+  #ifdef WASM_BUILD
+    EM_ASM_ARGS({
+      if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+    }, 100);
+  #endif
 
   return true;
 }
@@ -620,9 +626,11 @@ void Tesseract::rejection_passes(PAGE_RES *page_res, ETEXT_DESC *monitor,
       monitor->progress = 95 + 5 * word_index / stats_.word_count;
     }
 
-    EM_ASM_ARGS({
-      if(Module['TesseractProgress']) Module['TesseractProgress']($0);
-    }, 95 + 5 * word_index / stats_.word_count);
+    #ifdef WASM_BUILD
+      EM_ASM_ARGS({
+        if(Module['TesseractProgress']) Module['TesseractProgress']($0);
+      }, 95 + 5 * word_index / stats_.word_count);
+    #endif
 
     if (word->rebuild_word == nullptr) {
       // Word was not processed by tesseract.
