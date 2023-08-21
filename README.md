@@ -13,6 +13,7 @@
 
 * [Tesseract OCR](#tesseract-ocr)
   * [About](#about)
+  * [Important Notes](#important-notes)
   * [Brief history](#brief-history)
   * [Installing Tesseract](#installing-tesseract)
   * [Running Tesseract](#running-tesseract)
@@ -29,21 +30,24 @@ This package contains an **OCR engine** - `libtesseract` and a **command line pr
 Tesseract 4 adds a new neural net (LSTM) based [OCR engine](https://en.wikipedia.org/wiki/Optical_character_recognition) which is focused on line recognition, but also still supports the legacy Tesseract OCR engine of Tesseract 3 which works by recognizing character patterns. Compatibility with Tesseract 3 is enabled by using the Legacy OCR Engine mode (--oem 0).
 It also needs [traineddata](https://tesseract-ocr.github.io/tessdoc/Data-Files.html) files which support the legacy engine, for example those from the [tessdata](https://github.com/tesseract-ocr/tessdata) repository.
 
-Stefan Weil is the current lead developer. Ray Smith was the lead developer until 2018. The maintainer is Zdenko Podobny. For a list of contributors see [AUTHORS](https://github.com/tesseract-ocr/tesseract/blob/main/AUTHORS)
-and GitHub's log of [contributors](https://github.com/tesseract-ocr/tesseract/graphs/contributors).
+## Important Notes
 
-Tesseract has **unicode (UTF-8) support**, and can **recognize [more than 100 languages](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)** "out of the box".
+* Stefan Weil is the current lead developer. Ray Smith was the lead developer until 2018. The maintainer is Zdenko Podobny. For a list of contributors see [AUTHORS](https://github.com/tesseract-ocr/tesseract/blob/main/AUTHORS)
+  and GitHub's log of [contributors](https://github.com/tesseract-ocr/tesseract/graphs/contributors).
 
-Tesseract supports **[various image formats](https://tesseract-ocr.github.io/tessdoc/InputFormats)** including PNG, JPEG and TIFF.
+* Tesseract has **unicode (UTF-8) support**, and can **recognize [more than 100 languages](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)** "out of the box".
 
-Tesseract supports **various output formats**: plain text, hOCR (HTML), PDF, invisible-text-only PDF, TSV and ALTO (the last one - since version 4.1.0).
+* Tesseract supports **[various image formats](https://tesseract-ocr.github.io/tessdoc/InputFormats)** including PNG, JPEG and TIFF.
 
-You should note that in many cases, in order to get better OCR results, you'll need to **[improve the quality](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html) of the image** you are giving Tesseract.
+* Tesseract supports **various output formats**: plain text, hOCR (HTML), PDF, invisible-text-only PDF, TSV and ALTO (the last one - since version 4.1.0).
 
-This project **does not include a GUI application**. If you need one, please see the [3rdParty](https://tesseract-ocr.github.io/tessdoc/User-Projects-%E2%80%93-3rdParty.html) documentation.
+* You should note that in many cases, in order to get better OCR results, you'll need to **[improve the quality](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html) of the image** you are giving Tesseract.
 
-Tesseract **can be trained to recognize other languages**.
-See [Tesseract Training](https://tesseract-ocr.github.io/tessdoc/Training-Tesseract.html) for more information.
+* This project **does not include a GUI application**. If you need one, please see the [3rdParty](https://tesseract-ocr.github.io/tessdoc/User-Projects-%E2%80%93-3rdParty.html) documentation.
+
+* Tesseract **can be trained to recognize other languages**.
+  See [Tesseract Training](https://tesseract-ocr.github.io/tessdoc/Training-Tesseract.html) for more information.
+
 
 ## Brief history
 
@@ -93,7 +97,8 @@ For support, first read the [documentation](https://tesseract-ocr.github.io/tess
 particularly the [FAQ](https://tesseract-ocr.github.io/tessdoc/FAQ.html) to see if your problem is addressed there.
 If not, search the [Tesseract user forum](https://groups.google.com/g/tesseract-ocr), the [Tesseract developer forum](https://groups.google.com/g/tesseract-dev) and [past issues](https://github.com/tesseract-ocr/tesseract/issues), and if you still can't find what you need, ask for support in the mailing-lists.
 
-Mailing-lists:
+
+### Mailing-lists:
 
 * [tesseract-ocr](https://groups.google.com/g/tesseract-ocr) - For tesseract users.
 * [tesseract-dev](https://groups.google.com/g/tesseract-dev) - For tesseract developers.
