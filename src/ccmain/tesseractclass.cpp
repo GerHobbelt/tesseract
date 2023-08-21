@@ -614,11 +614,9 @@ void Tesseract::PrepareForPageseg() {
 
   textord_.set_use_cjk_fp_model(textord_use_cjk_fp_model);
   // Find the max splitter strategy over all langs.
-  auto max_pageseg_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
-      static_cast<int32_t>(pageseg_devanagari_split_strategy));
+  auto max_pageseg_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(static_cast<int32_t>(pageseg_devanagari_split_strategy));
   for (auto &sub_lang : sub_langs_) {
-    auto pageseg_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
-        static_cast<int32_t>(sub_lang->pageseg_devanagari_split_strategy));
+    auto pageseg_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(static_cast<int32_t>(sub_lang->pageseg_devanagari_split_strategy));
     if (pageseg_strategy > max_pageseg_strategy) {
       max_pageseg_strategy = pageseg_strategy;
     }
@@ -648,11 +646,9 @@ void Tesseract::PrepareForPageseg() {
 // value of devanagari_ocr_split_strategy.
 void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   // Find the max splitter strategy over all langs.
-  auto max_ocr_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
-      static_cast<int32_t>(ocr_devanagari_split_strategy));
+  auto max_ocr_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(static_cast<int32_t>(ocr_devanagari_split_strategy));
   for (auto &sub_lang : sub_langs_) {
-    auto ocr_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(
-        static_cast<int32_t>(sub_lang->ocr_devanagari_split_strategy));
+    auto ocr_strategy = static_cast<ShiroRekhaSplitter::SplitStrategy>(static_cast<int32_t>(sub_lang->ocr_devanagari_split_strategy));
     if (ocr_strategy > max_ocr_strategy) {
       max_ocr_strategy = ocr_strategy;
     }
@@ -806,6 +802,46 @@ void Tesseract::ResyncVariablesInternally() {
         lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
         lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
         lstm_recognizer_->SetDebug(tess_debug_lstm);
+    }
+
+    if (language_model_ != nullptr) {
+        int lvl = language_model_->language_model_debug_level;
+
+#if 0
+        language_model_->CopyDebugParameters(this, &Classify::getDict());
+
+        INT_VAR_H(language_model_debug_level);
+        BOOL_VAR_H(language_model_ngram_on);
+        INT_VAR_H(language_model_ngram_order);
+        INT_VAR_H(language_model_viterbi_list_max_num_prunable);
+        INT_VAR_H(language_model_viterbi_list_max_size);
+        double_VAR_H(language_model_ngram_small_prob);
+        double_VAR_H(language_model_ngram_nonmatch_score);
+        BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
+        double_VAR_H(language_model_ngram_scale_factor);
+        double_VAR_H(language_model_ngram_rating_factor);
+        BOOL_VAR_H(language_model_ngram_space_delimited_language);
+        INT_VAR_H(language_model_min_compound_length);
+        // Penalties used for adjusting path costs and final word rating.
+        double_VAR_H(language_model_penalty_non_freq_dict_word);
+        double_VAR_H(language_model_penalty_non_dict_word);
+        double_VAR_H(language_model_penalty_punc);
+        double_VAR_H(language_model_penalty_case);
+        double_VAR_H(language_model_penalty_script);
+        double_VAR_H(language_model_penalty_chartype);
+        double_VAR_H(language_model_penalty_font);
+        double_VAR_H(language_model_penalty_spacing);
+        double_VAR_H(language_model_penalty_increment);
+        INT_VAR_H(wordrec_display_segmentations);
+        BOOL_VAR_H(language_model_use_sigmoidal_certainty);
+#endif
+    }
+
+    // init sub-languages:
+     for (auto &sub_tess : sub_langs_) {
+        if (sub_tess != nullptr) {
+            auto lvl = (bool)sub_tess->debug_display_page;
+        }
     }
 }
 
