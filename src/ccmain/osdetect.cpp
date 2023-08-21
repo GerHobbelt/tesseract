@@ -475,6 +475,8 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
     for (choice_it.mark_cycle_pt(); !choice_it.cycled_list(); choice_it.forward()) {
       BLOB_CHOICE *choice = choice_it.data();
       int id = choice->script_id();
+      if (id < 0) // "large speckle" BLOB_CHOICE object ?
+        continue;
       if (allowed_scripts_ != nullptr && !allowed_scripts_->empty()) {
         // Check that the choice is in an allowed script.
         size_t s = 0;
