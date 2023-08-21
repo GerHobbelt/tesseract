@@ -205,8 +205,8 @@ static int TruncateParam(float Param, int Min, int Max) {
 /// Builds a feature from an FCOORD for position with all the necessary
 /// clipping and rounding.
 INT_FEATURE_STRUCT::INT_FEATURE_STRUCT(const FCOORD &pos, uint8_t theta)
-    : X(ClipToRange<int16_t>(static_cast<int16_t>(pos.x() + 0.5), 0, 255))
-    , Y(ClipToRange<int16_t>(static_cast<int16_t>(pos.y() + 0.5), 0, 255))
+    : X(ClipToRange<TDimension>(static_cast<TDimension>(pos.x() + 0.5), 0, 255)),
+      Y(ClipToRange<TDimension>(static_cast<TDimension>(pos.y() + 0.5), 0, 255))
     , Theta(theta)
     , CP_misses(0) {}
 /** Builds a feature from ints with all the necessary clipping and casting. */
@@ -1502,10 +1502,8 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 
       /* translate into bucket positions and deltas */
       Filler->X = Bucket8For(Start.x, XS, NB);
-      Filler->StartDelta = static_cast<int16_t>(
-          ClipToRange<int>(-IntCastRounded((Sin / Cos) * 256), INT16_MIN, INT16_MAX));
-      Filler->EndDelta = static_cast<int16_t>(
-          ClipToRange<int>(IntCastRounded((Cos / Sin) * 256), INT16_MIN, INT16_MAX));
+      Filler->StartDelta = static_cast<int16_t>(ClipToRange<int>(-IntCastRounded((Sin / Cos) * 256), INT16_MIN, INT16_MAX));
+      Filler->EndDelta = static_cast<int16_t>(ClipToRange<int>(IntCastRounded((Cos / Sin) * 256), INT16_MIN, INT16_MAX));
 
       XAdjust = BucketEnd(Filler->X, XS, NB) - Start.x;
       YAdjust = XAdjust * Sin / Cos;
