@@ -140,8 +140,7 @@ public:
   // Return step at a given index as a DIR128.
   DIR128 step_dir(int index) const {
     ASSERT_HOST(index >= 0);
-    return DIR128(
-        static_cast<int16_t>(((steps[index / 4] >> (index % 4 * 2)) & STEP_MASK) << (DIRBITS - 2)));
+    return DIR128(static_cast<int16_t>(((steps[index / 4] >> (index % 4 * 2)) & STEP_MASK) << (DIRBITS - 2)));
   }
   // Return the step vector for the given outline position.
   ICOORD step(int index) const { // index of step

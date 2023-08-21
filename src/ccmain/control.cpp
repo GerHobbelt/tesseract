@@ -1308,8 +1308,7 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
 #if DISABLED_LEGACY_ENGINE
   WordRecognizer recognizer = &Tesseract::classify_word_pass1;
 #else
-  WordRecognizer recognizer =
-      pass_n == 1 ? &Tesseract::classify_word_pass1 : &Tesseract::classify_word_pass2;
+  WordRecognizer recognizer = (pass_n == 1 ? &Tesseract::classify_word_pass1 : &Tesseract::classify_word_pass2);
 #endif // DISABLED_LEGACY_ENGINE
 
   // Best result so far.
@@ -1338,20 +1337,17 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
     for (sub = 0; sub < sub_langs_.size() && most_recently_used_ != sub_langs_[sub]; ++sub) {
     }
   }
-  most_recently_used_->RetryWithLanguage(*word_data, recognizer, debug, &word_data->lang_words[sub],
-                                         &best_words);
+  most_recently_used_->RetryWithLanguage(*word_data, recognizer, debug, &word_data->lang_words[sub], &best_words);
   Tesseract *best_lang_tess = most_recently_used_;
   if (!WordsAcceptable(best_words)) {
     // Try all the other languages to see if they are any better.
     if (most_recently_used_ != this &&
-        this->RetryWithLanguage(*word_data, recognizer, debug,
-                                &word_data->lang_words[sub_langs_.size()], &best_words) > 0) {
+        this->RetryWithLanguage(*word_data, recognizer, debug, &word_data->lang_words[sub_langs_.size()], &best_words) > 0) {
       best_lang_tess = this;
     }
     for (unsigned int i = 0; !WordsAcceptable(best_words) && i < sub_langs_.size(); ++i) {
       if (most_recently_used_ != sub_langs_[i] &&
-          sub_langs_[i]->RetryWithLanguage(*word_data, recognizer, debug, &word_data->lang_words[i],
-                                           &best_words) > 0) {
+          sub_langs_[i]->RetryWithLanguage(*word_data, recognizer, debug, &word_data->lang_words[i], &best_words) > 0) {
         best_lang_tess = sub_langs_[i];
       }
     }
