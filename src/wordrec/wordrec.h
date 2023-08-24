@@ -225,7 +225,7 @@ public:
 
   // methods from wordrec/*.cpp ***********************************************
   Wordrec();
-  ~Wordrec() override = default;
+  virtual ~Wordrec() override = default;
 
   // Fills word->alt_choices with alternative paths found during
   // chopping/segmentation search that are kept in best_choices.

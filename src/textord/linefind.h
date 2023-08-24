@@ -33,6 +33,7 @@ class Tesseract;
 class LineFinder {
 public:
   LineFinder(Tesseract* tess);
+  ~LineFinder() = default;
 
   /**
    * Finds vertical and horizontal line objects in the given pix and removes

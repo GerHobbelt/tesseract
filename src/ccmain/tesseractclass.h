@@ -194,8 +194,16 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract(Tesseract *parent = nullptr);
-  ~Tesseract() override;
+  Tesseract(Tesseract *parent = nullptr, AutoSupressDatum *LogReportingHoldoffMarkerRef = nullptr);
+  virtual ~Tesseract() override;
+
+protected:
+  AutoSupressDatum &reporting_holdoff_;
+
+public:
+  AutoSupressDatum &GetLogReportingHoldoffMarkerRef() {
+    return reporting_holdoff_;
+  };
 
   // Return appropriate dictionary
   Dict &getDict() override;
@@ -237,11 +245,6 @@ public:
     pix_grey_.destroy();
     pix_grey_ = grey_pix;
   }
-#if 0
-  DebugPixa &pix_debug() {
-	  return pixa_debug_;
-  }
-#endif
   Image pix_original() const {
     return pix_original_;
   }
@@ -269,6 +272,8 @@ public:
       pix_for_debug_view_ = nullptr;
     }
   }
+
+  void ReportDebugInfo();
 
   // Return a memory capacity cost estimate for the given image / current original image.
   //

@@ -302,6 +302,12 @@ public:
     return DisplayImage(pix, title.c_str(), window);
   }
 
+  virtual void Clean() {
+    forward_win_ = nullptr;
+    backward_win_ = nullptr;
+    name_.clear();
+  }
+
 protected:
   // Returns a random number in [-range, range].
   TFloat Random(TFloat range);

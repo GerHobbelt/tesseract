@@ -273,8 +273,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
   }
 
   if (!user_patterns_suffix.empty() || !user_patterns_file.empty()) {
-    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(),
-                              dawg_debug_level);
+    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(), dawg_debug_level);
     trie_ptr->initialize_patterns(&(getUnicharset()));
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
@@ -346,8 +345,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
   }
 
   if (!user_patterns_suffix.empty() || !user_patterns_file.empty()) {
-    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(),
-                              dawg_debug_level);
+    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(), dawg_debug_level);
     trie_ptr->initialize_patterns(&(getUnicharset()));
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
@@ -433,7 +431,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
 
   //ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
 
-  if (dawg_debug_level >= 3) {
+  if (dawg_debug_level > 2) {
     tprintf(
         "def_letter_is_okay: current unichar={} word_end={}"
         " num active dawgs={} unicharset.contains_unichar_id={}\n",
@@ -479,7 +477,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
           UNICHAR_ID ch = char_for_dawg(unicharset, unichar_id, sdawg);
           EDGE_REF dawg_edge = sdawg->edge_char_of(0, ch, word_end);
           if (dawg_edge != NO_EDGE) {
-            if (dawg_debug_level >= 3) {
+            if (dawg_debug_level > 2) {
               tprintf("Letter found in dawg {}\n", sdawg_index);
             }
             dawg_args->updated_dawgs->add_unique(
@@ -496,7 +494,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
       }
       EDGE_REF punc_edge = punc_dawg->edge_char_of(punc_node, unichar_id, word_end);
       if (punc_edge != NO_EDGE) {
-        if (dawg_debug_level >= 3) {
+        if (dawg_debug_level > 2) {
           tprintf("Letter found in punctuation dawg\n");
         }
         dawg_args->updated_dawgs->add_unique(
@@ -552,16 +550,16 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
             ? NO_EDGE
             : dawg->edge_char_of(node, char_for_dawg(unicharset, unichar_id, dawg), word_end);
 
-    if (dawg_debug_level >= 3) {
+    if (dawg_debug_level > 2) {
       tprintf("Active dawg: [{}, {}] edge={}\n", pos.dawg_index, node, edge);
     }
 
     if (edge != NO_EDGE) { // the unichar was found in the current dawg
-      if (dawg_debug_level >= 3) {
+      if (dawg_debug_level > 2) {
         tprintf("Letter found in dawg {}\n", pos.dawg_index);
       }
       if (word_end && punc_dawg && !punc_dawg->end_of_word(pos.punc_ref)) {
-        if (dawg_debug_level >= 3) {
+        if (dawg_debug_level > 2) {
           tprintf("Punctuation constraint not satisfied at end of word.\n");
         }
         continue;
@@ -586,7 +584,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
       (curr_perm != PUNC_PERM && dawg_args->permuter != COMPOUND_PERM)) {
     dawg_args->permuter = curr_perm;
   }
-  if (dawg_debug_level >= 2) {
+  if (dawg_debug_level > 1) {
     tprintf("Returning {} for permuter code for this character.\n", dawg_args->permuter);
   }
   return dawg_args->permuter;
@@ -610,7 +608,7 @@ void Dict::ProcessPatternEdges(const Dawg *dawg, const DawgPosition &pos, UNICHA
       if (edge == NO_EDGE) {
         continue;
       }
-      if (dawg_debug_level >= 3) {
+      if (dawg_debug_level > 2) {
         tprintf("Pattern dawg: [{}, {}] edge={}\n", pos.dawg_index, node,
                 edge);
         tprintf("Letter found in pattern dawg {}\n", pos.dawg_index);
@@ -634,7 +632,7 @@ void Dict::ProcessPatternEdges(const Dawg *dawg, const DawgPosition &pos, UNICHA
 void Dict::init_active_dawgs(DawgPositionVector *active_dawgs, bool ambigs_mode) const {
   if (hyphenated()) {
     *active_dawgs = hyphen_active_dawgs_;
-    if (dawg_debug_level >= 3) {
+    if (dawg_debug_level > 2) {
       for (unsigned i = 0; i < hyphen_active_dawgs_.size(); ++i) {
         tprintf("Adding hyphen beginning dawg [{}, {}]\n",
                 hyphen_active_dawgs_[i].dawg_index, hyphen_active_dawgs_[i].dawg_ref);
@@ -655,12 +653,12 @@ void Dict::default_dawgs(DawgPositionVector *dawg_pos_vec, bool suppress_pattern
       bool subsumed_by_punc = kDawgSuccessors[DAWG_TYPE_PUNCTUATION][dawg_ty];
       if (dawg_ty == DAWG_TYPE_PUNCTUATION) {
         dawg_pos_vec->push_back(DawgPosition(-1, NO_EDGE, i, NO_EDGE, false));
-        if (dawg_debug_level >= 3) {
+        if (dawg_debug_level > 2) {
           tprintf("Adding beginning punc dawg [{}, {}]\n", i, NO_EDGE);
         }
       } else if (!punc_dawg_available || !subsumed_by_punc) {
         dawg_pos_vec->push_back(DawgPosition(i, NO_EDGE, -1, NO_EDGE, false));
-        if (dawg_debug_level >= 3) {
+        if (dawg_debug_level > 2) {
           tprintf("Adding beginning dawg [{}, {}]\n", i, NO_EDGE);
         }
       }
