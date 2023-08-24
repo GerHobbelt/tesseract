@@ -87,6 +87,15 @@ public:
   // Must be overridden IFF GetShapeTable() returns nullptr.
   virtual const UNICHARSET &GetUnicharset() const;
 
+  // Set the active page image for the visual debugger.
+  void SetPageImageForDebugReport(Image page_pix) {
+    pix_for_debug_display_ = page_pix;
+  }
+
+protected:
+  Image pix_for_debug_display_;
+
+public:
   // Visual debugger classifies the given sample, displays the results and
   // solicits user input to display other classifications. Returns when
   // the user has finished with debugging the sample.

@@ -108,7 +108,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
 // and a keep_this argument to find out what is going on.
 void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifier *old_classifier,
                                   CountTypes boosting_mode, const FontInfoTable &fontinfo_table,
-                                  const std::vector<Image > &page_images, SampleIterator *it) {
+                                  const std::vector<Image> &page_images, SampleIterator *it) {
   int fontsize = it->sample_set()->NumFonts();
   ErrorCounter old_counter(old_classifier->GetUnicharset(), fontsize);
   ErrorCounter new_counter(new_classifier->GetUnicharset(), fontsize);
@@ -122,6 +122,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
     int page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
+    new_classifier->SetPageImageForDebugReport(page_pix);
     // No debug, no keep this.
     old_classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID,
                                           &results);
