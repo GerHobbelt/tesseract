@@ -496,8 +496,8 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
     bool valid = unicharset_.contains_unichar(uch);
     if (valid) {
       spacing = new FontSpacingInfo();
-      spacing->x_gap_before = static_cast<int16_t>(x_gap_before * scale);
-      spacing->x_gap_after = static_cast<int16_t>(x_gap_after * scale);
+      spacing->x_gap_before = static_cast<TDimension>(x_gap_before * scale);
+      spacing->x_gap_after = static_cast<TDimension>(x_gap_after * scale);
     }
     for (int k = 0; k < num_kerned; ++k) {
       if (tfscanf(fontinfo_file, "%s %d", kerned_uch, &x_gap) != 2) {
@@ -511,7 +511,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
       }
       spacing->kerned_unichar_ids.push_back(
           unicharset_.unichar_to_id(kerned_uch));
-      spacing->kerned_x_gaps.push_back(static_cast<int16_t>(x_gap * scale));
+      spacing->kerned_x_gaps.push_back(static_cast<TDimension>(x_gap * scale));
     }
     if (valid) {
       fi->add_spacing(unicharset_.unichar_to_id(uch), spacing);
@@ -791,7 +791,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
       }
     }
   }
-  f_window->Update();
+  f_window->UpdateWindow();
   if (f_window->HasInteractiveFeature()) {
     ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
     SVEventType ev_type;
@@ -807,7 +807,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
           shape.AddToShape(class_id1, cloud_font);
           s_window->Clear();
           samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, ScrollView::GREEN, s_window);
-          s_window->Update();
+          s_window->UpdateWindow();
         }
       }
     } while (ev_type != SVET_DESTROY);

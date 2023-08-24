@@ -432,7 +432,7 @@ ChoiceIterator::ChoiceIterator(const LTRResultIterator &result_it) {
   // Is there legacy engine related trained data?
   bool oemLegacy = word_res_->tesseract->AnyTessLang();
   // Is lstm_choice_mode activated?
-  bool lstm_choice_mode = word_res_->tesseract->lstm_choice_mode;
+  int32_t lstm_choice_mode = word_res_->tesseract->lstm_choice_mode;
   rating_coefficient_ = word_res_->tesseract->lstm_rating_coefficient;
   blanks_before_word_ = result_it.BlanksBeforeWord();
   BLOB_CHOICE_LIST *choices = nullptr;
@@ -449,7 +449,7 @@ ChoiceIterator::ChoiceIterator(const LTRResultIterator &result_it) {
       filterSpaces();
     }
   }
-  if ((oemLegacy || !lstm_choice_mode) && word_res_->ratings != nullptr) {
+  if ((oemLegacy || lstm_choice_mode == 0) && word_res_->ratings != nullptr) {
     choices = word_res_->GetBlobChoices(result_it.blob_index_);
   }
   if (choices != nullptr && !choices->empty()) {

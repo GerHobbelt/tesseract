@@ -264,7 +264,7 @@ protected:
     AssociateUtils::ComputeStats(
         col, row, (parent_vse != nullptr) ? &(parent_vse->associate_stats) : nullptr,
         (parent_vse != nullptr) ? parent_vse->length : 0, fixed_pitch_, max_char_wh_ratio, word_res,
-        language_model_debug_level > 2, associate_stats);
+        (language_model_debug_level > 2), associate_stats);
   }
 
   // Returns true if the path with such top_choice_flags and dawg_info

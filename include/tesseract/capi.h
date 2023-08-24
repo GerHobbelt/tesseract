@@ -346,8 +346,7 @@ TESS_API char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetBoxText(TessBaseAPI *handle, int page_number);
 TESS_API char *TessBaseAPIGetLSTMBoxText(TessBaseAPI *handle, int page_number);
-TESS_API char *TessBaseAPIGetWordStrBoxText(TessBaseAPI *handle,
-                                            int page_number);
+TESS_API char *TessBaseAPIGetWordStrBoxText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetUNLVText(TessBaseAPI *handle);
 TESS_API int TessBaseAPIMeanTextConf(TessBaseAPI *handle);

@@ -59,8 +59,8 @@ namespace tesseract {
 
   public:
 
-    // Return true when one or more images have been collected.
-    bool HasPix() const;
+    // Return true when one or more images have been collected and/or one or more lines of text have been collected.
+    bool HasContent() const;
 
     // Sets the destination filename and outputs the collective of images and textual info as a HTML file (+ PNGs)
     // on destruction.
@@ -68,7 +68,7 @@ namespace tesseract {
 
     void WriteSectionParamsUsageReport();
 
-    void Clear();
+    void Clear(bool final_cleanup = false);
 
   protected:
 
@@ -112,6 +112,7 @@ namespace tesseract {
     std::vector<DebugProcessStep> steps;
     std::vector<DebugProcessInfoChunk> info_chunks;
     int active_step_index;
+    bool content_has_been_written_to_file;
 
 #if defined(HAVE_MUPDF)
     fz_context *fz_ctx; 

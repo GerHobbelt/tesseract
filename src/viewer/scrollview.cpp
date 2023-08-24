@@ -62,7 +62,7 @@ struct SVPolyLineBuffer {
 };
 
 // A map between the window IDs and their corresponding pointers.
-static std::map<int, ScrollViewReference> svmap;
+static std::vector<ScrollViewReference> svmap;
 static std::mutex *svmap_mu;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
 
 // A map of all semaphores waiting for a specific event on a specific window.
@@ -124,9 +124,10 @@ void InteractiveScrollView::MessageReceiver() {
            &cur->y, &cur->x_size, &cur->y_size, &cur->command_id, &n);
     char *p = (message + n);
 
-    svmap_mu->lock();
-    cur->window = svmap[window_id];
-    svmap_mu->unlock();
+    {
+      std::lock_guard<std::mutex> guard(*svmap_mu);
+      cur->window = svmap[window_id];
+    }
 
     if (cur->window) {
       auto length = strlen(p);
@@ -295,7 +296,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
 
 #if 0
   svmap_mu->lock();
-  svmap[GetId()] = this;
+  svmap.insert_or_assign(GetId(), this);
   svmap_mu->unlock();
 #endif
 }
@@ -410,10 +411,10 @@ ScrollView::~ScrollView() {
   Update();
 #endif
 
-  //svmap_mu->lock();
+#if !defined(NO_ASSERTIONS)
   auto &ref = svmap[GetId()];
   ASSERT0(ref.GetRef() == nullptr);
-  //svmap_mu->unlock();
+#endif
 
   delete points_;
 #endif // !GRAPHICS_DISABLED
@@ -693,6 +694,11 @@ void InteractiveScrollView::TextAttributes(const char *font, int pixel_size,
   SendMsg("textAttributes('{}',{},{},{},{})", font, pixel_size, b, i, u);
 }
 
+// Set up a X/Y offset for the subsequent drawing primitives.
+void InteractiveScrollView::SetXYOffset(int x, int y) {
+  // no-op
+}
+
 // Draw text at the given coordinates.
 void InteractiveScrollView::Text(int x, int y, const char *mystring) {
   SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
@@ -766,11 +772,12 @@ void ScrollView::Update() {
   }
 
   std::vector<ScrollViewReference> worklist;
+  // limit scope of lock
   {
       std::lock_guard<std::mutex> guard(*svmap_mu);
       for (auto &iter : svmap) {
-        if (iter.second) {
-          worklist.push_back(iter.second);
+        if (iter) {
+          worklist.push_back(iter);
         }
       }
   }
@@ -785,15 +792,20 @@ void ScrollView::Exit() {
     svmap_mu = new std::mutex();
   }
 
+  std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
     std::lock_guard<std::mutex> guard(*svmap_mu);
     for (auto &iter : svmap) {
-      if (iter.second) {
-        iter.second->ExitHelper();
-      }
+        if (iter) {
+          worklist.push_back(iter);
+        }
     }
   }
+  for (auto &iter : worklist) {
+    iter->ExitHelper();
+  }
+
   exit(667);
 }
 
@@ -935,7 +947,7 @@ BackgroundScrollView::BackgroundScrollView(Tesseract *tess, const char *name,
                                              const char *server_name)
     : ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
                  y_canvas_size, y_axis_reversed, server_name)
-    , dirty(false) {
+    , dirty(false), x_offset(0), y_offset(0) {
   Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
              y_canvas_size, y_axis_reversed, server_name);
 }
@@ -947,19 +959,8 @@ void BackgroundScrollView::PrepCanvas(void) {
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  ASSERT0(pix.pix_ != wh_pix.pix_);
   wh_pix.destroy();
-}
-
-/// Sets up a ScrollView window, depending on the constructor variables.
-void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
-                                       int x_pos, int y_pos, int x_size,
-                                       int y_size, int x_canvas_size,
-                                       int y_canvas_size, bool y_axis_reversed,
-                                       const char *server_name) {
-  composeRGBPixel(255, 50, 255, &pen_color);
-  composeRGBPixel(50, 255, 255, &brush_color);
-
-  PrepCanvas();
 
 #  if 0
     BOX* border = boxCreate(2, 2, width + 4, height + 4);
@@ -972,6 +973,18 @@ void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
     pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
     boxaDestroy(&boxlist);
 #  endif
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
+                                       int x_pos, int y_pos, int x_size,
+                                       int y_size, int x_canvas_size,
+                                       int y_canvas_size, bool y_axis_reversed,
+                                       const char *server_name) {
+  composeRGBPixel(255, 50, 255, &pen_color);
+  composeRGBPixel(50, 255, 255, &brush_color);
+
+  PrepCanvas();
 }
 
 /// Sits and waits for events on this window.
@@ -1014,7 +1027,8 @@ std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
   return std::make_unique<SVEvent>();
 }
 
-const float kMixFactor = 0.75;
+const float kMixFactor = 0.65;
+const float kBlendPaintLayerFactor = 0.65;
 
     // Send the current buffered polygon (if any) and clear it.
 void BackgroundScrollView::SendPolygon() {
@@ -1115,6 +1129,8 @@ void BackgroundScrollView::SetCursor(int x, int y) {
 
 // Draws from the current position to (x,y) and sets the new position to it.
 void BackgroundScrollView::DrawTo(int x, int y) {
+  x += x_offset;
+  y += y_offset;
   points_->xcoords.push_back(x);
   points_->ycoords.push_back(TranslateYCoordinate(y));
   points_->empty = false;
@@ -1122,6 +1138,10 @@ void BackgroundScrollView::DrawTo(int x, int y) {
 
 // Draw a line using the current pen color.
 void BackgroundScrollView::Line(int x1, int y1, int x2, int y2) {
+  x1 += x_offset;
+  y1 += y_offset;
+  x2 += x_offset;
+  y2 += y_offset;
   if (!points_->xcoords.empty() && x1 == points_->xcoords.back() &&
       TranslateYCoordinate(y1) == points_->ycoords.back()) {
     // We are already at x1, y1, so just draw to x2, y2.
@@ -1194,6 +1214,8 @@ void BackgroundScrollView::Clear() {
     PrepCanvas();
 
     dirty = false;
+    x_offset = 0;
+    y_offset = 0;
   }
 }
 
@@ -1207,6 +1229,10 @@ void BackgroundScrollView::Stroke(float width) {
 // The rectangle is filled with the current brush color.
 void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   SendPolygon();
+  x1 += x_offset;
+  y1 += y_offset;
+  x2 += x_offset;
+  y2 += y_offset;
   SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
           TranslateYCoordinate(y2));
 
@@ -1228,6 +1254,8 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
 // The ellipse is filled with the current brush color.
 void BackgroundScrollView::Ellipse(int x1, int y1, int width, int height) {
   SendPolygon();
+  x1 += x_offset;
+  y1 += y_offset;
   SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
           height);
 }
@@ -1288,17 +1316,76 @@ void BackgroundScrollView::TextAttributes(const char *font, int pixel_size,
   SendMsg("textAttributes('{}',{},{},{},{})", font, pixel_size, b, i, u);
 }
 
+
+// Set up a X/Y offset for the subsequent drawing primitives.
+void BackgroundScrollView::SetXYOffset(int x, int y) {
+  x_offset = x;
+  y_offset = y;
+}
+
 // Draw text at the given coordinates.
 void BackgroundScrollView::Text(int x, int y, const char *mystring) {
   SendPolygon();
+  x += x_offset;
+  y += y_offset;
   SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
 
   BOX *box = boxCreate(x, TranslateYCoordinate(y), 5, 20);
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
-  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
-  pixBlendInRect(pix, box, pen_color, 0.33);
+  pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+
+  const int fontsize = 16;
+  L_BMF *bmf = bmfCreate(NULL, fontsize);
+  l_int32 width_used = 0;
+  l_int32 ovf = 0;
+  //pixSetTextline(pix, bmf, mystring, pen_color, x, y, &width_used, &ovf);
+  //y += bmf->lineheight + bmf->vertlinesep;
+
+  int x_start = x;
+  int h = bmf->lineheight;
+  float scale = 13.0 / h;
+
+  int nchar = strlen(mystring);
+  for (int i = 0; i < nchar; i++) {
+    char chr = mystring[i];
+    if (chr == '\n' || chr == '\r')
+      continue;
+    PIX *tpix = bmfGetPix(bmf, chr);
+    l_int32 baseline;
+    bmfGetBaseline(bmf, chr, &baseline);
+    int w = pixGetWidth(tpix);
+    //PIX *tpix2 = pixScaleSmooth(tpix, scale, scale);
+    //pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
+    int d = pixGetDepth(pix);
+    PIX *tpix2 = nullptr;
+    switch (d) { 
+    default: 
+        ASSERT0(!"Should never get here!");
+        break;
+
+    case 32:
+        tpix2 = pixConvertTo32(tpix);
+        break;
+    }
+    PIX *tpix3 = pixScaleSmooth(tpix2, scale, scale);
+    // pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
+    l_int32 cw, ch, cd;
+    pixGetDimensions(tpix3, &cw, &ch, &cd);
+    //pixRasterop(pix, x, y - baseline * scale, cw, ch, PIX_XOR, tpix3, 0, 0);
+    pixBlendColorByChannel(pix, pix, tpix3, x, y - baseline * scale, 1.0, 0.0, 1.0, 1, 0xFFFFFF00u);
+    x += (w + bmf->kernwidth) * scale;
+    pixDestroy(&tpix);
+    pixDestroy(&tpix2);
+    pixDestroy(&tpix3);
+  }
+
+  width_used = x - bmf->kernwidth * scale - x_start;
+  ovf = (x > pixGetWidth(pix) - 1);
+
+  bmfDestroy(&bmf);
   boxDestroy(&box);
 }
 
@@ -1306,14 +1393,16 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
 void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
   SendPolygon();
   SendMsg("openImage('{}')", image);
+  x_pos += x_offset;
+  y_pos += y_offset;
   SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
 
   BOX *box = boxCreate(x_pos, TranslateYCoordinate(y_pos), 5, 20);
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
-  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
-  pixBlendInRect(pix, box, pen_color, 0.33);
+  pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
   boxDestroy(&box);
 }
 
@@ -1411,6 +1500,10 @@ int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
 // Zoom the window to the rectangle given upper left corner and
 // lower right corner.
 void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+  x1 += x_offset;
+  y1 += y_offset;
+  x1 += x_offset;
+  y1 += y_offset;
   y1 = TranslateYCoordinate(y1);
   y2 = TranslateYCoordinate(y2);
   SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
@@ -1420,6 +1513,8 @@ void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
 // Send an image of type Pix.
 void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *title) {
   SendPolygon();
+  x_pos += x_offset;
+  y_pos += y_offset;
   y_pos = TranslateYCoordinate(y_pos);
   SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
   tesseract_->AddClippedPixDebugPage(image, title);
@@ -1430,8 +1525,8 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
-  pixRenderBoxBlend(pix, box, width, r, g, b, 0.75);
-  pixBlendInRect(pix, box, pen_color, 0.33);
+  pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
   boxDestroy(&box);
 }
 
@@ -1475,13 +1570,19 @@ void ScrollViewReference::cleanup_before_delete() {
       if (view_ != nullptr) {
         view_->UpdateWindow();
 
-        svmap_mu->lock();
-        int id = GetRef()->GetId();
-        svmap[id] = nullptr;  // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
-        svmap_mu->unlock();
+        {
+          std::lock_guard<std::mutex> guard(*svmap_mu);
+          int id = GetRef()->GetId();
+          while (svmap.size() <= id) {
+            svmap.push_back(nullptr);
+          }
+          svmap[id] = nullptr; // --> this will fire another ScrollviewReference's destructor and thus fire `case 0:` below...
+          auto &ref = svmap[id];
+          ref.clear();
+        }
 
         delete view_;
-        ASSERT0(*counter_ == 0);
+        ASSERT0(counter_ == nullptr || *counter_ == 0);
         delete counter_;
 
         view_ = nullptr;
@@ -1521,6 +1622,16 @@ ScrollViewReference &ScrollViewReference::operator=(ScrollView *new_view) {
     }
   }
   return *this;
+}
+
+void ScrollViewReference::clear() {
+  if (view_ != nullptr) {
+    cleanup_before_delete();
+
+    view_ = nullptr;
+    counter_ = nullptr;
+    id = -1;
+  }
 }
 
 ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
@@ -1615,10 +1726,14 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
   // 
   // That's why we #if0-ed that chunk of code further above!
   auto wi = rv->GetId();
-  svmap_mu->lock();
-  svmap[wi] = rv;
   rv.id = wi;
-  svmap_mu->unlock();
+  {
+    std::lock_guard<std::mutex> guard(*svmap_mu);
+    while (svmap.size() <= wi) {
+      svmap.push_back(nullptr);
+    }
+    svmap[wi] = rv;
+  }
 
   return rv;
 }
@@ -1666,8 +1781,8 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
       {
         std::lock_guard<std::mutex> guard(*svmap_mu);
         for (auto &iter : svmap) {
-            if (iter.second) {
-              delset.push_back(iter.second);
+            if (iter) {
+              delset.push_back(iter);
             }
         }
       }

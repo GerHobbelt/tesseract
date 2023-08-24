@@ -57,7 +57,7 @@ ScrollViewReference &create_to_win(ICOORD page_tr) {
 void close_to_win() {
   // to_win is leaked, but this enables the user to view the contents.
   if (to_win) {
-    to_win->Update();
+    to_win->UpdateWindow();
     //to_win->ExitHelper();
     to_win = nullptr;
   }
@@ -271,14 +271,14 @@ void draw_meanlines(          // draw a block
  * highlighted.
  **********************************************************************/
 
-void plot_word_decisions( // draw words
+void plot_word_decisions(          // draw words
     ScrollViewReference &win,      // window to draw in
-    int16_t pitch,        // of block
-    TO_ROW *row           // row to draw
+    TDimension pitch,              // of block
+    TO_ROW *row                    // row to draw
 ) {
   ScrollView::Color colour = ScrollView::MAGENTA; // current colour
   ScrollView::Color rect_colour;                  // fuzzy colour
-  int32_t prev_x;                                 // end of prev blob
+  TDimension prev_x;                              // end of prev blob
   int16_t blob_count;                             // blobs in word
   BLOBNBOX *blob;                                 // current blob
   TBOX blob_box;                                  // bounding box

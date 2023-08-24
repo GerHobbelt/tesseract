@@ -173,10 +173,10 @@ public:
 
   void print(const UNICHARSET *unicharset) const {
     tprintf("r{} c{} x[{},{}]: {} {}",
-            static_cast<double>(rating_),
-            static_cast<double>(certainty_),
-            static_cast<double>(min_xheight_),
-            static_cast<double>(max_xheight_),
+            rating_,
+            certainty_,
+            min_xheight_,
+            max_xheight_,
             unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_).c_str());
   }
   void print_full() const {

@@ -249,7 +249,7 @@ protected:
 //      }
 //      ptaDestroy(&pts);
 //    } while (it->Next(tesseract::RIL_BLOCK));
-//    win->Update();
+//    win->UpdateWindow();
 //    delete win->AwaitEvent(SVET_DESTROY);
 //    delete win;
 //    delete it;

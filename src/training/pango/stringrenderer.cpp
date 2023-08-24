@@ -297,7 +297,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char *text, int text_length) 
   UNICHAR::const_iterator it = UNICHAR::begin(text, text_length);
   const UNICHAR::const_iterator it_end = UNICHAR::end(text, text_length);
   const int kMaxUnicodeBufLength = 15000;
-  for (int i = 0; i < kMaxUnicodeBufLength && it != it_end; ++it, ++i) {
+  for (int i = 0; i < kMaxUnicodeBufLength && it < it_end; ++it, ++i) {
     ;
   }
   int buf_length = it.utf8_data() - text;
@@ -607,15 +607,25 @@ static void MergeBoxCharsToWords(std::vector<BoxChar *> *boxchars) {
       BoxChar *last_boxchar = result.back();
       // Compute bounding box union
       const Box *box = boxchar->box();
+      int32_t box_x;
+      int32_t box_y;
+      int32_t box_w;
+      int32_t box_h;
+      boxGetGeometry(const_cast<Box *>(box), &box_x, &box_y, &box_w, &box_h);
       Box *last_box = last_boxchar->mutable_box();
-      int left = std::min(last_box->x, box->x);
-      int right = std::max(last_box->x + last_box->w, box->x + box->w);
-      int top = std::min(last_box->y, box->y);
-      int bottom = std::max(last_box->y + last_box->h, box->y + box->h);
+      int32_t last_box_x;
+      int32_t last_box_y;
+      int32_t last_box_w;
+      int32_t last_box_h;
+      boxGetGeometry(last_box, &last_box_x, &last_box_y, &last_box_w, &last_box_h);
+      int left = std::min(last_box_x, box_x);
+      int right = std::max(last_box_x + last_box_w, box_x + box_w);
+      int top = std::min(last_box_y, box_y);
+      int bottom = std::max(last_box_y + last_box_h, box_y + box_h);
       // Conclude that the word was broken to span multiple lines based on the
       // size of the merged bounding box in relation to those of the individual
       // characters seen so far.
-      if (right - left > last_box->w + 5 * box->w) {
+      if (right - left > last_box_w + 5 * box_w) {
         tlog(1, "Found line break after '{}'", last_boxchar->ch().c_str());
         // Insert a fake interword space and start a new word with the current
         // boxchar.
@@ -626,10 +636,7 @@ static void MergeBoxCharsToWords(std::vector<BoxChar *> *boxchars) {
       }
       // Append to last word
       last_boxchar->mutable_ch()->append(boxchar->ch());
-      last_box->x = left;
-      last_box->w = right - left;
-      last_box->y = top;
-      last_box->h = bottom - top;
+      boxSetGeometry(last_box, left, top, right - left, bottom - top);
       delete boxchar;
       boxchar = nullptr;
     }
@@ -919,7 +926,7 @@ int StringRenderer::RenderToBinaryImage(const char *text, int text_length, int t
 std::string StringRenderer::InsertWordJoiners(const std::string &text) {
   std::string out_str;
   const UNICHAR::const_iterator it_end = UNICHAR::end(text.c_str(), text.length());
-  for (UNICHAR::const_iterator it = UNICHAR::begin(text.c_str(), text.length()); it != it_end;
+  for (UNICHAR::const_iterator it = UNICHAR::begin(text.c_str(), text.length()); it < it_end;
        ++it) {
     // Add the symbol to the output string.
     out_str.append(it.utf8_data(), it.utf8_len());
@@ -939,7 +946,7 @@ std::string StringRenderer::InsertWordJoiners(const std::string &text) {
 std::string StringRenderer::ConvertBasicLatinToFullwidthLatin(const std::string &str) {
   std::string full_str;
   const UNICHAR::const_iterator it_end = UNICHAR::end(str.c_str(), str.length());
-  for (UNICHAR::const_iterator it = UNICHAR::begin(str.c_str(), str.length()); it != it_end; ++it) {
+  for (UNICHAR::const_iterator it = UNICHAR::begin(str.c_str(), str.length()); it < it_end; ++it) {
     // Convert printable and non-space 7-bit ASCII characters to
     // their fullwidth forms.
     if (IsInterchangeValid7BitAscii(*it) && isprint(*it) && !isspace(*it)) {
@@ -957,7 +964,7 @@ std::string StringRenderer::ConvertBasicLatinToFullwidthLatin(const std::string 
 std::string StringRenderer::ConvertFullwidthLatinToBasicLatin(const std::string &str) {
   std::string half_str;
   UNICHAR::const_iterator it_end = UNICHAR::end(str.c_str(), str.length());
-  for (UNICHAR::const_iterator it = UNICHAR::begin(str.c_str(), str.length()); it != it_end; ++it) {
+  for (UNICHAR::const_iterator it = UNICHAR::begin(str.c_str(), str.length()); it < it_end; ++it) {
     char32 half_char = FullwidthToHalfwidth(*it);
     // Convert fullwidth Latin characters to their halfwidth forms
     // only if halfwidth forms are printable and non-space 7-bit ASCII.
@@ -1094,7 +1101,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
     total_chars_ = 0;
     // Fill the hash table and use that for computing which fonts to use.
     for (UNICHAR::const_iterator it = UNICHAR::begin(text, text_length);
-         it != UNICHAR::end(text, text_length); ++it) {
+         it < UNICHAR::end(text, text_length); ++it) {
       ++total_chars_;
       ++char_map_[*it];
     }

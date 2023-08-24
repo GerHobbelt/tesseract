@@ -122,11 +122,11 @@ void BLOBNBOX::chop(       // chop blobs
     FCOORD rotation,       // for landscape
     float xheight          // of line
 ) {
-  int16_t blobcount;          // no of blobs
+  int blobcount;              // no of blobs
   BLOBNBOX *newblob;          // fake blob
   BLOBNBOX *blob;             // current blob
-  int16_t blobindex;          // number of chop
-  int16_t leftx;              // left edge of blob
+  int blobindex;              // number of chop
+  TDimension leftx;           // left edge of blob
   float blobwidth;            // width of each
   float rightx;               // right edge to scan
   float ymin, ymax;           // limits of new blob
@@ -135,14 +135,14 @@ void BLOBNBOX::chop(       // chop blobs
   BLOBNBOX_IT blob_it;        // blob iterator
 
   // get no of chops
-  blobcount = static_cast<int16_t>(std::floor(box.width() / xheight));
+  blobcount = static_cast<int>(std::floor(box.width() / xheight));
   if (blobcount > 1 && cblob_ptr != nullptr) {
     // width of each
     blobwidth = static_cast<float>(box.width() + 1) / blobcount;
     for (blobindex = blobcount - 1, rightx = box.right(); blobindex >= 0;
          blobindex--, rightx -= blobwidth) {
-      ymin = static_cast<float>(INT32_MAX);
-      ymax = static_cast<float>(-INT32_MAX);
+      ymin = static_cast<float>(TDIMENSION_MAX);
+      ymax = static_cast<float>(TDIMENSION_MIN);
       blob_it = *start_it;
       do {
         blob = blob_it.data();
@@ -151,13 +151,14 @@ void BLOBNBOX::chop(       // chop blobs
         blob_it.forward();
         UpdateRange(test_ymin, test_ymax, &ymin, &ymax);
       } while (blob != end_it->data());
+
       if (ymin < ymax) {
-        leftx = static_cast<int16_t>(std::floor(rightx - blobwidth));
+        leftx = static_cast<TDimension>(std::floor(rightx - blobwidth));
         if (leftx < box.left()) {
           leftx = box.left(); // clip to real box
         }
-        bl = ICOORD(leftx, static_cast<int16_t>(std::floor(ymin)));
-        tr = ICOORD(static_cast<int16_t>(std::ceil(rightx)), static_cast<int16_t>(std::ceil(ymax)));
+        bl = ICOORD(leftx, static_cast<TDimension>(std::floor(ymin)));
+        tr = ICOORD(static_cast<TDimension>(std::ceil(rightx)), static_cast<TDimension>(std::ceil(ymax)));
         if (blobindex == 0) {
           box = TBOX(bl, tr); // change box
         } else {
@@ -417,7 +418,8 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
 
 #if !GRAPHICS_DISABLED
 // Helper to draw all the blobs on the list in the given body_colour,
-// with child outlines in the child_colour.
+// with child outlines in the child_colour: outer bits are done in body_colour,
+// while holes will be done in child_colour.
 void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
                          ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
@@ -500,8 +502,8 @@ ScrollView::Color BLOBNBOX::BoxColor() const {
 }
 
 void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
-                    ScrollView::Color blob_colour,    // for outer bits
-                    ScrollView::Color child_colour) { // for holes
+                    ScrollView::Color blob_colour,             // for outer bits
+                    ScrollView::Color child_colour) {          // for holes
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(window, blob_colour, child_colour);
   }

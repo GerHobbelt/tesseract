@@ -100,7 +100,7 @@ void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReferen
     }
     win->Rectangle(box.left(), box.bottom(), box.right(), box.top());
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -151,7 +151,7 @@ void TextlineProjection::DisplayProjection() const {
   }
   ScrollViewReference win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
   win->Draw(pixc, 0, win->TranslateYCoordinate(0), "TextlineProjection::DisplayProjection");
-  win->Update();
+  win->UpdateWindow();
   pixc.destroy();
 }
 

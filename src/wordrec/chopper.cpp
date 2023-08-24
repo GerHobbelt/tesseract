@@ -463,8 +463,7 @@ void Wordrec::improve_by_chopping(float rating_cert_scale, WERD_RES *word,
         blob_choices.push_back(bc_it.data());
       }
     }
-    SEAM *seam = improve_one_blob(blob_choices, &best_choice_bundle->fixpt, false, false, word,
-                                  &blob_number);
+    SEAM *seam = improve_one_blob(blob_choices, &best_choice_bundle->fixpt, false, false, word, &blob_number);
     if (seam == nullptr) {
       break;
     }
@@ -511,8 +510,7 @@ void Wordrec::improve_by_chopping(float rating_cert_scale, WERD_RES *word,
       !word->blamer_bundle->ChoiceIsCorrect(word->best_choice)) {
     bool valid_permuter = word->best_choice != nullptr &&
                           Dict::valid_word_permuter(word->best_choice->permuter(), false);
-    word->blamer_bundle->BlameClassifierOrLangModel(word, getDict().getUnicharset(), valid_permuter,
-                                                    wordrec_debug_blamer);
+    word->blamer_bundle->BlameClassifierOrLangModel(word, getDict().getUnicharset(), valid_permuter, wordrec_debug_blamer);
   }
 }
 

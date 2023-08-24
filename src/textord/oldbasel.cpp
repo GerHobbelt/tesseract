@@ -608,8 +608,7 @@ void make_first_baseline( // initial approximation
     }
   } else {
     *baseline = *spline; /*copy it */
-    shift =
-        ICOORD(0, static_cast<int16_t>(blobcoords[0].bottom() - spline->y(blobcoords[0].right())));
+    shift = ICOORD(0, static_cast<TDimension>(blobcoords[0].bottom() - spline->y(blobcoords[0].right())));
     baseline->move(shift);
   }
 }
@@ -662,7 +661,7 @@ void make_holed_baseline( // initial approximation
       spline->xcoords[spline->segments - 1] >= rightedge - MAXOVERLAP * (rightedge - leftedge)) {
     *baseline = *spline; /*copy it */
     x = (leftedge + rightedge) / 2.0;
-    shift = ICOORD(0, static_cast<int16_t>(gradient * x + c - spline->y(x)));
+    shift = ICOORD(0, static_cast<TDimension>(gradient * x + c - spline->y(x)));
     baseline->move(shift);
   }
 }

@@ -208,7 +208,7 @@ void AlignedBlob::DisplayTabs(ScrollViewReference &tab_win) {
       tab_win->Line(right_x, top_y, right_x, bottom_y);
     }
   }
-  tab_win->Update();
+  tab_win->UpdateWindow();
   return;
 }
 

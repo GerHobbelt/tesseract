@@ -63,7 +63,7 @@ GAPMAP::GAPMAP(     // Constructor
     row = row_it.data();
     if (!row->blob_list()->empty()) {
       total_rows++;
-      xht_stats.add(static_cast<int16_t>(floor(row->xheight + 0.5)), 1);
+      xht_stats.add(static_cast<int32_t>(floor(row->xheight + 0.5)), 1);
       blob_it.set_to_list(row->blob_list());
       start_of_row = blob_it.data()->bounding_box().left();
       end_of_row = blob_it.data_relative(-1)->bounding_box().right();

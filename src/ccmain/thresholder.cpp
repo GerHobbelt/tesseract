@@ -260,7 +260,7 @@ Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
   pixDestroy(&pixd2);
 
   /// Local contrast enhancement
-  //  Ignore a border of 10 % and get a mean threshold,
+  //  Ignore a border of 10% and get a mean threshold,
   //  background and foreground value
   pixbox = boxCreate(w1 * 0.1, h1 * 0.1, w1 * 0.9, h1 * 0.9);
   na = pixGetGrayHistogramInRect(pixg, pixbox, 1);

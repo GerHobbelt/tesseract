@@ -43,9 +43,9 @@
 namespace tesseract {
 
 /// Denominator of resolution makes max pixel width to allow thin lines.
-const int kThinLineFraction = 20;
+const float kThinLineFraction = 20;
 /// Denominator of resolution makes min pixels to demand line lengths to be.
-const int kMinLineLengthFraction = 4;
+const float kMinLineLengthFraction = 4;
 /// Spacing of cracks across the page to break up tall vertical lines.
 const int kCrackSpacing = 100;
 /// Grid size used by line finder. Not very critical.
@@ -58,15 +58,16 @@ const int kMinThickLineWidth = 12;
 const int kMaxLineResidue = 6;
 // Min length in inches of a line segment that exceeds kMinThickLineWidth in
 // thickness. (Such lines shouldn't break by simple image degradation.)
-const double kThickLengthMultiple = 0.75;
+const float kThickLengthMultiple = 0.75;
 // Max fraction of line box area that can be occupied by non-line pixels.
-const double kMaxNonLineDensity = 0.25;
+const float kMaxNonLineDensity = 0.25;
 // Max height of a music stave in inches.
-const double kMaxStaveHeight = 1.0;
+const float kMaxStaveHeight = 1.0;
 // Minimum fraction of pixels in a music rectangle connected to the staves.
 const double kMinMusicPixelFraction = 0.75;
 // Reduction factor from line width to dilate/erode brick kernel size
-const double kBrickToLineWidthFraction = 2.0;  // original: 3;
+const float kClosingBrickToLineWidthFraction = 2.0;  // original: 3;
+const float kOpenBrickToClosingBrickFraction = 1.5;
 
 LineFinder::LineFinder(Tesseract* tess) :
   tesseract_(tess) {
@@ -198,7 +199,7 @@ static int CountPixelsAdjacentToLine(int line_width, Box *line_box, Image nonlin
 // Returns the number of remaining connected components.
 static int FilterFalsePositives(int resolution, Image nonline_pix, Image intersection_pix,
                                 Image line_pix) {
-  int min_thick_length = static_cast<int>(resolution * kThickLengthMultiple);
+  int min_thick_length = round(resolution * kThickLengthMultiple);
   Pixa *pixa = nullptr;
   Boxa *boxa = pixConnComp(line_pix, &pixa, 8);
   // Iterate over the boxes to remove false positives.
@@ -391,7 +392,7 @@ void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
 // Returns nullptr and does minimal work if no music is found.
 static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Image pix_hline,
                         bool &v_empty, bool &h_empty) {
-  int max_stave_height = static_cast<int>(resolution * kMaxStaveHeight);
+  float max_stave_height = resolution * kMaxStaveHeight;
   Image intersection_pix = pix_vline & pix_hline;
   Boxa *boxa = pixConnComp(pix_vline, nullptr, 8);
   // Iterate over the boxes to find music bars.
@@ -403,7 +404,9 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
     boxGetGeometry(box, &x, &y, &box_width, &box_height);
     int joins = NumTouchingIntersections(box, intersection_pix);
     // Test for the join density being at least 5 per max_stave_height,
-    // ie (joins-1)/box_height >= (5-1)/max_stave_height.
+    // i.e. (joins-1)/box_height >= (5-1)/max_stave_height.
+    //
+    // TODO: adjust comparison now that I've turned this into a float expresion instead of int [GHo]
     if (joins >= 5 && (joins - 1) * max_stave_height >= 4 * box_height) {
       // This is a music bar. Add to the mask.
       if (music_mask == nullptr) {
@@ -467,22 +470,25 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
 // This function promises to initialize all the output (2nd level) pointers,
 // but any of the returns that are empty will be nullptr on output.
 // None of the input (1st level) pointers may be nullptr except
-// pix_music_mask, which will disable music detection, and pixa_display, which
-// is for debug.
+// pix_music_mask, which will disable music detection.
 void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image *pix_non_vline,
                          Image *pix_hline, Image *pix_non_hline, Image *pix_intersections,
                          Image *pix_music_mask) {
   Image pix_closed = nullptr;
   Image pix_hollow = nullptr;
 
-  int max_line_width = resolution / kThinLineFraction;
-  int min_line_length = resolution / kMinLineLengthFraction;
-  int closing_brick = round(max_line_width / kBrickToLineWidthFraction);
+  float max_line_width = resolution / kThinLineFraction;
+  float min_line_length = resolution / kMinLineLengthFraction;
+  float brick_base_size = max_line_width / kClosingBrickToLineWidthFraction;
+  int closing_brick = round(brick_base_size);
+  int open_brick = round(brick_base_size / kOpenBrickToClosingBrickFraction);
+  int h_v_line_brick_size = round(min_line_length);
   if (tesseract_->debug_line_finding) {
-    tprintf("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), closing-brick hole size = {}\n", resolution,
+    tprintf("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), brick hole base size = {}, closing-brick hole size = {}, opening-brick hole size = {}, h+v line brick size = {}\n", resolution,
         max_line_width, resolution, kThinLineFraction,
         min_line_length, resolution, kMinLineLengthFraction,
-        closing_brick);
+        brick_base_size,
+        closing_brick, open_brick, h_v_line_brick_size);
   }
 
 // only use opencl if compiled w/ OpenCL and selected device is opencl
@@ -515,9 +521,9 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
         " lines. (max_line_width = {})\n",
         max_line_width);
     }
-    Image pix_solid = pixOpenBrick(nullptr, pix_closed, max_line_width, max_line_width);
+    Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
     if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (max_line_width = {})", max_line_width));
+      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
     }
     pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
@@ -526,11 +532,12 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     if (tesseract_->debug_line_finding) {
       tprintf("PROCESS:"
         " Now open up in both directions independently to find lines of at least"
-        " 1 inch/kMinLineLengthFraction in length.\n");
+        " 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
+        kMinLineLengthFraction, h_v_line_brick_size);
       tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
-    *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, min_line_length);
-    *pix_hline = pixOpenBrick(nullptr, pix_hollow, min_line_length, 1);
+    *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);
+    *pix_hline = pixOpenBrick(nullptr, pix_hollow, h_v_line_brick_size, 1);
 
     pix_hollow.destroy();
 #ifdef USE_OPENCL

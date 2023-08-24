@@ -51,10 +51,10 @@ struct ScoredFont {
 
 // Struct for information about spacing between characters in a particular font.
 struct FontSpacingInfo {
-  int16_t x_gap_before;
-  int16_t x_gap_after;
+  TDimension x_gap_before;
+  TDimension x_gap_after;
   std::vector<UNICHAR_ID> kerned_unichar_ids;
-  std::vector<int16_t> kerned_x_gaps;
+  std::vector<TDimension> kerned_x_gaps;
 };
 
 /*

@@ -378,10 +378,10 @@ bool try_doc_fixed(             // determine pitch
   TO_BLOCK_IT block_it = port_blocks;
   TO_BLOCK *block;         // current block;
   TO_ROW *row;             // current row
-  int16_t projection_left; // edges
-  int16_t projection_right;
-  int16_t row_left; // edges of row
-  int16_t row_right;
+  TDimension projection_left; // edges
+  TDimension projection_right;
+  TDimension row_left; // edges of row
+  TDimension row_right;
   float master_y;     // uniform shifts
   float shift_factor; // page skew correction
   float final_pitch;  // output pitch
@@ -419,8 +419,8 @@ bool try_doc_fixed(             // determine pitch
       }
       // find median
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
-      row_right = static_cast<int16_t>(row->projection_right - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
+      row_right = static_cast<TDimension>(row->projection_right - shift_factor * (master_y - row_y));
       if (row_left < projection_left) {
         projection_left = row_left;
       }
@@ -440,7 +440,7 @@ bool try_doc_fixed(             // determine pitch
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row = row_it.data();
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
       for (x = row->projection_left; x < row->projection_right; x++, row_left++) {
         projection.add(row_left, row->projection.pile_count(x));
       }
@@ -1085,8 +1085,8 @@ bool count_pitch_stats(  // find lines
 float tune_row_pitch(           // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
@@ -1183,8 +1183,8 @@ float tune_row_pitch(           // find fp cells
 float tune_row_pitch2(          // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
@@ -1275,8 +1275,8 @@ float tune_row_pitch2(          // find fp cells
 float compute_pitch_sd(        // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float space_size,          // size of blank
     float initial_pitch,       // guess at pitch
     float &sp_sd,              // space sd
@@ -1298,8 +1298,8 @@ float compute_pitch_sd(        // find fp cells
   int32_t sp_count;      // spaces
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
-  int16_t cellpos;       // previous cell boundary
+  TDimension segpos;     // position of segment
+  TDimension cellpos;    // previous cell boundary
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;     // new cell
@@ -1388,9 +1388,9 @@ float compute_pitch_sd(        // find fp cells
       if (cell_it.empty() || segpos > cellpos + initial_pitch / 2) {
         // big gap
         while (!cell_it.empty() && segpos > cellpos + initial_pitch * 3 / 2) {
-          cell = new ICOORDELT(cellpos + static_cast<int16_t>(initial_pitch), 0);
+          cell = new ICOORDELT(cellpos + static_cast<TDimension>(initial_pitch), 0);
           cell_it.add_after_then_move(cell);
-          cellpos += static_cast<int16_t>(initial_pitch);
+          cellpos += static_cast<TDimension>(initial_pitch);
         }
         // make new one
         cell = new ICOORDELT(segpos, 0);
@@ -1431,8 +1431,8 @@ float compute_pitch_sd(        // find fp cells
 float compute_pitch_sd2(       // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float initial_pitch,       // guess at pitch
     int16_t &occupation,       // no of occupied cells
     int16_t &mid_cuts,         // no of free cuts
@@ -1447,7 +1447,7 @@ float compute_pitch_sd2(       // find fp cells
   TBOX blob_box;         // bounding box
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
+  TDimension segpos;     // position of segment
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;  // new cell
@@ -1472,7 +1472,7 @@ float compute_pitch_sd2(       // find fp cells
   } while (!blob_it.cycled_list());
   plot_it = blob_it;
   word_sync = check_pitch_sync2(
-      &blob_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+      &blob_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
       projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, start, end);
   if (1) {
     tprintf("Row ending at ({},{}), len={}, sync rating={}, ", blob_box.right(), blob_box.top(),
@@ -1519,8 +1519,9 @@ float compute_pitch_sd2(       // find fp cells
 void print_pitch_sd(         // find fp cells
     TO_ROW *row,             // row to do
     STATS *projection,       // vertical projection
-    int16_t projection_left, // edges //size of blank
-    int16_t projection_right, float space_size,
+    TDimension projection_left, // edges //size of blank
+    TDimension projection_right, 
+	float space_size,
     float initial_pitch // guess at pitch
 ) {
   const char *res2;   // pitch result
@@ -1571,7 +1572,7 @@ void print_pitch_sd(         // find fp cells
       blob_box = box_next(&blob_it);
     } while (!blob_it.cycled_list() && blob_box.left() - prev_box.right() < space_size);
     word_sync = check_pitch_sync2(
-        &start_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+        &start_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
         projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
     total_blob_count += blob_count;
     seg_it.set_to_list(&seg_list);
@@ -1604,7 +1605,7 @@ void print_pitch_sd(         // find fp cells
   start_it = row_start;
   blob_it = row_start;
   word_sync =
-      check_pitch_sync2(&blob_it, total_blob_count, static_cast<int16_t>(initial_pitch), 2,
+      check_pitch_sync2(&blob_it, total_blob_count, static_cast<TDimension>(initial_pitch), 2,
                         projection, projection_left, projection_right,
                         row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
   if (occupation > 1) {
@@ -1724,7 +1725,7 @@ void plot_fp_word(   // draw block of words
     row->min_space = static_cast<int32_t>((pitch + nonspace) / 2);
     row->max_nonspace = row->min_space;
     row->space_threshold = row->min_space;
-    plot_word_decisions(to_win, static_cast<int16_t>(pitch), row);
+    plot_word_decisions(to_win, static_cast<TDimension>(pitch), row);
   }
 }
 #endif
