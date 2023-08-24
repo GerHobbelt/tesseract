@@ -307,7 +307,7 @@ void WERD_RES::InitForRetryRecognition(const WERD_RES &source) {
 // normalization scale and offset.
 // Returns false if the word is empty and sets up fake results.
 bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
-                                   tesseract::Tesseract *tess, Image pix,
+                                   tesseract::Tesseract *tess,
                                    int norm_mode, const TBOX *norm_box,
                                    bool numeric_mode, bool use_body_size,
                                    bool allow_detailed_fx, ROW *row,
@@ -331,7 +331,7 @@ bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
       use_body_size && row != nullptr && row->body_size() > 0.0f
           ? row->body_size()
           : x_height;
-  chopped_word->BLNormalize(block, row, pix, word->flag(W_INVERSE),
+  chopped_word->BLNormalize(block, row, word->flag(W_INVERSE),
                             word_xheight, baseline_shift, numeric_mode,
                             norm_mode_hint, norm_box, &denorm);
   blob_row = row;

@@ -230,7 +230,7 @@ PAGE_RES *Tesseract::SetupApplyBoxes(const std::vector<TBOX> &boxes, BLOCK_LIST 
 /// box_word and best_state for the maximally chopped word.
 void Tesseract::MaximallyChopWord(const std::vector<TBOX> &boxes, BLOCK *block, ROW *row,
                                   WERD_RES *word_res) {
-  if (!word_res->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+  if (!word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                      classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                      poly_allow_detailed_fx, row, block)) {
     word_res->CloneChoppedToRebuild();

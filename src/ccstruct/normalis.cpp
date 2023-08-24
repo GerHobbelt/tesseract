@@ -51,7 +51,6 @@ DENORM &DENORM::operator=(const DENORM &src) {
   Clear();
   inverse_ = src.inverse_;
   predecessor_ = src.predecessor_;
-  pix_ = src.pix_;
   block_ = src.block_;
   if (src.rotation_ == nullptr) {
     rotation_ = nullptr;
@@ -513,10 +512,6 @@ void DENORM::XHeightRange(int unichar_id, const UNICHARSET &unicharset, const TB
 
 // Prints the content of the DENORM for debug purposes.
 void DENORM::Print() const {
-  if (pix_ != nullptr) {
-    tprintf("Pix dimensions {} x {} x {}\n", pixGetWidth(pix_), pixGetHeight(pix_),
-            pixGetDepth(pix_));
-  }
   if (inverse_) {
     tprintf("Inverse\n");
   }
@@ -562,7 +557,6 @@ void DENORM::Clear() {
 // Setup default values.
 void DENORM::Init() {
   inverse_ = false;
-  pix_ = nullptr;
   block_ = nullptr;
   rotation_ = nullptr;
   predecessor_ = nullptr;
