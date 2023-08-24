@@ -184,7 +184,8 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
     revised_box->rotate(block.re_rotation());
   }
   // Now revised_box always refers to the image.
-  Image pix = pix_binary();
+  // BestPix is never colormapped, but may be of any depth.
+  Image pix = BestPix();
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
   TBOX image_box(0, 0, width, height);
