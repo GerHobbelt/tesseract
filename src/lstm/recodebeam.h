@@ -131,7 +131,7 @@ struct RecodeNode {
   RecodeNode &operator=(const RecodeNode &src) {
     delete dawgs;
     memcpy(this, &src, sizeof(src));
-    ((RecodeNode &)src).dawgs = nullptr;
+    src.dawgs = nullptr;
     return *this;
   }
   ~RecodeNode() {
@@ -169,7 +169,7 @@ struct RecodeNode {
   // The previous node in this chain. Borrowed pointer.
   const RecodeNode *prev;
   // The currently active dawgs at this position. Owned pointer.
-  DawgPositionVector *dawgs;
+  mutable DawgPositionVector *dawgs;
   // A hash of all codes in the prefix and this->code as well. Used for
   // duplicate path removal.
   uint64_t code_hash;
@@ -221,12 +221,14 @@ public:
 
   // Generates debug output of the content of the beams after a Decode.
   void PrintBeam2(bool uids, int num_outputs, const UNICHARSET *charset, bool secondary) const;
+
   // Segments the timestep bundle by the character_boundaries.
   void segmentTimestepsByCharacters();
-  std::vector<std::vector<std::pair<const char *, float>>>
+
   // Unions the segmented timestep character bundles to one big bundle.
-  combineSegmentedTimesteps(
-      std::vector<std::vector<std::vector<std::pair<const char *, float>>>> *segmentedTimesteps);
+  std::vector<std::vector<std::pair<const char *, float>>>
+  combineSegmentedTimesteps(std::vector<std::vector<std::vector<std::pair<const char *, float>>>> *segmentedTimesteps);
+
   // Stores the alternative characters of every timestep together with their
   // probability.
   std::vector<std::vector<std::pair<const char *, float>>> timesteps;
@@ -237,6 +239,7 @@ public:
   std::vector<std::unordered_set<int>> excludedUnichars;
   // Stores the character boundaries regarding timesteps.
   std::vector<int> character_boundaries_;
+
   // Clipping value for certainty inside Tesseract. Reflects the minimum value
   // of certainty that will be returned by ExtractBestPathAsUnicharIds.
   // Supposedly on a uniform scale that can be compared across languages and
@@ -264,7 +267,7 @@ public:
 
 private:
   // Struct for the Re-encode beam search. This struct holds the data for
-  // a single time-step position of the output. Use a vector<RecodeBeam>
+  // a single time-step position of the output. Use a std::vector<RecodeBeam>
   // to hold all the timesteps and prevent reallocation of the individual heaps.
   struct RecodeBeam {
     // Resets to the initial state without deleting all the memory.

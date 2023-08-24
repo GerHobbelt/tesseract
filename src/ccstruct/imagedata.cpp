@@ -196,15 +196,9 @@ void ImageData::SetPix(Image pix) {
 // Returns the Pix image for *this. Must be pixDestroyed after use.
 Image ImageData::GetPix() const {
 #ifdef TESSERACT_IMAGEDATA_AS_PIX
-#  ifdef GRAPHICS_DISABLED
-  /* The only caller of this is the scaling functions to prescale the
-   * source. Thus we can just return a new pointer to the same data. */
-  return internal_pix_.clone();
-#  else
   /* pixCopy always does an actual copy, so the caller can modify the
    * changed data. */
   return internal_pix_.copy();
-#  endif
 #else
   return GetPixInternal(image_data_);
 #endif
@@ -308,7 +302,7 @@ void ImageData::Display(Tesseract *tesseract_) const {
     win->Pen(ScrollView::CYAN);
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
-  win->Update();
+  win->UpdateWindow();
   win->Wait();
 }
 

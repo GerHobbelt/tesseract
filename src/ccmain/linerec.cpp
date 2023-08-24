@@ -177,8 +177,9 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
   } else if (block.re_rotation().y() < 0.0f) {
     num_rotations = 3;
   }
-  // Handle two cases automatically: 1 the box came from the block, 2 the box
-  // came from a box file, and refers to the image, which the block may not.
+  // Handle two cases automatically: 
+  // 1) the box came from the block, 
+  // 2) the box came from a box file, and refers to the image, which the block may not.
   if (block.pdblk.bounding_box().major_overlap(*revised_box)) {
     revised_box->rotate(block.re_rotation());
   }
@@ -248,17 +249,14 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
     return;
   }
 
-  bool do_invert = tessedit_do_invert;
-  float threshold = do_invert ? double(invert_threshold) : 0.0f;
-
   {
     Image dbg_pix = im_data->GetPix();
-    AddClippedPixDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: do_invert:{}, threshold:{}", do_invert, threshold));
+    AddClippedPixDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}", static_cast<double>(invert_threshold)));
     dbg_pix.destroy();
   }
 
   lstm_recognizer_->SetDebug(classify_debug_level > 0 && tess_debug_lstm);
-  lstm_recognizer_->RecognizeLine(*im_data, threshold, 
+  lstm_recognizer_->RecognizeLine(*im_data, invert_threshold, 
                                   kWorstDictCertainty / kCertaintyScale, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);
   delete im_data;
@@ -295,15 +293,14 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       word->done = true;
       word->tesseract = this;
       float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
-      word_certainty *= kCertaintyScale;
+      float corrected_word_certainty = word_certainty * kCertaintyScale;
       if (getDict().stopper_debug_level >= 1) {
-        tprintf("Best choice certainty={}, space={}, scaled={}, final={}\n",
+        tprintf("Best choice certainty={}, space={}, raw={}, scaled={}, final={}\n",
                 word->best_choice->certainty(), word->space_certainty,
-                std::min(word->space_certainty, word->best_choice->certainty()) * kCertaintyScale,
-                word_certainty);
+                word_certainty, corrected_word_certainty, corrected_word_certainty);
         word->best_choice->print();
       }
-      word->best_choice->set_certainty(word_certainty);
+      word->best_choice->set_certainty(corrected_word_certainty);
 
       word->tess_accepted = stopper_dict->AcceptableResult(word);
     }

@@ -25,22 +25,22 @@
 #include <fmt/format.h>
 
 
-#define DECL_FMT_FORMAT_TESSENUMTYPE(Type)                               \
-                                                                         \
-} /* close current namespace tesseract */                                \
-                                                                         \
-namespace fmt {                                                          \
-                                                                         \
-  template <>                                                            \
-  struct formatter<tesseract::Type> : formatter<std::string_view> {      \
-    /* parse is inherited from formatter<string_view>. */                \
-                                                                         \
-    auto format(tesseract::Type c, format_context &ctx) const -> decltype(ctx.out());           \
-  };                                                                     \
-                                                                         \
-}                                                                        \
-                                                                         \
-namespace tesseract {                                                    \
+#define DECL_FMT_FORMAT_TESSENUMTYPE(Type)                                                   \
+                                                                                             \
+} /* close current namespace tesseract */                                                    \
+                                                                                             \
+namespace fmt {                                                                              \
+                                                                                             \
+  template <>                                                                                \
+  struct formatter<tesseract::Type> : formatter<std::string_view> {                          \
+    /* parse is inherited from formatter<string_view>. */                                    \
+                                                                                             \
+    auto format(tesseract::Type c, format_context &ctx) const -> decltype(ctx.out());        \
+  };                                                                                         \
+                                                                                             \
+}                                                                                            \
+                                                                                             \
+namespace tesseract {                                                                        \
   /* re-open namepsace tesseract */
 
 

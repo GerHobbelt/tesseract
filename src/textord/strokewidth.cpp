@@ -1988,7 +1988,7 @@ ScrollViewReference StrokeWidth::DisplayGoodBlobs(const char *window_name, int x
     window->Pen(BLOBNBOX::TextlineColor(blob_type, flow));
     window->Rectangle(left_x, bottom_y, right_x, top_y);
   }
-  window->Update();
+  window->UpdateWindow();
   return window;
 }
 
@@ -2030,7 +2030,7 @@ ScrollViewReference StrokeWidth::DisplayDiacritics(const char *window_name, int 
     const TBOX &box = blob->bounding_box();
     window->Rectangle(box.left(), box.bottom(), box.right(), box.top());
   }
-  window->Update();
+  window->UpdateWindow();
   return window;
 }
 

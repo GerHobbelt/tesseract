@@ -84,8 +84,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
   // Note that NumInputs() is defined as input image height.
   int target_height = network->NumInputs();
   int width = 0, height = 0;
-  Image pix =
-      image_data.PreScale(target_height, kMaxInputHeight, image_scale, &width, &height, nullptr);
+  Image pix = image_data.PreScale(target_height, kMaxInputHeight, image_scale, &width, &height, nullptr);
   if (pix == nullptr) {
     tprintf("ERROR: Bad pix from ImageData!\n");
     return nullptr;

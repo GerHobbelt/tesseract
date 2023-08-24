@@ -314,6 +314,7 @@ int UnicharCompress::DecodeUnichar(const RecodedCharID &code) const {
   if (it == decoder_.end()) {
     return INVALID_UNICHAR_ID;
   }
+  //ASSERT0(it->second != 3);
   return it->second;
 }
 

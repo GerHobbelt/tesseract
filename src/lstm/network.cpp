@@ -337,7 +337,7 @@ void Network::DisplayForward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
   ClearWindow(false, name_, pixGetWidth(image), pixGetHeight(image), forward_win_);
   DisplayImage(image, fmt::format("DisplayForward({})", name_), forward_win_);
-  forward_win_->Update();
+  forward_win_->UpdateWindow();
 }
 
 // Displays the image of the matrix to the backward window.
@@ -346,7 +346,7 @@ void Network::DisplayBackward(const NetworkIO &matrix) {
   std::string window_name = name_ + "-back";
   ClearWindow(false, window_name, pixGetWidth(image), pixGetHeight(image), backward_win_);
   DisplayImage(image, fmt::format("DisplayBackward({})", name_), backward_win_);
-  backward_win_->Update();
+  backward_win_->UpdateWindow();
 }
 
 // Creates the window if needed, otherwise clears it.

@@ -104,6 +104,8 @@ static void AddBoxTohOCR(const ResultIterator *it, PageIteratorLevel level,
     hocr_str << "; x_size " << row_height << "; x_descenders " << -descenders
              << "; x_ascenders " << ascenders;
   }
+  float conf = it->Confidence(level);
+  hocr_str << "; x_conf " << conf;
   hocr_str << "\">";
 }
 
@@ -238,7 +240,9 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-          ASSERT_HOST(false);
+            if (tesseract_->hocr_images) {
+              hocr_str << "ocr_photo";
+            }
           break;
         default:
           hocr_str << "ocr_line";
@@ -263,12 +267,12 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
     bool bold, italic, underlined, monospace, serif, smallcaps;
     int pointsize, font_id;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
+    float w_conf = res_it->Confidence(RIL_WORD);
     const char *font_name =
         res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
                                    &serif, &smallcaps, &pointsize, &font_id);
     hocr_str << " title='bbox " << left << " " << top << " " << right << " "
-             << bottom << "; x_wconf "
-             << static_cast<int>(res_it->Confidence(RIL_WORD));
+             << bottom << "; x_wconf " << w_conf;
     if (tesseract_->hocr_font_info) {
       if (font_name) {
         hocr_str << "; x_font " << HOcrEscape(font_name).c_str();

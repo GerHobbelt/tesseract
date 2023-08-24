@@ -171,6 +171,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
         // Handle all kinds of images.
+		//
         // TODO: optionally add TYPE, for example TYPE="photo".
         alto_str << "\t\t\t\t<Illustration ID=\"cblock_" << bcnt++ << "\"";
         AddBoxToAlto(res_it, RIL_BLOCK, alto_str);

@@ -105,7 +105,7 @@ void mark_outline(EDGEPT *edgept) { /* Start of point list */
   y += 6;
   window->DrawTo(x, y);
 
-  window->Update();
+  window->UpdateWindow();
 }
 
 } // namespace tesseract

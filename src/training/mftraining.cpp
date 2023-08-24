@@ -87,7 +87,7 @@ static void DisplayProtoList(const char *ch, LIST protolist) {
       tprintf("Red proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
     }
   }
-  window->Update();
+  window->UpdateWindow();
 }
 #endif // !GRAPHICS_DISABLED
 

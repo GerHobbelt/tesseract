@@ -413,8 +413,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     }
     recog_word_recursive(prefix);
     if (superscript_debug >= 2) {
-      tprintf(" The leading bits look like {} {}\n", ScriptPosToString(leading_pos),
-              prefix->best_choice->unichar_string());
+      tprintf(" The leading bits look like {} \"{}\"\n", ScriptPosToString(leading_pos), prefix->best_choice->unichar_string());
     }
 
     // Restore the normal y-position penalties.
@@ -437,8 +436,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     }
     recog_word_recursive(suffix);
     if (superscript_debug >= 2) {
-      tprintf(" The trailing bits look like {} {}\n", ScriptPosToString(trailing_pos),
-              suffix->best_choice->unichar_string());
+      tprintf(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
     }
 
     // Restore the normal y-position penalties.

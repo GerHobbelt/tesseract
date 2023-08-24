@@ -274,7 +274,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
     else if (wordrec_display_splits) {
       seam->Mark(edge_window);
       if (chop_debug > 2) {
-        edge_window->Update();
+        edge_window->UpdateWindow();
         edge_window->Wait();
       }
     }

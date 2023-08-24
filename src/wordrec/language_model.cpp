@@ -58,7 +58,7 @@ static inline double log2(double n) {
 const float LanguageModel::kMaxAvgNgramCost = 25.0f;
 
 LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict *dict)
-    : INT_MEMBER(language_model_debug_level, 0, "Language model debug level",
+    : INT_MEMBER(language_model_debug_level, 0, "Language model debug level (0..7)",
                  dict->getCCUtil()->params())
     , BOOL_INIT_MEMBER(language_model_ngram_on, false,
                        "Turn on/off the use of character ngram model", dict->getCCUtil()->params())
@@ -561,16 +561,17 @@ ViterbiStateEntry *LanguageModel::GetNextParentVSE(bool just_classified, bool mi
     if (parent_vse->competing_vse != nullptr) {
       const BLOB_CHOICE *competing_b = parent_vse->competing_vse->curr_b;
       UNICHAR_ID other_id = competing_b->unichar_id();
-      if (language_model_debug_level >= 5) {
-        tprintf("Parent {} has competition {}\n", unicharset.id_to_unichar(parent_id),
+      if (language_model_debug_level > 4) {
+        tprintf("Parent {} has competition {}\n", 
+                unicharset.id_to_unichar(parent_id),
                 unicharset.id_to_unichar(other_id));
       }
       if (unicharset.SizesDistinct(parent_id, other_id)) {
         // If other_id matches bc wrt position and size, and parent_id, doesn't,
         // don't bind to the current parent.
         if (bc->PosAndSizeAgree(*competing_b, word_res->x_height,
-                                language_model_debug_level >= 5) &&
-            !bc->PosAndSizeAgree(*parent_b, word_res->x_height, language_model_debug_level >= 5)) {
+                                (language_model_debug_level > 4)) &&
+            !bc->PosAndSizeAgree(*parent_b, word_res->x_height, (language_model_debug_level > 4))) {
           continue; // Competing blobchoice has a better vertical match.
         }
       }
@@ -679,7 +680,7 @@ bool LanguageModel::AddViterbiStateEntry(LanguageModelFlagsType top_choice_flags
                                             ? dict_->getUnicharset().id_to_unichar(b->unichar_id())
                                             : nullptr);
   new_vse->cost = ComputeAdjustedPathCost(new_vse);
-  if (language_model_debug_level >= 3) {
+  if (language_model_debug_level > 2) {
     tprintf("Adjusted cost = {}\n", new_vse->cost);
   }
 
@@ -815,7 +816,7 @@ LanguageModelDawgInfo *LanguageModel::GenerateDawgInfo(bool word_end, int curr_c
   // Deal with hyphenated words.
   if (word_end && dict_->has_hyphen_end(&dict_->getUnicharset(), b.unichar_id(), curr_col == 0)) {
     if (language_model_debug_level > 0) {
-      tprintf("Hyphenated word found\n");
+      tprintf("Hyphenated word found.\n");
     }
     return new LanguageModelDawgInfo(dawg_args_.active_dawgs, COMPOUND_PERM);
   }
@@ -824,7 +825,7 @@ LanguageModelDawgInfo *LanguageModel::GenerateDawgInfo(bool word_end, int curr_c
   if (dict_->compound_marker(b.unichar_id()) &&
       (parent_vse == nullptr || parent_vse->dawg_info->permuter != NUMBER_PERM)) {
     if (language_model_debug_level > 0) {
-      tprintf("Found compound marker\n");
+      tprintf("Found compound marker.\n");
     }
     // Do not allow compound operators at the beginning and end of the word.
     // Do not allow more than one compound operator per word.
@@ -854,7 +855,7 @@ LanguageModelDawgInfo *LanguageModel::GenerateDawgInfo(bool word_end, int curr_c
     }
 
     if (language_model_debug_level > 0) {
-      tprintf("Compound word found\n");
+      tprintf("Compound word found.\n");
     }
     return new LanguageModelDawgInfo(&beginning_active_dawgs_, COMPOUND_PERM);
   } // done dealing with compound words
@@ -957,11 +958,11 @@ float LanguageModel::ComputeNgramCost(const char *unichar, float certainty, floa
   float prob = 0.0f;
   int step = 0;
   while (unichar_ptr < unichar_end && (step = UNICHAR::utf8_step(unichar_ptr)) > 0) {
+    auto prob_in_context = dict_->ProbabilityInContext(context_ptr, -1, unichar_ptr, step);
     if (language_model_debug_level > 1) {
-      tprintf("prob({} | {})={}\n", unichar_ptr, context_ptr,
-              dict_->ProbabilityInContext(context_ptr, -1, unichar_ptr, step));
+      tprintf("prob({} | {})={}\n", unichar_ptr, context_ptr, prob_in_context);
     }
-    prob += dict_->ProbabilityInContext(context_ptr, -1, unichar_ptr, step);
+    prob += prob_in_context;
     ++(*unichar_step_len);
     if (language_model_ngram_use_only_first_uft8_step) {
       break;
@@ -1208,7 +1209,7 @@ float LanguageModel::ComputeAdjustedPathCost(ViterbiStateEntry *vse) {
     float cost = params_model_.ComputeCost(features);
     if (language_model_debug_level > 3) {
       tprintf("ComputeAdjustedPathCost {} ParamsModel features:\n", cost);
-      if (language_model_debug_level >= 5) {
+      if (language_model_debug_level > 4) {
         for (int f = 0; f < PTRAIN_NUM_FEATURE_TYPES; ++f) {
           tprintf("{}={}\n", kParamsTrainingFeatureTypeName[f], features[f]);
         }
@@ -1289,7 +1290,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
   // Update and log new raw_choice if needed.
   if (word_res->raw_choice == nullptr || word->rating() < word_res->raw_choice->rating()) {
     if (word_res->LogNewRawChoice(word) && language_model_debug_level > 0) {
-      tprintf("Updated raw choice\n");
+      tprintf("Updated raw choice.\n");
     }
   }
   // Set the modified rating for best choice to vse->cost and log best choice.
@@ -1316,7 +1317,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
     best_choice_bundle->updated = true;
     best_choice_bundle->best_vse = vse;
     if (language_model_debug_level > 0) {
-      tprintf("Updated best choice\n");
+      tprintf("Updated best choice.\n");
       word->print_state("New state ");
     }
     // Update hyphen state if we are dealing with a dictionary word.
@@ -1435,8 +1436,10 @@ WERD_CHOICE *LanguageModel::ConstructWord(ViterbiStateEntry *vse, WERD_RES *word
       vse->associate_stats.full_wh_ratio_var +=
           pow(full_wh_ratio_mean - curr_vse->associate_stats.full_wh_ratio, 2);
       if (language_model_debug_level > 2) {
-        tprintf("full_wh_ratio_var += ({}-{})^2\n", full_wh_ratio_mean,
-                curr_vse->associate_stats.full_wh_ratio);
+        tprintf("full_wh_ratio_var += ({}-{})^2 --> {}\n", 
+                full_wh_ratio_mean,
+                curr_vse->associate_stats.full_wh_ratio,
+                vse->associate_stats.full_wh_ratio_var);
       }
     }
 

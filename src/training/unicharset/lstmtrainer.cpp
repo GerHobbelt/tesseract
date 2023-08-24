@@ -233,8 +233,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
     double cert_offset_step, double max_cert_offset, std::string &results) {
   sample_iteration_ = iteration;
   NetworkIO fwd_outputs, targets;
-  Trainability result =
-      PrepareForBackward(trainingdata, &fwd_outputs, &targets);
+  Trainability result = PrepareForBackward(trainingdata, &fwd_outputs, &targets);
   if (result == UNENCODABLE || result == HI_PRECISION_ERR || dict_ == nullptr) {
     return result;
   }
@@ -945,7 +944,8 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   float image_scale;
   NetworkIO inputs;
   bool invert = trainingdata->boxes().empty();
-  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down,
+  TBOX line_box(0, 0, 100, 100);
+  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down, line_box, 
                      &image_scale, &inputs, fwd_outputs)) {
     tprintf("ERROR: Image {} not trainable\n", trainingdata->imagefilename());
     return UNENCODABLE;
@@ -1175,7 +1175,8 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
               truth_text);
       DebugActivationPath(outputs, labels, xcoords);
 #if !GRAPHICS_DISABLED
-      DisplayForward(inputs, labels, xcoords, "LSTMTraining", align_win_);
+      TBOX line_box(0, 0, 100, 100);
+      DisplayForward(inputs, labels, xcoords, line_box, "LSTMTraining", align_win_);
       if (OutputLossType() == LT_CTC) {
         DisplayTargets(fwd_outputs, "CTC Outputs", ctc_win_);
         DisplayTargets(outputs, "CTC Targets", target_win_);
@@ -1218,7 +1219,7 @@ void LSTMTrainer::DisplayTargets(const NetworkIO &targets,
       window->DrawTo(start_t - 1, 0);
     }
   }
-  window->Update();
+  window->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED

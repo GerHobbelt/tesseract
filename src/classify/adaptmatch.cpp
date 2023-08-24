@@ -411,13 +411,13 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
   if (strcmp(classify_learn_debug_str.c_str(), correct_text) == 0) {
     RefreshDebugWindow(learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
     rotated_blob->plot(learn_debug_win_, ScrollView::GREEN, ScrollView::BROWN);
-    learn_debug_win_->Update();
+    learn_debug_win_->UpdateWindow();
     learn_debug_win_->Wait();
   }
   if (classify_debug_character_fragments && segmentation == CST_FRAGMENT) {
     ASSERT_HOST(!learn_fragments_debug_win_); // set up in LearnWord
     blob->plot(learn_fragments_debug_win_, ScrollView::BLUE, ScrollView::BROWN);
-    learn_fragments_debug_win_->Update();
+    learn_fragments_debug_win_->UpdateWindow();
   }
 #endif // !GRAPHICS_DISABLED
 
@@ -1405,7 +1405,8 @@ void Classify::ConvertMatchesToChoices(const DENORM &denorm, const TBOX &box,
     } else {
       Rating = Certainty = (1.0f - result.rating);
       Rating *= rating_scale * Results->BlobLength;
-      Certainty *= -(getDict().certainty_scale);
+      float certainty_scale = getDict().certainty_scale;
+      Certainty *= -certainty_scale;
     }
     // Adapted results, by their very nature, should have good certainty.
     // Those that don't are at best misleading, and often lead to errors,

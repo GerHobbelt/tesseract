@@ -52,7 +52,7 @@ enum TrainingFlags {
 class TESS_API LSTMRecognizer {
 public:
   LSTMRecognizer();
-  LSTMRecognizer(const std::string &language_data_path_prefix);
+  //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
   int NumOutputs() const {
@@ -230,10 +230,12 @@ public:
   // If mgr contains a unicharset and recoder, then they are taken from there,
   // otherwise, they are part of the serialization in fp.
   bool DeSerialize(const TessdataManager *mgr, TFile *fp);
+  
   // Loads the charsets from mgr.
   bool LoadCharsets(const TessdataManager *mgr);
   // Loads the Recoder.
   bool LoadRecoder(TFile *fp);
+
   // Loads the dictionary if possible from the traineddata file.
   // Prints a warning message, and returns false but otherwise fails silently
   // and continues to work without it if loading fails.
@@ -256,6 +258,7 @@ public:
 
   // Helper computes min and mean best results in the output.
   void OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output, float *sd);
+
   // Recognizes the image_data, returning the labels,
   // scores, and corresponding pairs of start, end x-coords in coords.
   // Returned in scale_factor is the reduction factor
@@ -266,7 +269,7 @@ public:
   // forward outputs for the best photometric interpretation.
   // inputs is filled with the used inputs to the network.
   bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool re_invert,
-                     bool upside_down, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
+                     bool upside_down, const TBOX &line_box, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
 
   // Converts an array of labels to utf-8, whether or not the labels are
   // augmented with character boundaries.
@@ -275,7 +278,8 @@ public:
   // Displays the forward results in a window with the characters and
   // boundaries as determined by the labels and label_coords.
   void DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
-                      const std::vector<int> &label_coords, const char *window_name,
+                      const std::vector<int> &label_coords,
+                      const TBOX &line_box, const char *window_name,
                       ScrollViewReference &window);
   // Converts the network output to a sequence of labels. Outputs labels, scores
   // and start xcoords of each char, and each null_char_, with an additional
@@ -283,6 +287,9 @@ public:
   // The conversion method is determined by internal state.
   void LabelsFromOutputs(const NetworkIO &outputs, std::vector<int> *labels,
                          std::vector<int> *xcoords);
+
+  void SetDataPathPrefix(const std::string &language_data_path_prefix);
+  void CopyDebugParameters(CCUtil *src, Dict *dict_src);
 
 protected:
   // Sets the random seed from the sample_iteration_;
@@ -295,7 +302,7 @@ protected:
   // Displays the labels and cuts at the corresponding xcoords.
   // Size of labels should match xcoords.
   void DisplayLSTMOutput(const std::vector<int> &labels, const std::vector<int> &xcoords,
-                         int height, ScrollViewReference &window);
+                         int height, const TBOX &line_box, ScrollViewReference &window);
 
   // Prints debug output detailing the activation path that is implied by the
   // xcoords.

@@ -86,8 +86,7 @@ void make_single_word(bool one_blob, TO_ROW_LIST *rows, ROW_LIST *real_rows) {
       delete bblob;
     }
     // Convert the TO_ROW to a ROW.
-    ROW *real_row =
-        new ROW(row, static_cast<int16_t>(row->kern_size), static_cast<int16_t>(row->space_size));
+    ROW *real_row = new ROW(row, static_cast<TDimension>(row->kern_size), static_cast<TDimension>(row->space_size));
     WERD_IT word_it(real_row->word_list());
     WERD *word = new WERD(&cblobs, 0, nullptr);
     word->set_flag(W_BOL, true);
@@ -158,7 +157,7 @@ void set_row_spaces( // find space sizes
     }
 #if !GRAPHICS_DISABLED
     if (textord_show_initial_words) {
-      plot_word_decisions(to_win, static_cast<int16_t>(row->fixed_pitch), row);
+      plot_word_decisions(to_win, static_cast<TDimension>(row->fixed_pitch), row);
     }
 #endif
   }
@@ -178,7 +177,7 @@ int32_t row_words(    // compute space size
 ) {
   bool testing_row;      // contains testpt
   bool prev_valid;       // if decent size
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;        // end of prev blob
   int32_t cluster_count; // no of clusters
   int32_t gap_index;     // which cluster
   int32_t smooth_factor; // for smoothing stats
@@ -197,7 +196,7 @@ int32_t row_words(    // compute space size
   //      if (testing_on)
   //              tprintf("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
-  prev_x = -INT32_MAX;
+  prev_x = TDIMENSION_MIN;
   testing_row = false;
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
     blob = blob_it.data();
@@ -330,7 +329,7 @@ int32_t row_words2(   // compute space size
 ) {
   bool prev_valid;       // if decent size
   bool this_valid;       // current blob big enough
-  int32_t prev_x;        // end of prev blob
+  TDimension prev_x;     // end of prev blob
   int32_t min_width;     // min interesting width
   int32_t valid_count;   // good gaps
   int32_t total_count;   // total gaps
@@ -513,7 +512,8 @@ void make_real_words(tesseract::Textord *textord,
       real_row_it.add_after_then_move(real_row);
     }
   }
-  block->block->set_stats(block->fixed_pitch == 0, static_cast<int16_t>(block->kern_size),
+  block->block->set_stats((block->fixed_pitch == 0), 
+                          static_cast<int16_t>(block->kern_size),
                           static_cast<int16_t>(block->space_size),
                           static_cast<int16_t>(block->fixed_pitch));
   block->block->check_pitch();
@@ -543,8 +543,7 @@ ROW *make_rep_words( // make a row
     word_box += word_it.data()->bounding_box();
   }
   row->xheight = block->xheight;
-  real_row =
-      new ROW(row, static_cast<int16_t>(block->kern_size), static_cast<int16_t>(block->space_size));
+  real_row = new ROW(row, static_cast<TDimension>(block->kern_size), static_cast<TDimension>(block->space_size));
   word_it.set_to_list(real_row->word_list());
   // put words in row
   word_it.add_list_after(&row->rep_words);

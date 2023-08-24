@@ -110,11 +110,6 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   good_grid.Clear(); // Not needed any more.
   Image pix = noise_density_->ThresholdToPix(max_noise_count_);
   if (debug) {
- #if 0
-    const int page_index = 0;
-	  std::string filepath = mkUniqueOutputFilePath(debug_output_path.c_str(), page_index, "nontext.junknoisemask", "png");
-	  WritePix(filepath, pix, IFF_PNG);
-#endif
     tesseract_->AddPixDebugPage(pix, "ComputeNonTextMask:nontext.junknoisemask");
   }
   ScrollViewReference win = nullptr;
@@ -142,7 +137,7 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   if (debug) {
 #if !GRAPHICS_DISABLED
     if (win) {
-      win->Update();
+      win->UpdateWindow();
     }
 #endif // !GRAPHICS_DISABLED
     tesseract_->AddPixDebugPage(pix, "nontext.junk.ComputeNonTextMask.photomask");

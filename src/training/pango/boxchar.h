@@ -30,10 +30,6 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#if (LIBLEPT_MAJOR_VERSION == 1 && LIBLEPT_MINOR_VERSION >= 83) || LIBLEPT_MAJOR_VERSION > 1
-#include <leptonica/pix_internal.h> // for fast access to Box geometry
-#endif
-
 namespace tesseract {
 
 class BoxChar {
@@ -88,7 +84,11 @@ public:
     if (other.box_ == nullptr) {
       return false;
     }
-    return box_->x < other.box_->x;
+    int32_t box_x;
+    int32_t other_box_x;
+    boxGetGeometry(box_, &box_x, nullptr, nullptr, nullptr);
+    boxGetGeometry(other.box_, &other_box_x, nullptr, nullptr, nullptr);
+    return box_x < other_box_x;
   }
   // Increments *num_rtl and *num_ltr according to the directionality of
   // characters in the box.
@@ -98,8 +98,7 @@ public:
   void ReverseUnicodesInBox();
 
   static void TranslateBoxes(int xshift, int yshift, std::vector<BoxChar *> *boxes);
-  static void TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box,
-                            std::vector<BoxChar *> *boxes);
+  static void TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box, std::vector<BoxChar *> *boxes);
   // Prepares for writing the boxes to a file by inserting newlines, spaces,
   // and re-ordering so the boxes are strictly left-to-right.
   static void PrepareToWrite(std::vector<BoxChar *> *boxes);

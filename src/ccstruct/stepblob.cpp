@@ -99,9 +99,9 @@ static void position_outline( // put in place
 #if !GRAPHICS_DISABLED
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST *list,          // outline to draw
-    ScrollViewReference &window,            // window to draw in
-    ScrollView::Color colour,      // colour to use
-    ScrollView::Color child_colour // colour of children
+    ScrollViewReference &window,   // window to draw in
+    ScrollView::Color colour,      // colour to use for the oulines (contours)
+    ScrollView::Color child_colour // colour of children (holes)
 ) {
   C_OUTLINE *outline;     // current outline
   C_OUTLINE_IT it = list; // iterator
@@ -233,9 +233,7 @@ void C_BLOB::ConstructBlobsFromOutlines(bool good_blob, C_OUTLINE_LIST *outline_
     // Set inverse flag and reverse if needed.
     blob->CheckInverseFlagAndDirection();
     // Put on appropriate list.
-    if (!blob_is_good && bad_blobs_it != nullptr) {
-      bad_blobs_it->add_after_then_move(blob);
-    } else {
+    if (!(!blob_is_good && bad_blobs_it != nullptr)) {
       good_blobs_it->add_after_then_move(blob);
     }
   }
@@ -549,8 +547,8 @@ Image C_BLOB::render_outline() {
 
 #if !GRAPHICS_DISABLED
 void C_BLOB::plot(ScrollViewReference &window,               // window to draw in
-                  ScrollView::Color blob_colour,    // main colour
-                  ScrollView::Color child_colour) { // for holes
+                  ScrollView::Color blob_colour,             // main colour
+                  ScrollView::Color child_colour) {          // for holes
   plot_outline_list(&outlines, window, blob_colour, child_colour);
 }
 #endif

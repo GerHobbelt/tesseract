@@ -71,20 +71,22 @@ void draw_meanlines(          // draw a block
     ScrollView::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 );
-void plot_word_decisions( // draw words
+void plot_word_decisions(          // draw words
     ScrollViewReference &win,      // window to draw in
-    int16_t pitch,        // of block
-    TO_ROW *row           // row to draw
+    TDimension pitch,              // of block
+    TO_ROW *row                    // row to draw
 );
-void plot_fp_cells(           // draw words
-    ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
-    BLOBNBOX_IT *blob_it,     // blobs
-    int16_t pitch,            // of block
-    int16_t blob_count,       // no of real blobs
-    STATS *projection,        // vertical
-    int16_t projection_left,  // edges //scale factor
-    int16_t projection_right, float projection_scale);
+void plot_fp_cells(              // draw words
+    ScrollViewReference &win,    // window to draw in
+    ScrollView::Color colour,    // colour of lines
+    BLOBNBOX_IT *blob_it,        // blobs
+    TDimension pitch,            // of block
+    int16_t blob_count,          // no of real blobs
+    STATS *projection,           // vertical
+    TDimension projection_left,  // edges 
+    TDimension projection_right, 
+    float projection_scale       // scale factor
+);
 void plot_fp_cells2(          // draw words
     ScrollViewReference &win,          // window to draw in
     ScrollView::Color colour, // colour of lines

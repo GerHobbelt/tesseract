@@ -186,7 +186,10 @@ void UNICHARSET::UNICHAR_PROPERTIES::CopyFrom(const UNICHAR_PROPERTIES &src) {
 UNICHARSET::UNICHARSET()
     : ids(), script_table(nullptr), script_table_size_used(0) {
   clear();
+  minimal_init();
+}
 
+void UNICHARSET::minimal_init() {
   for (int i = 0; i < SPECIAL_UNICHAR_CODES_COUNT; ++i) {
     unichar_insert(kSpecialUnicharCodes[i]);
     if (i == UNICHAR_JOINED) {
@@ -380,6 +383,7 @@ std::string UNICHARSET::debug_str(UNICHAR_ID id) const {
 // Sets the normed_ids vector from the normed string. normed_ids is not
 // stored in the file, and needs to be set when the UNICHARSET is loaded.
 void UNICHARSET::set_normed_ids(UNICHAR_ID unichar_id) {
+  ASSERT_HOST(contains_unichar_id(unichar_id));
   unichars[unichar_id].properties.normed_ids.clear();
   if (unichar_id == UNICHAR_SPACE && id_to_unichar(unichar_id)[0] == ' ') {
     unichars[unichar_id].properties.normed_ids.push_back(UNICHAR_SPACE);
@@ -455,6 +459,7 @@ void UNICHARSET::ExpandRangesFromOther(const UNICHARSET &src) {
 // ids will not be present in this if not in src. Does NOT reorder the set!
 void UNICHARSET::CopyFrom(const UNICHARSET &src) {
   clear();
+  minimal_init();
   for (unsigned ch = 0; ch < src.unichars.size(); ++ch) {
     const UNICHAR_PROPERTIES &src_props = src.unichars[ch].properties;
     const char *utf8 = src.id_to_unichar(ch);
@@ -762,8 +767,8 @@ bool UNICHARSET::save_to_string(std::string &str) const {
              << ',' << bearing_sd << ',' << advance << ',' << advance_sd << ' '
              << this->get_script_from_script_id(this->get_script(id)) << ' '
              << this->get_other_case(id) << ' ' << this->get_direction(id)
-             << ' ' << this->get_mirror(id) << ' '
-             << this->get_normed_unichar(id) << "\t# "
+             << ' ' << this->get_mirror(id) << " \""
+             << this->get_normed_unichar(id) << "\"\t# "
              << this->debug_str(id).c_str() << '\n';
       str += stream.str().c_str();
     }
@@ -805,6 +810,7 @@ bool UNICHARSET::load_via_fgets(
   char buffer[256];
 
   this->clear();
+  this->minimal_init();
   if (fgets_cb(buffer, sizeof(buffer)) == nullptr ||
       sscanf(buffer, "%d", &unicharset_size) != 1) {
     return false;

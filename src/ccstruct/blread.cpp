@@ -56,9 +56,9 @@ bool read_unlv_file(   // print list of sides
   } else {
     while (tfscanf(pdfp, "%d %d %d %d %*s", &x, &y, &width, &height) >= 4) {
       // make rect block
-      block = new BLOCK(name.c_str(), true, 0, 0, static_cast<int16_t>(x),
-                        static_cast<int16_t>(ysize - y - height), static_cast<int16_t>(x + width),
-                        static_cast<int16_t>(ysize - y));
+      block = new BLOCK(name.c_str(), true, 0, 0, static_cast<TDimension>(x),
+                        static_cast<TDimension>(ysize - y - height), static_cast<TDimension>(x + width),
+                        static_cast<TDimension>(ysize - y));
       // on end of list
       block_it.add_to_end(block);
     }

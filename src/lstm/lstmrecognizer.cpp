@@ -48,10 +48,10 @@ const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
 const double kCertOffset = -0.085;
 
-LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
-    : LSTMRecognizer::LSTMRecognizer() {
-  ccutil_.language_data_path_prefix = language_data_path_prefix;
-}
+//LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
+//    : LSTMRecognizer::LSTMRecognizer() {
+//  ccutil_.language_data_path_prefix = language_data_path_prefix;
+//}
 
 LSTMRecognizer::LSTMRecognizer()
     : network_(nullptr)
@@ -251,7 +251,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   NetworkIO outputs;
   float scale_factor = 0.0;
   NetworkIO inputs;
-  if (!RecognizeLine(image_data, invert_threshold, false, false, &scale_factor, &inputs, &outputs)) {
+  if (!RecognizeLine(image_data, invert_threshold, false, false, line_box, &scale_factor, &inputs, &outputs)) {
     return;
   }
   if (search_ == nullptr) {
@@ -259,15 +259,12 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
 	search_->SetDebug(HasDebug());
   }
   search_->excludedUnichars.clear();
-  search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(),
-                  lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words,
-                                  lstm_choice_mode);
+  search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words, lstm_choice_mode);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
     for (int i = 0; i < lstm_choice_amount; ++i) {
-      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert,
-                                    &GetUnicharset(), lstm_choice_mode);
+      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
       search_->extractSymbolChoices(&GetUnicharset());
     }
     search_->segmentTimestepsByCharacters();
@@ -292,8 +289,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
 }
 
 // Helper computes min and mean best results in the output.
-void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output,
-                                 float *sd) {
+void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output, float *sd) {
   const int kOutputScale = INT8_MAX;
   STATS stats(0, kOutputScale);
   for (int t = 0; t < outputs.Width(); ++t) {
@@ -320,7 +316,9 @@ void LSTMRecognizer::OutputStats(const NetworkIO &outputs, float *min_output, fl
 // scores, and corresponding pairs of start, end x-coords in coords.
 bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
                                    float invert_threshold,
-                                   bool re_invert, bool upside_down, float *scale_factor,
+                                   bool re_invert, bool upside_down, 
+                                   const TBOX &line_box, 
+                                   float *scale_factor,
                                    NetworkIO *inputs, NetworkIO *outputs) {
   // This ensures consistent recognition results.
   SetRandomSeed();
@@ -363,13 +361,14 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       NetworkIO inv_inputs, inv_outputs;
       inv_inputs.set_int_mode(IsIntMode());
       SetRandomSeed();
-      pixInvert(pix, pix);
-      Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, &inv_inputs);
+      Image inv_pix = pixClone(pix);
+      pixInvert(inv_pix, pix);
+      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (HasDebug()) {
-        tprintf("Inverting image: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
+        tprintf("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
@@ -383,6 +382,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         SetRandomSeed();
         network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
       }
+      inv_pix.destroy();
     }
   }
 
@@ -391,7 +391,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     std::vector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
 #if !GRAPHICS_DISABLED
-    DisplayForward(*inputs, labels, coords, "LSTMForward", debug_win_);
+    DisplayForward(*inputs, labels, coords, line_box, "LSTMForward", debug_win_);
 #endif
     DebugActivationPath(*outputs, labels, coords);
   }
@@ -418,23 +418,28 @@ std::string LSTMRecognizer::DecodeLabels(const std::vector<int> &labels) {
 // Displays the forward results in a window with the characters and
 // boundaries as determined by the labels and label_coords.
 void LSTMRecognizer::DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
-                                    const std::vector<int> &label_coords, const char *window_name,
+                                    const std::vector<int> &label_coords,
+                                    const TBOX &line_box, const char *window_name,
                                     ScrollViewReference &window) {
   Image input_pix = inputs.ToPix();
   Network::ClearWindow(false, window_name, pixGetWidth(input_pix), pixGetHeight(input_pix), window);
   int line_height = Network::DisplayImage(input_pix, "LSTMRecognizer::DisplayForward", window);
-  DisplayLSTMOutput(labels, label_coords, line_height, window);
+  DisplayLSTMOutput(labels, label_coords, line_height, line_box, window);
 }
 
 // Displays the labels and cuts at the corresponding xcoords.
 // Size of labels should match xcoords.
 void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
-                                       const std::vector<int> &xcoords, int height,
+                                       const std::vector<int> &xcoords,
+                                       int height, const TBOX &line_box, 
                                        ScrollViewReference &window) {
   int x_scale = network_->XScaleFactor();
   window->TextAttributes("Arial", height / 4, false, false, false);
-  unsigned end = 1;
-  for (unsigned start = 0; start < labels.size(); start = end) {
+  int x_offset = line_box.left();
+  int y_offset = line_box.bottom();
+  window->SetXYOffset(x_offset, y_offset);
+  unsigned int end = 1;
+  for (unsigned int start = 0; start < labels.size(); start = end) {
     int xpos = xcoords[start] * x_scale;
     if (labels[start] == null_char_) {
       end = start + 1;
@@ -450,7 +455,8 @@ void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
     }
     window->Line(xpos, 0, xpos, height * 3 / 2);
   }
-  window->Update();
+  window->SetXYOffset(0, 0);
+  window->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -636,6 +642,57 @@ const char *LSTMRecognizer::DecodeSingleLabel(int label) {
     return " ";
   }
   return GetUnicharset().get_normed_unichar(label);
+}
+
+
+void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_prefix) {
+  ccutil_.language_data_path_prefix = language_data_path_prefix;
+}
+
+void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
+  if (src != nullptr && &ccutil_ != src) {
+      ccutil_.ambigs_debug_level = (int)src->ambigs_debug_level;
+      ccutil_.use_ambigs_for_adaption = (bool)src->use_ambigs_for_adaption;
+  }
+
+  if (dict_ != nullptr && dict_ != dict_src) {
+      dict_->user_words_file = dict_src->user_words_file.c_str();
+      dict_->user_words_suffix = dict_src->user_words_suffix.c_str();
+      dict_->user_patterns_file = dict_src->user_patterns_file.c_str();
+      dict_->user_patterns_suffix = dict_src->user_patterns_suffix.c_str();
+      dict_->load_system_dawg = (bool)dict_src->load_system_dawg;
+      dict_->load_freq_dawg = (bool)dict_src->load_freq_dawg;
+      dict_->load_unambig_dawg = (bool)dict_src->load_unambig_dawg;
+      dict_->load_punc_dawg = (bool)dict_src->load_punc_dawg;
+      dict_->load_number_dawg = (bool)dict_src->load_number_dawg;
+      dict_->load_bigram_dawg = (bool)dict_src->load_bigram_dawg;
+      dict_->xheight_penalty_subscripts = (double)dict_src->xheight_penalty_subscripts;
+      dict_->xheight_penalty_inconsistent = (double)dict_src->xheight_penalty_inconsistent;
+      dict_->segment_penalty_dict_frequent_word = (double)dict_src->segment_penalty_dict_frequent_word;
+      dict_->segment_penalty_dict_case_ok = (double)dict_src->segment_penalty_dict_case_ok;
+      dict_->segment_penalty_dict_case_bad = (double)dict_src->segment_penalty_dict_case_bad;
+      dict_->segment_penalty_dict_nonword = (double)dict_src->segment_penalty_dict_nonword;
+      dict_->segment_penalty_garbage = (double)dict_src->segment_penalty_garbage;
+      dict_->output_ambig_words_file = dict_src->output_ambig_words_file.c_str();
+      dict_->dawg_debug_level = (int)dict_src->dawg_debug_level;
+      dict_->hyphen_debug_level = (int)dict_src->hyphen_debug_level;
+      dict_->use_only_first_uft8_step = (bool)dict_src->use_only_first_uft8_step;
+      dict_->certainty_scale = (double)dict_src->certainty_scale;
+      dict_->stopper_nondict_certainty_base = (double)dict_src->stopper_nondict_certainty_base;
+      dict_->stopper_phase2_certainty_rejection_offset = (double)dict_src->stopper_phase2_certainty_rejection_offset;
+      dict_->stopper_smallword_size = (int)dict_src->stopper_smallword_size;
+      dict_->stopper_certainty_per_char = (double)dict_src->stopper_certainty_per_char;
+      dict_->stopper_allowable_character_badness = (double)dict_src->stopper_allowable_character_badness;
+      dict_->stopper_debug_level = (int)dict_src->stopper_debug_level;
+      dict_->stopper_no_acceptable_choices = (bool)dict_src->stopper_no_acceptable_choices;
+      dict_->tessedit_truncate_wordchoice_log = (int)dict_src->tessedit_truncate_wordchoice_log;
+      dict_->word_to_debug = dict_src->word_to_debug.c_str();
+      dict_->segment_nonalphabetic_script = (bool)dict_src->segment_nonalphabetic_script;
+      dict_->save_doc_words = (bool)dict_src->save_doc_words;
+      dict_->doc_dict_pending_threshold = (double)dict_src->doc_dict_pending_threshold;
+      dict_->doc_dict_certainty_threshold = (double)dict_src->doc_dict_certainty_threshold;
+      dict_->max_permuter_attempts = (int)dict_src->max_permuter_attempts;
+  }
 }
 
 } // namespace tesseract.
