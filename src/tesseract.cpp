@@ -902,7 +902,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_bigram_debug", "Y");
 
-    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
+    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "1" : "0"); // LSTM debug output is extremely noisy
 
     api.SetVariable("debug_noise_removal", "Y");
 

@@ -42,7 +42,7 @@ static int list_components(TessdataManager &tm, const char *filename) {
   return EXIT_SUCCESS;
 }
 
-static int list_network(TessdataManager &tm, const char *filename, bool tess_debug_lstm) {
+static int list_network(TessdataManager &tm, const char *filename, int tess_debug_lstm) {
   if (filename != nullptr && !tm.Init(filename)) {
     tprintf("ERROR: Failed to read {}\n", filename);
     return EXIT_FAILURE;
@@ -129,7 +129,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
 {
   tesseract::CheckSharedLibraryVersion();
 
-  bool tess_debug_lstm = false;
+  int tess_debug_lstm = 0;
 
   int i;
   tesseract::TessdataManager tm;

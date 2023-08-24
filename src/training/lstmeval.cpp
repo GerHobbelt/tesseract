@@ -72,7 +72,7 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
   }
   tesseract::LSTMTester tester(static_cast<int64_t>(FLAGS_max_image_MB) * 1048576);
 #ifndef NDEBUG
-  tester.SetDebug(true);
+  tester.SetDebug(1);
 #endif
   if (!tester.LoadAllEvalData(FLAGS_eval_listfile.c_str())) {
     tprintf("ERROR: Failed to load eval data from: {}\n", FLAGS_eval_listfile.c_str());
