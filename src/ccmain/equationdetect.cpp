@@ -176,7 +176,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
   const float x_orig = (box.left() + box.right()) / 2.0f, y_orig = box.bottom();
   std::unique_ptr<TBLOB> normed_blob(new TBLOB(*tblob));
   normed_blob->Normalize(nullptr, nullptr, nullptr, x_orig, y_orig, scaling, scaling, 0.0f,
-                         static_cast<float>(kBlnBaselineOffset), false);
+                         static_cast<float>(kBlnBaselineOffset), false, nullptr);
   equ_tesseract_.AdaptiveClassifier(normed_blob.get(), &ratings_equ);
   lang_tesseract_->AdaptiveClassifier(normed_blob.get(), &ratings_lang);
   delete tblob;

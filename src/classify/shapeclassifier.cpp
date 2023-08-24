@@ -41,12 +41,12 @@ namespace tesseract {
 // Classifies the given [training] sample, writing to results.
 // See shapeclassifier.h for a full description.
 // Default implementation calls the ShapeRating version.
-int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, int debug,
+int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, Image page_pix, int debug,
                                            UNICHAR_ID keep_this,
                                            std::vector<UnicharRating> *results) {
   results->clear();
   std::vector<ShapeRating> shape_results;
-  int num_shape_results = ClassifySample(sample, debug, keep_this, &shape_results);
+  int num_shape_results = ClassifySample(sample, page_pix, debug, keep_this, &shape_results);
   const ShapeTable *shapes = GetShapeTable();
   std::vector<int> unichar_map(shapes->unicharset().size(), -1);
   for (int r = 0; r < num_shape_results; ++r) {
@@ -58,7 +58,7 @@ int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, int deb
 // Classifies the given [training] sample, writing to results.
 // See shapeclassifier.h for a full description.
 // Default implementation aborts.
-int ShapeClassifier::ClassifySample(const TrainingSample &sample, int debug,
+int ShapeClassifier::ClassifySample(const TrainingSample &sample, Image page_pix, int debug,
                                     int keep_this, std::vector<ShapeRating> *results) {
   ASSERT_HOST(!"Must implement ClassifySample!");
   return 0;
@@ -68,11 +68,11 @@ int ShapeClassifier::ClassifySample(const TrainingSample &sample, int debug,
 // If result is not nullptr, it is set with the shape_id and rating.
 // Does not need to be overridden if ClassifySample respects the keep_this
 // rule.
-int ShapeClassifier::BestShapeForUnichar(const TrainingSample &sample,
+int ShapeClassifier::BestShapeForUnichar(const TrainingSample &sample, Image page_pix,
                                          UNICHAR_ID unichar_id, ShapeRating *result) {
   std::vector<ShapeRating> results;
   const ShapeTable *shapes = GetShapeTable();
-  int num_results = ClassifySample(sample, 0, unichar_id, &results);
+  int num_results = ClassifySample(sample, page_pix, 0, unichar_id, &results);
   for (int r = 0; r < num_results; ++r) {
     if (shapes->GetShape(results[r].shape_id).ContainsUnichar(unichar_id)) {
       if (result != nullptr) {
@@ -97,7 +97,7 @@ const UNICHARSET &ShapeClassifier::GetUnicharset() const {
 // the user has finished with debugging the sample.
 // Probably doesn't need to be overridden if the subclass provides
 // DisplayClassifyAs.
-void ShapeClassifier::DebugDisplay(const TrainingSample &sample, 
+void ShapeClassifier::DebugDisplay(const TrainingSample &sample, Image page_pix,
                                    UNICHAR_ID unichar_id)
 {
   {
@@ -131,11 +131,11 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
     std::vector<ScrollViewReference> windows;
     if (unichar_id >= 0) {
       tprintf("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
-      UnicharClassifySample(sample, 1, unichar_id, &results);
-      DisplayClassifyAs(sample, unichar_id, 1, windows);
+      UnicharClassifySample(sample, page_pix, 1, unichar_id, &results);
+      DisplayClassifyAs(sample, page_pix, unichar_id, 1, windows);
     } else {
       tprintf("Invalid unichar_id: {}\n", unichar_id);
-      UnicharClassifySample(sample, 1, -1, &results);
+      UnicharClassifySample(sample, page_pix, 1, -1, &results);
     }
     if (unichar_id >= 0) {
       tprintf("Debugged class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
@@ -169,7 +169,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
 // windows to the windows output and returns a new index that may be used
 // by any subsequent classifiers. Caller waits for the user to view and
 // then destroys the windows by clearing the vector.
-int ShapeClassifier::DisplayClassifyAs(const TrainingSample &sample,
+int ShapeClassifier::DisplayClassifyAs(const TrainingSample &sample, Image page_pix,
                                        UNICHAR_ID unichar_id, int index,
                                        std::vector<ScrollViewReference > &windows) {
   // Does nothing in the default implementation.

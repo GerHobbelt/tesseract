@@ -323,7 +323,7 @@ struct TBLOB {
   // this blob and the Pix for the full image.
   void Normalize(const BLOCK *block, const FCOORD *rotation, const DENORM *predecessor,
                  float x_origin, float y_origin, float x_scale, float y_scale, float final_xshift,
-                 float final_yshift, bool inverse);
+                 float final_yshift, bool inverse, Image pix);
   // Rotates by the given rotation in place.
   void Rotate(const FCOORD rotation);
   // Moves by the given vec in place.

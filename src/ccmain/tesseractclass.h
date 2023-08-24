@@ -282,6 +282,24 @@ public:
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use pix_original() data */) const;
   bool CheckAndReportIfImageTooLarge(int width, int height) const;
 
+  // Returns a pointer to a Pix representing the best available resolution image
+  // of the page, with best available bit depth as second priority. Result can
+  // be of any bit depth, but never color-mapped, as that has always been
+  // removed. Note that in grey and color, 0 is black and 255 is
+  // white. If the input was binary, then black is 1 and white is 0.
+  // To tell the difference pixGetDepth() will return 32, 8 or 1.
+  // In any case, the return value is a borrowed Pix, and should not be
+  // deleted or pixDestroyed.
+  Image BestPix() const {
+    if (pixGetWidth(pix_original_) == ImageWidth()) {
+      return pix_original_;
+    } else if (pix_grey_ != nullptr) {
+      return pix_grey_;
+    } else {
+      return pix_binary_;
+    }
+  }
+
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();
     pix_thresholds_ = thresholds;
