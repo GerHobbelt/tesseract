@@ -55,6 +55,8 @@ public:
   //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
+  void Clean();
+
   int NumOutputs() const {
     return network_->NumOutputs();
   }

@@ -67,9 +67,24 @@ LSTMRecognizer::LSTMRecognizer()
     , debug_win_(nullptr) {}
 
 LSTMRecognizer::~LSTMRecognizer() {
+  if (network_ != nullptr) {
+    network_->Clean();
+  }
+
   delete network_;
   delete dict_;
   delete search_;
+}
+
+void LSTMRecognizer::Clean() {
+  network_->Clean();
+
+  delete network_;
+  network_ = nullptr;
+  delete dict_;
+  dict_ = nullptr;
+  delete search_;
+  search_ = nullptr;
 }
 
 // Loads a model from mgr, including the dictionary only if lang is not null.

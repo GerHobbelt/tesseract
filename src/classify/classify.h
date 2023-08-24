@@ -95,7 +95,8 @@ enum CharSegmentationType {
 class TESS_API Classify : public CCStruct {
 public:
   Classify();
-  ~Classify() override;
+  virtual ~Classify() override;
+
   virtual Dict &getDict() {
     return dict_;
   }

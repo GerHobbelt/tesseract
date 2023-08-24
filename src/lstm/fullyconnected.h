@@ -29,7 +29,7 @@ class FullyConnected : public Network {
 public:
   TESS_API
   FullyConnected(const std::string &name, int ni, int no, NetworkType type);
-  ~FullyConnected() override = default;
+  virtual ~FullyConnected() override;
 
   // Returns the shape output from the network given an input shape (which may
   // be partially unknown ie zero).

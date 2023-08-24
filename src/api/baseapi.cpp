@@ -224,6 +224,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 #endif
 }
 
+
 static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBaseAPI *api_ref, Tesseract *ocr_ref) {
     Tesseract *tess = ocr_ref;
     if (!tess) {
@@ -232,8 +233,9 @@ static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBas
         }
     }
     tprintf("tesseract ({}) log holdoff lock released.", (void *)tess);
+
     if (tess) {
-        tess->AddPixDebugPage(tess->GetPixForDebugView(), "this page's scan/image");
+        tess->ReportDebugInfo();
     }
 }
 
@@ -303,7 +305,7 @@ size_t TessBaseAPI::getOpenCLDevice(void **data) {
  */
 void TessBaseAPI::SetInputName(const char *name) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
   tesseract_->input_file_path = name ? name : "";
 }
@@ -384,13 +386,13 @@ const std::string &TessBaseAPI::GetOutputName() {
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
   return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
 }
 bool TessBaseAPI::SetVariable(const char *name, int value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
   std::string v = fmt::format("{}", value);
   return ParamUtils::SetParam(name, v.c_str(), SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
@@ -398,7 +400,7 @@ bool TessBaseAPI::SetVariable(const char *name, int value) {
 
 bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
   return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_DEBUG_ONLY, tesseract_->params());
 }
@@ -578,7 +580,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   bool reset_classifier = true;
   if (tesseract_ == nullptr) {
     reset_classifier = false;
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
     if (reader != nullptr) {
       reader_ = reader;
     }
@@ -656,7 +658,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs)
  */
 void TessBaseAPI::InitForAnalysePage() {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
 #if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
@@ -684,7 +686,7 @@ void TessBaseAPI::ReadDebugConfigFile(const char *filename) {
  */
 void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
   tesseract_->tessedit_pageseg_mode.set_value(mode);
 }
@@ -2698,7 +2700,7 @@ int TessBaseAPI::FindLines() {
     return 0;
   }
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract;
+    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
 #if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
@@ -3074,11 +3076,6 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
 
 
 	return std::move(f);
-}
-
-std::string mkUniqueOutputFilePath(const std::string& basepath, int page_number, const char* label, const char* filename_extension)
-{
-  return mkUniqueOutputFilePath(basepath.c_str(), page_number, label, filename_extension);
 }
 
 void WritePix(const std::string &file_path, Pix *pic, int file_type)
