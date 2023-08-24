@@ -1159,7 +1159,7 @@ bool ColPartition::MarkAsLeaderIfMonospaced() {
   double max_width = std::max(median_gap, median_width);
   double min_width = std::min(median_gap, median_width);
   double gap_iqr = gap_stats.ile(0.75f) - gap_stats.ile(0.25f);
-  if (textord_debug_tabfind >= 4) {
+  if (textord_debug_tabfind > 3) {
     tprintf("gap iqr = {}, blob_count={}, limits={},{}\n", gap_iqr, blob_count,
             max_width * kMaxLeaderGapFractionOfMax,
             min_width * kMaxLeaderGapFractionOfMin);
@@ -1223,7 +1223,7 @@ bool ColPartition::MarkAsLeaderIfMonospaced() {
       }
       blob_type_ = BRT_TEXT;
       flow_ = BTFT_LEADER;
-    } else if (textord_debug_tabfind) {
+    } else if (textord_debug_tabfind > 0) {
       if (best_end == nullptr) {
         tprintf("No path\n");
       } else {
@@ -1442,7 +1442,7 @@ void ColPartition::AddToWorkingSet(const ICOORD &bleft, const ICOORD &tright,
        it.forward(), ++col_index) {
     ;
   }
-  if (textord_debug_tabfind >= 2) {
+  if (textord_debug_tabfind > 1) {
     tprintf("Match is {} for:", (col_index & 1) ? "Real" : "Between");
     Print();
   }
@@ -1520,7 +1520,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
       part->set_bottom_spacing(page_height);
       part->set_top_spacing(page_height);
     }
-    if (textord_debug_tabfind) {
+    if (textord_debug_tabfind > 0) {
       part->Print();
       tprintf("side step = {}, top spacing = {}, bottom spacing={}\n",
               side_steps.median(), part->top_spacing(), part->bottom_spacing());
@@ -1552,7 +1552,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
         // If there is a size match one-way, then the middle line goes with
         // its matched size, otherwise it goes with the smallest spacing.
         ColPartition *third_part = it.at_last() ? nullptr : it.data_relative(1);
-        if (textord_debug_tabfind) {
+        if (textord_debug_tabfind > 0) {
           tprintf(
               "Spacings unequal: upper:{}/{}, lower:{}/{},"
               " sizes {} {} {}\n",
@@ -1579,7 +1579,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
             // Add to the current block.
             sp_block_it.add_to_end(it.extract());
             it.forward();
-            if (textord_debug_tabfind) {
+            if (textord_debug_tabfind > 0) {
               tprintf("Added line to current block.\n");
             }
           }
@@ -1592,7 +1592,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
       }
       sp_block_it.set_to_list(&spacing_parts);
     } else {
-      if (textord_debug_tabfind && !it.empty()) {
+      if (textord_debug_tabfind > 0 && !it.empty()) {
         ColPartition *next_part = it.data();
         tprintf("Spacings equal: upper:{}/{}, lower:{}/{}, median:{}/{}\n",
                 part->top_spacing(), part->bottom_spacing(),
@@ -1749,7 +1749,7 @@ TO_BLOCK *ColPartition::MakeBlock(const ICOORD &bleft, const ICOORD &tright,
       it.move_to_last();
     }
   } while (iteration < 2);
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Making block at ({},{})->({},{})\n", min_x, min_y, max_x, max_y);
   }
   auto *block = new BLOCK("", true, 0, 0, min_x, min_y, max_x, max_y);
@@ -1774,7 +1774,7 @@ TO_BLOCK *ColPartition::MakeVerticalTextBlock(const ICOORD &bleft,
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     block_box += it.data()->bounding_box();
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Making block at:");
     block_box.print();
   }
@@ -2366,7 +2366,7 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
         // There were at least 2 lines, so set them all to the mean.
         int top_spacing = static_cast<int>(total_top / total_count + 0.5);
         int bottom_spacing = static_cast<int>(total_bottom / total_count + 0.5);
-        if (textord_debug_tabfind) {
+        if (textord_debug_tabfind > 0) {
           tprintf("Spacing run ended. Cause:");
           if (neighbourhood[PN_LOWER] == nullptr) {
             tprintf("No more lines\n");
@@ -2400,7 +2400,7 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
         while (upper != last_part) {
           upper->set_top_spacing(top_spacing);
           upper->set_bottom_spacing(bottom_spacing);
-          if (textord_debug_tabfind) {
+          if (textord_debug_tabfind > 0) {
             tprintf("Setting mean on:");
             upper->Print();
           }
@@ -2586,7 +2586,7 @@ void ColPartition::LeftEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   start->set_x(part->XAtY(margin_right, start_y));
   end->set_y(end_y);
   end->set_x(part->XAtY(margin_right, end_y));
-  if (textord_debug_tabfind && !part_it->at_first()) {
+  if (textord_debug_tabfind > 0 && !part_it->at_first()) {
     tprintf("Left run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
             start_y, end_y, part->XAtY(margin_left, end_y), end->x(),
             part->left_margin_, part->bounding_box_.left());
@@ -2675,7 +2675,7 @@ void ColPartition::RightEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   start->set_x(part->XAtY(margin_left, start_y));
   end->set_y(end_y);
   end->set_x(part->XAtY(margin_left, end_y));
-  if (textord_debug_tabfind && !part_it->at_last()) {
+  if (textord_debug_tabfind > 0 && !part_it->at_last()) {
     tprintf("Right run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
             start_y, end_y, end->x(), part->XAtY(margin_right, end_y),
             part->bounding_box_.right(), part->right_margin_);

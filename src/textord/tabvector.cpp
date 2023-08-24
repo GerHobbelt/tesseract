@@ -366,17 +366,17 @@ void TabVector::MergeSimilarTabVectors(const ICOORD &vertical, TabVector_LIST *v
       if (v2->SimilarTo(vertical, *v1, grid)) {
         // Merge into the forward one, in case the combined vector now
         // overlaps one in between.
-        if (textord_debug_tabfind) {
+        if (textord_debug_tabfind > 0) {
           v2->Print("Merging");
           v1->Print("by deleting");
         }
         v2->MergeWith(vertical, it1.extract());
-        if (textord_debug_tabfind) {
+        if (textord_debug_tabfind > 0) {
           v2->Print("Producing");
         }
         ICOORD merged_vector = v2->endpt();
         merged_vector -= v2->startpt();
-        if (textord_debug_tabfind && abs(merged_vector.x()) > 100) {
+        if (textord_debug_tabfind > 0 && abs(merged_vector.x()) > 100) {
           v2->Print("Garbage result of merge?");
         }
         break;
