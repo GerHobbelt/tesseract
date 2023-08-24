@@ -1591,6 +1591,56 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   }
 
   // Image preprocessing on image
+  
+  // pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
+  // 
+  // pixAutoPhotoinvert()
+  //
+  //     if (edgecrop > 0.0) {
+  //  box = boxCreate(0.5f * edgecrop * w, 0.5f * edgecrop * h,
+  //                   (1.0f - edgecrop) * w, (1.0f - edgecrop) * h);
+  //   pix2 = pixClipRectangle(pix1, box, NULL);
+  //   boxDestroy(&box);
+  // }
+  //   else {
+  //   pix2 = pixClone(pix1);
+  // }
+  //
+  // pixCleanBackgroundToWhite()
+  //
+  //   pixalpha = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);  /* save */
+  //   if ((nag = numaGammaTRC(gamma, minval, maxval)) == NULL)
+  //     return (PIX *)ERROR_PTR("nag not made", __func__, pixd);
+  //   pixTRCMap(pixd, NULL, nag);
+  //   pixSetRGBComponent(pixd, pixalpha, L_ALPHA_CHANNEL); /* restore */
+  //   pixSetSpp(pixd, 4);
+  //   numaDestroy(&nag);
+  //   pixDestroy(&pixalpha);
+  //
+  // l_float32  avefg, avebg;
+  //   l_float32 numfg, numbg;
+  //   NUMA *na = pixGetGrayHistogram(pixt, 1);
+  //   l_float32 mean, median, mode, variance;
+  //   numaGetHistogramStats(na, 0.0, 1.0, &mean, &median, &mode, &variance);
+  //
+  // PIX * pixGetRGBComponent ( PIX *pixs, l_int32 comp );
+  //
+  // pixGetRankValue()
+  // numaHistogramGetValFromRank(na, rank, &val);
+  //
+  // numaGetMin(), numaGetMax()
+  //
+  // pixThresholdByConnComp()
+  //
+  //  numaGetNonzeroRange()
+  //
+  // pixMaxDynamicRange
+
+  
+
+
+  
+
   // Grayscale normalization
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   {
@@ -1606,6 +1656,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
     }
     tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
   }
+
     // rewind the normalize operation as it was only showcased, but not intended for use by the remainder of the process:
     if (tesseract_->showcase_threshold_methods && (graynorm_mode <= 0)) {
       SetInputImage(input_img);
