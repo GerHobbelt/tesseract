@@ -32,6 +32,7 @@
 #include <memory> // std::unique_ptr
 
 #include <leptonica/allheaders.h>
+#include <leptonica/pix_internal.h>
 #include <tesseract/baseapi.h>
 #include "dict.h"
 #if defined(USE_OPENCL)
@@ -273,6 +274,8 @@ static void PrintHelpExtra(const char *program) {
       "  --two-pass            Whether to use a two-pass approach (only with --psm 3).\n"
       "  --loglevel LEVEL      Specify logging level. LEVEL can be\n"
       "                        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL or OFF.\n"
+      "  --rectangle RECT      Specify rectangle(s) used for OCR.\n"
+      "                        format: l173t257w2094h367[+l755t815w594h820[...]]\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
       "  -c VAR=VALUE          Set value for config variables.\n"
       "                        Multiple -c arguments are allowed.\n"
@@ -322,6 +325,7 @@ static void PrintHelpExtra(const char *program) {
       "  --help-oem            Show OCR Engine modes.\n"
 #endif
       "  -v, --version         Show version information.\n"
+      "  --rectangle           Specify rectangle(s) used for OCR.\n"
       "  --list-langs          List available languages for tesseract engine.\n"
 #if !DISABLED_LEGACY_ENGINE
       "  --print-fonts-table   Print tesseract fonts table.\n"
@@ -349,6 +353,7 @@ static void PrintHelpMessage(const char *program) {
       "  {} <imagename> <outputbase> [options...] [<configfile>...]\n"
       "\n"
       "OCR options:\n"
+      "  --rectangle           Specify rectangle(s) used for OCR.\n"
       "  -l LANG[+LANG]        Specify language(s) used for OCR.\n"
       "NOTE: These options must occur before any configfile.\n"
       "\n"
@@ -521,7 +526,9 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
                       bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
                       l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
-                      tesseract::OcrEngineMode *enginemode) {
+                      tesseract::OcrEngineMode *enginemode,
+                      bool *rectangle_mode, const char **rectangle_str
+) {
   int i = 1;
   if (i < argc) {
     const char* verb = argv[i];
@@ -622,7 +629,11 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if (strcmp(argv[i], "--list-langs") == 0) {
       noocr = true;
       *list_langs = true;
-    } else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
+    } else if (strcmp(argv[i], "--rectangle") == 0 && i + 1 < argc) {
+		*rectangle_mode = true;
+		*rectangle_str = argv[i + 1];
+		++i;
+	} else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
       if (!checkArgValues(atoi(argv[i + 1]), "PSM", tesseract::PSM_COUNT)) {
         return false;
       }
@@ -1013,6 +1024,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
   const char *outputbase = nullptr;
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
+  bool rectangle_mode = false;
+  const char* rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
@@ -1052,7 +1065,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
   if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &twopass, &list_langs,
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
-                 &pagesegmode, &enginemode)) {
+                 &pagesegmode, &enginemode,
+                 &rectangle_mode, &rectangle_str
+  )) {
     return EXIT_FAILURE;
   }
 
@@ -1115,6 +1130,96 @@ extern "C" int tesseract_main(int argc, const char** argv)
         api.End();
         return EXIT_SUCCESS;
       }
+
+	if (rectangle_mode) {
+		Pix* pixs = pixRead(image);
+		if (!pixs) {
+			tprintf("ERROR: Cannot open input file: {}\n", image);
+            return EXIT_FAILURE;
+		}
+
+		api.SetImage(pixs);
+
+		std::string outfile = std::string(outputbase) + std::string(".txt");
+		FILE* fout = NULL;
+		
+		if (strcmp(outputbase, "stdout") != 0) {
+			fout = fopen(outfile.c_str(), "wb");
+		}
+		else {
+			fout = stdout;
+		}
+
+		if (fout == NULL) {
+			tprintf("ERROR: Cannot open output file: {}\n", outfile);
+			pixDestroy(&pixs);
+            return EXIT_FAILURE;
+		}
+
+		// for each rectangle
+		const char *delim = "+";
+		char *token;
+		char *specstr = strdup(rectangle_str);
+
+		token = strtok(specstr, delim);
+		
+		while (token != NULL) {
+			int left = 0;
+			int top = 0;
+			int width = 0;
+			int height = 0;
+			char *utf8 = NULL;
+
+			// syntax = x30y60w50h100
+			int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
+			if (params == 4) {
+				// clamp this rectangle
+				if (left < 0) {
+					left = 0;
+				}
+				
+				if (top < 0) {
+					top = 0;
+				}
+				
+				if (width <= 0) {
+					width = 1;
+				}
+				
+				if (height <= 0) {
+					height = 1;
+				}
+
+				if (left + width > pixs->w) {
+					width = pixs->w - left;
+				}
+
+				if (top + height > pixs->h) {
+					height = pixs->h - top;
+				}
+
+				api.SetRectangle(left, top, width, height);
+				utf8 = api.GetUTF8Text();
+				if (utf8) {
+					fwrite(utf8, 1, strlen(utf8), fout);
+					delete[] utf8;
+					utf8 = NULL;
+				}
+			}
+			else {
+				tprintf("ERROR: incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
+				fclose(fout);
+				pixDestroy(&pixs);
+                return EXIT_FAILURE;
+			}
+			token = strtok(NULL, delim);
+		}
+
+		fclose(fout);
+		pixDestroy(&pixs);
+        free(specstr);
+        return EXIT_SUCCESS;
+    }
 
 #if !DISABLED_LEGACY_ENGINE
       if (print_fonts_table) {
