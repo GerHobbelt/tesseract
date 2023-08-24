@@ -240,7 +240,9 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-          ASSERT_HOST(false);
+            if (tesseract_->hocr_images) {
+              hocr_str << "ocr_photo";
+            }
           break;
         default:
           hocr_str << "ocr_line";
