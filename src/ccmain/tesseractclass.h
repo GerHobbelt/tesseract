@@ -255,21 +255,6 @@ public:
     }
   }
 
-  Image GetPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr)
-      return pix_for_debug_view_;
-
-    pix_for_debug_view_ = pixConvertTo32(pix_binary_);
-    return pix_for_debug_view_;
-  }
-
-  void ClearPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr) {
-      pix_for_debug_view_.destroy();
-      pix_for_debug_view_ = nullptr;
-    }
-  }
-
   // Return a memory capacity cost estimate for the given image / current original image.
   //
   // (unless overridden by the `pix` argument) uses the current original image for the estimate,
@@ -1160,8 +1145,6 @@ private:
   Image pix_original_;
   // Thresholds that were used to generate the thresholded image from grey.
   Image pix_thresholds_;
-  // canvas copy of pix_binary for debug view painting; this image is always 32-bit depth RGBA.
-  Image pix_for_debug_view_;
   // Debug images. If non-empty, will be written on destruction.
   DebugPixa pixa_debug_;
   // Input image resolution after any scaling. The resolution is not well
