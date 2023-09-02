@@ -1043,9 +1043,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
 # Build tesseract-core.js (WASM version)
 ########################################
 if(HAVE_SSE4_1)
-  set(WASM_NAME tesseract-core-simd)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-simd-lstm)
+  else()
+    set(WASM_NAME tesseract-core-simd)
+  endif()
 else()
-  set(WASM_NAME tesseract-core)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-lstm)
+  else()
+    set(WASM_NAME tesseract-core)
+  endif()
 endif()
 
 set(tesseract_js_wrapper ../../javascript/src/wrapper.cpp)
@@ -1056,7 +1064,7 @@ add_executable                  (${WASM_NAME} ${tesseract_js_wrapper})
 # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
 #
 # Use double amount of memory comparing to default
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
 # Allow memory to grow
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
 # Replace default name 'Module' with 'TesseractCore'
