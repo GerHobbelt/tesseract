@@ -118,7 +118,7 @@ BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'va
 double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 
 
-/** Minimum sensible image size to be worth running tesseract. */
+/** Minimum sensible image size to be worth running Tesseract. */
 const int kMinRectSize = 10;
 /** Character returned when Tesseract couldn't recognize as anything. */
 const char kTesseractReject = '~';
