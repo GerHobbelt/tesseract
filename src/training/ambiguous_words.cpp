@@ -36,7 +36,7 @@
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_ambiguous_words_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
@@ -94,7 +94,7 @@ extern "C" int tesseract_ambiguous_words_main(int argc, const char** argv)
 
 #else
 
-TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 {
 	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
     return EXIT_FAILURE;
