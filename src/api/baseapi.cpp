@@ -120,7 +120,7 @@ double_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allo
 
 /** Minimum sensible image size to be worth running Tesseract. */
 const int kMinRectSize = 10;
-/** Character returned when Tesseract couldn't recognize as anything. */
+/** Character returned when Tesseract couldn't recognize anything. */
 const char kTesseractReject = '~';
 /** Character used by UNLV error counter as a reject. */
 const char kUNLVReject = '~';
