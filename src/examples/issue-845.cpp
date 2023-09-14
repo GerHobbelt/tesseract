@@ -136,7 +136,12 @@ Here is my test code:
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
-int main() {
+#if defined(BUILD_MONOLITHIC)
+#  define main tesseract_test_issue_845_main
+#endif
+
+extern "C" int main(int argc, const char **argv)
+{
   // Show version info
   char *versionStrP;
   printf("tesseract %s\n", tesseract::TessBaseAPI::Version());
@@ -153,9 +158,30 @@ int main() {
 #else
   tesseract::OcrEngineMode enginemode = tesseract::OEM_TESSERACT_ONLY;
 #endif
-  api->Init(NULL, "eng", enginemode);
+  api->InitOem(NULL, "eng", enginemode);
 
-  Pix *image = pixRead("SetRectangle_test.png");
+  const char *imgpath = argv[1];
+  if (!imgpath) {
+    imgpath = "SetRectangle_test.png";
+  }
+  const char *imgpath2 = (argc > 2 ? argv[2] : nullptr);
+  if (!imgpath2) {
+    static char fpathbuf[1024 + 30];
+    strncpy(fpathbuf, imgpath, sizeof(fpathbuf));
+    fpathbuf[1023] = 0;
+    char *dirp = strrchr(fpathbuf, '/');
+    if (!dirp)
+        dirp = strrchr(fpathbuf, '\\');
+    if (dirp)
+        strcpy(dirp + 1, "ocred_pix.png");
+    else
+        strcpy(fpathbuf, "ocred_pix.png");
+    imgpath2 = fpathbuf;
+  }
+
+  Pix *image = pixRead(imgpath);
+  if (!image)
+    return 1;
   api->SetImage(image);
   int w = pixGetWidth(image);
   int h =  pixGetHeight(image);
@@ -164,7 +190,7 @@ int main() {
   char *outTextSR = api->GetUTF8Text();
   printf("********\tOCR output after SetRectangle:\n%s", outTextSR);
   Pix *rect_pix = api->GetThresholdedImage();
-  pixWrite("ocred_pix.png", rect_pix, IFF_PNG);
+  pixWrite(imgpath2, rect_pix, IFF_PNG);
 
   api->SetImage(rect_pix);
   char *outTextSI = api->GetUTF8Text();

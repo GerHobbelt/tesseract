@@ -29,26 +29,34 @@ This is my basic code:
 #include "tesseract/baseapi.h"
 
 //Leptonica includes
-#include "allheaders.h"
+#include <leptonica/allheaders.h>
 
 
+#if defined(BUILD_MONOLITHIC)
+#  define main tesseract_test_issue_ML_1bba6c_main
+#endif
 
-int main()
+extern "C" int main(int argc, const char **argv)
 {
     tesseract::TessBaseAPI api;
     // Initialize tesseract-ocr with English, without specifying tessdata path
-    if (api.Init(nullptr, "eng"))
+    if (api.InitSimple(nullptr, "eng"))
     {
         std::cout << "Could not initialize tesseract." << std::endl;
         return 1;
     }
 
     //
+    const char *imgpath = argv[1];
+    if (!imgpath) 
+    {
 #if 1
-    Pix* image = pixRead("D:/projects/cpp/Tesseract-Test/Protocol_Table.png");
+        imgpath = "Protocol_Table.png";
 #else
-    Pix* image = pixRead("D:/projects/cpp/Tesseract-Test/Single_Number.png");
+        imgpath = "Single_Number.png";
 #endif
+    }
+    Pix* image = pixRead(imgpath);
     api.SetImage(image);
     // Restrict recognition to a sub-rectangle of the image
     // SetRectangle(left, top, width, height)
@@ -64,4 +72,5 @@ int main()
 
     // Destroy used object and release memory
     api.End();    
+    return 0;
 }
