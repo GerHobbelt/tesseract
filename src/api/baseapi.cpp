@@ -250,7 +250,7 @@ TessBaseAPI::TessBaseAPI()
     ,
     // thresholder_ is initialized to nullptr here, but will be set before use
     // by: A constructor of a derived API or created
-    // implicitly when used in InternalSetImage.
+    // implicitly when used in InternalResetImage.
     thresholder_(nullptr)
     , paragraph_models_(nullptr)
     , block_list_(nullptr)
@@ -753,7 +753,7 @@ void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height
                            int bytes_per_pixel, int bytes_per_line, float angle) {
   AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
 
-  if (InternalSetImage()) {
+  if (InternalResetImage()) {
     thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, angle);
     SetInputImage(thresholder_->GetPixRect());
   }
@@ -778,7 +778,7 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
 void TessBaseAPI::SetImage(Pix *pix, float angle) {
   AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
 
-  if (InternalSetImage()) {
+  if (InternalResetImage()) {
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
       Pix *p1 = pixRemoveAlpha(pix);
@@ -2527,7 +2527,7 @@ void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
 }
 
 /** Common code for setting the image. */
-bool TessBaseAPI::InternalSetImage() {
+bool TessBaseAPI::InternalResetImage() {
   AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
 
   if (tesseract_ == nullptr) {

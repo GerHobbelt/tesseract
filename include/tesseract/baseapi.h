@@ -844,7 +844,7 @@ public:
 protected:
   /** Common code for setting the image. Returns true if Init has been called.
    */
-  bool InternalSetImage();
+  bool InternalResetImage();
 
   /**
    * Run the thresholder to make the thresholded image. If pix is not nullptr,
