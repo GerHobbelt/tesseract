@@ -852,6 +852,7 @@ int main(int argc, char **argv) {
             //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
             api.SetPageSegMode(PSM_SINGLE_BLOCK);
+            api.SetVariable("thresholding_method", "0");
             //api.SetPageSegMode(PSM_SPARSE_TEXT);
             api.SetImage(newpix);
 
