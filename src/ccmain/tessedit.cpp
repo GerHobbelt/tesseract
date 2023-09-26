@@ -370,7 +370,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         }
       } else {
         if (result < 0) {
-          tprintf("ERROR: Failed loading language '{}'\n", lang_str);
+          tprintf("ERROR: Failed loading sub-language '{}'\n", lang_str);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);
