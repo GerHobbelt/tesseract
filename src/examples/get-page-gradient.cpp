@@ -4,11 +4,11 @@
 #include <tesseract/baseapi.h>
 
 
-#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char **argv)
-#else
-extern "C" int tesseract_get_page_gradient_main(int argc, const char **argv)
+#if defined(BUILD_MONOLITHIC)
+#define main   tesseract_get_page_gradient_main
 #endif
+
+extern "C" int main(int argc, const char **argv)
 {
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
   // Initialize tesseract-ocr with English, without specifying tessdata path

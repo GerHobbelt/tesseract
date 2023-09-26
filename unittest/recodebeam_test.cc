@@ -121,7 +121,7 @@ protected:
                      Dict *dict, PointerVector<WERD_RES> *words) {
     RecodeBeamSearch beam_search(recoder_, encoded_null_char_, false, dict);
 #ifndef NDEBUG
-	beam_search.SetDebug(true);
+	beam_search.SetDebug(1);
 #endif
 	beam_search.Decode(output, 3.5, -0.125, -25.0, &ccutil_.unicharset);
     // Uncomment and/or change nullptr above to &ccutil_.unicharset to debug:

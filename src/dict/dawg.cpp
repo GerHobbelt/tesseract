@@ -97,7 +97,7 @@ int Dawg::check_for_words(const char *filename, const UNICHARSET &unicharset,
   }
   fclose(word_file);
   // Make sure the user sees this with fprintf instead of tprintf.
-  if (debug_level_) {
+  if (debug_level_ > 0) {
     tprintf("Number of lost words={}\n", misses);
   }
   return misses;
@@ -310,7 +310,7 @@ void SquishedDawg::print_edge(EDGE_REF edge) const {
 }
 
 bool SquishedDawg::read_squished_dawg(TFile *file) {
-  if (debug_level_) {
+  if (debug_level_ > 0) {
     tprintf("Reading squished dawg\n");
   }
 
@@ -394,7 +394,7 @@ bool SquishedDawg::write_squished_dawg(TFile *file) {
   EDGE_REF old_index;
   EDGE_RECORD temp_record;
 
-  if (debug_level_) {
+  if (debug_level_ > 0) {
     tprintf("write_squished_dawg\n");
   }
 
@@ -422,7 +422,7 @@ bool SquishedDawg::write_squished_dawg(TFile *file) {
     return false;
   }
 
-  if (debug_level_) {
+  if (debug_level_ > 0) {
     tprintf("{} nodes in DAWG\n", node_count);
     tprintf("{} edges in DAWG\n", num_edges);
   }

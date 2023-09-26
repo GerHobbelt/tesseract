@@ -50,8 +50,11 @@
 
 namespace tesseract {
 
-Tesseract::Tesseract(Tesseract *parent)
-    : parent_instance_(parent)
+Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMarkerRef)
+    : parent_instance_(parent),
+      reporting_holdoff_((parent != nullptr && LogReportingHoldoffMarkerRef == nullptr)
+                        ? parent->GetLogReportingHoldoffMarkerRef()
+                        : *LogReportingHoldoffMarkerRef)
     , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
                   "Take segmentation and labeling from box file", params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
@@ -505,12 +508,24 @@ Tesseract::Tesseract(Tesseract *parent)
 Tesseract::~Tesseract() {
   ScrollViewManager::RemoveActiveTesseractInstance(this);
 
+  if (lstm_recognizer_ != nullptr) {
+    lstm_recognizer_->Clean();
+  }
+
   Clear(true);
   end_tesseract();
-  std::vector<Tesseract *> langs = std::move(sub_langs_);
-  for (auto *lang : langs) {
-    delete lang;
+  {
+      std::vector<Tesseract *> langs = std::move(sub_langs_);
+ 
+      // delete the sublangs IN REVERSE ORDER!
+      // 
+      // Otherwise you MAY run into races and crashes re
+      // `fz_set_error_callback()` calls in the related DebugPixa destructor!
+      for (int i = langs.size() - 1; i >= 0; i--) {
+        delete langs[i];
+      }
   }
+
 #if !DISABLED_LEGACY_ENGINE
   delete equ_detect_;
   equ_detect_ = nullptr;
@@ -529,8 +544,11 @@ Dict &Tesseract::getDict() {
 }
 
 void Tesseract::Clear(bool invoked_by_destructor) {
+  for (auto &sub_lang : sub_langs_) {
+    sub_lang->Clear(invoked_by_destructor);
+  }
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, "", "html");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
 
     ClearPixForDebugView();
@@ -544,15 +562,13 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   pix_binary_.destroy();
   pix_grey_.destroy();
   pix_thresholds_.destroy();
+  pix_for_debug_view_.destroy();
   scaled_color_.destroy();
   deskew_ = FCOORD(1.0f, 0.0f);
   reskew_ = FCOORD(1.0f, 0.0f);
   gradient_ = 0.0f;
   splitter_.Clear();
   scaled_factor_ = -1;
-  for (auto &sub_lang : sub_langs_) {
-    sub_lang->Clear();
-  }
 }
 
 #if !DISABLED_LEGACY_ENGINE
@@ -842,6 +858,18 @@ void Tesseract::ResyncVariablesInternally() {
         if (sub_tess != nullptr) {
             auto lvl = (bool)sub_tess->debug_display_page;
         }
+    }
+}
+
+void Tesseract::ReportDebugInfo() {
+    if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+        AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+
+        std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
+        pixa_debug_.WriteHTML(file_path.c_str());
+
+        ClearPixForDebugView();
+        pixa_debug_.Clear();
     }
 }
 

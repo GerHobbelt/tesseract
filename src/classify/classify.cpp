@@ -26,7 +26,7 @@ namespace tesseract {
 
 Classify::Classify()
     : INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
-    , BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
+    , INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", this->params())
 
     , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
 
@@ -60,7 +60,7 @@ Classify::Classify()
                   this->params())
     , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", this->params())
     , INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
-	, BOOL_MEMBER(tess_debug_lstm, false, "Debug LSTM internals", this->params())
+	, INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", this->params())
 	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
     , double_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
                     this->params())

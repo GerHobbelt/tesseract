@@ -67,9 +67,24 @@ LSTMRecognizer::LSTMRecognizer()
     , debug_win_(nullptr) {}
 
 LSTMRecognizer::~LSTMRecognizer() {
+  if (network_ != nullptr) {
+    network_->Clean();
+  }
+
   delete network_;
   delete dict_;
   delete search_;
+}
+
+void LSTMRecognizer::Clean() {
+  network_->Clean();
+
+  delete network_;
+  network_ = nullptr;
+  delete dict_;
+  dict_ = nullptr;
+  delete search_;
+  search_ = nullptr;
 }
 
 // Loads a model from mgr, including the dictionary only if lang is not null.
@@ -256,7 +271,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug());
+	search_->SetDebug(HasDebug() - 1);
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
@@ -546,7 +561,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
                                        std::vector<int> *xcoords) {
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug());
+	search_->SetDebug(HasDebug() - 1);
   }
   search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 0);
   search_->ExtractBestPathAsLabels(labels, xcoords);

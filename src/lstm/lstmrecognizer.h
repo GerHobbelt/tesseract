@@ -55,6 +55,8 @@ public:
   //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
+  void Clean();
+
   int NumOutputs() const {
     return network_->NumOutputs();
   }
@@ -370,13 +372,13 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
-  bool debug_ = false;
+  int debug_ = 0;
 
 public:
-  void SetDebug(bool v) {
-	debug_ = v;
+  void SetDebug(int v) {
+	debug_ = std::max(0, v);
   }
-  bool HasDebug() const {
+  int HasDebug() const {
 	  return debug_;
   }
 

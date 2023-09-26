@@ -844,7 +844,7 @@ public:
 protected:
   /** Common code for setting the image. Returns true if Init has been called.
    */
-  bool InternalSetImage();
+  bool InternalResetImage();
 
   /**
    * Run the thresholder to make the thresholded image. If pix is not nullptr,
@@ -937,7 +937,6 @@ private:
 std::string HOcrEscape(const char *text);
 
 std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
-std::string mkUniqueOutputFilePath(const std::string& basepath, int page_number, const char* label, const char* filename_extension);
 
 void WritePix(const std::string &filepath, Pix *pic, int file_type);
 

@@ -30,7 +30,7 @@ public:
   Input(const std::string &name, int ni, int no);
   TESS_API
   Input(const std::string &name, const StaticShape &shape);
-  ~Input() override = default;
+  virtual ~Input() override = default;
 
   std::string spec() const override {
     return std::to_string(shape_.batch()) + "," +

@@ -101,7 +101,7 @@ void TabFind::InsertBlobsToGrid(bool h_spread, bool v_spread, BLOBNBOX_LIST *blo
       ++reject_count;
     }
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Inserted {} blobs into grid, {} rejected.\n", b_count, reject_count);
   }
 }
@@ -471,7 +471,7 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
       ++b_count;
     }
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Moved {} large blobs to normal list\n", b_count);
 #if !GRAPHICS_DISABLED
       ScrollViewReference rej_win(MakeWindow(tesseract_, 500, 300, "Image blobs"));
@@ -858,7 +858,7 @@ void TabFind::FindAllTabVectors(int min_gutter_width) {
       bbox->set_right_tab_type(TT_MAYBE_ALIGNED);
     }
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Beginning real tab search with vertical = {},{}\n", vertical_x, vertical_y);
   }
   // Now do the real thing ,but keep the vectors in the dummy_vectors list
@@ -923,7 +923,7 @@ TabVector *TabFind::FindTabVector(int search_size_multiple, int min_gutter_width
 void TabFind::SetVerticalSkewAndParallelize(int vertical_x, int vertical_y) {
   // Fit the vertical vector into an ICOORD, which is 16 bit.
   vertical_skew_.set_with_shrink(vertical_x, vertical_y);
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Vertical skew vector=({},{})\n", vertical_skew_.x(), vertical_skew_.y());
   }
   v_it_.set_to_list(&vectors_);
@@ -1069,7 +1069,7 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
         col_count > kMinFractionalLinesInColumn * total_col_count) {
       auto *w = new ICOORDELT(0, width);
       w_it.add_after_then_move(w);
-      if (textord_debug_tabfind) {
+      if (textord_debug_tabfind > 0) {
         tprintf("Column of width {} has {} = {}% lines\n", width * kColumnWidthFactor, col_count,
                 100.0 * col_count / total_col_count);
       }
@@ -1080,7 +1080,7 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
 // Mark blobs as being in a vertical text line where that is the case.
 // Returns true if the majority of the image is vertical text lines.
 void TabFind::MarkVerticalText() {
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Checking for vertical lines\n");
   }
   BlobGridSearch gsearch(this);
@@ -1114,7 +1114,7 @@ int TabFind::FindMedianGutterWidth(TabVector_LIST *lines) {
     }
     prev_right = partner->startpt().x();
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("TabGutter total {}  median_gap {}  median_hgt {}\n", gaps.get_total(),
             gaps.median(), heights.median());
   }

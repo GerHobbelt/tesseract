@@ -58,7 +58,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
   UNICHAR_ID orig_uch_id = word->unichar_id(word_index);
   bool checked_unigrams = false;
   if (getUnicharset().get_isngram(orig_uch_id)) {
-    if (dawg_debug_level) {
+    if (dawg_debug_level > 0) {
       tprintf("Checking unigrams in an ngram {}\n", getUnicharset().debug_str(orig_uch_id));
     }
     int num_unigrams = 0;
@@ -82,7 +82,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
                                              word->unichar_id(word_index + num_unigrams - 1),
                                              word_ending && i == encoding.size() - 1);
       (*unigram_dawg_args.active_dawgs) = *(unigram_dawg_args.updated_dawgs);
-      if (dawg_debug_level) {
+      if (dawg_debug_level > 0) {
         tprintf("unigram {} is {}\n", getUnicharset().debug_str(uch_id),
                 unigrams_ok ? "OK" : "not OK");
       }
@@ -105,7 +105,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
                                                    word->unichar_id(word_index), word_ending)) {
     // Add a new word choice
     if (word_ending) {
-      if (dawg_debug_level) {
+      if (dawg_debug_level > 0) {
         tprintf("Found word = {}\n", word->debug_string());
       }
       if (strcmp(output_ambig_words_file.c_str(), "") != 0) {
@@ -141,7 +141,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
       --(more_args->active_dawgs);
     }
   } else {
-    if (dawg_debug_level) {
+    if (dawg_debug_level > 0) {
       tprintf("Last unichar not OK at index {} in {}\n", word_index, word->debug_string());
     }
   }
@@ -172,7 +172,7 @@ WERD_CHOICE *Dict::dawg_permute_and_select(const BLOB_CHOICE_LIST_VECTOR &char_c
   float certainties[MAX_WERD_LENGTH];
   this->go_deeper_fxn_ = &tesseract::Dict::go_deeper_dawg_fxn;
   int attempts_left = max_permuter_attempts;
-  permute_choices((dawg_debug_level) ? "permute_dawg_debug" : nullptr, char_choices, 0, nullptr,
+  permute_choices((dawg_debug_level > 0) ? "permute_dawg_debug" : nullptr, char_choices, 0, nullptr,
                   &word, certainties, &rating_limit, best_choice, &attempts_left, &dawg_args);
   delete[] active_dawgs;
   return best_choice;
