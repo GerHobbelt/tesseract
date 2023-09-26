@@ -189,7 +189,7 @@ void RecodeBeamSearch::calculateCharBoundaries(std::vector<int> *starts,
                                                std::vector<int> *ends,
                                                std::vector<int> *char_bounds_,
                                                int maxWidth) {
-  char_bounds_->push_back(0);
+  char_bounds_->push_back((*starts)[0]);    // fix introduced in commit b29668135e26669486430add7f4cddb9d4934366; in many cases starts[0] != 0
   for (unsigned int i = 0; i < ends->size(); ++i) {
     int middle = ((*starts)[i + 1] - (*ends)[i]) / 2;
     char_bounds_->push_back((*ends)[i] + middle);
@@ -556,7 +556,6 @@ void RecodeBeamSearch::DebugBeamPos(const UNICHARSET *unicharset,
 
 // Returns the given best_nodes as unichar-ids/certs/ratings/xcoords skipping
 // duplicates, nulls and intermediate parts.
-/* static */
 void RecodeBeamSearch::ExtractPathAsUnicharIds(
     const std::vector<const RecodeNode *> &best_nodes,
     std::vector<int> *unichar_ids, std::vector<float> *certs,
