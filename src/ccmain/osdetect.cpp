@@ -124,7 +124,7 @@ int OSResults::get_best_script(int orientation_id) const {
   return max_id;
 }
 
-  // Print the script scores for all possible orientations.
+// Print the script scores for all possible orientations.
 void OSResults::print_scores(void) const {
   for (int i = 0; i < 4; ++i) {
     tprintf("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
