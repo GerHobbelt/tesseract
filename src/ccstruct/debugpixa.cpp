@@ -116,32 +116,14 @@ namespace tesseract {
       int depth = pixGetDepth(pix);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-    {
-    int pics_count = pixaGetCount(pixa_);
-    if (pics_count == 39) {
-      pics_count++;
-      pics_count--;
-    }
-    }
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
-    {
-    Image p = pixaGetPix(pixa_, 39, L_CLONE);
-    p.destroy();
-    }
 #else
     int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
     Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
 
     pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif
-    {
-    int pics_count = pixaGetCount(pixa_);
-    if (pics_count == 40) {
-        pics_count++;
-        pics_count--;
-    }
-    }
 
     captions.push_back(caption);
     cliprects.push_back(bbox);
