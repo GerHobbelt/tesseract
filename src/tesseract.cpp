@@ -999,6 +999,10 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
   }
 }
 
+void pause_key(void) {
+  (void)fgetc(stdin);
+}
+
   /**********************************************************************
  *  main()
  *
@@ -1019,6 +1023,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
   feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #  endif
 #endif
+
+  atexit(pause_key);
 
   const char *lang = nullptr;
   const char *image = nullptr;
