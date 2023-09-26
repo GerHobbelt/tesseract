@@ -129,6 +129,7 @@ class ParamsReportWriter {
 public:
   ParamsReportWriter(FILE *f)
       : file_(f) {}
+  virtual ~ParamsReportWriter() = default;
 
   virtual void Write(const std::string message) = 0;
 
@@ -139,6 +140,7 @@ protected:
 class ParamsReportDefaultWriter : public ParamsReportWriter {
 public:
   ParamsReportDefaultWriter() : ParamsReportWriter(nullptr) {}
+  virtual ~ParamsReportDefaultWriter() = default;
 
   virtual void Write(const std::string message) {
     tprintf("{}", message);
@@ -152,6 +154,7 @@ public:
   ParamsReportFileDuoWriter(FILE *f) : ParamsReportWriter(f) {
     is_separate_file_ = (f != nullptr && f != stderr && f != stdout);
   }
+  virtual ~ParamsReportFileDuoWriter() = default;
 
   virtual void Write(const std::string message) {
     // only write via tprintf() -- which usually logs to stderr -- when the `f` file destination is an actual file, rather than stderr or stdout.
@@ -177,12 +180,12 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 {
   bool is_section_subreport = (section_title != nullptr);
 
-  ParamsReportWriter *writer;
+  std::unique_ptr<ParamsReportWriter> writer;
 
   if (f != nullptr) {
-    writer = new ParamsReportFileDuoWriter(f);
+    writer.reset(new ParamsReportFileDuoWriter(f));
   } else {
-    writer = new ParamsReportDefaultWriter();
+    writer.reset(new ParamsReportDefaultWriter());
   }
 
   writer->Write(fmt::format("\n\nTesseract Parameter Usage Statistics{}: which params have been relevant?\n"

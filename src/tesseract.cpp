@@ -273,7 +273,6 @@ static void PrintHelpExtra(const char *program) {
       "  --user-patterns PATH  Specify the location of user patterns file.\n"
       "                        (Same as: -c user_patterns_file=PATH)\n"
       "  --dpi VALUE           Specify DPI for input image.\n"
-      "  --two-pass            Whether to use a two-pass approach (only with --psm 3).\n"
       "  --loglevel LEVEL      Specify logging level. LEVEL can be\n"
       "                        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL or OFF.\n"
       "  --rectangle RECT      Specify rectangle(s) used for OCR.\n"
@@ -523,7 +522,7 @@ bool std::filesystem::exists(const char* filename) {
 // NOTE: arg_i is used here to avoid ugly *i so many times in this function
 static bool ParseArgs(int argc, const char** argv, const char **lang, const char **image,
                       const char **outputbase, const char **datapath, l_int32 *dpi,
-                      bool *twopass, bool *list_langs,
+                      bool *list_langs,
                       const char **visible_pdf_image_file,
                       bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
@@ -592,8 +591,6 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if (strcmp(argv[i], "--dpi") == 0 && i + 1 < argc) {
       *dpi = atoi(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--two-pass") == 0) {
-      *twopass = true;
     } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
       // Allow the log levels which are used by log4cxx.
       std::string loglevel_string = argv[++i];
@@ -702,16 +699,24 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
   return true;
 }
 
-static void PreloadRenderers(tesseract::TessBaseAPI &api,
+static bool PreloadRenderers(tesseract::TessBaseAPI &api,
                              std::vector<std::unique_ptr<TessResultRenderer>> &renderers,
                              tesseract::PageSegMode pagesegmode, const char *outputbase) {
+  bool error = false;
   if (pagesegmode == tesseract::PSM_OSD_ONLY) {
 #if !DISABLED_LEGACY_ENGINE
-    renderers.push_back(std::make_unique<tesseract::TessOsdRenderer>(outputbase));
+    auto renderer = std::make_unique<tesseract::TessOsdRenderer>(outputbase);
+    if (renderer->happy()) {
+      renderers.push_back(std::move(renderer));
+    } else {
+      tprintf("ERROR: Could not create OSD output file: {}\n",
+              strerror(errno));
+      error = true;
+    }
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
-    bool error = false;
     bool b;
+
     api.GetBoolVariable("tessedit_create_hocr", &b);
     if (b) {
       bool font_info;
@@ -823,7 +828,7 @@ static void PreloadRenderers(tesseract::TessBaseAPI &api,
     }
 
     api.GetBoolVariable("tessedit_create_txt", &b);
-    if (b || (!error && renderers.empty())) {
+    if (b) {
       // Create text output if no other output was requested
       // even if text output was not explicitly requested unless
       // there was an error.
@@ -832,23 +837,39 @@ static void PreloadRenderers(tesseract::TessBaseAPI &api,
         renderers.push_back(std::move(renderer));
       } else {
         tprintf("ERROR: Could not create TXT output file: {}\n", strerror(errno));
+        error = true;
       }
     }
   }
 
-  // Null-out the renderers that are
-  // added to the root, and leave the root in the vector.
-  for (size_t r = 1; r < renderers.size(); ++r) {
-    renderers[0]->insert(renderers[r].get());
-    renderers[r].release(); // at the moment insert() is owning
+  if (!error) {
+    // Null-out the renderers that are
+    // added to the root, and leave the root in the vector.
+    if (renderers.size() > 1) {
+      for (size_t r = 1; r < renderers.size(); ++r) {
+        renderers[0]->insert(renderers[r].get());
+        renderers[r].release(); // at the moment insert() is owning
+      }
+      size_t l = 1;
+#if !defined(NO_ASSERTIONS)
+      for (size_t l = renderers.size(); l > 0; --l) {
+        if (renderers[l - 1].get() != nullptr)
+          break;
+      }
+#endif
+      ASSERT0(l == 1);
+      renderers.resize(l);
+    }
   }
+
+  return error;
 }
 
 static void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
     api.SetVariable("textord_tabfind_show_images", "Y");
-    api.SetVariable("textord_tabfind_show_vlines", "Y");
+    //api.SetVariable("textord_tabfind_show_vlines", "Y");
 
 #if !GRAPHICS_DISABLED
     api.SetVariable("textord_tabfind_show_initial_partitions", "Y");
@@ -936,7 +957,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("hyphen_debug_level", "3");
 
-    api.SetVariable("language_model_debug_level", "7");
+    api.SetVariable("language_model_debug_level", "0"); /* 7 */
 
     api.SetVariable("tosp_debug_level", "3");
 
@@ -1038,16 +1059,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
   bool print_parameters = false;
   bool print_fonts_table = false;
   l_int32 dpi = 0;
-  bool twopass = false;
   int arg_i = 1;
   int ret_val = EXIT_SUCCESS;
 
   tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
-#if DISABLED_LEGACY_ENGINE
-  auto enginemode = tesseract::OEM_LSTM_ONLY;
-#else
   tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
-#endif
   std::vector<std::string> vars_vec;
   std::vector<std::string> vars_values;
 
@@ -1070,7 +1086,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
-  if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &twopass, &list_langs,
+  if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
                  &pagesegmode, &enginemode,
@@ -1325,10 +1341,28 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       std::vector<std::unique_ptr<TessResultRenderer>> renderers;
 
+      bool succeed = true;
+
       if (in_training_mode) {
         renderers.push_back(nullptr);
       } else if (outputbase != nullptr) {
-        PreloadRenderers(api, renderers, pagesegmode, outputbase);
+        succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
+        if (succeed && renderers.empty()) {
+          // default: TXT + HOCR renderer
+          api.SetVariable("tessedit_create_hocr", "Y");
+          api.SetVariable("tessedit_create_alto", "Y");
+          api.SetVariable("tessedit_create_page", "Y");
+          api.SetVariable("tessedit_create_tsv", "Y");
+          api.SetVariable("tessedit_create_pdf", "Y");
+          api.SetVariable("textonly_pdf", "n");
+          api.SetVariable("tessedit_write_unlv", "Y");
+          api.SetVariable("tessedit_create_lstmbox", "Y");
+          api.SetVariable("tessedit_create_boxfile", "Y");
+          api.SetVariable("tessedit_create_wordstrbox", "Y");
+          api.SetVariable("tessedit_create_txt", "Y");
+
+          succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
+        }
       }
 
       if (!renderers.empty()) {
@@ -1338,41 +1372,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         }
 #endif
 
-        bool succeed;
-
-        if (!twopass) {
-            succeed = api.ProcessPages(image, nullptr, 0, renderers[0].get());
-        } else {
-            Pix *pix = pixRead(image);
-            auto renderer = renderers[0].get();
-            renderer->BeginDocument("");
-            //document_title.c_str());
-
-            succeed = api.ProcessPage(pix, image, NULL, 0, renderers[0].get());
-
-            {
-                Boxa* default_boxes = api.GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
-
-                //pixWrite("/tmp/out.png", pix, IFF_PNG);
-                //Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-                Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
-                //pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
-
-                api.SetPageSegMode(PSM_SINGLE_BLOCK);
-                //api.SetPageSegMode(PSM_SPARSE_TEXT);
-                api.SetImage(newpix);
-
-                succeed = succeed && !api.Recognize(NULL);
-                renderer->AddImage(&api);
-
-                boxaDestroy(&default_boxes);
-                pixDestroy(&newpix);
-            }
-
-            pixDestroy(&pix);
-
-            renderer->EndDocument();
-        }
+        succeed &= api.ProcessPages(image, nullptr, 0, renderers[0].get());
 
         if (!succeed) {
           tprintf("ERROR: Error during page processing. File: {}\n", image);

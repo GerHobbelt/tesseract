@@ -229,7 +229,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
  *
  * If osd (orientation and script detection) is true then that is performed
  * as well. If only_osd is true, then only orientation and script detection is
- * performed. If osd is desired, (osd or only_osd) then osr_tess must be
+ * performed. If osd is desired, (osd or only_osd) then osd_tess must be
  * another Tesseract that was initialized especially for osd, and the results
  * will be output into osr (orientation and script result).
  */
@@ -324,7 +324,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
   }
   // Leptonica is used to find the rule/separator lines in the input.
-  line_finder_.FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
+  line_finder_.FindAndRemoveLines(source_resolution_, pix_binary_,
                                  &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines);
   if (tessedit_dump_pageseg_images) {
     AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : Lines Removed");
@@ -332,15 +332,12 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   // Leptonica is used to find a mask of the photo regions in the input.
   *photo_mask_pix = image_finder_.FindImages(pix_binary_);
   if (tessedit_dump_pageseg_images) {
-    Image pix_no_image_ = nullptr;
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
-      pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-    } else {
-      pix_no_image_ = pix_binary_.clone();
+      Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
+      pix_no_image_.destroy();
     }
-    AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
-    pix_no_image_.destroy();
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) {
     v_lines.clear();

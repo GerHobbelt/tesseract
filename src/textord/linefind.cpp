@@ -549,8 +549,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
   bool h_empty = pix_hline->isZero();
   if (pix_music_mask != nullptr) {
     if (!v_empty && !h_empty) {
-      *pix_music_mask =
-          FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
+      *pix_music_mask = FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
     } else {
       *pix_music_mask = nullptr;
     }
@@ -720,7 +719,7 @@ void LineFinder::FindAndRemoveHLines(Image pix_intersections, int vertical_x,
 // The output vectors are owned by the list and Frozen (cannot refit) by
 // having no boxes, as there is no need to refit or merge separator lines.
 // The detected lines are removed from the pix.
-void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
                                     int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
                                     TabVector_LIST *h_lines) {
   if (pix == nullptr || vertical_x == nullptr || vertical_y == nullptr) {
@@ -751,11 +750,13 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   }
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
-  if (tesseract_->debug_line_finding && pix_vline != nullptr) {
-    tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
-  }
-  if (tesseract_->debug_line_finding && pix_hline != nullptr) {
-    tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : vline");
+  if (tesseract_->debug_line_finding) {
+    if (pix_vline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
+    }
+    if (pix_hline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline");
+    }
   }
   pix_intersections.destroy();
   if (pix_vline != nullptr && pix_hline != nullptr) {

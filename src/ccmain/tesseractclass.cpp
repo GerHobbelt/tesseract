@@ -349,8 +349,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                     "x-height above the baseline for us to reconsider whether "
                     "it's a superscript.",
                     params())
-    , BOOL_MEMBER(tessedit_write_block_separators, false, "Write block separators in output.",
-                  params())
+    , BOOL_MEMBER(tessedit_write_block_separators, false, "Write block separators in output.", params())
     , BOOL_MEMBER(tessedit_write_rep_codes, false, "Write repetition char code.", params())
     , BOOL_MEMBER(tessedit_write_unlv, false, "Write .unlv output file.", params())
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
@@ -359,18 +358,14 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file.", params())
     , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values.", params())
     , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel.", params())
-    , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.",
-                  params())
+    , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.", params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
-    , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.",
-                  params())
+    , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
     , BOOL_MEMBER(tessedit_create_pdf, false, "Write .pdf output file.", params())
-    , BOOL_MEMBER(textonly_pdf, false, "Create PDF with only one invisible text layer.",
-                  params())
+    , BOOL_MEMBER(textonly_pdf, false, "Create PDF with only one invisible text layer.", params())
     , INT_MEMBER(jpg_quality, 85, "Set JPEG quality level.", params())
     , INT_MEMBER(user_defined_dpi, 0, "Specify DPI for input image.", params())
-    , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD.",
-                 params())
+    , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD.", params())
     , STRING_MEMBER(unrecognised_char, "|", "Output char for unidentified blobs.", params())
     , INT_MEMBER(suspect_level, 99, "Suspect marker level (0..4)", params())
     , INT_MEMBER(suspect_short_words, 2, "Don't suspect dict wds longer than this.", params())
@@ -379,10 +374,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , double_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit.", params())
     , BOOL_MEMBER(tessedit_minimal_rejection, false, "Only reject tess failures.", params())
     , BOOL_MEMBER(tessedit_zero_rejection, false, "Don't reject ANYTHING.", params())
-    , BOOL_MEMBER(tessedit_word_for_word, false, "Make output have exactly one word per WERD.",
-                  params())
-    , BOOL_MEMBER(tessedit_zero_kelvin_rejection, false, "Don't reject ANYTHING AT ALL.",
-                  params())
+    , BOOL_MEMBER(tessedit_word_for_word, false, "Make output have exactly one word per WERD.", params())
+    , BOOL_MEMBER(tessedit_zero_kelvin_rejection, false, "Don't reject ANYTHING AT ALL.", params())
     , INT_MEMBER(tessedit_reject_mode, 0, "Rejection algorithm.", params())
     , BOOL_MEMBER(tessedit_rejection_debug, false, "Debug adaption/rejection.", params())
     , BOOL_MEMBER(tessedit_flip_0O, true, "Contextual 0O O0 flips.", params())
@@ -402,21 +395,19 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , STRING_MEMBER(conflict_set_I_l_1, "Il1[]", "Il1 conflict set.", params())
     , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", params())
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
-    , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.",
-                 params())
+    , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
     , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", params())
     , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", params())
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
-    , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.",
-                    params())
+    , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
                   params())
     , double_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
-    , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())
+    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())

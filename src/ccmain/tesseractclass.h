@@ -234,6 +234,10 @@ public:
   void set_pix_binary(Image pix) {
     pix_binary_.destroy();
     pix_binary_ = pix;
+    // Clone to sublangs as well.
+    for (auto &lang_ref : sub_langs_) {
+      lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
+    }
   }
   Image pix_binary() const {
     return pix_binary_;
@@ -244,6 +248,10 @@ public:
   void set_pix_grey(Image grey_pix) {
     pix_grey_.destroy();
     pix_grey_ = grey_pix;
+    // Clone to sublangs as well.
+    for (auto &lang_ref : sub_langs_) {
+      lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
+    }
   }
   Image pix_original() const {
     return pix_original_;
@@ -275,6 +283,10 @@ public:
 
   void ReportDebugInfo();
 
+  bool SupportsInteractiveScrollView() {
+    return (interactive_display_mode && !debug_do_not_use_scrollview_app);
+  }
+
   // Return a memory capacity cost estimate for the given image / current original image.
   //
   // (unless overridden by the `pix` argument) uses the current original image for the estimate,
@@ -296,7 +308,7 @@ public:
   // In any case, the return value is a borrowed Pix, and should not be
   // deleted or pixDestroyed.
   Image BestPix() const {
-    if (pixGetWidth(pix_original_) == ImageWidth()) {
+    if (pix_original_ != nullptr && pixGetWidth(pix_original_) == ImageWidth()) {
       return pix_original_;
     } else if (pix_grey_ != nullptr) {
       return pix_grey_;
@@ -1018,7 +1030,7 @@ public:
   // Min acceptable orientation margin (difference in scores between top and 2nd
   // choice in OSResults::orientations) to believe the page orientation.
   double_VAR_H(min_orientation_margin);
-  BOOL_VAR_H(textord_tabfind_show_vlines);
+  //BOOL_VAR_H(textord_tabfind_show_vlines);
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);

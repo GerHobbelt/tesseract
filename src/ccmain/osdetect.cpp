@@ -172,8 +172,7 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
     resolution = pixGetXRes(pix);
   }
 
-  line_finder_.FindAndRemoveLines(resolution, false, pix, &vertical_x, &vertical_y,
-                                            nullptr, &v_lines, &h_lines);
+  line_finder_.FindAndRemoveLines(resolution, pix, &vertical_x, &vertical_y, nullptr, &v_lines, &h_lines);
   AddPixDebugPage(pix, "Removing nontext regions: after FindAndRemoveLines : result");
   Image im_pix = image_finder_.FindImages(pix);
   AddPixDebugPage(im_pix, "Removing nontext regions: after FindAndRemoveLines : mask or image on-text) areas");

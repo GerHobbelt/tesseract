@@ -1107,7 +1107,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif // !DISABLED_LEGACY_ENGINE
 
   int result = 0;
-  if (tesseract_->interactive_display_mode && !tesseract_->debug_do_not_use_scrollview_app) {
+  if (tesseract_->SupportsInteractiveScrollView()) {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
@@ -1330,6 +1330,29 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
     }
     tprintf("Page #{} : {}\n", page_number + 1, pagename);
     bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
+
+    bool two_pass = false;
+
+    if (two_pass) {
+      Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
+
+      // pixWrite("/tmp/out.png", pix, IFF_PNG);
+      // Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
+      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+      // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
+
+      SetPageSegMode(PSM_SINGLE_BLOCK);
+      // SetPageSegMode(PSM_SPARSE_TEXT);
+
+      SetImage(newpix);
+
+      r = r && !Recognize(NULL);
+      renderer->AddImage(this);
+
+      boxaDestroy(&default_boxes);
+      pixDestroy(&newpix);
+    }
+
     pixDestroy(&pix);
     if (!r) {
       return false;
@@ -1676,7 +1699,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
       failed = true;
     }
   } else if (tesseract_->tessedit_pageseg_mode == PSM_OSD_ONLY) {
-    failed = FindLines() != 0;
+    failed = (FindLines() != 0);
   } else if (timeout_millisec > 0) {
     // Running with a timeout.
     ETEXT_DESC monitor;
