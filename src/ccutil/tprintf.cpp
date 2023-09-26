@@ -45,7 +45,7 @@ namespace tesseract {
 // Warning: tprintf() is invoked in tesseract for PARTIAL lines, so we SHOULD gather these fragments
 // here before dispatching the gathered lines to the appropriate back-end API!
 static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
-	auto msg = fmt::vformat(format, args);
+  auto msg = fmt::vformat(format, args);
 
   static std::string msg_buffer;
   msg_buffer += msg;
