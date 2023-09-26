@@ -563,7 +563,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
 	search_->SetDebug(HasDebug() - 1);
   }
-  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 0);
+  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2);
   search_->ExtractBestPathAsLabels(labels, xcoords);
 }
 
