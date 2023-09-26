@@ -116,7 +116,7 @@ static int list_network(TessdataManager &tm, const char *filename, int tess_debu
 //
 // Specify option -u to unpack all the components to the specified path:
 //
-// combine_tessdata -u tessdata/eng.traineddata /home/$USER/temp/eng.
+//   combine_tessdata -u tessdata/eng.traineddata /home/$USER/temp/eng.
 //
 // This will create  /home/$USER/temp/eng.* files with individual tessdata
 // components from tessdata/eng.traineddata.
