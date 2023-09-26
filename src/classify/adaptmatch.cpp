@@ -288,7 +288,7 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
 
 #if !GRAPHICS_DISABLED
   if (classify_debug_character_fragments) {
-    if (!learn_fragmented_word_debug_win_) {
+    if (learn_fragmented_word_debug_win_) {
       learn_fragmented_word_debug_win_->Wait();
     }
     RefreshDebugWindow(learn_fragments_debug_win_, "LearnPieces", 400,
