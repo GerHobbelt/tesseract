@@ -112,10 +112,12 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
     terminator->RegisterGlobalRefToMe(&terminator);
   }
   ScrollViewReference debug_win = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "ClassifierDebug", 0, 0);
-  // Provide a right-click menu to choose the class.
-  auto *popup_menu = new SVMenuNode();
-  popup_menu->AddChild("Choose class to debug", 0, "x", "Class to debug");
-  popup_menu->BuildMenu(debug_win, false);
+  if (debug_win->HasInteractiveFeature()) {
+    // Provide a right-click menu to choose the class.
+    auto *popup_menu = new SVMenuNode();
+    popup_menu->AddChild("Choose class to debug", 0, "x", "Class to debug");
+    popup_menu->BuildMenu(debug_win, false);
+  }
   // Display the features in green.
   const INT_FEATURE_STRUCT *features = sample.features();
   uint32_t num_features = sample.num_features();

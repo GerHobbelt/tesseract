@@ -548,6 +548,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   SVMenuNode *svMenuRoot = build_menu_new();
 
   svMenuRoot->BuildMenu(image_win);
+
   image_win->SetVisible(true);
 
   image_win->AwaitEvent(SVET_DESTROY);

@@ -202,6 +202,7 @@ int ParamContent::Compare(const void *v1, const void *v2) {
 
 // Find all editable parameters used within tesseract and create a
 // SVMenuNode tree from it.
+// 
 // TODO (wanke): This is actually sort of hackish.
 SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
   auto *mr = new SVMenuNode();
@@ -299,25 +300,27 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference &sv) 
   // Only one event handler per window.
   // sv->AddEventHandler((SVEventHandler*) this);
 
-  SVMenuNode *svMenuRoot = BuildListOfAllLeaves(tess);
+  if (sv->HasInteractiveFeature()) {
+    SVMenuNode *svMenuRoot = BuildListOfAllLeaves(tess);
 
-  std::string paramfile;
-  paramfile = tess->datadir;
-  paramfile += VARDIR;   // parameters dir
-  paramfile += "edited"; // actual name
+    std::string paramfile;
+    paramfile = tess->datadir;
+    paramfile += VARDIR;   // parameters dir
+    paramfile += "edited"; // actual name
 
-  SVMenuNode *std_menu = svMenuRoot->AddChild("Build Config File");
+    SVMenuNode *std_menu = svMenuRoot->AddChild("Build Config File");
 
-  writeCommands[0] = nrParams + 1;
-  std_menu->AddChild("All Parameters", writeCommands[0], paramfile.c_str(), "Config file name?");
+    writeCommands[0] = nrParams + 1;
+    std_menu->AddChild("All Parameters", writeCommands[0], paramfile.c_str(), "Config file name?");
 
-  writeCommands[1] = nrParams + 2;
-  std_menu->AddChild("changed_ Parameters Only", writeCommands[1], paramfile.c_str(),
-                     "Config file name?");
+    writeCommands[1] = nrParams + 2;
+    std_menu->AddChild("changed_ Parameters Only", writeCommands[1], paramfile.c_str(),
+                       "Config file name?");
 
-  svMenuRoot->BuildMenu(sv, false);
+    svMenuRoot->BuildMenu(sv, false);
 
-  delete svMenuRoot;
+    delete svMenuRoot;
+  }
 }
 
 // Write all (changed_) parameters to a config file.

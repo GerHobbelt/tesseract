@@ -1490,15 +1490,10 @@ int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
 // Zoom the window to the rectangle given upper left corner and
 // lower right corner.
 void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
-  ASSERT0(!"Should never get here!");
-  x1 += x_offset;
-  y1 += y_offset;
-  x1 += x_offset;
-  y1 += y_offset;
-  y1 = TranslateYCoordinate(y1);
-  y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
-          std::max(x1, x2), std::max(y1, y2));
+  // draw zoom rectangle instead...
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
+  Pen(255, 128, 0);
+  Rectangle(x1, y1, x2, y2);
 }
 
 // Send an image of type Pix.

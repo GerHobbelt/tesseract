@@ -1638,13 +1638,15 @@ void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_
 void InitIntMatchWindowIfReqd() {
   if (!IntMatchWindow) {
     IntMatchWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "IntMatchWindow", 50, 200);
-    auto *popup_menu = new SVMenuNode();
+    if (IntMatchWindow->HasInteractiveFeature()) {
+      auto *popup_menu = new SVMenuNode();
 
-    popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
-    popup_menu->AddChild("Debug Static classes", IDA_STATIC, "x", "Class to debug");
-    popup_menu->AddChild("Debug Both", IDA_BOTH, "x", "Class to debug");
-    popup_menu->AddChild("Debug Shape Index", IDA_SHAPE_INDEX, "0", "Index to debug");
-    popup_menu->BuildMenu(IntMatchWindow, false);
+      popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
+      popup_menu->AddChild("Debug Static classes", IDA_STATIC, "x", "Class to debug");
+      popup_menu->AddChild("Debug Both", IDA_BOTH, "x", "Class to debug");
+      popup_menu->AddChild("Debug Shape Index", IDA_SHAPE_INDEX, "0", "Index to debug");
+      popup_menu->BuildMenu(IntMatchWindow, false);
+    }
   }
 }
 
