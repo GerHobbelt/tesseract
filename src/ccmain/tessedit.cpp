@@ -188,6 +188,20 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
         "Error: Tesseract (legacy) engine requested, but components are "
         "not present in %s!!\n",
         tessdata_path.c_str());
+
+#ifdef WASM_BUILD
+    // For the WASM build for Tesseract.js, this message is saved to a separate file.
+    // This allows for Tesseract.js to catch that the wrong data is being used and correct,
+    // regardless of where tprintf is being directed to in general.
+    FILE *debugfp = nullptr; // debug file
+    debugfp = fopen("/debugDev.txt", "a+");
+    fprintf(debugfp, "Error: Tesseract (legacy) engine requested, but components are "
+        "not present in %s!!\n");
+    // Webassembly build does not always flush properly if not explicitly called for. 
+    // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
+    fclose(debugfp);
+#endif
+
     return false;
   }
 #endif // ndef DISABLED_LEGACY_ENGINE

@@ -23,12 +23,15 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
       "\n cmake ..")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# if(WASM_BUILD) 
+#   set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
+# else()
+#   set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
-set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -86,7 +89,7 @@ else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
-option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" ON)
+option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
@@ -168,7 +171,9 @@ endif(ENABLE_NATIVE)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
+## For the .wasm build, whether SIMD instructions are used or not is set manually.
+## For other builds, auto-detection occurs. 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686" AND NOT WASM_BUILD)
 
   set(HAVE_NEON FALSE)
   if(MSVC)
@@ -244,7 +249,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
     endif(OPENMP_SIMD)
   endif(MSVC)
 
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*" AND NOT WASM_BUILD)
 
   set(HAVE_AVX FALSE)
   set(HAVE_AVX2 FALSE)
@@ -253,7 +258,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*")
   set(HAVE_SSE4_1 FALSE)
   set(HAVE_NEON TRUE)
 
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*" AND NOT WASM_BUILD)
 
   set(HAVE_AVX FALSE)
   set(HAVE_AVX2 FALSE)
@@ -265,6 +270,14 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*")
   if(HAVE_NEON)
     set(NEON_COMPILE_FLAGS "-mfpu=neon")
   endif(HAVE_NEON)
+
+elseif(WASM_BUILD)
+    option(HAVE_AVX "" FALSE)
+    option(HAVE_AVX2 "" FALSE)
+    option(HAVE_AVX512F "" FALSE)
+    option(HAVE_FMA "" FALSE)
+    option(HAVE_NEON "" FALSE)
+    option(HAVE_SSE4_1 "" FALSE)
 
 else()
 
@@ -364,23 +377,7 @@ if(CYGWIN)
   add_definitions(-D__CYGWIN__)
 elseif(UNIX)
   if(NOT ANDROID)
-        #
-        # Check link below for detail explanation:
-        # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
-        # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
-        #
-        # Use c++11 standard
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
-        # Optimize code for size reduction
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
-        # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
-        # Do not emit a separate memory initialization file
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
-        # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
-        set(LIB_pthread pthread)
+    set(LIB_pthread pthread)
   endif()
 elseif(WIN32)
   set(LIB_Ws2_32 Ws2_32)
@@ -393,7 +390,7 @@ add_definitions("-DCMAKE_BUILD")
 # packages
 #
 # ##############################################################################
-include(CheckFunctions)
+# include(CheckFunctions)
 
 if(SW_BUILD)
   find_package(SW REQUIRED)
@@ -425,13 +422,13 @@ else()
   endif(NOT Leptonica_FOUND)
   include_directories(${Leptonica_INCLUDE_DIRS})
 
-  check_leptonica_tiff_support()
-  if ((NOT LEPT_TIFF_RESULT EQUAL 0) AND LEPT_TIFF_COMPILE_SUCCESS)
-    message(NOTICE "Leptonica was build without TIFF support! Disabling TIFF support...")
-    set(DISABLE_TIFF ON)
-  elseif(NOT ${CMAKE_VERSION} VERSION_LESS "3.25")
-    message(STATUS "Leptonica was build with TIFF support.")
-  endif()
+#   check_leptonica_tiff_support()
+#   if ((NOT LEPT_TIFF_RESULT EQUAL 0) AND LEPT_TIFF_COMPILE_SUCCESS)
+#     message(NOTICE "Leptonica was build without TIFF support! Disabling TIFF support...")
+#     set(DISABLE_TIFF ON)
+#   elseif(NOT ${CMAKE_VERSION} VERSION_LESS "3.25")
+#     message(STATUS "Leptonica was build with TIFF support.")
+#   endif()
 
   # Check for optional libraries.
   if(DISABLE_TIFF)
@@ -710,10 +707,19 @@ if(DISABLED_LEGACY_ENGINE)
   list(REMOVE_ITEM TESSERACT_SRC ${TESSERACT_SRC_LEGACY})
 endif(DISABLED_LEGACY_ENGINE)
 
+if (WASM_BUILD)
 if(NOT HAVE_SSE4_1)
   list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
       src/arch/intsimdmatrix.cpp)
+else()
+    list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
+    set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
 endif(NOT HAVE_SSE4_1)
+
+else()
+
+list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
+     src/arch/intsimdmatrix.cpp)
 
 if(DOTPRODUCT_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
@@ -756,6 +762,8 @@ if(HAVE_NEON)
       PROPERTIES COMPILE_FLAGS ${NEON_COMPILE_FLAGS})
   endif()
 endif(HAVE_NEON)
+
+endif()
 
 file(
   GLOB_RECURSE
@@ -920,6 +928,7 @@ endif()
 # EXECUTABLE tesseract
 # ##############################################################################
 
+if(NOT WASM_BUILD)
 add_executable(tesseract src/tesseract.cpp)
 target_link_libraries(tesseract libtesseract)
 if(HAVE_TIFFIO_H AND WIN32)
@@ -1004,6 +1013,116 @@ if(INSTALL_CONFIGS)
           DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
   install(FILES ${TESSERACT_TESSCONFIGS}
           DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
+endif()
+
+else()
+
+## Define variable for pre-processor to add emscripten-specific content
+add_definitions(-DWASM_BUILD)
+
+#
+# Check link below for detail explanation:
+# https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
+# https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+#
+# Use c++11 standard
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+# Optimize code for size reduction
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
+# Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
+# Do not emit a separate memory initialization file
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+# LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
+# set(LIB_pthread pthread)
+
+
+########################################
+# Build tesseract-core.js (WASM version)
+########################################
+if(HAVE_SSE4_1)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-simd-lstm)
+  else()
+    set(WASM_NAME tesseract-core-simd)
+  endif()
+else()
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-lstm)
+  else()
+    set(WASM_NAME tesseract-core)
+  endif()
+endif()
+
+set(tesseract_js_wrapper ../../javascript/src/wrapper.cpp)
+
+add_executable                  (${WASM_NAME} ${tesseract_js_wrapper})
+#
+# Check link below for detail explanation
+# https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+#
+# Use double amount of memory comparing to default
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
+# Allow memory to grow
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
+# Replace default name 'Module' with 'TesseractCore'
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+# Enable for closure option
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s MODULARIZE=1")
+# Do not run main function
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
+# Remove unneeded variables
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s AGGRESSIVE_VARIABLE_ELIMINATION=1")
+# Allow stackTrace() to emit fully proper demangled c++ names
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+# Allow unused symbol
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
+#
+# This flag fix the issue of [float unrepresentable in integer range]
+# Ref: http://kripken.github.io/emscripten-site/docs/compiling/WebAssembly.html#trap-mode
+#
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s BINARYEN_TRAP_MODE='\"clamp\"'")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ASSERTIONS=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s FS_LOG=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s RUNTIME_LOGGING=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s LIBRARY_DEBUG=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SYSCALL_DEBUG=1")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_FUNCTIONS='[\"_pixDestroy\",\"_boxaDestroy\",\"_pixaDestroy\",\"_ptaDestroy\",\"_pixReadMem\",\"_pixReadHeaderMem\",\"_malloc\",\"_free\"]'")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_RUNTIME_METHODS='[\"FS\", \"setValue\", \"getValue\"]'")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/glue.js")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/anterior.js")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --embed-file ../tessdata/pdf.ttf@pdf.ttf")
+
+set_target_properties(${WASM_NAME} PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+target_link_libraries         (libtesseract PUBLIC
+  ${CMAKE_PREFIX_PATH}/lib/libgif.a
+  ${CMAKE_PREFIX_PATH}/lib/libjpeg.a
+  ${CMAKE_PREFIX_PATH}/lib/libopenlibm.a
+  ${CMAKE_PREFIX_PATH}/lib/libpng.a
+  ${CMAKE_PREFIX_PATH}/lib/libtiff.a
+  ${CMAKE_PREFIX_PATH}/lib/libtiffxx.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebp.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebpdecoder.a
+  ${CMAKE_PREFIX_PATH}/lib/libwebpdemux.a
+  ${CMAKE_PREFIX_PATH}/lib/libz.a
+)
+target_link_libraries           (${WASM_NAME} libtesseract)
+
+#############################################################
+# Build tesseract-core.wasm.js (WASM Base64 embedded version)
+#############################################################
+
+
+add_executable                  (${WASM_NAME}.wasm ${tesseract_js_wrapper})
+
+# # Embeds all subresources in the emitted file as base64 string literals
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SINGLE_FILE=1")
+set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
+
+target_link_libraries           (${WASM_NAME}.wasm libtesseract)
+
 endif()
 
 # ##############################################################################
