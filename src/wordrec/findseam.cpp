@@ -275,7 +275,9 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
       seam->Mark(edge_window);
       if (chop_debug > 2) {
         edge_window->UpdateWindow();
-        edge_window->Wait();
+        if (edge_window->HasInteractiveFeature()) {
+          edge_window->Wait();
+        }
       }
     }
 #endif

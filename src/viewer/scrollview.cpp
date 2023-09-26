@@ -1082,6 +1082,7 @@ void BackgroundScrollView::SendPolygon() {
         //SendMsg("drawPolyline({})", decimal_coords.c_str());
 
         PTA *ptas = ptaCreate(length);
+        ASSERT0(ptas != NULL);
         for (int i = 0; i < length; ++i) {
           ptaAddPt(ptas, points_->xcoords[i], points_->ycoords[i]);
         }
@@ -1223,6 +1224,8 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   //SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 
   PTA *ptas = ptaCreate(5);
+  ASSERT0(ptas != NULL);
+
   ptaAddPt(ptas, x1, TranslateYCoordinate(y1));
   ptaAddPt(ptas, x2, TranslateYCoordinate(y1));
   ptaAddPt(ptas, x2, TranslateYCoordinate(y2));
@@ -1670,8 +1673,7 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
 
 ////////////////////////////////////////////////////////////////////////
 
-// if (tesseract_->interactive_display_mode &&
-// !tesseract_->debug_do_not_use_scrollview_app) ...
+// if (tesseract_->SupportsInteractiveScrollView()) ...
 
 ScrollViewManager::ScrollViewManager() {
   active = nullptr;
@@ -1694,7 +1696,7 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
 
   ScrollViewReference rv; 
 
-  if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
+  if (tess->SupportsInteractiveScrollView()) {
       rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
                                        x_canvas_size, y_canvas_size,
                                        y_axis_reversed, server_name);

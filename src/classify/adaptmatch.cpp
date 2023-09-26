@@ -288,7 +288,7 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
 
 #if !GRAPHICS_DISABLED
   if (classify_debug_character_fragments) {
-    if (learn_fragmented_word_debug_win_) {
+    if (learn_fragmented_word_debug_win_ && learn_fragmented_word_debug_win_->HasInteractiveFeature()) {
       learn_fragmented_word_debug_win_->Wait();
     }
     RefreshDebugWindow(learn_fragments_debug_win_, "LearnPieces", 400,
@@ -412,7 +412,9 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
     RefreshDebugWindow(learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
     rotated_blob->plot(learn_debug_win_, ScrollView::GREEN, ScrollView::BROWN);
     learn_debug_win_->UpdateWindow();
-    learn_debug_win_->Wait();
+    if (learn_debug_win_->HasInteractiveFeature()) {
+      learn_debug_win_->Wait();
+    }
   }
   if (classify_debug_character_fragments && segmentation == CST_FRAGMENT) {
     ASSERT_HOST(!learn_fragments_debug_win_); // set up in LearnWord
@@ -1455,6 +1457,7 @@ void Classify::DebugAdaptiveClassifier(TBLOB *blob, ADAPT_RESULTS *Results) {
     return;
   }
   static_classifier_->DebugDisplay(*sample, Results->best_unichar_id);
+  delete sample;
 } /* DebugAdaptiveClassifier */
 #endif
 
@@ -1483,8 +1486,7 @@ void Classify::DoAdaptiveMatch(TBLOB *Blob, ADAPT_RESULTS *Results) {
 
   INT_FX_RESULT_STRUCT fx_info;
   std::vector<INT_FEATURE_STRUCT> bl_features;
-  TrainingSample *sample =
-      BlobToTrainingSample(*Blob, classify_nonlinear_norm, &fx_info, &bl_features);
+  TrainingSample *sample = BlobToTrainingSample(*Blob, classify_nonlinear_norm, &fx_info, &bl_features);
   if (sample == nullptr) {
     return;
   }

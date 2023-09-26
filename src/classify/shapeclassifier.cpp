@@ -102,7 +102,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
 {
   {
     Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
-    if (!tess || !tess->interactive_display_mode || tess->debug_do_not_use_scrollview_app) 
+    if (!tess || !tess->SupportsInteractiveScrollView()) 
       return;
   }
 

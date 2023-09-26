@@ -70,7 +70,7 @@ BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, Scroll
     print_ratings_list(string, choices, getDict().getUnicharset());
   }
 
-  if (wordrec_blob_pause) {
+  if (wordrec_blob_pause && blob_window && blob_window->HasInteractiveFeature()) {
     blob_window->Wait();
   }
 #endif

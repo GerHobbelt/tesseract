@@ -771,7 +771,9 @@ void WERD_CHOICE::DisplaySegmentation(TWERD *word) {
   }
   segm_window->ZoomToRectangle(bbox.left(), bbox.top(), bbox.right(), bbox.bottom());
   segm_window->UpdateWindow();
-  segm_window->Wait();
+  if (segm_window->HasInteractiveFeature()) {
+    segm_window->Wait();
+  }
 }
 
 #endif // !GRAPHICS_DISABLED

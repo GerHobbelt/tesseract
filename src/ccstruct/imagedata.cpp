@@ -303,7 +303,9 @@ void ImageData::Display(Tesseract *tesseract_) const {
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
   win->UpdateWindow();
-  win->Wait();
+  if (win->HasInteractiveFeature()) {
+    win->Wait();
+  }
 }
 
 #endif
