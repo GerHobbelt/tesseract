@@ -75,7 +75,8 @@ static const int fz_get_cpu_core_count()
 // ... but we're going for broke here and expect benchmarks to usually run on otherwise unburdened heavy-duty hardware, so as to optimize
 // for those, we just say TAKE IT ALL:
 static const int kNumThreads = std::max(1, fz_get_cpu_core_count());
-static BS::thread_pool pool(kNumThreads);
+static BS::thread_pool *pool = nullptr;
+static int pool_ref_count = 0;
 #elif defined(_OPENMP)
 static const int kNumThreads = 4;
 #else
@@ -88,7 +89,22 @@ FullyConnected::FullyConnected(const std::string &name, int ni, int no,
                                NetworkType type)
     : Network(type, name, ni, no),
       external_source_(nullptr),
-      int_mode_(false) {}
+      int_mode_(false) {
+    if (!pool) {
+        pool = new BS::thread_pool(kNumThreads);
+        pool_ref_count = 1;
+    }
+    else {
+        pool_ref_count++;
+    }
+}
+
+FullyConnected::~FullyConnected() {
+    if (pool && --pool_ref_count == 0) {
+        delete pool;
+        pool = nullptr;
+    }
+}
 
 // Returns the shape output from the network given an input shape (which may
 // be partially unknown ie zero).
@@ -200,7 +216,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
   }
   std::atomic<int> num_threads = 0;
   if (input.int_mode()) {
-    pool.parallelize_loop(0, width,
+    pool->parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines](const int &start, const int &end) {
       // Thread-local pointer to temporary storage.
       int thread_id = num_threads++;
@@ -214,9 +230,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         }
       }
     }).get();
-	pool.wait_for_tasks();
+	pool->wait_for_tasks();
   } else if (IsTraining() && type_ != NT_SOFTMAX) {
-    pool.parallelize_loop(0, width,
+    pool->parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
       // Thread-local pointer to temporary storage.
       int thread_id = num_threads++;
@@ -228,9 +244,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         acts_.CopyTimeStepFrom(t, *output, t);
       }
     }).get();
-	pool.wait_for_tasks();
+	pool->wait_for_tasks();
   } else {
-    pool.parallelize_loop(0, width,
+    pool->parallelize_loop(0, width,
       [this, &input, &output, &num_threads, &temp_lines, &curr_input](const int &start, const int &end) {
       // Thread-local pointer to temporary storage.
       int thread_id = num_threads++;
@@ -241,7 +257,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
         output->WriteTimeStep(t, temp_line);
       }
     }).get();
-	pool.wait_for_tasks();
+	pool->wait_for_tasks();
   }
 #else // THREADPOOL
   ASSERT0(kNumThreads > 0);
@@ -379,7 +395,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
   std::atomic<unsigned> num_threads = 0;
   if (needs_to_backprop_) {
     std::vector<NetworkScratch::FloatVec> temp_backprops(kNumThreads);
-    pool.parallelize_loop(0, width,
+    pool->parallelize_loop(0, width,
       [this, &back_deltas, &fwd_deltas, &temp_backprops, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
       // Thread-local pointer to temporary storage.
       unsigned thread_id = num_threads++;
@@ -390,9 +406,9 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
         back_deltas->WriteTimeStep(t, backprop);
       }
     }).get();
-	pool.wait_for_tasks();
+	pool->wait_for_tasks();
   } else {
-    pool.parallelize_loop(0, width,
+    pool->parallelize_loop(0, width,
       [this, &fwd_deltas, &errors, &errors_t, &num_threads](const unsigned &start, const unsigned &end) {
       // Thread-local pointer to temporary storage.
       unsigned thread_id = num_threads++;
@@ -401,7 +417,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO &fwd_deltas,
         BackwardTimeStep(fwd_deltas, t, curr_errors, errors_t.get(), nullptr);
       }
     }).get();
-	pool.wait_for_tasks();
+	pool->wait_for_tasks();
   }
 #else
 #ifdef _OPENMP

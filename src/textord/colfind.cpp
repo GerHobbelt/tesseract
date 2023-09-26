@@ -258,7 +258,7 @@ void ColumnFinder::CorrectOrientation(TO_BLOCK *block, bool vertical_text_lines,
     SetBlockRuleEdges(block);
     stroke_width_->CorrectForRotation(rerotate_, &part_grid_);
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Vertical={}, orientation={}, final rotation=({}, {})+({},{})\n", vertical_text_lines,
             recognition_rotation, rotation_.x(), rotation_.y(), text_rotation_.x(),
             text_rotation_.y());
@@ -469,7 +469,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
   } else {
     TransformToBlocks(blocks, to_blocks);
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Found {} blocks, {} to_blocks\n", blocks->length(), to_blocks->length());
   }
 
@@ -583,12 +583,12 @@ bool ColumnFinder::MakeColumns(bool single_column) {
       }
       good_only = !good_only;
     } while (column_sets_.empty() && !good_only);
-    if (textord_debug_tabfind) {
+    if (textord_debug_tabfind > 0) {
       PrintColumnCandidates("Column candidates");
     }
     // Improve the column candidates against themselves.
     ImproveColumnCandidates(&column_sets_, &column_sets_);
-    if (textord_debug_tabfind) {
+    if (textord_debug_tabfind > 0) {
       PrintColumnCandidates("Improved columns");
     }
     // Improve the column candidates using the part_sets_.
@@ -600,7 +600,7 @@ bool ColumnFinder::MakeColumns(bool single_column) {
     // single column mode.
     single_column_set->AddToColumnSetsIfUnique(&column_sets_, WidthCB());
   }
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     PrintColumnCandidates("Final Columns");
   }
   bool has_columns = !column_sets_.empty();
@@ -664,7 +664,7 @@ void ColumnFinder::ImproveColumnCandidates(PartSetVector *src_sets, PartSetVecto
 void ColumnFinder::PrintColumnCandidates(const char *title) {
   int set_size = column_sets_.size();
   tprintf("Found {} {}:\n", set_size, title);
-  if (textord_debug_tabfind >= 3) {
+  if (textord_debug_tabfind > 2) {
     for (int i = 0; i < set_size; ++i) {
       ColPartitionSet *column_set = column_sets_.at(i);
       column_set->Print();
@@ -729,19 +729,19 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
   // While there is an unassigned range, find its mode.
   int start, end;
   while (BiggestUnassignedRange(set_count, any_columns_possible, &start, &end)) {
-    if (textord_debug_tabfind >= 2) {
+    if (textord_debug_tabfind > 1) {
       tprintf("Biggest unassigned range = {}- {}\n", start, end);
     }
     // Find the modal column_set_id in the range.
     int column_set_id = RangeModalColumnSet(column_set_costs, assigned_costs, start, end);
-    if (textord_debug_tabfind >= 2) {
+    if (textord_debug_tabfind > 1) {
       tprintf("Range modal column id = {}\n", column_set_id);
       column_sets_.at(column_set_id)->Print();
     }
     // Now find the longest run of the column_set_id in the range.
     ShrinkRangeToLongestRun(column_set_costs, assigned_costs, any_columns_possible, column_set_id,
                             &start, &end);
-    if (textord_debug_tabfind >= 2) {
+    if (textord_debug_tabfind > 1) {
       tprintf("Shrunk range = {}- {}\n", start, end);
     }
     // Extend the start and end past the longest run, while there are
@@ -753,7 +753,7 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
     ExtendRangePastSmallGaps(column_set_costs, assigned_costs, any_columns_possible, column_set_id,
                              1, set_count, &end);
     ++end;
-    if (textord_debug_tabfind) {
+    if (textord_debug_tabfind > 0) {
       tprintf("Column id {} applies to range = {} - {}\n", column_set_id, start, end);
     }
     // Assign the column to the range, which now may overlap with other ranges.
@@ -1464,7 +1464,7 @@ void ColumnFinder::TransformToBlocks(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_block
       // Every line should have a non-null best column.
       ASSERT_HOST(column_set != nullptr);
       column_set->ChangeWorkColumns(bleft_, tright_, resolution_, &good_parts_, &work_set);
-      if (textord_debug_tabfind) {
+      if (textord_debug_tabfind > 0) {
         tprintf("Changed column groups at grid index {}, y={}\n", gsearch.GridY(),
                 gsearch.GridY() * gridsize());
       }
@@ -1597,7 +1597,7 @@ void ColumnFinder::RotateAndReskewBlocks(bool input_is_rtl, TO_BLOCK_LIST *block
     }
     block->set_median_size(static_cast<int>(widths.median() + 0.5),
                            static_cast<int>(heights.median() + 0.5));
-    if (textord_debug_tabfind >= 2) {
+    if (textord_debug_tabfind > 1) {
       tprintf("Block median size = ({}, {})\n", block->median_size().x(), block->median_size().y());
     }
   }
@@ -1645,7 +1645,7 @@ FCOORD ColumnFinder::ComputeBlockAndClassifyRotation(BLOCK *block) {
   block_rotation.set_y(-block_rotation.y());
   block->set_re_rotation(block_rotation);
   block->set_classify_rotation(classify_rotation);
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("Blk {}, type {} rerotation({}, {}), char({},{}), box:", block->pdblk.index(),
             block->pdblk.poly_block()->isA(), block->re_rotation().x(), block->re_rotation().y(),
             classify_rotation.x(), classify_rotation.y());

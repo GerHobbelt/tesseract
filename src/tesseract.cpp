@@ -863,7 +863,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("textord_baseline_debug", "Y");
     api.SetVariable("textord_debug_block", "9");
     api.SetVariable("textord_debug_bugs", "9");
-    api.SetVariable("textord_debug_tabfind", "2" /* "9" */); // very noisy output
+    api.SetVariable("textord_debug_tabfind", "1" /* "9" */); // very noisy output
 
     api.SetVariable("textord_debug_baselines", "Y");
     api.SetVariable("textord_debug_blob", "Y");
@@ -902,7 +902,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_bigram_debug", "Y");
 
-    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "Y" : "N"); // LSTM debug output is extremely noisy
+    api.SetVariable("tess_debug_lstm", debug_all >= 1 ? "1" : "0"); // LSTM debug output is extremely noisy
 
     api.SetVariable("debug_noise_removal", "Y");
 
@@ -927,7 +927,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("crunch_debug", "Y");
 
-    api.SetVariable("dawg_debug_level", "3");
+    api.SetVariable("dawg_debug_level", "1");   // noisy
 
     api.SetVariable("debug_fix_space_level", "9");
     api.SetVariable("debug_x_ht_level", "3");

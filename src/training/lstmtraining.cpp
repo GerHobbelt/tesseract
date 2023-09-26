@@ -141,7 +141,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
                                  FLAGS_debug_interval,
                                  static_cast<int64_t>(FLAGS_max_image_MB) * 1048576);
 #if !defined(NDEEBUG)
-  trainer.SetDebug(true);
+  trainer.SetDebug(1);
 #endif
   if (!trainer.InitCharSet(FLAGS_traineddata.c_str())) {
     tprintf("ERROR: Failed to read {}\n", FLAGS_traineddata.c_str());

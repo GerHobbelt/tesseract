@@ -41,6 +41,7 @@ class TESS_API Tesseract;
 class ImageFind {
 public:
   ImageFind(Tesseract* tess);
+  ~ImageFind() = default;
 
   // Finds image regions within the BINARY source pix (page image) and returns
   // the image regions as a mask image.

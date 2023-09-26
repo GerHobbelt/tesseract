@@ -57,6 +57,7 @@ ShiroRekhaSplitter::ShiroRekhaSplitter(Tesseract* tess)
 
 ShiroRekhaSplitter::~ShiroRekhaSplitter() {
   Clear();
+  tesseract_ = nullptr;
 }
 
 void ShiroRekhaSplitter::Clear() {

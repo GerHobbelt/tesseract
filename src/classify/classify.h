@@ -42,7 +42,7 @@ public:
   // Member variables.
 
   INT_VAR_H(classify_debug_level);
-  BOOL_VAR_H(tess_debug_lstm);
+  INT_VAR_H(tess_debug_lstm);
   BOOL_VAR_H(classify_bln_numeric_mode);
   double_VAR_H(classify_max_rating_ratio);
   double_VAR_H(classify_max_certainty_margin);
@@ -95,7 +95,8 @@ enum CharSegmentationType {
 class TESS_API Classify : public CCStruct {
 public:
   Classify();
-  ~Classify() override;
+  virtual ~Classify() override;
+
   virtual Dict &getDict() {
     return dict_;
   }
@@ -364,7 +365,7 @@ public:
   BOOL_VAR_H(prioritize_division);
   BOOL_VAR_H(classify_enable_learning);
   INT_VAR_H(classify_debug_level);
-  BOOL_VAR_H(tess_debug_lstm);
+  INT_VAR_H(tess_debug_lstm);
 
   /* mfoutline.cpp ***********************************************************/
   /* control knobs used to control normalization of outlines */

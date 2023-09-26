@@ -184,7 +184,8 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
     revised_box->rotate(block.re_rotation());
   }
   // Now revised_box always refers to the image.
-  Image pix = pix_binary();
+  // BestPix is never colormapped, but may be of any depth.
+  Image pix = BestPix();
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
   TBOX image_box(0, 0, width, height);
@@ -255,7 +256,7 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
     dbg_pix.destroy();
   }
 
-  lstm_recognizer_->SetDebug(classify_debug_level > 0 && tess_debug_lstm);
+  lstm_recognizer_->SetDebug(classify_debug_level > 0 ? tess_debug_lstm : 0);
   lstm_recognizer_->RecognizeLine(*im_data, invert_threshold, 
                                   kWorstDictCertainty / kCertaintyScale, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);

@@ -194,8 +194,16 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract(Tesseract *parent = nullptr);
-  ~Tesseract() override;
+  Tesseract(Tesseract *parent = nullptr, AutoSupressDatum *LogReportingHoldoffMarkerRef = nullptr);
+  virtual ~Tesseract() override;
+
+protected:
+  AutoSupressDatum &reporting_holdoff_;
+
+public:
+  AutoSupressDatum &GetLogReportingHoldoffMarkerRef() {
+    return reporting_holdoff_;
+  };
 
   // Return appropriate dictionary
   Dict &getDict() override;
@@ -237,11 +245,6 @@ public:
     pix_grey_.destroy();
     pix_grey_ = grey_pix;
   }
-#if 0
-  DebugPixa &pix_debug() {
-	  return pixa_debug_;
-  }
-#endif
   Image pix_original() const {
     return pix_original_;
   }
@@ -270,6 +273,8 @@ public:
     }
   }
 
+  void ReportDebugInfo();
+
   // Return a memory capacity cost estimate for the given image / current original image.
   //
   // (unless overridden by the `pix` argument) uses the current original image for the estimate,
@@ -281,6 +286,24 @@ public:
   // `true` when the cost is expected to be too high.
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use pix_original() data */) const;
   bool CheckAndReportIfImageTooLarge(int width, int height) const;
+
+  // Returns a pointer to a Pix representing the best available resolution image
+  // of the page, with best available bit depth as second priority. Result can
+  // be of any bit depth, but never color-mapped, as that has always been
+  // removed. Note that in grey and color, 0 is black and 255 is
+  // white. If the input was binary, then black is 1 and white is 0.
+  // To tell the difference pixGetDepth() will return 32, 8 or 1.
+  // In any case, the return value is a borrowed Pix, and should not be
+  // deleted or pixDestroyed.
+  Image BestPix() const {
+    if (pixGetWidth(pix_original_) == ImageWidth()) {
+      return pix_original_;
+    } else if (pix_grey_ != nullptr) {
+      return pix_grey_;
+    } else {
+      return pix_binary_;
+    }
+  }
 
   void set_pix_thresholds(Image thresholds) {
     pix_thresholds_.destroy();

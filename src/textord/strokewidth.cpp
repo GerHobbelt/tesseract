@@ -222,7 +222,7 @@ bool StrokeWidth::TestVerticalTextDirection(double find_vertical_text_ratio, TO_
                         &horizontal_blobs, &nondescript_blobs);
   CollectHorizVertBlobs(&block->large_blobs, &vertical_boxes, &horizontal_boxes, &vertical_blobs,
                         &horizontal_blobs, &nondescript_blobs);
-  if (textord_debug_tabfind) {
+  if (textord_debug_tabfind > 0) {
     tprintf("TextDir hbox={} vs vbox={}, {}H, {}V, {}N osd blobs\n", horizontal_boxes,
             vertical_boxes, horizontal_blobs.length(), vertical_blobs.length(),
             nondescript_blobs.length());
@@ -1099,8 +1099,7 @@ static void List3rdNeighbours(const BLOBNBOX *blob, BLOBNBOX_CLIST *neighbours) 
 
 // Helper to count the evidence for verticalness or horizontalness
 // in a list of neighbours.
-static void CountNeighbourGaps(bool debug, BLOBNBOX_CLIST *neighbours, int *pure_h_count,
-                               int *pure_v_count) {
+static void CountNeighbourGaps(bool debug, BLOBNBOX_CLIST *neighbours, int *pure_h_count, int *pure_v_count) {
   if (neighbours->length() <= kMostlyOneDirRatio) {
     return;
   }
@@ -1142,8 +1141,7 @@ void StrokeWidth::SetNeighbourFlows(BLOBNBOX *blob) {
   if (blob->DefiniteIndividualFlow()) {
     return;
   }
-  bool debug =
-      AlignedBlob::WithinTestRegion(2, blob->bounding_box().left(), blob->bounding_box().bottom());
+  bool debug = AlignedBlob::WithinTestRegion(2, blob->bounding_box().left(), blob->bounding_box().bottom());
   if (debug) {
     tprintf("SetNeighbourFlows (current flow={}, type={}) on:", blob->flow(), blob->region_type());
     blob->bounding_box().print();

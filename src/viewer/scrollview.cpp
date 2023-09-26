@@ -961,18 +961,6 @@ void BackgroundScrollView::PrepCanvas(void) {
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
   ASSERT0(pix.pix_ != wh_pix.pix_);
   wh_pix.destroy();
-
-#  if 0
-    BOX* border = boxCreate(2, 2, width + 4, height + 4);
-    // boxDestroy(BOX * *pbox);
-    BOXA* boxlist = boxaCreate(1);
-    boxaAddBox(boxlist, border, false);
-    //boxaDestroy(BOXA * *pboxa);
-    l_uint32 bordercolor;
-    composeRGBAPixel(255, 32, 32, 255, &bordercolor);
-    pix = pixDrawBoxa(pix, boxlist, 2, bordercolor);
-    boxaDestroy(&boxlist);
-#  endif
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
@@ -1041,7 +1029,8 @@ void BackgroundScrollView::SendPolygon() {
     // last setCursor has any effect.
     if (length == 2) {
       // An isolated line!
-      SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
+
+      //SendMsg("drawLine({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[1], points_->ycoords[1]);
 
       PTA *ptas = ptaCreate(2);
       ptaAddPt(ptas, points_->xcoords[0], points_->ycoords[0]);
@@ -1063,7 +1052,7 @@ void BackgroundScrollView::SendPolygon() {
               points_->xcoords[2] == points_->xcoords[3] &&
               points_->ycoords[0] == points_->ycoords[3] &&
               points_->ycoords[1] == points_->ycoords[2]) {
-            SendMsg("drawRectangle({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[2], points_->ycoords[2]);
+            //SendMsg("drawRectangle({},{},{},{})", points_->xcoords[0], points_->ycoords[0], points_->xcoords[2], points_->ycoords[2]);
 
             PTA *ptas = ptaCreate(4);
             ptaAddPt(ptas, points_->xcoords[0], points_->ycoords[0]);
@@ -1082,9 +1071,6 @@ void BackgroundScrollView::SendPolygon() {
         }
       }
       if (!done) {
-#if 0
-        SendMsg("createPolyline({})", length);
-#endif
         char coordpair[kMaxIntPairSize];
         std::string decimal_coords;
         for (int i = 0; i < length; ++i) {
@@ -1093,7 +1079,7 @@ void BackgroundScrollView::SendPolygon() {
         }
         // erase trailing ',':
         decimal_coords.pop_back();
-        SendMsg("drawPolyline({})", decimal_coords.c_str());
+        //SendMsg("drawPolyline({})", decimal_coords.c_str());
 
         PTA *ptas = ptaCreate(length);
         for (int i = 0; i < length; ++i) {
@@ -1233,8 +1219,8 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   y1 += y_offset;
   x2 += x_offset;
   y2 += y_offset;
-  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
-          TranslateYCoordinate(y2));
+  
+  //SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 
   PTA *ptas = ptaCreate(5);
   ptaAddPt(ptas, x1, TranslateYCoordinate(y1));
@@ -1328,7 +1314,8 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
   SendPolygon();
   x += x_offset;
   y += y_offset;
-  SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
+
+  //SendMsg("drawText({},{},'{}')", x, TranslateYCoordinate(y), mystring);
 
   BOX *box = boxCreate(x, TranslateYCoordinate(y), 5, 20);
   const int width = 1;
@@ -1392,10 +1379,13 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
 // Open and draw an image given a name at (x,y).
 void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
   SendPolygon();
-  SendMsg("openImage('{}')", image);
+  
+  //SendMsg("openImage('{}')", image);
+
   x_pos += x_offset;
   y_pos += y_offset;
-  SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
+  
+  //SendMsg("drawImage('{}',{},{})", image, x_pos, TranslateYCoordinate(y_pos));
 
   BOX *box = boxCreate(x_pos, TranslateYCoordinate(y_pos), 5, 20);
   const int width = 1;
@@ -1500,6 +1490,7 @@ int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
 // Zoom the window to the rectangle given upper left corner and
 // lower right corner.
 void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+  ASSERT0(!"Should never get here!");
   x1 += x_offset;
   y1 += y_offset;
   x1 += x_offset;
@@ -1516,7 +1507,9 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
   x_pos += x_offset;
   y_pos += y_offset;
   y_pos = TranslateYCoordinate(y_pos);
-  SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
+
+  //SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
+
   tesseract_->AddClippedPixDebugPage(image, title);
 
   int w = pixGetWidth(image);
@@ -1635,7 +1628,6 @@ void ScrollViewReference::clear() {
 }
 
 ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
-  tprintf("copy constructor failed!\n");
   view_ = o.view_;
   counter_ = o.counter_;
   id = o.id;
@@ -1645,7 +1637,6 @@ ScrollViewReference::ScrollViewReference(const ScrollViewReference &o) {
 }
 
 ScrollViewReference::ScrollViewReference(ScrollViewReference &&o) {
-  tprintf("move failed!\n");
   view_ = o.view_;
   counter_ = o.counter_;
   id = o.id;
@@ -1655,7 +1646,6 @@ ScrollViewReference::ScrollViewReference(ScrollViewReference &&o) {
 }
 
 ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &other) {
-  tprintf("copy assigned\n");
   if (&other != this) {
     cleanup_before_delete();
 
@@ -1670,7 +1660,6 @@ ScrollViewReference &ScrollViewReference::operator =(const ScrollViewReference &
 }
 
 ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other) {
-  tprintf("move assigned\n");
   if (&other != this) {
     cleanup_before_delete();
 
