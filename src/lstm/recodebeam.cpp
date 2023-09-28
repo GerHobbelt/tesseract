@@ -574,11 +574,12 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
     double certainty = 0.0;
     double rating = 0.0;
     while (t < width && best_nodes[t]->unichar_id == INVALID_UNICHAR_ID) {
-      double cert = best_nodes[t++]->certainty;
+      double cert = best_nodes[t]->certainty;
       if (cert < certainty) {
         certainty = cert;
       }
       rating -= cert;
+	  t++;
     }
     starts.push_back(t);
     if (t < width) {
@@ -597,14 +598,15 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
       unichar_ids->push_back(unichar_id);
       xcoords->push_back(t);
       do {
-        double cert = best_nodes[t++]->certainty;
+        double cert = best_nodes[t]->certainty;
         // Special-case NO-PERM space to forget the certainty of the previous
         // nulls. See long comment in ContinueContext.
         if (cert < certainty || (unichar_id == UNICHAR_SPACE &&
-                                 best_nodes[t - 1]->permuter == NO_PERM)) {
+                                 best_nodes[t]->permuter == NO_PERM)) {
           certainty = cert;
         }
         rating -= cert;
+		t++;
       } while (t < width && best_nodes[t]->duplicate);
       ends.push_back(t);
       certs->push_back(certainty);
