@@ -738,10 +738,7 @@ bool UNICHARSET::eq(UNICHAR_ID unichar_id,
 }
 
 bool UNICHARSET::save_to_string(std::string &str) const {
-  const int kFileBufSize = 1024;
-  char buffer[kFileBufSize + 1];
-  snprintf(buffer, kFileBufSize, "%zu\n", this->size());
-  str = buffer;
+  str = fmt::format("{}\n", this->size());
   for (unsigned id = 0; id < this->size(); ++id) {
     int min_bottom, max_bottom, min_top, max_top;
     get_top_bottom(id, &min_bottom, &max_bottom, &min_top, &max_top);
@@ -753,23 +750,23 @@ bool UNICHARSET::save_to_string(std::string &str) const {
     get_advance_stats(id, &advance, &advance_sd);
     unsigned int properties = this->get_properties(id);
     if (strcmp(this->id_to_unichar(id), " ") == 0) {
-      snprintf(buffer, kFileBufSize, "%s %x %s %d\n", "NULL", properties,
+	  str += fmt::format("NULL {} {} {}\n", "NULL", properties,
                this->get_script_from_script_id(this->get_script(id)),
                this->get_other_case(id));
-      str += buffer;
     } else {
-      std::ostringstream stream;
-      stream.imbue(std::locale::classic());
-      stream << this->id_to_unichar(id) << ' ' << properties << ' '
-             << min_bottom << ',' << max_bottom << ',' << min_top << ','
-             << max_top << ',' << width << ',' << width_sd << ',' << bearing
-             << ',' << bearing_sd << ',' << advance << ',' << advance_sd << ' '
-             << this->get_script_from_script_id(this->get_script(id)) << ' '
-             << this->get_other_case(id) << ' ' << this->get_direction(id)
-             << ' ' << this->get_mirror(id) << " \""
-             << this->get_normed_unichar(id) << "\"\t# "
-             << this->debug_str(id).c_str() << '\n';
-      str += stream.str().c_str();
+      str += fmt::format("{} {} "
+	                     "{},{},{},{},{},{},{},{},{},{} "
+						 "{} {} {} {} \"{}\"\t# {}\n",
+		   this->id_to_unichar(id), properties,
+           min_bottom, max_bottom, min_top,
+		   max_top, width, width_sd, bearing,
+		   bearing_sd, advance, advance_sd,
+		   this->get_script_from_script_id(this->get_script(id)),
+		   this->get_other_case(id), this->get_direction(id),
+		   this->get_mirror(id),
+		   this->get_normed_unichar(id),
+		   this->debug_str(id)
+      );
     }
   }
   return true;
