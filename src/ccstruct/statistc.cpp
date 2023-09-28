@@ -173,7 +173,7 @@ double STATS::ile(double frac) const {
   if (buckets_ == nullptr || total_count_ == 0) {
     return static_cast<double>(rangemin_);
   }
-#if 0
+#if 01
   // TODO(rays) The existing code doesn't seem to be doing the right thing
   // with target a double but this substitute crashes the code that uses it.
   // Investigate and fix properly.
@@ -189,8 +189,14 @@ double STATS::ile(double frac) const {
     ;
   }
   if (index > 0) {
-    ASSERT_HOST(buckets_[index - 1] > 0);
-    return rangemin_ + index - static_cast<double>(sum - target) / buckets_[index - 1];
+	int v_delta = buckets_[index - 1];
+	int s_delta = sum - target;
+	ASSERT_HOST(s_delta >= 0);
+	ASSERT_HOST(v_delta > 0);
+	if (s_delta > 0)
+	  return rangemin_ + index - static_cast<double>(s_delta) / v_delta;
+	else
+      return rangemin_ + index;
   } else {
     return static_cast<double>(rangemin_);
   }
