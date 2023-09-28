@@ -170,9 +170,9 @@ public:
    * Supply the name of the parameter and the value as a string, just as
    * you would in a config file.
    * Returns false if the name lookup failed.
-   * Eg SetVariable("tessedit_char_blacklist", "xyz"); to ignore x, y and z.
-   * Or SetVariable("classify_bln_numeric_mode", "1"); to set numeric-only mode.
-   * SetVariable may be used before Init, but settings will revert to
+   * E.g. `SetVariable("tessedit_char_blacklist", "xyz");` to ignore 'x', 'y' and 'z'.
+   * Or `SetVariable("classify_bln_numeric_mode", "1");` to set numeric-only mode.
+   * SetVariable() may be used before Init(), but settings will revert to
    * defaults on End().
    *
    * Note: Must be called after Init(). Only works for non-init variables
@@ -184,7 +184,7 @@ public:
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
-   * Fills in value with the value of the parameter.
+   * Fills in `value` with the value of the parameter.
    */
   bool GetIntVariable(const char *name, int *value) const;
   bool GetBoolVariable(const char *name, bool *value) const;
