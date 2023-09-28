@@ -56,11 +56,11 @@ const double kMinAlignedGutter = 0.25;
 // Constant add-on for minimum gutter for ragged tabs.
 const double kMinRaggedGutter = 1.5;
 
-double_VAR(textord_tabvector_vertical_gap_fraction, 0.5,
+DOUBLE_VAR(textord_tabvector_vertical_gap_fraction, 0.5,
            "max fraction of mean blob width allowed for vertical gaps in "
            "vertical text");
 
-double_VAR(textord_tabvector_vertical_box_ratio, 0.5,
+DOUBLE_VAR(textord_tabvector_vertical_box_ratio, 0.5,
            "Fraction of box matches required to declare a line vertical");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)

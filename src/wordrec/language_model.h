@@ -26,7 +26,7 @@
 #include "dict.h"           // for DawgArgs, Dict
 #include "lm_consistency.h" // for LMConsistencyInfo
 #include "lm_state.h"       // for ViterbiStateEntry, LanguageModelFlagsType
-#include "params.h"         // for DoubleParam, double_VAR_H, IntParam, Boo...
+#include "params.h"         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
 #include "params_model.h"   // for ParamsModel
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST...
 #include "stopper.h"        // for DANGERR
@@ -298,23 +298,23 @@ public:
   INT_VAR_H(language_model_ngram_order);
   INT_VAR_H(language_model_viterbi_list_max_num_prunable);
   INT_VAR_H(language_model_viterbi_list_max_size);
-  double_VAR_H(language_model_ngram_small_prob);
-  double_VAR_H(language_model_ngram_nonmatch_score);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
   BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-  double_VAR_H(language_model_ngram_scale_factor);
-  double_VAR_H(language_model_ngram_rating_factor);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
   BOOL_VAR_H(language_model_ngram_space_delimited_language);
   INT_VAR_H(language_model_min_compound_length);
   // Penalties used for adjusting path costs and final word rating.
-  double_VAR_H(language_model_penalty_non_freq_dict_word);
-  double_VAR_H(language_model_penalty_non_dict_word);
-  double_VAR_H(language_model_penalty_punc);
-  double_VAR_H(language_model_penalty_case);
-  double_VAR_H(language_model_penalty_script);
-  double_VAR_H(language_model_penalty_chartype);
-  double_VAR_H(language_model_penalty_font);
-  double_VAR_H(language_model_penalty_spacing);
-  double_VAR_H(language_model_penalty_increment);
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
   INT_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 

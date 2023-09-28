@@ -159,18 +159,18 @@ static ScrollViewReference ProtoDisplayWindow = nullptr;
 
 /* control knobs */
 static INT_VAR(classify_num_cp_levels, 3, "Number of Class Pruner Levels");
-static double_VAR(classify_cp_angle_pad_loose, 45.0, "Class Pruner Angle Pad Loose");
-static double_VAR(classify_cp_angle_pad_medium, 20.0, "Class Pruner Angle Pad Medium");
-static double_VAR(classify_cp_angle_pad_tight, 10.0, "CLass Pruner Angle Pad Tight");
-static double_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
-static double_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
-static double_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
-static double_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
-static double_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
-static double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
-static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
-static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
-static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+static DOUBLE_VAR(classify_cp_angle_pad_loose, 45.0, "Class Pruner Angle Pad Loose");
+static DOUBLE_VAR(classify_cp_angle_pad_medium, 20.0, "Class Pruner Angle Pad Medium");
+static DOUBLE_VAR(classify_cp_angle_pad_tight, 10.0, "CLass Pruner Angle Pad Tight");
+static DOUBLE_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
+static DOUBLE_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
+static DOUBLE_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
+static DOUBLE_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
+static DOUBLE_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
+static DOUBLE_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
+static DOUBLE_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
+static DOUBLE_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
+static DOUBLE_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 

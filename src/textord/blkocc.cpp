@@ -29,7 +29,7 @@
 
 namespace tesseract {
 
-double_VAR(textord_underline_threshold, 0.5, "Fraction of width occupied");
+DOUBLE_VAR(textord_underline_threshold, 0.5, "Fraction of width occupied");
 
 // Forward declarations of static functions
 static void horizontal_cblob_projection(C_BLOB *blob,  // blob to project

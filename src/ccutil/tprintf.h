@@ -19,7 +19,6 @@
 #ifndef TESSERACT_CCUTIL_TPRINTF_H
 #define TESSERACT_CCUTIL_TPRINTF_H
 
-#include "params.h"           // for BOOL_VAR_H
 #include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 
@@ -34,6 +33,15 @@ extern TESS_API void vTessPrint(fmt::string_view format, fmt::format_args args);
 template <typename S, typename... Args>
 void tprintf(const S *format, Args &&...args) {
   vTessPrint(format, fmt::make_format_args(args...));
+}
+
+// Helper function for dbgPrintf.
+extern TESS_API void vTessDebugPrint(fmt::string_view format, fmt::format_args args);
+
+// Main logging function.
+template <typename S, typename... Args>
+void dbgPrintf(const S *format, Args &&...args) {
+  vTessDebugPrint(format, fmt::make_format_args(args...));
 }
 
 } // namespace tesseract

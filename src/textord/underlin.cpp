@@ -20,7 +20,7 @@
 
 namespace tesseract {
 
-double_VAR(textord_underline_offset, 0.1, "Fraction of x to ignore");
+DOUBLE_VAR(textord_underline_offset, 0.1, "Fraction of x to ignore");
 BOOL_VAR(textord_restore_underlines, true, "Chop underlines & put back");
 
 /**********************************************************************

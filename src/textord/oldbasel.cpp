@@ -53,10 +53,10 @@ static BOOL_VAR(textord_oldbl_merge_parts, true, "Merge suspect partitions");
 static BOOL_VAR(oldbl_corrfix, true, "Improve correlation of heights");
 static BOOL_VAR(oldbl_xhfix, false, "Fix bug in modes threshold for xheights");
 static BOOL_VAR(textord_ocropus_mode, false, "Make baselines for ocropus");
-static double_VAR(oldbl_xhfract, 0.4, "Fraction of est allowed in calc");
+static DOUBLE_VAR(oldbl_xhfract, 0.4, "Fraction of est allowed in calc");
 static INT_VAR(oldbl_holed_losscount, 10, "Max lost before fallback line used");
-static double_VAR(oldbl_dot_error_size, 1.26, "Max aspect ratio of a dot");
-static double_VAR(textord_oldbl_jumplimit, 0.15, "X fraction for new partition");
+static DOUBLE_VAR(oldbl_dot_error_size, 1.26, "Max aspect ratio of a dot");
+static DOUBLE_VAR(textord_oldbl_jumplimit, 0.15, "X fraction for new partition");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 

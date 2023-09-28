@@ -436,7 +436,7 @@ int Tesseract::init_tesseract_internal(const std::string &arg0, const std::strin
   }
   // If only LSTM will be used, skip loading Tesseract classifier's
   // pre-trained templates and dictionary.
-  bool init_tesseract = tessedit_ocr_engine_mode != OEM_LSTM_ONLY;
+  bool init_tesseract = (tessedit_ocr_engine_mode != OEM_LSTM_ONLY);
   program_editup(textbase, init_tesseract ? mgr : nullptr, init_tesseract ? mgr : nullptr);
   return 0; // Normal exit
 }

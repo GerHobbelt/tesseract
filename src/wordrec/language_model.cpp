@@ -72,22 +72,22 @@ LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict 
     , INT_MEMBER(language_model_viterbi_list_max_size, 500,
                  "Maximum size of viterbi lists recorded in BLOB_CHOICEs",
                  dict->getCCUtil()->params())
-    , double_MEMBER(language_model_ngram_small_prob, 0.000001,
+    , DOUBLE_MEMBER(language_model_ngram_small_prob, 0.000001,
                     "To avoid overly small denominators use this as the "
                     "floor of the probability returned by the ngram model.",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_ngram_nonmatch_score, -40.0,
+    , DOUBLE_MEMBER(language_model_ngram_nonmatch_score, -40.0,
                     "Average classifier score of a non-matching unichar.",
                     dict->getCCUtil()->params())
     , BOOL_MEMBER(language_model_ngram_use_only_first_uft8_step, false,
                   "Use only the first UTF8 step of the given string"
                   " when computing log probabilities.",
                   dict->getCCUtil()->params())
-    , double_MEMBER(language_model_ngram_scale_factor, 0.03,
+    , DOUBLE_MEMBER(language_model_ngram_scale_factor, 0.03,
                     "Strength of the character ngram model relative to the"
                     " character classifier ",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_ngram_rating_factor, 16.0,
+    , DOUBLE_MEMBER(language_model_ngram_rating_factor, 16.0,
                     "Factor to bring log-probs into the same range as ratings"
                     " when multiplied by outline length ",
                     dict->getCCUtil()->params())
@@ -95,27 +95,27 @@ LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict 
                   "Words are delimited by space", dict->getCCUtil()->params())
     , INT_MEMBER(language_model_min_compound_length, 3, "Minimum length of compound words",
                  dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_non_freq_dict_word, 0.1,
+    , DOUBLE_MEMBER(language_model_penalty_non_freq_dict_word, 0.1,
                     "Penalty for words not in the frequent word dictionary",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_non_dict_word, 0.15, "Penalty for non-dictionary words",
+    , DOUBLE_MEMBER(language_model_penalty_non_dict_word, 0.15, "Penalty for non-dictionary words",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_punc, 0.2, "Penalty for inconsistent punctuation",
+    , DOUBLE_MEMBER(language_model_penalty_punc, 0.2, "Penalty for inconsistent punctuation",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_case, 0.1, "Penalty for inconsistent case",
+    , DOUBLE_MEMBER(language_model_penalty_case, 0.1, "Penalty for inconsistent case",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_script, 0.5, "Penalty for inconsistent script",
+    , DOUBLE_MEMBER(language_model_penalty_script, 0.5, "Penalty for inconsistent script",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_chartype, 0.3, "Penalty for inconsistent character type",
+    , DOUBLE_MEMBER(language_model_penalty_chartype, 0.3, "Penalty for inconsistent character type",
                     dict->getCCUtil()->params())
     ,
     // TODO(daria, rays): enable font consistency checking
     // after improving font analysis.
-    double_MEMBER(language_model_penalty_font, 0.00, "Penalty for inconsistent font",
+    DOUBLE_MEMBER(language_model_penalty_font, 0.00, "Penalty for inconsistent font",
                   dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_spacing, 0.05, "Penalty for inconsistent spacing",
+    , DOUBLE_MEMBER(language_model_penalty_spacing, 0.05, "Penalty for inconsistent spacing",
                     dict->getCCUtil()->params())
-    , double_MEMBER(language_model_penalty_increment, 0.01, "Penalty increment",
+    , DOUBLE_MEMBER(language_model_penalty_increment, 0.01, "Penalty increment",
                     dict->getCCUtil()->params())
     , INT_MEMBER(wordrec_display_segmentations, 0, "Display Segmentations (ScrollView)",
                  dict->getCCUtil()->params())

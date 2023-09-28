@@ -679,8 +679,7 @@ void UNICHARSET::unichar_insert(const char *const unichar_repr,
   if (old_style == OldUncleanUnichars::kTrue) {
     old_style_included_ = true;
   }
-  std::string cleaned =
-      old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
+  std::string cleaned = old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
   if (!cleaned.empty() && !ids.contains(cleaned.data(), cleaned.size())) {
     const char *str = cleaned.c_str();
     std::vector<int> encoding;

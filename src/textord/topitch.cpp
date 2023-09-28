@@ -46,8 +46,8 @@ BOOL_VAR(textord_debug_pitch_metric, false, "Write full metric stuff");
 BOOL_VAR(textord_show_row_cuts, false, "Draw row-level cuts");
 BOOL_VAR(textord_show_page_cuts, false, "Draw page-level cuts");
 BOOL_VAR(textord_blockndoc_fixed, false, "Attempt whole doc/block fixed pitch");
-double_VAR(textord_projection_scale, 0.200, "Ding rate for mid-cuts");
-double_VAR(textord_balance_factor, 1.0, "Ding rate for unbalanced char cells");
+DOUBLE_VAR(textord_projection_scale, 0.200, "Ding rate for mid-cuts");
+DOUBLE_VAR(textord_balance_factor, 1.0, "Ding rate for unbalanced char cells");
 
 #define BLOCK_STATS_CLUSTERS 10
 #define MAX_ALLOWED_PITCH 100 // max pixel pitch.

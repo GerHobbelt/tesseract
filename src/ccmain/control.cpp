@@ -879,7 +879,7 @@ int Tesseract::RetryWithLanguage(const WordData &word_data, WordRecognizer recog
                                  WERD_RES **in_word, PointerVector<WERD_RES> *best_words) {
   if (debug) {
     tprintf("Trying word using lang {}, oem {}\n", lang.c_str(),
-            static_cast<int>(tessedit_ocr_engine_mode));
+            tessedit_ocr_engine_mode.value());
   }
   // Run the recognizer on the word.
   PointerVector<WERD_RES> new_words;

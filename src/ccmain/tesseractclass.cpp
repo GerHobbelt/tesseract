@@ -67,7 +67,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                   "Break input into lines and remap boxes if present", params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
                   "Dump intermediate images made during page segmentation", params())
-    , double_MEMBER(invert_threshold, 0.7,
+    , DOUBLE_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
                     params())
     ,
@@ -99,28 +99,28 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process.",
                   params())
-    , double_MEMBER(thresholding_window_size, 0.33,
+    , DOUBLE_MEMBER(thresholding_window_size, 0.33,
                     "Window size for measuring local statistics (to be "
                     "multiplied by image DPI). "
                     "This parameter is used by the Sauvola thresholding method.",
                     params())
-    , double_MEMBER(thresholding_kfactor, 0.34,
+    , DOUBLE_MEMBER(thresholding_kfactor, 0.34,
                     "Factor for reducing threshold due to variance. "
                     "This parameter is used by the Sauvola thresholding method. "
                     "Normal range: 0.2-0.5.",
                     params())
-    , double_MEMBER(thresholding_tile_size, 0.33,
+    , DOUBLE_MEMBER(thresholding_tile_size, 0.33,
                     "Desired tile size (to be multiplied by image DPI). "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method.",
                     params())
-    , double_MEMBER(thresholding_smooth_kernel_size, 0.01,
+    , DOUBLE_MEMBER(thresholding_smooth_kernel_size, 0.01,
                     "Size of convolution kernel applied to threshold array "
                     "(to be multiplied by image DPI). Use 0 for no smoothing. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method.",
                     params())
-    , double_MEMBER(thresholding_score_fraction, 0.1,
+    , DOUBLE_MEMBER(thresholding_score_fraction, 0.1,
                     "Fraction of the max Otsu score. "
                     "This parameter is used by the Adaptive Leptonica Otsu thresholding "
                     "method. "
@@ -200,18 +200,18 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
     // character worse and still be included.
-    double_MEMBER(noise_cert_basechar, -8.0, "Hingepoint for base char certainty.", params())
+    DOUBLE_MEMBER(noise_cert_basechar, -8.0, "Hingepoint for base char certainty.", params())
     ,
     // Worst (min) certainty, for which a non-overlapping diacritic is allowed
     // to make the base character worse and still be included.
-    double_MEMBER(noise_cert_disjoint, -1.0, "Hingepoint for disjoint certainty.", params())
+    DOUBLE_MEMBER(noise_cert_disjoint, -1.0, "Hingepoint for disjoint certainty.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make a new
     // stand-alone blob.
-    double_MEMBER(noise_cert_punc, -3.0, "Threshold for new punc char certainty.", params())
+    DOUBLE_MEMBER(noise_cert_punc, -3.0, "Threshold for new punc char certainty.", params())
     ,
     // Factor of certainty margin for adding diacritics to not count as worse.
-    double_MEMBER(noise_cert_factor, 0.375, "Scaling on certainty diff from Hingepoint.",
+    DOUBLE_MEMBER(noise_cert_factor, 0.375, "Scaling on certainty diff from Hingepoint.",
                   params())
     , INT_MEMBER(noise_maxperblob, 8, "Max diacritics to apply to a blob.", params())
     , INT_MEMBER(noise_maxperword, 16, "Max diacritics to apply to a word.", params())
@@ -219,11 +219,11 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , STRING_MEMBER(chs_leading_punct, "('`\"", "Leading punctuation.", params())
     , STRING_MEMBER(chs_trailing_punct1, ").,;:?!", "1st Trailing punctuation.", params())
     , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
-    , double_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
-    , double_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
-    , double_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
+    , DOUBLE_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
+    , DOUBLE_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
+    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
                     params())
-    , double_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
+    , DOUBLE_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
                  "(bit set where bit 0 = ADAPTABLE_WERD, bit 1 = ACCEPTABLE_WERD, "
@@ -234,8 +234,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                   params())
     , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
     , BOOL_MEMBER(test_pt, false, "Test for point.", params())
-    , double_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
-    , double_MEMBER(test_pt_y, 99999.99, "ycoord.", params())
+    , DOUBLE_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
+    , DOUBLE_MEMBER(test_pt_y, 99999.99, "ycoord.", params())
     , INT_MEMBER(multilang_debug_level, 0, "Print multilang debug info. (0..1)", params())
     , INT_MEMBER(paragraph_debug_level, 0, "Print paragraph debug info. (0..3)", params())
     , BOOL_MEMBER(paragraph_text_based, true,
@@ -248,13 +248,13 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(tessedit_good_quality_unrej, true, "Reduce rejection on good docs.",
                   params())
     , BOOL_MEMBER(tessedit_use_reject_spaces, true, "Reject spaces?", params())
-    , double_MEMBER(tessedit_reject_doc_percent, 65.00, "%rej allowed before rej whole doc.",
+    , DOUBLE_MEMBER(tessedit_reject_doc_percent, 65.00, "%rej allowed before rej whole doc.",
                     params())
-    , double_MEMBER(tessedit_reject_block_percent, 45.00, "%rej allowed before rej whole block.",
+    , DOUBLE_MEMBER(tessedit_reject_block_percent, 45.00, "%rej allowed before rej whole block.",
                     params())
-    , double_MEMBER(tessedit_reject_row_percent, 40.00, "%rej allowed before rej whole row.",
+    , DOUBLE_MEMBER(tessedit_reject_row_percent, 40.00, "%rej allowed before rej whole row.",
                     params())
-    , double_MEMBER(tessedit_whole_wd_rej_row_percent, 70.00,
+    , DOUBLE_MEMBER(tessedit_whole_wd_rej_row_percent, 70.00,
                     "Number of row rejects in whole word rejects "
                     "which prevents whole row rejection.",
                     params())
@@ -270,14 +270,14 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                  params())
     , BOOL_MEMBER(tessedit_row_rej_good_docs, true, "Apply row rejection to good docs.",
                   params())
-    , double_MEMBER(tessedit_good_doc_still_rowrej_wd, 1.1,
+    , DOUBLE_MEMBER(tessedit_good_doc_still_rowrej_wd, 1.1,
                     "rej good doc wd if more than this fraction rejected.", params())
     , BOOL_MEMBER(tessedit_reject_bad_qual_wds, true, "Reject all bad quality wds.", params())
     , BOOL_MEMBER(tessedit_debug_doc_rejection, false, "Print doc and Block character rejection page stats.", params())
     , BOOL_MEMBER(tessedit_debug_quality_metrics, false, "Print recognition quality report to debug channel.",
                   params())
     , BOOL_MEMBER(bland_unrej, false, "unrej potential with no checks.", params())
-    , double_MEMBER(quality_rowrej_pc, 1.1, "good_quality_doc gte good char limit.", params())
+    , DOUBLE_MEMBER(quality_rowrej_pc, 1.1, "good_quality_doc gte good char limit.", params())
     , BOOL_MEMBER(unlv_tilde_crunching, false, "Mark v.bad words for tilde crunch.", params())
     , BOOL_MEMBER(hocr_font_info, false, "Add font info to hocr output.", params())
     , BOOL_MEMBER(hocr_char_boxes, false, "Add coordinates for each character to hocr output.",
@@ -285,20 +285,20 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(hocr_images, false, "Add images to hocr output.", params())
     , BOOL_MEMBER(crunch_early_merge_tess_fails, true, "Before word crunch?", params())
     , BOOL_MEMBER(crunch_early_convert_bad_unlv_chs, false, "Take out ~^ early?", params())
-    , double_MEMBER(crunch_terrible_rating, 80.0, "crunch rating lt this.", params())
+    , DOUBLE_MEMBER(crunch_terrible_rating, 80.0, "crunch rating lt this.", params())
     , BOOL_MEMBER(crunch_terrible_garbage, true, "As it says.", params())
-    , double_MEMBER(crunch_poor_garbage_cert, -9.0, "crunch garbage cert lt this.", params())
-    , double_MEMBER(crunch_poor_garbage_rate, 60, "crunch garbage rating lt this.", params())
-    , double_MEMBER(crunch_pot_poor_rate, 40, "POTENTIAL crunch rating lt this.", params())
-    , double_MEMBER(crunch_pot_poor_cert, -8.0, "POTENTIAL crunch cert lt this.", params())
-    , double_MEMBER(crunch_del_rating, 60, "POTENTIAL crunch rating lt this.", params())
-    , double_MEMBER(crunch_del_cert, -10.0, "POTENTIAL crunch cert lt this.", params())
-    , double_MEMBER(crunch_del_min_ht, 0.7, "Del if word ht lt xht x this.", params())
-    , double_MEMBER(crunch_del_max_ht, 3.0, "Del if word ht gt xht x this.", params())
-    , double_MEMBER(crunch_del_min_width, 3.0, "Del if word width lt xht x this.", params())
-    , double_MEMBER(crunch_del_high_word, 1.5, "Del if word gt xht x this above bl.", params())
-    , double_MEMBER(crunch_del_low_word, 0.5, "Del if word gt xht x this below bl.", params())
-    , double_MEMBER(crunch_small_outlines_size, 0.6, "Small if lt xht x this.", params())
+    , DOUBLE_MEMBER(crunch_poor_garbage_cert, -9.0, "crunch garbage cert lt this.", params())
+    , DOUBLE_MEMBER(crunch_poor_garbage_rate, 60, "crunch garbage rating lt this.", params())
+    , DOUBLE_MEMBER(crunch_pot_poor_rate, 40, "POTENTIAL crunch rating lt this.", params())
+    , DOUBLE_MEMBER(crunch_pot_poor_cert, -8.0, "POTENTIAL crunch cert lt this.", params())
+    , DOUBLE_MEMBER(crunch_del_rating, 60, "POTENTIAL crunch rating lt this.", params())
+    , DOUBLE_MEMBER(crunch_del_cert, -10.0, "POTENTIAL crunch cert lt this.", params())
+    , DOUBLE_MEMBER(crunch_del_min_ht, 0.7, "Del if word ht lt xht x this.", params())
+    , DOUBLE_MEMBER(crunch_del_max_ht, 3.0, "Del if word ht gt xht x this.", params())
+    , DOUBLE_MEMBER(crunch_del_min_width, 3.0, "Del if word width lt xht x this.", params())
+    , DOUBLE_MEMBER(crunch_del_high_word, 1.5, "Del if word gt xht x this above bl.", params())
+    , DOUBLE_MEMBER(crunch_del_low_word, 0.5, "Del if word gt xht x this below bl.", params())
+    , DOUBLE_MEMBER(crunch_small_outlines_size, 0.6, "Small if lt xht x this.", params())
     , INT_MEMBER(crunch_rating_max, 10, "For adj length in rating per ch.", params())
     , INT_MEMBER(crunch_pot_indicators, 1, "How many potential indicators needed.", params())
     , BOOL_MEMBER(crunch_leave_ok_strings, true, "Don't touch sensible strings.", params())
@@ -313,7 +313,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , INT_MEMBER(crunch_long_repetitions, 3, "Crunch words with long repetitions.", params())
     , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch.", params())
     , INT_MEMBER(fixsp_non_noise_limit, 1, "How many non-noise blobs either side?", params())
-    , double_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", params())
+    , DOUBLE_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", params())
     , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins.", params())
     , INT_MEMBER(fixsp_done_mode, 1, "What constitutes done for spacing.", params())
     , INT_MEMBER(debug_fix_space_level, 0, "Contextual fixspace debug (0..3).", params())
@@ -322,29 +322,29 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                  "Max allowed deviation of blob top outside of font data.", params())
     , INT_MEMBER(x_ht_min_change, 8, "Min change in xht before actually trying it.", params())
     , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer.", params())
-    , double_MEMBER(superscript_worse_certainty, 2.0,
+    , DOUBLE_MEMBER(superscript_worse_certainty, 2.0,
                     "How many times worse "
                     "certainty does a superscript position glyph need to be for "
                     "us to try classifying it as a char with a different "
                     "baseline?",
                     params())
-    , double_MEMBER(superscript_bettered_certainty, 0.97,
+    , DOUBLE_MEMBER(superscript_bettered_certainty, 0.97,
                     "What reduction in "
                     "badness do we think sufficient to choose a superscript "
                     "over what we'd thought.  For example, a value of 0.6 means "
                     "we want to reduce badness of certainty by at least 40%.",
                     params())
-    , double_MEMBER(superscript_scaledown_ratio, 0.4,
+    , DOUBLE_MEMBER(superscript_scaledown_ratio, 0.4,
                     "A superscript scaled down more than this is unbelievably "
                     "small.  For example, 0.3 means we expect the font size to "
                     "be no smaller than 30% of the text line font size.",
                     params())
-    , double_MEMBER(subscript_max_y_top, 0.5,
+    , DOUBLE_MEMBER(subscript_max_y_top, 0.5,
                     "Maximum top of a character measured as a multiple of "
                     "x-height above the baseline for us to reconsider whether "
                     "it's a subscript.",
                     params())
-    , double_MEMBER(superscript_min_y_bottom, 0.3,
+    , DOUBLE_MEMBER(superscript_min_y_bottom, 0.3,
                     "Minimum bottom of a character measured as a multiple of "
                     "x-height above the baseline for us to reconsider whether "
                     "it's a superscript.",
@@ -370,8 +370,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , INT_MEMBER(suspect_level, 99, "Suspect marker level (0..4)", params())
     , INT_MEMBER(suspect_short_words, 2, "Don't suspect dict wds longer than this.", params())
     , BOOL_MEMBER(suspect_constrain_1Il, false, "UNLV keep 1Il chars rejected.", params())
-    , double_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit.", params())
-    , double_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit.", params())
+    , DOUBLE_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit.", params())
+    , DOUBLE_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit.", params())
     , BOOL_MEMBER(tessedit_minimal_rejection, false, "Only reject tess failures.", params())
     , BOOL_MEMBER(tessedit_zero_rejection, false, "Don't reject ANYTHING.", params())
     , BOOL_MEMBER(tessedit_word_for_word, false, "Make output have exactly one word per WERD.", params())
@@ -379,8 +379,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , INT_MEMBER(tessedit_reject_mode, 0, "Rejection algorithm.", params())
     , BOOL_MEMBER(tessedit_rejection_debug, false, "Debug adaption/rejection.", params())
     , BOOL_MEMBER(tessedit_flip_0O, true, "Contextual 0O O0 flips.", params())
-    , double_MEMBER(tessedit_lower_flip_hyphen, 1.5, "Aspect ratio dot/hyphen test.", params())
-    , double_MEMBER(tessedit_upper_flip_hyphen, 1.8, "Aspect ratio dot/hyphen test.", params())
+    , DOUBLE_MEMBER(tessedit_lower_flip_hyphen, 1.5, "Aspect ratio dot/hyphen test.", params())
+    , DOUBLE_MEMBER(tessedit_upper_flip_hyphen, 1.8, "Aspect ratio dot/hyphen test.", params())
     , BOOL_MEMBER(rej_trust_doc_dawg, false, "Use DOC dawg in 11l conf. detector.", params())
     , BOOL_MEMBER(rej_1Il_use_dict_word, false, "Use dictword test.", params())
     , BOOL_MEMBER(rej_1Il_trust_permuter_type, true, "Don't double check.", params())
@@ -389,7 +389,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(rej_use_good_perm, true, "Individual rejection control.", params())
     , BOOL_MEMBER(rej_use_sensible_wd, false, "Extend permuter check.", params())
     , BOOL_MEMBER(rej_alphas_in_number_perm, false, "Extend permuter check.", params())
-    , double_MEMBER(rej_whole_of_mostly_reject_word_fract, 0.85, "reject whole of word if > this fract.", params())
+    , DOUBLE_MEMBER(rej_whole_of_mostly_reject_word_fract, 0.85, "reject whole of word if > this fract.", params())
     , INT_MEMBER(tessedit_image_border, 2, "Rej blbs near image edge limit.", params())
     , STRING_MEMBER(ok_repeated_ch_non_alphanum_wds, "-?*\075", "Allow NN to unrej.", params())
     , STRING_MEMBER(conflict_set_I_l_1, "Il1[]", "Il1 conflict set.", params())
@@ -405,7 +405,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                   "In multilingual mode use params model of the "
                   "primary language.",
                   params())
-    , double_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
+    , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
     // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
@@ -422,11 +422,11 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(textord_tabfind_vertical_text, true, "Enable vertical detection.", params())
     , BOOL_MEMBER(textord_tabfind_force_vertical_text, false, "Force using vertical text page mode.",
                   params())
-    , double_MEMBER(textord_tabfind_vertical_text_ratio, 0.5,
+    , DOUBLE_MEMBER(textord_tabfind_vertical_text_ratio, 0.5,
                     "Fraction of textlines deemed vertical to use vertical page "
                     "mode",
                     params())
-    , double_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
+    , DOUBLE_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
                     "Fraction of height used as a minimum gap for aligned blobs.", params())
     , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params())
     , BOOL_MEMBER(preserve_interword_spaces, false, "Preserve multiple interword spaces.",
@@ -446,7 +446,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                  "lstm_choice_mode. Note that lstm_choice_mode must be set to a "
                  "value greater than 0 to produce results.",
                  params())
-    , double_MEMBER(lstm_rating_coefficient, 5,
+    , DOUBLE_MEMBER(lstm_rating_coefficient, 5,
                     "Sets the rating coefficient for the lstm choices. The smaller the "
                     "coefficient, the better are the ratings for each choice and less "
                     "information is lost due to the cut off at 0. The standard value is "
@@ -454,7 +454,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                     params())
     , BOOL_MEMBER(pageseg_apply_music_mask, false,
                   "Detect music staff and remove intersecting components.", params())
-    , double_MEMBER(max_page_gradient_recognize, 100,
+    , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
     , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
     , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
@@ -822,23 +822,23 @@ void Tesseract::ResyncVariablesInternally() {
         INT_VAR_H(language_model_ngram_order);
         INT_VAR_H(language_model_viterbi_list_max_num_prunable);
         INT_VAR_H(language_model_viterbi_list_max_size);
-        double_VAR_H(language_model_ngram_small_prob);
-        double_VAR_H(language_model_ngram_nonmatch_score);
+        DOUBLE_VAR_H(language_model_ngram_small_prob);
+        DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
         BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-        double_VAR_H(language_model_ngram_scale_factor);
-        double_VAR_H(language_model_ngram_rating_factor);
+        DOUBLE_VAR_H(language_model_ngram_scale_factor);
+        DOUBLE_VAR_H(language_model_ngram_rating_factor);
         BOOL_VAR_H(language_model_ngram_space_delimited_language);
         INT_VAR_H(language_model_min_compound_length);
         // Penalties used for adjusting path costs and final word rating.
-        double_VAR_H(language_model_penalty_non_freq_dict_word);
-        double_VAR_H(language_model_penalty_non_dict_word);
-        double_VAR_H(language_model_penalty_punc);
-        double_VAR_H(language_model_penalty_case);
-        double_VAR_H(language_model_penalty_script);
-        double_VAR_H(language_model_penalty_chartype);
-        double_VAR_H(language_model_penalty_font);
-        double_VAR_H(language_model_penalty_spacing);
-        double_VAR_H(language_model_penalty_increment);
+        DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+        DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+        DOUBLE_VAR_H(language_model_penalty_punc);
+        DOUBLE_VAR_H(language_model_penalty_case);
+        DOUBLE_VAR_H(language_model_penalty_script);
+        DOUBLE_VAR_H(language_model_penalty_chartype);
+        DOUBLE_VAR_H(language_model_penalty_font);
+        DOUBLE_VAR_H(language_model_penalty_spacing);
+        DOUBLE_VAR_H(language_model_penalty_increment);
         INT_VAR_H(wordrec_display_segmentations);
         BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif

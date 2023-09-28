@@ -324,8 +324,7 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstraint constraint,
                           ParamsVectors *member_params) {
   // Look for the parameter among string parameters.
-  auto *sp =
-      FindParam<StringParam>(name, GlobalParams()->string_params(), member_params->string_params());
+  auto *sp = FindParam<StringParam>(name, GlobalParams()->string_params(), member_params->string_params());
   if (sp != nullptr && sp->constraint_ok(constraint)) {
     sp->set_value(value);
   }
@@ -363,8 +362,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
   }
 
   // Look for the parameter among double parameters.
-  auto *dp =
-      FindParam<DoubleParam>(name, GlobalParams()->double_params(), member_params->double_params());
+  auto *dp = FindParam<DoubleParam>(name, GlobalParams()->double_params(), member_params->double_params());
   if (dp != nullptr && dp->constraint_ok(constraint)) {
     double doubleval = NAN;
     std::stringstream stream(value);

@@ -56,8 +56,8 @@ static BOOL_VAR(edges_children_fix, false,
 static INT_VAR(edges_min_nonhole, 12, "Min pixels for potential char in box");
 static INT_VAR(edges_patharea_ratio, 40,
                "Max lensq/area for acceptable child outline");
-static double_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
-static double_VAR(edges_boxarea, 0.875,
+static DOUBLE_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
+static DOUBLE_VAR(edges_boxarea, 0.875,
                   "Min area fraction of grandchild for box");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)

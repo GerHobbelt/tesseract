@@ -22,6 +22,7 @@
 #define PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
+#include "tprintf.h"          // for printf (when debugging this code)
 
 #include <cstdint>
 #include <cstdio>
@@ -52,36 +53,36 @@ class ParamsVectors {
   std::vector<DoubleParam *> _double_params;
 
 public:
-	ParamsVectors() {
-	}
-	~ParamsVectors() {
-	}
+    ParamsVectors() {
+    }
+    ~ParamsVectors() {
+    }
 
-	std::vector<IntParam *> &int_params() {
-		return _int_params;
-	}
-	std::vector<BoolParam *> &bool_params() {
-		return _bool_params;
-	}
-	std::vector<StringParam *> &string_params() {
-		return _string_params;
-	}
-	std::vector<DoubleParam *> &double_params() {
-		return _double_params;
-	}
+    std::vector<IntParam *> &int_params() {
+        return _int_params;
+    }
+    std::vector<BoolParam *> &bool_params() {
+        return _bool_params;
+    }
+    std::vector<StringParam *> &string_params() {
+        return _string_params;
+    }
+    std::vector<DoubleParam *> &double_params() {
+        return _double_params;
+    }
 
-	const std::vector<IntParam *> &int_params_c() const {
-		return _int_params;
-	}
-	const std::vector<BoolParam *> &bool_params_c() const {
-		return _bool_params;
-	}
-	const std::vector<StringParam *> &string_params_c() const {
-		return _string_params;
-	}
-	const std::vector<DoubleParam *> &double_params_c() const {
-		return _double_params;
-	}
+    const std::vector<IntParam *> &int_params_c() const {
+        return _int_params;
+    }
+    const std::vector<BoolParam *> &bool_params_c() const {
+        return _bool_params;
+    }
+    const std::vector<StringParam *> &string_params_c() const {
+        return _string_params;
+    }
+    const std::vector<DoubleParam *> &double_params_c() const {
+        return _double_params;
+    }
 };
 
 // Utility functions for working with Tesseract parameters.
@@ -107,19 +108,19 @@ public:
   // in the database.
   static inline bool CompareKeys(const char *db_key, const char *user_key)
   {
-	  // if (0 == strcmp(db_key, user_key))
-	  //   return true;
+      // if (0 == strcmp(db_key, user_key))
+      //   return true;
 
-	  for (; *db_key && *user_key; db_key++, user_key++)
-	  {
-		  if (*db_key != *user_key)
-		  {
-			  if (*db_key == '_' && *user_key == '-')
-				  continue;
-			  return false;
-		  }
-	  }
-	  return (*db_key == *user_key);
+      for (; *db_key && *user_key; db_key++, user_key++)
+      {
+          if (*db_key != *user_key)
+          {
+              if (*db_key == '_' && *user_key == '-')
+                  continue;
+              return false;
+          }
+      }
+      return (*db_key == *user_key);
   }
 
   // Returns the pointer to the parameter with the given name (of the
@@ -214,8 +215,8 @@ public:
 
   typedef struct access_counts {
     // the current section's counts
-	  int reading;  
-	  int writing;
+    int reading;  
+    int writing;
 
     // the sum of the previous section's counts
     int prev_sum_reading;
@@ -223,7 +224,7 @@ public:
   } access_counts_t;
 
   access_counts_t access_counts() const {
-	  return access_counts_;
+    return access_counts_;
   }
 
   void reset_access_counts() {
@@ -245,8 +246,8 @@ public:
 protected:
   Param(const char *name, const char *comment, bool init)
       : name_(name), info_(comment), init_(init) {
-    debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display"));
-	access_counts_ = {0,0};
+    debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
+    access_counts_ = {0,0};
   }
 
   const char *name_; // name of this parameter
@@ -262,7 +263,7 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-	  access_counts_.writing++;
+    access_counts_.writing++;
     params_vec_ = vec;
     vec->int_params().push_back(this);
   }
@@ -270,16 +271,20 @@ public:
     ParamUtils::RemoveParam<IntParam>(this, &params_vec_->int_params());
   }
   operator int32_t() const {
-	  access_counts_.reading++;
-	  return value_;
+      access_counts_.reading++;
+      return value_;
   }
   void operator=(int32_t value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
   }
   void set_value(int32_t value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
+  }
+  int32_t value() const {
+	  access_counts_.reading++;
+	  return value_;
   }
   void ResetToDefault() {
     access_counts_.writing++;
@@ -288,17 +293,18 @@ public:
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->int_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
-        // tprintf("overriding param {}={} by ={}\n", name_, value_,
-        // *param);
-          access_counts_.writing++;
-          value_ = *param;
+#if !defined(NDEBUG) && 0
+        ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
+#endif
+        access_counts_.writing++;
+        value_ = *param;
         break;
       }
     }
   }
 
   virtual std::string formatted_value_str() const override {
-      return std::to_string(value_);
+    return std::to_string(value_);
   }
 
   IntParam(const IntParam &o) = delete;
@@ -321,24 +327,28 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-	access_counts_.writing++;
-	params_vec_ = vec;
+    access_counts_.writing++;
+    params_vec_ = vec;
     vec->bool_params().push_back(this);
   }
   ~BoolParam() {
     ParamUtils::RemoveParam<BoolParam>(this, &params_vec_->bool_params());
   }
   operator bool() const {
-	  access_counts_.reading++;
-	  return value_;
+      access_counts_.reading++;
+      return value_;
   }
   void operator=(bool value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
   }
   void set_value(bool value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
+  }
+  bool value() const {
+	  access_counts_.reading++;
+	  return value_;
   }
   void ResetToDefault() {
       access_counts_.writing++;
@@ -347,17 +357,18 @@ public:
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->bool_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
-        // tprintf("overriding param {}={} by ={}\n", name_, value_ ? "true" :
-        // "false", *param ? "true" : "false");
-          access_counts_.writing++;
-          value_ = *param;
+#if !defined(NDEBUG) && 0
+        ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
+#endif
+        access_counts_.writing++;
+        value_ = *param;
         break;
       }
     }
   }
 
   virtual std::string formatted_value_str() const override {
-      return std::to_string(value_);
+    return value_ ? "true" : "false";
   }
 
   BoolParam(const BoolParam &o) = delete;
@@ -381,42 +392,42 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-	access_counts_.writing++;
-	params_vec_ = vec;
+    access_counts_.writing++;
+    params_vec_ = vec;
     vec->string_params().push_back(this);
   }
   ~StringParam() {
     ParamUtils::RemoveParam<StringParam>(this, &params_vec_->string_params());
   }
   operator std::string &() {
-	  access_counts_.reading++;
-	  return value_;
+      access_counts_.reading++;
+      return value_;
   }
   const char *c_str() const {
-	  access_counts_.reading++;
-	  return value_.c_str();
+      access_counts_.reading++;
+      return value_.c_str();
   }
   bool contains(char c) const {
-	  access_counts_.reading++;
-	  return value_.find(c) != std::string::npos;
+      access_counts_.reading++;
+      return value_.find(c) != std::string::npos;
   }
   bool empty() const {
-	  access_counts_.reading++;
-	  return value_.empty();
+      access_counts_.reading++;
+      return value_.empty();
   }
   bool operator==(const std::string &other) const {
-	  access_counts_.reading++;
-	  return value_ == other;
+      access_counts_.reading++;
+      return value_ == other;
   }
   void operator=(const std::string &value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
   }
   void set_value(const std::string &value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
   }
-  const std::string &value() {
+  const std::string &value() const {
 	  access_counts_.reading++;
 	  return value_;
   }
@@ -427,20 +438,21 @@ public:
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->string_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
-        // tprintf("overriding param {}={} by ={}\n", name_, value_,
-        // param->c_str());
-          access_counts_.writing++;
-          value_ = *param;
+#if !defined(NDEBUG) && 0
+        ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
+#endif
+        access_counts_.writing++;
+        value_ = *param;
         break;
       }
     }
   }
 
   virtual std::string formatted_value_str() const override {
-      std::string rv = (const char *)u8"«";
-      rv += value_;
-      rv += (const char *)u8"»";
-      return rv;
+    std::string rv = (const char *)u8"«";
+    rv += value_;
+    rv += (const char *)u8"»";
+    return rv;
   }
 
   StringParam(const StringParam &o) = delete;
@@ -463,24 +475,28 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-	access_counts_.writing++;
-	params_vec_ = vec;
+    access_counts_.writing++;
+    params_vec_ = vec;
     vec->double_params().push_back(this);
   }
   ~DoubleParam() {
     ParamUtils::RemoveParam<DoubleParam>(this, &params_vec_->double_params());
   }
   operator double() const {
-	  access_counts_.reading++;
-	  return value_;
+      access_counts_.reading++;
+      return value_;
   }
   void operator=(double value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
   }
   void set_value(double value) {
-	  access_counts_.writing++;
-	  value_ = value;
+      access_counts_.writing++;
+      value_ = value;
+  }
+  double value() const {
+	  access_counts_.reading++;
+	  return value_;
   }
   void ResetToDefault() {
       access_counts_.writing++;
@@ -489,10 +505,11 @@ public:
   void ResetFrom(const ParamsVectors *vec) {
     for (auto *param : vec->double_params_c()) {
       if (strcmp(param->name_str(), name_) == 0) {
-        // tprintf("overriding param {}={} by ={}\n", name_, value_,
-        // *param);
-          access_counts_.writing++;
-          value_ = *param;
+#if !defined(NDEBUG) && 0
+        ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
+#endif
+        access_counts_.writing++;
+        value_ = *param;
         break;
       }
     }
@@ -500,11 +517,12 @@ public:
 
   virtual std::string formatted_value_str() const override {
 #if 0
-      return std::to_string(value_);   // always outputs %.6f format style values
+    return std::to_string(value_);   // always outputs %.6f format style values
 #else
-      char sbuf[40];
-      snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
-      return sbuf;
+    char sbuf[40];
+    snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
+    sbuf[39] = 0;
+    return sbuf;
 #endif
   }
 
@@ -549,7 +567,7 @@ ParamsVectors *GlobalParams();
 
 #define STRING_VAR_H(name) ::tesseract::StringParam name
 
-#define double_VAR_H(name) ::tesseract::DoubleParam name
+#define DOUBLE_VAR_H(name) ::tesseract::DoubleParam name
 
 #define INT_VAR(name, val, comment) \
   ::tesseract::IntParam name(val, #name, comment, false, ::tesseract::GlobalParams())
@@ -560,7 +578,7 @@ ParamsVectors *GlobalParams();
 #define STRING_VAR(name, val, comment) \
   ::tesseract::StringParam name(val, #name, comment, false, ::tesseract::GlobalParams())
 
-#define double_VAR(name, val, comment) \
+#define DOUBLE_VAR(name, val, comment) \
   ::tesseract::DoubleParam name(val, #name, comment, false, ::tesseract::GlobalParams())
 
 #define INT_MEMBER(name, val, comment, vec) name(val, #name, comment, false, vec)
@@ -569,7 +587,7 @@ ParamsVectors *GlobalParams();
 
 #define STRING_MEMBER(name, val, comment, vec) name(val, #name, comment, false, vec)
 
-#define double_MEMBER(name, val, comment, vec) name(val, #name, comment, false, vec)
+#define DOUBLE_MEMBER(name, val, comment, vec) name(val, #name, comment, false, vec)
 
 #define INT_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
@@ -577,7 +595,7 @@ ParamsVectors *GlobalParams();
 
 #define STRING_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
-#define double_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
+#define DOUBLE_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
 // ------------------------------------
 
@@ -589,7 +607,7 @@ extern INT_VAR_H(curl_timeout);
 extern INT_VAR_H(debug_all);
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
-extern double_VAR_H(allowed_image_memory_capacity);
+extern DOUBLE_VAR_H(allowed_image_memory_capacity);
 
 } // namespace tesseract
 

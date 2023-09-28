@@ -62,31 +62,31 @@ Dict::Dict(CCUtil *ccutil)
                        "Load dawg with special word "
                        "bigrams.",
                        getCCUtil()->params())
-    , double_MEMBER(xheight_penalty_subscripts, 0.125,
+    , DOUBLE_MEMBER(xheight_penalty_subscripts, 0.125,
                     "Score penalty (0.1 = 10%) added if there are subscripts "
                     "or superscripts in a word, but it is otherwise OK.",
                     getCCUtil()->params())
-    , double_MEMBER(xheight_penalty_inconsistent, 0.25,
+    , DOUBLE_MEMBER(xheight_penalty_inconsistent, 0.25,
                     "Score penalty (0.1 = 10%) added if an xheight is "
                     "inconsistent.",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_frequent_word, 1.0,
+    , DOUBLE_MEMBER(segment_penalty_dict_frequent_word, 1.0,
                     "Score multiplier for word matches which have good case and"
                     " are frequent in the given language (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_case_ok, 1.1,
+    , DOUBLE_MEMBER(segment_penalty_dict_case_ok, 1.1,
                     "Score multiplier for word matches that have good case "
                     "(lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_case_bad, 1.3125,
+    , DOUBLE_MEMBER(segment_penalty_dict_case_bad, 1.3125,
                     "Default score multiplier for word matches, which may have "
                     "case issues (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_nonword, 1.25,
+    , DOUBLE_MEMBER(segment_penalty_dict_nonword, 1.25,
                     "Score multiplier for glyph fragment segmentations which "
                     "do not match a dictionary word (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_garbage, 1.50,
+    , DOUBLE_MEMBER(segment_penalty_garbage, 1.50,
                     "Score multiplier for poorly cased strings that are not in"
                     " the dictionary and generally look like garbage (lower is"
                     " better).",
@@ -102,18 +102,18 @@ Dict::Dict(CCUtil *ccutil)
                   "Use only the first UTF8 step of the given string"
                   " when computing log probabilities.",
                   getCCUtil()->params())
-    , double_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
-    , double_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words.",
+    , DOUBLE_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
+    , DOUBLE_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words.",
                     getCCUtil()->params())
-    , double_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset.",
+    , DOUBLE_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset.",
                     getCCUtil()->params())
     , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word.",
                  getCCUtil()->params())
-    , double_MEMBER(stopper_certainty_per_char, -0.50,
+    , DOUBLE_MEMBER(stopper_certainty_per_char, -0.50,
                     "Certainty to add"
                     " for each dict char above small word size.",
                     getCCUtil()->params())
-    , double_MEMBER(stopper_allowable_character_badness, 3.0,
+    , DOUBLE_MEMBER(stopper_allowable_character_badness, 3.0,
                     "Max certainty variation allowed in a word (in sigma).", getCCUtil()->params())
     , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level. (0..3)", getCCUtil()->params())
     , BOOL_MEMBER(stopper_no_acceptable_choices, false,
@@ -132,9 +132,9 @@ Dict::Dict(CCUtil *ccutil)
                   " scripts that are cursive or inherently fixed-pitch.",
                   getCCUtil()->params())
     , BOOL_MEMBER(save_doc_words, 0, "Save Document Words", getCCUtil()->params())
-    , double_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary.",
+    , DOUBLE_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary.",
                     getCCUtil()->params())
-    , double_MEMBER(doc_dict_certainty_threshold, -2.25,
+    , DOUBLE_MEMBER(doc_dict_certainty_threshold, -2.25,
                     "Worst certainty for words that can be inserted into the"
                     " document dictionary.",
                     getCCUtil()->params())

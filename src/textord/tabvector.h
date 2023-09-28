@@ -36,8 +36,8 @@ class ScrollView;
 
 namespace tesseract {
 
-extern double_VAR_H(textord_tabvector_vertical_gap_fraction);
-extern double_VAR_H(textord_tabvector_vertical_box_ratio);
+extern DOUBLE_VAR_H(textord_tabvector_vertical_gap_fraction);
+extern DOUBLE_VAR_H(textord_tabvector_vertical_box_ratio);
 
 // The alignment type that a tab vector represents.
 // Keep this enum synced with kAlignmentNames in tabvector.cpp.
