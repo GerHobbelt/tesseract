@@ -22,14 +22,17 @@
 #include <leptonica/allheaders.h>
 #include "functions.h"
 #include "statistc.h"
+#include "recodebeam.h"
 #include "tprintf.h"
 
 namespace tesseract {
 
+#if 0
 // Minimum value to output for certainty.
-const float kMinCertainty = -20.0f;
+static const float kMinCertainty = -25.0f;
 // Probability corresponding to kMinCertainty.
-const float kMinProb = std::exp(kMinCertainty);
+static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
+#endif
 
 // Resizes to a specific size as a 2-d temp buffer. No batches, no y-dim.
 void NetworkIO::Resize2d(bool int_mode, int width, int num_features) {
@@ -579,7 +582,15 @@ void NetworkIO::EnsureBestLabel(int t, int label) {
 // Helper function converts prob to certainty taking the minimum into account.
 /* static */
 float NetworkIO::ProbToCertainty(float prob) {
-  return prob > kMinProb ? std::log(prob) : kMinCertainty;
+	// Probability corresponding to kMinCertainty.
+#if 0
+	static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
+	return prob > kMinProb ? std::log(prob) : RecodeBeamSearch::kMinCertainty;
+#else
+	const float min_prob = 10 * std::numeric_limits<float>::min();
+	const float min_cert = std::logf(min_prob);
+	return prob > min_prob ? std::log(prob) : min_cert;
+#endif
 }
 
 // Returns true if there is any bad value that is suspiciously like a GT

@@ -909,7 +909,7 @@ void RecodeBeamSearch::ContinueContext(
             NetworkIO::ProbToCertainty(outputs[prev->code]) + cert_offset;
         PushDupOrNoDawgIfBetter(length, true, prev->code, prev->unichar_id,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_ANYTHING, prev, step);
+                                NC_ANYTHING, prev, step, charset);
       }
       if (prev_cont == NC_ANYTHING && top_n_flag == TN_TOP2 &&
           prev->code != null_char_) {
@@ -918,7 +918,7 @@ void RecodeBeamSearch::ContinueContext(
                      cert_offset;
         PushDupOrNoDawgIfBetter(length, true, prev->code, prev->unichar_id,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_NO_DUP, prev, step);
+                                NC_NO_DUP, prev, step, charset);
       }
     }
     if (prev_cont == NC_ONLY_DUP) {
@@ -932,7 +932,7 @@ void RecodeBeamSearch::ContinueContext(
           NetworkIO::ProbToCertainty(outputs[null_char_]) + cert_offset;
       PushDupOrNoDawgIfBetter(length, false, null_char_, INVALID_UNICHAR_ID,
                               cert, worst_dict_cert, dict_ratio, use_dawgs,
-                              NC_ANYTHING, prev, step);
+                              NC_ANYTHING, prev, step, charset);
     }
   }
   const std::vector<int> *final_codes = recoder_.GetFinalCodes(prefix);
@@ -946,7 +946,11 @@ void RecodeBeamSearch::ContinueContext(
       }
       float cert = NetworkIO::ProbToCertainty(outputs[code]) + cert_offset;
       if (cert < kMinCertainty && code != null_char_) {
-        continue;
+		full_code.Set(length, code);
+		int unichar_id = recoder_.DecodeUnichar(full_code);
+		const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
+		tprintf("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+  	    continue;
       }
       full_code.Set(length, code);
       int unichar_id = recoder_.DecodeUnichar(full_code);
@@ -986,7 +990,7 @@ void RecodeBeamSearch::ContinueContext(
       float cert = NetworkIO::ProbToCertainty(outputs[code]) + cert_offset;
       PushDupOrNoDawgIfBetter(length + 1, false, code, INVALID_UNICHAR_ID, cert,
                               worst_dict_cert, dict_ratio, use_dawgs,
-                              NC_ANYTHING, prev, step);
+                              NC_ANYTHING, prev, step, charset);
       if (top_n_flag == TN_TOP2 && code != null_char_) {
         float prob = outputs[code] + outputs[null_char_];
         if (prev != nullptr && prev_cont == NC_ANYTHING &&
@@ -998,7 +1002,7 @@ void RecodeBeamSearch::ContinueContext(
         cert = NetworkIO::ProbToCertainty(prob) + cert_offset;
         PushDupOrNoDawgIfBetter(length + 1, false, code, INVALID_UNICHAR_ID,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_ONLY_DUP, prev, step);
+                                NC_ONLY_DUP, prev, step, charset);
       }
     }
   }
@@ -1161,7 +1165,7 @@ void RecodeBeamSearch::PushInitialDawgIfBetter(int code, int unichar_id,
 void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
     int length, bool dup, int code, int unichar_id, float cert,
     float worst_dict_cert, float dict_ratio, bool use_dawgs,
-    NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step) {
+    NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step, const UNICHARSET *charset) {
   int index = BeamIndex(use_dawgs, cont, length);
   if (use_dawgs) {
     if (cert > worst_dict_cert) {
@@ -1170,12 +1174,17 @@ void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
                        dup, cert, prev, nullptr, &step->beams_[index]);
     }
   } else {
+	// non-dictionary word being processed: correct certainty by kDictRatio factor
     cert *= dict_ratio;
     if (cert >= kMinCertainty || code == null_char_) {
       PushHeapIfBetter(kBeamWidths[length], code, unichar_id,
                        prev ? prev->permuter : TOP_CHOICE_PERM, false, false,
                        false, dup, cert, prev, nullptr, &step->beams_[index]);
     }
+	else {
+      const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
+	  tprintf("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+	}
   }
 }
 
