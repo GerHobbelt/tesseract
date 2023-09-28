@@ -498,11 +498,11 @@ public:
     TFile file;
     file.OpenWrite(nullptr);
     if (!this->write_squished_dawg(&file)) {
-      tprintf("ERROR: Error serializing {}\n", filename);
+      tprintError("Error serializing {}\n", filename);
       return false;
     }
     if (!file.CloseWrite(filename, nullptr)) {
-      tprintf("ERROR: Error writing file {}\n", filename);
+      tprintError("Error writing file {}\n", filename);
       return false;
     }
     return true;

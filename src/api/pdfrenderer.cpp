@@ -310,7 +310,7 @@ static void ClipBaseline(int ppi, int x1, int y1, int x2, int y2, int *line_x1, 
 
 static bool CodepointToUtf16be(int code, char utf16[kMaxBytesPerCodepoint]) {
   if ((code > 0xD7FF && code < 0xE000) || code > 0x10FFFF) {
-    tprintf("ERROR: Dropping invalid codepoint {}\n", code);
+    tprintError("Dropping invalid codepoint {}\n", code);
     return false;
   }
   if (code < 0x10000) {
@@ -641,7 +641,7 @@ bool TessPDFRenderer::BeginDocumentHandler() {
     font = buffer.data();
   } else {
 #if !defined(NDEBUG)
-    tprintf("ERROR: Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str());
+    tprintError("Cannot open file \"{}\"!\nUsing internal glyphless font.\n", stream.str());
 #endif
     font = pdf_ttf;
     size = sizeof(pdf_ttf);

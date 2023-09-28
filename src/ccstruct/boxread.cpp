@@ -181,7 +181,7 @@ bool ReadNextBox(int target_page, int *line_number, FILE *box_file, std::string 
     }
     if (*buffptr != '\0') {
       if (!ParseBoxFileStr(buffptr, &page, utf8_str, bounding_box)) {
-        tprintf("ERROR: Box file format error on line {}; ignored\n", *line_number);
+        tprintError("Box file format error on line {}; ignored\n", *line_number);
         continue;
       }
       if (target_page >= 0 && target_page != page) {
@@ -244,7 +244,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
   stream >> y_max;
   stream >> *page_number;
   if (x_max < x_min || y_max < y_min) {
-    tprintf("ERROR: Bad box coordinates in boxfile string! {}\n", reinterpret_cast<const char *>(ubuf));
+    tprintError("Bad box coordinates in boxfile string! {}\n", reinterpret_cast<const char *>(ubuf));
     return false;
   }
   // Test for long space-delimited string label.
@@ -260,7 +260,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
     tesseract::UNICHAR ch(uch + used, uch_len - used);
     int new_used = ch.utf8_len();
     if (new_used == 0) {
-      tprintf("ERROR: Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
+      tprintError("Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
       return false;
     }
     used += new_used;

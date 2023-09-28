@@ -323,7 +323,7 @@ bool Trie::add_word_list(const std::vector<std::string> &words, const UNICHARSET
     if (!word_in_dawg(word)) {
       add_word_to_dawg(word);
       if (!word_in_dawg(word)) {
-        tprintf("ERROR: Word '{}' not in DAWG after adding it\n", i.c_str());
+        tprintError("Word '{}' not in DAWG after adding it\n", i.c_str());
         return false;
       }
     }
@@ -391,13 +391,13 @@ UNICHAR_ID Trie::character_class_to_pattern(char ch) {
 
 bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset) {
   if (!initialized_patterns_) {
-    tprintf("WARNING: Please call initialize_patterns() before read_pattern_list()\n");
+    tprintWarn("Please call initialize_patterns() before read_pattern_list()\n");
     return false;
   }
 
   FILE *pattern_file = fopen(filename, "rb");
   if (pattern_file == nullptr) {
-    tprintf("ERROR: Error opening pattern file {}\n", filename);
+    tprintError("Error opening pattern file {}\n", filename);
     return false;
   }
 
@@ -451,7 +451,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
       }
     }
     if (failed) {
-      tprintf("ERROR: Invalid user pattern {}\n", string);
+      tprintError("Invalid user pattern {}\n", string);
       continue;
     }
     // Insert the pattern into the trie.
@@ -461,7 +461,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
     if (!this->word_in_dawg(word)) {
       this->add_word_to_dawg(word, &repetitions_vec);
       if (!this->word_in_dawg(word)) {
-        tprintf("ERROR: failed to insert pattern '{}'\n", string);
+        tprintError("failed to insert pattern '{}'\n", string);
       }
     }
     ++pattern_count;

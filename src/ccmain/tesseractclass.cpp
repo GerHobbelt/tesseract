@@ -274,14 +274,12 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                     "rej good doc wd if more than this fraction rejected.", params())
     , BOOL_MEMBER(tessedit_reject_bad_qual_wds, true, "Reject all bad quality wds.", params())
     , BOOL_MEMBER(tessedit_debug_doc_rejection, false, "Print doc and Block character rejection page stats.", params())
-    , BOOL_MEMBER(tessedit_debug_quality_metrics, false, "Print recognition quality report to debug channel.",
-                  params())
+    , BOOL_MEMBER(tessedit_debug_quality_metrics, false, "Print recognition quality report to debug channel.", params())
     , BOOL_MEMBER(bland_unrej, false, "unrej potential with no checks.", params())
     , DOUBLE_MEMBER(quality_rowrej_pc, 1.1, "good_quality_doc gte good char limit.", params())
     , BOOL_MEMBER(unlv_tilde_crunching, false, "Mark v.bad words for tilde crunch.", params())
     , BOOL_MEMBER(hocr_font_info, false, "Add font info to hocr output.", params())
-    , BOOL_MEMBER(hocr_char_boxes, false, "Add coordinates for each character to hocr output.",
-                  params())
+    , BOOL_MEMBER(hocr_char_boxes, false, "Add coordinates for each character to hocr output.", params())
     , BOOL_MEMBER(hocr_images, false, "Add images to hocr output.", params())
     , BOOL_MEMBER(crunch_early_merge_tess_fails, true, "Before word crunch?", params())
     , BOOL_MEMBER(crunch_early_convert_bad_unlv_chs, false, "Take out ~^ early?", params())
@@ -716,15 +714,15 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   }
 
   if (width >= TDIMENSION_MAX) {
-    tprintf("ERROR: Image is too large: ({} x {} px, {}) (maximum accepted width: {} px)\n", width, height, cost.to_string(), TDIMENSION_MAX - 1);
+    tprintError("Image is too large: ({} x {} px, {}) (maximum accepted width: {} px)\n", width, height, cost.to_string(), TDIMENSION_MAX - 1);
     return true;
   }
   if (height >= TDIMENSION_MAX) {
-    tprintf("ERROR: Image is too large: ({} x {} px, {}) (maximum accepted height: {} px)\n", width, height, cost.to_string(), TDIMENSION_MAX - 1);
+    tprintError("Image is too large: ({} x {} px, {}) (maximum accepted height: {} px)\n", width, height, cost.to_string(), TDIMENSION_MAX - 1);
     return true;
   }
   if (cost.is_too_large()) {
-    tprintf("ERROR: Image is too large: ({} x {} px, {}) (maximum allowed memory cost: {} vs. estimated cost: {})\n", width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity), cost.to_string());
+    tprintError("Image is too large: ({} x {} px, {}) (maximum allowed memory cost: {} vs. estimated cost: {})\n", width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity), cost.to_string());
     return true;
   }
   return false;

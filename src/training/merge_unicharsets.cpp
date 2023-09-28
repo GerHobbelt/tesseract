@@ -49,7 +49,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
       tprintf("Loaded unicharset of size {} from file {}\n", input_unicharset.size(), argv[arg]);
       result_unicharset.AppendOtherUnicharset(input_unicharset);
     } else {
-      tprintf("ERROR: Failed to load unicharset from file {}!!\n", argv[arg]);
+      tprintError("Failed to load unicharset from file {}!!\n", argv[arg]);
       return EXIT_FAILURE;
     }
   }
@@ -58,7 +58,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
   if (result_unicharset.save_to_file(argv[argc - 1])) {
     tprintf("Wrote unicharset file {}\n", argv[argc - 1]);
   } else {
-    tprintf("ERROR: Cannot save unicharset file {}\n", argv[argc - 1]);
+    tprintError("Cannot save unicharset file {}\n", argv[argc - 1]);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

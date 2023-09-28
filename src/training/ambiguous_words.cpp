@@ -75,7 +75,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
   tesseract::Dict &dict = api.tesseract()->getDict();
   FILE *input_file = fopen(input_file_str, "rb");
   if (input_file == nullptr) {
-    tesseract::tprintf("ERROR: Failed to open input wordlist file {}\n", input_file_str);
+    tesseract::tprintError("Failed to open input wordlist file {}\n", input_file_str);
     return EXIT_FAILURE;
   }
   char str[CHARS_PER_LINE];
@@ -96,7 +96,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 
 extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 {
-	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
+	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
     return EXIT_FAILURE;
 }
 

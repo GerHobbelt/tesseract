@@ -150,7 +150,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
 
   FILE *fp = fopen(page_name, "rb");
   if (fp == nullptr) {
-    tprintf("ERROR: Failed to open tr file: {}\n", page_name);
+    tprintError("Failed to open tr file: {}\n", page_name);
     return;
   }
   tr_filenames_.emplace_back(page_name);
@@ -161,7 +161,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
 
     char *space = strchr(buffer, ' ');
     if (space == nullptr) {
-      tprintf("ERROR: Bad format in tr file, reading fontname, unichar\n");
+      tprintError("Bad format in tr file, reading fontname, unichar\n");
       continue;
     }
     *space++ = '\0';
@@ -173,7 +173,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
     std::string unichar;
     TBOX bounding_box;
     if (!ParseBoxFileStr(space, &page_number, unichar, &bounding_box)) {
-      tprintf("ERROR: Bad format in tr file, reading box coords\n");
+      tprintError("Bad format in tr file, reading box coords\n");
       continue;
     }
     auto char_desc = ReadCharDescription(feature_defs, fp);
@@ -381,7 +381,7 @@ void MasterTrainer::ReplicateAndRandomizeSamplesIfRequired() {
 bool MasterTrainer::LoadFontInfo(const char *filename) {
   FILE *fp = fopen(filename, "rb");
   if (fp == nullptr) {
-    tprintf("ERROR: Failed to load font_properties from {}\n", filename);
+    tprintError("Failed to load font_properties from {}\n", filename);
     return false;
   }
   int italic, bold, fixed, serif, fraktur;
@@ -420,7 +420,7 @@ bool MasterTrainer::LoadXHeights(const char *filename) {
   }
   FILE *f = fopen(filename, "rb");
   if (f == nullptr) {
-    tprintf("ERROR: Failed to load font xheights from {}\n", filename);
+    tprintError("Failed to load font xheights from {}\n", filename);
     return false;
   }
   tprintf("Reading x-heights from {} ...\n", filename);
@@ -447,7 +447,7 @@ bool MasterTrainer::LoadXHeights(const char *filename) {
     ++xheight_count;
   }
   if (xheight_count == 0) {
-    tprintf("ERROR: No valid xheights in {}!\n", filename);
+    tprintError("No valid xheights in {}!\n", filename);
     fclose(f);
     return false;
   }
@@ -470,7 +470,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
   // Find the fontinfo_id.
   int fontinfo_id = GetBestMatchingFontInfoId(filename);
   if (fontinfo_id < 0) {
-    tprintf("ERROR: No font found matching fontinfo filename {}\n", filename);
+    tprintError("No font found matching fontinfo filename {}\n", filename);
     fclose(fontinfo_file);
     return false;
   }
@@ -489,7 +489,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
   for (int l = 0; l < num_unichars; ++l) {
     if (tfscanf(fontinfo_file, "%s %d %d %d", uch, &x_gap_before, &x_gap_after,
                 &num_kerned) != 4) {
-      tprintf("ERROR: Bad format of font spacing file {}\n", filename);
+      tprintError("Bad format of font spacing file {}\n", filename);
       fclose(fontinfo_file);
       return false;
     }
@@ -501,7 +501,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
     }
     for (int k = 0; k < num_kerned; ++k) {
       if (tfscanf(fontinfo_file, "%s %d", kerned_uch, &x_gap) != 2) {
-        tprintf("ERROR: Bad format of font spacing file {}\n", filename);
+        tprintError("Bad format of font spacing file {}\n", filename);
         fclose(fontinfo_file);
         delete spacing;
         return false;
@@ -637,7 +637,7 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
       classify->CreateIntTemplates(float_classes, shape_set);
   FILE *fp = fopen(inttemp_file, "wb");
   if (fp == nullptr) {
-    tprintf("ERROR: Failed to open file \"{}\"\n", inttemp_file);
+    tprintError("Failed to open file \"{}\"\n", inttemp_file);
   } else {
     classify->WriteIntTemplates(fp, int_templates, shape_set);
     fclose(fp);
@@ -675,7 +675,7 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
   }
   fp = fopen(pffmtable_file, "wb");
   if (fp == nullptr) {
-    tprintf("ERROR: Failed to open file \"{}\"\n", pffmtable_file);
+    tprintError("Failed to open file \"{}\"\n", pffmtable_file);
   } else {
     tesseract::Serialize(fp, shapetable_cutoffs);
     for (size_t c = 0; c < unicharset.size(); ++c) {
@@ -703,7 +703,7 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
     class_id2 = class_id1;
   }
   if (class_id1 == INVALID_UNICHAR_ID) {
-    tprintf("ERROR: No unicharset entry found for {}\n", unichar_str1);
+    tprintError("No unicharset entry found for {}\n", unichar_str1);
     return;
   } else {
     tprintf("Font ambiguities for unichar {} = {} and {} = {}\n", class_id1,

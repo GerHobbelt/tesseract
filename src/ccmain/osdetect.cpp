@@ -167,7 +167,7 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
   int resolution;
   if (kMinCredibleResolution > pixGetXRes(pix)) {
     resolution = kMinCredibleResolution;
-    tprintf("WARNING: Invalid resolution {} dpi. Using {} instead.\n", pixGetXRes(pix), resolution);
+    tprintWarn("Invalid resolution {} dpi. Using {} instead.\n", pixGetXRes(pix), resolution);
   } else {
     resolution = pixGetXRes(pix);
   }

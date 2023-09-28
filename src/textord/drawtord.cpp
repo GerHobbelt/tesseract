@@ -123,7 +123,7 @@ void plot_to_row(             // draw a row
     return;
 
   if (it.empty()) {
-    tprintf("ERROR: No blobs in row at {}\n", row->parallel_c());
+    tprintError("No blobs in row at {}\n", row->parallel_c());
     return;
   }
   left = it.data()->bounding_box().left();

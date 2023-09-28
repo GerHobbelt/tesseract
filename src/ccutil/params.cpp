@@ -59,7 +59,7 @@ bool ParamUtils::ReadParamsFile(const char *file, SetParamConstraint constraint,
                                 ParamsVectors *member_params) {
   TFile fp;
   if (!fp.Open(file, nullptr)) {
-    tprintf("ERROR: read_params_file: Can't open file {}\n", file);
+    tprintError("read_params_file: Can't open file {}\n", file);
     return true;
   }
   return ReadParamsFromFp(constraint, &fp, member_params);
@@ -88,7 +88,7 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
 
       if (!foundit) {
         anyerr = true; // had an error
-        tprintf("WARNING: Parameter not found: {}\n", line);
+        tprintWarn("Parameter not found: {}\n", line);
       }
     }
   }
@@ -119,7 +119,7 @@ FILE* ParamUtils::OpenReportFile(const char* path)
     f = fopen(path, "w");
 #endif
     if (!f) {
-      tprintf("ERROR: Cannot produce parameter usage report file: '{}'\n", path);
+      tprintError("Cannot produce parameter usage report file: '{}'\n", path);
     }
   }
   return f;
@@ -164,7 +164,7 @@ public:
     }
     size_t len = message.length();
     if (fwrite(message.c_str(), 1, len, file_) != len) {
-      tprintf("ERROR: failed to write params-report line to file. {}\n", strerror(errno));
+      tprintError("failed to write params-report line to file. {}\n", strerror(errno));
     }
   }
 

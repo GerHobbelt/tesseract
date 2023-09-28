@@ -30,7 +30,7 @@
 namespace tesseract {
 
 // Scale factor to make certainty more comparable to Tesseract.
-const float kCertaintyScale = 7.0f;
+const float kCertaintyScale = 2.0f;
 // Worst acceptable certainty for a dictionary word.
 const float kWorstDictCertainty = -25.0f;
 
@@ -45,7 +45,7 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   if (applybox_page > 0) {
     // Load existing document for the previous pages.
     if (!images.LoadDocument(lstmf_name.c_str(), 0, 0, nullptr)) {
-      tprintf("ERROR: Failed to read training data from {}!\n", lstmf_name);
+      tprintError("Failed to read training data from {}!\n", lstmf_name);
       return false;
     }
   }
@@ -54,17 +54,17 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   // Get the boxes for this page, if there are any.
   if (!ReadAllBoxes(applybox_page, false, input_imagename, &boxes, &texts, nullptr, nullptr) ||
       boxes.empty()) {
-    tprintf("ERROR: Failed to read boxes from {}\n", input_imagename);
+    tprintError("Failed to read boxes from {}\n", input_imagename);
     return false;
   }
   TrainFromBoxes(boxes, texts, block_list, &images);
   if (images.PagesSize() == 0) {
-    tprintf("ERROR: Failed to read pages from {}\n", input_imagename);
+    tprintError("Failed to read pages from {}\n", input_imagename);
     return false;
   }
   images.Shuffle();
   if (!images.SaveDocument(lstmf_name.c_str(), nullptr)) {
-    tprintf("ERROR: Failed to write training data to {}!\n", lstmf_name);
+    tprintError("Failed to write training data to {}!\n", lstmf_name);
     return false;
   }
   return true;

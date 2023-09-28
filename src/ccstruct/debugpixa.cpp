@@ -509,7 +509,7 @@ namespace tesseract {
 
     Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
     if (pixs == nullptr) {
-      tprintf("ERROR: {}: pixs[{}] not retrieved.\n", __func__, idx);
+      tprintError("{}: pixs[{}] not retrieved.\n", __func__, idx);
       return;
     }
     {
@@ -596,7 +596,7 @@ namespace tesseract {
       html = fopen(filename, "w");
 #endif
       if (!html) {
-        tprintf("ERROR: cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
+        tprintError("cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
         return;
       }
 

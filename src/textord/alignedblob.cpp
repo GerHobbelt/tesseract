@@ -307,7 +307,7 @@ TabVector *AlignedBlob::FindVerticalAlignment(AlignedBlobParams align_params, BL
       }
       return result;
     } else if (debug) {
-      tprintf("WARNING: Ragged tab used too many used points: {} out of {}\n", confirmed_points, pt_count);
+      tprintWarn("Ragged tab used too many used points: {} out of {}\n", confirmed_points, pt_count);
     }
   } else if (debug) {
     tprintf(

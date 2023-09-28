@@ -286,7 +286,7 @@ extern "C" int tesseract_mf_training_main(int argc, const char** argv)
 
 extern "C" TESS_API int tesseract_mf_training_main(int argc, const char **argv)
 {
-	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
+	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
 	return 1;
 }
 

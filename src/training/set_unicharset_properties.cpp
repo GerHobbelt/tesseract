@@ -38,11 +38,11 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
 
   // Check validity of input flags.
   if (FLAGS_U.empty() || FLAGS_O.empty()) {
-    tprintf("ERROR: Specify both input and output unicharsets!\n");
+    tprintError("Specify both input and output unicharsets!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_script_dir.empty()) {
-    tprintf("ERROR: Must specify a script_dir!\n");
+    tprintError("Must specify a script_dir!\n");
     return EXIT_FAILURE;
   }
 

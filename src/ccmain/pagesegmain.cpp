@@ -145,7 +145,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     if (pageseg_mode == PSM_OSD_ONLY) {
       if (blocks->empty()) {
         if (textord_debug_tabfind > 0) {
-          tprintf("WARNING: Empty page\n");
+          tprintWarn("Empty page\n");
         }
         return 0; // AutoPageSeg found an empty page.
       }
@@ -174,7 +174,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
 
   if (blocks->empty()) {
     if (textord_debug_tabfind > 0) {
-      tprintf("WARNING: Empty page\n");
+      tprintWarn("Empty page\n");
     }
     return 0; // AutoPageSeg found an empty page.
   }

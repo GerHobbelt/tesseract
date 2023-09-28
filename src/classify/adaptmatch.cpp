@@ -447,7 +447,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
       AdaptToChar(rotated_blob, class_id, font_id, threshold, BackupAdaptedTemplates);
     }
   } else if (classify_debug_level >= 1) {
-    tprintf("WARNING: Can't adapt to '{}' not in unicharset\n", correct_text);
+    tprintWarn("Can't adapt to '{}' not in unicharset\n", correct_text);
   }
   if (rotated_blob != blob) {
     delete rotated_blob;
@@ -477,7 +477,7 @@ void Classify::EndAdaptiveClassifier() {
     Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
     File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
-      tprintf("ERROR: Unable to save adapted templates to {}!\n", Filename.c_str());
+      tprintError("Unable to save adapted templates to {}!\n", Filename.c_str());
     } else {
       tprintf("\nSaving adapted templates to {} ...", Filename);
       fflush(stdout);

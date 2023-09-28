@@ -72,7 +72,7 @@ ImageData *ImageData::Build(const char *name, int page_number, const char *lang,
   memcpy(&image_data->image_data_[0], imagedata, imagedatasize);
   if (!image_data->AddBoxes(box_text)) {
     if (truth_text == nullptr || truth_text[0] == '\0') {
-      tprintf("ERROR: No text corresponding to page {} from image {}!\n",
+      tprintError("No text corresponding to page {} from image {}!\n",
               page_number, name);
       delete image_data;
       return nullptr;
@@ -232,7 +232,7 @@ Image ImageData::PreScale(int target_height, int max_height,
   // Get the scaled image.
   Image pix = pixScale(src_pix, im_factor, im_factor);
   if (pix == nullptr) {
-    tprintf("ERROR: Scaling pix of size {}, {} by factor {} made null pix!!\n",
+    tprintError("Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
     src_pix.destroy();
     return nullptr;
@@ -371,7 +371,7 @@ bool ImageData::AddBoxes(const char *box_text) {
       AddBoxes(boxes, texts, box_pages);
       return true;
     } else {
-      tprintf("ERROR: No boxes for page {} from image {}!\n", page_number_,
+      tprintError("No boxes for page {} from image {}!\n", page_number_,
               imagefilename_);
     }
   }
@@ -423,7 +423,7 @@ bool DocumentData::SaveDocument(const char *filename, FileWriter writer) {
   TFile fp;
   fp.OpenWrite(nullptr);
   if (!fp.Serialize(pages_) || !fp.CloseWrite(filename, writer)) {
-    tprintf("ERROR: Serialize failed: {}\n", filename);
+    tprintError("Serialize failed: {}\n", filename);
     return false;
   }
   return true;
@@ -556,7 +556,7 @@ bool DocumentData::ReCachePages() {
   TFile fp;
   if (!fp.Open(document_name_.c_str(), reader_) ||
       !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintf("ERROR: Deserialize header failed: {}\n", document_name_);
+    tprintError("Deserialize header failed: {}\n", document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -591,7 +591,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintf("ERROR: Deserialize failed: {} read {}/{} lines\n", document_name_,
+    tprintError("Deserialize failed: {} read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;
@@ -639,7 +639,7 @@ bool DocumentCache::LoadDocuments(const std::vector<std::string> &filenames,
     if (GetPageBySerial(0) != nullptr) {
       return true;
     }
-    tprintf("ERROR: Load of page 0 failed!\n");
+    tprintError("Load of page 0 failed!\n");
   }
   return false;
 }
@@ -707,7 +707,7 @@ const ImageData *DocumentCache::GetPageSequential(int serial) {
     documents_[0]->GetPage(0);
     num_pages_per_doc_ = documents_[0]->NumPages();
     if (num_pages_per_doc_ == 0) {
-      tprintf("ERROR: First document cannot be empty!!\n");
+      tprintError("First document cannot be empty!!\n");
       ASSERT_HOST(num_pages_per_doc_ > 0);
     }
     // Get rid of zero now if we don't need it.

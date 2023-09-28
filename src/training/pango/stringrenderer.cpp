@@ -83,7 +83,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    tprintf("ERROR: Unexpected surface format {}\n", cairo_image_surface_get_format(surface));
+    tprintError("Unexpected surface format {}\n", cairo_image_surface_get_format(surface));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -626,7 +626,7 @@ static void MergeBoxCharsToWords(std::vector<BoxChar *> *boxchars) {
       // size of the merged bounding box in relation to those of the individual
       // characters seen so far.
       if (right - left > last_box_w + 5 * box_w) {
-        tlog(1, "Found line break after '{}'", last_boxchar->ch().c_str());
+        tlog(1, "Found line break after '{}'", last_boxchar->ch());
         // Insert a fake interword space and start a new word with the current
         // boxchar.
         result.push_back(new BoxChar(" ", 1));
@@ -753,7 +753,7 @@ void StringRenderer::ComputeClusterBoxes() {
     }
     if (!cluster_rect.width || !cluster_rect.height || IsUTF8Whitespace(cluster_text.c_str())) {
       tlog(2, "Skipping whitespace with boxdim ({},{}) '{}'\n", cluster_rect.width,
-           cluster_rect.height, cluster_text.c_str());
+           cluster_rect.height, cluster_text);
       auto *boxchar = new BoxChar(" ", 1);
       boxchar->set_page(page_);
       start_byte_to_box[start_byte_index] = boxchar;
@@ -762,7 +762,7 @@ void StringRenderer::ComputeClusterBoxes() {
     // Prepare a boxchar for addition at this byte position.
     tlog(2, "[{} {}], {}, {} : start_byte={} end_byte={} : '{}'\n", cluster_rect.x, cluster_rect.y,
          cluster_rect.width, cluster_rect.height, start_byte_index, end_byte_index,
-         cluster_text.c_str());
+         cluster_text);
     ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:{}  start_byte_index:{}\n",
                     cluster_text, start_byte_index);
     ASSERT_HOST_MSG(cluster_rect.height, "cluster_text:{}  start_byte_index:{}\n",
@@ -1021,7 +1021,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
   if (drop_uncovered_chars_ && !font_.CoversUTF8Text(page_text.c_str(), page_text.length())) {
     int num_dropped = font_.DropUncoveredChars(&page_text);
     if (num_dropped) {
-      tprintf("WARNING: Dropped {} uncovered characters\n", num_dropped);
+      tprintWarn("Dropped {} uncovered characters\n", num_dropped);
     }
   }
   if (add_ligatures_) {
@@ -1087,11 +1087,11 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
   const char kTitleTemplate[] = "%s : %d hits = %.2f%%, raw = %d = %.2f%%";
   std::string title_font;
   if (!FontUtils::SelectFont(kTitleTemplate, strlen(kTitleTemplate), &title_font, nullptr)) {
-    tprintf("WARNING: Could not find a font to render image title with!\n");
+    tprintWarn("Could not find a font to render image title with!\n");
     title_font = "Arial";
   }
   title_font += " 8";
-  tlog(1, "Selected title font: {}\n", title_font.c_str());
+  tlog(1, "Selected title font: {}\n", title_font);
   if (font_used) {
     font_used->clear();
   }

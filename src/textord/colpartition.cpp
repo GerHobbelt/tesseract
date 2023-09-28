@@ -367,7 +367,7 @@ void ColPartition::ReflectInYAxis() {
 bool ColPartition::IsLegal() {
   if (bounding_box_.left() > bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintf("ERROR: Bounding box invalid\n");
+      tprintError("Bounding box invalid\n");
       Print();
     }
     return false; // Bounding box invalid.
@@ -375,7 +375,7 @@ bool ColPartition::IsLegal() {
   if (left_margin_ > bounding_box_.left() ||
       right_margin_ < bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintf("ERROR: Margins invalid\n");
+      tprintError("Margins invalid\n");
       Print();
     }
     return false; // Margins invalid.
@@ -982,12 +982,12 @@ void ColPartition::ComputeLimits() {
   }
 
   if (right_margin_ < bounding_box_.right() && textord_debug_bugs) {
-    tprintf("WARNING: Made partition with bad right coords, {} < {}\n", right_margin_,
+    tprintWarn("Made partition with bad right coords, {} < {}\n", right_margin_,
             bounding_box_.right());
     Print();
   }
   if (left_margin_ > bounding_box_.left() && textord_debug_bugs) {
-    tprintf("WARNING: Made partition with bad left coords, {} > {}\n", left_margin_,
+    tprintWarn("Made partition with bad left coords, {} > {}\n", left_margin_,
             bounding_box_.left());
     Print();
   }

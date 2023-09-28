@@ -212,7 +212,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
       }
       NormProtos->Protos[unichar_id] = Protos;
     } else {
-      tprintf("ERROR: unichar {} in normproto file is not in unichar set.\n", unichar);
+      tprintError("unichar {} in normproto file is not in unichar set.\n", unichar);
       for (int i = 0; i < NumProtos; i++) {
         FreePrototype(ReadPrototype(fp, NormProtos->NumParams));
       }

@@ -273,7 +273,7 @@ static void ExtractFontProperties(const std::string &utf8_text, StringRenderer *
     if (boxes.size() > 2 && !IsWhitespaceBox(boxes[boxes.size() - 1]) &&
         IsWhitespaceBox(boxes[boxes.size() - 2])) {
       if (boxes.size() > 3) {
-        tprintf("WARNING: Adjusting to bad page break after '{}{}'\n",
+        tprintWarn("Adjusting to bad page break after '{}{}'\n",
                 boxes[boxes.size() - 4]->ch().c_str(), boxes[boxes.size() - 3]->ch().c_str());
       }
       offset -= boxes[boxes.size() - 1]->ch().size();
@@ -318,7 +318,7 @@ static void ExtractFontProperties(const std::string &utf8_text, StringRenderer *
         ++ok_count;
       }
       const std::string &ch1 = boxes[b + 1]->ch();
-      tlog(3, "{}{}\n", ch0.c_str(), ch1.c_str());
+      tlog(3, "{}{}\n", ch0, ch1);
       spacing_map_it1 = spacing_map.find(ch1);
       if (spacing_map_it1 == spacing_map.end() &&
           render->font().GetSpacingProperties(ch1, &x_bearing, &x_advance)) {
@@ -361,13 +361,13 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
                                  const int input_tiff_page) {
   // If checks fail, return false without exiting text2image
   if (!pix) {
-    tprintf("ERROR: MakeIndividualGlyphs(): Input Pix* is nullptr\n");
+    tprintError("MakeIndividualGlyphs(): Input Pix* is nullptr\n");
     return false;
   } else if (FLAGS_glyph_resized_size <= 0) {
-    tprintf("ERROR: --glyph_resized_size must be positive\n");
+    tprintError("--glyph_resized_size must be positive\n");
     return false;
   } else if (FLAGS_glyph_num_border_pixels_to_pad < 0) {
-    tprintf("ERROR: --glyph_num_border_pixels_to_pad must be 0 or positive\n");
+    tprintError("--glyph_num_border_pixels_to_pad must be 0 or positive\n");
     return false;
   }
 
@@ -389,7 +389,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     boxGetGeometry(b, &x, &y, &w, &h);
     // Check present tiff page (for multipage tiff)
     if (y < y_previous - pixGetHeight(pix) / 10) {
-      tprintf("ERROR: Wrap-around encountered, at i={}\n", i);
+      tprintError("Wrap-around encountered, at i={}\n", i);
       current_tiff_page++;
     }
     if (current_tiff_page < input_tiff_page) {
@@ -406,26 +406,26 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
       continue;
     } else if (w < FLAGS_glyph_num_border_pixels_to_pad &&
                h < FLAGS_glyph_num_border_pixels_to_pad) {
-      tprintf("ERROR: Input image too small to be a character, at i={}\n", i);
+      tprintError("Input image too small to be a character, at i={}\n", i);
       continue;
     }
     // Crop the boxed character
     Image pix_glyph = pixClipRectangle(pix, b, nullptr);
     if (!pix_glyph) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to clip, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to clip, at i={}\n", i);
       continue;
     }
     // Resize to square
     Image pix_glyph_sq =
         pixScaleToSize(pix_glyph, FLAGS_glyph_resized_size, FLAGS_glyph_resized_size);
     if (!pix_glyph_sq) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to resize, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to resize, at i={}\n", i);
       continue;
     }
     // Zero-pad
     Image pix_glyph_sq_pad = pixAddBorder(pix_glyph_sq, FLAGS_glyph_num_border_pixels_to_pad, 0);
     if (!pix_glyph_sq_pad) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to zero-pad, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to zero-pad, at i={}\n", i);
       continue;
     }
     // Write out
@@ -484,15 +484,15 @@ static int Main() {
 
   // Check validity of input flags.
   if (FLAGS_text.empty()) {
-    tprintf("ERROR: '--text' option is missing!\n");
+    tprintError("'--text' option is missing!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_outputbase.empty()) {
-    tprintf("ERROR: '--outputbase' option is missing!\n");
+    tprintError("'--outputbase' option is missing!\n");
     return EXIT_FAILURE;
   }
   if (!FLAGS_unicharset_file.empty() && FLAGS_render_ngrams) {
-    tprintf("ERROR: Use '--unicharset_file' only if '--render_ngrams' is set.\n");
+    tprintError("Use '--unicharset_file' only if '--render_ngrams' is set.\n");
     return EXIT_FAILURE;
   }
 
@@ -501,7 +501,7 @@ static int Main() {
     font_name += ',';
     std::string pango_name;
     if (!FontUtils::IsAvailableFont(font_name.c_str(), &pango_name)) {
-      tprintf("ERROR: Could not find font named '{}'.\n", FLAGS_font.c_str());
+      tprintError("Could not find font named '{}'.\n", FLAGS_font.c_str());
       if (!pango_name.empty()) {
         tprintf("  Pango suggested font '{}'.\n", pango_name.c_str());
       }
@@ -551,14 +551,14 @@ static int Main() {
     render.set_gravity_hint_strong(true);
     render.set_render_fullwidth_latin(true);
   } else {
-    tprintf("ERROR: Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
+    tprintError("Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
     return EXIT_FAILURE;
   }
 
   std::string src_utf8;
   // This c_str is NOT redundant!
   if (!File::ReadFileToString(FLAGS_text.c_str(), &src_utf8)) {
-    tprintf("ERROR: Failed to read file: {}\n", FLAGS_text.c_str());
+    tprintError("Failed to read file: {}\n", FLAGS_text.c_str());
     return EXIT_FAILURE;
   }
 
@@ -580,7 +580,7 @@ static int Main() {
     UNICHARSET unicharset;
     if (FLAGS_render_ngrams && !FLAGS_unicharset_file.empty() &&
         !unicharset.load_from_file(FLAGS_unicharset_file.c_str())) {
-      tprintf("ERROR: Failed to load unicharset from file {}\n", FLAGS_unicharset_file.c_str());
+      tprintError("Failed to load unicharset from file {}\n", FLAGS_unicharset_file.c_str());
       return EXIT_FAILURE;
     }
 
@@ -732,7 +732,7 @@ static int Main() {
         // Make individual glyphs
         if (FLAGS_output_individual_glyph_images) {
           if (!MakeIndividualGlyphs(gray_pix, render.GetBoxes(), im)) {
-            tprintf("ERROR: Individual glyphs not saved\n");
+            tprintError("Individual glyphs not saved\n");
           }
         }
         gray_pix.destroy();
@@ -754,7 +754,7 @@ static int Main() {
     filename += ".fontlist.txt";
     FILE *fp = fopen(filename.c_str(), "wb");
     if (fp == nullptr) {
-      tprintf("ERROR: Failed to create output font list {}\n", filename.c_str());
+      tprintError("Failed to create output font list {}\n", filename.c_str());
     } else {
       for (auto &font_name : font_names) {
         fprintf(fp, "%s\n", font_name.c_str());

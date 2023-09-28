@@ -45,7 +45,7 @@ namespace tesseract {
 // and also accepts a relative or absolute path name.
 void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
   if (filename || !*filename) {
-    tprintf("ERROR: empty config filename specified. No config loaded.\n");
+    tprintError("empty config filename specified. No config loaded.\n");
     return;
   }
 
@@ -70,7 +70,7 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
         fclose(fp);
       }
       else {
-        tprintf("ERROR: config file '{}' cannot be opened / does not exist.\n", path);
+        tprintError("config file '{}' cannot be opened / does not exist.\n", path);
         return;
       }
     }
@@ -103,7 +103,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Initialize TessdataManager.
   std::string tessdata_path = language_data_path_prefix + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
-    tprintf("ERROR: Error opening data file {}\n", tessdata_path.c_str());
+    tprintError("Error opening data file {}\n", tessdata_path.c_str());
     tprintf(
         "INFO: Please make sure the TESSDATA_PREFIX environment variable is set"
         " to your \"tessdata\" directory.\n");
@@ -149,7 +149,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     for (unsigned i = 0; i < vars_vec->size(); ++i) {
       if (!ParamUtils::SetParam((*vars_vec)[i].c_str(), (*vars_values)[i].c_str(),
                                 set_params_constraint, this->params())) {
-        tprintf("WARNING: The parameter '{}' was not found.\n", (*vars_vec)[i].c_str());
+        tprintWarn("The parameter '{}' was not found.\n", (*vars_vec)[i].c_str());
       }
     }
   }
@@ -160,7 +160,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       ParamUtils::PrintParams(params_file, this->params());
       fclose(params_file);
     } else {
-      tprintf("ERROR: Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
+      tprintError("Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
     }
   }
 
@@ -191,7 +191,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
                                          lstm_use_matrix ? language : "", mgr));
 	  // TODO: ConvertToInt optional extra
     } else {
-      tprintf("ERROR: LSTM requested, but not present!! Loading tesseract.\n");
+      tprintError("LSTM requested, but not present!! Loading tesseract.\n");
       tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_ONLY);
     }
   }
@@ -211,7 +211,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   }
 #endif // !DISABLED_LEGACY_ENGINE
   if (unicharset.size() > MAX_NUM_CLASSES) {
-    tprintf("ERROR: Size of unicharset is greater than MAX_NUM_CLASSES\n");
+    tprintError("Size of unicharset is greater than MAX_NUM_CLASSES\n");
     return false;
   }
   right_to_left_ = unicharset.major_right_to_left();
@@ -359,14 +359,14 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       if (!loaded_primary) {
         if (result < 0) {
-          tprintf("ERROR: Failed loading language '{}'\n", lang_str);
+          tprintError("Failed loading language '{}'\n", lang_str);
         } else {
           ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
           loaded_primary = true;
         }
       } else {
         if (result < 0) {
-          tprintf("ERROR: Failed loading sub-language '{}'\n", lang_str);
+          tprintError("Failed loading sub-language '{}'\n", lang_str);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);
@@ -377,7 +377,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     }
   }
   if (!loaded_primary && !langs_to_load.empty()) {
-    tprintf("ERROR: Tesseract couldn't load any languages!\n");
+    tprintError("Tesseract couldn't load any languages!\n");
     return -1; // Couldn't load any language!
   }
 

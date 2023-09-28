@@ -38,7 +38,7 @@ namespace tesseract {
   // the --tlog_level commandline argument. Otherwise it must be specified in a
   // config file like other params.
   template <typename S, typename... Args>
-  void tlog(int level, const S* format, Args &&...args) {
+  void TLOG(int level, const S* format, Args &&...args) {
     if (FLAGS_tlog_level >= level) {
       //tprintf(format, ...);
       vTessPrint(format, fmt::make_format_args(args...));

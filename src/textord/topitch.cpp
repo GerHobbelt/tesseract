@@ -255,7 +255,7 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       } else if (block_votes == 0 && like_votes > 0) {
         bad_row->fixed_pitch = like_stats.ile(0.5);
       } else {
-        tprintf("WARNING: Guessing pitch as xheight on row {}, block {}\n", row_target,
+        tprintWarn("Guessing pitch as xheight on row {}, block {}\n", row_target,
                 block_target);
         bad_row->fixed_pitch = bad_row->xheight;
       }

@@ -376,7 +376,7 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
       opt1[255] = '\0';
       char *p = strchr(opt1, '=');
       if (!p) {
-        tprintf("ERROR: Missing '=' in configvar assignment for '{}'\n", opt1);
+        tprintError("Missing '=' in configvar assignment for '{}'\n", opt1);
         success = false;
         break;
       }
@@ -386,7 +386,7 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
       ++i;
 
       if (!api.SetVariable(opt1, opt2)) {
-        tprintf("ERROR: Could not set option: {}={}\n", opt1, opt2);
+        tprintError("Could not set option: {}={}\n", opt1, opt2);
       }
     }
   }
@@ -426,7 +426,7 @@ static void FixPageSegMode(tesseract::TessBaseAPI &api, tesseract::PageSegMode p
 
 static bool checkArgValues(int arg, const char *mode, int count) {
   if (arg >= count || arg < 0) {
-    tprintf("ERROR: Invalid {} value, please enter a number between 0-{}\n", mode, count - 1);
+    tprintError("Invalid {} value, please enter a number between 0-{}\n", mode, count - 1);
     return false;
   }
   return true;
@@ -459,7 +459,7 @@ static void UnpackFiles(const char** filenames) {
     tprintf("Extracting {}\n", filename);
     tesseract::DocumentData images(filename);
     if (!images.LoadDocument(filename, 0, 0, nullptr)) {
-      tprintf("ERROR: Failed to read training data from {}!\n", filename);
+      tprintError("Failed to read training data from {}!\n", filename);
       continue;
     }
 #if 0
@@ -480,7 +480,7 @@ static void UnpackFiles(const char** filenames) {
       std::string gt_filename = stream.str() + ".gt.txt";
       FILE* f = fopen(gt_filename.c_str(), "wb");
       if (f == nullptr) {
-        tprintf("ERROR: Writing {} failed\n", gt_filename);
+        tprintError("Writing {} failed\n", gt_filename);
         continue;
       }
       fprintf(f, "%s\n", transcription);
@@ -491,7 +491,7 @@ static void UnpackFiles(const char** filenames) {
       Pix* pix = image->GetPix();
       std::string image_filename = stream.str() + ".png";
       if (pixWrite(image_filename.c_str(), pix, IFF_PNG) != 0) {
-        tprintf("ERROR: Writing {} failed\n", image_filename);
+        tprintError("Writing {} failed\n", image_filename);
       }
       pixDestroy(&pix);
 #if 0
@@ -546,7 +546,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
           } else if ((strcmp(argv[i], "psm") == 0)) {
             PrintHelpForPSM();
           } else {
-            tprintf("ERROR: No help available for {}\n", argv[i]);
+            tprintError("No help available for {}\n", argv[i]);
           }
         } else {
           PrintHelpMessage(argv[0]);
@@ -558,7 +558,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       } else if (strcmp(verb, "version") == 0) {
         PrintVersionInfo();
       } else {
-        tprintf("ERROR: Unknown action: {}\n", verb);
+        tprintError("Unknown action: {}\n", verb);
       }
       return true;
     }
@@ -612,9 +612,9 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
         auto loglevel = loglevels.at(loglevel_string);
         FLAGS_tlog_level = loglevel;
       } catch (const std::out_of_range &e) {
-		    (void)e;		// unused variable
+		(void)e;		// unused variable
         // TODO: Allow numeric argument?
-        tprintf("ERROR: Unsupported --loglevel {}\n", loglevel_string);
+        tprintError("Unsupported --loglevel {}\n", loglevel_string);
         return false;
       }
     } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
@@ -672,7 +672,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       *outputbase = argv[i];
     } else {
       // Unexpected argument.
-      tprintf("ERROR: Unknown command line argument '{}'\n", argv[i]);
+      tprintError("Unknown command line argument '{}'\n", argv[i]);
       return false;
     }
   }
@@ -684,7 +684,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     if (*lang != nullptr && strcmp(*lang, "osd")) {
       // If the user explicitly specifies a language (other than osd)
       // or a script, only orientation can be detected.
-      tprintf("WARNING: Detects only orientation with -l {}\n", *lang);
+      tprintWarn("Detects only orientation with -l {}\n", *lang);
     } else {
       // That mode requires osd.traineddata to detect orientation and script.
       *lang = "osd";
@@ -709,7 +709,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
     if (renderer->happy()) {
       renderers.push_back(std::move(renderer));
     } else {
-      tprintf("ERROR: Could not create OSD output file: {}\n",
+      tprintError("Could not create OSD output file: {}\n",
               strerror(errno));
       error = true;
     }
@@ -725,7 +725,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create hOCR output file: {}\n", strerror(errno));
+        tprintError("Could not create hOCR output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -736,7 +736,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create ALTO output file: {}\n", strerror(errno));
+        tprintError("Could not create ALTO output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -747,7 +747,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create ALTO output file: {}\n", strerror(errno));
+        tprintError("Could not create ALTO output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -760,7 +760,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create TSV output file: {}\n", strerror(errno));
+        tprintError("Could not create TSV output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -769,7 +769,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
     if (b) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
       if (_setmode(_fileno(stdout), _O_BINARY) == -1)
-        tprintf("ERROR: Cannot set STDIN to binary: {}", strerror(errno));
+        tprintError("Cannot set STDIN to binary: {}", strerror(errno));
 #endif // WIN32
       bool textonly;
       api.GetBoolVariable("textonly_pdf", &textonly);
@@ -777,7 +777,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create PDF output file: {}\n", strerror(errno));
+        tprintError("Could not create PDF output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -789,7 +789,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create UNLV output file: {}\n", strerror(errno));
+        tprintError("Could not create UNLV output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -800,7 +800,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create LSTM BOX output file: {}\n", strerror(errno));
+        tprintError("Could not create LSTM BOX output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -811,7 +811,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create BOX output file: {}\n", strerror(errno));
+        tprintError("Could not create BOX output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -822,7 +822,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create WordStr BOX output file: {}\n", strerror(errno));
+        tprintError("Could not create WordStr BOX output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -836,7 +836,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("ERROR: Could not create TXT output file: {}\n", strerror(errno));
+        tprintError("Could not create TXT output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -1144,7 +1144,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       }
 
       if (init_failed) {
-        tprintf("ERROR: Could not initialize tesseract.\n");
+        tprintError("Could not initialize tesseract.\n");
         return EXIT_FAILURE;
       }
 
@@ -1158,7 +1158,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 	if (rectangle_mode) {
 		Pix* pixs = pixRead(image);
 		if (!pixs) {
-			tprintf("ERROR: Cannot open input file: {}\n", image);
+			tprintError("Cannot open input file: {}\n", image);
             return EXIT_FAILURE;
 		}
 
@@ -1175,7 +1175,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 		}
 
 		if (fout == NULL) {
-			tprintf("ERROR: Cannot open output file: {}\n", outfile);
+			tprintError("Cannot open output file: {}\n", outfile);
 			pixDestroy(&pixs);
             return EXIT_FAILURE;
 		}
@@ -1231,7 +1231,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 				}
 			}
 			else {
-				tprintf("ERROR: incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
+				tprintError("incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
 				fclose(fout);
 				pixDestroy(&pixs);
                 return EXIT_FAILURE;
@@ -1273,7 +1273,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
         Pix *pixs = pixRead(image);
         if (!pixs) {
-          tprintf("ERROR: Leptonica can't process input file: {}\n", image);
+          tprintError("Leptonica can't process input file: {}\n", image);
           return 2;
         }
 
@@ -1375,7 +1375,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         succeed &= api.ProcessPages(image, nullptr, 0, renderers[0].get());
 
         if (!succeed) {
-          tprintf("ERROR: Error during page processing. File: {}\n", image);
+          tprintError("Error during page processing. File: {}\n", image);
           ret_val = EXIT_FAILURE;
         }
       }

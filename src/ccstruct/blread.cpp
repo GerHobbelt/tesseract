@@ -51,7 +51,7 @@ bool read_unlv_file(   // print list of sides
     name += UNLV_EXT; // add extension
   }
   if ((pdfp = fopen(name.c_str(), "rb")) == nullptr) {
-    tprintf("ERROR: Cannot read UZN file {}.\n", name);
+    tprintError("Cannot read UZN file {}.\n", name);
     return false; // didn't read one
   } else {
     while (tfscanf(pdfp, "%d %d %d %d %*s", &x, &y, &width, &height) >= 4) {
@@ -91,7 +91,7 @@ bool write_unlv_file(   // print list of sides
     name += UNLV_EXT; // add extension
   }
   if ((pdfp = fopen(name.c_str(), "wb")) == nullptr) {
-    tprintf("ERROR: Cannot create UZN file {}.\n", name);
+    tprintError("Cannot create UZN file {}.\n", name);
     return false; // didn't write one
   }
   else {
@@ -124,7 +124,7 @@ bool write_unlv_file(   // print list of sides
         auto len = s.length();
         int l = fwrite(s.c_str(), 1, len, pdfp);
         if (l != len) { 
-          tprintf("ERROR: Write error while producing UZN file {}.\n", name);
+          tprintError("Write error while producing UZN file {}.\n", name);
           fclose(pdfp);
           return false; // didn't write one
         }

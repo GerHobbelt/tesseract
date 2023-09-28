@@ -58,7 +58,7 @@ public:
 
 private:
   void DebugWeights() override {
-    tprintf("WARNING: Must override Network::DebugWeights for type {}\n", type_);
+    tprintWarn("Must override Network::DebugWeights for type {}\n", type_);
   }
 
 protected:

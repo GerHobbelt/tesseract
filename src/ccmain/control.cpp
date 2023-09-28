@@ -93,8 +93,7 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
     int16_t good_char_qual;
     WERD_RES *word_res = pr_it->word();
     word_char_quality(word_res, &char_qual, &good_char_qual);
-    tprintf(
-        "\n{} chars;  word_blob_quality: {};  outline_errs: {}; "
+    dbgPrint("\n{} chars;  word_blob_quality: {};  outline_errs: {}; "
         "char_quality: {}; good_char_quality: {}\n",
         word_res->reject_map.length(), word_blob_quality(word_res), word_outline_errs(word_res),
         char_qual, good_char_qual);
@@ -126,7 +125,7 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
         backup_config_file_ = kBackUpConfigFile;
         FILE *config_fp = fopen(backup_config_file_, "wb");
         if (config_fp == nullptr) {
-          tprintf("ERROR: Failed to open file \"{}\"\n", backup_config_file_);
+          tprintError("Failed to open file \"{}\"\n", backup_config_file_);
         } else {
           ParamUtils::PrintParams(config_fp, params(), false);
           fclose(config_fp);
@@ -479,7 +478,7 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
     }
     if (w_prev->word->flag(W_REP_CHAR) || w->word->flag(W_REP_CHAR)) {
       if (tessedit_bigram_debug) {
-        tprintf("WARNING: Skipping because one of the words is W_REP_CHAR\n");
+        tprintWarn("Skipping because one of the words is W_REP_CHAR\n");
       }
       continue;
     }
@@ -1686,7 +1685,7 @@ void Tesseract::fix_rep_char(PAGE_RES_IT *page_res_it) {
   // Find the best exemplar of a classifier result for maxch_id.
   BLOB_CHOICE *best_choice = FindBestMatchingChoice(maxch_id, word_res);
   if (best_choice == nullptr) {
-    tprintf("WARNING: Failed to find a choice for {}, occurring {} times\n",
+    tprintWarn("Failed to find a choice for {}, occurring {} times\n",
             word_res->uch_set->debug_str(maxch_id), max_count);
     return;
   }
@@ -1935,7 +1934,7 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
   }
   if (tessedit_font_id > 0) {
     if (tessedit_font_id >= fontinfo_size) {
-      tprintf("ERROR: Invalid font ID provided: must be below {}.\n"
+      tprintError("Invalid font ID provided: must be below {}.\n"
               "Falling back to font auto-detection.\n", fontinfo_size);
     } else {
       word->fontinfo = &fontinfo_table_.at(tessedit_font_id);

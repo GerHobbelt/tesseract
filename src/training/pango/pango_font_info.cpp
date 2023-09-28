@@ -82,7 +82,7 @@ PangoFontInfo::PangoFontInfo() : desc_(nullptr), resolution_(kDefaultResolution)
 PangoFontInfo::PangoFontInfo(const std::string &desc)
     : desc_(nullptr), resolution_(kDefaultResolution) {
   if (!ParseFontDescriptionName(desc)) {
-    tprintf("ERROR: Could not parse {}\n", desc.c_str());
+    tprintError("Could not parse {}\n", desc.c_str());
     Clear();
   }
 }
@@ -174,7 +174,7 @@ bool PangoFontInfo::ParseFontDescription(const PangoFontDescription *desc) {
   const char *family = pango_font_description_get_family(desc);
   if (!family) {
     char *desc_str = pango_font_description_to_string(desc);
-    tprintf("WARNING: Could not parse family name from description: '{}'\n", desc_str);
+    tprintWarn("Could not parse family name from description: '{}'\n", desc_str);
     g_free(desc_str);
     return false;
   }
@@ -406,7 +406,7 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
 
     if (TLOG_IS_ON(2)) {
       PangoFontDescription *desc = pango_font_describe(font);
-      char *desc_str = pango_font_description_to_string(desc);
+      const char *desc_str = pango_font_description_to_string(desc);
       tlog(2, "Desc of font in run: {}\n", desc_str);
       g_free(desc_str);
       pango_font_description_free(desc);
@@ -580,7 +580,7 @@ int FontUtils::FontScore(const std::unordered_map<char32, int64_t> &ch_map,
                          const std::string &fontname, int *raw_score, std::vector<bool> *ch_flags) {
   PangoFontInfo font_info;
   if (!font_info.ParseFontDescriptionName(fontname)) {
-    tprintf("ERROR: Could not parse {}\n", fontname.c_str());
+    tprintError("Could not parse {}\n", fontname.c_str());
   }
   PangoFont *font = font_info.ToPangoFont();
   PangoCoverage *coverage = nullptr;
@@ -727,7 +727,7 @@ void FontUtils::PangoFontTypeInfo() {
              CAIRO_FONT_TYPE_USER) {
     tprintf("Using CAIRO_FONT_TYPE_USER.\n");
   } else if (!font_map) {
-    tprintf("ERROR: Cannot create pango cairo font map!\n");
+    tprintError("Cannot create pango cairo font map!\n");
   }
 }
 

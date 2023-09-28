@@ -112,7 +112,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
         if (output_ambig_words_file_ == nullptr) {
           output_ambig_words_file_ = fopen(output_ambig_words_file.c_str(), "wb+");
           if (output_ambig_words_file_ == nullptr) {
-            tprintf("ERROR: Failed to open output_ambig_words_file {}\n", output_ambig_words_file.c_str());
+            tprintError("Failed to open output_ambig_words_file {}\n", output_ambig_words_file.c_str());
             throw "Failed to open output_ambig_words_file";	// GHo: analyzed code flow; this entire function seems to only be used in DISABLED_LEGACY_ENGINE but better to throw than to exit() anyway!
           }
           std::string word_str;
@@ -311,7 +311,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   char_frag_info->num_fragments = 1;
   if (prev_fragment && !this_fragment) {
     if (debug) {
-      tprintf("WARNING: Skip choice with incomplete fragment\n");
+      tprintWarn("Skip choice with incomplete fragment\n");
     }
     return false;
   }
@@ -349,7 +349,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
         }
       } else {
         if (debug) {
-          tprintf("WARNING: Non-starting fragment piece with no prev_fragment\n");
+          tprintWarn("Non-starting fragment piece with no prev_fragment\n");
         }
         return false;
       }
@@ -357,7 +357,7 @@ bool Dict::fragment_state_okay(UNICHAR_ID curr_unichar_id, float curr_rating, fl
   }
   if (word_ending && char_frag_info->fragment) {
     if (debug) {
-      tprintf("WARNING: Word cannot end with a fragment\n");
+      tprintWarn("Word cannot end with a fragment\n");
     }
     return false;
   }

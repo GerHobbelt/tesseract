@@ -254,7 +254,7 @@ static void WriteProtos(FILE *File, uint16_t N, LIST ProtoList, bool WriteSigPro
 
 TESS_API int tesseract_cn_training_main(int argc, const char** argv)
 {
-	tesseract::tprintf("ERROR: the {} tool is not supported in this build.\n", argv[0]);
+	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
 	return 1;
 }
 

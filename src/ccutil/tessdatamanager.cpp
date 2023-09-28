@@ -272,7 +272,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
     if (fp != nullptr) {
       fclose(fp);
       if (!LoadDataFromFile(filename.c_str(), &entries_[type])) {
-        tprintf("ERROR: Load of file {} failed!\n", filename.c_str());
+        tprintError("Load of file {} failed!\n", filename.c_str());
         return false;
       }
     }
@@ -298,7 +298,7 @@ bool TessdataManager::OverwriteComponents(const char *new_traineddata_filename,
     TessdataType type;
     if (TessdataTypeFromFileName(component_filenames[i], &type)) {
       if (!LoadDataFromFile(component_filenames[i], &entries_[type])) {
-        tprintf("ERROR: Failed to read component file:{}\n", component_filenames[i]);
+        tprintError("Failed to read component file:{}\n", component_filenames[i]);
         return false;
       }
     }

@@ -42,7 +42,7 @@ bool ValidateMyanmar::ConsumeGraphemeIfValid() {
     }
   } else {
     if (report_errors_) {
-      tprintf("ERROR: Invalid start of Myanmar syllable: {}\n", codes_[codes_used_].second);
+      tprintError("Invalid start of Myanmar syllable: {}\n", codes_[codes_used_].second);
     }
     return false; // One of these is required.
   }

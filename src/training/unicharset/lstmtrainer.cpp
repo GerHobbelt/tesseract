@@ -107,7 +107,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
     return false;
   }
   if (IsIntMode()) {
-    tprintf("ERROR: {} is an integer (fast) model, cannot continue training.\n",
+    tprintError("{} is an integer (fast) model, cannot continue training.\n",
             filename);
     return false;
   }
@@ -119,7 +119,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   tprintf("Code range changed from {} to {}!\n", network_->NumOutputs(),
           recoder_.code_range());
   if (old_traineddata == nullptr || *old_traineddata == '\0') {
-    tprintf("ERROR: Must supply the old traineddata for code conversion!\n");
+    tprintError("Must supply the old traineddata for code conversion!\n");
     return false;
   }
   TessdataManager old_mgr;
@@ -511,7 +511,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
     // Special case. If we successfully decoded the recognizer, but fail here
     // then it means we were just given a recognizer, so issue a warning and
     // allow it.
-    tprintf("WARNING: LSTMTrainer deserialized an LSTMRecognizer!\n");
+    tprintWarn("LSTMTrainer deserialized an LSTMRecognizer!\n");
     learning_iteration_ = 0;
     network_->SetEnableTraining(TS_ENABLED);
     return true;
@@ -812,7 +812,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
                                const UnicharCompress *recoder, bool simple_text,
                                int null_char, std::vector<int> *labels) {
   if (str.c_str() == nullptr || str.length() <= 0) {
-    tprintf("ERROR: Empty truth string!\n");
+    tprintError("Empty truth string!\n");
     return false;
   }
   unsigned err_index;
@@ -853,7 +853,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
       return true;
     }
   }
-  tprintf("ERROR: Encoding of string failed!\n");
+  tprintError("Encoding of string failed!\n");
   tprintf("  Failure bytes:");
   while (err_index < cleaned.size()) {
     tprintf(" {}", cleaned[err_index++] & 0xff);
@@ -901,7 +901,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
                                              NetworkIO *fwd_outputs,
                                              NetworkIO *targets) {
   if (trainingdata == nullptr) {
-    tprintf("ERROR: Null trainingdata.\n");
+    tprintError("Null trainingdata.\n");
     return UNENCODABLE;
   }
   // Ensure repeatability of random elements even across checkpoints.
@@ -909,7 +909,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
       debug_interval_ > 0 && training_iteration() % debug_interval_ == 0;
   std::vector<int> truth_labels;
   if (!EncodeString(trainingdata->transcription(), &truth_labels)) {
-    tprintf("ERROR: Can't encode transcription: '{}' in language '{}'\n",
+    tprintError("Can't encode transcription: '{}' in language '{}'\n",
             trainingdata->transcription(),
             trainingdata->language());
     return UNENCODABLE;
@@ -938,7 +938,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
     ++w;
   }
   if (w == truth_labels.size()) {
-    tprintf("ERROR: Blank transcription: {}\n", trainingdata->transcription());
+    tprintError("Blank transcription: {}\n", trainingdata->transcription());
     return UNENCODABLE;
   }
   float image_scale;
@@ -947,25 +947,25 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   TBOX line_box(0, 0, 100, 100);
   if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down, line_box, 
                      &image_scale, &inputs, fwd_outputs)) {
-    tprintf("ERROR: Image {} not trainable\n", trainingdata->imagefilename());
+    tprintError("Image {} not trainable\n", trainingdata->imagefilename());
     return UNENCODABLE;
   }
   targets->Resize(*fwd_outputs, network_->NumOutputs());
   LossType loss_type = OutputLossType();
   if (loss_type == LT_SOFTMAX) {
     if (!ComputeTextTargets(*fwd_outputs, truth_labels, targets)) {
-      tprintf("ERROR: Compute simple targets failed for {}!\n",
+      tprintError("Compute simple targets failed for {}!\n",
               trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else if (loss_type == LT_CTC) {
     if (!ComputeCTCTargets(truth_labels, fwd_outputs, targets)) {
-      tprintf("ERROR: Compute CTC targets failed for {}!\n",
+      tprintError("Compute CTC targets failed for {}!\n",
               trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else {
-    tprintf("ERROR: Logistic outputs not implemented yet!\n");
+    tprintError("Logistic outputs not implemented yet!\n");
     return UNENCODABLE;
   }
   std::vector<int> ocr_labels;
@@ -977,7 +977,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   }
   if (!DebugLSTMTraining(inputs, *trainingdata, *fwd_outputs, truth_labels,
                          *targets)) {
-    tprintf("ERROR: Input width was {}\n", inputs.Width());
+    tprintError("Input width was {}\n", inputs.Width());
     return UNENCODABLE;
   }
   std::string ocr_text = DecodeLabels(ocr_labels);
@@ -1021,7 +1021,7 @@ bool LSTMTrainer::SaveTrainingDump(SerializeAmount serialize_amount,
 bool LSTMTrainer::ReadLocalTrainingDump(const TessdataManager *mgr,
                                         const char *data, int size) {
   if (size == 0) {
-    tprintf("WARNING: Data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
+    tprintWarn("Data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
     return false;
   }
   TFile fp;
@@ -1155,7 +1155,7 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
                                     const NetworkIO &outputs) {
   const std::string &truth_text = DecodeLabels(truth_labels);
   if (truth_text.c_str() == nullptr || truth_text.length() <= 0) {
-    tprintf("ERROR: Empty truth string at decode time!\n");
+    tprintError("Empty truth string at decode time!\n");
     return false;
   }
   if (debug_interval_ != 0) {
@@ -1230,7 +1230,7 @@ bool LSTMTrainer::ComputeTextTargets(const NetworkIO &outputs,
                                      const std::vector<int> &truth_labels,
                                      NetworkIO *targets) {
   if (truth_labels.size() > targets->Width()) {
-    tprintf("ERROR: Transcription {} too long to fit into target of width {}\n",
+    tprintError("Transcription {} too long to fit into target of width {}\n",
             DecodeLabels(truth_labels), targets->Width());
     return false;
   }

@@ -58,9 +58,9 @@ static void error_action(TessErrorLogCode action) {
 void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   if (caller != nullptr) {
     // name of caller
-    tprintf("ERROR: {}\n", fmt::format("{}:{}", caller, message).c_str());
+    tprintError("{}\n", fmt::format("{}:{}", caller, message).c_str());
   } else {
-    tprintf("ERROR: {}\n", fmt::format("{}", message).c_str());
+    tprintError("{}\n", fmt::format("{}", message).c_str());
   }
   error_action(action);
 }
@@ -68,9 +68,9 @@ void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
 void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const {
   if (caller != nullptr) {
     // name of caller
-    tprintf("ERROR: {}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
   } else {
-    tprintf("ERROR: {}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
   }
   error_action(action);
 }

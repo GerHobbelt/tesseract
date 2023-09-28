@@ -68,7 +68,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
   const char *unicharset_file = argv[++argv_index];
   tprintf("Loading unicharset from '{}'\n", unicharset_file);
   if (!classify.getDict().getUnicharset().load_from_file(unicharset_file)) {
-    tprintf("ERROR: Failed to load unicharset from '{}'\n", unicharset_file);
+    tprintError("Failed to load unicharset from '{}'\n", unicharset_file);
     return EXIT_FAILURE;
   }
   const UNICHARSET &unicharset = classify.getDict().getUnicharset();
@@ -79,7 +79,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
         classify.getDict().dawg_debug_level);
     tprintf("Reading word list from '{}'\n", wordlist_filename);
     if (!trie.read_and_add_word_list(wordlist_filename, unicharset, reverse_policy)) {
-      tprintf("ERROR: Failed to add word list from '{}'\n", wordlist_filename);
+      tprintError("Failed to add word list from '{}'\n", wordlist_filename);
       return EXIT_FAILURE;
     }
     tprintf("Reducing Trie to SquishedDawg\n");
@@ -88,7 +88,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
       tprintf("Writing squished DAWG to '{}'\n", dawg_filename);
       dawg->write_squished_dawg(dawg_filename);
     } else {
-      tprintf("WARNING: Dawg is empty, skip producing the output file\n");
+      tprintWarn("Dawg is empty, skip producing the output file\n");
     }
   } else if (argc == 5) {
     tprintf("Loading dawg DAWG from '{}'\n", dawg_filename);
@@ -99,7 +99,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
     tprintf("Checking word list from '{}'\n", wordlist_filename);
     words.check_for_words(wordlist_filename, unicharset, true);
   } else { // should never get here
-    tprintf("ERROR: Invalid command-line options.\n");
+    tprintError("Invalid command-line options.\n");
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

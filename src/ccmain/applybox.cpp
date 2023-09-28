@@ -146,10 +146,10 @@ PAGE_RES *Tesseract::ApplyBoxes(const char *filename, bool find_segmentation,
     ReSegmentByClassification(page_res);
   }
   if (applybox_debug > 0) {
-    tprintf("APPLY_BOXES:\n");
-    tprintf("   Boxes read from boxfile:  {}\n", box_count);
+    dbgPrint("APPLY_BOXES:\n"
+              "   Boxes read from boxfile:  {}\n", box_count);
     if (box_failures > 0) {
-      tprintf("   Boxes failed resegmentation:  {}\n", box_failures);
+      dbgPrint("   Boxes failed resegmentation:  {}\n", box_failures);
     }
   }
   TidyUp(page_res);
@@ -184,7 +184,7 @@ void Tesseract::PreenXHeights(BLOCK_LIST *block_list) {
       const double diff = fabs(row->x_height() - median_xheight);
       if (diff > max_deviation) {
         if (applybox_debug) {
-          tprintf("row xheight={}, but median xheight = {}\n", row->x_height(), median_xheight);
+          dbgPrint("row xheight={}, but median xheight = {}\n", row->x_height(), median_xheight);
         }
         row->set_x_height(static_cast<float>(median_xheight));
       }
@@ -237,7 +237,7 @@ void Tesseract::MaximallyChopWord(const std::vector<TBOX> &boxes, BLOCK *block, 
     return;
   }
   if (chop_debug) {
-    tprintf("Maximally chopping word at:");
+    dbgPrint("Maximally chopping word at:");
     word_res->word->bounding_box().print();
   }
   std::vector<BLOB_CHOICE *> blob_choices;
@@ -310,7 +310,7 @@ static double BoxMissMetric(const TBOX &box1, const TBOX &box2) {
 bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const TBOX &box,
                                  const TBOX *next_box, const char *correct_text) {
   if (applybox_debug > 1) {
-    tprintf("\nAPPLY_BOX: in ResegmentCharBox() for {}\n", correct_text);
+    dbgPrint("\nAPPLY_BOX: in ResegmentCharBox() for {}\n", correct_text);
   }
   PAGE_RES_IT page_res_it(page_res);
   WERD_RES *word_res;
@@ -319,7 +319,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
       continue;
     }
     if (applybox_debug > 1) {
-      tprintf("Checking word box:");
+      dbgPrint("Checking word box:");
       word_res->box_word->bounding_box().print();
     }
     int word_len = word_res->box_word->length();
@@ -338,9 +338,9 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
           const double current_box_miss_metric = BoxMissMetric(blob_box, box);
           const double next_box_miss_metric = BoxMissMetric(blob_box, *next_box);
           if (applybox_debug > 2) {
-            tprintf("Checking blob:");
+            dbgPrint("Checking blob:");
             blob_box.print();
-            tprintf("Current miss metric = {}, next = {}\n", current_box_miss_metric,
+            dbgPrint("Current miss metric = {}, next = {}\n", current_box_miss_metric,
                     next_box_miss_metric);
           }
           if (current_box_miss_metric > next_box_miss_metric) {
@@ -351,7 +351,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
       }
       if (blob_count > 0) {
         if (applybox_debug > 1) {
-          tprintf("Index [{}, {}) seem good.\n", i, i + blob_count);
+          dbgPrint("Index [{}, {}) seem good.\n", i, i + blob_count);
         }
         if (!char_box.almost_equal(box, 3) &&
             ((next_box != nullptr && box.x_gap(*next_box) < -3) ||
@@ -366,12 +366,12 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
         word_res->best_state[i] = blob_count;
         word_res->correct_text[i] = correct_text;
         if (applybox_debug > 2) {
-          tprintf("{} Blobs match: blob box:", blob_count);
+          dbgPrint("{} Blobs match: blob box:", blob_count);
           word_res->box_word->BlobBox(i).print();
-          tprintf("Matches box:");
+		  dbgPrint("Matches box:");
           box.print();
           if (next_box != nullptr) {
-            tprintf("With next box:");
+            dbgPrint("With next box:");
             next_box->print();
           }
         }
@@ -384,23 +384,23 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
         // Assume that no box spans multiple source words, so we are done with
         // this box.
         if (applybox_debug > 1) {
-          tprintf("Best state = ");
+          dbgPrint("Best state = ");
           for (auto best_state : word_res->best_state) {
-            tprintf("{} ", best_state);
+            dbgPrint("{} ", best_state);
           }
-          tprintf("\n");
-          tprintf("Correct text = [[ ");
+          dbgPrint("\n");
+          dbgPrint("Correct text = [[ ");
           for (auto &it : word_res->correct_text) {
-            tprintf("{} ", it.c_str());
+            dbgPrint("{} ", it.c_str());
           }
-          tprintf("]]\n");
+          dbgPrint("]]\n");
         }
         return true;
       }
     }
   }
   if (applybox_debug > 0) {
-    tprintf("ERROR: FAIL!\n");
+    dbgPrint("ERROR: FAIL!\n");
   }
   return false; // Failure.
 }
@@ -414,7 +414,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
 bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const TBOX *next_box,
                                  const char *correct_text) {
   if (applybox_debug > 1) {
-    tprintf("\nAPPLY_BOX: in ResegmentWordBox() for {}\n", correct_text);
+    dbgPrint("\nAPPLY_BOX: in ResegmentWordBox() for {}\n", correct_text);
   }
   WERD *new_word = nullptr;
   BLOCK_IT b_it(block_list);
@@ -433,7 +433,7 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
       for (w_it.mark_cycle_pt(); !w_it.cycled_list(); w_it.forward()) {
         WERD *word = w_it.data();
         if (applybox_debug > 2) {
-          tprintf("Checking word:");
+          dbgPrint("Checking word:");
           word->bounding_box().print();
         }
         if (word->text() != nullptr && word->text()[0] != '\0') {
@@ -453,9 +453,9 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
             const double current_box_miss_metric = BoxMissMetric(blob_box, box);
             const double next_box_miss_metric = BoxMissMetric(blob_box, *next_box);
             if (applybox_debug > 2) {
-              tprintf("Checking blob:");
+              dbgPrint("Checking blob:");
               blob_box.print();
-              tprintf("Current miss metric = {}, next = {}\n", current_box_miss_metric,
+              dbgPrint("Current miss metric = {}, next = {}\n", current_box_miss_metric,
                       next_box_miss_metric);
             }
             if (current_box_miss_metric > next_box_miss_metric) {
@@ -463,12 +463,12 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
             }
           }
           if (applybox_debug > 2) {
-            tprintf("Blob match: blob:");
+            dbgPrint("Blob match: blob:");
             blob_box.print();
-            tprintf("Matches box:");
+            dbgPrint("Matches box:");
             box.print();
             if (next_box != nullptr) {
-              tprintf("With next box:");
+              dbgPrint("With next box:");
               next_box->print();
             }
           }
@@ -485,7 +485,7 @@ bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const 
     }
   }
   if (new_word == nullptr && applybox_debug > 0) {
-    tprintf("ERROR: FAIL!\n");
+    tprintError("FAIL!\n");
   }
   return new_word != nullptr;
 }
@@ -552,7 +552,7 @@ bool Tesseract::FindSegmentation(const std::vector<UNICHAR_ID> &target_text, WER
           classify_piece(word_res->seam_array, i, i + j - 1, "Applybox", word_res->chopped_word,
                          word_res->blamer_bundle);
       if (applybox_debug > 2) {
-        tprintf("{}+{}:", i, j);
+        dbgPrint("{}+{}:", i, j);
         print_ratings_list("Segment:", match_result, unicharset);
       }
       choices[i].push_back(match_result);
@@ -652,7 +652,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
     if (choices_pos + length == choices_length && text_index + 1 == target_text.size()) {
       // This is a complete match. If the rating is good record a new best.
       if (applybox_debug > 2) {
-        tprintf("Complete match, rating = {}, best={}, seglength={}, best={}\n",
+        dbgPrint("Complete match, rating = {}, best={}, seglength={}, best={}\n",
                 rating + choice_rating, *best_rating, segmentation->size(),
                 best_segmentation->size());
       }
@@ -662,7 +662,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
       }
     } else if (choices_pos + length < choices_length && text_index + 1 < target_text.size()) {
       if (applybox_debug > 3) {
-        tprintf("Match found for {}={}:{}, at {}+{}, recursing...\n", target_text[text_index],
+        dbgPrint("Match found for {}={}:{}, at {}+{}, recursing...\n", target_text[text_index],
                 unicharset.id_to_unichar(target_text[text_index]),
                 choice_it.data()->unichar_id() == target_text[text_index] ? "Match" : "Ambig",
                 choices_pos, length);
@@ -670,7 +670,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
       SearchForText(choices, choices_pos + length, choices_length, target_text, text_index + 1,
                     rating + choice_rating, segmentation, best_rating, best_segmentation);
       if (applybox_debug > 3) {
-        tprintf("End recursion for {}={}\n", target_text[text_index],
+        dbgPrint("End recursion for {}={}\n", target_text[text_index],
                 unicharset.id_to_unichar(target_text[text_index]));
       }
     }
@@ -713,7 +713,7 @@ void Tesseract::TidyUp(PAGE_RES *page_res) {
     } else {
       ++unlabelled_words;
       if (applybox_debug > 0) {
-        tprintf("APPLY_BOXES: Unlabelled word at :");
+        dbgPrint("APPLY_BOXES: Unlabelled word at :");
         word_res->word->bounding_box().print();
       }
       pr_it.DeleteCurrentWord();
@@ -729,12 +729,12 @@ void Tesseract::TidyUp(PAGE_RES *page_res) {
     word_res->word->set_flag(W_EOL, pr_it.next_row() != pr_it.row());
   }
   if (applybox_debug > 0) {
-    tprintf("   Found {} good blobs.\n", ok_blob_count);
+    dbgPrint("   Found {} good blobs.\n", ok_blob_count);
     if (bad_blob_count > 0) {
-      tprintf("   Leaving {} unlabelled blobs in {} words.\n", bad_blob_count, ok_word_count);
+      dbgPrint("   Leaving {} unlabelled blobs in {} words.\n", bad_blob_count, ok_word_count);
     }
     if (unlabelled_words > 0) {
-      tprintf("   {} remaining unlabelled words deleted.\n", unlabelled_words);
+      dbgPrint("   {} remaining unlabelled words deleted.\n", unlabelled_words);
     }
   }
 }

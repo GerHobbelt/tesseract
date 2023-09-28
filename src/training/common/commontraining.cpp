@@ -171,13 +171,13 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
     if (!shape_table->DeSerialize(&shape_fp)) {
       delete shape_table;
       shape_table = nullptr;
-      tprintf("ERROR: Failed to read shape table {}\n", shape_table_file.c_str());
+      tprintError("Failed to read shape table {}\n", shape_table_file.c_str());
     } else {
       int num_shapes = shape_table->NumShapes();
       tprintf("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
     }
   } else {
-    tprintf("WARNING: No shape table file present: {}\n", shape_table_file.c_str());
+    tprintWarn("No shape table file present: {}\n", shape_table_file.c_str());
   }
   return shape_table;
 }
@@ -189,11 +189,11 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
   FILE *fp = fopen(shape_table_file.c_str(), "wb");
   if (fp != nullptr) {
     if (!shape_table.Serialize(fp)) {
-      tprintf("ERROR: Error writing shape table: {}\n", shape_table_file.c_str());
+      tprintError("Error writing shape table: {}\n", shape_table_file.c_str());
     }
     fclose(fp);
   } else {
-    tprintf("ERROR: Error creating shape table: {}\n", shape_table_file.c_str());
+    tprintError("Error creating shape table: {}\n", shape_table_file.c_str());
   }
 }
 
@@ -280,7 +280,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   if (!FLAGS_output_trainer.empty()) {
     FILE *fp = fopen(FLAGS_output_trainer.c_str(), "wb");
     if (fp == nullptr) {
-      tprintf("ERROR: Can't create saved trainer data!\n");
+      tprintError("Can't create saved trainer data!\n");
     } else {
       trainer->Serialize(fp);
       fclose(fp);
@@ -288,7 +288,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   }
   trainer->PreTrainingSetup();
   if (!FLAGS_O.empty() && !trainer->unicharset().save_to_file(FLAGS_O.c_str())) {
-    tprintf("ERROR: Failed to save unicharset to file {}\n", FLAGS_O.c_str());
+    tprintError("Failed to save unicharset to file {}\n", FLAGS_O.c_str());
     return {};
   }
 

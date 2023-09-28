@@ -223,7 +223,7 @@ static bool OKMergeCandidate(const ColPartition *part,
         !part->OKDiacriticMerge(*candidate, debug) &&
         !candidate->OKDiacriticMerge(*part, debug)) {
       if (debug) {
-        tprintf("WARNING: Candidate fails overlap and diacritic tests!\n");
+        tprintWarn("Candidate fails overlap and diacritic tests!\n");
       }
       return false;
     }

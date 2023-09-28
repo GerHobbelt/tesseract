@@ -248,7 +248,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     *test_ambig_part_size = unichars.size();
     if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
       if (debug_level) {
-        tprintf("ERROR: Too many unichars in ambiguity on line {}\n", line_num);
+        tprintError("Too many unichars in ambiguity on line {}\n", line_num);
       }
       return false;
     }
@@ -264,7 +264,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     *replacement_ambig_part_size = unichars.size();
     if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
       if (debug_level) {
-        tprintf("ERROR: Too many unichars in ambiguity on line {}\n", line_num);
+        tprintError("Too many unichars in ambiguity on line {}\n", line_num);
       }
       return false;
     }
@@ -289,7 +289,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   }
   if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
     if (debug_level) {
-      tprintf("ERROR: Too many unichars in ambiguity on line {}\n", line_num);
+      tprintError("Too many unichars in ambiguity on line {}\n", line_num);
     }
     return false;
   }
@@ -316,7 +316,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   }
   if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
     if (debug_level) {
-      tprintf("ERROR: Too many unichars in ambiguity on line {}\n", line_num);
+      tprintError("Too many unichars in ambiguity on line {}\n", line_num);
     }
     return false;
   }

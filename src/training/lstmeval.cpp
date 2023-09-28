@@ -45,27 +45,27 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
   ParseArguments(&argc, &argv);
   if (FLAGS_model.empty()) {
-    tprintf("ERROR: Must provide a --model!\n");
+    tprintError("Must provide a --model!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_eval_listfile.empty()) {
-    tprintf("ERROR: Must provide a --eval_listfile!\n");
+    tprintError("Must provide a --eval_listfile!\n");
     return EXIT_FAILURE;
   }
   tesseract::TessdataManager mgr;
   if (!mgr.Init(FLAGS_model.c_str())) {
     if (FLAGS_traineddata.empty()) {
-      tprintf("ERROR: Must supply --traineddata to eval a training checkpoint!\n");
+      tprintError("Must supply --traineddata to eval a training checkpoint!\n");
       return EXIT_FAILURE;
     }
-    tprintf("WARNING: {} is not a recognition model, trying training checkpoint...\n", FLAGS_model.c_str());
+    tprintWarn("{} is not a recognition model, trying training checkpoint...\n", FLAGS_model.c_str());
     if (!mgr.Init(FLAGS_traineddata.c_str())) {
-      tprintf("ERROR: Failed to load language model from {}!\n", FLAGS_traineddata.c_str());
+      tprintError("Failed to load language model from {}!\n", FLAGS_traineddata.c_str());
       return EXIT_FAILURE;
     }
     std::vector<char> model_data;
     if (!tesseract::LoadDataFromFile(FLAGS_model.c_str(), &model_data)) {
-      tprintf("ERROR: Failed to load model from: {}\n", FLAGS_model.c_str());
+      tprintError("Failed to load model from: {}\n", FLAGS_model.c_str());
       return EXIT_FAILURE;
     }
     mgr.OverwriteEntry(tesseract::TESSDATA_LSTM, &model_data[0], model_data.size());
@@ -75,7 +75,7 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
   tester.SetDebug(1);
 #endif
   if (!tester.LoadAllEvalData(FLAGS_eval_listfile.c_str())) {
-    tprintf("ERROR: Failed to load eval data from: {}\n", FLAGS_eval_listfile.c_str());
+    tprintError("Failed to load eval data from: {}\n", FLAGS_eval_listfile.c_str());
     return EXIT_FAILURE;
   }
   double errs = 0.0;

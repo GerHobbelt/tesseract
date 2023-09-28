@@ -135,7 +135,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       break;
 
     default:
-      tprintf("ERROR: Cannot convert RAW image to Pix with bpp = {}\n", bpp);
+      tprintError("Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
 
   SetImage(pix, angle);

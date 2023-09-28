@@ -1492,7 +1492,7 @@ void make_first_xheight( // find xheight
     tprintf("Output xheight={}\n", row->xheight);
   }
   if (row->xheight < 0 && textord_oldbl_debug) {
-    tprintf("WARNING: Row Line height < 0; {}\n", row->xheight);
+    tprintWarn("Row Line height < 0; {}\n", row->xheight);
   }
 
   if (sign_bit < 0) {
