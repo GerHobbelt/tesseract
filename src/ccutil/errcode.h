@@ -54,7 +54,9 @@ public:
       TessErrorLogCode action, // action to take
       const S *format,
       Args&&... args
-  ) const __attribute__((format(gnu_printf, 3, 4)));
+  ) const {
+    verror(caller, action, format, fmt::make_format_args(args...));
+  }
 
   void error(const char *caller, TessErrorLogCode action) const;
   constexpr ERRCODE(const char *string) : message(string) {} // initialize with string

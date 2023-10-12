@@ -31,16 +31,18 @@ extern TESS_API void vTessPrint(fmt::string_view format, fmt::format_args args);
 
 // Main logging function.
 template <typename S, typename... Args>
-void tprintf(const S *format, Args &&...args)
-    __attribute__((format(gnu_printf, 1, 2)));
+void tprintf(const S *format, Args &&...args) {
+  vTessPrint(format, fmt::make_format_args(args...));
+}
 
 // Helper function for dbgPrintf.
 extern TESS_API void vTessDebugPrint(fmt::string_view format, fmt::format_args args);
 
 // Main logging function.
 template <typename S, typename... Args>
-void dbgPrintf(const S *format, Args &&...args)
-    __attribute__((format(gnu_printf, 1, 2)));
+void dbgPrintf(const S *format, Args &&...args) {
+  vTessDebugPrint(format, fmt::make_format_args(args...));
+}
 
 } // namespace tesseract
 

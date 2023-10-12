@@ -371,8 +371,9 @@ public:
   // ...which can be added by this command.
   // This is intended as an "debug" output window.
   template <typename S, typename... Args>
-  void AddMessage(const S &format, Args &&...args)
-  		__attribute__((format(gnu_printf, 1, 2)));
+  void AddMessage(const S &format, Args &&...args) {
+    vAddMessage(format, fmt::make_format_args(args...));
+  }
 
   // Zoom the window to the rectangle given upper left corner and
   // lower right corner.
@@ -388,8 +389,9 @@ public:
   virtual void vSendMsg(fmt::string_view format, fmt::format_args args) = 0;
 
   template <typename S, typename... Args>
-  void SendMsg(const S &format, Args&&... args)
-  		__attribute__((format(gnu_printf, 1, 2)));
+  void SendMsg(const S &format, Args&&... args) {
+    vSendMsg(format, fmt::make_format_args(args...));
+  }
 
   /*******************************************************************************
    * Add new menu entries to parent. If parent is "", the entry gets added to
