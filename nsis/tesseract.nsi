@@ -44,6 +44,8 @@ Unicode true
 !endif
 !define GITHUB_RAW_FILE_URL \
   "http://digi.bib.uni-mannheim.de/tesseract/tessdata_fast"
+# "http://digi.bib.uni-mannheim.de/tesseract/tessdata_fast"
+# "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main"
 
 !ifdef CROSSBUILD
 !addincludedir ${SRCDIR}\nsis\include
