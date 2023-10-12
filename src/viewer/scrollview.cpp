@@ -63,7 +63,7 @@ struct SVPolyLineBuffer {
 
 // A map between the window IDs and their corresponding pointers.
 static std::vector<ScrollViewReference> svmap;
-static std::mutex *svmap_mu;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
+static std::mutex *svmap_mu = nullptr;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
 
 // A map of all semaphores waiting for a specific event on a specific window.
 static std::map<std::pair<ScrollViewReference, SVEventType>,
@@ -276,6 +276,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
   tesseract_ = tess;
   ref_of_ref_ = nullptr;
 
+  ASSERT0(svmap_mu != nullptr);
 #if 0
   if (!svmap_mu) {
     svmap_mu = new std::mutex();
@@ -767,10 +768,7 @@ void InteractiveScrollView::UpdateWindow() {
 
 // Note: this is an update to all windows
 void ScrollView::Update() {
-  if (!svmap_mu) {
-    svmap_mu = new std::mutex();
-  }
-
+  ASSERT0(svmap_mu != nullptr);
   std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
@@ -788,10 +786,7 @@ void ScrollView::Update() {
 
 // 
 void ScrollView::Exit() {
-  if (!svmap_mu) {
-    svmap_mu = new std::mutex();
-  }
-
+  ASSERT0(svmap_mu != nullptr);
   std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
@@ -1677,6 +1672,10 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
 
 ScrollViewManager::ScrollViewManager() {
   active = nullptr;
+
+  if (!svmap_mu) {
+	svmap_mu = new std::mutex();
+  }
 }
 
 ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
@@ -1686,7 +1685,8 @@ ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
 }
 
 ScrollViewManager::~ScrollViewManager() {
-
+  delete svmap_mu;
+  svmap_mu = nullptr;
 }
 
 ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
