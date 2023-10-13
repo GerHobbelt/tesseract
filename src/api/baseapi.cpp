@@ -113,6 +113,9 @@ STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF 
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
+BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
+BOOL_VAR(scrollview_support, false, "Turn ScrollView support on/off. When turned OFF, the OCR process executes a little faster but almost all graphical feedback/diagnostics features will have been disabled.");
+BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which steps are taken during the OCR process. This may help non-expert users to better grasp what is happening under the hood and which stages of the OCR process take up time.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
 BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
 DOUBLE_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
@@ -232,7 +235,10 @@ static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBas
             tess = api_ref->tesseract();
         }
     }
-    tprintf("tesseract ({}) log holdoff lock released.", (void *)tess);
+
+	if (debug_misc) {
+      tprintf("tesseract ({}) log holdoff lock released.\n", (void *)tess);
+	}
 
     if (tess) {
         tess->ReportDebugInfo();
@@ -779,8 +785,8 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
   AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
 
   if (InternalResetImage()) {
-    if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
-      // remove alpha channel from png
+    if (pixGetSpp(pix) == 4) {
+      // remove alpha channel from image; the background color is assumed to be PURE WHITE.
       Pix *p1 = pixRemoveAlpha(pix);
       pixSetSpp(p1, 3);
       (void)pixCopy(pix, p1);
@@ -802,8 +808,8 @@ void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
   if (thresholder_ == nullptr) {
     return;
   }
-  thresholder_->SetRectangle(left, top, width, height);
   ClearResults();
+  thresholder_->SetRectangle(left, top, width, height);
 }
 
 /**
@@ -817,7 +823,9 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   if (tesseract_->pix_binary() == nullptr) {
-    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+	if (verbose_process) {
+      tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+	}
 
     Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
@@ -1071,17 +1079,17 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   recognition_done_ = true;
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
-    if (debug_all)
+    if (verbose_process)
       tprintf("PROCESS: Re-segment from line boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
-    if (debug_all)
+    if (verbose_process)
       tprintf("PROCESS: Re-segment from page boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
-    if (debug_all)
+    if (verbose_process)
       tprintf("PROCESS: Re-segment from LSTM / previous word best choice.\n");
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
   }
@@ -1134,7 +1142,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   } else {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition"));
 
-    if (debug_all) {
+    if (scrollview_support) {
       tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
 
@@ -1142,21 +1150,21 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     if (!tesseract_->paragraph_text_based) {
       AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
-      if (debug_all) {
+      if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
     }
 
     AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
-      if (debug_all) {
+      if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
       subsection_handle2.pop();
       if (tesseract_->paragraph_text_based) {
         AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
-        if (debug_all) {
+        if (scrollview_support) {
           tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
       }
@@ -2472,7 +2480,11 @@ void TessBaseAPI::End() {
 // and End() of individual TessBaseAPI's.  This function allows the clearing
 // of these caches.
 void TessBaseAPI::ClearPersistentCache() {
+#if 0
   Dict::GlobalDawgCache()->DeleteUnusedDawgs();
+#else
+  Dict::CleanGlobalDawgCache();
+#endif
 }
 
 /**
@@ -2556,6 +2568,9 @@ bool TessBaseAPI::InternalResetImage() {
   if (tesseract_ == nullptr) {
     tprintf("ERROR: Please call Init before attempting to set an image.\n");
     return false;
+  }
+  if (thresholder_ != nullptr) {
+	  thresholder_->Clear();
   }
   if (thresholder_ == nullptr) {
     thresholder_ = new ImageThresholder(tesseract_);
@@ -2729,17 +2744,24 @@ int TessBaseAPI::FindLines() {
 #endif
   }
   if (tesseract_->pix_binary() == nullptr) {
-    tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+	if (verbose_process) {
+      tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+	}
 
-	  Image pix = Image();
-	  if (!Threshold(&pix.pix_)) {
-		  return -1;
-	  }
-	  tesseract_->set_pix_binary(pix);
+	Image pix = Image();
+	if (!Threshold(&pix.pix_)) {
+	  return -1;
+	}
+	tesseract_->set_pix_binary(pix);
   }
 
   if (tesseract_->tessedit_dump_pageseg_images) {
     tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image");
+  }
+
+  if (verbose_process) {
+	  tprintf("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
+		  (tesseract_->textord_equation_detect ? " + equations" : ""));
   }
 
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation"));

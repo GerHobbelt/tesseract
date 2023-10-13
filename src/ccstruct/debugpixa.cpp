@@ -748,7 +748,7 @@ namespace tesseract {
       title = "(null)";
     auto level = section_info.level;
 
-    if (level == 3) {
+    if (level == 3 && verbose_process) {
       tesseract::ParamsVectors *vec = tesseract_->params();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, title);
     }

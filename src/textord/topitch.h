@@ -25,7 +25,8 @@ namespace tesseract {
 
 class Tesseract;
 
-extern BOOL_VAR_H(textord_debug_pitch_test);
+extern BOOL_VAR_H(textord_debug_fixed_pitch_test);
+extern BOOL_VAR_H(textord_debug_pitch);
 extern BOOL_VAR_H(textord_debug_pitch_metric);
 extern BOOL_VAR_H(textord_show_row_cuts);
 extern BOOL_VAR_H(textord_show_page_cuts);

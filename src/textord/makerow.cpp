@@ -703,7 +703,7 @@ bool find_best_dropout_row( // find neighbours
   int8_t row_inc;     // increment to row_index
   TO_ROW *next_row;   // nextious row
 
-  if (1) {
+  if (debug_misc) {
     tprintf("Row at {}({}), dropout dist={},", row->intercept(), row->parallel_c(), distance);
   }
   if (distance < 0) {
@@ -714,7 +714,7 @@ bool find_best_dropout_row( // find neighbours
     abs_dist = distance;
   }
   if (abs_dist > dist_limit) {
-    if (1) {
+    if (debug_misc) {
       tprintf(" too far - deleting\n");
     }
     return true;
@@ -728,14 +728,14 @@ bool find_best_dropout_row( // find neighbours
            next_index > line_index + distance + distance) ||
           (distance >= 0 && next_index > line_index &&
            next_index < line_index + distance + distance)) {
-        if (1) {
+        if (debug_misc) {
           tprintf(" nearer neighbour ({}) at {}\n", line_index + distance - next_index,
                   next_row->intercept());
         }
         return true; // other is nearer
       } else if (next_index == line_index || next_index == line_index + distance + distance) {
         if (row->believability() <= next_row->believability()) {
-          if (1) {
+          if (debug_misc) {
             tprintf(" equal but more believable at {} ({}/{})\n", next_row->intercept(),
                     row->believability(), next_row->believability());
           }
@@ -745,7 +745,7 @@ bool find_best_dropout_row( // find neighbours
       row_offset += row_inc;
     } while ((next_index == line_index || next_index == line_index + distance + distance) &&
              row_offset < row_it->length());
-    if (1) {
+    if (debug_misc) {
       tprintf(" keeping\n");
     }
   }
@@ -1179,7 +1179,7 @@ void compute_row_stats( // find lines
         // That can cause large memory allocations with out-of-memory.
         prev_row->spacing = 0;
       }
-      if (1) {
+      if (debug_misc) {
         tprintf("Row at {} yields spacing of {}\n", row->intercept(), prev_row->spacing);
       }
     }
@@ -1188,7 +1188,7 @@ void compute_row_stats( // find lines
   } while (!row_it.at_last());
   block->key_row = prev_row;
   block->baseline_offset = std::fmod(prev_row->parallel_c(), block->line_spacing);
-  if (1) {
+  if (debug_misc) {
     tprintf("Blob based spacing=({},{}), offset={}", block->line_size, block->line_spacing,
             block->baseline_offset);
   }
@@ -1203,7 +1203,7 @@ void compute_row_stats( // find lines
     row_index = rowcount / 2;
     std::nth_element(rows.begin(), rows.begin() + row_index, rows.end(), row_spacing_order);
     block->key_row = rows[row_index];
-    if (1) {
+    if (debug_misc) {
       tprintf(" row based={}({})", rows[row_index]->spacing, iqr);
     }
     if (rowcount > 2 && iqr < rows[row_index]->spacing * textord_linespace_iqrlimit) {
@@ -1233,7 +1233,7 @@ void compute_row_stats( // find lines
     }
     block->baseline_offset = std::fmod(rows[row_index]->intercept(), block->line_spacing);
   }
-  if (1) {
+  if (debug_misc) {
     tprintf("\nEstimate line size={}, spacing={}, offset={}\n", block->line_size,
             block->line_spacing, block->baseline_offset);
   }

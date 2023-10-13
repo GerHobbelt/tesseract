@@ -231,7 +231,9 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   } else {
     gradient = 0.0f;
   }
-  BaselineDetect baseline_detector(textord_baseline_debug, reskew, to_blocks);
+  int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
+  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+  BaselineDetect baseline_detector(reskew, to_blocks);
   baseline_detector.ComputeStraightBaselines(use_box_bottoms);
   baseline_detector.ComputeBaselineSplinesAndXheights(
       page_tr_, pageseg_mode != PSM_RAW_LINE, textord_heavy_nr, textord_show_final_rows, this);
@@ -256,6 +258,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
+  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
 #if !GRAPHICS_DISABLED
   close_to_win();
 #endif

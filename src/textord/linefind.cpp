@@ -503,9 +503,9 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
                                 min_line_length, min_line_length);
   } else {
 #endif
-    if (tesseract_->debug_line_finding) {
+    if (tesseract_->debug_line_finding || verbose_process) {
       tprintf("PROCESS:"
-      " Close up small holes (size <= {}px), making it less likely that false alarms are found"
+      " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
       " in thickened text (as it will become more solid) and also smoothing over"
       " some line breaks and nicks in the edges of the lines.\n",
       closing_brick);
@@ -514,9 +514,9 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     if (tesseract_->debug_line_finding) {
       tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
     }
-    if (tesseract_->debug_line_finding) {
+    if (tesseract_->debug_line_finding || verbose_process) {
       tprintf("PROCESS:"
-        " Open up with a big box to detect solid areas, which can then be"
+        " Open up the image with a big box to detect solid areas, which can then be"
         " subtracted. This is very generous and will leave in even quite wide"
         " lines. (max_line_width = {})\n",
         max_line_width);
@@ -529,11 +529,13 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
 
     pix_solid.destroy();
 
-    if (tesseract_->debug_line_finding) {
-      tprintf("PROCESS:"
-        " Now open up in both directions independently to find lines of at least"
-        " 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
-        kMinLineLengthFraction, h_v_line_brick_size);
+	if (verbose_process) {
+	  tprintf("PROCESS:"
+		" Now open up in both directions independently to find lines of at least"
+		" 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
+		kMinLineLengthFraction, h_v_line_brick_size);
+	}
+	if (tesseract_->debug_line_finding) {
       tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);

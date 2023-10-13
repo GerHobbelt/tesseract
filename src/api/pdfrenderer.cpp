@@ -963,7 +963,7 @@ bool TessPDFRenderer::EndDocumentHandler() {
     }
   }
 
-  char *datestr = l_getFormattedDate();
+  const char *datestr = l_getFormattedDate();
   stream.str("");
   stream << obj_
          << " 0 obj\n"

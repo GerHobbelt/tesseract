@@ -1181,7 +1181,7 @@ void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
                        prev ? prev->permuter : TOP_CHOICE_PERM, false, false,
                        false, dup, cert, prev, nullptr, &step->beams_[index]);
     }
-	else {
+	else if (verbose_process || debug_misc) {
       const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
 	  tprintf("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
 	}

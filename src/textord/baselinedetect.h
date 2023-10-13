@@ -28,6 +28,10 @@ struct Pix;
 
 namespace tesseract {
 
+extern INT_VAR_H(debug_baseline_detector_level);
+extern INT_VAR_H(debug_baseline_y_coord_start);
+extern INT_VAR_H(debug_baseline_y_coord_end);
+
 class Textord;
 class BLOBNBOX_LIST;
 class TO_BLOCK;
@@ -64,19 +68,18 @@ public:
   // points to be reasonably sure of the fitted baseline.
   // If use_box_bottoms is false, baselines positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaseline(int debug, bool use_box_bottoms);
+  bool FitBaseline(bool use_box_bottoms);
   // Modifies an existing result of FitBaseline to be parallel to the given
   // vector if that produces a better result.
-  void AdjustBaselineToParallel(int debug, const FCOORD &direction);
+  void AdjustBaselineToParallel(const FCOORD &direction);
   // Modifies the baseline to snap to the textline grid if the existing
   // result is not good enough.
-  double AdjustBaselineToGrid(int debug, const FCOORD &direction, double line_spacing,
-                              double line_offset);
+  double AdjustBaselineToGrid(const FCOORD &direction, double line_spacing, double line_offset);
 
 private:
   // Sets up displacement_modes_ with the top few modes of the perpendicular
   // distance of each blob from the given direction vector, after rounding.
-  void SetupBlobDisplacements(int debug, const FCOORD &direction);
+  void SetupBlobDisplacements(const FCOORD &direction);
 
   // Fits a line in the given direction to blobs that are close to the given
   // target_offset perpendicular displacement from the direction. The fit
@@ -88,8 +91,7 @@ private:
   // Otherwise the new fit will only replace the old if it is really better,
   // or the old fit is marked bad and the new fit has sufficient points, as
   // well as being within the max_baseline_error_.
-  void FitConstrainedIfBetter(int debug, const FCOORD &direction, double cheat_allowance,
-                              double target_offset);
+  void FitConstrainedIfBetter(const FCOORD &direction, double cheat_allowance, double target_offset);
   // Returns the perpendicular distance of the point from the straight
   // baseline.
   float PerpDistanceFromBaseline(const FCOORD &pt) const;
@@ -125,7 +127,7 @@ private:
 // Class to compute and hold baseline data for a TO_BLOCK.
 class BaselineBlock {
 public:
-  BaselineBlock(int debug_level, bool non_text, TO_BLOCK *block);
+  BaselineBlock(bool non_text, TO_BLOCK *block);
 
   ~BaselineBlock() {
     for (auto row : rows_) {
@@ -148,7 +150,7 @@ public:
   // median angle. Returns true if a good angle is found.
   // If use_box_bottoms is false, baseline positions are formed by
   // considering the outlines of the blobs.
-  bool FitBaselinesAndFindSkew(int debug, bool use_box_bottoms);
+  bool FitBaselinesAndFindSkew(bool use_box_bottoms);
 
   // Refits the baseline to a constrained angle, using the stored block
   // skew if good enough, otherwise the supplied default skew.
@@ -213,8 +215,6 @@ private:
   TO_BLOCK *block_;
   // The rows in the block that we will be working with.
   std::vector<BaselineRow *> rows_;
-  // Amount of debugging output to provide.
-  int debug_level_;
   // True if the block is non-text (graphic).
   bool non_text_block_;
   // True if the block has at least one good enough baseline to compute the
@@ -236,7 +236,7 @@ private:
 
 class BaselineDetect {
 public:
-  BaselineDetect(int debug_level, const FCOORD &page_skew, TO_BLOCK_LIST *blocks);
+  BaselineDetect(const FCOORD &page_skew, TO_BLOCK_LIST *blocks);
 
   ~BaselineDetect() {
     for (auto block : blocks_) {
@@ -261,8 +261,6 @@ private:
   // Average (median) skew of the blocks on the page among those that have
   // a good angle of their own.
   FCOORD page_skew_;
-  // Amount of debug output to produce.
-  int debug_level_;
   // The blocks that we are working with.
   std::vector<BaselineBlock *> blocks_;
 };

@@ -36,7 +36,6 @@
 #include <leptonica/pix_internal.h>
 #endif
 #include <tesseract/baseapi.h>
-#include "dict.h"
 #if defined(USE_OPENCL)
 #  include "openclwrapper.h" // for OpenclDevice
 #endif
@@ -112,17 +111,17 @@ static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
 #endif // _WIN32
 
 static void PrintVersionInfo() {
-  char *versionStrP;
+  const char *versionStrP;
 
   tprintf("tesseract {}\n", tesseract::TessBaseAPI::Version());
 
   versionStrP = getLeptonicaVersion();
   tprintf("  {}\n", versionStrP);
-  lept_free(versionStrP);
+  stringDestroy(&versionStrP);
 
   versionStrP = getImagelibVersions();
   tprintf("  {}\n", versionStrP);
-  lept_free(versionStrP);
+  stringDestroy(&versionStrP);
 
 #ifdef USE_OPENCL
   cl_platform_id platform[4];
@@ -868,7 +867,10 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
 static void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
-    api.SetVariable("textord_tabfind_show_images", "Y");
+	api.SetVariable("verbose_process", "Y");
+	api.SetVariable("scrollview_support", "Y");
+
+	api.SetVariable("textord_tabfind_show_images", "Y");
     //api.SetVariable("textord_tabfind_show_vlines", "Y");
 
 #if !GRAPHICS_DISABLED
@@ -890,10 +892,15 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("textord_debug_blob", "Y");
     api.SetVariable("textord_debug_blob", "Y");
     api.SetVariable("textord_debug_pitch_metric", "Y");
-    api.SetVariable("textord_debug_pitch_test", "Y");
-    api.SetVariable("textord_debug_printable", "Y");
+    api.SetVariable("textord_debug_fixed_pitch_test", "Y");
+	api.SetVariable("textord_debug_pitch", "Y");
+	api.SetVariable("textord_debug_printable", "Y");
     api.SetVariable("textord_debug_xheights", "Y");
     api.SetVariable("textord_debug_xheights", "Y");
+
+	api.SetVariable("textord_show_initial_words", "Y");
+	api.SetVariable("textord_blocksall_fixed", "Y");
+	api.SetVariable("textord_blocksall_prop", "Y");
 
     api.SetVariable("tessedit_create_hocr", "Y");
     api.SetVariable("tessedit_create_alto", "Y");
@@ -954,6 +961,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("debug_x_ht_level", "3");
     // api.SetVariable("debug_file", "xxxxxxxxxxxxxxxxx");
     // api.SetVariable("debug_output_path", "xxxxxxxxxxxxxx");
+	api.SetVariable("debug_misc", "Y");
 
     api.SetVariable("hyphen_debug_level", "3");
 
@@ -1106,10 +1114,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
     return EXIT_SUCCESS;
   }
 
+#if 0
   // Call GlobalDawgCache here to create the global DawgCache object before
   // the TessBaseAPI object. This fixes the order of destructor calls:
   // first TessBaseAPI must be destructed, DawgCache must be the last object.
   tesseract::Dict::GlobalDawgCache();
+#endif
 
   {
       TessBaseAPI api;
@@ -1381,17 +1391,17 @@ extern "C" int tesseract_main(int argc, const char** argv)
       }
     }
 
-    if (ret_val == EXIT_SUCCESS) {
+    if (ret_val == EXIT_SUCCESS && verbose_process) {
       api.ReportParamsUsageStatistics();
     }
 
     supress_premature_log_reporting.stepdown();
     api.Clear();
   }
-  // ^^^ end of scope for the Tesseract api instance
+  // ^^^ end of scope for the Tesseract `api` instance
   // --> cache occupancy is removed, so the next call will succeed without fail (due to internal sanity checks)
 
-  tesseract::Dict::CleanGlobalDawgCache();
+  TessBaseAPI::ClearPersistentCache();
 
   return ret_val;
 }

@@ -514,7 +514,7 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
     "\t\t<Creator>Tesseract - " << TESSERACT_VERSION_STR << " (Text2Image)</Creator>\n";
   
   // If gmtime conversion is problematic maybe l_getFormattedDate can be used here
-  //char *datestr = l_getFormattedDate();
+  //const char *datestr = l_getFormattedDate();
   std::time_t now= std::time(nullptr);
   std::tm* now_tm= std::gmtime(&now);
   char mbstr[100];

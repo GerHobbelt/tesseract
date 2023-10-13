@@ -189,8 +189,10 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
                        pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, gradient_);
   
-  tprintf("Page Gradient OSR estimate: {}\n", osr->gradient);
-  tprintf("Page Gradient TextOrd estimate: {}\n", gradient_);
+  if (verbose_process) {
+    tprintf("Page Gradient OSR estimate: {}\n", osr->gradient);
+    tprintf("Page Gradient TextOrd estimate: {}\n", gradient_);
+  }
 
   if (isnan(osr->gradient)) {
     osr->gradient = gradient_;
