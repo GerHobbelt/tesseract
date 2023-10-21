@@ -23,6 +23,7 @@
 
 #include "helpers.h"
 #include "serialis.h"
+#include "fopenutf8.h"
 
 #include <algorithm>
 #include <cassert>
@@ -236,7 +237,7 @@ protected:
 // returning false on error.
 inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
   bool result = false;
-  FILE *fp = fopen(filename, "rb");
+  FILE *fp = fopenUtf8(filename, "rb");
   if (fp != nullptr) {
     fseek(fp, 0, SEEK_END);
     auto size = std::ftell(fp);
@@ -256,7 +257,7 @@ inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
 // The default FileWriter writes the vector of char to the filename file,
 // returning false on error.
 inline bool SaveDataToFile(const GenericVector<char> &data, const char *filename) {
-  FILE *fp = fopen(filename, "wb");
+  FILE *fp = fopenUtf8(filename, "wb");
   if (fp == nullptr) {
     return false;
   }
