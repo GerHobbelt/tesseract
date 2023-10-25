@@ -41,6 +41,7 @@
 //#include "pangofc-font.h"
 
 #include "hb.h"
+#include "fontconfig/fontconfig.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -107,9 +108,9 @@ std::string PangoFontInfo::DescriptionName() const {
   if (!desc_) {
     return "";
   }
-  char *desc_str = pango_font_description_to_string(desc_);
+  const char *desc_str = pango_font_description_to_string(desc_);
   std::string desc_name(desc_str);
-  g_free(desc_str);
+  g_free((void *)desc_str);
   return desc_name;
 }
 
@@ -175,9 +176,9 @@ bool PangoFontInfo::ParseFontDescription(const PangoFontDescription *desc) {
   Clear();
   const char *family = pango_font_description_get_family(desc);
   if (!family) {
-    char *desc_str = pango_font_description_to_string(desc);
+    const char *desc_str = pango_font_description_to_string(desc);
     tprintf("WARNING: Could not parse family name from description: '{}'\n", desc_str);
-    g_free(desc_str);
+    g_free((void *)desc_str);
     return false;
   }
   family_name_ = std::string(family);

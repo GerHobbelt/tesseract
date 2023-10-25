@@ -70,6 +70,97 @@ struct _PangoFontDescription
 	int size;
 };
 
+/**
+* PANGO_SCALE:
+*
+* The scale between dimensions used for Pango distances and device units.
+*
+* The definition of device units is dependent on the output device; it will
+* typically be pixels for a screen, and points for a printer. %PANGO_SCALE is
+* currently 1024, but this may be changed in the future.
+*
+* When setting font sizes, device units are always considered to be
+* points (as in "12 point font"), rather than pixels.
+*/
+/**
+* PANGO_PIXELS:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by rounding.
+*
+* Return value: rounded dimension in device units.
+*/
+/**
+* PANGO_PIXELS_FLOOR:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by flooring.
+*
+* Return value: floored dimension in device units.
+* Since: 1.14
+*/
+/**
+* PANGO_PIXELS_CEIL:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by ceiling.
+*
+* Return value: ceiled dimension in device units.
+* Since: 1.14
+*/
+#define PANGO_SCALE 1024
+#define PANGO_PIXELS(d) (((int)(d) + 512) >> 10)
+#define PANGO_PIXELS_FLOOR(d) (((int)(d)) >> 10)
+#define PANGO_PIXELS_CEIL(d) (((int)(d) + 1023) >> 10)
+/* The above expressions are just slightly wrong for floating point d;
+* For example we'd expect PANGO_PIXELS(-512.5) => -1 but instead we get 0.
+* That's unlikely to matter for practical use and the expression is much
+* more compact and faster than alternatives that work exactly for both
+* integers and floating point.
+*
+* PANGO_PIXELS also behaves differently for +512 and -512.
+*/
+
+/**
+* PANGO_UNITS_FLOOR:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension down to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded down dimension in Pango units.
+* Since: 1.50
+*/
+#define PANGO_UNITS_FLOOR(d)                \
+  ((d) & ~(PANGO_SCALE - 1))
+
+/**
+* PANGO_UNITS_CEIL:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension up to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded up dimension in Pango units.
+* Since: 1.50
+*/
+#define PANGO_UNITS_CEIL(d)                 \
+  (((d) + (PANGO_SCALE - 1)) & ~(PANGO_SCALE - 1))
+
+/**
+* PANGO_UNITS_ROUND:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded dimension in Pango units.
+* Since: 1.18
+*/
+#define PANGO_UNITS_ROUND(d)				\
+  (((d) + (PANGO_SCALE >> 1)) & ~(PANGO_SCALE - 1))
+
+
 typedef struct _PangoFontDescription PangoFontDescription;
 
 struct _PangoFont    ;
@@ -99,9 +190,14 @@ typedef struct _PangoLayout PangoLayout;
 struct _PangoFontDescription;
 typedef struct _PangoFontDescription PangoFontDescription;
 
+struct _PangoFontFamily;
+typedef struct _PangoFontFamily PangoFontFamily;
 
 typedef hb_codepoint_t PangoGlyph ;
 typedef wchar_t gunichar;
+
+struct _PangoCoverage;
+typedef struct _PangoCoverage PangoCoverage;
 
 static inline const char *pango_version_string() { return "X.X"; }
 
@@ -131,6 +227,100 @@ pango_font_description_to_string (const PangoFontDescription *desc)
 {
 	return "Bogus";
 }
+
+static inline hb_font_t *pango_font_get_hb_font(PangoFont *font) {
+	return NULL;
+}
+
+static inline void g_free(void *desc_str) {
+}
+
+static inline void 
+pango_cairo_font_map_set_default(void *ptr) {}
+
+static inline 	PangoFontMap * pango_cairo_font_map_get_default(void) {
+	return NULL; 
+}
+static inline void	pango_font_map_list_families(PangoFontMap *font_map, PangoFontFamily ***families, int *n_families)
+{
+	*families = NULL;
+	*n_families = 0;
+}
+
+static inline 	const char * pango_font_description_get_family(const PangoFontDescription *desc) { return "XXX"; }
+static inline 	PangoFontDescription * pango_font_description_copy(const PangoFontDescription *desc) { return NULL; }
+
+static inline int pango_font_description_get_size(const PangoFontDescription *desc) { return 0; }
+static inline int pango_font_description_get_size_is_absolute(const PangoFontDescription *desc) { return TRUE; }
+
+static inline PangoFontDescription * pango_font_description_from_string(const char *name) { return NULL; }
+
+static inline 	PangoFontMap * pango_cairo_font_map_get_default() { return NULL; }
+static inline 	PangoContext * pango_context_new() { return NULL; }
+static inline 	void pango_cairo_context_set_resolution(PangoContext *context, int resolution_) {}
+static inline 	void pango_context_set_font_map(PangoContext *context, PangoFontMap * font_map) {}
+static inline 	PangoFont *pango_font_map_load_font(PangoFontMap * font_map, PangoContext *context, const PangoFontDescription *desc_) { return NULL; }
+static inline void	g_object_unref(void *context) {}
+
+static inline 	PangoCoverage * pango_font_get_coverage(PangoFont *font, void *ptr) { return NULL; }
+static inline  int pango_is_zero_width(int it) { return 0 ; }
+static inline  int pango_coverage_get(PangoCoverage *coverage, int it) { return 0; }
+
+#define PANGO_COVERAGE_EXACT  1
+
+static inline  void  pango_coverage_unref(PangoCoverage *coverage) { return; }
+
+static inline  void  pango_font_get_glyph_extents(PangoFont *font, PangoGlyph glyph_index, PangoRectangle  *ink_rect, PangoRectangle  *logical_rect) {}
+static inline  void  	pango_extents_to_pixels(PangoRectangle  *ink_rect, void *ptr) {}
+static inline  void  	pango_extents_to_pixels(PangoRectangle  *logical_rect, void *ptr) {}
+
+#define PANGO_LBEARING(ink_rect)		1
+#define PANGO_RBEARING(logical_rect)	1
+
+static inline  void  			pango_layout_set_font_description(PangoLayout *layout, const PangoFontDescription *desc_) {}
+static inline  void  		pango_layout_set_font_description(PangoLayout *layout, const PangoFontDescription *desc) {}
+static inline  void  					pango_font_description_free(PangoFontDescription *desc) {}
+static inline  void  	pango_layout_set_text(PangoLayout *layout, const char *utf8_word, int len) {}
+static inline  PangoLayoutIter *pango_layout_get_iter(PangoLayout *layout) { return NULL; }
+static inline  		PangoLayoutRun *pango_layout_iter_get_run_readonly(PangoLayoutIter *run_iter) { return NULL; }
+static inline  		PangoFontDescription *pango_font_describe(PangoFont *font) { return NULL; }
+static inline  		int pango_glyph_item_iter_init_start(PangoGlyphItemIter *cluster_iter, PangoLayoutRun *run, const char *utf8_word) { return 0; }
+static inline  		int  pango_glyph_item_iter_next_cluster(PangoGlyphItemIter  *cluster_iter) { return 0; }
+
+static inline  void  		pango_layout_iter_free(PangoLayoutIter *run_iter) {}
+
+static inline  	PangoFontMap * pango_cairo_font_map_get_default() { return NULL; }
+static inline  	PangoFontDescription *pango_font_describe(selected_font) { return NULL; }
+
+static inline  	bool pango_font_description_equal(const PangoFontDescription *desc, const PangoFontDescription *selected_desc) { return 0; }
+static inline  	int pango_font_description_get_weight(const PangoFontDescription *desc) { return 0; }
+static inline  int pango_font_description_get_weight(const PangoFontDescription *selected_desc) { return 0; }
+
+static inline  	const char *pango_font_description_to_string(const PangoFontDescription *selected_desc) { return NULL; }
+static inline  void 	pango_font_description_free(PangoFontDescription *selected_desc) {}
+
+static inline  		const char * pango_font_family_get_name(PangoFontFamily *famili) { return NULL; }
+static inline   void	pango_font_family_list_faces(PangoFontFamily *famili, PangoFontFace ***faces, int *n_faces) {
+	*faces = NULL;
+	*n_faces = 0;
+}
+static inline  	PangoFontDescription * pango_font_face_describe(PangoFontFace *face) { return NULL; }
+static inline  	const char * pango_font_description_to_string(const PangoFontDescription *desc) { return NULL; }
+static inline  	int pango_font_face_is_synthesized(PangoFontFace *face) { return TRUE; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef enum _cairo_format {
 	CAIRO_FORMAT_INVALID   = -1,
