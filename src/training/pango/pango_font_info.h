@@ -103,6 +103,8 @@ typedef struct _PangoFontDescription PangoFontDescription;
 typedef hb_codepoint_t PangoGlyph ;
 typedef wchar_t gunichar;
 
+static inline const char *pango_version_string() { return "X.X"; }
+
 static inline void
 pango_font_description_free (PangoFontDescription *desc)
 {
