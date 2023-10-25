@@ -27,9 +27,152 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango/pango-font.h"
-#include "pango/pango.h"
-#include "pango/pangocairo.h"
+//#include "pango/pango-font.h"
+//#include "pango/pango.h"
+//#include "pango/pangocairo.h"
+
+#include "hb.h"
+
+typedef enum {
+	PANGO_UNDERLINE_NONE,
+	PANGO_UNDERLINE_SINGLE,
+	PANGO_UNDERLINE_DOUBLE,
+	PANGO_UNDERLINE_LOW,
+	PANGO_UNDERLINE_ERROR,
+	PANGO_UNDERLINE_SINGLE_LINE,
+	PANGO_UNDERLINE_DOUBLE_LINE,
+	PANGO_UNDERLINE_ERROR_LINE
+} PangoUnderline;
+
+enum PangoStyle : int;
+enum PangoVariant : int;
+enum PangoWeight  : int;
+enum PangoStretch  : int;
+enum PangoGravity  : int;
+
+struct _PangoFontDescription
+{
+	char *family_name;
+
+	enum PangoStyle style;
+	enum PangoVariant variant;
+	enum PangoWeight weight;
+	enum PangoStretch stretch;
+	enum PangoGravity gravity;
+
+	char *variations;
+
+	unsigned short  mask;
+	unsigned static_family : 1;
+	unsigned static_variations : 1;
+	unsigned size_is_absolute : 1;
+
+	int size;
+};
+
+typedef struct _PangoFontDescription PangoFontDescription;
+
+struct _PangoFont    ;
+typedef struct _PangoFont    PangoFont;
+
+struct _PangoFontMap;
+typedef struct _PangoFontMap PangoFontMap;
+
+struct _PangoRectangle;
+typedef struct _PangoRectangle PangoRectangle;
+
+struct _PangoContext;
+typedef struct _PangoContext PangoContext;
+
+struct _PangoLanguage ;
+typedef struct _PangoLanguage PangoLanguage;
+
+struct PangoAttrList ;
+struct PangoAttribute ;
+
+struct cairo_surface_t ;
+struct cairo_t ;
+
+struct _PangoLayout;
+typedef struct _PangoLayout PangoLayout;
+
+struct _PangoFontDescription;
+typedef struct _PangoFontDescription PangoFontDescription;
+
+
+typedef hb_codepoint_t PangoGlyph ;
+typedef wchar_t gunichar;
+
+static inline void
+pango_font_description_free (PangoFontDescription *desc)
+{
+	if (desc == NULL)
+		return;
+	return;
+}
+
+/**
+* pango_font_description_to_filename:
+* @desc: a `PangoFontDescription`
+*
+* Creates a filename representation of a font description.
+*
+* The filename is identical to the result from calling
+* [method@Pango.FontDescription.to_string], but with underscores
+* instead of characters that are untypical in filenames, and in
+* lower case only.
+*
+* Returns: (transfer full) (nullable): a new string that must be freed with g_free().
+*/
+static inline const char *
+pango_font_description_to_string (const PangoFontDescription *desc)
+{
+	return "Bogus";
+}
+
+typedef enum _cairo_format {
+	CAIRO_FORMAT_INVALID   = -1,
+	CAIRO_FORMAT_ARGB32    = 0,
+	CAIRO_FORMAT_RGB24     = 1,
+	CAIRO_FORMAT_A8        = 2,
+	CAIRO_FORMAT_A1        = 3,
+	CAIRO_FORMAT_RGB16_565 = 4,
+	CAIRO_FORMAT_RGB30     = 5,
+	CAIRO_FORMAT_RGB96F    = 6,
+	CAIRO_FORMAT_RGBA128F  = 7
+} cairo_format_t;
+
+static inline cairo_format_t cairo_image_surface_get_format(cairo_surface_t *surface) {
+	return CAIRO_FORMAT_ARGB32;
+}
+static inline int cairo_image_surface_get_width(cairo_surface_t *surface) {
+	return 0; 
+}
+static inline int cairo_image_surface_get_height(cairo_surface_t *surface) {
+	return 0;
+}
+static inline int cairo_image_surface_get_stride(cairo_surface_t *surface) {
+	return 0; 
+}
+static inline uint8_t *cairo_image_surface_get_data(cairo_surface_t *surface) {
+	return NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//===================================================================================================================================================================================================
 
 #include <string>
 #include <unordered_map>

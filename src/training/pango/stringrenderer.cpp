@@ -17,9 +17,14 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "stringrenderer.h"
 
 #include <leptonica/allheaders.h> // from leptonica
+#include <leptonica/pix_internal.h> 
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include "boxchar.h"
 #include "fileio.h"
@@ -32,8 +37,8 @@
 
 #if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
 
-#include "pango/pango-font.h"
-#include "pango/pango-glyph-item.h"
+//#include "pango/pango-font.h"
+//#include "pango/pango-glyph-item.h"
 #include "unicode/uchar.h" // from libicu
 
 #include <algorithm>
@@ -541,7 +546,7 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
     if (boxe->rtl_index()) line_str << "\"right-to-left\" ";
     else line_str << "\"left-to-right\" ";
     line_str << "custom=\""<< "readingOrder {index:0;}\">\n";
-    auto bbox = boxe->box();
+    Box *bbox = boxe->box();
     line_str << "\t\t\t\t";
     AddBaselinePtsToPAGE(boxe->baseline(), line_str);
     ptaAddPt(line_polygon_pts, bbox->x, bbox->y);

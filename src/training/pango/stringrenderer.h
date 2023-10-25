@@ -33,9 +33,11 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango/pango-layout.h"
-#include "pango/pangocairo.h"
+//#include "pango/pango-layout.h"
+//#include "pango/pangocairo.h"
+
 #include "pango_font_info.h"
+
 
 #include "image.h"
 

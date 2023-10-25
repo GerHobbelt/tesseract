@@ -36,9 +36,11 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango.h"
-#include "pangocairo.h"
-#include "pangofc-font.h"
+//#include "pango.h"
+//#include "pangocairo.h"
+//#include "pangofc-font.h"
+
+#include "hb.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -63,7 +65,7 @@ std::string PangoFontInfo::fonts_dir_;
 std::string PangoFontInfo::cache_dir_;
 
 static PangoGlyph get_glyph(PangoFont *font, gunichar wc) {
-#if PANGO_VERSION_CHECK(1, 44, 0)
+#if 1 // PANGO_VERSION_CHECK(1, 44, 0)
   // pango_font_get_hb_font requires Pango 1.44 or newer.
   hb_font_t *hb_font = pango_font_get_hb_font(font);
   hb_codepoint_t glyph;
