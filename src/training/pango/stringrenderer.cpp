@@ -507,7 +507,7 @@ AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
 }
 
 void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, const std::vector<BoxChar *> &boxes){
-  float x_min, y_min, x_max, y_max, a, b;
+  float x_min, y_min, x_max, y_max;
   std::stringstream page_str;
   std::stringstream line_str;
 
