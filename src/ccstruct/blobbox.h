@@ -763,7 +763,7 @@ public:
     TO_ROW_IT row_it = &row_list;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       auto row = row_it.data();
-      tprintf("Row range ({},{}), para_c={}, blobcount={}\n",
+      tprintDebug("Row range ({},{}), para_c={}, blobcount={}\n",
               row->min_y(),
               row->max_y(),
               row->parallel_c(),

@@ -102,7 +102,7 @@ void TabFind::InsertBlobsToGrid(bool h_spread, bool v_spread, BLOBNBOX_LIST *blo
     }
   }
   if (textord_debug_tabfind > 0) {
-    tprintf("Inserted {} blobs into grid, {} rejected.\n", b_count, reject_count);
+    tprintDebug("Inserted {} blobs into grid, {} rejected.\n", b_count, reject_count);
   }
 }
 
@@ -220,7 +220,7 @@ void TabFind::GutterWidthAndNeighbourGap(int tab_x, int mean_height, int max_gut
   }
   bool debug = WithinTestRegion(2, box.left(), box.bottom());
   if (debug) {
-    tprintf("Looking in gutter\n");
+    tprintDebug("Looking in gutter\n");
   }
   // Find the nearest blob on the outside of the column.
   BLOBNBOX *gutter_bbox = AdjacentBlob(bbox, left, bbox->flow() == BTFT_TEXT_ON_IMAGE, 0.0,
@@ -253,7 +253,7 @@ void TabFind::GutterWidthAndNeighbourGap(int tab_x, int mean_height, int max_gut
   }
   // Now look for a neighbour on the inside.
   if (debug) {
-    tprintf("Looking for neighbour\n");
+    tprintDebug("Looking for neighbour\n");
   }
   BLOBNBOX *neighbour = AdjacentBlob(bbox, !left, bbox->flow() == BTFT_TEXT_ON_IMAGE, 0.0,
                                      *gutter_width, box.top(), box.bottom());
@@ -261,7 +261,7 @@ void TabFind::GutterWidthAndNeighbourGap(int tab_x, int mean_height, int max_gut
   if (neighbour != nullptr) {
     const TBOX &n_box = neighbour->bounding_box();
     if (debug) {
-      tprintf("Found neighbour:");
+      tprintDebug("Found neighbour:");
       n_box.print();
     }
     if (left && n_box.left() < neighbour_edge) {
@@ -472,7 +472,7 @@ void TabFind::TidyBlobs(TO_BLOCK *block) {
     }
   }
   if (textord_debug_tabfind > 0) {
-    tprintf("Moved {} large blobs to normal list\n", b_count);
+    tprintDebug("Moved {} large blobs to normal list\n", b_count);
 #if !GRAPHICS_DISABLED
       ScrollViewReference rej_win(MakeWindow(tesseract_, 500, 300, "Image blobs"));
       block->plot_graded_blobs(rej_win);
@@ -611,7 +611,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
   int height = box.height();
   bool debug = WithinTestRegion(3, left_x, top_y);
   if (debug) {
-    tprintf("Column edges for blob at ({},{})->({},{}) are [{}, {}]\n", left_x, top_y, right_x,
+    tprintDebug("Column edges for blob at ({},{})->({},{}) are [{}, {}]\n", left_x, top_y, right_x,
             bottom_y, left_column_edge, right_column_edge);
   }
   // Compute a search radius based on a multiple of the height.
@@ -676,7 +676,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     int n_left = nbox.left();
     int n_right = nbox.right();
     if (debug) {
-      tprintf("Neighbour at ({},{})->({},{})\n", n_left, nbox.bottom(), n_right, nbox.top());
+      tprintDebug("Neighbour at ({},{})->({},{})\n", n_left, nbox.bottom(), n_right, nbox.top());
     }
     // If the neighbouring blob is the wrong side of a separator line, then it
     // "doesn't exist" as far as we are concerned.
@@ -688,7 +688,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     int n_mid_y = (nbox.top() + nbox.bottom()) / 2;
     if (n_mid_x <= left_x && n_right >= target_right) {
       if (debug) {
-        tprintf("Not a left tab\n");
+        tprintDebug("Not a left tab\n");
       }
       is_left_tab = false;
       if (n_mid_y < top_y) {
@@ -699,7 +699,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
       }
     } else if (NearlyEqual(left_x, n_left, alignment_tolerance)) {
       if (debug) {
-        tprintf("Maybe a left tab\n");
+        tprintDebug("Maybe a left tab\n");
       }
       if (n_mid_y > top_y && maybe_left_tab_up > -INT32_MAX) {
         ++maybe_left_tab_up;
@@ -710,7 +710,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     } else if (n_left < left_x && n_right >= left_x) {
       // Overlaps but not aligned so negative points on a maybe.
       if (debug) {
-        tprintf("Maybe Not a left tab\n");
+        tprintDebug("Maybe Not a left tab\n");
       }
       if (n_mid_y > top_y && maybe_left_tab_up > -INT32_MAX) {
         --maybe_left_tab_up;
@@ -722,12 +722,12 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
     if (n_left < left_x && nbox.y_overlap(box) && n_right >= target_right) {
       maybe_ragged_left = false;
       if (debug) {
-        tprintf("Not a ragged left\n");
+        tprintDebug("Not a ragged left\n");
       }
     }
     if (n_mid_x >= right_x && n_left <= target_left) {
       if (debug) {
-        tprintf("Not a right tab\n");
+        tprintDebug("Not a right tab\n");
       }
       is_right_tab = false;
       if (n_mid_y < top_y) {
@@ -738,7 +738,7 @@ bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
       }
     } else if (NearlyEqual(right_x, n_right, alignment_tolerance)) {
       if (debug) {
-        tprintf("Maybe a right tab\n");
+        tprintDebug("Maybe a right tab\n");
       }
       if (n_mid_y > top_y && maybe_right_tab_up > -INT32_MAX) {
         ++maybe_right_tab_up;

@@ -231,10 +231,10 @@ bool PangoFontInfo::CoversUTF8Text(const char *utf8_text, int byte_length) const
       continue;
     }
     if (pango_coverage_get(coverage, *it) != PANGO_COVERAGE_EXACT) {
-      char tmp[5];
+      char tmp[8]; // UTF8 max codepoint size + 1 (sentinel)
       int len = it.get_utf8(tmp);
       tmp[len] = '\0';
-      tlog(2, "'{}' (U+{}) not covered by font\n", tmp, *it);
+      tlog(2, "'{}' (U+{}) not covered by font.\n", tmp, *it);
       pango_coverage_unref(coverage);
       g_object_unref(font);
       return false;
