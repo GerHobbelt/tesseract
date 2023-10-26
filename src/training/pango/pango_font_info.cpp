@@ -409,9 +409,9 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
 
     if (TLOG_IS_ON(2)) {
       PangoFontDescription *desc = pango_font_describe(font);
-      char *desc_str = pango_font_description_to_string(desc);
+      const char *desc_str = pango_font_description_to_string(desc);
       tlog(2, "Desc of font in run: {}\n", desc_str);
-      g_free(desc_str);
+      g_free((void *)desc_str);
       pango_font_description_free(desc);
     }
 
@@ -508,7 +508,7 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
   tlog(3, "query weight = {} \t selected weight ={}\n", pango_font_description_get_weight(desc),
        pango_font_description_get_weight(selected_desc));
 
-  char *selected_desc_str = pango_font_description_to_string(selected_desc);
+  const char *selected_desc_str = pango_font_description_to_string(selected_desc);
   tlog(2, "query_desc: '{}' Selected: '{}'\n", query_desc.c_str(), selected_desc_str);
   if (!equal && best_match != nullptr) {
     *best_match = selected_desc_str;
@@ -519,7 +519,7 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
       *best_match = best_match->substr(0, len - 2);
     }
   }
-  g_free(selected_desc_str);
+  g_free((void *)selected_desc_str);
   pango_font_description_free(selected_desc);
   g_object_unref(selected_font);
   pango_font_description_free(desc);
@@ -561,13 +561,13 @@ const std::vector<std::string> &FontUtils::ListAvailableFonts() {
     pango_font_family_list_faces(families[i], &faces, &n_faces);
     for (int j = 0; j < n_faces; ++j) {
       PangoFontDescription *desc = pango_font_face_describe(faces[j]);
-      char *desc_str = pango_font_description_to_string(desc);
+      const char *desc_str = pango_font_description_to_string(desc);
       // "synthesized" font faces that are not truly loadable, so we skip it
       if (!pango_font_face_is_synthesized(faces[j]) && IsAvailableFont(desc_str)) {
         available_fonts_.emplace_back(desc_str);
       }
       pango_font_description_free(desc);
-      g_free(desc_str);
+      g_free((void *)desc_str);
     }
     g_free(faces);
   }

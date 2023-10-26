@@ -546,7 +546,7 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
     if (boxe->rtl_index()) line_str << "\"right-to-left\" ";
     else line_str << "\"left-to-right\" ";
     line_str << "custom=\""<< "readingOrder {index:0;}\">\n";
-    Box *bbox = boxe->box();
+    const Box *bbox = boxe->box();
     line_str << "\t\t\t\t";
     AddBaselinePtsToPAGE(boxe->baseline(), line_str);
     ptaAddPt(line_polygon_pts, bbox->x, bbox->y);
@@ -723,7 +723,7 @@ void StringRenderer::ComputeClusterBoxes() {
     line_boxchar->set_page(page_);
     line_boxchar->AddBox(ink_rect.x, logical_rect.y, ink_rect.width, logical_rect.height);
     line_boxchar->AddBaselinePt(ink_rect.x, baseline);
-    line_boxchar->AddBaselinePt(ink_rect.x+ink_rect.width, baseline);
+    line_boxchar->AddBaselinePt(ink_rect.x + ink_rect.width, baseline);
     line_boxchar->set_rtl_index(rtl);
     line_boxchars_.push_back(line_boxchar);
   } while (pango_layout_iter_next_line(line_iter));
