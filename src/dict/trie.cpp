@@ -555,7 +555,7 @@ SquishedDawg *Trie::trie_to_dawg() {
 bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
                                      const EDGE_RECORD &edge2) {
   if (debug_level_ > 1) {
-    tprintf("\nCollapsing node %" PRIi64 ":\n", node);
+    tprintf("\nCollapsing node {}:\n", node);
     print_node(node, MAX_NODE_EDGES_DISPLAY);
     tprintf("Candidate edges: ");
     print_edge_rec(edge1);
