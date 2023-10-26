@@ -477,9 +477,9 @@ void Classify::EndAdaptiveClassifier() {
     Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
     File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
-      tprintError("Unable to save adapted templates to {}!\n", Filename.c_str());
+      tprintError("Unable to save adapted templates to file {}!\n", Filename);
     } else {
-      tprintf("\nSaving adapted templates to {} ...", Filename);
+      tprintf("\nSaving adapted templates to file {} ...", Filename);
       fflush(stdout);
       WriteAdaptedTemplates(File, AdaptedTemplates);
       tprintf("\n");
@@ -584,7 +584,7 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
     if (!fp.Open(Filename.c_str(), nullptr)) {
       AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
     } else {
-      tprintf("\nReading pre-adapted templates from {} ...\n", Filename);
+      tprintf("\nReading pre-adapted templates from file {} ...\n", Filename);
       fflush(stdout);
       AdaptedTemplates = ReadAdaptedTemplates(&fp);
       tprintf("\n");
@@ -2076,11 +2076,11 @@ void Classify::ShowBestMatchFor(int shape_id, const INT_FEATURE_STRUCT *features
                                 int num_features) {
   uint32_t config_mask;
   if (UnusedClassIdIn(PreTrainedTemplates, shape_id)) {
-    tprintf("No built-in templates for class/shape {}\n", shape_id);
+    tprintError("No built-in templates for class/shape {}\n", shape_id);
     return;
   }
   if (num_features <= 0) {
-    tprintf("Illegal blob (char norm features)!\n");
+    tprintError("Illegal blob (char norm features)!\n");
     return;
   }
   UnicharRating cn_result;

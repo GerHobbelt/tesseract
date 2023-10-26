@@ -60,7 +60,7 @@ bool Tesseract::word_adaptable( // should we adapt?
 */
   if (mode == 0) {
     if (tessedit_adaption_debug) {
-      dbgPprint("adaption disabled\n");
+      tprintDebug("adaption disabled\n");
     }
     return false;
   }
@@ -68,14 +68,14 @@ bool Tesseract::word_adaptable( // should we adapt?
   if (flags[ADAPTABLE_WERD]) {
     status |= word->tess_would_adapt; // result of Classify::AdaptableWord()
     if (tessedit_adaption_debug && !status) {
-	  dbgPprint("tess_would_adapt bit is false\n");
+	  tprintDebug("tess_would_adapt bit is false\n");
     }
   }
 
   if (flags[ACCEPTABLE_WERD]) {
     status |= word->tess_accepted;
     if (tessedit_adaption_debug && !status) {
-	  dbgPprint("tess_accepted bit is false\n");
+	  tprintDebug("tess_accepted bit is false\n");
     }
   }
 
@@ -88,14 +88,14 @@ bool Tesseract::word_adaptable( // should we adapt?
       (word->best_choice->permuter() != USER_DAWG_PERM) &&
       (word->best_choice->permuter() != NUMBER_PERM)) {
     if (tessedit_adaption_debug) {
-	  dbgPprint("word not in dawgs\n");
+	  tprintDebug("word not in dawgs\n");
     }
     return false;
   }
 
   if (flags[CHECK_ONE_ELL_CONFLICT] && one_ell_conflict(word, false)) {
     if (tessedit_adaption_debug) {
-      dbgPprint("word has ell conflict\n");
+      tprintDebug("word has ell conflict\n");
     }
     return false;
   }
@@ -103,20 +103,20 @@ bool Tesseract::word_adaptable( // should we adapt?
   if (flags[CHECK_SPACES] &&
       (strchr(word->best_choice->unichar_string().c_str(), ' ') != nullptr)) {
     if (tessedit_adaption_debug) {
-      dbgPprint("word contains spaces\n");
+      tprintDebug("word contains spaces\n");
     }
     return false;
   }
 
   if (flags[CHECK_AMBIG_WERD] && word->best_choice->dangerous_ambig_found()) {
     if (tessedit_adaption_debug) {
-      dbgPprint("word is ambiguous\n");
+      tprintDebug("word is ambiguous\n");
     }
     return false;
   }
 
   if (tessedit_adaption_debug) {
-    dbgPprint("returning status {}\n", status);
+    tprintDebug("returning status {}\n", status);
   }
   return status;
 }

@@ -228,7 +228,7 @@ PROTOTYPE *ReadPrototype(TFile *fp, uint16_t N) {
       break;
     default:
       delete Proto;
-      tprintf("Invalid prototype style\n");
+	  tprintError("Invalid prototype style\n");
       return nullptr;
   }
   return Proto;

@@ -260,23 +260,23 @@ void WERD::copy_on(WERD *other) {
  */
 
 void WERD::print() const {
-  tprintf("Blanks= {}\n", blanks);
+  tprintDebug("Blanks= {}\n", blanks);
   bounding_box().print();
-  tprintf("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());
-  tprintf("   W_SEGMENTED = {}\n", flags[W_SEGMENTED] ? "TRUE" : "FALSE");
-  tprintf("   W_ITALIC = {}\n", flags[W_ITALIC] ? "TRUE" : "FALSE");
-  tprintf("   W_BOL = {}\n", flags[W_BOL] ? "TRUE" : "FALSE");
-  tprintf("   W_EOL = {}\n", flags[W_EOL] ? "TRUE" : "FALSE");
-  tprintf("   W_NORMALIZED = {}\n", flags[W_NORMALIZED] ? "TRUE" : "FALSE");
-  tprintf("   W_SCRIPT_HAS_XHEIGHT = {}\n", flags[W_SCRIPT_HAS_XHEIGHT] ? "TRUE" : "FALSE");
-  tprintf("   W_SCRIPT_IS_LATIN = {}\n", flags[W_SCRIPT_IS_LATIN] ? "TRUE" : "FALSE");
-  tprintf("   W_DONT_CHOP = {}\n", flags[W_DONT_CHOP] ? "TRUE" : "FALSE");
-  tprintf("   W_REP_CHAR = {}\n", flags[W_REP_CHAR] ? "TRUE" : "FALSE");
-  tprintf("   W_FUZZY_SP = {}\n", flags[W_FUZZY_SP] ? "TRUE" : "FALSE");
-  tprintf("   W_FUZZY_NON = {}\n", flags[W_FUZZY_NON] ? "TRUE" : "FALSE");
-  tprintf("Correct= {}\n", correct.c_str());
-  tprintf("Rejected cblob count = {}\n", rej_cblobs.length());
-  tprintf("Script = {}\n", script_id_);
+  tprintDebug("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());
+  tprintDebug("   W_SEGMENTED = {}\n", flags[W_SEGMENTED] ? "TRUE" : "FALSE");
+  tprintDebug("   W_ITALIC = {}\n", flags[W_ITALIC] ? "TRUE" : "FALSE");
+  tprintDebug("   W_BOL = {}\n", flags[W_BOL] ? "TRUE" : "FALSE");
+  tprintDebug("   W_EOL = {}\n", flags[W_EOL] ? "TRUE" : "FALSE");
+  tprintDebug("   W_NORMALIZED = {}\n", flags[W_NORMALIZED] ? "TRUE" : "FALSE");
+  tprintDebug("   W_SCRIPT_HAS_XHEIGHT = {}\n", flags[W_SCRIPT_HAS_XHEIGHT] ? "TRUE" : "FALSE");
+  tprintDebug("   W_SCRIPT_IS_LATIN = {}\n", flags[W_SCRIPT_IS_LATIN] ? "TRUE" : "FALSE");
+  tprintDebug("   W_DONT_CHOP = {}\n", flags[W_DONT_CHOP] ? "TRUE" : "FALSE");
+  tprintDebug("   W_REP_CHAR = {}\n", flags[W_REP_CHAR] ? "TRUE" : "FALSE");
+  tprintDebug("   W_FUZZY_SP = {}\n", flags[W_FUZZY_SP] ? "TRUE" : "FALSE");
+  tprintDebug("   W_FUZZY_NON = {}\n", flags[W_FUZZY_NON] ? "TRUE" : "FALSE");
+  tprintDebug("Correct= {}\n", correct.c_str());
+  tprintDebug("Rejected cblob count = {}\n", rej_cblobs.length());
+  tprintDebug("Script = {}\n", script_id_);
 }
 
 /**

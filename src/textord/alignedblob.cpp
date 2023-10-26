@@ -310,8 +310,7 @@ TabVector *AlignedBlob::FindVerticalAlignment(AlignedBlobParams align_params, BL
       tprintWarn("Ragged tab used too many used points: {} out of {}\n", confirmed_points, pt_count);
     }
   } else if (debug) {
-    tprintf(
-        "WARNING: Tab vector failed basic tests: pt count {} vs min {}, "
+	  tprintWarn("Tab vector failed basic tests: pt count {} vs min {}, "
         "length {} vs min {}, min grad {}\n",
         pt_count, align_params.min_points, end_y - start_y, align_params.min_length,
         abs(end_x - start_x) * kMinTabGradient);
@@ -468,7 +467,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     int n_right = nbox.right();
     int n_x = p.right_tab ? n_right : n_left;
     if (WithinTestRegion(2, x_start, start_y)) {
-      tprintf("neighbour at ({},{})->({},{}), n_x={}, n_y={}, xatn={}\n", nbox.left(),
+      tprintf("Neighbour at ({},{})->({},{}), n_x={}, n_y={}, xatn={}\n", nbox.left(),
               nbox.bottom(), nbox.right(), nbox.top(), n_x, n_y, x_at_n_y);
     }
     if (p.right_tab && n_left < x_at_n_y + p.min_gutter &&

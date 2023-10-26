@@ -172,7 +172,7 @@ public:
   bool PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool debug) const;
 
   void print(const UNICHARSET *unicharset) const {
-    tprintf("r{} c{} x[{},{}]: {} {}",
+    tprintDebug("r{} c{} x[{},{}]: {} {}",
             rating_,
             certainty_,
             min_xheight_,
@@ -181,7 +181,7 @@ public:
   }
   void print_full() const {
     print(nullptr);
-    tprintf(" script={}, font1={}, font2={}, yshift={}, classifier={}\n",
+	tprintDebug(" script={}, font1={}, font2={}, yshift={}, classifier={}\n",
             script_id_, fontinfo_id_, fontinfo_id2_, yshift_,
             classifier_);
   }

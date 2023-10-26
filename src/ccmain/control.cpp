@@ -93,7 +93,7 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
     int16_t good_char_qual;
     WERD_RES *word_res = pr_it->word();
     word_char_quality(word_res, &char_qual, &good_char_qual);
-    dbgPrint("\n{} chars;  word_blob_quality: {};  outline_errs: {}; "
+    tprintDebug("\n{} chars;  word_blob_quality: {};  outline_errs: {}; "
         "char_quality: {}; good_char_quality: {}\n",
         word_res->reject_map.length(), word_blob_quality(word_res), word_outline_errs(word_res),
         char_qual, good_char_qual);

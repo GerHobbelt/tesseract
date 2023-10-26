@@ -2364,7 +2364,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
   if (tesseract_->applybox_debug) {
-	dbgPrint("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
+	tprintDebug("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
   }
   if (text != nullptr) {
     PAGE_RES_IT it(page_res_);

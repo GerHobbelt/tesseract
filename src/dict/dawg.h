@@ -392,7 +392,7 @@ public:
     }
     push_back(new_pos);
     if (debug) {
-      tprintf("{}[{}, {}] [punc: {}{}]\n", debug_msg,
+      tprintDebug("{}[{}, {}] [punc: {}{}]\n", debug_msg,
               new_pos.dawg_index, new_pos.dawg_ref, new_pos.punc_ref,
               new_pos.back_to_punc ? " returned" : "");
     }
@@ -557,11 +557,11 @@ private:
 
   /// Prints the contents of the SquishedDawg.
   void print_all(const char *msg) {
-    tprintf("\n__________________________\n{}\n", msg);
+    tprintDebug("\n__________________________\n{}\n", msg);
     for (int i = 0; i < num_edges_; ++i) {
       print_edge(i);
     }
-    tprintf("__________________________\n");
+	tprintDebug("__________________________\n");
   }
   /// Constructs a mapping from the memory node indices to disk node indices.
   std::unique_ptr<EDGE_REF[]> build_node_map(int32_t *num_nodes) const;

@@ -136,7 +136,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
       UnicharClassifySample(sample, 1, unichar_id, &results);
       DisplayClassifyAs(sample, unichar_id, 1, windows);
     } else {
-      tprintf("Invalid unichar_id: {}\n", unichar_id);
+      tprintError("Invalid unichar_id: {}\n", unichar_id);
       UnicharClassifySample(sample, 1, -1, &results);
     }
     if (unichar_id >= 0) {

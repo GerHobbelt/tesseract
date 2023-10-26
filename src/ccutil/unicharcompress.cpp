@@ -197,7 +197,7 @@ bool UnicharCompress::ComputeEncoding(const UNICHARSET &unicharset, int null_id,
           delete[] utf8;
           if (direct_set.size() > unicharset.size() + !unicharset.has_special_codes()) {
             // Code space got bigger!
-            tprintf("Code space expanded from original unicharset!!\n");
+            tprintWarn("Code space expanded from original unicharset!!\n");
             return false;
           }
         }

@@ -461,7 +461,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
 
     if (!dawg && !punc_dawg) {
       // shouldn't happen.
-      tprintf("Received DawgPosition with no dawg or punc_dawg.  wth?\n");
+      tprintError("Received DawgPosition with no dawg or punc_dawg.  wth?\n");
       continue;
     }
     if (!dawg) {

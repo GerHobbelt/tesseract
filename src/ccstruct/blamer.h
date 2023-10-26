@@ -298,7 +298,7 @@ private:
     debug_ += " to blame: ";
     FillDebugString(msg, choice, debug_);
     if (debug) {
-      tprintf("SetBlame(): {}", debug_);
+      tprintDebug("SetBlame(): {}", debug_);
     }
   }
 

@@ -164,7 +164,7 @@ public:
     }
     size_t len = message.length();
     if (fwrite(message.c_str(), 1, len, file_) != len) {
-      tprintError("failed to write params-report line to file. {}\n", strerror(errno));
+      tprintError("Failed to write params-report line to file. {}\n", strerror(errno));
     }
   }
 

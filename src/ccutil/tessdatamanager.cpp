@@ -281,8 +281,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
 
   // Make sure that the required components are present.
   if (!IsBaseAvailable() && !IsLSTMAvailable()) {
-    tprintf(
-        "ERROR: traineddata file must contain at least (a unicharset file"
+	  tprintError("traineddata file must contain at least (a unicharset file"
         " and inttemp) OR an lstm file.\n");
     return false;
   }
@@ -325,8 +324,7 @@ bool TessdataManager::TessdataTypeFromFileSuffix(const char *suffix, TessdataTyp
     }
   }
 #if !defined(NDEBUG)
-  tprintf(
-      "ERROR: TessdataManager can't determine which tessdata"
+  tprintError("TessdataManager can't determine which tessdata"
       " component is represented by {}\n",
       suffix);
 #endif
