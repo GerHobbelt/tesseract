@@ -72,5 +72,7 @@ extern "C" int main(int argc, const char **argv)
 
     // Destroy used object and release memory
     api.End();    
-    return 0;
+	pixDestroy(&image);
+
+	return 0;
 }

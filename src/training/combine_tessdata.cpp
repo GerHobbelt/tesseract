@@ -18,6 +18,10 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "lstmrecognizer.h"
 #include "tessdatamanager.h"
@@ -281,6 +285,9 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         "Usage for listing directory of components:\n"
         "  {} -d traineddata_file\n\n",
         exename);
+    tprintf(
+        "NOTE: Above two flags may combined as -dl or -ld to get both outputs.\n\n"
+        );
     tprintf(
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",

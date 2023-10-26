@@ -244,7 +244,7 @@ public:
   // of certainty that will be returned by ExtractBestPathAsUnicharIds.
   // Supposedly on a uniform scale that can be compared across languages and
   // engines.
-  static constexpr float kMinCertainty = -20.0f;
+  static constexpr float kMinCertainty = -20.0f;   
   // Number of different code lengths for which we have a separate beam.
   static const int kNumLengths = RecodedCharID::kMaxCodeLen + 1;
   // Total number of beams: dawg/nodawg * number of NodeContinuation * number
@@ -366,7 +366,7 @@ private:
   // current worst element if already full.
   void PushDupOrNoDawgIfBetter(int length, bool dup, int code, int unichar_id, float cert,
                                float worst_dict_cert, float dict_ratio, bool use_dawgs,
-                               NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step);
+                               NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step, const UNICHARSET *charset);
   // Adds a RecodeNode composed of the args to the correct heap in step if there
   // is room or if better than the current worst element if already full.
   void PushHeapIfBetter(int max_size, int code, int unichar_id, PermuterType permuter,

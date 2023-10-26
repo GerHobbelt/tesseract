@@ -9,7 +9,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <string> // for std::string
 
 #include "include_gunit.h"

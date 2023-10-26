@@ -17,9 +17,14 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "stringrenderer.h"
 
 #include <leptonica/allheaders.h> // from leptonica
+#include <leptonica/pix_internal.h> 
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include "boxchar.h"
 #include "fileio.h"
@@ -32,8 +37,8 @@
 
 #if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
 
-#include "pango/pango-font.h"
-#include "pango/pango-glyph-item.h"
+//#include "pango/pango-font.h"
+//#include "pango/pango-glyph-item.h"
 #include "unicode/uchar.h" // from libicu
 
 #include <algorithm>
@@ -502,7 +507,7 @@ AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
 }
 
 void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, const std::vector<BoxChar *> &boxes){
-  float x_min, y_min, x_max, y_max, a, b;
+  float x_min, y_min, x_max, y_max;
   std::stringstream page_str;
   std::stringstream line_str;
 
@@ -514,7 +519,7 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
     "\t\t<Creator>Tesseract - " << TESSERACT_VERSION_STR << " (Text2Image)</Creator>\n";
   
   // If gmtime conversion is problematic maybe l_getFormattedDate can be used here
-  //char *datestr = l_getFormattedDate();
+  //const char *datestr = l_getFormattedDate();
   std::time_t now= std::time(nullptr);
   std::tm* now_tm= std::gmtime(&now);
   char mbstr[100];
@@ -541,7 +546,7 @@ void StringRenderer::WriteTesseractBoxAsPAGEFile(const std::string &filename, co
     if (boxe->rtl_index()) line_str << "\"right-to-left\" ";
     else line_str << "\"left-to-right\" ";
     line_str << "custom=\""<< "readingOrder {index:0;}\">\n";
-    auto bbox = boxe->box();
+    const Box *bbox = boxe->box();
     line_str << "\t\t\t\t";
     AddBaselinePtsToPAGE(boxe->baseline(), line_str);
     ptaAddPt(line_polygon_pts, bbox->x, bbox->y);
@@ -718,7 +723,7 @@ void StringRenderer::ComputeClusterBoxes() {
     line_boxchar->set_page(page_);
     line_boxchar->AddBox(ink_rect.x, logical_rect.y, ink_rect.width, logical_rect.height);
     line_boxchar->AddBaselinePt(ink_rect.x, baseline);
-    line_boxchar->AddBaselinePt(ink_rect.x+ink_rect.width, baseline);
+    line_boxchar->AddBaselinePt(ink_rect.x + ink_rect.width, baseline);
     line_boxchar->set_rtl_index(rtl);
     line_boxchars_.push_back(line_boxchar);
   } while (pango_layout_iter_next_line(line_iter));

@@ -36,9 +36,12 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango.h"
-#include "pangocairo.h"
-#include "pangofc-font.h"
+//#include "pango.h"
+//#include "pangocairo.h"
+//#include "pangofc-font.h"
+
+#include "hb.h"
+#include "fontconfig/fontconfig.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -63,7 +66,7 @@ std::string PangoFontInfo::fonts_dir_;
 std::string PangoFontInfo::cache_dir_;
 
 static PangoGlyph get_glyph(PangoFont *font, gunichar wc) {
-#if PANGO_VERSION_CHECK(1, 44, 0)
+#if 1 // PANGO_VERSION_CHECK(1, 44, 0)
   // pango_font_get_hb_font requires Pango 1.44 or newer.
   hb_font_t *hb_font = pango_font_get_hb_font(font);
   hb_codepoint_t glyph;
@@ -105,9 +108,9 @@ std::string PangoFontInfo::DescriptionName() const {
   if (!desc_) {
     return "";
   }
-  char *desc_str = pango_font_description_to_string(desc_);
+  const char *desc_str = pango_font_description_to_string(desc_);
   std::string desc_name(desc_str);
-  g_free(desc_str);
+  g_free((void *)desc_str);
   return desc_name;
 }
 
@@ -173,9 +176,9 @@ bool PangoFontInfo::ParseFontDescription(const PangoFontDescription *desc) {
   Clear();
   const char *family = pango_font_description_get_family(desc);
   if (!family) {
-    char *desc_str = pango_font_description_to_string(desc);
+    const char *desc_str = pango_font_description_to_string(desc);
     tprintWarn("Could not parse family name from description: '{}'\n", desc_str);
-    g_free(desc_str);
+    g_free((void *)desc_str);
     return false;
   }
   family_name_ = std::string(family);
@@ -408,7 +411,7 @@ bool PangoFontInfo::CanRenderString(const char *utf8_word, int len,
       PangoFontDescription *desc = pango_font_describe(font);
       const char *desc_str = pango_font_description_to_string(desc);
       tlog(2, "Desc of font in run: {}\n", desc_str);
-      g_free(desc_str);
+      g_free((void *)desc_str);
       pango_font_description_free(desc);
     }
 
@@ -505,7 +508,7 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
   tlog(3, "query weight = {} \t selected weight ={}\n", pango_font_description_get_weight(desc),
        pango_font_description_get_weight(selected_desc));
 
-  char *selected_desc_str = pango_font_description_to_string(selected_desc);
+  const char *selected_desc_str = pango_font_description_to_string(selected_desc);
   tlog(2, "query_desc: '{}' Selected: '{}'\n", query_desc.c_str(), selected_desc_str);
   if (!equal && best_match != nullptr) {
     *best_match = selected_desc_str;
@@ -516,7 +519,7 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
       *best_match = best_match->substr(0, len - 2);
     }
   }
-  g_free(selected_desc_str);
+  g_free((void *)selected_desc_str);
   pango_font_description_free(selected_desc);
   g_object_unref(selected_font);
   pango_font_description_free(desc);
@@ -558,13 +561,13 @@ const std::vector<std::string> &FontUtils::ListAvailableFonts() {
     pango_font_family_list_faces(families[i], &faces, &n_faces);
     for (int j = 0; j < n_faces; ++j) {
       PangoFontDescription *desc = pango_font_face_describe(faces[j]);
-      char *desc_str = pango_font_description_to_string(desc);
+      const char *desc_str = pango_font_description_to_string(desc);
       // "synthesized" font faces that are not truly loadable, so we skip it
       if (!pango_font_face_is_synthesized(faces[j]) && IsAvailableFont(desc_str)) {
         available_fonts_.emplace_back(desc_str);
       }
       pango_font_description_free(desc);
-      g_free(desc_str);
+      g_free((void *)desc_str);
     }
     g_free(faces);
   }

@@ -21,7 +21,7 @@
 
 // expects clone of tessdata_fast repo in ../../tessdata_fast
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <time.h>
 #include <fstream>
@@ -67,18 +67,20 @@ void OCRTester(const char *imgname, const char *groundtruth, const char *tessdat
   std::ifstream file(groundtruth);
   file.imbue(loc); // Use it for file input
   std::string gtText((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-  auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
-  Image image = pixRead(imgname);
-  ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
-  api->SetImage(image);
-  outText = api->GetUTF8Text();
-  EXPECT_EQ(gtText, outText) << "Phototest.tif OCR does not match ground truth for "
-                             << ::testing::PrintToString(lang);
-  api->End();
-  api->ClearPersistentCache();
-  delete[] outText;
-  image.destroy();
+  {
+    auto api = std::make_unique<tesseract::TessBaseAPI>();
+    ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
+    Image image = pixRead(imgname);
+    ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
+    api->SetImage(image);
+    outText = api->GetUTF8Text();
+    EXPECT_EQ(gtText, outText) << "Phototest.tif OCR does not match ground truth for "
+                               << ::testing::PrintToString(lang);
+    api->End();
+    image.destroy();
+    delete[] outText;
+  }	// end of `api` scope
+  TessBaseAPI::ClearPersistentCache();
 }
 
 class MatchGroundTruth : public QuickTest, public ::testing::WithParamInterface<const char *> {};

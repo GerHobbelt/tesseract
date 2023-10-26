@@ -337,10 +337,10 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   // Add any languages that this language requires
   bool loaded_primary = false;
   // Load the rest into sub_langs_.
-  // A range based for loop does not work here because langs_to_load
+  // WARNING: A range based for loop does not work here because langs_to_load
   // might be changed in the loop when a new submodel is found.
-  for (size_t idx = 0; idx < langs_to_load.size(); ++idx) {
-    const auto &lang_to_load = langs_to_load[idx];
+  for (size_t lang_index = 0; lang_index < langs_to_load.size(); ++lang_index) {
+    const auto &lang_to_load = langs_to_load[lang_index];
     if (!IsStrInList(lang_to_load, langs_not_to_load)) {
       const char *lang_str = lang_to_load.c_str();
       Tesseract *tess_to_init;

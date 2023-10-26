@@ -20,6 +20,10 @@
 // normalizes the text according to command-line options and generates
 // a unicharset.
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include <cstdlib>
 #include <filesystem>
 #include "boxread.h"
@@ -95,9 +99,9 @@ static int Main(int argc, const char** argv) {
   SetupBasicProperties(/*report_errors*/ true, /*decompose*/ false, &unicharset);
   // Write unicharset file.
   if (unicharset.save_to_file(FLAGS_output_unicharset.c_str())) {
-    tprintf("Wrote unicharset file {}\n", FLAGS_output_unicharset);
+    tprintf("Wrote unicharset file {}\n", FLAGS_output_unicharset.value());
   } else {
-    tprintError("Cannot save unicharset file {}\n", FLAGS_output_unicharset);
+    tprintError("Cannot save unicharset file {}\n", FLAGS_output_unicharset.value());
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

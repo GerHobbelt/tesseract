@@ -29,10 +29,14 @@
 
 namespace tesseract {
 
+// Obsoleted; see `rescale_certainty_from_LSTM_to_tesseract_value()` comment further below.
+#if 0
 // Scale factor to make certainty more comparable to Tesseract.
-const float kCertaintyScale = 2.0f;
+static const float kCertaintyScale = 2.0f;
+#endif
+
 // Worst acceptable certainty for a dictionary word.
-const float kWorstDictCertainty = -25.0f;
+static const float kWorstDictCertainty = -25.0f /* / kCertaintyScale */ ;
 
 // Generates training data for training a line recognizer, eg LSTM.
 // Breaks the page into lines, according to the boxes, and writes them to a
@@ -258,10 +262,58 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
 
   lstm_recognizer_->SetDebug(classify_debug_level > 0 ? tess_debug_lstm : 0);
   lstm_recognizer_->RecognizeLine(*im_data, invert_threshold, 
-                                  kWorstDictCertainty / kCertaintyScale, word_box, words,
+                                  kWorstDictCertainty /* / kCertaintyScale */, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);
   delete im_data;
   SearchWords(words);
+}
+
+// Heuristically determined continuously increasing curve constructed in LibreCalc spreadsheet
+// to mimic classic tesseract v3 certainty percentages, derived from the LSTM probability values
+// produced per character & word.
+//
+// The curve is a rough approximation and is tweaked to produce human-believable percentages
+// in adverse conditions, i.e. the curve has a very long tail sp HOCR and other outputs won't
+// be quick to report some word or char probability as 0(zero); an artifact that occurred periodically
+// with the old vanilla tesseract linear `kCertaintyScale` multiplier approach.
+static float rescale_certainty_from_LSTM_to_tesseract_value(float cert) {
+	float e33 = 2 / (1 + std::exp(cert));
+	float f33 = 2 - e33;
+	const float G = 13;
+	float g33 = f33 * G * cert;
+	const float H = 2.6;
+	float h33 = g33 + H * cert;
+	const float K = 85;
+	const float J = -0.92;
+	float comp = (h33 + K) * J;
+	comp = std::max(0.f, comp);
+	cert = h33 + comp;
+	cert = std::min(0.f, cert);
+	return cert;
+}
+
+// rescale not just the word, but also each of the characters in each of the choices.
+// This ensures HOCR and other statistics-reporting outputs produce more believable, congruent probability
+// percentages at all levels (char, word, line, paragraph, ...).
+static void rescale_word_certainty_from_LSTM_to_tesseract_values(WERD_RES *word) {
+	word->space_certainty = rescale_certainty_from_LSTM_to_tesseract_value(word->space_certainty);
+
+	if (word->best_choice != nullptr /* faster check than `best_choices.length() > 0` */ ) {
+		for (WERD_CHOICE_IT it(&word->best_choices); !it.at_first(); it.forward()) {
+			WERD_CHOICE *choice = it.data();
+
+			unsigned int l = choice->length();
+			for (unsigned int i = 0; i < l; i++) {
+				float cert = choice->certainty(i);
+				cert = rescale_certainty_from_LSTM_to_tesseract_value(cert);
+				choice->set_certainty(i, cert);
+			}
+
+			float cert = choice->certainty();
+			cert = rescale_certainty_from_LSTM_to_tesseract_value(cert);
+			choice->set_certainty(cert);
+		}
+	}
 }
 
 // Apply segmentation search to the given set of words, within the constraints
@@ -293,15 +345,15 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       word->tess_would_adapt = false;
       word->done = true;
       word->tesseract = this;
-      float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
-      float corrected_word_certainty = word_certainty * kCertaintyScale;
+	  rescale_word_certainty_from_LSTM_to_tesseract_values(word);
+      float corrected_word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       if (getDict().stopper_debug_level >= 1) {
-        tprintf("Best choice certainty={}, space={}, raw={}, scaled={}, final={}\n",
+        tprintf("Best choice certainty={}, space={}, corrected={}, final={}\n",
                 word->best_choice->certainty(), word->space_certainty,
-                word_certainty, corrected_word_certainty, corrected_word_certainty);
+                corrected_word_certainty, corrected_word_certainty);
         word->best_choice->print();
       }
-      word->best_choice->set_certainty(corrected_word_certainty);
+      /* word->best_choice->set_certainty(corrected_word_certainty); */
 
       word->tess_accepted = stopper_dict->AcceptableResult(word);
     }

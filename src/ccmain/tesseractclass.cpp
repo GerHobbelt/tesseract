@@ -708,7 +708,7 @@ bool Tesseract::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   auto cost = TessBaseAPI::EstimateImageMemoryCost(width, height, allowed_image_memory_capacity);
 
-  if (debug_all) {
+  if (debug_misc) {
     tprintf("Image size & memory cost estimate: {} x {} px, estimated cost {} vs. {} allowed capacity.\n",
       width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity));
   }

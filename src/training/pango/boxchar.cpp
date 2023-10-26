@@ -19,6 +19,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "boxchar.h"
 
 #include "../unicharset/fileio.h"
@@ -33,6 +37,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <vector>
+
+#include <leptonica/allheaders.h>
+#include <leptonica/pix.h>                 // for BOX
+#include <leptonica/pix_internal.h>        // for BOX
 
 // Absolute Ratio of dx:dy or dy:dx to be a newline.
 const int kMinNewlineRatio = 5;

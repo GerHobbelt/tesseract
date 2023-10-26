@@ -16,6 +16,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset/lang_model_helpers.h"

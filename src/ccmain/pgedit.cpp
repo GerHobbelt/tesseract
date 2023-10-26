@@ -522,7 +522,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
 
   build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
-  if (debug_all) {
+  if (debug_misc) {
     word_display_mode.set(DF_BOX);
     word_display_mode.set(DF_TEXT);
     word_display_mode.set(DF_POLYGONAL);
@@ -1056,7 +1056,7 @@ bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   BLOCK_RES *block = pr_it->block();
   if (block != nullptr && block->block != nullptr) {
     tprintf("\nBlock data...\n");
-    block->block->print(nullptr, debug_all);
+    block->block->print(nullptr, true);
   }
   tprintf("\nRow data...\n");
   ROW_RES *row = pr_it->row();

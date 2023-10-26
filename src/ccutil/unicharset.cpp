@@ -754,7 +754,9 @@ bool UNICHARSET::save_to_string(std::string &str) const {
                this->get_script_from_script_id(this->get_script(id)),
                this->get_other_case(id));
     } else {
-      str += fmt::format("{} {} {},{},{},{},{},{},{},{},{} {} {} {} {} \"{}\"\t# {}\n",
+      str += fmt::format("{} {} "
+	                     "{},{},{},{},{},{},{},{},{},{} "
+						 "{} {} {} {} \"{}\"\t# {}\n",
 		   this->id_to_unichar(id), properties,
            min_bottom, max_bottom, min_top,
 		   max_top, width, width_sd, bearing,
@@ -763,7 +765,7 @@ bool UNICHARSET::save_to_string(std::string &str) const {
 		   this->get_other_case(id), this->get_direction(id),
 		   this->get_mirror(id),
 		   this->get_normed_unichar(id),
-		   this->debug_str(id).c_str()
+		   this->debug_str(id)
       );
     }
   }

@@ -23,6 +23,7 @@
 #include "unicharmap.h"
 
 #include <tesseract/unichar.h>
+#include <tesseract/fmt-support.h>
 #include "helpers.h"
 #include "serialis.h"
 
@@ -200,7 +201,6 @@ public:
     U_CHAR_DIRECTION_COUNT
 #endif // U_HIDE_DEPRECATED_API
   };
-
   // Create an empty UNICHARSET
   UNICHARSET();
 
@@ -1123,6 +1123,8 @@ private:
   // The most frequently occurring script in the charset.
   int default_sid_;
 };
+
+DECL_FMT_FORMAT_TESSENUMTYPE(UNICHARSET::Direction);
 
 } // namespace tesseract
 

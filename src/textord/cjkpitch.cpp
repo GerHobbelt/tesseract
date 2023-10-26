@@ -1116,7 +1116,7 @@ void compute_fixed_pitch_cjk(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
 
   // Early exit if the page doesn't seem to contain fixed pitch rows.
   if (!analyzer.maybe_fixed_pitch()) {
-    if (textord_debug_pitch_test) {
+    if (textord_debug_fixed_pitch_test) {
       tprintf("INFO: Page doesn't seem to contain fixed pitch rows.\n");
     }
     return;
@@ -1130,13 +1130,13 @@ void compute_fixed_pitch_cjk(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
     iteration++;
   } while (analyzer.Pass2Analyze() && iteration < analyzer.max_iteration());
 
-  if (textord_debug_pitch_test) {
+  if (textord_debug_fixed_pitch_test) {
     tprintf("compute_fixed_pitch_cjk finished after {} iteration (limit={})\n", iteration,
             analyzer.max_iteration());
   }
 
   analyzer.OutputEstimations();
-  if (textord_debug_pitch_test) {
+  if (textord_debug_fixed_pitch_test) {
     analyzer.DebugOutputResult();
   }
 }

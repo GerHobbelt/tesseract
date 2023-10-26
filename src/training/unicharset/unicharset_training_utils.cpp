@@ -17,6 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "unicharset_training_utils.h"
 
 #include <cstdlib>
@@ -41,7 +45,7 @@ namespace tesseract {
 // Helper sets the character attribute properties and sets up the script table.
 // Does not set tops and bottoms.
 void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicharset) {
-  for (size_t unichar_id = 0; unichar_id < unicharset->size(); ++unichar_id) {
+  for (UNICHAR_ID unichar_id = 0; unichar_id < (UNICHAR_ID)unicharset->size(); ++unichar_id) {
     // Convert any custom ligatures.
     const char *unichar_str = unicharset->id_to_unichar(unichar_id);
     for (int i = 0; UNICHARSET::kCustomLigatures[i][0] != nullptr; ++i) {

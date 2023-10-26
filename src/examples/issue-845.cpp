@@ -143,14 +143,14 @@ Here is my test code:
 extern "C" int main(int argc, const char **argv)
 {
   // Show version info
-  char *versionStrP;
+  const char *versionStrP;
   printf("tesseract %s\n", tesseract::TessBaseAPI::Version());
   versionStrP = getLeptonicaVersion();
   printf(" %s\n", versionStrP);
-  lept_free(versionStrP);
+  stringDestroy(&versionStrP);
   versionStrP = getImagelibVersions();
   printf("  %s\n", versionStrP);
-  lept_free(versionStrP);
+  stringDestroy(&versionStrP);
 
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();  
 #if 1

@@ -18,6 +18,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "ligature_table.h"
 
 #include <tesseract/unichar.h>
