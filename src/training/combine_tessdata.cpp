@@ -286,6 +286,9 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         "  {} -d traineddata_file\n\n",
         exename);
     tprintf(
+        "NOTE: Above two flags may combined as -dl or -ld to get both outputs.\n\n"
+        );
+    tprintf(
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
         exename);
