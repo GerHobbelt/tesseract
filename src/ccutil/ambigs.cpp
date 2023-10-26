@@ -39,8 +39,6 @@
 namespace tesseract {
 
 static const char kAmbigDelimiters[] = "\t ";
-static const char kIllegalMsg[] = "ERROR: Illegal ambiguity specification on line %d\n";
-static const char kIllegalUnicharMsg[] = "ERROR: Illegal unichar %s in ambiguity specification\n";
 
 // Maximum line size:
 //   10 for sizes of ambigs, tabs, abmig type and newline
@@ -236,7 +234,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     std::vector<std::string> fields = split(input, ' ');
     if (fields.size() != 3) {
       if (debug_level) {
-        tprintf(kIllegalMsg, line_num);
+        tprintError("Illegal ambiguity specification on line {}\n", line_num);
       }
       return false;
     }
@@ -270,7 +268,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     }
     if (sscanf(fields[2].c_str(), "%d", type) != 1) {
       if (debug_level) {
-        tprintf(kIllegalMsg, line_num);
+        tprintError("Illegal ambiguity specification on line {}\n", line_num);
       }
       return false;
     }
@@ -283,7 +281,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   if (!(token = strtok_r(buffer, kAmbigDelimiters, &next_token)) ||
       !sscanf(token, "%d", test_ambig_part_size) || *test_ambig_part_size <= 0) {
     if (debug_level) {
-      tprintf(kIllegalMsg, line_num);
+      tprintError("Illegal ambiguity specification on line {}\n", line_num);
     }
     return false;
   }
@@ -299,7 +297,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     }
     if (!unicharset.contains_unichar(token)) {
       if (debug_level) {
-        tprintf(kIllegalUnicharMsg, token);
+        tprintError("Illegal unichar {} in ambiguity specification\n", token);
       }
       break;
     }
@@ -310,7 +308,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   if (i != *test_ambig_part_size || !(token = strtok_r(nullptr, kAmbigDelimiters, &next_token)) ||
       !sscanf(token, "%d", replacement_ambig_part_size) || *replacement_ambig_part_size <= 0) {
     if (debug_level) {
-      tprintf(kIllegalMsg, line_num);
+      tprintError("Illegal ambiguity specification on line {}\n", line_num);
     }
     return false;
   }
@@ -328,14 +326,14 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     strcat(replacement_string, token);
     if (!unicharset.contains_unichar(token)) {
       if (debug_level) {
-        tprintf(kIllegalUnicharMsg, token);
+        tprintError("Illegal unichar {} in ambiguity specification\n", token);
       }
       break;
     }
   }
   if (i != *replacement_ambig_part_size) {
     if (debug_level) {
-      tprintf(kIllegalMsg, line_num);
+      tprintError("Illegal ambiguity specification on line {}\n", line_num);
     }
     return false;
   }
@@ -351,7 +349,7 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     // has limited support for ngram unichar (e.g. dawg permuter).
     if (!(token = strtok_r(nullptr, kAmbigDelimiters, &next_token)) || !sscanf(token, "%d", type)) {
       if (debug_level) {
-        tprintf(kIllegalMsg, line_num);
+        tprintError("Illegal ambiguity specification on line {}\n", line_num);
       }
       return false;
     }
