@@ -113,7 +113,7 @@ MATRIX *MATRIX::DeepCopy() const {
 
 // Print the best guesses out of the match rating matrix.
 void MATRIX::print(const UNICHARSET &unicharset) const {
-  tprintf("Ratings Matrix (top 3 choices)\n");
+  tprintDebug("Ratings Matrix (top 3 choices)\n");
   int dim = dimension();
   int band_width = bandwidth();
   int row, col;
@@ -124,27 +124,27 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         continue;
       }
       BLOB_CHOICE_IT b_it(rating);
-      tprintf("col={} row={} ", col, row);
+      tprintDebug("col={} row={} ", col, row);
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-        tprintf("{} rat={} cert={} ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
+        tprintDebug("{} rat={} cert={} ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
                 b_it.data()->rating(), b_it.data()->certainty());
       }
-      tprintf("\n");
+      tprintDebug("\n");
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
-  tprintf("\n");
+  tprintDebug("\n");
   for (col = 0; col < dim; ++col) {
-    tprintf("\t{}", col);
+    tprintDebug("\t{}", col);
   }
-  tprintf("\n");
+  tprintDebug("\n");
   for (row = 0; row < dim; ++row) {
     for (col = 0; col <= row; ++col) {
       if (col == 0) {
-        tprintf("{}\t", row);
+        tprintDebug("{}\t", row);
       }
       if (row >= col + band_width) {
-        tprintf(" \t");
+        tprintDebug(" \t");
         continue;
       }
       BLOB_CHOICE_LIST *rating = this->get(col, row);
@@ -152,18 +152,18 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         BLOB_CHOICE_IT b_it(rating);
         int counter = 0;
         for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-          tprintf("{} ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
+          tprintDebug("{} ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
           ++counter;
           if (counter == 3) {
             break;
           }
         }
-        tprintf("\t");
+        tprintDebug("\t");
       } else {
-        tprintf(" \t");
+        tprintDebug(" \t");
       }
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 

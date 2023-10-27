@@ -68,13 +68,13 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
     if ((*api)->InitOem(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
-      fprintf(stderr, "Tesseract initialization failed!\n");
+      tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
     tesseract = const_cast<tesseract::Tesseract *>((*api)->tesseract());
     classify = static_cast<tesseract::Classify *>(tesseract);
     if (classify->shape_table() == nullptr) {
-      fprintf(stderr, "Tesseract must contain a ShapeTable!\n");
+      tprintError("Tesseract must contain a ShapeTable!\n");
       return nullptr;
     }
   }
@@ -85,7 +85,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   } else if (classifier == CN_FULL) {
     shape_classifier = new tesseract::TessClassifier(false, classify);
   }
-  tprintf("Testing classifier {}:\n", classifer_name);
+  tprintDebug("Testing classifier {}:\n", classifer_name);
   return shape_classifier;
 }
 

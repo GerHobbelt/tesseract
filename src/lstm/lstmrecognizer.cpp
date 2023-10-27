@@ -357,7 +357,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   *scale_factor = min_width / *scale_factor;
   inputs->set_int_mode(IsIntMode());
   if (HasDebug()) {
-    tprintf("Scale_factor:{}, upside_down:{}, invert_threshold:{}, int_mode:{}\n",
+    tprintDebug("Scale_factor:{}, upside_down:{}, invert_threshold:{}, int_mode:{}\n",
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
@@ -368,7 +368,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     float pos_min, pos_mean, pos_sd;
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
     if (HasDebug()) {
-      tprintf("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
+      tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
           pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
     }
     if (pos_mean < invert_threshold) {
@@ -383,7 +383,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (HasDebug() || 1) {
-        tprintf("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
+        tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
@@ -505,7 +505,7 @@ void LSTMRecognizer::DebugActivationPath(const NetworkIO &outputs, const std::ve
 // of positions.
 void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *label,
                                           int best_choice, int x_start, int x_end) {
-  tprintf("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
+  tprintDebug("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
   double max_score = 0.0;
   double mean_score = 0.0;
   const int width = x_end - x_start;
@@ -524,9 +524,9 @@ void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *
         best_score = line[c];
       }
     }
-    tprintf(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
+    tprintDebug(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
   }
-  tprintf(", Mean={}, max={}\n", mean_score, max_score);
+  tprintDebug(", Mean={}, max={}\n", mean_score, max_score);
 }
 
 // Helper returns true if the null_char is the winner at t, and it beats the

@@ -41,14 +41,14 @@ namespace tesseract {
   static inline void TLOG(int level, const S* format, Args &&...args) {
     if (FLAGS_tlog_level >= level) {
       //tprintf(format, ...);
-      vTessPrint(format, fmt::make_format_args(args...));
+      vTessPrint(4 - level, format, fmt::make_format_args(args...));
     }
   }
 
   template <typename S, typename... Args>
   static inline void VTLOG(int level, const S* format, fmt::format_args args) {
 	  if (FLAGS_tlog_level >= level) {
-		  vTessPrint(format, args);
+		  vTessPrint(4 - level, format, args);
 	  }
   }
 

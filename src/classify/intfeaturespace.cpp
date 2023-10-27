@@ -89,7 +89,7 @@ int IntFeatureSpace::XYToFeatureIndex(int x, int y) const {
     return -1;
   }
   feature = PositionFromIndex(index);
-  tprintf("Click at ({}, {}) ->({}, {}), ->({}, {})\n", x, y, feature.X, feature.Y, x - feature.X,
+  tprintDebug("Click at ({}, {}) ->({}, {}), ->({}, {})\n", x, y, feature.X, feature.Y, x - feature.X,
           y - feature.Y);
   // Get the relative position of x,y from the rounded feature.
   x -= feature.X;

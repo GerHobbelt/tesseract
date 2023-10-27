@@ -196,13 +196,13 @@ void SetPropertiesForInputFile(const std::string &script_dir,
 
   // Load the input unicharset
   unicharset.load_from_file(input_unicharset_file.c_str());
-  tprintf("Loaded unicharset of size {} from file {}\n", unicharset.size(),
+  tprintDebug("Loaded unicharset of size {} from file {}\n", unicharset.size(),
           input_unicharset_file);
 
   // Set unichar properties
-  tprintf("Setting unichar properties\n");
+  tprintDebug("Setting unichar properties\n");
   SetupBasicProperties(true, false, &unicharset);
-  tprintf("Setting script properties\n");
+  tprintDebug("Setting script properties\n");
   SetScriptProperties(script_dir, &unicharset);
   if (!output_xheights_file.empty()) {
     std::string xheights_str = GetXheightString(script_dir, unicharset);
@@ -210,7 +210,7 @@ void SetPropertiesForInputFile(const std::string &script_dir,
   }
 
   // Write the output unicharset
-  tprintf("Writing unicharset to file {}\n", output_unicharset_file);
+  tprintDebug("Writing unicharset to file {}\n", output_unicharset_file);
   unicharset.save_to_file(output_unicharset_file.c_str());
 }
 

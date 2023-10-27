@@ -1866,7 +1866,7 @@ void pre_associate_blobs( // make rough chars
       start_it = blob_it; // save start point
       //                      if (testing_on && textord_show_final_blobs)
       //                      {
-      //                              tprintf("Blob at ({},{})->({},{}),
+      //                              tprintDebug("Blob at ({},{})->({},{}),
       //                              addr={}, count={}\n",
       //                                      blob_box.left(),blob_box.bottom(),
       //                                      blob_box.right(),blob_box.top(),
@@ -2097,7 +2097,7 @@ bool segment_baseline( // split baseline
   segments = 1;
   blobcount = row->blob_list()->length();
   if (textord_oldbl_debug) {
-    tprintf("Segmenting baseline of {} blobs at ({},{})\n", blobcount, box.left(), box.bottom());
+    tprintDebug("Segmenting baseline of {} blobs at ({},{})\n", blobcount, box.left(), box.bottom());
   }
   if (blobcount <= textord_spline_medianwin || blobcount < textord_spline_minblobs) {
     blob_it.move_to_last();
@@ -2135,7 +2135,7 @@ bool segment_baseline( // split baseline
     if (state != 0) {
       needs_curve = true;
     }
-    //              tprintf("State={}, prev={}, shift={}\n",
+    //              tprintDebug("State={}, prev={}, shift={}\n",
     //                      state,last_state,yshift);
     if (state != last_state && blobcount > textord_spline_minblobs) {
       xstarts[segments++] = box.left();
@@ -2156,7 +2156,7 @@ bool segment_baseline( // split baseline
     xstarts[--segments] = new_box.right();
   }
   if (textord_oldbl_debug) {
-    tprintf("Made {} segments on row at ({},{})\n", segments, box.right(), box.bottom());
+    tprintDebug("Made {} segments on row at ({},{})\n", segments, box.right(), box.bottom());
   }
   return needs_curve;
 }
@@ -2202,7 +2202,7 @@ double *linear_spline_baseline( // split baseline
   // quadratic coeffs
   auto *coeffs = new double[segments * 3];
   if (textord_oldbl_debug) {
-    tprintf(
+    tprintDebug(
         "Linear splining baseline of {} blobs at ({},{}), into {} segments of "
         "{} blobs\n",
         blobcount, box.left(), box.bottom(), segments, blobs_per_segment);
@@ -2315,9 +2315,9 @@ void assign_blobs_to_rows( // find lines
                    *gradient / g_length * blob->bounding_box().left();
     } else if (blob->bounding_box().left() - last_x > block->line_size / 2 &&
                last_x - left_x > block->line_size * 2 && textord_interpolating_skew) {
-      //                      tprintf("Interpolating skew from {}",block_skew);
+      //                      tprintDebug("Interpolating skew from {}",block_skew);
       block_skew *= static_cast<float>(blob->bounding_box().left() - left_x) / (last_x - left_x);
-      //                      tprintf("to {}\n",block_skew);
+      //                      tprintDebug("to {}\n",block_skew);
     }
     last_x = blob->bounding_box().left();
     top = blob->bounding_box().top() - block_skew;
@@ -2400,7 +2400,7 @@ void assign_blobs_to_rows( // find lines
     }
     if (blob->bounding_box().contains(testpt) && textord_debug_blob) {
       if (overlap_result != REJECT) {
-        tprintf("Test blob assigned to row at ({},{}) on pass {}\n", dest_row->min_y(),
+        tprintDebug("Test blob assigned to row at ({},{}) on pass {}\n", dest_row->min_y(),
                 dest_row->max_y(), pass);
       } else {
         tprintDebug("Test blob assigned to no row on pass {}\n", pass);

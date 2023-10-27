@@ -153,7 +153,7 @@ bool BLOB_CHOICE::PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool
   double baseline_diff = std::fabs(yshift() - other.yshift());
   if (baseline_diff > kMaxBaselineDrift * x_height) {
     if (debug) {
-      tprintf("Baseline diff {} for {} v {}\n", baseline_diff, unichar_id_, other.unichar_id_);
+      tprintDebug("Baseline diff {} for {} v {}\n", baseline_diff, unichar_id_, other.unichar_id_);
     }
     return false;
   }
@@ -165,7 +165,7 @@ bool BLOB_CHOICE::PosAndSizeAgree(const BLOB_CHOICE &other, float x_height, bool
       std::min(max_xheight(), other.max_xheight()) - std::max(min_xheight(), other.min_xheight());
   overlap /= denominator;
   if (debug) {
-    tprintf("PosAndSize for {} v {}: bl diff = {}, ranges {}, {} / {} ->{}\n", unichar_id_,
+    tprintDebug("PosAndSize for {} v {}: bl diff = {}, ranges {}, {} / {} ->{}\n", unichar_id_,
             other.unichar_id_, baseline_diff, this_range, other_range, denominator, overlap);
   }
 
@@ -561,8 +561,7 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
   if (4 * position_counts[tesseract::SP_SUBSCRIPT] > 3 * length_ ||
       4 * position_counts[tesseract::SP_SUPERSCRIPT] > 3 * length_) {
     if (debug >= 2) {
-      tprintf(
-          "WARNING: Most characters of {} are subscript or superscript.\n"
+      tprintWarn("Most characters of {} are subscript or superscript.\n"
           "That seems wrong, so I'll assume we got the baseline wrong\n",
           unichar_string());
     }
@@ -578,7 +577,7 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
   }
 
   if ((debug >= 1 && position_counts[tesseract::SP_NORMAL] < length_) || debug >= 2) {
-    tprintf("SetScriptPosition on {}\n", unichar_string());
+    tprintDebug("SetScriptPosition on {}\n", unichar_string());
     int chunk_index = 0;
     for (unsigned int blob_index = 0; blob_index < length_; ++blob_index) {
       if (debug >= 2 || script_pos_[blob_index] != tesseract::SP_NORMAL) {
@@ -619,7 +618,7 @@ ScriptPos WERD_CHOICE::ScriptPositionOf(bool print_debug, const UNICHARSET &unic
 
   if (print_debug) {
     const char *pos = ScriptPosToString(retval);
-    tprintf(
+    tprintDebug(
         "{} Character '{}' [bottom:{} top:{}]  "
         "bot_range[{}, {}]  top_range[{}, {}] "
         "sub_thresh[bot:{} top:{}]  sup_thresh_bot {}\n",
@@ -693,7 +692,7 @@ void WERD_CHOICE::print(const char *msg) const {
   for (unsigned int i = 0; i < length_; ++i) {
     s += fmt::format("'{}' ", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
-  tprintf("{}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
+  tprintDebug("{}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
           s, length_, rating_, certainty_,
           adjust_factor_, permuter_, min_x_height_, max_x_height_, dangerous_ambig_found_);
   if (length_ > 0) {
@@ -713,17 +712,17 @@ void WERD_CHOICE::print(const char *msg) const {
       for (unsigned int i = 0; i < length_; ++i) {
         s += fmt::format("\t{}", certainties_[i]);
       }
-      tprintf("{}\n", s);
+      tprintDebug("{}\n", s);
   }
 }
 
 // Prints the segmentation state with an introductory message.
 void WERD_CHOICE::print_state(const char *msg) const {
-  tprintf("{}", msg);
+  tprintDebug("{}", msg);
   for (unsigned int i = 0; i < length_; ++i) {
-    tprintf(" {}", state_[i]);
+    tprintDebug(" {}", state_[i]);
   }
-  tprintf("\n");
+  tprintDebug("\n");
 }
 
 #if !GRAPHICS_DISABLED
@@ -845,21 +844,21 @@ bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1,
 void print_ratings_list(const char *msg, BLOB_CHOICE_LIST *ratings,
                         const UNICHARSET &current_unicharset) {
   if (ratings->empty()) {
-    tprintf("{}:<none>\n", msg);
+    tprintDebug("{}:<none>\n", msg);
     return;
   }
   if (*msg != '\0') {
-    tprintf("{}\n", msg);
+    tprintDebug("{}\n", msg);
   }
   BLOB_CHOICE_IT c_it;
   c_it.set_to_list(ratings);
   for (c_it.mark_cycle_pt(); !c_it.cycled_list(); c_it.forward()) {
     c_it.data()->print(&current_unicharset);
     if (!c_it.at_last()) {
-      tprintf("\n");
+      tprintDebug("\n");
     }
   }
-  tprintf("\n");
+  tprintDebug("\n");
   fflush(stdout);
 }
 

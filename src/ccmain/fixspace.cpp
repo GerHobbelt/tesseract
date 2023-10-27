@@ -502,32 +502,32 @@ void Tesseract::dump_words(WERD_RES_LIST &perm, int16_t score, int16_t mode, boo
     if (debug_fix_space_level > 1) {
       switch (mode) {
         case 1:
-          tprintf("EXTRACTED ({}): \"", score);
+          tprintDebug("EXTRACTED ({}): \"", score);
           break;
         case 2:
-          tprintf("TESTED ({}): \"", score);
+          tprintDebug("TESTED ({}): \"", score);
           break;
         case 3:
-          tprintf("RETURNED ({}): \"", score);
+          tprintDebug("RETURNED ({}): \"", score);
           break;
       }
 
       for (word_res_it.mark_cycle_pt(); !word_res_it.cycled_list(); word_res_it.forward()) {
         if (!word_res_it.data()->part_of_combo) {
-          tprintf("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
+          tprintDebug("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
                   static_cast<int>(word_res_it.data()->best_choice->permuter()));
         }
       }
-      tprintf("\"\n");
+      tprintDebug("\"\n");
     } else if (improved) {
-      tprintf("FIX SPACING \"{}\" => \"", stats_.dump_words_str);
+      tprintDebug("FIX SPACING \"{}\" => \"", stats_.dump_words_str);
       for (word_res_it.mark_cycle_pt(); !word_res_it.cycled_list(); word_res_it.forward()) {
         if (!word_res_it.data()->part_of_combo) {
-          tprintf("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
+          tprintDebug("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
                   static_cast<int>(word_res_it.data()->best_choice->permuter()));
         }
       }
-      tprintf("\"\n");
+      tprintDebug("\"\n");
     }
   }
 }
@@ -583,7 +583,7 @@ void Tesseract::fix_sp_fp_word(WERD_RES_IT &word_res_it, ROW *row, BLOCK *block)
   }
 
   if (debug_fix_space_level > 1) {
-    tprintf("FP fixspace working on \"{}\"\n", word_res->best_choice->unichar_string());
+    tprintDebug("FP fixspace working on \"{}\"\n", word_res->best_choice->unichar_string());
   }
   word_res->word->rej_cblob_list()->sort(c_blob_comparator);
   sub_word_list_it.add_after_stay_put(word_res_it.extract());
@@ -727,7 +727,7 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
 
 #ifndef SECURE_NAMES
   if (debug_fix_space_level > 2) {
-    tprintf("FP fixspace Noise metrics for \"{}\": ",
+    tprintDebug("FP fixspace Noise metrics for \"{}\": ",
             word_res->best_choice->unichar_string());
   }
 #endif
@@ -741,11 +741,11 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
     }
 
     if (debug_fix_space_level > 2) {
-      tprintf("{} ", noise_score[i]);
+      tprintDebug("{} ", noise_score[i]);
     }
   }
   if (debug_fix_space_level > 2) {
-    tprintf("\n");
+    tprintDebug("\n");
   }
 
   /* Now find the worst one which is far enough away from the end of the word */
@@ -830,21 +830,21 @@ void fixspace_dbg(WERD_RES *word) {
   int16_t i;
 
   box.print();
-  tprintf(" \"{}\" ", word->best_choice->unichar_string());
-  tprintf("Blob count: {} (word); {}/{} (rebuild word)\n", word->word->cblob_list()->length(),
+  tprintDebug(" \"{}\" ", word->best_choice->unichar_string());
+  tprintDebug("Blob count: {} (word); {}/{} (rebuild word)\n", word->word->cblob_list()->length(),
           word->rebuild_word->NumBlobs(), word->box_word->length());
   word->reject_map.print(debug_fp);
-  tprintf("\n");
+  tprintDebug("\n");
   if (show_map_detail) {
-    tprintf("\"{}\"\n", word->best_choice->unichar_string());
+    tprintDebug("\"{}\"\n", word->best_choice->unichar_string());
     for (i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
-      tprintf("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
+      tprintDebug("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
       word->reject_map[i].full_print(debug_fp);
     }
   }
 
-  tprintf("Tess Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
-  tprintf("Done flag: {}\n\n", word->done ? "TRUE" : "FALSE");
+  tprintDebug("Tess Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
+  tprintDebug("Done flag: {}\n\n", word->done ? "TRUE" : "FALSE");
 }
 
 /**

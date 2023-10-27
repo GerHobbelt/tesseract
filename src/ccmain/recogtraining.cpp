@@ -153,11 +153,11 @@ void Tesseract::recog_training_segmented(const char *filename, PAGE_RES *page_re
     }
   }
   if (examined_words < 0.85 * total_words) {
-    tprintf(
+    tprintInfo(
         "TODO(antonova): clean up recog_training_segmented; "
         " It examined only a small fraction of the ambigs image.\n");
   }
-  tprintf("recog_training_segmented: examined {} / {} words.\n", examined_words, total_words);
+  tprintInfo("recog_training_segmented: examined {} / {} words.\n", examined_words, total_words);
 }
 
 // Helper prints the given set of blob choices.
@@ -215,7 +215,7 @@ void Tesseract::ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it
   // Compute the number of unichars in the label.
   std::vector<UNICHAR_ID> encoding;
   if (!unicharset.encode_string(label, true, &encoding, nullptr, nullptr)) {
-    tprintf("Not outputting illegal unichar {}\n", label);
+    tprintError("Not outputting illegal unichar {}\n", label);
     return;
   }
 

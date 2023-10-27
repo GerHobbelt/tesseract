@@ -466,7 +466,7 @@ bool WERD_RES::IsAmbiguous() {
 bool WERD_RES::StatesAllValid() {
   unsigned ratings_dim = ratings->dimension();
   if (raw_choice->TotalOfStates() != ratings_dim) {
-    tprintf("raw_choice has total of states = {} vs ratings dim of {}\n",
+    tprintDebug("raw_choice has total of states = {} vs ratings dim of {}\n",
             raw_choice->TotalOfStates(), ratings_dim);
     return false;
   }
@@ -475,7 +475,7 @@ bool WERD_RES::StatesAllValid() {
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward(), ++index) {
     WERD_CHOICE *choice = it.data();
     if (choice->TotalOfStates() != ratings_dim) {
-      tprintf("Cooked #{} has total of states = {} vs ratings dim of {}\n",
+      tprintDebug("Cooked #{} has total of states = {} vs ratings dim of {}\n",
               index, choice->TotalOfStates(), ratings_dim);
       return false;
     }
@@ -506,10 +506,10 @@ void WERD_RES::DebugWordChoices(bool debug, const char *word_to_debug) {
 
 // Prints the top choice along with the accepted/done flags.
 void WERD_RES::DebugTopChoice(const char *msg) const {
-  tprintf("Best choice: accepted={}, adaptable={}, done={} : ", tess_accepted,
+  tprintDebug("Best choice: accepted={}, adaptable={}, done={} : ", tess_accepted,
           tess_would_adapt, done);
   if (best_choice == nullptr) {
-    tprintf("<Null choice>\n");
+    tprintDebug("<Null choice>\n");
   } else {
     best_choice->print(msg);
   }
@@ -550,11 +550,11 @@ void WERD_RES::FilterWordChoices(int debug_level) {
           choice->certainty(i) - best_choice->certainty(j) < threshold) {
         if (debug_level >= 2) {
           choice->print("WorstCertaintyDiffWorseThan");
-          tprintf(
+          tprintDebug(
               "i {} j {} Choice->Blob[i].Certainty {}"
               " WorstOtherChoiceCertainty {} Threshold {}\n",
               i, j, choice->certainty(i), best_choice->certainty(j), threshold);
-          tprintf("Discarding bad choice #{}\n", index);
+          tprintDebug("Discarding bad choice #{}\n", index);
         }
         delete it.extract();
         break;
@@ -649,7 +649,7 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
       if (debug) {
         std::string bad_string;
         word_choice->string_and_lengths(&bad_string, nullptr);
-        tprintf(
+        tprintDebug(
             "Discarding choice \"{}\" with an overly low certainty"
             " {} vs best choice certainty {} (Threshold: {})\n",
             bad_string.c_str(), word_choice->certainty(),
@@ -686,7 +686,7 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
         } else {
           // Old is better.
           if (debug) {
-            tprintf("Discarding duplicate choice \"{}\", rating {} vs {}\n",
+            tprintDebug("Discarding duplicate choice \"{}\", rating {} vs {}\n",
                     new_str, word_choice->rating(), choice->rating());
           }
           delete word_choice;
@@ -710,9 +710,9 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
   }
   if (debug) {
     if (inserted) {
-      tprintf("New {} Word Choice", best_choice == word_choice ? "Best" : "Secondary");
+      tprintDebug("New {} Word Choice", best_choice == word_choice ? "Best" : "Secondary");
     } else {
-      tprintf("Poor Word Choice");
+      tprintDebug("Poor Word Choice");
     }
     word_choice->print(" Word Choice");
   }
@@ -742,7 +742,7 @@ void WERD_RES::PrintBestChoices() const {
     }
     alternates_str += it.data()->unichar_string();
   }
-  tprintf("Alternates for \"{}\": {\"{}\"}\n",
+  tprintDebug("Alternates for \"{}\": {\"{}\"}\n",
           best_choice->unichar_string(), alternates_str);
 }
 

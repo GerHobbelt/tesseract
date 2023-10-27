@@ -46,7 +46,7 @@ static bool ReadNFloats(TFile *fp, uint16_t N, float Buffer[]) {
   const int kMaxLineSize = 1024;
   char line[kMaxLineSize];
   if (fp->FGets(line, kMaxLineSize) == nullptr) {
-    tprintf("Hit EOF in ReadNFloats!\n");
+    tprintError("Hit EOF in ReadNFloats!\n");
     return false;
   }
 

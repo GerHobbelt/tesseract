@@ -66,28 +66,28 @@
 using namespace tesseract;
 
 static void Win32ErrorHandler(const char *module, const char *fmt, va_list ap) {
-  char buf[2048] = "ERROR: ";
+  char buf[2048] = "";
 
   if (module != nullptr) {
-    snprintf(buf, sizeof(buf), "ERROR: %s: ", module);
+    snprintf(buf, sizeof(buf), "%s: ", module);
   }
   size_t off = strlen(buf);
   vsnprintf(buf + off, sizeof(buf) - off, fmt, ap);
   buf[sizeof(buf) - 1] = 0;			// make sure string is NUL terminated under all circumstances.
-  tprintf("{}\n", buf);
+  tprintError("{}\n", buf);
 }
 
 static void Win32WarningHandler(const char *module, const char *fmt, va_list ap) {
-  char buf[2048] = "WARNING: ";
+  char buf[2048] = "";
 
   if (module != nullptr) {
-    snprintf(buf, sizeof(buf), "WARNING: %s: ", module);
+    snprintf(buf, sizeof(buf), "%s: ", module);
   }
   size_t off = strlen(buf);
   vsnprintf(buf + off, sizeof(buf) - off, fmt, ap);
   buf[sizeof(buf) - 1] =
       0;  // make sure string is NUL terminated under all circumstances.
-  tprintf("{}\n", buf);
+  tprintWarn("{}\n", buf);
 }
 
 #  endif /* HAVE_TIFFIO_H */
@@ -111,40 +111,45 @@ static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
 #endif // _WIN32
 
 static void PrintVersionInfo() {
+  tprintSetLogLevelElevation(1);  // Debug -> Info
+  AutoExecOnScopeExit printElevator([]() {
+	// reset the log level elevation we just issued once we leave this function's scope.
+	return tprintSetLogLevelElevation(0);
+  });
   const char *versionStrP;
 
-  tprintf("tesseract {}\n", tesseract::TessBaseAPI::Version());
+  tprintDebug("tesseract {}\n", tesseract::TessBaseAPI::Version());
 
   versionStrP = getLeptonicaVersion();
-  tprintf("  {}\n", versionStrP);
+  tprintDebug("  {}\n", versionStrP);
   stringDestroy(&versionStrP);
 
   versionStrP = getImagelibVersions();
-  tprintf("  {}\n", versionStrP);
+  tprintDebug("  {}\n", versionStrP);
   stringDestroy(&versionStrP);
 
 #ifdef USE_OPENCL
   cl_platform_id platform[4];
   cl_uint num_platforms;
 
-  tprintf(" OpenCL info:\n");
+  tprintDebug(" OpenCL info:\n");
   if (clGetPlatformIDs(4, platform, &num_platforms) == CL_SUCCESS) {
-    tprintf("  Found {} platform(s).\n", num_platforms);
+    tprintDebug("  Found {} platform(s).\n", num_platforms);
     for (unsigned n = 0; n < num_platforms; n++) {
       char info[256];
       if (clGetPlatformInfo(platform[n], CL_PLATFORM_NAME, 256, info, 0) == CL_SUCCESS) {
-        tprintf("  Platform {} name: {}\n", n + 1, info);
+        tprintDebug("  Platform {} name: {}\n", n + 1, info);
       }
       if (clGetPlatformInfo(platform[n], CL_PLATFORM_VERSION, 256, info, 0) == CL_SUCCESS) {
-        tprintf("  Version: {}\n", info);
+        tprintDebug("  Version: {}\n", info);
       }
       cl_device_id devices[2];
       cl_uint num_devices;
       if (clGetDeviceIDs(platform[n], CL_DEVICE_TYPE_ALL, 2, devices, &num_devices) == CL_SUCCESS) {
-        tprintf("  Found {} device(s).\n", num_devices);
+        tprintDebug("  Found {} device(s).\n", num_devices);
         for (unsigned i = 0; i < num_devices; ++i) {
           if (clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 256, info, 0) == CL_SUCCESS) {
-            tprintf("    Device {} name: {}\n", i + 1, info);
+            tprintDebug("    Device {} name: {}\n", i + 1, info);
           }
         }
       }
@@ -153,42 +158,42 @@ static void PrintVersionInfo() {
 #endif
 #if defined(HAVE_NEON) || defined(__aarch64__)
   if (tesseract::SIMDDetect::IsNEONAvailable())
-    tprintf(" Found NEON\n");
+    tprintDebug(" Found NEON\n");
 #else
   if (tesseract::SIMDDetect::IsAVX512BWAvailable()) {
-    tprintf(" Found AVX512BW\n");
+    tprintDebug(" Found AVX512BW\n");
   }
   if (tesseract::SIMDDetect::IsAVX512FAvailable()) {
-    tprintf(" Found AVX512F\n");
+    tprintDebug(" Found AVX512F\n");
   }
   if (tesseract::SIMDDetect::IsAVX512VNNIAvailable()) {
-    tprintf(" Found AVX512VNNI\n");
+    tprintDebug(" Found AVX512VNNI\n");
   }
   if (tesseract::SIMDDetect::IsAVX2Available()) {
-    tprintf(" Found AVX2\n");
+    tprintDebug(" Found AVX2\n");
   }
   if (tesseract::SIMDDetect::IsAVXAvailable()) {
-    tprintf(" Found AVX\n");
+    tprintDebug(" Found AVX\n");
   }
   if (tesseract::SIMDDetect::IsFMAAvailable()) {
-    tprintf(" Found FMA\n");
+    tprintDebug(" Found FMA\n");
   }
   if (tesseract::SIMDDetect::IsSSEAvailable()) {
-    tprintf(" Found SSE4.1\n");
+    tprintDebug(" Found SSE4.1\n");
   }
 #endif
 #ifdef _OPENMP
-  tprintf(" Found OpenMP {}\n", _OPENMP);
+  tprintDebug(" Found OpenMP {}\n", _OPENMP);
 #endif
 #if defined(HAVE_LIBARCHIVE)
 #  if ARCHIVE_VERSION_NUMBER >= 3002000
-  tprintf(" Found {}\n", archive_version_details());
+  tprintDebug(" Found {}\n", archive_version_details());
 #  else
-  tprintf(" Found {}\n", archive_version_string());
+  tprintDebug(" Found {}\n", archive_version_string());
 #  endif // ARCHIVE_VERSION_NUMBER
 #endif   // HAVE_LIBARCHIVE
 #if defined(HAVE_LIBCURL)
-  tprintf(" Found {}\n", curl_version());
+  tprintDebug(" Found {}\n", curl_version());
 #endif
 }
 
@@ -214,9 +219,9 @@ static void PrintHelpForPSM() {
 
 #if DISABLED_LEGACY_ENGINE
   const char *disabled_osd_msg = "\nNOTE: The OSD modes are currently disabled.\n";
-  tprintf("{}{}", msg, disabled_osd_msg);
+  tprintDebug("{}{}", msg, disabled_osd_msg);
 #else
-  tprintf("{}", msg);
+  tprintDebug("{}", msg);
 #endif
 }
 
@@ -229,7 +234,7 @@ static void PrintHelpForOEM() {
       "  2    Legacy + LSTM engines.\n"
       "  3    Default, based on what is available.\n";
 
-  tprintf("{}", msg);
+  tprintDebug("{}", msg);
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
@@ -247,7 +252,7 @@ static const char* basename(const char* path)
 
 static void PrintHelpExtra(const char *program) {
   program = basename(program);
-  tprintf(
+  tprintDebug(
       "Usage:\n"
       "  {} --help | --help-extra | --help-psm | "
 #if !DISABLED_LEGACY_ENGINE
@@ -298,11 +303,11 @@ static void PrintHelpExtra(const char *program) {
 
   PrintHelpForPSM();
 #if !DISABLED_LEGACY_ENGINE
-  tprintf("\n");
+  tprintDebug("\n");
   PrintHelpForOEM();
 #endif
 
-  tprintf(
+  tprintDebug(
       "\n"
       "Commands:\n"
       "\n"
@@ -344,7 +349,7 @@ static void PrintHelpExtra(const char *program) {
 
 static void PrintHelpMessage(const char *program) {
   program = basename(program);
-  tprintf(
+  tprintDebug(
       "Usage:\n"
       "  {} --help | --help-extra | --version\n"
       "  {} help [section]\n"
@@ -395,10 +400,10 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
   std::vector<std::string> languages;
   api.GetAvailableLanguagesAsVector(&languages);
-  tprintf("List of available languages in \"{}\" ({}):\n",
+  tprintDebug("List of available languages in \"{}\" ({}):\n",
          api.GetDatapath(), languages.size());
   for (const auto &language : languages) {
-    tprintf("{}\n", language);
+    tprintDebug("{}\n", language);
   }
   api.End();
 }
@@ -440,13 +445,13 @@ static void InfoTraineddata(const char** filenames) {
   while ((filename = *filenames++) != nullptr) {
     tesseract::TessdataManager mgr;
     if (!mgr.is_loaded() && !mgr.Init(filename)) {
-      tprintf("Error: Error opening data file {}\n", filename);
+      tprintError("Error opening data file {}\n", filename);
     } else {
       if (mgr.IsLSTMAvailable()) {
-        tprintf("{} - LSTM\n", filename);
+        tprintDebug("{} - LSTM\n", filename);
       }
       if (mgr.IsBaseAvailable()) {
-        tprintf("{} - legacy\n", filename);
+        tprintDebug("{} - legacy\n", filename);
       }
     }
   }
@@ -455,15 +460,15 @@ static void InfoTraineddata(const char** filenames) {
 static void UnpackFiles(const char** filenames) {
   const char* filename;
   while ((filename = *filenames++) != nullptr) {
-    tprintf("Extracting {}\n", filename);
+    tprintDebug("Extracting {}\n", filename);
     tesseract::DocumentData images(filename);
     if (!images.LoadDocument(filename, 0, 0, nullptr)) {
       tprintError("Failed to read training data from {}!\n", filename);
       continue;
     }
 #if 0
-    tprintf("{} pages\n", images.NumPages());
-    tprintf("{} size\n", images.PagesSize());
+    tprintDebug("{} pages\n", images.NumPages());
+    tprintDebug("{} size\n", images.PagesSize());
 #endif
     for (int page = 0; page < images.NumPages(); page++) {
       std::string basename = filename;
@@ -473,7 +478,7 @@ static void UnpackFiles(const char** filenames) {
       const tesseract::ImageData* image = images.GetPage(page);
 #if 0
       const char* imagefilename = image->imagefilename().c_str();
-      tprintf("fn: {}\n", imagefilename);
+      tprintDebug("fn: {}\n", imagefilename);
 #endif
       const char* transcription = image->transcription().c_str();
       std::string gt_filename = stream.str() + ".gt.txt";
@@ -485,7 +490,7 @@ static void UnpackFiles(const char** filenames) {
       fprintf(f, "%s\n", transcription);
       fclose(f);
 #if 0
-      tprintf("gt page {}: {}\n", page, transcription);
+      tprintDebug("gt page {}: {}\n", page, transcription);
 #endif
       Pix* pix = image->GetPix();
       std::string image_filename = stream.str() + ".png";
@@ -498,7 +503,7 @@ static void UnpackFiles(const char** filenames) {
       const TBOX& box = boxes[0];
       box.print();
       const GenericVector<STRING>& box_texts = image->box_texts();
-      tprintf("gt: {}\n", box_texts[0]);
+      tprintDebug("gt: {}\n", box_texts[0]);
 #endif
     }
   }
@@ -1159,7 +1164,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       }
 
       if (print_parameters) {
-        tprintf("Tesseract parameters:\n");
+        tprintDebug("Tesseract parameters:\n");
         api.PrintVariables();
         api.End();
         return EXIT_SUCCESS;
@@ -1257,7 +1262,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
 #if !DISABLED_LEGACY_ENGINE
       if (print_fonts_table) {
-        tprintf("Tesseract fonts table:\n");
+        tprintDebug("Tesseract fonts table:\n");
         api.PrintFontsTable();
         api.End();
         return EXIT_SUCCESS;
@@ -1299,7 +1304,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
           // TODO: Implement output of page segmentation, see documentation
           // ("Automatic page segmentation, but no OSD, or OCR").
           it->Orientation(&orientation, &direction, &order, &deskew_angle);
-          tprintf(
+          tprintDebug(
               "Orientation: {}\nWritingDirection: {}\nTextlineOrder: {}\n"
               "Deskew angle: {}\n",
               orientation, direction, order, deskew_angle);
@@ -1332,7 +1337,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         const char *disabled_osd_msg =
             "\nERROR: The page segmentation mode 0 (OSD Only) is currently "
             "disabled.\n\n";
-        tprintf("{}",  disabled_osd_msg);
+        tprintDebug("{}",  disabled_osd_msg);
         return EXIT_FAILURE;
       } else if (cur_psm == tesseract::PSM_AUTO_OSD) {
         api.SetPageSegMode(tesseract::PSM_AUTO);
@@ -1378,7 +1383,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       if (!renderers.empty()) {
 #if DISABLED_LEGACY_ENGINE
         if (!osd_warning.empty()) {
-          tprintf("{}", osd_warning);
+          tprintDebug("{}", osd_warning);
         }
 #endif
 

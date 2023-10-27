@@ -163,7 +163,7 @@ int32_t OL_BUCKETS::outline_complexity(C_OUTLINE *outline, // parent outline
 
         if (child_count > edges_max_children_per_outline) { // too fragmented
           if (edges_debug) {
-            tprintf(
+            tprintDebug(
                 "Discard outline on child_count={} > "
                 "max_children_per_outline={}\n",
                 child_count,
@@ -180,7 +180,7 @@ int32_t OL_BUCKETS::outline_complexity(C_OUTLINE *outline, // parent outline
         }
         if (child_count + grandchild_count > max_count) { // too complex
           if (edges_debug) {
-            tprintf(
+            tprintDebug(
                 "Discard outline on child_count={} + grandchild_count={} "
                 "> max_count={}\n",
                 child_count, grandchild_count, max_count);
@@ -249,7 +249,7 @@ int32_t OL_BUCKETS::count_children( // recursive count
           }
           if (child_count + grandchild_count > max_count) {
             if (edges_debug) {
-              tprintf("Discarding parent with child count={}, gc={}\n",
+              tprintDebug("Discarding parent with child count={}, gc={}\n",
                       child_count, grandchild_count);
             }
             return child_count + grandchild_count;
@@ -278,7 +278,7 @@ int32_t OL_BUCKETS::count_children( // recursive count
               }
               if (grandchild_count > 0) {
                 if (edges_debug) {
-                  tprintf(
+                  tprintDebug(
                       "Discarding parent of area {}, child area={}, max{} "
                       "with gc={}\n",
                       parent_area, child_area, max_parent_area,
@@ -290,7 +290,7 @@ int32_t OL_BUCKETS::count_children( // recursive count
               if (child_length * child_length >
                   child_area * edges_patharea_ratio) {
                 if (edges_debug) {
-                  tprintf(
+                  tprintDebug(
                       "Discarding parent of area {}, child area={}, max{} "
                       "with child length={}\n",
                       parent_area, child_area, max_parent_area, child_length);
@@ -300,7 +300,7 @@ int32_t OL_BUCKETS::count_children( // recursive count
             }
             if (child_area < child->bounding_box().area() * edges_childarea) {
               if (edges_debug) {
-                tprintf(
+                tprintDebug(
                     "Discarding parent of area {}, child area={}, max{} "
                     "with child rect={}\n",
                     parent_area, child_area, max_parent_area,

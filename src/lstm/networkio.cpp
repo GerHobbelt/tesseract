@@ -202,7 +202,7 @@ void NetworkIO::FromPixes(const StaticShape &shape, const std::vector<Image> &pi
       contrast = 1.0f;
     }
 	if (debug_misc) {
-      tprintf("LSTM NetworkIO::FromPixes: pix[{}]: black:{}, white:{}, contrast:{}, depth:{}, target_width:{}, target_height:{}, width:{}, height:{}\n", b, black, white, contrast, shape.depth(), target_width, target_height, pixGetWidth(pix), pixGetHeight(pix));
+      tprintDebug("LSTM NetworkIO::FromPixes: pix[{}]: black:{}, white:{}, contrast:{}, depth:{}, target_width:{}, target_height:{}, width:{}, height:{}\n", b, black, white, contrast, shape.depth(), target_width, target_height, pixGetWidth(pix), pixGetHeight(pix));
 	}
     if (shape.height() == 1) {
       Copy1DGreyImage(b, pix, black, contrast, randomizer);
@@ -387,13 +387,13 @@ void NetworkIO::Print(int num) const {
     for (int t = 0; t < Width(); ++t) {
       if (num == 0 || t < num || t + num >= Width()) {
         if (int_mode_) {
-          tprintf(" {}", static_cast<float>(i_[t][y]) / INT8_MAX);
+          tprintDebug(" {}", static_cast<float>(i_[t][y]) / INT8_MAX);
         } else {
-          tprintf(" {}", f_[t][y]);
+          tprintDebug(" {}", f_[t][y]);
         }
       }
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 

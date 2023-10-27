@@ -521,7 +521,7 @@ int64_t DocumentData::UnCache() {
   pages_offset_ = -1;
   set_total_pages(-1);
   set_memory_used(0);
-  tprintf("Unloaded document {}, saving {} memory\n",
+  tprintDebug("Unloaded document {}, saving {} memory\n",
           document_name_, memory_saved);
   return memory_saved;
 }
@@ -599,7 +599,7 @@ bool DocumentData::ReCachePages() {
     pages_.clear();
   } else if (loaded_pages > 1) {
     // Avoid lots of messages for training with single line images.
-    tprintf("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
+    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
             loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
             document_name_);
   }

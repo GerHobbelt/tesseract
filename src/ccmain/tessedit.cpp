@@ -52,7 +52,7 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
   std::string path = datadir;
   path += "configs/";
   path += filename;
-  tprintf("Read Config: test if '{}' is a readable file.\n", path);
+  tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
   FILE *fp;
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
@@ -60,12 +60,12 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
     path = datadir;
     path += "tessconfigs/";
     path += filename;
-    tprintf("Read Config: test if '{}' is a readable file.\n", path);
+    tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
       fclose(fp);
     } else {
       path = filename;
-      tprintf("Read Config: test if '{}' is a readable file.\n", path);
+      tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
       if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
         fclose(fp);
       }
@@ -103,9 +103,8 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Initialize TessdataManager.
   std::string tessdata_path = language_data_path_prefix + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
-    tprintError("Error opening data file {}\n", tessdata_path.c_str());
-    tprintf(
-        "INFO: Please make sure the TESSDATA_PREFIX environment variable is set"
+    tprintError("Error opening data file {}\n", tessdata_path);
+    tprintInfo("Please make sure the TESSDATA_PREFIX environment variable is set"
         " to your \"tessdata\" directory.\n");
     return false;
   }
@@ -203,8 +202,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   }
 #if !DISABLED_LEGACY_ENGINE
   else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset.load_from_file(&fp, false)) {
-    tprintf(
-        "ERROR: Tesseract (legacy) engine requested, but components are "
+    tprintError("Tesseract (legacy) engine requested, but components are "
         "not present in {}!!\n",
         tessdata_path);
     return false;
@@ -391,7 +389,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       for (auto &sub_lang : sub_langs_) {
         sub_lang->language_model_->getParamsModel().Copy(this->language_model_->getParamsModel());
       }
-      tprintf("Using params model of the primary language.\n");
+      tprintDebug("Using params model of the primary language.\n");
     } else {
       this->language_model_->getParamsModel().Clear();
       for (auto &sub_lang : sub_langs_) {

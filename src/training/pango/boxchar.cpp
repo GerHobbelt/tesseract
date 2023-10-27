@@ -71,9 +71,9 @@ void BoxChar::GetDirection(int *num_rtl, int *num_ltr) const {
   if (uni_vector.empty()) {
     tprintError("Illegal utf8 in boxchar string:{} = ", ch_.c_str());
     for (char c : ch_) {
-      tprintf(" {}", c);
+      tprintError(" {}", c);
     }
-    tprintf("\n");
+    tprintError("\n");
     return;
   }
   for (char32 ch : uni_vector) {
@@ -134,7 +134,7 @@ void BoxChar::PrepareToWrite(std::vector<BoxChar *> *boxes) {
   InsertSpaces(rtl_rules, vertical_rules, boxes);
   for (size_t i = 0; i < boxes->size(); ++i) {
     if ((*boxes)[i]->box_ == nullptr) {
-      tprintf("Null box at index {}\n", i);
+      tprintDebug("Null box at index {}\n", i);
     }
   }
   if (rtl_rules) {
@@ -192,7 +192,7 @@ void BoxChar::InsertNewlines(bool rtl_rules, bool vertical_rules, std::vector<Bo
         } else if (rtl_rules) {
           x = prev_box_x - width;
           if (x < 0) {
-            tprintf("prev x = {}, width={}\n", prev_box->x, width);
+            tprintDebug("prev x = {}, width={}\n", prev_box->x, width);
             x = 0;
           }
         }

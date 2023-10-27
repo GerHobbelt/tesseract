@@ -110,7 +110,7 @@ bool WriteRecoder(const UNICHARSET &unicharset, bool pass_through, const std::st
     recoder.SetupPassThrough(unicharset);
   } else {
     int null_char = unicharset.has_special_codes() ? UNICHAR_BROKEN : unicharset.size();
-    tprintf("Null char={}\n", null_char);
+    tprintDebug("Null char={}\n", null_char);
     if (!recoder.ComputeEncoding(unicharset, null_char, radical_table_data)) {
       tprintError("Creation of encoded unicharset failed!!\n");
       return false;
@@ -140,7 +140,7 @@ static bool WriteDawg(const std::vector<std::string> &words, const UNICHARSET &u
   // The first 3 arguments are not used in this case.
   Trie trie(DAWG_TYPE_WORD, "", SYSTEM_DAWG_PERM, unicharset.size(), 0);
   trie.add_word_list(words, unicharset, reverse_policy);
-  tprintf("Reducing Trie to SquishedDawg\n");
+  tprintDebug("Reducing Trie to SquishedDawg\n");
   std::unique_ptr<SquishedDawg> dawg(trie.trie_to_dawg());
   if (dawg == nullptr || dawg->NumEdges() == 0) {
     return false;
@@ -207,7 +207,7 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
     tprintError("Error writing unicharset!!\n");
     return EXIT_FAILURE;
   } else {
-    tprintf("Config file is optional, continuing...\n");
+    tprintDebug("Config file is optional, continuing...\n");
   }
   // If there is a config file, read it and add to traineddata.
   std::string config_filename = script_dir + "/" + lang + "/" + lang + ".config";
@@ -239,7 +239,7 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
     tprintError("Error writing output traineddata file!!\n");
     return EXIT_FAILURE;
   }
-  tprintf("Created %s/%s/%s.traineddata", output_dir.c_str(), lang.c_str(), lang.c_str());
+  tprintDebug("Created %s/%s/%s.traineddata", output_dir.c_str(), lang.c_str(), lang.c_str());
   return EXIT_SUCCESS;
 }
 

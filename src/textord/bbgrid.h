@@ -701,7 +701,7 @@ void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::AssertNoDuplicates() {
 // Handle a click event in a display window.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
 void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::HandleClick(int x, int y) {
-  tprintf("Click at ({}, {})\n", x, y);
+  tprintDebug("Click at ({}, {})\n", x, y);
 }
 
 ///////////////////////////////////////////////////////////////////////

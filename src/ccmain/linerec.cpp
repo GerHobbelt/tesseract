@@ -116,7 +116,7 @@ void Tesseract::TrainFromBoxes(const std::vector<TBOX> &boxes, const std::vector
     }
     ImageData *imagedata = nullptr;
     if (best_block == nullptr) {
-      tprintf("No block overlapping textline: {}\n", line_str);
+      tprintInfo("No block overlapping textline: {}\n", line_str);
     } else {
       imagedata = GetLineData(line_box, boxes, texts, start_box, end_box, *best_block);
     }
@@ -348,7 +348,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
 	  rescale_word_certainty_from_LSTM_to_tesseract_values(word);
       float corrected_word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       if (getDict().stopper_debug_level >= 1) {
-        tprintf("Best choice certainty={}, space={}, corrected={}, final={}\n",
+        tprintDebug("Best choice certainty={}, space={}, corrected={}, final={}\n",
                 word->best_choice->certainty(), word->space_certainty,
                 corrected_word_certainty, corrected_word_certainty);
         word->best_choice->print();

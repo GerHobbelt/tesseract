@@ -692,7 +692,7 @@ ImageCostEstimate Tesseract::EstimateImageMemoryCost(const Pix* pix) const {
 }
 
 // Helper, which may be invoked after SetInputImage() or equivalent has been called:
-// reports the cost estimate for the current instance/image via `tprintf()` and returns
+// reports the cost estimate for the current instance/image via `tprintDebug()` and returns
 // `true` when the cost is expected to be too high.
 bool Tesseract::CheckAndReportIfImageTooLarge(const Pix* pix) const {
   // default: use pix_original() data 
@@ -709,7 +709,7 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   auto cost = TessBaseAPI::EstimateImageMemoryCost(width, height, allowed_image_memory_capacity);
 
   if (debug_misc) {
-    tprintf("Image size & memory cost estimate: {} x {} px, estimated cost {} vs. {} allowed capacity.\n",
+    tprintDebug("Image size & memory cost estimate: {} x {} px, estimated cost {} vs. {} allowed capacity.\n",
       width, height, cost.to_string(), ImageCostEstimate::capacity_to_string(allowed_image_memory_capacity));
   }
 

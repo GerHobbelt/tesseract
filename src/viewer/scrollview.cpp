@@ -304,7 +304,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
 
 
 void ScrollView::ExitHelper() {
-  tprintf("Nuking ScrollView #{}.\n", GetId());
+  tprintDebug("Nuking ScrollView #{}.\n", GetId());
 
   if (ref_of_ref_) {
     *ref_of_ref_ = nullptr;
@@ -986,7 +986,7 @@ BackgroundScrollView::~BackgroundScrollView() {
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
   auto message = fmt::vformat(format, args);
-  tprintf("DEBUG-DRAW: {}\n", message);
+  tprintDebug("DEBUG-DRAW: {}\n", message);
 }
 
 /// Add an Event Listener to this ScrollView Window

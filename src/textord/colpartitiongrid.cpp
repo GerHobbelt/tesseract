@@ -88,7 +88,7 @@ void ColPartitionGrid::HandleClick(int x, int y) {
   while ((neighbour = radsearch.NextRadSearch()) != nullptr) {
     const TBOX &nbox = neighbour->bounding_box();
     if (nbox.contains(click)) {
-      tprintf("Block box:");
+      tprintDebug("Block box:");
       neighbour->bounding_box().print();
       neighbour->Print();
     }
@@ -138,7 +138,7 @@ bool ColPartitionGrid::MergePart(
     TBOX box = part->bounding_box();
     bool debug = AlignedBlob::WithinTestRegion(2, box.left(), box.bottom());
     if (debug) {
-      tprintf("Merge candidate:");
+      tprintDebug("Merge candidate:");
       box.print();
     }
     // Set up a rectangle search bounded by the part.
@@ -154,7 +154,7 @@ bool ColPartitionGrid::MergePart(
                                                  confirm_cb, &overlap_increase);
     if (neighbour != nullptr && overlap_increase <= 0) {
       if (debug) {
-        tprintf("Merging:hoverlap={}, voverlap={}, OLI={}\n",
+        tprintDebug("Merging:hoverlap={}, voverlap={}, OLI={}\n",
                 part->HCoreOverlap(*neighbour), part->VCoreOverlap(*neighbour),
                 overlap_increase);
       }
@@ -169,11 +169,11 @@ bool ColPartitionGrid::MergePart(
       any_done = true;
     } else if (neighbour != nullptr) {
       if (debug) {
-        tprintf("Overlapped when merged with increase {}: ", overlap_increase);
+        tprintDebug("Overlapped when merged with increase {}: ", overlap_increase);
         neighbour->bounding_box().print();
       }
     } else if (debug) {
-      tprintf("No candidate neighbour returned\n");
+      tprintDebug("No candidate neighbour returned\n");
     }
   } while (merge_done);
   return any_done;
@@ -196,7 +196,7 @@ static bool OKMergeCandidate(const ColPartition *part,
 
   const TBOX &c_box = candidate->bounding_box();
   if (debug) {
-    tprintf("Examining merge candidate:");
+    tprintDebug("Examining merge candidate:");
     c_box.print();
   }
   // Candidates must be within a reasonable distance.
@@ -204,7 +204,7 @@ static bool OKMergeCandidate(const ColPartition *part,
     int h_dist = -part->HCoreOverlap(*candidate);
     if (h_dist >= std::max(part_box.width(), c_box.width()) / 2) {
       if (debug) {
-        tprintf("Too far away: h_dist = {}\n", h_dist);
+        tprintDebug("Too far away: h_dist = {}\n", h_dist);
       }
       return false;
     }
@@ -213,7 +213,7 @@ static bool OKMergeCandidate(const ColPartition *part,
     int v_dist = -part->VCoreOverlap(*candidate);
     if (v_dist >= std::max(part_box.height(), c_box.height()) / 2) {
       if (debug) {
-        tprintf("Too far away: v_dist = {}\n", v_dist);
+        tprintDebug("Too far away: v_dist = {}\n", v_dist);
       }
       return false;
     }
@@ -309,9 +309,9 @@ static bool TestCompatibleCandidates(const ColPartition &part, bool debug,
         if (candidate2 != candidate &&
             !OKMergeCandidate(candidate, candidate2, false)) {
           if (debug) {
-            tprintf("NC overlap failed:Candidate:");
+            tprintDebug("NC overlap failed:Candidate:");
             candidate2->bounding_box().print();
-            tprintf("fails to be a good merge with:");
+            tprintDebug("fails to be a good merge with:");
             candidate->bounding_box().print();
           }
           return false;
@@ -445,7 +445,7 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
   // we need anything that might be overlapped by the merged box.
   FindOverlappingPartitions(full_box, part, &neighbours);
   if (debug) {
-    tprintf("Finding best merge candidate from {}, {} neighbours for box:",
+    tprintDebug("Finding best merge candidate from {}, {} neighbours for box:",
             candidates->length(), neighbours.length());
     part_box.print();
   }
@@ -464,7 +464,7 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
     ColPartition *candidate = it.data();
     if (confirm_cb != nullptr && !confirm_cb(part, candidate)) {
       if (debug) {
-        tprintf("Candidate not confirmed:");
+        tprintDebug("Candidate not confirmed:");
         candidate->bounding_box().print();
       }
       continue;
@@ -476,7 +476,7 @@ ColPartition *ColPartitionGrid::BestMergeCandidate(
       best_increase = increase;
       best_area = cand_box.bounding_union(part_box).area() - cand_box.area();
       if (debug) {
-        tprintf("New best merge candidate has increase {}, area {}, over box:",
+        tprintDebug("New best merge candidate has increase {}, area {}, over box:",
                 increase, best_area);
         full_box.print();
         candidate->Print();
@@ -1003,7 +1003,7 @@ void ColPartitionGrid::GridFindMargins(ColPartitionSet **best_columns) {
     FindPartitionMargins(columns, part);
     const TBOX &box = part->bounding_box();
     if (AlignedBlob::WithinTestRegion(2, box.left(), box.bottom())) {
-      tprintf("Computed margins for part:");
+      tprintDebug("Computed margins for part:");
       part->Print();
     }
   }
@@ -1122,9 +1122,9 @@ void ColPartitionGrid::FindFigureCaptions() {
           }
           const TBOX &partner_box = partner->bounding_box();
           if (debug) {
-            tprintf("Finding figure captions for image part:");
+            tprintDebug("Finding figure captions for image part:");
             part_box.print();
-            tprintf("Considering partner:");
+            tprintDebug("Considering partner:");
             partner_box.print();
           }
           if (partner_box.left() >= part_box.left() &&
@@ -1140,7 +1140,7 @@ void ColPartitionGrid::FindFigureCaptions() {
       }
       if (best_caption != nullptr) {
         if (debug) {
-          tprintf("Best caption candidate:");
+          tprintDebug("Best caption candidate:");
           best_caption->bounding_box().print();
         }
         // We have a candidate caption. Qualify it as being separable from
@@ -1182,10 +1182,10 @@ void ColPartitionGrid::FindFigureCaptions() {
           }
         }
         if (debug) {
-          tprintf("Line count={}, biggest gap {}, smallest{}, mean height {}\n",
+          tprintDebug("Line count={}, biggest gap {}, smallest{}, mean height {}\n",
                   line_count, biggest_gap, smallest_gap, mean_height);
           if (end_partner != nullptr) {
-            tprintf("End partner:");
+            tprintDebug("End partner:");
             end_partner->bounding_box().print();
           }
         }
@@ -1200,7 +1200,7 @@ void ColPartitionGrid::FindFigureCaptions() {
             partner->set_type(PT_CAPTION_TEXT);
             partner->SetBlobTypes();
             if (debug) {
-              tprintf("Set caption type for partition:");
+              tprintDebug("Set caption type for partition:");
               partner->bounding_box().print();
             }
             next_partner = partner->SingletonPartner(best_upper);
@@ -1412,23 +1412,23 @@ void ColPartitionGrid::FindMergeCandidates(const ColPartition *part,
       }
       if (neighbour != nullptr) {
         if (debug) {
-          tprintf(
+          tprintDebug(
               "Combined box overlaps another that is not OK despite"
               " allowance of {}:",
               ok_overlap);
           neighbour->bounding_box().print();
-          tprintf("Reason:");
+          tprintDebug("Reason:");
           OKMergeCandidate(part, neighbour, true);
-          tprintf("...and:");
+          tprintDebug("...and:");
           OKMergeCandidate(candidate, neighbour, true);
-          tprintf("Overlap:");
+          tprintDebug("Overlap:");
           neighbour->OKMergeOverlap(*part, *candidate, ok_overlap, true);
         }
         continue;
       }
     }
     if (debug) {
-      tprintf("Adding candidate:");
+      tprintDebug("Adding candidate:");
       candidate->bounding_box().print();
     }
     // Unique elements as they arrive.
@@ -1452,7 +1452,7 @@ bool ColPartitionGrid::SmoothRegionType(Image nontext_map, const TBOX &im_box,
                                         ColPartition *part) {
   const TBOX &part_box = part->bounding_box();
   if (debug) {
-    tprintf("Smooothing part at:");
+    tprintDebug("Smooothing part at:");
     part_box.print();
   }
   BlobRegionType best_type = BRT_UNKNOWN;
@@ -1468,7 +1468,7 @@ bool ColPartitionGrid::SmoothRegionType(Image nontext_map, const TBOX &im_box,
     BlobRegionType type = SmoothInOneDirection(dir, nontext_map, im_box,
                                                rerotation, debug, *part, &dist);
     if (debug) {
-      tprintf("Result in dir {} = {} at dist {}\n", dir, type, dist);
+      tprintDebug("Result in dir {} = {} at dist {}\n", dir, type, dist);
     }
     if (type != BRT_UNKNOWN && dist < best_dist) {
       best_dist = dist;
@@ -1503,7 +1503,7 @@ bool ColPartitionGrid::SmoothRegionType(Image nontext_map, const TBOX &im_box,
     part->set_blob_type(new_type);
     part->SetBlobTypes();
     if (debug) {
-      tprintf("Modified part:");
+      tprintDebug("Modified part:");
       part->Print();
     }
     return true;
@@ -1609,7 +1609,7 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
     }
     *best_distance = min_dist;
     if (debug) {
-      tprintf("Totals: htext={}+{}, vtext={}+{}, image={}+{}, at dist={}\n",
+      tprintDebug("Totals: htext={}+{}, vtext={}+{}, image={}+{}, at dist={}\n",
               counts[NPT_HTEXT], counts[NPT_WEAK_HTEXT], counts[NPT_VTEXT],
               counts[NPT_WEAK_VTEXT], counts[NPT_IMAGE], image_bias, min_dist);
     }
@@ -1683,7 +1683,7 @@ void ColPartitionGrid::AccumulatePartDistances(
     int y_gap = std::max(part_box.y_gap(nbox), 0);
     int n_dist = x_gap * dist_scaling.x() + y_gap * dist_scaling.y();
     if (debug) {
-      tprintf("Part has x-gap={}, y={}, dist={} at:", x_gap, y_gap, n_dist);
+      tprintDebug("Part has x-gap={}, y={}, dist={} at:", x_gap, y_gap, n_dist);
       nbox.print();
     }
     // Truncate the number of boxes, so text doesn't get too much advantage.
@@ -1697,7 +1697,7 @@ void ColPartitionGrid::AccumulatePartDistances(
         count_vector = &dists[NPT_VTEXT];
       }
       if (debug) {
-        tprintf("{} {}\n", n_type == BRT_TEXT ? "Htext" : "Vtext", n_boxes);
+        tprintDebug("{} {}\n", n_type == BRT_TEXT ? "Htext" : "Vtext", n_boxes);
       }
     } else if ((n_type == BRT_TEXT || n_type == BRT_VERT_TEXT) &&
                (n_flow == BTFT_CHAIN || n_flow == BTFT_NEIGHBOURS)) {
@@ -1708,12 +1708,12 @@ void ColPartitionGrid::AccumulatePartDistances(
         count_vector = &dists[NPT_WEAK_VTEXT];
       }
       if (debug) {
-        tprintf("Weak {}\n", n_boxes);
+        tprintDebug("Weak {}\n", n_boxes);
       }
     } else {
       count_vector = &dists[NPT_IMAGE];
       if (debug) {
-        tprintf("Image {}\n", n_boxes);
+        tprintDebug("Image {}\n", n_boxes);
       }
     }
     if (count_vector != nullptr) {

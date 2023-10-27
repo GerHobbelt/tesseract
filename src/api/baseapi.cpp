@@ -237,7 +237,7 @@ static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBas
     }
 
 	if (debug_misc) {
-      tprintf("tesseract ({}) log holdoff lock released.\n", (void *)tess);
+      tprintDebug("tesseract ({}) log holdoff lock released.\n", (void *)tess);
 	}
 
     if (tess) {
@@ -371,7 +371,7 @@ ImageCostEstimate TessBaseAPI::EstimateImageMemoryCost() const {
 
 /**
 * Helper, which may be invoked after SetInputImage() or equivalent has been called:
-* reports the cost estimate for the current instance/image via `tprintf()` and returns
+* reports the cost estimate for the current instance/image via `tprintDebug()` and returns
 * `true` when the cost is expected to be too high.
 *
 * You can use this as a fast pre-flight check. Many major tesseract APIs perform
@@ -468,7 +468,7 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
 #ifdef HAVE_MUPDF
 	if (print_info)
 	{
-		tprintf("ID=%3d: {} is_italic={} is_bold={}"
+		tprintDebug("ID=%3d: {} is_italic={} is_bold={}"
 				" is_fixed_pitch={} is_serif={} is_fraktur={}\n",
 					font_index, font.name,
 					font.is_italic() ? "true" : "false",
@@ -824,7 +824,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   }
   if (tesseract_->pix_binary() == nullptr) {
 	if (verbose_process) {
-      tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
     Image pix = Image();
@@ -1080,17 +1080,17 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
     if (verbose_process)
-      tprintf("PROCESS: Re-segment from line boxes.\n");
+      tprintInfo("PROCESS: Re-segment from line boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
     if (verbose_process)
-      tprintf("PROCESS: Re-segment from page boxes.\n");
+      tprintInfo("PROCESS: Re-segment from page boxes.\n");
     page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
     if (verbose_process)
-      tprintf("PROCESS: Re-segment from LSTM / previous word best choice.\n");
+      tprintInfo("PROCESS: Re-segment from LSTM / previous word best choice.\n");
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
   }
 
@@ -1140,7 +1140,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition"));
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
     if (scrollview_support) {
       tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
@@ -1215,7 +1215,7 @@ bool TessBaseAPI::NormalizeImage(int mode) {
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Normalize Image"));
 
   if (!GetInputImage()) {
-    tprintf("Please use SetImage before applying the image pre-processing steps.");
+    tprintError("Please use SetImage before applying the image pre-processing steps.\n");
     return false;
   }
 
@@ -1336,8 +1336,9 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       tprintError("Image file {} cannot be read!\n", pagename);
       return false;
     }
-    tprintf("Page #{} : {}\n", page_number + 1, pagename);
-    bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
+    tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
+	SetVariable("applybox_page", page_number);
+	bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
     bool two_pass = false;
 
@@ -1395,7 +1396,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     if (pix == nullptr) {
       break;
     }
-    tprintf("Page #{}\n", page_number + 1);
+    tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
     SetVariable("applybox_page", page_number);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
@@ -1543,8 +1544,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 
   // Here is our autodetection
   int format;
-  int r =
-      (data != nullptr) ? findFileFormatBuffer(data, &format) : findFileFormat(filename, &format);
+  int r = (data != nullptr) ? findFileFormatBuffer(data, &format) : findFileFormat(filename, &format);
 
   // Maybe we have a filelist
   if (r != 0 || format == IFF_UNKNOWN) {
@@ -1583,8 +1583,13 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
   }
 
   // Produce output
-  r = (tiff) ? ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer)
-             : ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+  if (tiff) {
+    r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
+  }
+  else {
+	SetVariable("applybox_page", -1);
+	r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+  }
 
   // Clean up memory as needed
   pixDestroy(&pix);
@@ -1616,7 +1621,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   {
     auto cost = TessBaseAPI::EstimateImageMemoryCost(pix);
     std::string cost_report = cost;
-    tprintf("Estimated memory pressure: {} for input image size {} x {} px\n", cost_report, pixGetWidth(pix), pixGetHeight(pix));
+    tprintInfo("Estimated memory pressure: {} for input image size {} x {} px\n", cost_report, pixGetWidth(pix), pixGetHeight(pix));
 
     if (CheckAndReportIfImageTooLarge(pix)) {
       return false; // fail early
@@ -1824,7 +1829,7 @@ char *TessBaseAPI::GetUTF8Text() {
         // Ignore images and lines for text output.
         continue;
       case PT_NOISE:
-        tprintf("TODO: Please report image which triggers the noise case.\n");
+        tprintError("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
 		break;
       default:
@@ -2743,7 +2748,7 @@ int TessBaseAPI::FindLines() {
   }
   if (tesseract_->pix_binary() == nullptr) {
 	if (verbose_process) {
-      tprintf("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
 	Image pix = Image();
@@ -2758,7 +2763,7 @@ int TessBaseAPI::FindLines() {
   }
 
   if (verbose_process) {
-	  tprintf("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
+	  tprintInfo("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
 		  (tesseract_->textord_equation_detect ? " + equations" : ""));
   }
 
@@ -3121,13 +3126,13 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
 
 void WritePix(const std::string &file_path, Pix *pic, int file_type)
 {
-	tprintf("Saving {}\n", file_path.c_str());
+	tprintInfo("Saving image file {}\n", file_path);
 #if defined(HAVE_MUPDF)
 	fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
 #endif
 	if (pixWrite(file_path.c_str(), pic, file_type))
 	{
-		tprintError("Writing {} failed\n", file_path.c_str());
+		tprintError("Writing image file {} failed\n", file_path);
 	}
 }
 

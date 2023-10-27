@@ -74,14 +74,14 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
     tprintError("Failed to load unicharset from {}\n", FLAGS_input_unicharset.c_str());
     return EXIT_FAILURE;
   }
-  tprintf("Loaded unicharset of size {} from file {}\n", unicharset.size(),
+  tprintDebug("Loaded unicharset of size {} from file {}\n", unicharset.size(),
           FLAGS_input_unicharset.c_str());
 
   // Set unichar properties
-  tprintf("Setting unichar properties\n");
+  tprintDebug("Setting unichar properties\n");
   tesseract::SetupBasicProperties(/*report_errors*/ true,
                                   /*decompose (NFD)*/ false, &unicharset);
-  tprintf("Setting script properties\n");
+  tprintDebug("Setting script properties\n");
   tesseract::SetScriptProperties(FLAGS_script_dir.c_str(), &unicharset);
   // Combine everything into a traineddata file.
   return tesseract::CombineLangModel(unicharset, FLAGS_script_dir.c_str(),

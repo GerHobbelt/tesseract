@@ -102,7 +102,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   if (!LoadDataFromFile(filename, &data)) {
     return false;
   }
-  tprintf("Loaded file {}, unpacking...\n", filename);
+  tprintDebug("Loaded file {}, unpacking...\n", filename);
   if (!ReadTrainingDump(data, *this)) {
     return false;
   }
@@ -116,7 +116,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
       filename == old_traineddata) {
     return true; // Normal checkpoint load complete.
   }
-  tprintf("Code range changed from {} to {}!\n", network_->NumOutputs(),
+  tprintDebug("Code range changed from {} to {}!\n", network_->NumOutputs(),
           recoder_.code_range());
   if (old_traineddata == nullptr || *old_traineddata == '\0') {
     tprintError("Must supply the old traineddata for code conversion!\n");
@@ -145,7 +145,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   SetNullChar();
   // Map the softmax(s) in the network.
   network_->RemapOutputs(old_recoder.code_range(), code_map);
-  tprintf("Previous null char={} mapped to {}\n", old_null_char, null_char_);
+  tprintDebug("Previous null char={} mapped to {}\n", old_null_char, null_char_);
   return true;
 }
 
@@ -170,13 +170,13 @@ bool LSTMTrainer::InitNetwork(const char *network_spec, int append_index,
     return false;
   }
   network_str_ += network_spec;
-  tprintf("Built network:{} from request {}\n", network_->spec(),
+  tprintDebug("Built network:{} from request {}\n", network_->spec(),
           network_spec);
-  tprintf(
+  tprintDebug(
       "Training parameters:\n  Debug interval = {},"
       " weights = {}, learning rate = {}, momentum={}\n",
       debug_interval_, weight_range, learning_rate_, momentum_);
-  tprintf("null char={}\n", null_char_);
+  tprintDebug("null char={}\n", null_char_);
   return true;
 }
 
@@ -188,7 +188,7 @@ int LSTMTrainer::InitTensorFlowNetwork(const std::string &tf_proto) {
   TFNetwork *tf_net = new TFNetwork("TensorFlow");
   training_iteration_ = tf_net->InitFromProtoStr(tf_proto);
   if (training_iteration_ == 0) {
-    tprintf("InitFromProtoStr failed!!\n");
+    tprintError("InitFromProtoStr failed!!\n");
     return 0;
   }
   network_ = tf_net;
@@ -269,7 +269,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
           !std::isfinite(word_error)) {
         std::string t = DecodeLabels(truth_labels);
         std::string o = DecodeLabels(ocr_labels);
-        tprintf("r={}, c={}, truth={}, ocr={}, wderr={}, truth[0]={}\n", r, c,
+        tprintDebug("r={}, c={}, truth={}, ocr={}, wderr={}, truth[0]={}\n", r, c,
                 t.c_str(), o.c_str(), word_error, truth_labels[0]);
       }
       results += " " + std::to_string(r);
@@ -645,7 +645,7 @@ SubTrainerResult LSTMTrainer::UpdateSubtrainer(std::stringstream &log_msg) {
       batch_log.imbue(std::locale::classic());
       sub_trainer_->PrepareLogMsg(batch_log);
       batch_log << "\n";
-      tprintf("UpdateSubtrainer:{}", batch_log.str());
+      tprintDebug("UpdateSubtrainer:{}", batch_log.str());
       log_msg << batch_log.str();
       sub_error = sub_trainer_->CharError();
       sub_margin = (training_error - sub_error) / sub_error;
@@ -782,14 +782,14 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     TFloat total_same = bad_sums[LR_SAME][i] + ok_sums[LR_SAME][i];
     TFloat frac_down = bad_sums[LR_DOWN][i] / total_down;
     TFloat frac_same = bad_sums[LR_SAME][i] / total_same;
-    tprintf("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
+    tprintDebug("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
             lr * factor, 100.0 * frac_down, lr, 100.0 * frac_same);
     if (frac_down < frac_same * kImprovementFraction) {
-      tprintf(" REDUCED\n");
+      tprintDebug(" REDUCED\n");
       ScaleLayerLearningRate(layers[i], factor);
       ++num_lowered;
     } else {
-      tprintf(" SAME\n");
+      tprintDebug(" SAME\n");
     }
   }
   if (num_lowered == 0) {
@@ -854,11 +854,11 @@ bool LSTMTrainer::EncodeString(const std::string &str,
     }
   }
   tprintError("Encoding of string failed!\n");
-  tprintf("  Failure bytes:");
+  tprintError("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintf(" {}", cleaned[err_index++] & 0xff);
+    tprintError(" {}", cleaned[err_index++] & 0xff);
   }
-  tprintf("\n");
+  tprintError("\n");
   return false;
 }
 
@@ -985,7 +985,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   targets->SubtractAllFromFloat(*fwd_outputs);
   if (debug_interval_ != 0) {
     if (truth_text != ocr_text) {
-      tprintf("Iteration {}: BEST OCR TEXT : {}\n", training_iteration(),
+      tprintDebug("Iteration {}: BEST OCR TEXT : {}\n", training_iteration(),
               ocr_text.c_str());
     }
   }
@@ -993,7 +993,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   double word_error = ComputeWordError(&truth_text, &ocr_text);
   double delta_error = ComputeErrorRates(*targets, char_error, word_error);
   if (debug_interval_ != 0) {
-    tprintf("File {} line {} {}:\n", trainingdata->imagefilename(),
+    tprintDebug("File {} line {} {}:\n", trainingdata->imagefilename(),
             trainingdata->page_number(), delta_error == 0.0 ? "(Perfect)" : "");
   }
   if (delta_error == 0.0) {
@@ -1164,14 +1164,14 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
     std::vector<int> xcoords;
     LabelsFromOutputs(outputs, &labels, &xcoords);
     std::string text = DecodeLabels(labels);
-    tprintf("Iteration {}: GROUND  TRUTH : {}\n", training_iteration(),
+    tprintDebug("Iteration {}: GROUND  TRUTH : {}\n", training_iteration(),
             truth_text);
     if (truth_text != text) {
-      tprintf("Iteration {}: ALIGNED TRUTH : {}\n", training_iteration(),
+      tprintDebug("Iteration {}: ALIGNED TRUTH : {}\n", training_iteration(),
               text);
     }
     if (debug_interval_ > 0 && training_iteration() % debug_interval_ == 0) {
-      tprintf("TRAINING activation path for truth string {}\n",
+      tprintDebug("TRAINING activation path for truth string {}\n",
               truth_text);
       DebugActivationPath(outputs, labels, xcoords);
 #if !GRAPHICS_DISABLED
@@ -1408,7 +1408,7 @@ void LSTMTrainer::RollErrorBuffers() {
   }
   ++training_iteration_;
   if (debug_interval_ != 0) {
-    tprintf("Mean rms={}%, delta={}%, train={}%({}%), skip ratio={}%\n",
+    tprintDebug("Mean rms={}%, delta={}%, train={}%({}%), skip ratio={}%\n",
             error_rates_[ET_RMS], error_rates_[ET_DELTA],
             error_rates_[ET_CHAR_ERROR], error_rates_[ET_WORD_RECERR],
             error_rates_[ET_SKIP_RATIO]);
@@ -1463,7 +1463,7 @@ std::string LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
     }
     int old_iteration = i >= 0 ? best_error_iterations_[i] : 0;
     improvement_steps_ = iteration - old_iteration;
-    tprintf("2 Percent improvement time={}, best error was {} @ {}\n",
+    tprintDebug("2 Percent improvement time={}, best error was {} @ {}\n",
             improvement_steps_, i >= 0 ? best_error_history_[i] : 100.0,
             old_iteration);
   } else if (error_rate > best_error_rate_) {

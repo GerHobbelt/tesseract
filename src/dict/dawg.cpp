@@ -96,9 +96,9 @@ int Dawg::check_for_words(const char *filename, const UNICHARSET &unicharset,
     }
   }
   fclose(word_file);
-  // Make sure the user sees this with fprintf instead of tprintf.
+  // Make sure the user sees this with fprintf instead of tprintDebug.
   if (debug_level_ > 0) {
-    tprintf("Number of lost words={}\n", misses);
+    tprintDebug("Number of lost words={}\n", misses);
   }
   return misses;
 }
@@ -268,7 +268,7 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
       eow = end_of_word(edge) ? eow_string : not_eow_string;
 
       unichar_id = edge_letter(edge);
-      tprintf("{} : next = {}, unichar_id = {}, {} {} {}\n",
+      tprintDebug("{} : next = {}, unichar_id = {}, {} {} {}\n",
               edge, next_node(edge), unichar_id, direction, is_last, eow);
 
       if (edge - node > max_num_edges) {
@@ -283,7 +283,7 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
         eow = end_of_word(edge) ? eow_string : not_eow_string;
 
         unichar_id = edge_letter(edge);
-        tprintf("{} : next = {}, unichar_id = {}, {} {} {}\n",
+        tprintDebug("{} : next = {}, unichar_id = {}, {} {} {}\n",
                 edge, next_node(edge), unichar_id, direction, is_last, eow);
 
         if (edge - node > MAX_NODE_EDGES_DISPLAY) {
@@ -292,9 +292,9 @@ void SquishedDawg::print_node(NODE_REF node, int max_num_edges) const {
       } while (!last_edge(edge++));
     }
   } else {
-    tprintf("{} : no edges in this node\n", node);
+    tprintDebug("{} : no edges in this node\n", node);
   }
-  tprintf("\n");
+  tprintDebug("\n");
 }
 
 void SquishedDawg::print_edge(EDGE_REF edge) const {

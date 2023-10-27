@@ -79,7 +79,7 @@ public:
   }
 
   void Print() const {
-    tprintf("Batch={}, Height={}, Width={}, Depth={}, loss={}\n", batch_, height_, width_, depth_,
+    tprintDebug("Batch={}, Height={}, Width={}, Depth={}, loss={}\n", batch_, height_, width_, depth_,
             loss_type_);
   }
 

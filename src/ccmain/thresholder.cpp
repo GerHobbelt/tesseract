@@ -442,7 +442,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
   if (tesseract_->thresholding_debug) {
-    tprintf("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
+    tprintDebug("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   if (method == ThresholdMethod::Sauvola) {
@@ -470,7 +470,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     kfactor = std::max(0.0, kfactor);
 
     if (tesseract_->thresholding_debug) {
-      tprintf("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
+      tprintDebug("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
@@ -499,7 +499,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double score_fraction = tesseract_->thresholding_score_fraction;
 
     if (tesseract_->thresholding_debug) {
-      tprintf("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
+      tprintDebug("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,

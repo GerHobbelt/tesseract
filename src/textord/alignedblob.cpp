@@ -281,7 +281,7 @@ TabVector *AlignedBlob::FindVerticalAlignment(AlignedBlobParams align_params, BL
     if (!align_params.ragged || confirmed_points + confirmed_points < pt_count) {
       const TBOX &box = bbox->bounding_box();
       if (debug) {
-        tprintf("Confirming tab vector of {} pts starting at {},{}\n", pt_count, box.left(),
+        tprintDebug("Confirming tab vector of {} pts starting at {},{}\n", pt_count, box.left(),
                 box.bottom());
       }
       // Flag all the aligned neighbours as confirmed .
@@ -302,7 +302,7 @@ TabVector *AlignedBlob::FindVerticalAlignment(AlignedBlobParams align_params, BL
                                ext_end_y, &good_points, vertical_x, vertical_y);
       result->set_intersects_other_lines(at_least_2_crossings);
       if (debug) {
-        tprintf("Box was {}, {}\n", box.left(), box.bottom());
+        tprintDebug("Box was {}, {}\n", box.left(), box.bottom());
         result->Print("After fitting");
       }
       return result;
@@ -330,7 +330,7 @@ int AlignedBlob::AlignTabs(const AlignedBlobParams &params, bool top_to_bottom, 
   TBOX box = bbox->bounding_box();
   bool debug = WithinTestRegion(2, box.left(), box.bottom());
   if (debug) {
-    tprintf("Starting alignment run at blob:");
+    tprintDebug("Starting alignment run at blob:");
     box.print();
   }
   int x_start = params.right_tab ? box.right() : box.left();
@@ -360,7 +360,7 @@ int AlignedBlob::AlignTabs(const AlignedBlobParams &params, bool top_to_bottom, 
     }
   }
   if (debug) {
-    tprintf("Alignment run ended with {} pts at blob:", ptcount);
+    tprintDebug("Alignment run ended with {} pts at blob:", ptcount);
     box.print();
   }
   return ptcount;
@@ -384,7 +384,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
   // line beyond start_y.
   int start_y = top_to_bottom ? box.bottom() : box.top();
   if (WithinTestRegion(2, x_start, start_y)) {
-    tprintf("Column edges for blob at ({},{})->({},{}) are [{}, {}]\n", box.left(), box.top(),
+    tprintDebug("Column edges for blob at ({},{})->({},{}) are [{}, {}]\n", box.left(), box.top(),
             box.right(), box.bottom(), left_column_edge, right_column_edge);
   }
   // Compute skew tolerance.
@@ -415,7 +415,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
   // Setup a vertical search for an aligned blob.
   GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> vsearch(this);
   if (WithinTestRegion(2, x_start, start_y)) {
-    tprintf("Starting {} {} search at {}-{},{}, search_size={}, gutter={}\n",
+    tprintDebug("Starting {} {} search at {}-{},{}, search_size={}, gutter={}\n",
             p.ragged ? "Ragged" : "Aligned", p.right_tab ? "Right" : "Left", xmin, xmax, start_y,
             p.max_v_gap, p.min_gutter);
   }
@@ -436,7 +436,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     if ((!top_to_bottom && n_y > start_y + p.max_v_gap) ||
         (top_to_bottom && n_y < start_y - p.max_v_gap)) {
       if (WithinTestRegion(2, x_start, start_y)) {
-        tprintf("Neighbour too far at ({},{})->({},{})\n", nbox.left(), nbox.bottom(), nbox.right(),
+        tprintDebug("Neighbour too far at ({},{})->({},{})\n", nbox.left(), nbox.bottom(), nbox.right(),
                 nbox.top());
       }
       break; // Gone far enough.
@@ -467,7 +467,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     int n_right = nbox.right();
     int n_x = p.right_tab ? n_right : n_left;
     if (WithinTestRegion(2, x_start, start_y)) {
-      tprintf("Neighbour at ({},{})->({},{}), n_x={}, n_y={}, xatn={}\n", nbox.left(),
+      tprintDebug("Neighbour at ({},{})->({},{}), n_x={}, n_y={}, xatn={}\n", nbox.left(),
               nbox.bottom(), nbox.right(), nbox.top(), n_x, n_y, x_at_n_y);
     }
     if (p.right_tab && n_left < x_at_n_y + p.min_gutter &&
@@ -479,7 +479,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       }
       *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
-        tprintf("gutter\n");
+        tprintDebug("gutter\n");
       }
       return nullptr;
     }
@@ -492,7 +492,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       }
       *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
-        tprintf("gutter\n");
+        tprintDebug("gutter\n");
       }
       return nullptr;
     }
@@ -504,7 +504,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       // Aligned so keep it. If it is a marked tab save it as result,
       // otherwise keep it as backup_result to return in case of later failure.
       if (WithinTestRegion(2, x_start, start_y)) {
-        tprintf("aligned, seeking{}, l={}, r={}\n", p.right_tab, neighbour->left_tab_type(),
+        tprintDebug("aligned, seeking{}, l={}, r={}\n", p.right_tab, neighbour->left_tab_type(),
                 neighbour->right_tab_type());
       }
       TabType n_type = p.right_tab ? neighbour->right_tab_type() : neighbour->left_tab_type();
@@ -528,7 +528,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
         }
       } else if (backup_result == nullptr) {
         if (WithinTestRegion(2, x_start, start_y)) {
-          tprintf("Backup\n");
+          tprintDebug("Backup\n");
         }
         backup_result = neighbour;
       } else {
@@ -536,7 +536,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
         if ((p.right_tab && backup_box.right() < nbox.right()) ||
             (!p.right_tab && backup_box.left() > nbox.left())) {
           if (WithinTestRegion(2, x_start, start_y)) {
-            tprintf("Better backup\n");
+            tprintDebug("Better backup\n");
           }
           backup_result = neighbour;
         }

@@ -80,7 +80,7 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
                                       UNICHARSET *unicharset) {
   UnicharIdVector *adaption_ambigs_entry;
   if (debug_level) {
-    tprintf("Reading ambiguities\n");
+    tprintDebug("Reading ambiguities\n");
   }
 
   int test_ambig_part_size;
@@ -106,7 +106,7 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   while (ambig_file->FGets(buffer, kBufferSize) != nullptr) {
     chomp_string(buffer);
     if (debug_level > 2) {
-      tprintf("read line {}\n", buffer);
+      tprintDebug("read line {}\n", buffer);
     }
     ++line_num;
     if (!ParseAmbiguityLine(line_num, version, debug_level, encoder_set, buffer,
@@ -190,15 +190,15 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
           continue;
         }
         if (!lst->empty()) {
-          tprintf("{} Ambiguities for {}:\n", (tbl == 0) ? "Replaceable" : "Dangerous",
+          tprintDebug("{} Ambiguities for {}:\n", (tbl == 0) ? "Replaceable" : "Dangerous",
                   unicharset->debug_str(i));
         }
         AmbigSpec_IT lst_it(lst);
         for (lst_it.mark_cycle_pt(); !lst_it.cycled_list(); lst_it.forward()) {
           AmbigSpec *ambig_spec = lst_it.data();
-          tprintf("wrong_ngram:");
+          tprintDebug("wrong_ngram:");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, *unicharset);
-          tprintf("correct_fragments:");
+          tprintDebug("correct_fragments:");
           UnicharIdArrayUtils::print(ambig_spec->correct_fragments, *unicharset);
         }
       }
@@ -210,12 +210,12 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
         for (size_t i = 0; i < vec.size(); ++i) {
           adaption_ambigs_entry = vec[i];
           if (adaption_ambigs_entry != nullptr) {
-            tprintf("{}Ambigs for adaption for {}:\n", (vec_id == 0) ? "" : "Reverse ",
+            tprintDebug("{}Ambigs for adaption for {}:\n", (vec_id == 0) ? "" : "Reverse ",
                     unicharset->debug_str(i));
             for (size_t j = 0; j < adaption_ambigs_entry->size(); ++j) {
-              tprintf("{} ", unicharset->debug_str((*adaption_ambigs_entry)[j]));
+              tprintDebug("{} ", unicharset->debug_str((*adaption_ambigs_entry)[j]));
             }
-            tprintf("\n");
+            tprintDebug("\n");
           }
         }
       }

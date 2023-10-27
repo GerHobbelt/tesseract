@@ -71,7 +71,7 @@ constexpr ERRCODE ASSERT_FAILED("Assert failed");
 
 #define ASSERT_HOST_MSG(x, ...)                                                \
   if (!(x)) {                                                                  \
-    tprintf(__VA_ARGS__);                                                      \
+    tprintError(__VA_ARGS__);                                                  \
     ASSERT_FAILED.error(#x, ABORT, "in file %s, line %d", __FILE__, __LINE__); \
   }
 

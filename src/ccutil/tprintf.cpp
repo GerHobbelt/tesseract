@@ -44,22 +44,48 @@ namespace tesseract {
 
 // Warning: tprintf() is invoked in tesseract for PARTIAL lines, so we SHOULD gather these fragments
 // here before dispatching the gathered lines to the appropriate back-end API!
-static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
+static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args args) {
+  static int block_level = T_LOG_DEBUG;
+  if (level < T_LOG_ERROR) {
+	  level = T_LOG_ERROR;
+  }
+  if (level < block_level) {
+    block_level = level;
+  }
+
   auto msg = fmt::vformat(format, args);
 
   static std::string msg_buffer;
   msg_buffer += msg;
   if (!msg_buffer.ends_with('\n'))
     return;
+
   const char *s = msg_buffer.c_str();
+  level = block_level;
 
   if (!strncmp(s, "ERROR: ", 7))
     fz_error(NULL, "%s", s + 7);
   else if (!strncmp(s, "WARNING: ", 9))
     fz_warn(NULL, "%s", s + 9);
-  else
-    fz_info(NULL, "%s", s);
+  else {
+	switch (level) {
+	case T_LOG_ERROR:
+      fz_error(NULL, "%s", s);
+	  break;
+	case T_LOG_WARN:
+	  fz_warn(NULL, "%s", s);
+	  break;
+	case T_LOG_INFO:
+      fz_info(NULL, "%s", s);
+	  break;
+	case T_LOG_DEBUG:
+	default:
+      fz_info(NULL, "%s", s);
+	  break;
+	}
+  }
   msg_buffer.clear();
+  block_level = T_LOG_DEBUG;
 }
 
 #endif
@@ -74,10 +100,29 @@ static void fz_tess_tprintf(fmt::string_view format, fmt::format_args args) {
 static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
 #endif
 
+static int print_level_offset = 0;
+
+int tprintSetLogLevelElevation(int offset)
+{
+	print_level_offset = offset;
+	return print_level_offset;
+}
+
+int tprintAddLogLevelElevation(int offset)
+{
+	print_level_offset += offset;
+	return print_level_offset;
+}
+
+const int tprintGetLevelElevation(void)
+{
+	return print_level_offset;
+}
+
 // Trace printf
-void vTessPrint(fmt::string_view format, fmt::format_args args) {
+void vTessPrint(LogLevel level, fmt::string_view format, fmt::format_args args) {
 #ifdef HAVE_MUPDF
-	fz_tess_tprintf(format, args);
+	fz_tess_tprintf(level, format, args);
 #else
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file

@@ -428,7 +428,7 @@ int32_t row_words2(   // compute space size
     lower = gaps[gap_index]; // most frequent below
   } else {
     if (1) {
-      tprintf("No cluster below block threshold!, using default={}\n", block->pr_nonsp);
+      tprintDebug("No cluster below block threshold!, using default={}\n", block->pr_nonsp);
     }
     lower = block->pr_nonsp;
   }
@@ -440,7 +440,7 @@ int32_t row_words2(   // compute space size
     upper = gaps[gap_index]; // most frequent above
   } else {
     if (1) {
-      tprintf("No cluster above block threshold!, using default={}\n", block->pr_space);
+      tprintDebug("No cluster above block threshold!, using default={}\n", block->pr_space);
     }
     upper = block->pr_space;
   }

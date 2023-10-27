@@ -487,7 +487,7 @@ void Classify::ConvertProto(PROTO_STRUCT *Proto, int ProtoId, INT_CLASS_STRUCT *
   Param = (Proto->Length / GetPicoFeatureLength()) + 0.5;
   Class->ProtoLengths[ProtoId] = TruncateParam(Param, 1, 255);
   if (classify_learning_debug_level >= 2) {
-    tprintf("Converted ffeat to (A={},B={},C={},L={})", P->A, P->B, P->C,
+    tprintDebug("Converted ffeat to (A={},B={},C={},L={})", P->A, P->B, P->C,
             Class->ProtoLengths[ProtoId]);
   }
 } /* ConvertProto */
@@ -958,8 +958,7 @@ void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES_STRUCT *Templates,
   int version_id = -5; // When negated by the reader -1 becomes +1 etc.
 
   if (Templates->NumClasses != unicharset_size) {
-    tprintf(
-        "WARNING: Executing WriteIntTemplates() with {} classes in"
+    tprintWarn("Executing WriteIntTemplates() with {} classes in"
         " Templates, while target_unicharset size is {}\n",
         Templates->NumClasses, unicharset_size);
   }
@@ -1138,7 +1137,7 @@ void FillPPCircularBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR]
     LastBucket -= NUM_PP_BUCKETS;
   }
   if (debug) {
-    tprintf("Circular fill from {} to {}", FirstBucket, LastBucket);
+    tprintDebug("Circular fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; true; CircularIncrement(i, NUM_PP_BUCKETS)) {
     SET_BIT(ParamTable[i], Bit);
@@ -1180,7 +1179,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
   }
 
   if (debug) {
-    tprintf("Linear fill from {} to {}", FirstBucket, LastBucket);
+    tprintDebug("Linear fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; i <= LastBucket; i++) {
     SET_BIT(ParamTable[i], Bit);
@@ -1209,7 +1208,7 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
   if (!IntMatchWindow->HasInteractiveFeature())
     return 0;
 
-  tprintf("{}\n", Prompt);
+  tprintDebug("{}\n", Prompt);
   SVEventType ev_type;
   int unichar_id = INVALID_UNICHAR_ID;
   // Wait until a click or popup event.
@@ -1225,10 +1224,10 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           if (*shape_id >= 0 && static_cast<unsigned>(*shape_id) < shape_table_->NumShapes()) {
             int font_id;
             shape_table_->GetFirstUnicharAndFont(*shape_id, &unichar_id, &font_id);
-            tprintf("Shape {}, first unichar={}, font={}\n", *shape_id, unichar_id, font_id);
+            tprintDebug("Shape {}, first unichar={}, font={}\n", *shape_id, unichar_id, font_id);
             return unichar_id;
           }
-          tprintf("Shape index '{}' not found in shape table\n", ev->parameter);
+          tprintDebug("Shape index '{}' not found in shape table\n", ev->parameter);
         } else {
           tprintWarn("No shape table loaded!\n");
         }
@@ -1252,7 +1251,7 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           }
           for (unsigned s = 0; s < shape_table_->NumShapes(); ++s) {
             if (shape_table_->GetShape(s).ContainsUnichar(unichar_id)) {
-              tprintf("{}\n", shape_table_->DebugStr(s).c_str());
+              tprintDebug("{}\n", shape_table_->DebugStr(s).c_str());
             }
           }
         } else {

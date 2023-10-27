@@ -26,7 +26,7 @@ namespace tesseract {
 
 // Note: You can disable some log messages by setting FLAGS_tlog_level > 0.
 
-enum LogLevel {
+enum LogLevel : int {
 	T_LOG_ERROR,
 	T_LOG_WARN,
 	T_LOG_INFO,
@@ -34,28 +34,32 @@ enum LogLevel {
 };
 
 // Helper function for tprintf.
-extern TESS_API void vTessPrint(LogLevel level, fmt::string_view format, fmt::format_args args);
+extern TESS_API void vTessPrint(int level, fmt::string_view format, fmt::format_args args);
+
+extern TESS_API int tprintSetLogLevelElevation(int offset);
+extern TESS_API int tprintAddLogLevelElevation(int offset);
+extern TESS_API const int tprintGetLevelElevation(void);
 
 // Main logging functions.
 
 template <typename S, typename... Args>
 void tprintError(const S *format, Args &&...args) {
-  vTessPrint(T_LOG_ERROR, format, fmt::make_format_args(args...));
+  vTessPrint(T_LOG_ERROR + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 void tprintWarn(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_WARN, format, fmt::make_format_args(args...));
+	vTessPrint(T_LOG_WARN + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 void tprintInfo(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_INFO, format, fmt::make_format_args(args...));
+	vTessPrint(T_LOG_INFO + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 void tprintDebug(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_DEBUG, format, fmt::make_format_args(args...));
+	vTessPrint(T_LOG_DEBUG + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
 } // namespace tesseract

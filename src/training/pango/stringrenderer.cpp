@@ -895,7 +895,7 @@ int StringRenderer::StripUnrenderableWords(std::string *utf8_text) const {
   utf8_text->swap(output_text);
 
   if (num_dropped > 0) {
-    tprintf("Stripped {} unrenderable word(s): '{}'\n", num_dropped, unrenderable_words.c_str());
+    tprintInfo("Stripped {} unrenderable word(s): '{}'\n", num_dropped, unrenderable_words.c_str());
   }
   return num_dropped;
 }
@@ -1110,7 +1110,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       ++total_chars_;
       ++char_map_[*it];
     }
-    tprintf("Total chars = {}\n", total_chars_);
+    tprintDebug("Total chars = {}\n", total_chars_);
   }
   const std::vector<std::string> &all_fonts = FontUtils::ListAvailableFonts();
 
@@ -1126,7 +1126,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       char title[kMaxTitleLength];
       snprintf(title, kMaxTitleLength, kTitleTemplate, all_fonts[i].c_str(), ok_chars,
                100.0 * ok_chars / total_chars_, raw_score, 100.0 * raw_score / char_map_.size());
-      tprintf("{}\n", title);
+      tprintDebug("{}\n", title);
       // This is a good font! Store the offset to return once we've tried all
       // the fonts.
       if (offset) {
@@ -1148,7 +1148,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       // We return the real offset only after cycling through the list of fonts.
       return 0;
     } else {
-      tprintf("Font {} failed with {} hits = {}%%\n", all_fonts[i].c_str(), ok_chars,
+      tprintDebug("Font {} failed with {} hits = {}%%\n", all_fonts[i].c_str(), ok_chars,
               100.0 * ok_chars / total_chars_);
     }
   }

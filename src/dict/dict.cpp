@@ -432,7 +432,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
   //ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
 
   if (dawg_debug_level > 2) {
-    tprintf(
+    tprintDebug(
         "def_letter_is_okay: current unichar={} word_end={}"
         " num active dawgs={} unicharset.contains_unichar_id={}\n",
         getUnicharset().debug_str(unichar_id).c_str(), word_end, dawg_args->active_dawgs->size(), unicharset.contains_unichar_id(unichar_id));
@@ -478,7 +478,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
           EDGE_REF dawg_edge = sdawg->edge_char_of(0, ch, word_end);
           if (dawg_edge != NO_EDGE) {
             if (dawg_debug_level > 2) {
-              tprintf("Letter found in dawg {}\n", sdawg_index);
+              tprintDebug("Letter found in dawg {}\n", sdawg_index);
             }
             dawg_args->updated_dawgs->add_unique(
                 DawgPosition(sdawg_index, dawg_edge, pos.punc_index, punc_transition_edge, false),
@@ -495,7 +495,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
       EDGE_REF punc_edge = punc_dawg->edge_char_of(punc_node, unichar_id, word_end);
       if (punc_edge != NO_EDGE) {
         if (dawg_debug_level > 2) {
-          tprintf("Letter found in punctuation dawg\n");
+          tprintDebug("Letter found in punctuation dawg\n");
         }
         dawg_args->updated_dawgs->add_unique(
             DawgPosition(-1, NO_EDGE, pos.punc_index, punc_edge, false), dawg_debug_level > 0,
@@ -551,16 +551,16 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
             : dawg->edge_char_of(node, char_for_dawg(unicharset, unichar_id, dawg), word_end);
 
     if (dawg_debug_level > 2) {
-      tprintf("Active dawg: [{}, {}] edge={}\n", pos.dawg_index, node, edge);
+      tprintDebug("Active dawg: [{}, {}] edge={}\n", pos.dawg_index, node, edge);
     }
 
     if (edge != NO_EDGE) { // the unichar was found in the current dawg
       if (dawg_debug_level > 2) {
-        tprintf("Letter found in dawg {}\n", pos.dawg_index);
+        tprintDebug("Letter found in dawg {}\n", pos.dawg_index);
       }
       if (word_end && punc_dawg && !punc_dawg->end_of_word(pos.punc_ref)) {
         if (dawg_debug_level > 2) {
-          tprintf("Punctuation constraint not satisfied at end of word.\n");
+          tprintDebug("Punctuation constraint not satisfied at end of word.\n");
         }
         continue;
       }
@@ -585,7 +585,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
     dawg_args->permuter = curr_perm;
   }
   if (dawg_debug_level > 1) {
-    tprintf("Returning {} for permuter code for this character.\n", dawg_args->permuter);
+    tprintDebug("Returning {} for permuter code for this character.\n", dawg_args->permuter);
   }
   return dawg_args->permuter;
 }
@@ -609,9 +609,9 @@ void Dict::ProcessPatternEdges(const Dawg *dawg, const DawgPosition &pos, UNICHA
         continue;
       }
       if (dawg_debug_level > 2) {
-        tprintf("Pattern dawg: [{}, {}] edge={}\n", pos.dawg_index, node,
+        tprintDebug("Pattern dawg: [{}, {}] edge={}\n", pos.dawg_index, node,
                 edge);
-        tprintf("Letter found in pattern dawg {}\n", pos.dawg_index);
+        tprintDebug("Letter found in pattern dawg {}\n", pos.dawg_index);
       }
       if (dawg->permuter() > *curr_perm) {
         *curr_perm = dawg->permuter();
@@ -634,7 +634,7 @@ void Dict::init_active_dawgs(DawgPositionVector *active_dawgs, bool ambigs_mode)
     *active_dawgs = hyphen_active_dawgs_;
     if (dawg_debug_level > 2) {
       for (unsigned i = 0; i < hyphen_active_dawgs_.size(); ++i) {
-        tprintf("Adding hyphen beginning dawg [{}, {}]\n",
+        tprintDebug("Adding hyphen beginning dawg [{}, {}]\n",
                 hyphen_active_dawgs_[i].dawg_index, hyphen_active_dawgs_[i].dawg_ref);
       }
     }
@@ -654,12 +654,12 @@ void Dict::default_dawgs(DawgPositionVector *dawg_pos_vec, bool suppress_pattern
       if (dawg_ty == DAWG_TYPE_PUNCTUATION) {
         dawg_pos_vec->push_back(DawgPosition(-1, NO_EDGE, i, NO_EDGE, false));
         if (dawg_debug_level > 2) {
-          tprintf("Adding beginning punc dawg [{}, {}]\n", i, NO_EDGE);
+          tprintDebug("Adding beginning punc dawg [{}, {}]\n", i, NO_EDGE);
         }
       } else if (!punc_dawg_available || !subsumed_by_punc) {
         dawg_pos_vec->push_back(DawgPosition(i, NO_EDGE, -1, NO_EDGE, false));
         if (dawg_debug_level > 2) {
-          tprintf("Adding beginning dawg [{}, {}]\n", i, NO_EDGE);
+          tprintDebug("Adding beginning dawg [{}, {}]\n", i, NO_EDGE);
         }
       }
     }
@@ -759,11 +759,11 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     // word, negate nonword status.
   } else {
     if (debug) {
-      tprintf("Consistency could not be calculated.\n");
+      tprintDebug("Consistency could not be calculated.\n");
     }
   }
   if (debug) {
-    tprintf("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
+    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
             word->rating(), xheight_triggered);
   }
 
@@ -772,17 +772,17 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
       adjust_factor += segment_penalty_dict_nonword;
       new_rating *= adjust_factor;
       if (debug) {
-        tprintf(", W");
+        tprintDebug(", W");
       }
     } else {
       adjust_factor += segment_penalty_garbage;
       new_rating *= adjust_factor;
       if (debug) {
         if (!case_is_ok) {
-          tprintf(", C");
+          tprintDebug(", C");
         }
         if (!punc_is_ok) {
-          tprintf(", P");
+          tprintDebug(", P");
         }
       }
     }
@@ -793,20 +793,20 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
         adjust_factor += segment_penalty_dict_frequent_word;
         new_rating *= adjust_factor;
         if (debug) {
-          tprintf(", F");
+          tprintDebug(", F");
         }
       } else {
         adjust_factor += segment_penalty_dict_case_ok;
         new_rating *= adjust_factor;
         if (debug) {
-          tprintf(", ");
+          tprintDebug(", ");
         }
       }
     } else {
       adjust_factor += segment_penalty_dict_case_bad;
       new_rating *= adjust_factor;
       if (debug) {
-        tprintf(", C");
+        tprintDebug(", C");
       }
     }
   }
@@ -815,7 +815,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     word->set_rating(new_rating);
   }
   if (debug) {
-    tprintf(" {} --> {}\n", adjust_factor, new_rating);
+    tprintDebug(" {} --> {}\n", adjust_factor, new_rating);
   }
   word->set_adjust_factor(adjust_factor);
 }

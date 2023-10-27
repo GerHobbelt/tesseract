@@ -189,7 +189,7 @@ static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB 
         if (debug_level > 2) {
           display_blob(blob, ScrollView::RED);
         }
-        tprintf("\n** seam being removed ** \n");
+        tprintDebug("\n** seam being removed ** \n");
       }
 #endif
     } else {
@@ -229,7 +229,7 @@ SEAM *Wordrec::attempt_blob_chop(TWERD *word, TBLOB *blob, int32_t blob_number, 
     if (seam != nullptr) {
       seam->Print("Good seam picked=");
     } else {
-      tprintf("\n** no seam picked *** \n");
+      tprintDebug("\n** no seam picked *** \n");
     }
   }
   if (seam) {
@@ -327,7 +327,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
   do {
     auto blob = select_blob_to_split_from_fixpt(fixpt);
     if (chop_debug) {
-      tprintf("blob_number from fixpt = {}\n", blob);
+      tprintDebug("blob_number from fixpt = {}\n", blob);
     }
     bool split_point_from_dict = (blob != -1);
     if (split_point_from_dict) {
@@ -336,7 +336,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
       blob = select_blob_to_split(blob_choices, rating_ceiling, split_next_to_fragment);
     }
     if (chop_debug) {
-      tprintf("blob_number = {}\n", blob);
+      tprintDebug("blob_number = {}\n", blob);
     }
     *blob_number = blob;
     if (blob == -1) {
@@ -431,7 +431,7 @@ void Wordrec::chop_word_main(WERD_RES *word) {
     CallFillLattice(*word->ratings, word->best_choices, *word->uch_set, word->blamer_bundle);
   }
   if (wordrec_debug_level > 0) {
-    tprintf("Final Ratings Matrix:\n");
+    tprintDebug("Final Ratings Matrix:\n");
     word->ratings->print(getDict().getUnicharset());
   }
   word->FilterWordChoices(getDict().stopper_debug_level);
@@ -531,9 +531,9 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
 
   if (chop_debug) {
     if (rating_ceiling < FLT_MAX) {
-      tprintf("rating_ceiling = {}\n", rating_ceiling);
+      tprintDebug("rating_ceiling = {}\n", rating_ceiling);
     } else {
-      tprintf("rating_ceiling = No Limit\n");
+      tprintDebug("rating_ceiling = No Limit\n");
     }
   }
 
@@ -579,7 +579,7 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
             worst_index_near_fragment = x;
             worst_near_fragment = blob_choice->rating();
             if (chop_debug) {
-              tprintf(
+              tprintDebug(
                   "worst_index_near_fragment={}"
                   " expand_following_fragment={}"
                   " expand_preceding_fragment={}\n",

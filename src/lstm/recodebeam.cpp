@@ -254,7 +254,7 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
   if (HasDebug()) {
     DebugPath(unicharset, best_nodes);
     ExtractPathAsUnicharIds(second_nodes, &unichar_ids, &certs, &ratings, &xcoords);
-    tprintf("\nSecond choice path:\n");
+    tprintDebug("\nSecond choice path:\n");
     DebugUnicharPath(unicharset, second_nodes, unichar_ids, certs, ratings, xcoords);
   }
   // If lstm choice mode is required in granularity level 2, it stores the x
@@ -356,7 +356,7 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
       break;
     }
     if (ct == character_boundaries_[cb]) {
-      tprintf("***\n");
+      tprintDebug("***\n");
       ++cb;
     }
     for (const RecodeNode *node : layer) {
@@ -391,15 +391,15 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
         prevCode = " ";
       }
       if (uids) {
-        tprintf("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode, node->score);
+        tprintDebug("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode, node->score);
       } else {
-        tprintf("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
+        tprintDebug("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
       }
     }
-    tprintf("-\n");
+    tprintDebug("-\n");
     ++ct;
   }
-  tprintf("***\n");
+  tprintDebug("***\n");
 }
 
 void RecodeBeamSearch::extractSymbolChoices(const UNICHARSET *unicharset) {
@@ -517,7 +517,7 @@ void RecodeBeamSearch::DebugBeams(const UNICHARSET *unicharset) const {
           continue;
         }
         // Print all the best scoring nodes for each unichar found.
-        tprintf("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict", kNodeContNames[c]);
+        tprintDebug("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict", kNodeContNames[c]);
         DebugBeamPos(unicharset, beam_[p]->beams_[index]);
       }
     }
@@ -546,11 +546,11 @@ void RecodeBeamSearch::DebugBeamPos(const UNICHARSET *unicharset,
   for (auto &unichar_best : unichar_bests) {
     if (unichar_best != nullptr) {
       const RecodeNode &node = *unichar_best;
-      tprintf("unichar_bests: {}\n", node.Print(null_char_, unicharset, 1));
+      tprintDebug("unichar_bests: {}\n", node.Print(null_char_, unicharset, 1));
     }
   }
   if (null_best != nullptr) {
-    tprintf("null_best: {}\n", null_best->Print(null_char_, unicharset, 1));
+    tprintDebug("null_best: {}\n", null_best->Print(null_char_, unicharset, 1));
   }
 }
 
@@ -760,14 +760,14 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -831,14 +831,14 @@ void RecodeBeamSearch::DecodeSecondaryStep(
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -949,7 +949,7 @@ void RecodeBeamSearch::ContinueContext(
 		full_code.Set(length, code);
 		int unichar_id = recoder_.DecodeUnichar(full_code);
 		const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
-		tprintf("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+		tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
   	    continue;
       }
       full_code.Set(length, code);
@@ -1183,7 +1183,7 @@ void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
     }
 	else if (verbose_process || debug_misc) {
       const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
-	  tprintf("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+	  tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
 	}
   }
 }
@@ -1365,7 +1365,7 @@ void RecodeBeamSearch::DebugPath(
     msg += '{';
     msg += node.Print(null_char_, unicharset, 1);
     msg += '}';
-    tprintf("path: {}\n", msg);
+    tprintDebug("path: {}\n", msg);
   }
 }
 
@@ -1379,7 +1379,7 @@ void RecodeBeamSearch::DebugUnicharPath(
   for (unsigned c = 0; c < num_ids; ++c) {
     int coord = xcoords[c];
 	auto unichar_id = unichar_ids[c];
-    tprintf("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_id,
+    tprintDebug("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_id,
 			(unicharset ?
 				unicharset->debug_str(unichar_id).c_str() :
 				std::string(1, (unichar_id < 0x80 && isprint(unichar_id)) ? (char)unichar_id : '.').c_str()),
@@ -1388,7 +1388,7 @@ void RecodeBeamSearch::DebugUnicharPath(
             path[coord]->permuter);
     total_rating += ratings[c];
   }
-  tprintf("Path total rating = {}\n", total_rating);
+  tprintDebug("Path total rating = {}\n", total_rating);
 }
 
 } // namespace tesseract.

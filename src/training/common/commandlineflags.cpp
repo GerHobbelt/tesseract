@@ -132,7 +132,7 @@ static void PrintCommandLineFlags() {
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
   for (auto &param : GlobalParams()->int_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintf("  --{}  {}  (type:int default:{})\n",
+      tprintDebug("  --{}  {}  (type:int default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(), int32_t(*param));
     }
@@ -140,7 +140,7 @@ static void PrintCommandLineFlags() {
   for (auto &param : GlobalParams()->double_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
-      tprintf("  --{}  {}  (type:double default:{})\n",
+      tprintDebug("  --{}  {}  (type:double default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              static_cast<double>(*param));
@@ -148,7 +148,7 @@ static void PrintCommandLineFlags() {
   }
   for (auto &param : GlobalParams()->bool_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintf("  --{}  {}  (type:bool default:{})\n",
+      tprintDebug("  --{}  {}  (type:bool default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              bool(*param) ? "true" : "false");
@@ -157,7 +157,7 @@ static void PrintCommandLineFlags() {
   for (auto &param : GlobalParams()->string_params_c()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix,
                  kFlagNamePrefixLen)) {
-      tprintf("  --{}  {}  (type:string default:{})\n",
+      tprintDebug("  --{}  {}  (type:string default:{})\n",
              param->name_str() + kFlagNamePrefixLen,
              param->info_str(),
              param->c_str());
@@ -167,13 +167,13 @@ static void PrintCommandLineFlags() {
 
 void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, const bool remove_flags) {
   if (*argc == 1) {
-    tprintf("USAGE: {}\n", usage);
+    tprintDebug("USAGE: {}\n", usage);
     PrintCommandLineFlags();
     exit(0);
   }
 
   if (*argc > 1 && (!strcmp((*argv)[1], "-v") || !strcmp((*argv)[1], "--version"))) {
-    tprintf("{}\n", TessBaseAPI::Version());
+    tprintDebug("{}\n", TessBaseAPI::Version());
     exit(0);
   }
 
@@ -192,7 +192,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     }
     // If this is asking for usage, print the help message and abort.
     if (!strcmp(current_arg, "help")) {
-      tprintf("Usage:\n  {} [OPTION ...]\n\n", usage);
+      tprintDebug("Usage:\n  {} [OPTION ...]\n\n", usage);
       PrintCommandLineFlags();
       exit(0);
     }

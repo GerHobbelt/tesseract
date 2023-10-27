@@ -309,7 +309,7 @@ protected:
   }
   /** Prints the given EDGE_RECORD. */
   inline void print_edge_rec(const EDGE_RECORD &edge_rec) const {
-    tprintf("|{}|{}{}{}|{}|", next_node_from_edge_rec(edge_rec),
+    tprintDebug("|{}|{}{}{}|{}|", next_node_from_edge_rec(edge_rec),
             marker_flag_from_edge_rec(edge_rec) ? "R," : "",
             (direction_from_edge_rec(edge_rec) == FORWARD_EDGE) ? "F" : "B",
             end_of_word_from_edge_rec(edge_rec) ? ",E" : "", unichar_id_from_edge_rec(edge_rec));
@@ -324,11 +324,11 @@ protected:
   // Prints the contents of the Trie.
   // At most max_num_edges will be printed for each node.
   void print_all(const char *msg, int max_num_edges) {
-    tprintf("\n__________________________\n{}\n", msg);
+    tprintDebug("\n__________________________\n{}\n", msg);
     for (size_t i = 0; i < nodes_.size(); ++i) {
       print_node(i, max_num_edges);
     }
-    tprintf("__________________________\n");
+    tprintDebug("__________________________\n");
   }
 
   // Finds the edge with the given direction, word_end and unichar_id

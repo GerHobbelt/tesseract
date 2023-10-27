@@ -153,7 +153,7 @@ GAPMAP::GAPMAP(     // Constructor
     }
   }
   if (gapmap_debug && any_tabs) {
-    tprintf("Table found\n");
+    tprintDebug("Table found\n");
   }
 }
 

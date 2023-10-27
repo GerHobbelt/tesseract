@@ -138,10 +138,10 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
   int i;
   tesseract::TessdataManager tm;
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    tprintf("{}\n", tesseract::TessBaseAPI::Version());
+    tprintInfo("{}\n", tesseract::TessBaseAPI::Version());
     return EXIT_SUCCESS;
   } else if (argc == 2) {
-    tprintf("Combining tessdata files\n");
+    tprintDebug("Combining tessdata files\n");
     std::string lang = argv[1];
     const char *last = &argv[1][strlen(argv[1])-1];
     if (*last != '.') {
@@ -152,7 +152,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     if (!tm.CombineDataFiles(lang.c_str(), output_file.c_str())) {
       tprintError("Error combining tessdata files into {}\n", output_file);
     } else {
-      tprintf("Output {} created successfully.\n", output_file);
+      tprintDebug("Output {} created successfully.\n", output_file);
     }
   } else if (argc >= 4 &&
              (strcmp(argv[1], "-e") == 0 || strcmp(argv[1], "-u") == 0)) {
@@ -161,15 +161,14 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       tprintError("Failed to read {}\n", argv[2]);
       return EXIT_FAILURE;
     }
-    tprintf("Extracting tessdata components from {}\n", argv[2]);
+    tprintDebug("Extracting tessdata components from {}\n", argv[2]);
     if (strcmp(argv[1], "-e") == 0) {
       for (i = 3; i < argc; ++i) {
         errno = 0;
         if (tm.ExtractToFile(argv[i])) {
-          tprintf("Wrote {}\n", argv[i]);
+          tprintDebug("Wrote {}\n", argv[i]);
         } else if (errno == 0) {
-          tprintf(
-              "ERROR: Not extracting {}, since this component"
+          tprintError("Not extracting {}, since this component"
               " is not present\n",
               argv[i]);
           return EXIT_FAILURE;
@@ -188,7 +187,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         filename += tesseract::kTessdataFileSuffixes[i];
         errno = 0;
         if (tm.ExtractToFile(filename.c_str())) {
-          tprintf("Wrote {}\n", filename);
+          tprintDebug("Wrote {}\n", filename);
         } else if (errno != 0) {
           tprintError("Could not extract {}: {}\n", filename,
                  strerror(errno));
@@ -256,39 +255,39 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     return result;
   } else {
     const char* exename = fz_basename(argv[0]);
-    tprintf(
+    tprintInfo(
         "Usage for combining tessdata components:\n"
         "  {} language_data_path_prefix\n"
         "  (e.g. {} tessdata/eng.)\n\n",
         exename, exename);
-    tprintf(
+    tprintInfo(
         "Usage for extracting tessdata components:\n"
         "  {} -e traineddata_file [output_component_file...]\n"
         "  (e.g. {} -e eng.traineddata eng.unicharset)\n\n",
         exename, exename);
-    tprintf(
+    tprintInfo(
         "Usage for overwriting tessdata components:\n"
         "  {} -o traineddata_file [input_component_file...]\n"
         "  (e.g. {} -o eng.traineddata eng.unicharset)\n\n",
         exename, exename);
-    tprintf(
+    tprintInfo(
         "Usage for unpacking all tessdata components:\n"
         "  {} -u traineddata_file output_path_prefix\n"
         "  (e.g. {} -u eng.traineddata tmp/eng.)\n\n",
         exename, exename);
-    tprintf(
+    tprintInfo(
         "Usage for listing the network information\n"
         "  {} -l traineddata_file\n"
         "  (e.g. {} -l eng.traineddata)\n\n",
         exename, exename);
-    tprintf(
+    tprintInfo(
         "Usage for listing directory of components:\n"
         "  {} -d traineddata_file\n\n",
         exename);
-    tprintf(
+    tprintInfo(
         "NOTE: Above two flags may combined as -dl or -ld to get both outputs.\n\n"
         );
-    tprintf(
+    tprintInfo(
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
         exename);

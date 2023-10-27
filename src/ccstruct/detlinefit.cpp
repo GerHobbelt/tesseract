@@ -147,13 +147,13 @@ double DetLineFit::ConstrainedFit(const FCOORD &direction, double min_dist, doub
   std::nth_element(distances_.begin(), distances_.begin() + median_index, distances_.end());
   *line_pt = distances_[median_index].data();
   if (debug_baseline_detector_level > 2) {
-    tprintf("Constrained fit to dir {}, {} = {}, {} :{} distances:\n", direction.x(), direction.y(),
+    tprintDebug("Constrained fit to dir {}, {} = {}, {} :{} distances:\n", direction.x(), direction.y(),
             line_pt->x(), line_pt->y(), distances_.size());
     for (unsigned i = 0; i < distances_.size(); ++i) {
-      tprintf("{}: {}, {} -> {}\n", i, distances_[i].data().x(), distances_[i].data().y(),
+      tprintDebug("{}: {}, {} -> {}\n", i, distances_[i].data().x(), distances_[i].data().y(),
               distances_[i].key());
     }
-    tprintf("Result = {}\n", median_index);
+    tprintDebug("Result = {}\n", median_index);
   }
   // Center distances on the fitted point.
   double dist_origin = direction * *line_pt;

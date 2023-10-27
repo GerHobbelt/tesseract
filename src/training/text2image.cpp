@@ -403,8 +403,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     }
     // Check box validity
     if (x < 0 || y < 0 || (x + w - 1) >= pixGetWidth(pix) || (y + h - 1) >= pixGetHeight(pix)) {
-      tprintf(
-          "ERROR: MakeIndividualGlyphs(): Index out of range, at i={}"
+      tprintError("MakeIndividualGlyphs(): Index out of range, at i={}"
           " (x={}, y={}, w={}, h={}\n)",
           i, x, y, w, h);
       continue;
@@ -437,8 +436,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     char filename[1024];
     snprintf(filename, 1024, "%s_%d.jpg", FLAGS_outputbase.c_str(), glyph_count++);
     if (pixWriteJpeg(filename, pix_glyph_sq_pad_8, 100, 0)) {
-      tprintf(
-          "ERROR: MakeIndividualGlyphs(): Failed to write JPEG to {},"
+      tprintError("MakeIndividualGlyphs(): Failed to write JPEG to {},"
           " at i={}\n",
           filename, i);
       continue;
@@ -454,7 +452,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
   if (n_boxes_saved == 0) {
     return false;
   } else {
-    tprintf("Total number of characters saved = {}\n", n_boxes_saved);
+    tprintDebug("Total number of characters saved = {}\n", n_boxes_saved);
     return true;
   }
 }
@@ -479,7 +477,7 @@ static int Main() {
       if (font_name.back() == ',') {
         font_name.pop_back();
       }
-      tprintf("{}: {}\n", i, font_name.c_str());
+      tprintDebug("{}: {}\n", i, font_name.c_str());
       ASSERT_HOST_MSG(FontUtils::IsAvailableFont(all_fonts[i].c_str()),
                       "Font {} is unrecognized.\n", all_fonts[i].c_str());
     }
@@ -507,9 +505,9 @@ static int Main() {
     if (!FontUtils::IsAvailableFont(font_name.c_str(), &pango_name)) {
       tprintError("Could not find font named '{}'.\n", FLAGS_font.c_str());
       if (!pango_name.empty()) {
-        tprintf("  Pango suggested font '{}'.\n", pango_name.c_str());
+        tprintDebug("  Pango suggested font '{}'.\n", pango_name.c_str());
       }
-      tprintf("  Please correct --font arg.\n");
+      tprintDebug("  Please correct --font arg.\n");
       return EXIT_FAILURE;
     }
   }
@@ -632,9 +630,9 @@ static int Main() {
     src_utf8.swap(rand_utf8);
   }
   if (FLAGS_only_extract_font_properties) {
-    tprintf("Extracting font properties only\n");
+    tprintDebug("Extracting font properties only\n");
     ExtractFontProperties(src_utf8, &render, FLAGS_outputbase.c_str());
-    tprintf("Done!\n");
+    tprintDebug("Done!\n");
     return EXIT_SUCCESS;
   }
 
@@ -710,7 +708,7 @@ static int Main() {
                   pixWritePng(img_name, gray_pix, 0);
                 }
             }
-            tprintf("Rendered page {} to file {}\n", im, img_name);
+            tprintDebug("Rendered page {} to file {}\n", im, img_name);
           } else {
             font_names.push_back(font_used);
           }
@@ -731,7 +729,7 @@ static int Main() {
                 pixWritePng(img_name, gray_pix, 0);
               }
           }
-          tprintf("Rendered page {} to file {}\n", im, img_name);
+          tprintDebug("Rendered page {} to file {}\n", im, img_name);
         }
         // Make individual glyphs
         if (FLAGS_output_individual_glyph_images) {
@@ -786,7 +784,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
     static char envstring[] = "PANGOCAIRO_BACKEND=fc";
     putenv(envstring);
   } else {
-    tprintf(
+    tprintDebug(
         "Using '{}' as pango cairo backend based on environment "
         "variable.\n",
         backend);
@@ -795,7 +793,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
   if (argc > 1) {
     if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
       FontUtils::PangoFontTypeInfo();
-      tprintf("Pango version: {}\n", pango_version_string());
+      tprintDebug("Pango version: {}\n", pango_version_string());
     }
   }
   tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);

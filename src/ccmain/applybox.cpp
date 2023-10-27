@@ -146,10 +146,9 @@ PAGE_RES *Tesseract::ApplyBoxes(const char *filename, bool find_segmentation,
     ReSegmentByClassification(page_res);
   }
   if (applybox_debug > 0) {
-    tprintDebug("APPLY_BOXES:\n"
-              "   Boxes read from boxfile:  {}\n", box_count);
+    tprintDebug("APPLY_BOXES: {} boxes read from boxfile: {}\n", box_count, filename);
     if (box_failures > 0) {
-      tprintDebug("   Boxes failed resegmentation:  {}\n", box_failures);
+      tprintDebug("APPLY_BOXES: {}/{} boxes failed resegmentation.\n", box_failures, box_count);
     }
   }
   TidyUp(page_res);
@@ -310,7 +309,7 @@ static double BoxMissMetric(const TBOX &box1, const TBOX &box2) {
 bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const TBOX &box,
                                  const TBOX *next_box, const char *correct_text) {
   if (applybox_debug > 1) {
-    tprintDebug("\nAPPLY_BOX: in ResegmentCharBox() for {}\n", correct_text);
+    tprintDebug("\nAPPLY_BOX: invoking ResegmentCharBox() for {}\n", correct_text);
   }
   PAGE_RES_IT page_res_it(page_res);
   WERD_RES *word_res;
@@ -414,7 +413,7 @@ bool Tesseract::ResegmentCharBox(PAGE_RES *page_res, const TBOX *prev_box, const
 bool Tesseract::ResegmentWordBox(BLOCK_LIST *block_list, const TBOX &box, const TBOX *next_box,
                                  const char *correct_text) {
   if (applybox_debug > 1) {
-    tprintDebug("\nAPPLY_BOX: in ResegmentWordBox() for {}\n", correct_text);
+    tprintDebug("\nAPPLY_BOX: invoking ResegmentWordBox() for {}\n", correct_text);
   }
   WERD *new_word = nullptr;
   BLOCK_IT b_it(block_list);
@@ -503,12 +502,12 @@ void Tesseract::ReSegmentByClassification(PAGE_RES *page_res) {
     // Convert the correct text to a vector of UNICHAR_ID
     std::vector<UNICHAR_ID> target_text;
     if (!ConvertStringToUnichars(word->text(), &target_text)) {
-      tprintf("APPLY_BOX: FAILURE: can't find class_id for '{}'\n", word->text());
+      tprintError("Tesseract::ReSegmentByClassification: FAILURE: can't find class_id for '{}'\n", word->text());
       pr_it.DeleteCurrentWord();
       continue;
     }
     if (!FindSegmentation(target_text, word_res)) {
-      tprintf("APPLY_BOX: FAILURE: can't find segmentation for '{}'\n", word->text());
+      tprintError("Tesseract::ReSegmentByClassification: FAILURE: can't find segmentation for '{}'\n", word->text());
       pr_it.DeleteCurrentWord();
       continue;
     }
@@ -742,7 +741,7 @@ void Tesseract::TidyUp(PAGE_RES *page_res) {
 /** Logs a bad box by line in the box file and box coords.*/
 void Tesseract::ReportFailedBox(int boxfile_lineno, TBOX box, const char *box_ch,
                                 const char *err_msg) {
-  tprintf("APPLY_BOXES: boxfile line {}/{} (({},{}),({},{})): {}\n", boxfile_lineno + 1, box_ch,
+  tprintError("Tesseract::ApplyBoxes: boxfile line {}/{} (({},{}),({},{})): {}\n", boxfile_lineno + 1, box_ch,
           box.left(), box.bottom(), box.right(), box.top(), err_msg);
 }
 
@@ -755,7 +754,7 @@ void Tesseract::ApplyBoxTraining(const std::string &fontname, PAGE_RES *page_res
     LearnWord(fontname.c_str(), word_res);
     ++word_count;
   }
-  tprintf("Generated training data for {} words\n", word_count);
+  tprintInfo("Generated training data for {} words\n", word_count);
 }
 
 #endif // !DISABLED_LEGACY_ENGINE

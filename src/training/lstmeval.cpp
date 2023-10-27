@@ -81,6 +81,6 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
   double errs = 0.0;
   std::string result = tester.RunEvalSync(0, &errs, mgr,
                                           /*training_stage (irrelevant)*/ 0, FLAGS_verbosity);
-  tprintf("{}\n", result);
+  tprintInfo("{}\n", result);
   return EXIT_SUCCESS;
 } /* main */

@@ -82,9 +82,9 @@ static void DisplayProtoList(const char *ch, LIST protolist) {
     window->DrawTo((x + dx) * 256, (y + dy) * 256);
     auto prototypeNumSamples = prototype->NumSamples;
     if (prototype->Significant) {
-      tprintf("Green proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
+      tprintDebug("Green proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
     } else if (prototype->NumSamples > 0 && !prototype->Merged) {
-      tprintf("Red proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
+      tprintDebug("Red proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
     }
   }
   window->UpdateWindow();
@@ -271,10 +271,10 @@ extern "C" int tesseract_mf_training_main(int argc, const char** argv)
   delete[] float_classes;
   FreeLabeledClassList(mf_classes);
   delete shape_table;
-  tprintf("Done!\n");
+  tprintDebug("Done!\n");
   if (!FLAGS_test_ch.empty()) {
     // If we are displaying debug window(s), wait for the user to look at them.
-    tprintf("Hit return to exit...\n");
+    tprintDebug("Hit return to exit...\n");
     while (getchar() != '\n') {
       ;
     }

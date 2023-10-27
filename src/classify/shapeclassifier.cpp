@@ -132,7 +132,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
   do {
     std::vector<ScrollViewReference> windows;
     if (unichar_id >= 0) {
-      tprintf("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
+      tprintDebug("Debugging class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
       UnicharClassifySample(sample, 1, unichar_id, &results);
       DisplayClassifyAs(sample, unichar_id, 1, windows);
     } else {
@@ -140,10 +140,10 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
       UnicharClassifySample(sample, 1, -1, &results);
     }
     if (unichar_id >= 0) {
-      tprintf("Debugged class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
+      tprintDebug("Debugged class {} = {}\n", unichar_id, unicharset.id_to_unichar(unichar_id));
     }
-    tprintf("Right-click in ClassifierDebug window to choose debug class,");
-    tprintf(" Left-click or close window to quit...\n");
+    tprintDebug("Right-click in ClassifierDebug window to choose debug class,");
+    tprintDebug(" Left-click or close window to quit...\n");
     UNICHAR_ID old_unichar_id;
     do {
       old_unichar_id = unichar_id;
@@ -153,7 +153,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
         if (unicharset.contains_unichar(ev->parameter)) {
           unichar_id = unicharset.unichar_to_id(ev->parameter);
         } else {
-          tprintf("Char class '{}' not found in unicharset", ev->parameter);
+          tprintDebug("Char class '{}' not found in unicharset", ev->parameter);
         }
       }
     } while (unichar_id == old_unichar_id && ev_type != SVET_CLICK && ev_type != SVET_DESTROY);
@@ -181,31 +181,31 @@ int ShapeClassifier::DisplayClassifyAs(const TrainingSample &sample,
 // Prints debug information on the results.
 void ShapeClassifier::UnicharPrintResults(const char *context,
                                           const std::vector<UnicharRating> &results) const {
-  tprintf("{}\n", context);
+  tprintDebug("{}\n", context);
   for (const auto &result : results) {
-    tprintf("{}: c_id={}={}", result.rating, result.unichar_id,
+    tprintDebug("{}: c_id={}={}", result.rating, result.unichar_id,
             GetUnicharset().id_to_unichar(result.unichar_id));
     if (!result.fonts.empty()) {
-      tprintf(" Font Vector:");
+      tprintDebug(" Font Vector:");
       for (auto &&font : result.fonts) {
-        tprintf(" {}", font.fontinfo_id);
+        tprintDebug(" {}", font.fontinfo_id);
       }
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 void ShapeClassifier::PrintResults(const char *context,
                                    const std::vector<ShapeRating> &results) const {
-  tprintf("{}\n", context);
+  tprintDebug("{}\n", context);
   for (const auto &result : results) {
-    tprintf("{}:", result.rating);
+    tprintDebug("{}:", result.rating);
     if (result.joined) {
-      tprintf("[J]");
+      tprintDebug("[J]");
     }
     if (result.broken) {
-      tprintf("[B]");
+      tprintDebug("[B]");
     }
-    tprintf(" {}\n", GetShapeTable()->DebugStr(result.shape_id).c_str());
+    tprintDebug(" {}\n", GetShapeTable()->DebugStr(result.shape_id).c_str());
   }
 }
 

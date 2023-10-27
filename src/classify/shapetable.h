@@ -42,7 +42,7 @@ struct UnicharRating {
 
   // Print debug info.
   void Print() const {
-    tprintf(
+    tprintDebug(
         "Unichar-id={}, rating={}, adapted={}, config={}, misses={},"
         " {} fonts\n",
         unichar_id, static_cast<double>(rating), adapted, config, feature_misses, fonts.size());

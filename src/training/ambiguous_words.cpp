@@ -43,10 +43,10 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 
   // Parse input arguments.
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    tesseract::tprintf("{}\n", tesseract::TessBaseAPI::Version());
+    tesseract::tprintInfo("{}\n", tesseract::TessBaseAPI::Version());
     return EXIT_SUCCESS;
   } else if (argc != 4 && (argc != 6 || strcmp(argv[1], "-l") != 0)) {
-    tesseract::tprintf(
+    tesseract::tprintInfo(
         "Usage: {} -v | --version | {} [-l lang] tessdata_dir wordlist_file"
         " output_ambiguous_wordlist_file\n",
         argv[0], argv[0]);

@@ -103,7 +103,7 @@ void Textord::make_old_baselines(TO_BLOCK *block, // block to do
       prev_baseline = nullptr;
       blob_it.set_to_list(row->blob_list());
       if (textord_debug_baselines) {
-        tprintf("Row baseline generation failed on row at ({},{})\n",
+        tprintDebug("Row baseline generation failed on row at ({},{})\n",
                 blob_it.data()->bounding_box().left(), blob_it.data()->bounding_box().bottom());
       }
     }
@@ -365,7 +365,7 @@ void Textord::find_textlines(TO_BLOCK *block,   // block row is in
   }
 
   if (textord_oldbl_debug) {
-    tprintf("\nInput height={}, Estimate x-height={} pixels, jumplimit={}\n", block->line_size,
+    tprintDebug("\nInput height={}, Estimate x-height={} pixels, jumplimit={}\n", block->line_size,
             lineheight, jumplimit);
   }
   if (holed_line) {
@@ -705,7 +705,7 @@ int partition_line(    // partition blobs
     /*do each blob in row */
     diff = ydiffs[blobindex]; /*diff from line */
     if (textord_oldbl_debug) {
-      tprintf("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
+      tprintDebug("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
               blobcoords[blobindex].bottom());
     }
     bestpart =
@@ -723,7 +723,7 @@ int partition_line(    // partition blobs
   for (blobindex = startx; blobindex >= 0; blobindex--) {
     diff = ydiffs[blobindex]; /*diff from line */
     if (textord_oldbl_debug) {
-      tprintf("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
+      tprintDebug("{}({},{}), ", blobindex, blobcoords[blobindex].left(),
               blobcoords[blobindex].bottom());
     }
     bestpart =
@@ -776,7 +776,7 @@ void merge_oldbl_parts( // partition blobs
   startx = 0;
   for (blobindex = 0; blobindex < blobcount; blobindex++) {
     if (partids[blobindex] != prevpart) {
-      //                      tprintf("Partition change at ({},{}) from {} to {}
+      //                      tprintDebug("Partition change at ({},{}) from {} to {}
       //                      after run of {}\n",
       //                              blobcoords[blobindex].left(),blobcoords[blobindex].bottom(),
       //                              prevpart,partids[blobindex],runlength);
@@ -791,7 +791,7 @@ void merge_oldbl_parts( // partition blobs
         m = stats.get_b();
         c = stats.get_c();
         if (textord_oldbl_debug) {
-          tprintf("Fitted line y={} x + {}\n", m, c);
+          tprintDebug("Fitted line y={} x + {}\n", m, c);
         }
         found_one = false;
         close_one = false;
@@ -806,7 +806,7 @@ void merge_oldbl_parts( // partition blobs
                 blobcoords[startx - test_blob].bottom());
             diff = m * coord.x() + c - coord.y();
             if (textord_oldbl_debug) {
-              tprintf("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
+              tprintDebug("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
                       coord.y());
             }
             if (diff < jumplimit && -diff < jumplimit) {
@@ -822,7 +822,7 @@ void merge_oldbl_parts( // partition blobs
                            blobcoords[blobindex + test_blob - 1].bottom());
             diff = m * coord.x() + c - coord.y();
             if (textord_oldbl_debug) {
-              tprintf("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
+              tprintDebug("Diff of common blob to suspect part={} at ({},{})\n", diff, coord.x(),
                       coord.y());
             }
             if (diff < jumplimit && -diff < jumplimit) {
@@ -832,7 +832,7 @@ void merge_oldbl_parts( // partition blobs
         }
         if (close_one) {
           if (textord_oldbl_debug) {
-            tprintf(
+            tprintDebug(
                 "Merged {} blobs back into part {} from {} starting at "
                 "({},{})\n",
                 runlength, biggestpart, prevpart, blobcoords[startx].left(),
@@ -933,7 +933,7 @@ int choose_partition(                              // select partition
   /*adjusted diff from part */
   delta = diff - partdiffs[lastpart] - *drift;
   if (textord_oldbl_debug) {
-    tprintf("Diff={}, Delta={}, Drift={}, ", diff, delta, *drift);
+    tprintDebug("Diff={}, Delta={}, Drift={}, ", diff, delta, *drift);
   }
   if (ABS(delta) > jumplimit / 2) {
     /*delta on part 0 */
@@ -966,7 +966,7 @@ int choose_partition(                              // select partition
   *lastdelta = delta;
 
   if (textord_oldbl_debug) {
-    tprintf("P={}\n", bestpart);
+    tprintDebug("P={}\n", bestpart);
   }
 
   return bestpart;
@@ -1098,7 +1098,7 @@ int segment_spline(             // make xstarts
   }
 
   if (textord_oldbl_debug && turncount > 0) {
-    tprintf("First turn is {} at ({},{})\n", turnpoints[0], xcoords[turnpoints[0]],
+    tprintDebug("First turn is {} at ({},{})\n", turnpoints[0], xcoords[turnpoints[0]],
             ycoords[turnpoints[0]]);
   }
   for (segment = 1; segment < turncount; segment++) {
@@ -1124,7 +1124,7 @@ int segment_spline(             // make xstarts
                        4;
     /*halfway between turns */
     if (textord_oldbl_debug) {
-      tprintf("Turn {} is {} at ({},{}), mid pt is {}@{}, final @{}\n", segment,
+      tprintDebug("Turn {} is {} at ({},{}), mid pt is {}@{}, final @{}\n", segment,
               turnpoints[segment], xcoords[turnpoints[segment]], ycoords[turnpoints[segment]],
               ptindex - 1, xcoords[ptindex - 1], xstarts[segment]);
     }
@@ -1177,7 +1177,7 @@ bool split_stepped_spline( // make xstarts
       }
       if (segments >= SPLINESIZE) {
         if (textord_debug_baselines) {
-          tprintf("Too many segments to resegment spline!!\n");
+          tprintError("Too many segments to resegment spline!!\n");
         }
       } else if (endindex - startindex >= textord_spline_medianwin * 3) {
         while (centreindex - startindex < textord_spline_medianwin * 3 / 2) {
@@ -1213,7 +1213,7 @@ bool split_stepped_spline( // make xstarts
           rightindex--;
         }
         if (textord_debug_baselines) {
-          tprintf("Splitting spline at {} with step {} at ({},{})\n", xstarts[segment],
+          tprintDebug("Splitting spline at {} with step {} at ({},{})\n", xstarts[segment],
                   baseline->step((xstarts[segment - 1] + xstarts[segment]) / 2.0,
                                  (xstarts[segment] + xstarts[segment + 1]) / 2.0),
                   (xcoords[leftindex - 1] + xcoords[leftindex]) / 2,
@@ -1223,11 +1223,11 @@ bool split_stepped_spline( // make xstarts
                             (xcoords[rightindex - 1] + xcoords[rightindex]) / 2, segments);
         doneany = true;
       } else if (textord_debug_baselines) {
-        tprintf("Resegmenting spline failed - insufficient pts ({},{},{},{})\n", startindex,
+        tprintDebug("Resegmenting spline failed - insufficient pts ({},{},{},{})\n", startindex,
                 centreindex, endindex, (int32_t)textord_spline_medianwin);
       }
     }
-    //              else tprintf("Spline step at {} is {}\n",
+    //              else tprintDebug("Spline step at {} is {}\n",
     //                      xstarts[segment],
     //                      baseline->step((xstarts[segment-1]+xstarts[segment])/2.0,
     //                      (xstarts[segment]+xstarts[segment+1])/2.0));
@@ -1477,19 +1477,19 @@ void make_first_xheight( // find xheight
   }
 
   if (textord_oldbl_debug) {
-    tprintf("blobcount={}, mode_count={}, mode_t={}\n", blobcount, mode_count, mode_threshold);
+    tprintDebug("blobcount={}, mode_count={}, mode_t={}\n", blobcount, mode_count, mode_threshold);
   }
   find_top_modes(&heightstat, HEIGHTBUCKETS, modelist, MODENUM);
   if (textord_oldbl_debug) {
     for (blobindex = 0; blobindex < MODENUM; blobindex++) {
-      tprintf("mode[{}]={} ", blobindex, modelist[blobindex]);
+      tprintDebug("mode[{}]={} ", blobindex, modelist[blobindex]);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
   pick_x_height(row, modelist, lefts, rights, &heightstat, mode_threshold);
 
   if (textord_oldbl_debug) {
-    tprintf("Output xheight={}\n", row->xheight);
+    tprintDebug("Output xheight={}\n", row->xheight);
   }
   if (row->xheight < 0 && textord_oldbl_debug) {
     tprintWarn("Row Line height < 0; {}\n", row->xheight);

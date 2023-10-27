@@ -143,7 +143,7 @@ public:
   virtual ~ParamsReportDefaultWriter() = default;
 
   virtual void Write(const std::string message) {
-    tprintf("{}", message);
+    tprintDebug("{}", message);
   }
 
 protected:
@@ -157,10 +157,10 @@ public:
   virtual ~ParamsReportFileDuoWriter() = default;
 
   virtual void Write(const std::string message) {
-    // only write via tprintf() -- which usually logs to stderr -- when the `f` file destination is an actual file, rather than stderr or stdout.
+    // only write via tprintDebug() -- which usually logs to stderr -- when the `f` file destination is an actual file, rather than stderr or stdout.
     // This prevents these report lines showing up in duplicate on the console.
     if (is_separate_file_) {
-      tprintf("{}", message);
+      tprintDebug("{}", message);
     }
     size_t len = message.length();
     if (fwrite(message.c_str(), 1, len, file_) != len) {
@@ -455,7 +455,7 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params, bool 
   }
   if (printing_to_stdio)
   {
-	  tprintf("{}", stream.str().c_str());
+	  tprintDebug("{}", stream.str().c_str());
   }
   else
   {

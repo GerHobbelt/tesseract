@@ -369,7 +369,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
       height = kMaxWinSize;
     }
     window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, window_name, 80, 100, width, height, width, height, tess_coords);
-    tprintf("Created window \"{}\" of size w:{} x h:{}\n", window_name, width, height);
+    tprintDebug("Created window \"{}\" of size w:{} x h:{}\n", window_name, width, height);
   } else {
     window->Clear();
   }

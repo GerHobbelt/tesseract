@@ -73,13 +73,14 @@ int TessClassifier::DisplayClassifyAs(const TrainingSample &sample, int unichar_
                                       int index, std::vector<ScrollViewReference> &windows) {
   int shape_id = unichar_id;
   // TODO(rays) Fix this so it works with both flat and real shapetables.
+  // 
   //  if (GetShapeTable() != nullptr)
-  //  shape_id = BestShapeForUnichar(sample, page_pix, unichar_id, nullptr);
+  //    shape_id = BestShapeForUnichar(sample, page_pix, unichar_id, nullptr);
   if (shape_id < 0) {
     return index;
   }
   if (UnusedClassIdIn(classify_->PreTrainedTemplates, shape_id)) {
-    tprintf("No built-in templates for class/shape {}\n", shape_id);
+    tprintDebug("No built-in templates for class/shape {}\n", shape_id);
     return index;
   }
 #if !GRAPHICS_DISABLED

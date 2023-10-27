@@ -33,7 +33,7 @@ void Dict::reset_hyphen_vars(bool last_word_on_line) {
     }
   }
   if (hyphen_debug_level) {
-    tprintf("reset_hyphen_vars: last_word_on_line {} -> {}\n", last_word_on_line_,
+    tprintDebug("reset_hyphen_vars: last_word_on_line {} -> {}\n", last_word_on_line_,
             last_word_on_line);
   }
   last_word_on_line_ = last_word_on_line;

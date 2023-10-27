@@ -40,7 +40,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
     return;
   }
   if (debug) {
-    tprintf("AssociateUtils::ComputeStats() for col={}, row={}{}\n", col, row,
+    tprintDebug("AssociateUtils::ComputeStats() for col={}, row={}{}\n", col, row,
             fixed_pitch ? " (fixed pitch)" : "");
   }
   float normalizing_height = kBlnXHeight;
@@ -57,7 +57,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
           word_res->denorm.y_scale() * (blob_row->x_height() + blob_row->ascenders());
     }
     if (debug) {
-      tprintf("normalizing height = {} (scale {} xheight {} ascenders {})\n", normalizing_height,
+      tprintDebug("normalizing height = {} (scale {} xheight {} ascenders {})\n", normalizing_height,
               word_res->denorm.y_scale(), blob_row->x_height(), blob_row->ascenders());
     }
   }
@@ -78,7 +78,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
     stats->gap_sum = negative_gap_sum;
   }
   if (debug) {
-    tprintf("wh_ratio={} (max_char_wh_ratio={}) gap_sum={} {}\n", wh_ratio, max_char_wh_ratio,
+    tprintDebug("wh_ratio={} (max_char_wh_ratio={}) gap_sum={} {}\n", wh_ratio, max_char_wh_ratio,
             stats->gap_sum, stats->bad_shape ? "bad_shape" : "");
   }
   // Compute shape_cost (for fixed pitch mode).
@@ -95,7 +95,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
         stats->bad_shape = true;
       }
       if (debug) {
-        tprintf("left_gap {}, left_seam {} {}\n", left_gap, left_seam->priority(),
+        tprintDebug("left_gap {}, left_seam {} {}\n", left_gap, left_seam->priority(),
                 stats->bad_shape ? "bad_shape" : "");
       }
     }
@@ -110,7 +110,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
         }
       }
       if (debug) {
-        tprintf("right_gap {} right_seam {} {}\n", right_gap, right_seam->priority(),
+        tprintDebug("right_gap {} right_seam {} {}\n", right_gap, right_seam->priority(),
                 stats->bad_shape ? "bad_shape" : "");
       }
     }
@@ -130,7 +130,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
       stats->full_wh_ratio_total = stats->full_wh_ratio;
     }
     if (debug) {
-      tprintf("full_wh_ratio {} full_wh_ratio_total {} full_wh_ratio_var {}\n",
+      tprintDebug("full_wh_ratio {} full_wh_ratio_total {} full_wh_ratio_var {}\n",
               stats->full_wh_ratio, stats->full_wh_ratio_total, stats->full_wh_ratio_var);
     }
 
@@ -144,7 +144,7 @@ void AssociateUtils::ComputeStats(int col, int row, const AssociateStats *parent
     }
     stats->shape_cost += stats->full_wh_ratio_var;
     if (debug) {
-      tprintf("shape_cost {}\n", stats->shape_cost);
+      tprintDebug("shape_cost {}\n", stats->shape_cost);
     }
   }
 }

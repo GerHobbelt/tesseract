@@ -778,7 +778,7 @@ namespace tesseract {
   void AutoPopDebugSectionLevel::pop() {
     if (section_handle_ >= 0) {
       tesseract_->PopPixDebugSection(section_handle_);
-      section_handle_ = -2;
+      section_handle_ = INT_MIN / 2;
     }
   }
 

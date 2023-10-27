@@ -64,7 +64,7 @@ bool read_unlv_file(   // print list of sides
     }
     fclose(pdfp);
   }
-  tprintf("UZN file {} loaded.\n", name);
+  tprintDebug("UZN file {} loaded.\n", name);
   return true;
 }
 
@@ -134,7 +134,7 @@ bool write_unlv_file(   // print list of sides
       fclose(pdfp);
     }
   }
-  tprintf("UZN file {} saved.\n", name);
+  tprintDebug("UZN file {} saved.\n", name);
   return true;
 }
 

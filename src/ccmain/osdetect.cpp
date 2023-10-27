@@ -127,7 +127,7 @@ int OSResults::get_best_script(int orientation_id) const {
 // Print the script scores for all possible orientations.
 void OSResults::print_scores(void) const {
   for (int i = 0; i < 4; ++i) {
-    tprintf("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
+    tprintDebug("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
     print_scores(i);
   }
 }
@@ -136,7 +136,7 @@ void OSResults::print_scores(void) const {
 void OSResults::print_scores(int orientation_id) const {
   for (int j = 0; j < kMaxNumberOfScripts; ++j) {
     if (scripts_na[orientation_id][j]) {
-      tprintf("{}\t: {}\n", unicharset->get_script_from_script_id(j),
+      tprintDebug("{}\t: {}\n", unicharset->get_script_from_script_id(j),
               scripts_na[orientation_id][j]);
     }
   }
@@ -291,13 +291,13 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
   BLOBNBOX_C_IT filtered_it(blob_list);
   int real_max = std::min(filtered_it.length(), maxCharactersToTry);
 #if 0
-  tprintf("Number of blobs post-filtering = {}\n", filtered_it.length());
-  tprintf("Number of blobs to try = {}\n", real_max);
+  tprintDebug("Number of blobs post-filtering = {}\n", filtered_it.length());
+  tprintDebug("Number of blobs to try = {}\n", real_max);
 #endif
 
   // If there are too few characters, skip this page entirely.
   if (real_max < minCharactersToTry / 2) {
-    tprintf("Too few characters. Skipping this page\n");
+    tprintInfo("Too few characters. Skipping this page\n");
     return 0;
   }
 
@@ -541,7 +541,7 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
       if (prev_id == latin_id_) {
         if (prev_fontinfo_id >= 0) {
           const tesseract::FontInfo &fi = tess_->get_fontinfo_table().at(prev_fontinfo_id);
-          // tprintf("Font: {} i:{} b:{} f:{} s:{} k:{} ({})\n", fi.name,
+          // tprintDebug("Font: {} i:{} b:{} f:{} s:{} k:{} ({})\n", fi.name,
           //       fi.is_italic(), fi.is_bold(), fi.is_fixed_pitch(),
           //       fi.is_serif(), fi.is_fraktur(),
           //       prev_unichar);

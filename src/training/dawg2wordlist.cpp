@@ -32,14 +32,14 @@ static std::unique_ptr<tesseract::Dawg> LoadSquishedDawg(const UNICHARSET &unich
     tprintError("Could not open {} for reading.\n", filename);
     return nullptr;
   }
-  tprintf("Loading word list from {}\n", filename);
+  tprintDebug("Loading word list from {}\n", filename);
   auto retval = std::make_unique<tesseract::SquishedDawg>(tesseract::DAWG_TYPE_WORD, "eng",
                                                           SYSTEM_DAWG_PERM, kDictDebugLevel);
   if (!retval->Load(&dawg_file)) {
     tprintError("Could not read {}\n", filename);
     return nullptr;
   }
-  tprintf("Word list loaded.\n");
+  tprintDebug("Word list loaded.\n");
   return retval;
 }
 
@@ -77,11 +77,11 @@ extern "C" int tesseract_dawg2wordlist_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    tprintf("{}\n", tesseract::TessBaseAPI::Version());
+    tprintDebug("{}\n", tesseract::TessBaseAPI::Version());
     return 0;
   } else if (argc != 4) {
-    tprintf("Print all the words in a given dawg.\n");
-    tprintf(
+    tprintInfo("Print all the words in a given dawg.\n");
+    tprintInfo(
         "Usage: {} -v | --version | {} <unicharset> <dawgfile> "
         "<wordlistfile>\n",
         argv[0], argv[0]);

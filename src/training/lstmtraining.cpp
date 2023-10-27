@@ -182,7 +182,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   // Checkpoints always take priority if they are available.
   if (trainer.TryLoadingCheckpoint(checkpoint_file.c_str(), nullptr) ||
       trainer.TryLoadingCheckpoint(checkpoint_bak.c_str(), nullptr)) {
-    tprintf("Successfully restored trainer from {}\n", checkpoint_file.c_str());
+    tprintDebug("Successfully restored trainer from {}\n", checkpoint_file.c_str());
   } else {
     if (!FLAGS_continue_from.empty()) {
       // Load a past model file to improve upon.
@@ -192,16 +192,16 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
         tprintError("Failed to continue from: {}\n", FLAGS_continue_from.c_str());
         return EXIT_FAILURE;
       }
-      tprintf("Continuing from {}\n", FLAGS_continue_from.c_str());
+      tprintDebug("Continuing from {}\n", FLAGS_continue_from.c_str());
       if (FLAGS_reset_learning_rate) {
         trainer.SetLearningRate(FLAGS_learning_rate);
-        tprintf("Set learning rate to {}\n", static_cast<float>(FLAGS_learning_rate));
+        tprintDebug("Set learning rate to {}\n", static_cast<float>(FLAGS_learning_rate));
       }
       trainer.InitIterations();
     }
     if (FLAGS_continue_from.empty() || FLAGS_append_index >= 0) {
       if (FLAGS_append_index >= 0) {
-        tprintf("Appending a new network to an old one!!");
+        tprintDebug("Appending a new network to an old one!!");
         if (FLAGS_continue_from.empty()) {
           tprintError("Must set --continue_from for appending!\n");
           return EXIT_FAILURE;
@@ -256,10 +256,10 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
     std::stringstream log_str;
     log_str.imbue(std::locale::classic());
     trainer.MaintainCheckpoints(tester_callback, log_str);
-    tprintf("{}\n", log_str.str());
+    tprintDebug("{}\n", log_str.str());
   } while (trainer.best_error_rate() > FLAGS_target_error_rate &&
            (trainer.training_iteration() < max_iterations));
-  tprintf("Finished! Selected model with minimal training error rate (BCER) = {}\n",
+  tprintInfo("Finished! Selected model with minimal training error rate (BCER) = {}\n",
           trainer.best_error_rate());
   return EXIT_SUCCESS;
 } /* main */

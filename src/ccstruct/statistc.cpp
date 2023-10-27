@@ -560,13 +560,13 @@ void STATS::print() const {
   int num_printed = 0;
   for (int index = min; index <= max; index++) {
     if (buckets_[index] != 0) {
-      tprintf("{}:{} ", rangemin_ + index, buckets_[index]);
+      tprintDebug("{}:{} ", rangemin_ + index, buckets_[index]);
       if (++num_printed % 8 == 0) {
-        tprintf("\n");
+        tprintDebug("\n");
       }
     }
   }
-  tprintf("\n");
+  tprintDebug("\n");
   print_summary();
 }
 
@@ -581,15 +581,15 @@ void STATS::print_summary() const {
   }
   int32_t min = min_bucket();
   int32_t max = max_bucket();
-  tprintf("Total count={}\n", total_count_);
-  tprintf("Min={} Really={}\n", ile(0.0), min);
-  tprintf("Lower quartile={}\n", ile(0.25));
-  tprintf("Median={}, ile(0.5)={}\n", median(), ile(0.5));
-  tprintf("Upper quartile={}\n", ile(0.75));
-  tprintf("Max={} Really={}\n", ile(1.0), max);
-  tprintf("Range={}\n", max + 1 - min);
-  tprintf("Mean= {}\n", mean());
-  tprintf("SD= {}\n", sd());
+  tprintDebug("Total count={}\n", total_count_);
+  tprintDebug("Min={} Really={}\n", ile(0.0), min);
+  tprintDebug("Lower quartile={}\n", ile(0.25));
+  tprintDebug("Median={}, ile(0.5)={}\n", median(), ile(0.5));
+  tprintDebug("Upper quartile={}\n", ile(0.75));
+  tprintDebug("Max={} Really={}\n", ile(1.0), max);
+  tprintDebug("Range={}\n", max + 1 - min);
+  tprintDebug("Mean= {}\n", mean());
+  tprintDebug("SD= {}\n", sd());
 }
 
 /**********************************************************************

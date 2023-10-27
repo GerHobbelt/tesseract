@@ -174,7 +174,7 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
       tprintError("Failed to read shape table {}\n", shape_table_file.c_str());
     } else {
       int num_shapes = shape_table->NumShapes();
-      tprintf("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
+      tprintDebug("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
     }
   } else {
     tprintWarn("No shape table file present: {}\n", shape_table_file.c_str());
@@ -254,7 +254,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   trainer->SetFeatureSpace(fs);
   // Load training data from .tr files in filelist (terminated by nullptr).
   for (const char *page_name = *filelist++; page_name != nullptr; page_name = *filelist++) {
-    tprintf("Reading {} ...\n", page_name);
+    tprintDebug("Reading {} ...\n", page_name);
     trainer->ReadTrainingSamples(page_name, feature_defs, false);
 
     // If there is a file with [lang].[fontname].exp[num].fontinfo present,
@@ -298,7 +298,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     if (*shape_table == nullptr) {
       *shape_table = new ShapeTable;
       trainer->SetupFlatShapeTable(*shape_table);
-      tprintf("Flat shape table summary: {}\n", (*shape_table)->SummaryStr().c_str());
+      tprintDebug("Flat shape table summary: {}\n", (*shape_table)->SummaryStr().c_str());
     }
     (*shape_table)->set_unicharset(trainer->unicharset());
   }
@@ -368,8 +368,7 @@ void ReadTrainingSamples(const FEATURE_DEFS_STRUCT &feature_definitions, const c
     if (unicharset != nullptr && !unicharset->contains_unichar(unichar)) {
       unicharset->unichar_insert(unichar);
       if (unicharset->size() > MAX_NUM_CLASSES) {
-        tprintf(
-            "ERROR: Size of unicharset in training is "
+        tprintError("Size of unicharset in training is "
             "greater than MAX_NUM_CLASSES\n");
         exit(1);
       }
@@ -509,7 +508,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
       if (debug) {
         auto BestMatchNumSamples = best_match->NumSamples;
         auto PrototypeNumSamples = Prototype->NumSamples;
-        tprintf("Merging red clusters ({}+{}) at {},{} and {},{}\n", BestMatchNumSamples,
+        tprintDebug("Merging red clusters ({}+{}) at {},{} and {},{}\n", BestMatchNumSamples,
                 PrototypeNumSamples, best_match->Mean[0], best_match->Mean[1], Prototype->Mean[0],
                 Prototype->Mean[1]);
       }
@@ -520,7 +519,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
       Prototype->Merged = true;
     } else if (best_match != nullptr) {
       if (debug) {
-        tprintf("Red proto at {},{} matched a green one at {},{}\n", Prototype->Mean[0],
+        tprintDebug("Red proto at {},{} matched a green one at {},{}\n", Prototype->Mean[0],
                 Prototype->Mean[1], best_match->Mean[0], best_match->Mean[1]);
       }
       Prototype->Merged = true;
@@ -534,7 +533,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
     // Process insignificant protos that do not match a green one
     if (!Prototype->Significant && Prototype->NumSamples >= min_samples && !Prototype->Merged) {
       if (debug) {
-        tprintf("Red proto at {},{} becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
+        tprintDebug("Red proto at {},{} becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
       }
       Prototype->Significant = true;
     }
@@ -657,7 +656,7 @@ CLASS_STRUCT *SetUpForFloat2Int(const UNICHARSET &unicharset, LIST LabeledClassL
   BIT_VECTOR NewConfig;
   BIT_VECTOR OldConfig;
 
-  //  tprintf("Float2Int ...\n");
+  //  tprintDebug("Float2Int ...\n");
 
   auto *float_classes = new CLASS_STRUCT[unicharset.size()];
   iterate(LabeledClassList) {

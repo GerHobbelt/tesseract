@@ -1055,26 +1055,26 @@ namespace tesseract {
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   BLOCK_RES *block = pr_it->block();
   if (block != nullptr && block->block != nullptr) {
-    tprintf("\nBlock data...\n");
+    tprintDebug("\nBlock data...\n");
     block->block->print(nullptr, true);
   }
-  tprintf("\nRow data...\n");
+  tprintDebug("\nRow data...\n");
   ROW_RES *row = pr_it->row();
   if (row != nullptr) {
     row->row->print(nullptr);
   } else {
-    tprintf("  (empty / nil)\n");
+    tprintDebug("  (empty / nil)\n");
   }
-  tprintf("\nWord data...\n");
+  tprintDebug("\nWord data...\n");
   WERD_RES *word_res = pr_it->word();
   if (word_res != nullptr) {
       word_res->word->print();
       if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
           word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
-        tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
+        tprintDebug("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
       }
   } else {
-      tprintf("  (empty / nil)\n");
+      tprintDebug("  (empty / nil)\n");
   }
   return true;
 }

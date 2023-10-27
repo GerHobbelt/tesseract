@@ -60,8 +60,8 @@ FILE *OpenBoxFile(const char *fname) {
   std::string filename = BoxFileName(fname);
   FILE *box_file = nullptr;
   if (!(box_file = fopen(filename.c_str(), "rb"))) {
-    CANTOPENFILE.error("read_next_box", TESSEXIT, "Can't open box file %s", filename.c_str());
-    tprintf("Can't open box file %s", filename.c_str());
+    CANTOPENFILE.error("read_next_box", TESSEXIT, "Can't open box file {}", filename);
+    tprintError("Can't open box file {}", filename);
   }
   return box_file;
 }
@@ -78,13 +78,13 @@ bool ReadAllBoxes(int target_page, bool skip_blanks, const char *filename, std::
                   std::vector<int> *pages) {
   std::ifstream input(BoxFileName(filename).c_str(), std::ios::in | std::ios::binary);
   if (input.fail()) {
-    tprintf("Cannot read box data from '%s'.\n", BoxFileName(filename).c_str());
-    tprintf("Does it exists?\n");
+    tprintError("Cannot read box data from '{}'.\n", BoxFileName(filename));
+    tprintError("Does it exist?\n");
     return false;
   }
   std::vector<char> box_data(std::istreambuf_iterator<char>(input), {});
   if (box_data.empty()) {
-    tprintf("No box data found in '%s'.\n", BoxFileName(filename).c_str());
+    tprintError("No box data found in '{}'.\n", BoxFileName(filename));
     return false;
   }
   // Convert the array of bytes to a string, so it can be used by the parser.

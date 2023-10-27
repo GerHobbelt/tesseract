@@ -795,7 +795,7 @@ char
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintf("TODO: Please report image which triggers the noise case.\n");
+        tprintError("TODO: Please report image which triggers the noise case.\n");
         ASSERT_HOST(false);
       default:
         break;

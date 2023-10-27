@@ -323,7 +323,7 @@ double check_pitch_sync2(    // find segmentation
   BLOBNBOX_IT this_it;          // copy iterator
   FPSEGPT_IT seg_it = seg_list; // output iterator
 
-  //      tprintf("Computing sync on word of {} blobs with pitch {}\n",
+  //      tprintDebug("Computing sync on word of {} blobs with pitch {}\n",
   //              blob_count, pitch);
   //      if (blob_count==8 && pitch==27)
   //              projection->print(stdout,true);
@@ -440,7 +440,7 @@ double check_pitch_sync2(    // find segmentation
   best_end = &cutpts[(best_left_x + best_right_x) / 2 - array_origin];
   if (this_box.right() == textord_test_x && this_box.top() == textord_test_y) {
     for (x = left_edge - pitch; x < right_edge + pitch; x++) {
-      tprintf("x={}, C={}, s={}, sq={}, prev={}\n", x, cutpts[x - array_origin].cost_function(),
+      tprintDebug("x={}, C={}, s={}, sq={}, prev={}\n", x, cutpts[x - array_origin].cost_function(),
               cutpts[x - array_origin].sum(), cutpts[x - array_origin].squares(),
               cutpts[x - array_origin].previous()->position());
     }
@@ -463,10 +463,10 @@ double check_pitch_sync2(    // find segmentation
   mean_sum = seg_it.data()->sum();
   mean_sum = mean_sum * mean_sum / best_count;
   if (seg_it.data()->squares() - mean_sum < 0) {
-    tprintf("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
+    tprintDebug("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
             seg_it.data()->sum(), best_count);
   }
-  //      tprintf("blob_count={}, pitch={}, sync={}, occ={}\n",
+  //      tprintDebug("blob_count={}, pitch={}, sync={}, occ={}\n",
   //              blob_count,pitch,seg_it.data()->squares()-mean_sum,
   //              occupation_count);
   return seg_it.data()->squares() - mean_sum;
@@ -659,7 +659,7 @@ double check_pitch_sync3(    // find segmentation
   best_end = &cutpts[(best_left_x + best_right_x) / 2 - array_origin];
   //      for (x=left_edge-pitch;x<right_edge+pitch;x++)
   //      {
-  //              tprintf("x={}, C={}, s={}, sq={}, prev={}\n",
+  //              tprintDebug("x={}, C={}, s={}, sq={}, prev={}\n",
   //                      x,cutpts[x-array_origin].cost_function(),
   //                      cutpts[x-array_origin].sum(),
   //                      cutpts[x-array_origin].squares(),
@@ -682,7 +682,7 @@ double check_pitch_sync3(    // find segmentation
   mean_sum = seg_it.data()->sum();
   mean_sum = mean_sum * mean_sum / best_count;
   if (seg_it.data()->squares() - mean_sum < 0) {
-    tprintf("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
+    tprintDebug("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
             seg_it.data()->sum(), best_count);
   }
   return seg_it.data()->squares() - mean_sum;

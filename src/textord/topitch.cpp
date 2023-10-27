@@ -1688,9 +1688,9 @@ void find_repeated_chars(TO_BLOCK *block    // Block to search.
         // set to point to the blob after the end of the extracted sequence.
         word = make_real_word(&box_it, blobcount, box_it.at_first(), 1);
         if (!box_it.empty() && box_it.data()->joined_to_prev()) {
-          tprintf("Bad box joined to prev at ");
+          tprintDebug("Bad box joined to prev at ");
           box_it.data()->bounding_box().print();
-          tprintf("After repeated word: ");
+          tprintDebug("After repeated word: ");
           word->bounding_box().print();
         }
         ASSERT_HOST(box_it.empty() || !box_it.data()->joined_to_prev());
