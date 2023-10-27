@@ -120,7 +120,7 @@ const int tprintGetLevelElevation(void)
 }
 
 // Trace printf
-void vTessPrint(LogLevel level, fmt::string_view format, fmt::format_args args) {
+void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
 #ifdef HAVE_MUPDF
 	fz_tess_tprintf(level, format, args);
 #else
