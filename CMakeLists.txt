@@ -23,12 +23,15 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
       "\n cmake ..")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# if(WASM_BUILD) 
+#   set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake;/emsdk/upstream/emscripten/cmake/Modules")
+# else()
+#   set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
-set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -86,7 +89,7 @@ else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
-option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" ON)
+option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
@@ -95,9 +98,10 @@ option(ENABLE_NATIVE
        "Enable optimization for host CPU (could break HW compatibility)" OFF)
 # see
 # https://stackoverflow.com/questions/52653025/why-is-march-native-used-so-rarely
-option(BUILD_TRAINING_TOOLS "Build training tools" OFF)
+option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 option(BUILD_TESTS "Build tests" OFF)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
+option(DISABLE_TIFF "Disable build with libtiff (if available)" OFF)
 option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" OFF)
 option(DISABLE_CURL "Disable build with libcurl (if available)" OFF)
 option(INSTALL_CONFIGS "Install tesseract configs" ON)
@@ -165,13 +169,128 @@ if(ENABLE_NATIVE)
   endif(COMPILER_SUPPORTS_MARCH_NATIVE)
 endif(ENABLE_NATIVE)
 
-set(HAVE_AVX FALSE)
-set(HAVE_AVX2 FALSE)
-set(HAVE_FMA FALSE)
-set(HAVE_NEON FALSE)
+message(STATUS "CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
+
+## For the .wasm build, whether SIMD instructions are used or not is set manually.
+## For other builds, auto-detection occurs. 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686" AND NOT WASM_BUILD)
+
+  set(HAVE_NEON FALSE)
+  if(MSVC)
+    set(HAVE_AVX ON)
+    set(AVX_COMPILE_FLAGS "/arch:AVX")
+    add_definitions("-DHAVE_AVX")
+
+    set(HAVE_AVX2 ON)
+    set(AVX2_COMPILE_FLAGS "/arch:AVX2")
+    add_definitions("-DHAVE_AVX2")
+
+    set(HAVE_AVX512F ON)
+    set(AVX512F_COMPILE_FLAGS "/arch:AVX512")
+    add_definitions("-DHAVE_AVX512F")
+
+    set(HAVE_FMA ON)
+    set(FMA_COMPILE_FLAGS "-D__FMA__")
+    add_definitions("-DHAVE_FMA")
+
+    set(HAVE_SSE4_1 ON)
+    set(SSE4_1_COMPILE_FLAGS "-D__SSE4_1__")
+    add_definitions("-DHAVE_SSE4_1")
+
+    set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -openmp:experimental")
+    add_definitions("-DOPENMP_SIMD")
+
+    # clang with MSVC compatibility
+    if(CLANG)
+      set(CMAKE_CXX_FLAGS
+          "${CMAKE_CXX_FLAGS} -Wno-microsoft-unqualified-friend")
+      if(HAVE_FMA)
+        set(FMA_COMPILE_FLAGS "-mfma ${FMA_COMPILE_FLAGS}")
+      endif(HAVE_FMA)
+      if(HAVE_SSE4_1)
+        set(SSE4_1_COMPILE_FLAGS "-msse4.1 ${SSE4_1_COMPILE_FLAGS}")
+      endif(HAVE_SSE4_1)
+    endif(CLANG)
+  else() # if not MSVC
+    check_cxx_compiler_flag("-mavx" HAVE_AVX)
+    if(HAVE_AVX)
+      set(AVX_COMPILE_FLAGS "-mavx")
+      add_definitions("-DHAVE_AVX")
+    endif(HAVE_AVX)
+
+    check_cxx_compiler_flag("-mavx2" HAVE_AVX2)
+    if(HAVE_AVX2)
+      set(AVX2_COMPILE_FLAGS "-mavx2")
+      add_definitions("-DHAVE_AVX2")
+    endif()
+
+    check_cxx_compiler_flag("-mavx512f" HAVE_AVX512F)
+    if(HAVE_AVX512F)
+      set(AVX512F_COMPILE_FLAGS "-mavx512f")
+      add_definitions("-DHAVE_AVX512F")
+    endif()
+
+    check_cxx_compiler_flag("-mfma" HAVE_FMA)
+    if(HAVE_FMA)
+      set(FMA_COMPILE_FLAGS "-mfma")
+      add_definitions("-DHAVE_FMA")
+    endif()
+
+    check_cxx_compiler_flag("-msse4.1" HAVE_SSE4_1)
+    if(HAVE_SSE4_1)
+      set(SSE4_1_COMPILE_FLAGS "-msse4.1")
+      add_definitions("-DHAVE_SSE4_1")
+    endif()
+
+    check_cxx_compiler_flag("-fopenmp-simd" OPENMP_SIMD)
+    if(OPENMP_SIMD)
+      set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -fopenmp-simd")
+      add_definitions("-DOPENMP_SIMD")
+    endif(OPENMP_SIMD)
+  endif(MSVC)
+
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64.*|AARCH64.*" AND NOT WASM_BUILD)
+
+  set(HAVE_AVX FALSE)
+  set(HAVE_AVX2 FALSE)
+  set(HAVE_AVX512F FALSE)
+  set(HAVE_FMA FALSE)
+  set(HAVE_SSE4_1 FALSE)
+  set(HAVE_NEON TRUE)
+
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*" AND NOT WASM_BUILD)
+
+  set(HAVE_AVX FALSE)
+  set(HAVE_AVX2 FALSE)
+  set(HAVE_AVX512F FALSE)
+  set(HAVE_FMA FALSE)
+  set(HAVE_SSE4_1 FALSE)
+
+  check_cxx_compiler_flag("-mfpu=neon" HAVE_NEON)
+  if(HAVE_NEON)
+    set(NEON_COMPILE_FLAGS "-mfpu=neon")
+  endif(HAVE_NEON)
+
+elseif(WASM_BUILD)
+    option(HAVE_AVX "" FALSE)
+    option(HAVE_AVX2 "" FALSE)
+    option(HAVE_AVX512F "" FALSE)
+    option(HAVE_FMA "" FALSE)
+    option(HAVE_NEON "" FALSE)
+    option(HAVE_SSE4_1 "" FALSE)
+
+else()
+
+  set(HAVE_AVX FALSE)
+  set(HAVE_AVX2 FALSE)
+  set(HAVE_AVX512F FALSE)
+  set(HAVE_FMA FALSE)
+  set(HAVE_NEON FALSE)
+  set(HAVE_SSE4_1 FALSE)
+
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
 
 if(HAVE_NEON)
-  set(NEON_COMPILE_FLAGS "-mfpu=neon")
   message(STATUS "LTO build is not supported on arm/RBPi.")
   set(ENABLE_LTO FALSE)  # enable LTO cause fatal error on arm/RBPi
 endif()
@@ -223,7 +342,7 @@ if(OPENMP_BUILD)
   if(NOT OpenMP_FOUND
      AND CLANG
      AND WIN32)
-    # workaroung because find_package(OpenMP) does not work for clang-cl
+    # workaround because find_package(OpenMP) does not work for clang-cl
     # https://gitlab.kitware.com/cmake/cmake/issues/19404
     check_include_file_cxx(omp.h HAVE_OMP_H_INCLUDE)
     find_library(OpenMP_LIBRARY NAMES omp libomp.lib)
@@ -258,23 +377,7 @@ if(CYGWIN)
   add_definitions(-D__CYGWIN__)
 elseif(UNIX)
   if(NOT ANDROID)
-        #
-        # Check link below for detail explanation:
-        # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
-        # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
-        #
-        # Use c++11 standard
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
-        # Optimize code for size reduction
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
-        # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
-        # Do not emit a separate memory initialization file
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
-        # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
-        # set(LIB_pthread pthread)
+    set(LIB_pthread pthread)
   endif()
 elseif(WIN32)
   set(LIB_Ws2_32 Ws2_32)
@@ -287,6 +390,7 @@ add_definitions("-DCMAKE_BUILD")
 # packages
 #
 # ##############################################################################
+# include(CheckFunctions)
 
 if(SW_BUILD)
   find_package(SW REQUIRED)
@@ -313,21 +417,37 @@ else()
   endif()
   if(NOT Leptonica_FOUND)
     message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
+  else()
+    message(STATUS "Found leptonica version: ${Leptonica_VERSION}")
   endif(NOT Leptonica_FOUND)
   include_directories(${Leptonica_INCLUDE_DIRS})
 
+#   check_leptonica_tiff_support()
+#   if ((NOT LEPT_TIFF_RESULT EQUAL 0) AND LEPT_TIFF_COMPILE_SUCCESS)
+#     message(NOTICE "Leptonica was build without TIFF support! Disabling TIFF support...")
+#     set(DISABLE_TIFF ON)
+#   elseif(NOT ${CMAKE_VERSION} VERSION_LESS "3.25")
+#     message(STATUS "Leptonica was build with TIFF support.")
+#   endif()
+
   # Check for optional libraries.
-  find_package(TIFF) # for tesseract
-  if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
-    # try PKG_CONFIG to find libtiff if cmake failed
-    pkg_check_modules(TIFF libtiff-4)
-  endif()
-  if(TIFF_FOUND)
-    set(HAVE_TIFFIO_H ON)
-    include_directories(${TIFF_INCLUDE_DIRS})
-  endif(TIFF_FOUND)
+  if(DISABLE_TIFF)
+    set(HAVE_TIFFIO_H OFF)
+    message(STATUS "TIFF support disabled.")
+  else(DISABLE_TIFF)
+    find_package(TIFF) # for tesseract
+    if(NOT TIFF_FOUND AND PKG_CONFIG_EXECUTABLE)
+      # try PKG_CONFIG to find libtiff if cmake failed
+      pkg_check_modules(TIFF libtiff-4)
+    endif()
+    if(TIFF_FOUND)
+      set(HAVE_TIFFIO_H ON)
+      include_directories(${TIFF_INCLUDE_DIRS})
+    endif(TIFF_FOUND)
+  endif(DISABLE_TIFF)
   if(DISABLE_ARCHIVE)
     set(HAVE_LIBARCHIVE OFF)
+    message(STATUS "LibArchive support disabled.")
   else(DISABLE_ARCHIVE)
     find_package(LibArchive)
     if(NOT LibArchive_FOUND AND PKG_CONFIG_EXECUTABLE)
@@ -341,6 +461,7 @@ else()
   endif(DISABLE_ARCHIVE)
   if(DISABLE_CURL)
     set(HAVE_LIBCURL OFF)
+    message(STATUS "CURL support disabled.")
   else(DISABLE_CURL)
     find_package(CURL)
     if(NOT CURL_FOUND AND PKG_CONFIG_EXECUTABLE)
@@ -586,40 +707,51 @@ if(DISABLED_LEGACY_ENGINE)
   list(REMOVE_ITEM TESSERACT_SRC ${TESSERACT_SRC_LEGACY})
 endif(DISABLED_LEGACY_ENGINE)
 
+if (WASM_BUILD)
 if(NOT HAVE_SSE4_1)
   list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
       src/arch/intsimdmatrix.cpp)
+else()
+    list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
+    set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
 endif(NOT HAVE_SSE4_1)
+
+else()
+
+list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
+     src/arch/intsimdmatrix.cpp)
 
 if(DOTPRODUCT_FLAGS)
   set_source_files_properties(src/arch/dotproduct.cpp
                               PROPERTIES COMPILE_FLAGS ${DOTPRODUCT_FLAGS})
 endif(DOTPRODUCT_FLAGS)
-# if(HAVE_AVX)
-#   list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
-#   set_source_files_properties(src/arch/dotproductavx.cpp
-#                               PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
-# endif(HAVE_AVX)
-# if(HAVE_AVX2)
-#   list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
-#        src/arch/dotproductavx.cpp)
-#   set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
-#                               PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
-# endif(HAVE_AVX2)
-# if(HAVE_AVX512F)
-#   list(APPEND arch_files_opt src/arch/dotproductavx512.cpp)
-#   set_source_files_properties(src/arch/dotproductavx512.cpp
-#                               PROPERTIES COMPILE_FLAGS ${AVX512F_COMPILE_FLAGS})
-# endif(HAVE_AVX512F)
-# if(HAVE_FMA)
-#   list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
-#   set_source_files_properties(src/arch/dotproductfma.cpp
-#                               PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
-# endif(HAVE_FMA)
+if(HAVE_AVX)
+  list(APPEND arch_files_opt src/arch/dotproductavx.cpp)
+  set_source_files_properties(src/arch/dotproductavx.cpp
+                              PROPERTIES COMPILE_FLAGS ${AVX_COMPILE_FLAGS})
+endif(HAVE_AVX)
+if(HAVE_AVX2)
+  list(APPEND arch_files_opt src/arch/intsimdmatrixavx2.cpp
+       src/arch/dotproductavx.cpp)
+  set_source_files_properties(src/arch/intsimdmatrixavx2.cpp
+                              PROPERTIES COMPILE_FLAGS ${AVX2_COMPILE_FLAGS})
+endif(HAVE_AVX2)
+if(HAVE_AVX512F)
+  list(APPEND arch_files_opt src/arch/dotproductavx512.cpp)
+  set_source_files_properties(src/arch/dotproductavx512.cpp
+                              PROPERTIES COMPILE_FLAGS ${AVX512F_COMPILE_FLAGS})
+endif(HAVE_AVX512F)
+if(HAVE_FMA)
+  list(APPEND arch_files_opt src/arch/dotproductfma.cpp)
+  set_source_files_properties(src/arch/dotproductfma.cpp
+                              PROPERTIES COMPILE_FLAGS ${FMA_COMPILE_FLAGS})
+endif(HAVE_FMA)
 if(HAVE_SSE4_1)
-  list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
-  set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
-  message("Using SSE41")
+  list(APPEND arch_files_opt src/arch/dotproductsse.cpp
+       src/arch/intsimdmatrixsse.cpp)
+  set_source_files_properties(
+    src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp
+    PROPERTIES COMPILE_FLAGS ${SSE4_1_COMPILE_FLAGS})
 endif(HAVE_SSE4_1)
 if(HAVE_NEON)
   list(APPEND arch_files_opt src/arch/dotproductneon.cpp
@@ -630,6 +762,8 @@ if(HAVE_NEON)
       PROPERTIES COMPILE_FLAGS ${NEON_COMPILE_FLAGS})
   endif()
 endif(HAVE_NEON)
+
+endif()
 
 file(
   GLOB_RECURSE
@@ -794,13 +928,132 @@ endif()
 # EXECUTABLE tesseract
 # ##############################################################################
 
+if(NOT WASM_BUILD)
+add_executable(tesseract src/tesseract.cpp)
+target_link_libraries(tesseract libtesseract)
+if(HAVE_TIFFIO_H AND WIN32)
+  target_link_libraries(tesseract ${TIFF_LIBRARIES})
+endif()
+
+if(OPENMP_BUILD AND UNIX)
+  target_link_libraries(tesseract pthread)
+endif()
+
+# ##############################################################################
+
+if(BUILD_TESTS
+   AND EXISTS
+       ${CMAKE_CURRENT_SOURCE_DIR}/unittest/third_party/googletest/CMakeLists.txt
+)
+  add_subdirectory(unittest/third_party/googletest)
+endif()
+
+if(BUILD_TRAINING_TOOLS)
+  add_subdirectory(src/training)
+endif()
+
+get_target_property(tesseract_NAME libtesseract NAME)
+get_target_property(tesseract_VERSION libtesseract VERSION)
+get_target_property(tesseract_OUTPUT_NAME libtesseract OUTPUT_NAME)
+
+configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc.in
+               @ONLY)
+# to resolve generator expression in OUTPUT_NAME
+file(
+  GENERATE
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tesseract_$<CONFIG>.pc
+  INPUT ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc.in)
+
+configure_package_config_file(
+  cmake/templates/TesseractConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract
+  PATH_VARS INCLUDE_DIR LIBRARY_DIRS)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion)
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract_$<CONFIG>.pc
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+  RENAME tesseract.pc)
+install(TARGETS tesseract DESTINATION bin)
+install(
+  TARGETS libtesseract
+  EXPORT TesseractTargets
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(
+  EXPORT TesseractTargets
+  NAMESPACE Tesseract::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(
+  FILES include/tesseract/baseapi.h
+        include/tesseract/capi.h
+        include/tesseract/renderer.h
+        ${CMAKE_CURRENT_BINARY_DIR}/include/tesseract/version.h
+        include/tesseract/ltrresultiterator.h
+        include/tesseract/pageiterator.h
+        include/tesseract/resultiterator.h
+        include/tesseract/osdetect.h
+        include/tesseract/publictypes.h
+        include/tesseract/ocrclass.h
+        include/tesseract/export.h
+        include/tesseract/unichar.h
+        # ${CMAKE_CURRENT_BINARY_DIR}/src/endianness.h
+  DESTINATION include/tesseract)
+
+if(INSTALL_CONFIGS)
+  install(FILES ${TESSERACT_CONFIGS}
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
+  install(FILES ${TESSERACT_TESSCONFIGS}
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
+endif()
+
+else()
+
+## Define variable for pre-processor to add emscripten-specific content
+add_definitions(-DWASM_BUILD)
+
+#
+# Check link below for detail explanation:
+# https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
+# https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
+#
+# Use c++11 standard
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+# Optimize code for size reduction
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g4")
+# Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
+# Do not emit a separate memory initialization file
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+# LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
+# set(LIB_pthread pthread)
+
+
 ########################################
 # Build tesseract-core.js (WASM version)
 ########################################
 if(HAVE_SSE4_1)
-  set(WASM_NAME tesseract-core-simd)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-simd-lstm)
+  else()
+    set(WASM_NAME tesseract-core-simd)
+  endif()
 else()
-  set(WASM_NAME tesseract-core)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-lstm)
+  else()
+    set(WASM_NAME tesseract-core)
+  endif()
 endif()
 
 set(tesseract_js_wrapper ../../javascript/src/wrapper.cpp)
@@ -811,7 +1064,7 @@ add_executable                  (${WASM_NAME} ${tesseract_js_wrapper})
 # https://github.com/kripken/emscripten/blob/1.38.16/src/settings.js
 #
 # Use double amount of memory comparing to default
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
+# set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s TOTAL_MEMORY=268435456")
 # Allow memory to grow
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
 # Replace default name 'Module' with 'TesseractCore'
@@ -836,7 +1089,7 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
 #set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s RUNTIME_LOGGING=1")
 #set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s LIBRARY_DEBUG=1")
 #set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s SYSCALL_DEBUG=1")
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_FUNCTIONS='[\"_pixDestroy\",\"_boxaDestroy\",\"_pixaDestroy\",\"_ptaDestroy\",\"_pixReadMem\",\"_pixReadHeaderMem\"]'")
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_FUNCTIONS='[\"_pixDestroy\",\"_boxaDestroy\",\"_pixaDestroy\",\"_ptaDestroy\",\"_pixReadMem\",\"_pixReadHeaderMem\",\"_malloc\",\"_free\"]'")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORTED_RUNTIME_METHODS='[\"FS\", \"setValue\", \"getValue\"]'")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/glue.js")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} --post-js ../../../javascript/anterior.js")
@@ -870,90 +1123,7 @@ set_target_properties(${WASM_NAME}.wasm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS
 
 target_link_libraries           (${WASM_NAME}.wasm libtesseract)
 
-
-###########################################
-# Build tesseract-core.asm.js (ASM version)
-###########################################
-
-#add_executable                  (tesseract-core.asm ${tesseract_js_wrapper})
-
-# Disable WASM
-#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s WASM=0")
-
-#set_target_properties(tesseract-core.asm PROPERTIES LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCoreASM\"'")
-#target_link_libraries           (tesseract-core.asm libtesseract)
-#set(tesseractmain_src src/api/tesseractmain.cpp)
-
-# ##############################################################################
-
-# if(BUILD_TESTS AND EXISTS
-#      ${CMAKE_CURRENT_SOURCE_DIR}/unittest/third_party/googletest/CMakeLists.txt
-# )
-#   add_subdirectory(unittest/third_party/googletest)
-# endif()
-
-# if(BUILD_TRAINING_TOOLS)
-#   add_subdirectory(src/training)
-# endif()
-
-# get_target_property(tesseract_NAME libtesseract NAME)
-# get_target_property(tesseract_VERSION libtesseract VERSION)
-# get_target_property(tesseract_OUTPUT_NAME libtesseract OUTPUT_NAME)
-
-# configure_file(tesseract.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
-#                @ONLY)
-
-# configure_package_config_file(
-#   cmake/templates/TesseractConfig.cmake.in
-#   ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfig.cmake
-#   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract
-#   PATH_VARS INCLUDE_DIR LIBRARY_DIRS)
-# write_basic_package_version_file(
-#   ${CMAKE_CURRENT_BINARY_DIR}/cmake/tesseract/TesseractConfigVersion.cmake
-#   VERSION ${PACKAGE_VERSION}
-#   COMPATIBILITY SameMajorVersion)
-
-# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tesseract.pc
-#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-# #install(TARGETS tesseract DESTINATION bin)
-# install(TARGETS ${WASM_NAME} RUNTIME DESTINATION bin)
-# #install(TARGETS tesseract-core.asm RUNTIME DESTINATION bin)
-
-# install(
-#   TARGETS libtesseract
-#   EXPORT TesseractTargets
-#   RUNTIME DESTINATION bin
-#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-# install(
-#   EXPORT TesseractTargets
-#   NAMESPACE Tesseract::
-#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tesseract)
-# install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cmake
-#         DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# install(
-#   FILES include/tesseract/baseapi.h
-#         include/tesseract/capi.h
-#         include/tesseract/renderer.h
-#         ${CMAKE_CURRENT_BINARY_DIR}/include/tesseract/version.h
-#         include/tesseract/ltrresultiterator.h
-#         include/tesseract/pageiterator.h
-#         include/tesseract/resultiterator.h
-#         include/tesseract/osdetect.h
-#         include/tesseract/publictypes.h
-#         include/tesseract/ocrclass.h
-#         include/tesseract/export.h
-#         include/tesseract/unichar.h
-#         # ${CMAKE_CURRENT_BINARY_DIR}/src/endianness.h
-#   DESTINATION include/tesseract)
-
-# if(INSTALL_CONFIGS)
-# install(FILES ${TESSERACT_CONFIGS}
-#         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
-# install(FILES ${TESSERACT_TESSCONFIGS}
-#         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
-# endif()
+endif()
 
 # ##############################################################################
 # uninstall target
