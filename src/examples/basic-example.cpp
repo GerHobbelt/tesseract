@@ -1,13 +1,19 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 
-int main() {
+#if defined(BUILD_MONOLITHIC)
+#define main   tesseract_basic_example_main
+#endif
+
+extern "C" int main(int argc, const char **argv)
+{
     // Initialize Tesseract API
     tesseract::TessBaseAPI api;
-    if (api.Init(nullptr, "eng")) {
+    if (api.InitSimple(nullptr, "eng")) {
         std::cerr << "Could not initialize Tesseract." << std::endl;
         return 1;
     }
