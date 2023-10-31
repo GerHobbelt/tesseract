@@ -538,28 +538,32 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * be returned.
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
-                      int configs_size, const std::vector<std::string> *vars_vec,
-                      const std::vector<std::string> *vars_values, bool set_only_non_debug_params) {
-  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, 
+	                  const std::vector<std::string> &configs,
+                      const std::vector<std::string> &vars_vec,
+                      const std::vector<std::string> &vars_values, 
+	                  bool set_only_non_debug_params) {
+  return InitFullWithReader(datapath, 0, language, oem, configs, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
 }
 
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
-  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
+  std::vector<std::string> nil;
+  return InitFull(datapath, language, oem, nil, nil, nil, false);
 }
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
-                false);
+  return InitOem(datapath, language, OEM_DEFAULT);
 }
 
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
 int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char *language, OcrEngineMode oem,
-                      const char **configs, int configs_size, const std::vector<std::string> *vars_vec,
-                      const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
+	                  const std::vector<std::string> &configs,
+                      const std::vector<std::string> &vars_vec,
+                      const std::vector<std::string> &vars_values, 
+                      bool set_only_non_debug_params,
                       FileReader reader) {
   if (language == nullptr || language[0] == 0) {
     language = "";
@@ -595,7 +599,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
       mgr.LoadMemBuffer(language, data, data_size);
     }
     if (tesseract_->init_tesseract(datapath, output_file_, language, oem, configs,
-                                   configs_size, vars_vec, vars_values, set_only_non_debug_params,
+                                   vars_vec, vars_values, set_only_non_debug_params,
                                    &mgr) != 0) {
       return -1;
     }
@@ -616,6 +620,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
     tesseract_->ResetAdaptiveClassifier();
   }
 #endif // !DISABLED_LEGACY_ENGINE
+
   return 0;
 }
 
@@ -2797,13 +2802,14 @@ int TessBaseAPI::FindLines() {
     } else {
       osd_tesseract_ = new Tesseract(tesseract_);
       TessdataManager mgr(reader_);
-      if (datapath_.empty()) {
+	  std::vector<std::string> nil;
+	  if (datapath_.empty()) {
         tprintWarn("Auto orientation and script detection requested,"
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
       } else if (osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY,
-                                                nullptr, 0, nullptr, nullptr, false, &mgr) == 0) {
+                                                nil, nil, nil, false, &mgr) == 0) {
         osd_tess = osd_tesseract_;
         osd_tesseract_->set_source_resolution(thresholder_->GetSourceYResolution());
       } else {

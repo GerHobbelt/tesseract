@@ -68,10 +68,11 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
   tesseract::TessBaseAPI api;
   std::vector<std::string> vars_vec;
   std::vector<std::string> vars_values;
+  std::vector<std::string> configs;		// = nil
   vars_vec.emplace_back("output_ambig_words_file");
   vars_values.emplace_back(output_file_str);
-  api.InitFull(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY, nullptr, 0, &vars_vec,
-           &vars_values, false);
+  api.InitFull(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY, configs, vars_vec,
+           vars_values, false);
   tesseract::Dict &dict = api.tesseract()->getDict();
   FILE *input_file = fopen(input_file_str, "rb");
   if (input_file == nullptr) {

@@ -217,10 +217,12 @@ public:
     // the current section's counts
     int reading;  
     int writing;
+	int changing;
 
     // the sum of the previous section's counts
     int prev_sum_reading;
     int prev_sum_writing;
+	int prev_sum_changing;
   } access_counts_t;
 
   access_counts_t access_counts() const {
@@ -230,9 +232,11 @@ public:
   void reset_access_counts() {
     access_counts_.prev_sum_reading += access_counts_.reading;
     access_counts_.prev_sum_writing += access_counts_.writing;
+	access_counts_.prev_sum_changing += access_counts_.changing;
 
     access_counts_.reading = 0;
     access_counts_.writing = 0;
+	access_counts_.changing = 0;
   }
 
   virtual std::string formatted_value_str() const = 0;
@@ -247,7 +251,7 @@ protected:
   Param(const char *name, const char *comment, bool init)
       : name_(name), info_(comment), init_(init) {
     debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
-    access_counts_ = {0,0};
+    access_counts_ = {0,0,0};
   }
 
   const char *name_; // name of this parameter
@@ -276,11 +280,15 @@ public:
   }
   void operator=(int32_t value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   void set_value(int32_t value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   int32_t value() const {
 	  access_counts_.reading++;
@@ -297,7 +305,10 @@ public:
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-        value_ = *param;
+		int32_t value = *param;
+		if (value != value_ && value != default_)
+			access_counts_.changing++;
+		value_ = value;
         break;
       }
     }
@@ -340,11 +351,15 @@ public:
   }
   void operator=(bool value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   void set_value(bool value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   bool value() const {
 	  access_counts_.reading++;
@@ -361,7 +376,10 @@ public:
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-        value_ = *param;
+		bool value = *param;
+		if (value != value_ && value != default_)
+			access_counts_.changing++;
+		value_ = value;
         break;
       }
     }
@@ -421,11 +439,15 @@ public:
   }
   void operator=(const std::string &value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   void set_value(const std::string &value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   const std::string &value() const {
 	  access_counts_.reading++;
@@ -442,7 +464,10 @@ public:
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-        value_ = *param;
+		std::string value = *param;
+		if (value != value_ && value != default_)
+			access_counts_.changing++;
+		value_ = value;
         break;
       }
     }
@@ -488,11 +513,15 @@ public:
   }
   void operator=(double value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   void set_value(double value) {
       access_counts_.writing++;
-      value_ = value;
+	  if (value != value_ && value != default_)
+		  access_counts_.changing++;
+	  value_ = value;
   }
   double value() const {
 	  access_counts_.reading++;
@@ -509,7 +538,10 @@ public:
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-        value_ = *param;
+		double value = *param;
+		if (value != value_ && value != default_)
+			access_counts_.changing++;
+		value_ = value;
         break;
       }
     }

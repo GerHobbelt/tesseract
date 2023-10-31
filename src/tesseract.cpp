@@ -523,17 +523,17 @@ bool std::filesystem::exists(const char* filename) {
 #endif
 }
 
-// NOTE: arg_i is used here to avoid ugly *i so many times in this function
-static bool ParseArgs(int argc, const char** argv, const char **lang, const char **image,
-                      const char **outputbase, const char **datapath, l_int32 *dpi,
-                      bool *list_langs,
-                      const char **visible_pdf_image_file,
+static bool ParseArgs(int argc, const char** argv, 
+                      bool *do_recognize, bool *list_langs,
                       bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
-                      l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
-                      tesseract::OcrEngineMode *enginemode,
-                      bool *rectangle_mode, const char **rectangle_str
+					  std::vector<std::string> *config_files
 ) {
+  *do_recognize = false;
+  *list_langs = false;
+  *print_parameters = false;
+  *print_fonts_table = false;
+
   int i = 1;
   if (i < argc) {
     const char* verb = argv[i];
@@ -550,8 +550,9 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
           } else if ((strcmp(argv[i], "psm") == 0)) {
             PrintHelpForPSM();
           } else {
-            tprintError("No help available for {}\n", argv[i]);
-          }
+            tprintError("No help available for '{}'.\nDid you mean 'extra', 'oem' or 'psm'?", argv[i]);
+			return false;
+		  }
         } else {
           PrintHelpMessage(argv[0]);
         }
@@ -562,65 +563,49 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       } else if (strcmp(verb, "version") == 0) {
         PrintVersionInfo();
       } else {
-        tprintError("Unknown action: {}\n", verb);
+        tprintError("Unknown action: '{}'\n", verb);
+		return false;
       }
       return true;
     }
   }
   bool noocr = false;
-  for (i = 1; i < argc && (*outputbase == nullptr || argv[i][0] == '-'); i++) {
+  bool dash_dash = false;
+  int state = 0;
+  for (i = 1; i < argc; i++) {
     if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
       PrintHelpMessage(argv[0]);
-      noocr = true;
-    } else if (strcmp(argv[i], "--help-extra") == 0) {
+	  noocr = true;
+	} else if (strcmp(argv[i], "--help-extra") == 0) {
       PrintHelpExtra(argv[0]);
-      noocr = true;
-    } else if ((strcmp(argv[i], "--help-psm") == 0)) {
+	  noocr = true;
+	} else if ((strcmp(argv[i], "--help-psm") == 0)) {
       PrintHelpForPSM();
-      noocr = true;
+	  noocr = true;
 #if !DISABLED_LEGACY_ENGINE
     } else if ((strcmp(argv[i], "--help-oem") == 0)) {
       PrintHelpForOEM();
-      noocr = true;
+	  noocr = true;
 #endif
     } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--version") == 0)) {
       PrintVersionInfo();
-      noocr = true;
-    } else if (strcmp(argv[i], "-l") == 0 && i + 1 < argc) {
-      *lang = argv[i + 1];
+	  noocr = true;
+	} else if (strcmp(argv[i], "-l") == 0 && i + 1 < argc) {
+      vars_vec->push_back("languages");
+      vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(argv[i], "--tessdata-dir") == 0 && i + 1 < argc) {
-      *datapath = argv[i + 1];
+      vars_vec->push_back("tessdata_path");
+      vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(argv[i], "--dpi") == 0 && i + 1 < argc) {
-      *dpi = atoi(argv[i + 1]);
+      vars_vec->push_back("source_image_dpi");
+      vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
-      // Allow the log levels which are used by log4cxx.
-      std::string loglevel_string = argv[++i];
-      std::transform(loglevel_string.cbegin(), loglevel_string.cend(),
-                   loglevel_string.begin(), // write to the same location
-                   [](unsigned char c) { return std::toupper(c); });
-
-      static const std::map<const std::string, int> loglevels {
-        {"ALL", INT_MIN},
-        {"TRACE", 5000},
-        {"DEBUG", 10000},
-        {"INFO", 20000},
-        {"WARN", 30000},
-        {"ERROR", 40000},
-        {"FATAL", 50000},
-        {"OFF", INT_MAX},
-      };
-      try {
-        auto loglevel = loglevels.at(loglevel_string);
-        FLAGS_tlog_level = loglevel;
-      } catch (const std::out_of_range &e) {
-		(void)e;		// unused variable
-        // TODO: Allow numeric argument?
-        tprintError("Unsupported --loglevel {}\n", loglevel_string);
-        return false;
-      }
+      vars_vec->push_back("loglevel");
+      vars_values->push_back(argv[i + 1]);
+	  ++i;
     } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
       vars_vec->push_back("user_words_file");
       vars_values->push_back(argv[i + 1]);
@@ -633,23 +618,16 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       noocr = true;
       *list_langs = true;
     } else if (strcmp(argv[i], "--rectangle") == 0 && i + 1 < argc) {
-		*rectangle_mode = true;
-		*rectangle_str = argv[i + 1];
-		++i;
+	  vars_vec->push_back("reactangle_to_process");
+	  vars_values->push_back(argv[i + 1]);
+  	  ++i;
 	} else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
-      if (!checkArgValues(atoi(argv[i + 1]), "PSM", tesseract::PSM_COUNT)) {
-        return false;
-      }
-      *pagesegmode = static_cast<tesseract::PageSegMode>(atoi(argv[i + 1]));
+      vars_vec->push_back("page_segmenting_mode");
+      vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(argv[i], "--oem") == 0 && i + 1 < argc) {
-#if !DISABLED_LEGACY_ENGINE
-      int oem = atoi(argv[i + 1]);
-      if (!checkArgValues(oem, "OEM", tesseract::OEM_COUNT)) {
-        return false;
-      }
-      *enginemode = static_cast<tesseract::OcrEngineMode>(oem);
-#endif
+      vars_vec->push_back("engine_mode");
+      vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(argv[i], "--print-parameters") == 0) {
       noocr = true;
@@ -661,45 +639,51 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
 #endif  // !DISABLED_LEGACY_ENGINE
     } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
       // handled properly after api init
-      ++i;
+	  const char *var_stmt = argv[i + 1];
+	  ++i;
+	  const char *p = strchr(var_stmt, '=');
+	  if (!p) {
+		tprintError("Missing '=' in '-c' configvar assignment statement: '{}'\n", var_stmt);
+		return false;
+	  }
+	  std::string name(var_stmt, p - var_stmt);
+	  vars_vec->push_back(name);
+	  vars_values->push_back(p + 1);
     } else if (strcmp(argv[i], "--visible-pdf-image") == 0 && i + 1 < argc) {
-      *visible_pdf_image_file = argv[i + 1];
+      vars_vec->push_back("visible_pdf_image");
+      vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (*image == nullptr) {
-      *image = argv[i];
-      i++;
+	} else if (strcmp(argv[i], "--") == 0) {
+	  dash_dash = true;
+	} else if (state == 0 && (dash_dash || argv[i][0] != '-')) {
+	  // first + second non-opt argument: the SOURCE IMAGE,
+      vars_vec->push_back("source_image");
+      vars_values->push_back(argv[i]);
+      ++i;
       if (i == argc) {
-        fprintf(stderr, "Error, missing outputbase command line argument\n");
+        tprintError("Error, missing outputbase command line argument\n");
         return false;
       }
       // outputbase follows image, don't allow options at that position.
-      *outputbase = argv[i];
-    } else {
+	  vars_vec->push_back("output_base_path");
+	  vars_values->push_back(argv[i]);
+	  ++state;
+	} else if (state == 1 && (dash_dash || argv[i][0] != '-')) {
+	  // third and further non-opt arguments: the (optional) CONFIG FILES
+	  config_files->push_back(argv[i]);
+	} else {
       // Unexpected argument.
       tprintError("Unknown command line argument '{}'\n", argv[i]);
       return false;
     }
   }
 
-  *arg_i = i;
-
-  if (*pagesegmode == tesseract::PSM_OSD_ONLY) {
-    // OSD = orientation and script detection.
-    if (*lang != nullptr && strcmp(*lang, "osd")) {
-      // If the user explicitly specifies a language (other than osd)
-      // or a script, only orientation can be detected.
-      tprintWarn("Detects only orientation with -l {}\n", *lang);
-    } else {
-      // That mode requires osd.traineddata to detect orientation and script.
-      *lang = "osd";
-    }
-  }
-
-  if (*outputbase == nullptr && noocr == false) {
+  if (state < 1 && noocr == false) {
     PrintHelpMessage(argv[0]);
     return false;
   }
 
+  *do_recognize = !noocr;
   return true;
 }
 
@@ -1033,9 +1017,11 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
   }
 }
 
-void pause_key(void) {
+#if 0
+static void pause_key(void) {
   (void)fgetc(stdin);
 }
+#endif
 
   /**********************************************************************
  *  main()
@@ -1058,7 +1044,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #  endif
 #endif
 
+#if 0
   atexit(pause_key);
+#endif
 
   const char *lang = nullptr;
   const char *image = nullptr;
@@ -1067,18 +1055,19 @@ extern "C" int tesseract_main(int argc, const char** argv)
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
   bool rectangle_mode = false;
+  bool do_recognize = false;
   const char* rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
   l_int32 dpi = 0;
-  int arg_i = 1;
   int ret_val = EXIT_SUCCESS;
 
   tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
   tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
   std::vector<std::string> vars_vec;
   std::vector<std::string> vars_values;
+  std::vector<std::string> config_files;
 
   if (std::getenv("LEPT_MSG_SEVERITY")) {
     // Get Leptonica message level from environment variable.
@@ -1099,23 +1088,32 @@ extern "C" int tesseract_main(int argc, const char** argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
-  if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
-                 &visible_pdf_image_file,
-                 &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
-                 &pagesegmode, &enginemode,
-                 &rectangle_mode, &rectangle_str
+  if (!ParseArgs(argc, argv, &do_recognize, &list_langs,
+                 &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &config_files 	             
   )) {
     return EXIT_FAILURE;
   }
 
-  bool in_recognition_mode = !list_langs && !print_parameters && !print_fonts_table;
+  bool nothing_further_to_do = !do_recognize && !list_langs && !print_parameters && !print_fonts_table;
 
-  if (lang == nullptr && in_recognition_mode) {
+  if (pagesegmode == tesseract::PSM_OSD_ONLY) {
+	  // OSD = orientation and script detection.
+	  if (lang != nullptr && strcmp(lang, "osd")) {
+		  // If the user explicitly specifies a language (other than osd)
+		  // or a script, only orientation can be detected.
+		  tprintWarn("Detects only orientation with -l {}\n", lang);
+	  } else {
+		  // That mode requires osd.traineddata to detect orientation and script.
+		  lang = "osd";
+	  }
+  }
+
+  if (lang == nullptr && do_recognize) {
     // Set default language model if none was given and a model file is needed.
     lang = "eng";
   }
 
-  if (image == nullptr && in_recognition_mode) {
+  if (image == nullptr && do_recognize) {
     return EXIT_SUCCESS;
   }
 
@@ -1136,8 +1134,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         return EXIT_FAILURE;
       }
 
-      int config_count = argc - arg_i;
-      const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values, false);
+      const int init_failed = api.InitFull(datapath, lang, enginemode, config_files, vars_vec, vars_values, false);
 
       // make sure the debug_all preset is set up BEFORE any command-line arguments
       // direct tesseract to set some arbitrary parameters just below,

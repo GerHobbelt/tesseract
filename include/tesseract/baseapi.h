@@ -272,9 +272,9 @@ public:
    * "debug" in the name will be set.
    */
   int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
-           const char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
            bool set_only_non_debug_params);
 
   int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
@@ -284,9 +284,10 @@ public:
   // In-memory version reads the traineddata file directly from the given
   // data[data_size] array, and/or reads data via a FileReader.
   int InitFullWithReader(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, const char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
            bool set_only_non_debug_params, FileReader reader);
 
   /**

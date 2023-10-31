@@ -233,8 +233,8 @@ BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle, const char *filen
 }
 
 int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     TessOcrEngineMode mode, const char **configs_vec, size_t configs_size, const char **vars_vec,
+                     const char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -243,14 +243,27 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
       varValues.emplace_back(vars_values[i]);
     }
   }
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
 
-  return handle->InitFull(datapath, language, mode, configs, configs_size, &varNames, &varValues,
+  return handle->InitFull(datapath, language, mode, configs, varNames, varValues,
                       set_only_non_debug_params != 0);
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode oem, const char **configs, int configs_size) {
-  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
+                     TessOcrEngineMode oem, const char **configs_vec, size_t configs_size) {
+  std::vector<std::string> nil;
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
+  return handle->InitFull(datapath, language, oem, configs, nil, nil, false);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,
@@ -263,8 +276,8 @@ int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *lang
 }
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
-                     TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     TessOcrEngineMode mode, const char **configs_vec, size_t configs_size, const char **vars_vec,
+                     const char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -273,8 +286,14 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
       varValues.emplace_back(vars_values[i]);
     }
   }
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
 
-  return handle->InitFullWithReader(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
+  return handle->InitFullWithReader(data, data_size, language, mode, configs, varNames, varValues,
                       set_only_non_debug_params != 0, nullptr);
 }
 
