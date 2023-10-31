@@ -1498,6 +1498,10 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       if (curlcode != CURLE_OK) {
         return error("curl_easy_setopt");
       }
+      curlcode = curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+      if (curlcode != CURLE_OK) {
+        return error("curl_easy_setopt");
+      }
       // Follow HTTP, HTTPS, FTP and FTPS redirects.
       curlcode = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
       if (curlcode != CURLE_OK) {
@@ -1523,7 +1527,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       if (!cookiefile.empty()) {
         curlcode = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookiefile.c_str());
         if (curlcode != CURLE_OK) {
-          return error("curl could not read cookiefile");
+          return error("curl_easy_setopt");
         }
       }
       curlcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
