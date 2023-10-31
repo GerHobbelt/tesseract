@@ -46,9 +46,11 @@ namespace tesseract {
 // here before dispatching the gathered lines to the appropriate back-end API!
 static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args args) {
   static int block_level = T_LOG_DEBUG;
+  // sanity check/clipping: there's no log level beyond ERROR severity: ERROR is the highest it can possibly get.
   if (level < T_LOG_ERROR) {
 	  level = T_LOG_ERROR;
   }
+  // make the entire message line have the most severe log level given for any part of the line:
   if (level < block_level) {
     block_level = level;
   }
@@ -84,7 +86,10 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
 	  break;
 	}
   }
+
   msg_buffer.clear();
+
+  // reset next line log level to lowest possible:
   block_level = T_LOG_DEBUG;
 }
 
