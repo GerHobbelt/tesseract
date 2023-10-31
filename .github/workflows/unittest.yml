@@ -36,6 +36,8 @@ jobs:
            sudo apt-get update
            sudo apt-get install autoconf libleptonica-dev libpango1.0-dev -y
            sudo apt-get install cabextract -y
+           # Remove g++-13 which conflicts with clang and breaks ci.
+           sudo apt-get purge g++-13 -y || true
 
     - name: Setup
       run: |
