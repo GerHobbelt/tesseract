@@ -38,7 +38,7 @@ namespace tesseract {
         marker_(0) {}
 
     virtual ~AutoSupressDatum() {
-        fire();
+		clear();
     }
 
     AutoSupressDatum(const AutoSupressDatum &o) = delete;
