@@ -635,6 +635,7 @@ extern BOOL_VAR_H(stream_filelist);
 extern STRING_VAR_H(document_title);
 #ifdef HAVE_LIBCURL
 extern INT_VAR_H(curl_timeout);
+extern STRING_VAR_H(curl_cookiefile);
 #endif
 extern INT_VAR_H(debug_all);
 extern BOOL_VAR_H(debug_misc);

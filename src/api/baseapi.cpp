@@ -111,6 +111,7 @@ BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
+STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
@@ -1516,6 +1517,13 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
         curlcode = curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
         if (curlcode != CURLE_OK) {
           return error("curl_easy_setopt");
+        }
+      }
+      std::string cookiefile = curl_cookiefile;
+      if (!cookiefile.empty()) {
+        curlcode = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookiefile.c_str());
+        if (curlcode != CURLE_OK) {
+          return error("curl could not read cookiefile");
         }
       }
       curlcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
