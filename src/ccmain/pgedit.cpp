@@ -231,6 +231,10 @@ auto fmt::formatter<CMD_EVENTS>::format(CMD_EVENTS c, format_context &ctx) const
 
 namespace tesseract {
 
+static inline auto format_as(CMD_EVENTS e) {
+  return fmt::underlying(e);
+}
+
 enum ColorationMode {
   CM_RAINBOW,
   CM_SUBSCRIPT,

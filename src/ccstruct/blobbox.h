@@ -57,6 +57,10 @@ enum PITCH_TYPE {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(PITCH_TYPE);
 
+static inline auto format_as(PITCH_TYPE t) {
+  return fmt::underlying(t);
+}
+
 // The possible tab-stop types of each side of a BLOBNBOX.
 // The ordering is important, as it is used for deleting dead-ends in the
 // search. ALIGNED, CONFIRMED and VLINE should remain greater than the
@@ -70,6 +74,10 @@ enum TabType {
   TT_VLINE          // Detected as a vertical line.
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(TabType);
+
+static inline auto format_as(TabType t) {
+  return fmt::underlying(t);
+}
 
 // The possible region types of a BLOBNBOX.
 // Note: keep all the text types > BRT_UNKNOWN and all the image types less.
@@ -89,6 +97,10 @@ enum BlobRegionType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(BlobRegionType);
 
+static inline auto format_as(BlobRegionType t) {
+  return fmt::underlying(t);
+}
+
 // enum for elements of arrays that refer to neighbours.
 // NOTE: keep in this order, so ^2 can be used to flip direction.
 enum BlobNeighbourDir {
@@ -99,6 +111,10 @@ enum BlobNeighbourDir {
   BND_COUNT
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(BlobNeighbourDir);
+
+static inline auto format_as(BlobNeighbourDir bd) {
+  return fmt::underlying(bd);
+}
 
 // enum for special type of text characters, such as math symbol or italic.
 enum BlobSpecialTextType {
@@ -131,6 +147,10 @@ enum BlobTextFlowType {
   BTFT_COUNT
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(BlobTextFlowType);
+
+static inline auto format_as(BlobTextFlowType t) {
+  return fmt::underlying(t);
+}
 
 // Returns true if type1 dominates type2 in a merge. Mostly determined by the
 // ordering of the enum, LEADER is weak and dominates nothing.
