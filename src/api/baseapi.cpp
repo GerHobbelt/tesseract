@@ -179,8 +179,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
   const auto kTrainedDataSuffixUtf16 = winutils::Utf8ToUtf16(kTrainedDataSuffix);
 
   WIN32_FIND_DATAW data;
-  HANDLE handle = FindFirstFileW(
-    winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
+  HANDLE handle = FindFirstFileW(winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
   if (handle != INVALID_HANDLE_VALUE) {
     BOOL result = TRUE;
     for (; result;) {
@@ -413,47 +412,47 @@ bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
-  auto *p = ParamUtils::FindParam<IntParam>(name, GlobalParams()->int_params(),
-                                            tesseract_->params()->int_params());
-  if (p == nullptr) {
+  IntParam *p;
+  p = ParamUtils::FindParam<IntParam>(p, name, tesseract_->params());
+  if (!p) {
     return false;
   }
-  *value = (int32_t)(*p);
+  *value = static_cast<int32_t>(*p);
   return true;
 }
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
-  auto *p = ParamUtils::FindParam<BoolParam>(name, GlobalParams()->bool_params(),
-                                             tesseract_->params()->bool_params());
-  if (p == nullptr) {
+  BoolParam *p;
+  p = ParamUtils::FindParam(p, name, tesseract_->params());
+  if (!p) {
     return false;
   }
-  *value = bool(*p);
+  *value = static_cast<bool>(*p);
   return true;
 }
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
-  auto *p = ParamUtils::FindParam<StringParam>(name, GlobalParams()->string_params(),
-                                               tesseract_->params()->string_params());
-  if (p == nullptr) {
-    return nullptr;
+  StringParam *p;
+  p = ParamUtils::FindParam(p, name, GlobalParams(), tesseract_->params());
+  if (!p) {
+    return false;
   }
   return p->c_str();
 }
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
-  auto *p = ParamUtils::FindParam<DoubleParam>(name, GlobalParams()->double_params(),
-                                               tesseract_->params()->double_params());
-  if (p == nullptr) {
+  DoubleParam *p;
+  p = ParamUtils::FindParam(p, name, GlobalParams(), tesseract_->params());
+  if (!p) {
     return false;
   }
-  *value = (double)(*p);
+  *value = static_cast<double>(*p);
   return true;
 }
 
 /** Get value of named variable as a string, if it exists. */
 bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const {
-  return ParamUtils::GetParamAsString(name, tesseract_->params(), val);
+  return ParamUtils::GetParamAsString(name, tesseract_, val);
 }
 
 #if !DISABLED_LEGACY_ENGINE
@@ -520,15 +519,8 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     std::string fpath = tesseract::vars_report_file;
-    FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
+    ReportFile f(fpath);
     ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
-    if (f) {
-      if (f != stdout && f != stderr) {
-        fclose(f);
-      } else {
-        fflush(f);
-      }
-    }
 }
 
 /**
@@ -1279,15 +1271,15 @@ int TessBaseAPI::GetSourceYResolution() {
   return thresholder_->GetSourceYResolution();
 }
 
-// If flist exists, get data from there. Otherwise get data from buf.
+// If `flist` exists, get data from there. Otherwise get data from `buf`.
 // Seems convoluted, but is the easiest way I know of to meet multiple
 // goals. Support streaming from stdin, and also work on platforms
 // lacking fmemopen.
 // 
 // TODO: check different logic for flist/buf and simplify.
 //
-// If tessedit_page_number is non-negative, will only process that
-// single page. Works for multi-page tiff file, or filelist.
+// If `tessedit_page_number` is non-negative, will only process that
+// single page. Works for multi-page tiff file as well as or filelist.
 bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char *retry_config,
                                        int timeout_millisec, TessResultRenderer *renderer) {
   if (!flist && !buf) {
@@ -1334,7 +1326,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       else if (page_number >= lines.size()) {
         break;
       }
-      snprintf(pagename, sizeof(pagename), "%s", lines[page_number].c_str());
+      snprintf(pagename, sizeof(pagename), "%s", lines[i].c_str());
     }
     chomp_string(pagename);
     Pix *pix = pixRead(pagename);
@@ -1385,25 +1377,27 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
   return true;
 }
 
+// If `tessedit_page_number` is non-negative, will only process that
+// single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
                                             const char *retry_config, int timeout_millisec,
                                             TessResultRenderer *renderer) {
   Pix *pix = nullptr;
   int page_number = (tesseract_->tessedit_page_number >= 0) ? tesseract_->tessedit_page_number : 0;
   size_t offset = 0;
-  for (;; ++page_number) {
-    if (tesseract_->tessedit_page_number >= 0) {
-      page_number = tesseract_->tessedit_page_number;
-      pix = (data) ? pixReadMemTiff(data, size, page_number) : pixReadTiff(filename, page_number);
-    } else {
-      pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
-                   : pixReadFromMultipageTiff(filename, &offset);
-    }
+  for (int pgn = 1; ; ++pgn) {
+    // pix = (data) ? pixReadMemTiff(data, size, page_number) : pixReadTiff(filename, page_number);
+    pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
+                 : pixReadFromMultipageTiff(filename, &offset);
     if (pix == nullptr) {
       break;
     }
-    tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
-    SetVariable("applybox_page", page_number);
+	if (tesseract_->tessedit_page_number > 0 && pgn != tesseract_->tessedit_page_number) {
+		continue;
+	}
+	
+    tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
+    SetVariable("applybox_page", pgn);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {

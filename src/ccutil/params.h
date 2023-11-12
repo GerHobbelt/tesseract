@@ -23,141 +23,255 @@
 
 #include <tesseract/export.h> // for TESS_API
 #include "tprintf.h"          // for printf (when debugging this code)
+#include "mupdf/assertions.h" // for ASSERT
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
+#include <variant>
+#include <functional>
+#include <unordered_map>
+
 
 namespace tesseract {
 
+class Param;
 class IntParam;
 class BoolParam;
 class StringParam;
 class DoubleParam;
 class TFile;
 
+
+enum ParamType {
+	UNKNOWN_PARAM = 0,
+
+	INT_PARAM = 1,
+	BOOL_PARAM = 2,
+	DOUBLE_PARAM = 4,
+	STRING_PARAM = 8,
+
+	ANY_TYPE_PARAM = 15,
+};
+
+enum ParamSetBySourceType {
+	PARAM_VALUE_IS_DEFAULT = 0,
+
+	PARAM_VALUE_IS_RESET,
+	PARAM_VALUE_IS_SET_BY_ASSIGN,			// 'indirect' write: value is copied over from elsewhere via operator=.
+	PARAM_VALUE_IS_SET_BY_PARAM,			// 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
+	PARAM_VALUE_IS_SET_BY_APPLICATION,		// 'explicit' write: user / application code set the param value, whatever it is now.
+};
+
 // Enum for constraints on what kind of params should be set by SetParam().
 enum SetParamConstraint {
   SET_PARAM_CONSTRAINT_NONE,
   SET_PARAM_CONSTRAINT_DEBUG_ONLY,
   SET_PARAM_CONSTRAINT_NON_DEBUG_ONLY,
+  SET_PARAM_CONSTRAINT_INIT_ONLY,
   SET_PARAM_CONSTRAINT_NON_INIT_ONLY,
 };
 
-class ParamsVectors {
-  std::vector<IntParam *> _int_params;
-  std::vector<BoolParam *> _bool_params;
-  std::vector<StringParam *> _string_params;
-  std::vector<DoubleParam *> _double_params;
+
+// Custom equivalent of std::hash<Param> + std::equal_to<Param> for std::unordered_map<const char *key, Param & value>.
+class ParamHash
+{
+public:
+	// hash:
+	std::size_t operator()(const Param& s) const noexcept;
+	std::size_t operator()(const char * s) const noexcept;
+
+	// equal_to:
+	bool operator()( const Param& lhs, const Param& rhs ) const noexcept;
+	// equal_to:
+	bool operator()( const char * lhs, const char * rhs ) const noexcept;
+};
+
+// Custom implementation of class Compare for std::sort.
+class ParamComparer
+{
+public:
+	// compare as a-less-b? for purposes of std::sort et al:
+	bool operator()( const Param& lhs, const Param& rhs ) const;
+	// compare as a-less-b? for purposes of std::sort et al:
+	bool operator()( const char * lhs, const char * rhs ) const;
+};
+
+typedef Param & ParamRef;
+typedef Param * ParamPtr;
+
+
+// reduce noise by using macros to help set up the member prototypes
+
+#define SOURCE_TYPE																\
+		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION
+
+#define SOURCE_REF																\
+		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION,		\
+		ParamPtr source = nullptr
+
+
+typedef std::unordered_map<
+	const char * /* key */, 
+	ParamPtr /* value */, 
+	ParamHash /* hash value calc */, 
+	ParamHash /* equality check */
+> ParamsHashTableType;
+
+
+class ParamsVector {
+private:
+	ParamsHashTableType params_;
+	std::string title_;
 
 public:
-    ParamsVectors() {
-    }
-    ~ParamsVectors() {
-    }
+	ParamsVector(const char *title = nullptr);
+	ParamsVector(const char *title, std::initializer_list<ParamRef> vecs);
+	
+	~ParamsVector();
 
-    std::vector<IntParam *> &int_params() {
-        return _int_params;
-    }
-    std::vector<BoolParam *> &bool_params() {
-        return _bool_params;
-    }
-    std::vector<StringParam *> &string_params() {
-        return _string_params;
-    }
-    std::vector<DoubleParam *> &double_params() {
-        return _double_params;
-    }
+	void add(ParamPtr param_ref);
+	void add(ParamRef param_ref);
+	void add(std::initializer_list<ParamRef> vecs);
 
-    const std::vector<IntParam *> &int_params_c() const {
-        return _int_params;
-    }
-    const std::vector<BoolParam *> &bool_params_c() const {
-        return _bool_params;
-    }
-    const std::vector<StringParam *> &string_params_c() const {
-        return _string_params;
-    }
-    const std::vector<DoubleParam *> &double_params_c() const {
-        return _double_params;
-    }
+	void remove(ParamPtr param_ref);
+	void remove(ParamRef param_ref);
+
+	const char *title() const { 
+		return title_.c_str(); 
+	}
+	void change_title(const char *title) {
+		title_ = title ? title : "";
+	}
+
+	ParamPtr find(
+		const char *name, 
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+		ParamType accepted_types_mask = ANY_TYPE_PARAM
+	) const;
+
+	template <class T>
+	T *find(
+		const char *name, 
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE
+	) const;
+
+	std::vector<ParamPtr> as_list(		
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+		ParamType accepted_types_mask = ANY_TYPE_PARAM
+	) const;
+
+	friend class ParamsVectors;
 };
+
+
+// an (ad-hoc?) collection of ParamsVector instances.
+class ParamsVectors {
+private:
+	std::vector<ParamsVector *> collection_;
+
+public:
+	ParamsVectors();
+	ParamsVectors(std::initializer_list<ParamsVector &> vecs);
+	
+	~ParamsVectors();
+
+	void add(ParamsVector &vec_ref);
+	void add(std::initializer_list<ParamsVector &> vecs);
+
+	ParamPtr find(
+		const char *name, 
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+		ParamType accepted_types_mask = ANY_TYPE_PARAM
+	) const;
+
+	template <class T>
+	T *find(
+		const char *name, 
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE
+	) const;
+
+	std::vector<ParamPtr> as_list(		
+		SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+		ParamType accepted_types_mask = ANY_TYPE_PARAM
+	) const;
+};
+
 
 // Utility functions for working with Tesseract parameters.
 class TESS_API ParamUtils {
 public:
   // Reads a file of parameter definitions and set/modify the values therein.
-  // If the filename begins with a + or -, the BoolVariables will be
+  // If the filename begins with a `+` or `-`, the Variables will be
   // ORed or ANDed with any current values.
+  // 
   // Blank lines and lines beginning # are ignored.
-  // Values may have any whitespace after the name and are the rest of line.
+  // 
+  // Variable names are followed by one of more whitespace characters,
+  // followed by the Value, which spans the rest of line.
+  //
+  // Any Variables listed in the file, which do not match the given
+  // constraint are ignored, but are reported via `tprintf()` as ignored,
+  // unless you set `quietly_ignore`.
   static bool ReadParamsFile(const char *file, // filename to read
-                             SetParamConstraint constraint, ParamsVectors *member_params);
+	  ParamsVectors *set = nullptr, 
+	  SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+	  SOURCE_REF,
+	  bool quietly_ignore = false
+  );
 
   // Read parameters from the given file pointer.
-  static bool ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
-                               ParamsVectors *member_params);
+  // Otherwise identical to ReadParamsFile().
+  static bool ReadParamsFromFp(TFile *fp,
+	  ParamsVectors *set = nullptr, 
+	  SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+	  SOURCE_REF,
+	  bool quietly_ignore = false
+  );
 
-  // Set a parameters to have the given value.
-  static bool SetParam(const char *name, const char *value, SetParamConstraint constraint,
-                       ParamsVectors *member_params);
+  // Set a parameter to have the given value.
+  //
+  // A Variable, which does not match the given constraint, is ignored, 
+  // but is reported via `tprintf()` as ignored,
+  // unless you set `quietly_ignore`.
+  static bool SetParam(
+	  const char *name, const char *value, 
+	  ParamsVectors *set = nullptr, 
+	  SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+	  SOURCE_REF,
+	  bool quietly_ignore = false
+  );
 
-  // accept both - and _ in key names, e.g. user-specified 'debug-all' would match 'debug_all'
-  // in the database.
-  static inline bool CompareKeys(const char *db_key, const char *user_key)
-  {
-      // if (0 == strcmp(db_key, user_key))
-      //   return true;
-
-      for (; *db_key && *user_key; db_key++, user_key++)
-      {
-          if (*db_key != *user_key)
-          {
-              if (*db_key == '_' && *user_key == '-')
-                  continue;
-              return false;
-          }
-      }
-      return (*db_key == *user_key);
-  }
-
-  // Returns the pointer to the parameter with the given name (of the
-  // appropriate type) if it was found in the vector obtained from
-  // GlobalParams() or in the given member_params.
+  // Produces a pointer (reference) to the parameter with the given name (of the
+  // appropriate type) if it was found in any of the given vectors.
+  // When `set` is empty, the `GlobalParams()` vector will be assumed 
+  // instead.
+  //
+  // Returns nullptr when param is not known. Prints a message via `tprintf()`
+  // to report this fact, unless you set `quietly_ignore`.
   template <class T>
-  static T *FindParam(const char *name, const std::vector<T *> &global_vec,
-                      const std::vector<T *> &member_vec) {
-    for (auto *param : global_vec) {
-      if (CompareKeys(param->name_str(), name)) {
-        return param;
-      }
-    }
-    for (auto *param : member_vec) {
-      if (CompareKeys(param->name_str(), name)) {
-        return param;
-      }
-    }
-    return nullptr;
-  }
-  // Removes the given pointer to the param from the given vector.
-  template <class T>
-  static void RemoveParam(T *param_ptr, std::vector<T *> *vec) {
-    for (auto it = vec->begin(); it != vec->end(); ++it) {
-      if (*it == param_ptr) {
-        vec->erase(it);
-        break;
-      }
-    }
-  }
+  static T *FindParam(
+	  const char *name, 
+	  const ParamsVectors *set = nullptr, 
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
+	  bool quietly_ignore = false
+  );
+
   // Fetches the value of the named param as a string. Returns false if not
-  // found.
-  static bool GetParamAsString(const char *name, const ParamsVectors *member_params,
-                               std::string *value);
+  // found. Prints a message via `tprintf()` to report this fact (see also `FindParam()`).
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static bool GetParamAsString(
+	  std::string *value_ref, const char *name, 
+	  const ParamsVectors *set = nullptr, 
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
+	  bool quietly_ignore = false
+  );
 
   // Print parameters to the given file.
-  static void PrintParams(FILE *fp, const ParamsVectors *member_params, bool print_info = true);
+  static void PrintParams(FILE *fp, const ParamsVectors *set = nullptr, bool print_info = true);
 
   // Report parameters' usage statistics, i.e. report which params have been
   // set, modified and read/checked until now during this run-time's lifetime.
@@ -173,21 +287,63 @@ public:
   // run, i.e. since the previous invocation of this reporting method (or when
   // it hasn't been called before: the start of the application).
   //
-  // Thismethod ALWAYS reports via `tprintf()` at least; when `f` is a valid, non-stdio
-  // handle, then the report is *additionally* written to the given FILE.
-  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectors *member_params, const char *section_title);
+  // Unless `f` is stdout/stderr, this method reports via `tprintf()` as well. 
+  // When `f` is a valid handle, then the report is written to the given FILE, 
+  // which may be stdout/stderr.
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectors *set = nullptr, const char *section_title = nullptr);
 
   // Resets all parameters back to default values;
-  static void ResetToDefaults(ParamsVectors *member_params);
+  static void ResetToDefaults(ParamsVectors *set, SOURCE_TYPE);
 
-  // Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular file in UTF8 write mode.
+  // Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular text file in UTF8 write mode.
   //
   // MAY return NULL, e.g. when path is empty. This is considered a legal/valid use & behaviour.
-  // On the other hand, a error line is printed via `tprintf()` when the given path is non-empty and
+  // On the other hand, an error line is printed via `tprintf()` when the given path is non-empty and
   // turns out not to be valid.
-  // Either way, a return value of NULL implies that default behaviour (output via `tprintf()` is assumed.
+  // Either way, a return value of NULL implies that default behaviour (output via `tprintf()`) is assumed.
   static FILE* OpenReportFile(const char *path);
 };
+
+
+// The very first time we call this one during the current run, we CREATE/OVERWRITE the target file.
+// Iff we happen to invoke this call multiple times for the same target file, any subsequent call
+// will APPEND to the target file.
+//
+// NOTE: as we need to track the given file path, this will incur a very minor heap memory leak
+// as we won't ever release the memory allocated for that string in `_processed_file_paths`.
+class ReportFile {
+public:
+	ReportFile(const char *path);
+	ReportFile(const std::string &path) : ReportFile(path.c_str()) {}
+	~ReportFile();
+
+	FILE * operator()() const;
+
+private:
+	FILE *_f;
+
+	// We assume we won't be processing very many file paths through here, so a linear scan through
+	// the set-processed-to-date is considered good enough/best re performance, hence std::vector 
+	// sufices for the tracking list.
+	static std::vector<std::string> _processed_file_paths;
+};
+
+
+class Param;
+
+typedef std::variant<bool, int, double, std::string> ParamValueContainer;
+
+typedef std::function<void (
+	const char * /* name */, 
+	ParamRef /* target */, 
+	ParamSetBySourceType /* source type */,
+    ParamPtr /* optional setter/parent */, 
+	ParamValueContainer & /* old value */, 
+	ParamValueContainer & /* new value */
+)> ParamOnModifyFunction;
+
 
 // Definition of various parameter types.
 class Param {
@@ -210,9 +366,22 @@ public:
     return (constraint == SET_PARAM_CONSTRAINT_NONE ||
             (constraint == SET_PARAM_CONSTRAINT_DEBUG_ONLY && this->is_debug()) ||
             (constraint == SET_PARAM_CONSTRAINT_NON_DEBUG_ONLY && !this->is_debug()) ||
+            (constraint == SET_PARAM_CONSTRAINT_INIT_ONLY && this->is_init()) ||
             (constraint == SET_PARAM_CONSTRAINT_NON_INIT_ONLY && !this->is_init()));
   }
 
+  ParamSetBySourceType set_mode() const {
+	  return set_mode_;
+  }
+  Param *is_set_by() const {
+	  return setter_;
+  }
+
+  // We track Param/Variable setup/changes/usage through this administrative struct.
+  // It helps us to diagnose and report which tesseract Params (Variables) are actually
+  // USED in which program section and in the program as a whole, while we can also 
+  // diagnose which variables have been set up during this session, and by *whom*, as
+  // some Params will have been modified due to others having been set, e.g. `debug_all`.
   typedef struct access_counts {
     // the current section's counts
     int reading;  
@@ -241,77 +410,102 @@ public:
 
   virtual std::string formatted_value_str() const = 0;
 
+  virtual bool set_value(const char *v, SOURCE_REF) = 0;
+  virtual bool set_value(int32_t v, SOURCE_REF) = 0;
+  virtual bool set_value(bool v, SOURCE_REF) = 0;
+  virtual bool set_value(double v, SOURCE_REF) = 0;
+  bool set_value(const ParamValueContainer &v, SOURCE_REF);
+  bool set_value(const std::string &v, SOURCE_REF) {
+	  return set_value(v.c_str(), source_type, source);
+  }
+
+  virtual void ResetToDefault(SOURCE_TYPE) = 0;
+  virtual void ResetFrom(const ParamsVectors &vec, SOURCE_TYPE) = 0;
+
   Param(const Param &o) = delete;
   Param(Param &&o) = delete;
 
   Param &operator=(const Param &other) = delete;
   Param &operator=(Param &&other) = delete;
 
-protected:
-  Param(const char *name, const char *comment, bool init)
-      : name_(name), info_(comment), init_(init) {
-    debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
-    access_counts_ = {0,0,0};
+  ParamType type() const {
+	  return type_;
   }
 
+protected:
+  Param(const char *name, const char *comment, bool init, ParamOnModifyFunction on_modify_f = 0) : 
+	  name_(name), 
+	  info_(comment), 
+	  init_(init), 
+	  type_(UNKNOWN_PARAM), 
+	  default_(true),
+	  set_mode_(PARAM_VALUE_IS_DEFAULT),
+	  setter_(nullptr),
+	  on_modify_f_(on_modify_f),
+	  access_counts_({0,0,0})
+  {
+    debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
+  }
+
+protected:
   const char *name_; // name of this parameter
   const char *info_; // for menus
+
+  ParamOnModifyFunction on_modify_f_;
+  
+  ParamValueContainer value_;
+  ParamValueContainer default_;
+  ParamType type_;
+
+  ParamSetBySourceType set_mode_;
+  Param *setter_;
+
   bool init_;        // needs to be set before init
   bool debug_;
+  
   mutable access_counts_t access_counts_;
 };
 
+
 class IntParam : public Param {
 public:
-  IntParam(int32_t value, const char *name, const char *comment, bool init, ParamsVectors *vec)
-      : Param(name, comment, init) {
+  IntParam(int32_t value, const char *name, const char *comment, bool init, ParamOnModifyFunction on_modify_f = 0)
+      : Param(name, comment, init, on_modify_f) {
     value_ = value;
     default_ = value;
+	type_ = INT_PARAM;
     access_counts_.writing++;
-    params_vec_ = vec;
-    vec->int_params().push_back(this);
   }
-  ~IntParam() {
-    ParamUtils::RemoveParam<IntParam>(this, &params_vec_->int_params());
-  }
+  ~IntParam() = default;
+
   operator int32_t() const {
       access_counts_.reading++;
       return value_;
   }
   void operator=(int32_t value) {
-      access_counts_.writing++;
-	  if (value != value_ && value != default_)
-		  access_counts_.changing++;
-	  value_ = value;
+	  set_value(value, PARAM_VALUE_IS_SET_BY_ASSIGN);
   }
-  void set_value(int32_t value) {
-      access_counts_.writing++;
-	  if (value != value_ && value != default_)
-		  access_counts_.changing++;
-	  value_ = value;
-  }
+
+  virtual bool set_value(const char *v, SOURCE_REF);
+  virtual bool set_value(int32_t v, SOURCE_REF);
+  virtual bool set_value(bool v, SOURCE_REF);
+  virtual bool set_value(double v, SOURCE_REF);
+
   int32_t value() const {
 	  access_counts_.reading++;
 	  return value_;
   }
-  void ResetToDefault() {
-    access_counts_.writing++;
-    value_ = default_;
+  virtual void ResetToDefault(SOURCE_TYPE) {
+	  set_value(default_, source_type);
   }
-  void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->int_params_c()) {
-      if (strcmp(param->name_str(), name_) == 0) {
-#if !defined(NDEBUG) && 0
-        ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
-#endif
-        access_counts_.writing++;
-		int32_t value = *param;
-		if (value != value_ && value != default_)
-			access_counts_.changing++;
-		value_ = value;
-        break;
-      }
+  virtual void ResetFrom(const ParamsVectors *vec, SOURCE_TYPE) {
+	IntParam *param = vec->find<IntParam>(name_);
+    if (param) {
+	  set_value(*param, source_type);
     }
+	else {
+	  ResetToDefault(source_type);
+	}
   }
 
   virtual std::string formatted_value_str() const override {
@@ -327,9 +521,6 @@ public:
 private:
   int32_t value_;
   int32_t default_;
-
-  // Pointer to the vector that contains this param (not owned by this class). Used by the destructor.
-  ParamsVectors *params_vec_;
 };
 
 class BoolParam : public Param {
@@ -338,12 +529,10 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    access_counts_.writing++;
-    params_vec_ = vec;
-    vec->bool_params().push_back(this);
+	type_ = BOOL_PARAM;
+	access_counts_.writing++;
   }
   ~BoolParam() {
-    ParamUtils::RemoveParam<BoolParam>(this, &params_vec_->bool_params());
   }
   operator bool() const {
       access_counts_.reading++;
@@ -355,6 +544,12 @@ public:
 		  access_counts_.changing++;
 	  value_ = value;
   }
+
+  virtual bool set_value(const char *v, SOURCE_REF);
+  virtual bool set_value(int32_t v, SOURCE_REF);
+  virtual bool set_value(bool v, SOURCE_REF);
+  virtual bool set_value(double v, SOURCE_REF);
+
   void set_value(bool value) {
       access_counts_.writing++;
 	  if (value != value_ && value != default_)
@@ -370,18 +565,18 @@ public:
       value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->bool_params_c()) {
-      if (strcmp(param->name_str(), name_) == 0) {
-#if !defined(NDEBUG) && 0
+    auto *param = vec->find(name_);
+    if (param) {
+#if !defined(NDEBUG)
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-		bool value = *param;
+		ASSERT0(param->type() == BOOL_PARAM);
+		BoolParam *p = static_cast<BoolParam *>(param);
+		bool value = *p;
 		if (value != value_ && value != default_)
 			access_counts_.changing++;
 		value_ = value;
-        break;
-      }
     }
   }
 
@@ -410,12 +605,10 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    access_counts_.writing++;
-    params_vec_ = vec;
-    vec->string_params().push_back(this);
+	type_ = STRING_PARAM;
+	access_counts_.writing++;
   }
   ~StringParam() {
-    ParamUtils::RemoveParam<StringParam>(this, &params_vec_->string_params());
   }
   operator std::string &() {
       access_counts_.reading++;
@@ -443,6 +636,12 @@ public:
 		  access_counts_.changing++;
 	  value_ = value;
   }
+
+  virtual bool set_value(const char *v, SOURCE_REF);
+  virtual bool set_value(int32_t v, SOURCE_REF);
+  virtual bool set_value(bool v, SOURCE_REF);
+  virtual bool set_value(double v, SOURCE_REF);
+
   void set_value(const std::string &value) {
       access_counts_.writing++;
 	  if (value != value_ && value != default_)
@@ -458,18 +657,18 @@ public:
       value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->string_params_c()) {
-      if (strcmp(param->name_str(), name_) == 0) {
+    auto *param = vec->find(name_);
+    if (param) {
 #if !defined(NDEBUG) && 0
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-		std::string value = *param;
+		ASSERT0(param->type() == STRING_PARAM);
+		StringParam *p = static_cast<StringParam *>(param);
+		std::string value = *p;
 		if (value != value_ && value != default_)
 			access_counts_.changing++;
 		value_ = value;
-        break;
-      }
     }
   }
 
@@ -500,12 +699,10 @@ public:
       : Param(name, comment, init) {
     value_ = value;
     default_ = value;
-    access_counts_.writing++;
-    params_vec_ = vec;
-    vec->double_params().push_back(this);
+	type_ = DOUBLE_PARAM;
+	access_counts_.writing++;
   }
   ~DoubleParam() {
-    ParamUtils::RemoveParam<DoubleParam>(this, &params_vec_->double_params());
   }
   operator double() const {
       access_counts_.reading++;
@@ -517,6 +714,12 @@ public:
 		  access_counts_.changing++;
 	  value_ = value;
   }
+
+  virtual bool set_value(const char *v, SOURCE_REF);
+  virtual bool set_value(int32_t v, SOURCE_REF);
+  virtual bool set_value(bool v, SOURCE_REF);
+  virtual bool set_value(double v, SOURCE_REF);
+
   void set_value(double value) {
       access_counts_.writing++;
 	  if (value != value_ && value != default_)
@@ -532,18 +735,18 @@ public:
       value_ = default_;
   }
   void ResetFrom(const ParamsVectors *vec) {
-    for (auto *param : vec->double_params_c()) {
-      if (strcmp(param->name_str(), name_) == 0) {
+    auto *param = vec->find(name_);
+    if (param) {
 #if !defined(NDEBUG) && 0
         ::tesseract::tprintf("overriding param {}={} by ={}\n", name_, formatted_value_str(), (*param).formatted_value_str());
 #endif
         access_counts_.writing++;
-		double value = *param;
+		ASSERT0(param->type() == DOUBLE_PARAM);
+		DoubleParam *p = static_cast<DoubleParam *>(param);
+		double value = *p;
 		if (value != value_ && value != default_)
 			access_counts_.changing++;
 		value_ = value;
-        break;
-      }
     }
   }
 
@@ -571,6 +774,14 @@ private:
   // Pointer to the vector that contains this param (not owned by this class).
   ParamsVectors *params_vec_;
 };
+
+
+// remove the macros to help set up the member prototypes
+
+#undef SOURCE_TYPE															
+#undef SOURCE_REF																
+
+
 
 // Global parameter lists.
 //

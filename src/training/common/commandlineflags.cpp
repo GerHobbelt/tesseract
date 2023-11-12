@@ -22,8 +22,7 @@ static bool IntFlagExists(const char *flag_name, int32_t *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<IntParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params_c(), empty);
+  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name.c_str());
   if (p == nullptr) {
     return false;
   }
@@ -35,8 +34,7 @@ static bool DoubleFlagExists(const char *flag_name, double *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params_c(), empty);
+  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str());
   if (p == nullptr) {
     return false;
   }
@@ -48,8 +46,7 @@ static bool BoolFlagExists(const char *flag_name, bool *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<BoolParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params_c(), empty);
+  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name.c_str());
   if (p == nullptr) {
     return false;
   }
@@ -61,8 +58,7 @@ static bool StringFlagExists(const char *flag_name, const char **value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params_c(), empty);
+  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str());
   *value = (p != nullptr) ? p->c_str() : nullptr;
   return p != nullptr;
 }
@@ -71,8 +67,7 @@ static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<IntParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params(), empty);
+  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name.c_str());
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -81,8 +76,7 @@ static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params(), empty);
+  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str());
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -92,7 +86,7 @@ static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
   full_flag_name += flag_name;
   std::vector<BoolParam *> empty;
   auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params(), empty);
+      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str());
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -101,8 +95,7 @@ static void SetStringFlagValue(const char *flag_name, const char *new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
   std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params(), empty);
+  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str());
   ASSERT_HOST(p != nullptr);
   p->set_value(std::string(new_val));
 }
@@ -214,6 +207,15 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
       tprintError("Bad argument: {}\n", (*argv)[i]);
       exit(1);
     }
+	if (rhs == nullptr) {
+	  // Pick the next argument
+	  if (i + 1 >= *argc) {
+		tprintError("Could not find value for flag {}\n", lhs);
+		exit(1);
+	  } else {
+		rhs = (*argv)[++i];
+	  }
+	}
 
     // Find the flag name in the list of global flags.
     // int32_t flag

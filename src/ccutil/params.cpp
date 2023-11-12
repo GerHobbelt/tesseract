@@ -22,6 +22,7 @@
 #include "host.h"     // tesseract/export.h, windows.h for MAX_PATH
 #include "serialis.h" // for TFile
 #include "tprintf.h"
+#include "fopenutf8.h"
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -33,6 +34,9 @@
 #include <cstring>
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::stringstream
+#include <functional>
+#include <exception>
+#include <cctype>  // for std::toupper
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/assertions.h"
@@ -55,25 +59,380 @@ tesseract::ParamsVectors *GlobalParams() {
   return &global_params;
 }
 
+
+static inline bool strieq(const char *s1, const char *s2) {
+	return strcasecmp(s1, s2) == 0;
+}
+
+// Note about Param names, i.e. Variable Names:
+// 
+// - accept both `-` and `_` in key names, e.g. user-specified 'debug-all' would match 'debug_all'
+//   in the database.
+// - names are matched case-*in*sensitive and must be ASCII. Unicode characters in Variable Names 
+//   are not supported.
+
+// calculate hash:
+std::size_t ParamHash::operator()(const Param& s) const noexcept {
+	const char * str = s.name_str();
+	return ParamHash()(str);
+}
+// calculate hash:
+std::size_t ParamHash::operator()(const char * s) const noexcept {
+	ASSERT0(s != nullptr);
+	uint32_t h = 1;
+	for (const char *p = s; *p ; p++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*p));
+		if (c == '-')
+			c = '_';
+		h *= 31397;
+		h += c;
+	}
+	return h;
+}
+
+// equal_to:
+bool ParamHash::operator()( const Param& lhs, const Param& rhs ) const noexcept {
+	ASSERT0(lhs.name_str() != nullptr);
+	ASSERT0(rhs.name_str() != nullptr);
+	return ParamHash()(lhs.name_str(), rhs.name_str());
+}
+// equal_to:
+bool ParamHash::operator()( const char * lhs, const char * rhs ) const noexcept {
+	ASSERT0(lhs != nullptr);
+	ASSERT0(rhs != nullptr);
+	for ( ; *lhs ; lhs++, rhs++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*lhs));
+		if (c == '-')
+			c = '_';
+		uint32_t d = std::toupper(static_cast<unsigned char>(*rhs));
+		if (d == '-')
+			d = '_';
+		if (c != d)
+			return false;
+	}
+	ASSERT0(*lhs == 0);
+	return *rhs == 0;
+}
+
+// compare as a-less-b? for purposes of std::sort et al:
+bool ParamComparer::operator()( const Param& lhs, const Param& rhs ) const {
+	return ParamComparer()(lhs.name_str(), rhs.name_str());
+}
+// compare as a-less-b? for purposes of std::sort et al:
+bool ParamComparer::operator()( const char * lhs, const char * rhs ) const {
+	ASSERT0(lhs != nullptr);
+	ASSERT0(rhs != nullptr);
+	for ( ; *lhs ; lhs++, rhs++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*lhs));
+		if (c == '-')
+			c = '_';
+		uint32_t d = std::toupper(static_cast<unsigned char>(*rhs));
+		if (d == '-')
+			d = '_';
+		// long names come before short names; otherwise sort A->Z
+		if (c != d)
+			return d == 0 ? true : (c < d);
+	}
+	ASSERT0(*lhs == 0);
+	return *rhs == 0;
+}
+
+
+#ifndef NDEBUG
+static void check_and_report_name_collisions(const char *name, const ParamsHashTableType &table) {
+	if (table.contains(name)) {
+		throw new std::logic_error(fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name));
+	}
+}
+static void check_and_report_name_collisions(const char *name, std::vector<ParamPtr> &table) {
+	for (Param *p : table) {
+		if (ParamHash()(p->name_str(), name)) {
+			throw new std::logic_error(fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name));
+		}
+	}
+}
+#else
+#define check_and_report_name_collisions(name, table)     ((void)0)
+#endif
+
+
+ParamsVector::~ParamsVector() {
+	params_.clear();
+}
+
+ParamsVector::ParamsVector(const char *title) :
+	title_(title)
+{
+	params_.reserve(256);
+}
+
+ParamsVector::ParamsVector(const char *title, std::initializer_list<ParamRef> vecs) :
+	title_(title) 
+{
+	params_.reserve(256);
+
+	for (ParamRef i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVector::add(ParamPtr param_ref) {
+	check_and_report_name_collisions(param_ref->name_str(), params_);
+	params_.insert({param_ref->name_str(), param_ref});
+}
+
+void ParamsVector::add(Param &param_ref) {
+	add(&param_ref);
+}
+
+void ParamsVector::add(std::initializer_list<ParamRef> vecs) {
+	for (ParamRef i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVector::remove(ParamPtr param_ref) {
+	params_.erase(param_ref->name_str());
+}
+
+void ParamsVector::remove(ParamRef param_ref) {
+	remove(&param_ref);
+}
+
+
+Param *ParamsVector::find(
+	const char *name, 
+	SetParamConstraint constraint,
+	ParamType accepted_types_mask
+) const {
+	auto l = params_.find(name);
+	if (l != params_.end()) {
+		ParamPtr p = (*l).second;
+		if (p->constraint_ok(constraint) && (p->type() & accepted_types_mask) != 0) {
+			return p;
+		}
+	}
+	return nullptr;
+}
+
+
+template <>
+IntParam *ParamsVector::find<IntParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<IntParam *>(find(name, constraint, INT_PARAM));
+}
+
+template <>
+BoolParam *ParamsVector::find<BoolParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<BoolParam *>(find(name, constraint, BOOL_PARAM));
+}
+
+template <>
+DoubleParam *ParamsVector::find<DoubleParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<DoubleParam *>(find(name, constraint, DOUBLE_PARAM));
+}
+
+template <>
+StringParam *ParamsVector::find<StringParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<StringParam *>(find(name, constraint, STRING_PARAM));
+}
+
+
+std::vector<ParamPtr> ParamsVector::as_list(		
+	SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+	ParamType accepted_types_mask = ANY_TYPE_PARAM
+) const {
+	std::vector<ParamPtr> lst;
+	for (auto i : params_) {
+		ParamPtr p = i.second;
+		if (p->constraint_ok(constraint) && (p->type() & accepted_types_mask) != 0) {
+			lst.push_back(p);
+		}
+	}
+	return lst;
+}
+
+
+ParamsVectors::~ParamsVectors() {
+	collection_.clear();
+}
+
+ParamsVectors::ParamsVectors() {
+}
+
+ParamsVectors::ParamsVectors(std::initializer_list<ParamsVector &> vecs) {
+	for (ParamsVector i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVectors::add(ParamsVector &vec_ref) {
+	collection_.push_back(&vec_ref);
+}
+
+void ParamsVectors::add(std::initializer_list<ParamsVector &> vecs) {
+	for (ParamsVector &i : vecs) {
+		add(i);
+	}
+}
+
+Param *ParamsVectors::find(
+	const char *name, 
+	SetParamConstraint constraint,
+	ParamType accepted_types_mask
+) const {
+	for (ParamsVector *vec : collection_) {
+		auto l = vec->params_.find(name);
+		if (l != vec->params_.end()) {
+			ParamPtr p = (*l).second;
+			if (p->constraint_ok(constraint) && (p->type() & accepted_types_mask) != 0) {
+				return p;
+			}
+		}
+	}
+	return nullptr;
+}
+
+template <>
+IntParam *ParamsVectors::find<IntParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<IntParam *>(find(name, constraint, INT_PARAM));
+}
+
+template <>
+BoolParam *ParamsVectors::find<BoolParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<BoolParam *>(find(name, constraint, BOOL_PARAM));
+}
+
+template <>
+DoubleParam *ParamsVectors::find<DoubleParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<DoubleParam *>(find(name, constraint, DOUBLE_PARAM));
+}
+
+template <>
+StringParam *ParamsVectors::find<StringParam>(
+	const char *name, 
+	SetParamConstraint constraint
+) const {
+	return static_cast<StringParam *>(find(name, constraint, STRING_PARAM));
+}
+
+std::vector<ParamPtr> ParamsVectors::as_list(		
+	SetParamConstraint constraint = SET_PARAM_CONSTRAINT_NONE,
+	ParamType accepted_types_mask = ANY_TYPE_PARAM
+) const {
+	std::vector<ParamPtr> lst;
+	for (ParamsVector *vec : collection_) {
+		for (auto i : vec->params_) {
+			ParamPtr p = i.second;
+			if (p->constraint_ok(constraint) && (p->type() & accepted_types_mask) != 0) {
+				lst.push_back(p);
+			}
+		}
+	}
+	return lst;
+}
+
+
+bool Param::set_value(const ParamValueContainer &v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (const int32_t* val = std::get_if<int32_t>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const bool* val = std::get_if<bool>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const double* val = std::get_if<double>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const std::string* val = std::get_if<std::string>(&v)) 
+		return set_value(*val, source_type, source);
+	else
+		throw new std::logic_error(fmt::format("tesseract param '{}' error: failed to get value from variant input arg", name_));
+}
+
+
+bool IntParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+	}
+	else {
+		value_ = value;
+	}
+}
+
+bool IntParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = atoi(v);
+	return set_value(val, source_type, source);
+}
+bool IntParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = v;
+	return set_value(val, source_type, source);
+}
+bool IntParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (v < INT32_MIN || v > INT32_MAX)
+		return false;
+
+	int32_t val = roundf(v);
+	return set_value(val, source_type, source);
+}
+
+
 bool ParamUtils::ReadParamsFile(const char *file, SetParamConstraint constraint,
                                 ParamsVectors *member_params) {
   TFile fp;
   if (!fp.Open(file, nullptr)) {
-    tprintError("read_params_file: Can't open file {}\n", file);
+    tprintError("read_params_file: Can't open/read file {}\n", file);
     return true;
   }
-  return ReadParamsFromFp(constraint, &fp, member_params);
+  return ReadParamsFromFp(&fp, constraint, member_params);
 }
 
-bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
+bool ParamUtils::ReadParamsFromFp(TFile *fp,
+								  SetParamConstraint constraint, 
                                   ParamsVectors *member_params) {
-  char line[MAX_PATH]; // input line
-  bool anyerr = false; // true if any error
-  bool foundit;        // found parameter
-  char *valptr;        // value field
+#define LINE_SIZE 4096
+  char line[LINE_SIZE]; // input line
+  bool anyerr = false;  // true if any error
+  bool foundit;         // found parameter
+  char *nameptr;        // name field
+  char *valptr;         // value field
 
-  while (fp->FGets(line, MAX_PATH) != nullptr) {
-    if (line[0] != '\r' && line[0] != '\n' && line[0] != '#') {
+  while (fp->FGets(line, LINE_SIZE) != nullptr) {
+	  // trimRight:
+	  for (nameptr = line + strlen(line) - 1; nameptr >= line && std::isspace(*nameptr); nameptr--) {
+		  ;
+	  }
+	  nameptr[1] = 0;
+	  // trimLeft:
+	  for (nameptr = line; *nameptr && std::isspace(*nameptr); nameptr++) {
+		  ;
+	  }
+	if (line[0] && line[0] != '#') {
       chomp_string(line); // remove newline
       for (valptr = line; *valptr && *valptr != ' ' && *valptr != '\t'; valptr++) {
         ;
@@ -95,35 +454,58 @@ bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
   return anyerr;
 }
 
-static bool strieq(const char *s1, const char *s2) {
-  return strcasecmp(s1, s2) == 0;
-}
 
-FILE* ParamUtils::OpenReportFile(const char* path) 
+
+
+
+ReportFile::ReportFile(const char *path)
 {
-  if (!path || !*path)
-    return NULL;
+	if (!path || !*path) {
+		_f = nullptr;
+		return;
+	}
 
-  FILE *f = nullptr;
+	_f = nullptr;
 
-  if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
-    f = stdout;
-  else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
-    f = stderr;
-  else {
-#if defined(HAVE_MUPDF)
-    fz_context *ctx = fz_get_global_context();
-    fz_mkdir_for_file(ctx, path);
-    f = fz_fopen_utf8(ctx, path, "w");
-#else
-    f = fopen(path, "w");
-#endif
-    if (!f) {
-      tprintError("Cannot produce parameter usage report file: '{}'\n", path);
-    }
-  }
-  return f;
+	if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
+		_f = stdout;
+	else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
+		_f = stderr;
+	else {
+		bool first = true;
+		for (std::string &i : _processed_file_paths) {
+			if (strieq(i.c_str(), path)) {
+				first = false;
+				break;
+			}
+		}
+		_f = fopenUtf8(path, first ? "w" : "a");
+		if (!_f) {
+			tprintError("Cannot produce parameter usage report file: '{}'\n", path);
+		}
+		else if (first) {
+			_processed_file_paths.push_back(path);
+		}
+	}
 }
+
+ReportFile::~ReportFile() {
+	if (_f) {
+		if (_f != stdout && _f != stderr) {
+			fclose(_f);
+		} else {
+			fflush(_f);
+		}
+	}
+}
+
+FILE * ReportFile::operator()() const {
+	return _f;
+}
+
+
+
+
 
 class ParamsReportWriter {
 public:
@@ -173,6 +555,24 @@ protected:
 };
 
 
+static inline const char *type_as_str(ParamType type) {
+	switch (type) {
+	case INT_PARAM:
+		return "[Integer]";
+	case BOOL_PARAM:
+		return "[Boolean]";
+	case DOUBLE_PARAM:
+		return "[Float]";
+	case STRING_PARAM:
+		return "[String]";
+	case ANY_TYPE_PARAM:
+		return "[ANY]";
+	default:
+		return "[???]";
+	}
+}
+
+
 // When `section_title` is NULL, this will report the lump sum parameter usage for the entire run.
 // When `section_title` is NOT NULL, this will only report the parameters that were actually used (R/W) during the last section of the run, i.e.
 // since the previous invocation of this reporting method (or when it hasn't been called before: the start of the application).
@@ -192,75 +592,59 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
                             "----------------------------------------------------------------------\n\n",
                             (section_title != nullptr ? fmt::format(" for section: {}", section_title) : "")));
 
-  // first collect all parameter names:
-
-  typedef enum {
-    INT_PARAM = 0,
-    BOOL_PARAM,
-    DOUBLE_PARAM,
-    STRING_PARAM,
-  } param_type_t;
-
-  typedef struct param_info {
-    const char* name;
-    bool global;
-    param_type_t type;
-    Param* ref;
-  } param_info_t;
-
-  std::vector<param_info_t> param_names;
-
-  if (member_params != nullptr) {
-    for (auto p : member_params->int_params_c()) {
-      param_names.push_back({ p->name_str(), false, INT_PARAM, p });
-    }
-    for (auto p : member_params->bool_params_c()) {
-      param_names.push_back({ p->name_str(), false, BOOL_PARAM, p });
-    }
-    for (auto p : member_params->string_params_c()) {
-      param_names.push_back({ p->name_str(), false, STRING_PARAM, p });
-    }
-    for (auto p : member_params->double_params_c()) {
-      param_names.push_back({ p->name_str(), false, DOUBLE_PARAM, p });
-    }
-  }
+  // first collect all parameters and sort them according to these criteria:
+  // - global / (class)local
+  // - name
 
   const ParamsVectors* globals = GlobalParams();
 
-  for (auto p : globals->int_params_c()) {
-    param_names.push_back({ p->name_str(), true, INT_PARAM, p });
-  }
-  for (auto p : globals->bool_params_c()) {
-    param_names.push_back({ p->name_str(), true, BOOL_PARAM, p });
-  }
-  for (auto p : globals->string_params_c()) {
-    param_names.push_back({ p->name_str(), true, STRING_PARAM, p });
-  }
-  for (auto p : globals->double_params_c()) {
-    param_names.push_back({ p->name_str(), true, DOUBLE_PARAM, p });
+  struct ParamInfo {
+	  Param *p;
+	  bool global;
+  };
+  
+  std::vector<ParamInfo> params;
+  {
+	std::vector<Param *> ll = globals->as_list();
+	params.reserve(ll.size());
+	for (Param *i : ll) {
+	  params.push_back({i, true});
+	}
   }
 
-  sort(param_names.begin(), param_names.end(), [](param_info_t& a, param_info_t& b)
+  if (member_params != nullptr) {
+	std::vector<Param *> ll = member_params->as_list();
+	params.reserve(ll.size() + params.size());
+	for (Param *i : ll) {
+	  params.push_back({i, false});
+	}
+  }
+
+  sort(params.begin(), params.end(), [](ParamInfo& a, ParamInfo& b)
   {
-	  int rv = strcmp(b.name, a.name);
-	  if (rv == 0)
-	  {
-	    rv = (int) b.global - (int) a.global;
-	  }
+    int rv = (int) a.global - (int) b.global;
+	if (rv == 0)
+	{
+		rv = (int) a.p->is_init() - (int) b.p->is_init();
+	if (rv == 0)
+	{
+		rv = (int) b.p->is_debug() - (int) a.p->is_debug();
+	if (rv == 0)
+	{
+	  rv = strcmp(b.p->name_str(), a.p->name_str());
 #if !defined(NDEBUG)
 	  if (rv == 0) 
 	  {
-	  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
+	  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.p->name_str());
 	    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
-
-        rv = a.ref - b.ref;
 	  }
 #endif
-	  return rv >= 0;
+	}}}
+    return (rv >= 0);
   });
 
-  static const char* type_map[] = { "[Integer]", "[Boolean]", "[Float]", "[String]" };
   static const char* categories[] = { "(Global)", "(Local)" };
+  static const char* sections[] = { "", "(Init)", "(Debug)", "(Init+Dbg)" };
   static const char* write_access[] = { ".", "w", "W" };
   static const char* read_access[] = { ".", "r", "R" };
 
@@ -273,17 +657,18 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
   if (!is_section_subreport) {
     // produce the final lump-sum overview report
 
-    for (auto item : param_names) {
-      Param *p = item.ref;
+    for (ParamInfo &item : params) {
+      Param *p = item.p;
       p->reset_access_counts();
     }
 
-    for (auto item : param_names) {
-      const Param* p = item.ref;
+    for (ParamInfo &item : params) {
+      const Param* p = item.p;
       auto stats = p->access_counts();
       if (stats.prev_sum_reading > 0)
       {
-        writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_map[item.type], p->formatted_value_str()));
+		int section = ((int)p->is_init()) | (2 * (int)p->is_debug());
+        writer->Write(fmt::format("* {:.<60} {:8}{:10} {}{} {:9} = {}\n", p->name_str(), categories[item.global], sections[section], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_as_str(p->type()), p->formatted_value_str()));
       }
     }
 
@@ -291,35 +676,57 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
     {
       writer->Write("\n\nUnused parameters:\n\n");
 
-      for (auto item : param_names) {
-        const Param* p = item.ref;
-        auto stats = p->access_counts();
+	  for (ParamInfo &item : params) {
+  	    const Param* p = item.p;
+		auto stats = p->access_counts();
         if (stats.prev_sum_reading <= 0)
         {
-          writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_map[item.type], p->formatted_value_str()));
-        }
+			int section = ((int)p->is_init()) | (2 * (int)p->is_debug());
+			writer->Write(fmt::format("* {:.<60} {:8}{:10} {}{} {:9} = {}\n", p->name_str(), categories[item.global], sections[section], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_as_str(p->type()), p->formatted_value_str()));
+		}
       }
     }
   }
   else {
     // produce the section-local report of used parameters
 
-    for (auto item : param_names) {
-      const Param* p = item.ref;
-      auto stats = p->access_counts();
+	for (ParamInfo &item : params) {
+	  const Param* p = item.p;
+	  auto stats = p->access_counts();
       if (stats.reading > 0)
       {
-        writer->Write(fmt::format("* {:.<60} {:8} {}{} {:9} = {}\n", p->name_str(), categories[item.global], write_access[acc(stats.writing)], read_access[acc(stats.reading)], type_map[item.type], p->formatted_value_str()));
-      }
+		  int section = ((int)p->is_init()) | (2 * (int)p->is_debug());
+		  writer->Write(fmt::format("* {:.<60} {:8}{:10} {}{} {:9} = {}\n", p->name_str(), categories[item.global], sections[section], write_access[acc(stats.prev_sum_writing)], read_access[acc(stats.prev_sum_reading)], type_as_str(p->type()), p->formatted_value_str()));
+	  }
     }
 
     // reset the access counts for the next section:
-    for (auto item : param_names) {
-      Param* p = item.ref;
+	for (ParamInfo &item : params) {
+	  Param* p = item.p;
       p->reset_access_counts();
     }
   }
 }
+
+template<>
+IntParam *FindParam(const char *name, ParamsVectors *globals, ParamsVectors *locals, const IntParam *DUMMY, ParamType accepted_types_mask) {
+	if (!globals)
+		globals = ::tesseract::GlobalParams();
+
+	Param *p = globals->find(name);
+	if (!p && locals != nullptr) {
+		p = locals->find(name);
+	}
+	IntParam *rv = nullptr;
+	if (p && p->type() == INT_PARAM)
+		rv = static_cast<IntParam *>(p);
+
+	if (rv)
+		return rv;
+
+	return nullptr;
+}
+
 
 bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstraint constraint,
                           ParamsVectors *member_params) {
@@ -362,7 +769,7 @@ bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstrain
   }
 
   // Look for the parameter among double parameters.
-  auto *dp = FindParam<DoubleParam>(name, GlobalParams()->double_params(), member_params->double_params());
+  auto *dp = FindParam<DoubleParam>(name, GlobalParams(), member_params);
   if (dp != nullptr && dp->constraint_ok(constraint)) {
     double doubleval = NAN;
     std::stringstream stream(value);
@@ -465,22 +872,119 @@ void ParamUtils::PrintParams(FILE *fp, const ParamsVectors *member_params, bool 
 
 // Resets all parameters back to default values;
 void ParamUtils::ResetToDefaults(ParamsVectors *member_params) {
-  int num_iterations = (member_params == nullptr) ? 1 : 2;
-  for (int v = 0; v < num_iterations; ++v) {
-    ParamsVectors *vec = (v == 0) ? GlobalParams() : member_params;
-    for (auto &param : vec->int_params()) {
-      param->ResetToDefault();
-    }
-    for (auto &param : vec->bool_params()) {
-      param->ResetToDefault();
-    }
-    for (auto &param : vec->string_params()) {
-      param->ResetToDefault();
-    }
-    for (auto &param : vec->double_params()) {
-      param->ResetToDefault();
-    }
-  }
+	for (Param *param : GlobalParams()->as_list()) {
+		param->ResetToDefault();
+	}
+	if (member_params != nullptr) {
+		for (Param *param : member_params->as_list()) {
+			param->ResetToDefault();
+		}
+	}
+}
+
+// Find the flag name in the list of global flags.
+// int32_t flag
+int32_t int_val;
+if (IntFlagExists(lhs.c_str(), &int_val)) {
+	if (rhs != nullptr) {
+		if (!strlen(rhs)) {
+			// Bad input of the format --int_flag=
+			tprintError("Bad argument: {}\n", (*argv)[i]);
+			exit(1);
+		}
+		if (!SafeAtoi(rhs, &int_val)) {
+			tprintError("Could not parse int from {} in flag {}\n", rhs, (*argv)[i]);
+			exit(1);
+		}
+	} else {
+		// We need to parse the next argument
+		if (i + 1 >= *argc) {
+			tprintError("Could not find value argument for flag {}\n", lhs.c_str());
+			exit(1);
+		} else {
+			++i;
+			if (!SafeAtoi((*argv)[i], &int_val)) {
+				tprintError("Could not parse int32_t from {}\n", (*argv)[i]);
+				exit(1);
+			}
+		}
+	}
+	SetIntFlagValue(lhs.c_str(), int_val);
+	continue;
+}
+
+// double flag
+double double_val;
+if (DoubleFlagExists(lhs.c_str(), &double_val)) {
+	if (rhs != nullptr) {
+		if (!strlen(rhs)) {
+			// Bad input of the format --double_flag=
+			tprintError("Bad argument: {}\n", (*argv)[i]);
+			exit(1);
+		}
+		if (!SafeAtod(rhs, &double_val)) {
+			tprintError("Could not parse double from {} in flag {}\n", rhs, (*argv)[i]);
+			exit(1);
+		}
+	} else {
+		// We need to parse the next argument
+		if (i + 1 >= *argc) {
+			tprintError("Could not find value argument for flag {}\n", lhs.c_str());
+			exit(1);
+		} else {
+			++i;
+			if (!SafeAtod((*argv)[i], &double_val)) {
+				tprintError("Could not parse double from {}\n", (*argv)[i]);
+				exit(1);
+			}
+		}
+	}
+	SetDoubleFlagValue(lhs.c_str(), double_val);
+	continue;
+}
+
+// Bool flag. Allow input forms --flag (equivalent to --flag=true),
+// --flag=false, --flag=true, --flag=0 and --flag=1
+bool bool_val;
+if (BoolFlagExists(lhs.c_str(), &bool_val)) {
+	if (rhs == nullptr) {
+		// --flag form
+		bool_val = true;
+	} else {
+		if (!strlen(rhs)) {
+			// Bad input of the format --bool_flag=
+			tprintError("Bad argument: {}\n", (*argv)[i]);
+			exit(1);
+		}
+		if (!strcmp(rhs, "false") || !strcmp(rhs, "0")) {
+			bool_val = false;
+		} else if (!strcmp(rhs, "true") || !strcmp(rhs, "1")) {
+			bool_val = true;
+		} else {
+			tprintError("Could not parse bool from flag {}\n", (*argv)[i]);
+			exit(1);
+		}
+	}
+	SetBoolFlagValue(lhs.c_str(), bool_val);
+	continue;
+}
+
+// string flag
+const char *string_val;
+if (StringFlagExists(lhs.c_str(), &string_val)) {
+	if (rhs != nullptr) {
+		string_val = rhs;
+	} else {
+		// Pick the next argument
+		if (i + 1 >= *argc) {
+			tprintError("Could not find string value for flag {}\n", lhs.c_str());
+			exit(1);
+		} else {
+			string_val = (*argv)[++i];
+		}
+	}
+	SetStringFlagValue(lhs.c_str(), string_val);
+	continue;
 }
 
 } // namespace tesseract
