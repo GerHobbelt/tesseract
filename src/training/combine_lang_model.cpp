@@ -62,7 +62,7 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
   // The output unicharset and charset_size files are just for
   // human readability.
   tesseract::CheckSharedLibraryVersion();
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
 
   // If these reads fail, we get a warning message and an empty list of words.
   std::vector<std::string> words = split(tesseract::ReadFile(FLAGS_words.c_str()), '\n');

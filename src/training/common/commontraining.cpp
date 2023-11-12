@@ -54,9 +54,9 @@ STRING_PARAM_FLAG(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default tempo
 void ParseArguments(int* argc, const char ***argv) {
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
   tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
@@ -140,9 +140,9 @@ void ParseArguments(int *argc, const char ***argv) {
 
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
   tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);

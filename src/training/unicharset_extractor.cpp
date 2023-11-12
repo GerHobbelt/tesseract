@@ -117,7 +117,7 @@ extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
 {
   tesseract::CheckSharedLibraryVersion();
   if (argc > 1) {
-    tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+    tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
   }
   if (argc < 2) {
     tprintDebug(

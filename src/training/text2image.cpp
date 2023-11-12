@@ -796,7 +796,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
       tprintDebug("Pango version: {}\n", pango_version_string());
     }
   }
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
   return Main();
 }
 

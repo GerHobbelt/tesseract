@@ -38,7 +38,7 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
 
   // Check validity of input flags.
   if (FLAGS_U.empty() || FLAGS_O.empty()) {
