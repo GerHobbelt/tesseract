@@ -825,7 +825,8 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   if (unicharset.encode_string(cleaned.c_str(), true, &internal_labels, nullptr,
                                &err_index)) {
     bool success = true;
-    for (auto internal_label : internal_labels) {
+	for (int i = 0, l = internal_labels.size(); i < l; i++) {
+	  auto internal_label = internal_labels[i];
       if (recoder != nullptr) {
         // Re-encode labels via recoder.
         RecodedCharID code;
@@ -856,9 +857,10 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   tprintError("Encoding of string failed!\n");
   tprintError("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintError(" {}", cleaned[err_index++] & 0xff);
+    tprintError(" {}", static_cast<unsigned int>(cleaned[err_index++] & 0xff));
   }
   tprintError("\n");
+  tprintError("  Source string fed to encoder: {}\n", unicharset.debug_utf8_str(str.c_str()));
   return false;
 }
 

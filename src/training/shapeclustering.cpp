@@ -36,8 +36,7 @@ using namespace tesseract;
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 static INT_PARAM_FLAG(display_cloud_font, -1, "Display cloud of this font, canonical_class1");
-static INT_PARAM_FLAG(display_canonical_font, -1,
-                      "Display canonical sample of this font, canonical_class2");
+static INT_PARAM_FLAG(display_canonical_font, -1, "Display canonical sample of this font, canonical_class2");
 static STRING_PARAM_FLAG(canonical_class1, "", "Class to show ambigs for");
 static STRING_PARAM_FLAG(canonical_class2, "", "Class to show ambigs for");
 

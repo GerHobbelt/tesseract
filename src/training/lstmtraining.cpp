@@ -26,6 +26,11 @@
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
 #endif
+#if defined(_MSC_VER)
+#include <float.h> // for __control87
+#pragma fenv_access (on)
+#endif
+
 #include "common/commontraining.h"
 #include "unicharset/fileio.h"             // for LoadFileLinesToStrings
 #include "unicharset/lstmtester.h"
@@ -63,7 +68,7 @@ static STRING_PARAM_FLAG(eval_listfile, "", "File listing eval files in lstmf tr
 #else
 DECLARE_STRING_PARAM_FLAG(eval_listfile);        // already declared in lstmeval.cpp
 #endif
-#if defined(__USE_GNU)
+#if defined(__USE_GNU) || defined(_MSC_VER)
 static BOOL_PARAM_FLAG(debug_float, false, "Raise error on certain float errors.");
 #endif
 static BOOL_PARAM_FLAG(stop_training, false, "Just convert the training model to a runtime model.");
@@ -108,6 +113,20 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
     // Raise SIGFPE for unwanted floating point calculations.
     feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
   }
+#elif defined(_MSC_VER)
+  if (FLAGS_debug_float) {
+	  // Raise SIGFPE for unwanted floating point calculations.
+	  // 
+	  // See also https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/control87-controlfp-control87-2?view=msvc-170
+	  _control87(0, (0
+		  // | _EM_INEXACT     //     inexact (precision)
+  		  // | _EM_UNDERFLOW   //     underflow
+		  | _EM_OVERFLOW    //     overflow
+		  | _EM_ZERODIVIDE  //     zero divide
+		  | _EM_INVALID     //     invalid
+		  // | _EM_DENORMAL    //     Denormal 
+		  ));
+  }
 #endif
   if (FLAGS_model_output.empty()) {
     tprintError("Must provide a --model_output!\n");
@@ -125,7 +144,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   if (f != nullptr) {
     fclose(f);
     if (remove(test_file.c_str()) != 0) {
-      tprintError("Failed to remove {}: {}\n", test_file.c_str(), strerror(errno));
+      tprintError("Failed to remove {}: {}\n", test_file, strerror(errno));
       return EXIT_FAILURE;
     }
   } else {

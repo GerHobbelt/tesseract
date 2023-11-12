@@ -11,15 +11,26 @@
 #include "fopenutf8.h"
 
 #include "winutils.h"
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
 
 namespace tesseract {
 
 FILE* fopenUtf8(const char* path, const char* mode) {
+#if defined(HAVE_MUPDF)
+	fz_context *ctx = fz_get_global_context();
+	if (mode[0] == 'w' || mode[0] == 'a') {
+		fz_mkdir_for_file(ctx, path);
+	}
+	return fz_fopen_utf8(ctx, path, mode);
+#else
 #ifdef _WIN32
   return _wfopen(
     winutils::Utf8ToUtf16(path).c_str(), winutils::Utf8ToUtf16(mode).c_str());
 #else
   return fopen(path, mode);
+#endif
 #endif
 }
 
