@@ -520,7 +520,7 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     std::string fpath = tesseract::vars_report_file;
     ReportFile f(fpath);
-    ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
+    ParamUtils::ReportParamsUsageStatistics(f(), vec, nullptr);
 }
 
 /**
@@ -536,7 +536,7 @@ int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineM
                       const std::vector<std::string> &vars_vec,
                       const std::vector<std::string> &vars_values, 
 	                  bool set_only_non_debug_params) {
-  return InitFullWithReader(datapath, 0, language, oem, configs, vars_vec, vars_values,
+  return InitFromMemory((const unsigned char *)datapath, 0, language, oem, configs, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
 }
 
@@ -552,7 +552,7 @@ int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
-int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char *language, OcrEngineMode oem,
+int TessBaseAPI::InitFromMemory(const unsigned char *data, int data_size, const char *language, OcrEngineMode oem,
 	                  const std::vector<std::string> &configs,
                       const std::vector<std::string> &vars_vec,
                       const std::vector<std::string> &vars_values, 
@@ -562,9 +562,9 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
     language = "";
   }
   if (data == nullptr) {
-    data = "";
+    data = (const unsigned char *)"";
   }
-  std::string datapath = data_size == 0 ? data : language;
+  std::string datapath = data_size == 0 ? (const char *)data : language;
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract_->lang stores the language
@@ -589,7 +589,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
     }
     TessdataManager mgr(reader_);
     if (data_size != 0) {
-      mgr.LoadMemBuffer(language, data, data_size);
+      mgr.LoadMemBuffer(language, (const char *)data, data_size);
     }
     if (tesseract_->init_tesseract(datapath, output_file_, language, oem, configs,
                                    vars_vec, vars_values, set_only_non_debug_params,

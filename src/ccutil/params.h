@@ -97,7 +97,8 @@ public:
                              SetParamConstraint constraint, ParamsVectors *member_params);
 
   // Read parameters from the given file pointer.
-  static bool ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
+  static bool ReadParamsFromFp(TFile *fp,
+							   SetParamConstraint constraint, 
                                ParamsVectors *member_params);
 
   // Set a parameters to have the given value.

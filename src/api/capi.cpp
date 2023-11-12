@@ -293,7 +293,7 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
 	}
   }
 
-  return handle->InitFullWithReader(data, data_size, language, mode, configs, varNames, varValues,
+  return handle->InitFromMemory((const unsigned char *)data, data_size, language, mode, configs, varNames, varValues,
                       set_only_non_debug_params != 0, nullptr);
 }
 

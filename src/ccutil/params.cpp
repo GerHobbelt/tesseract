@@ -59,6 +59,12 @@ tesseract::ParamsVectors *GlobalParams() {
   return &global_params;
 }
 
+
+static inline bool strieq(const char *s1, const char *s2) {
+	return strcasecmp(s1, s2) == 0;
+}
+
+
 bool ParamUtils::ReadParamsFile(const char *file, SetParamConstraint constraint,
                                 ParamsVectors *member_params) {
   TFile fp;
