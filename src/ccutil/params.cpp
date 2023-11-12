@@ -63,6 +63,9 @@ tesseract::ParamsVectors *GlobalParams() {
 static inline bool strieq(const char *s1, const char *s2) {
 	return strcasecmp(s1, s2) == 0;
 }
+static inline bool streq(const char *s1, const char *s2) {
+	return strcmp(s1, s2) == 0;
+}
 
 
 bool ParamUtils::ReadParamsFile(const char *file, SetParamConstraint constraint,
@@ -121,6 +124,10 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
 
 
 
+// permanent lookup table:
+std::vector<std::string> ReportFile::_processed_file_paths;
+
+
 ReportFile::ReportFile(const char *path)
 {
 	if (!path || !*path) {
@@ -137,7 +144,7 @@ ReportFile::ReportFile(const char *path)
 	else {
 		bool first = true;
 		for (std::string &i : _processed_file_paths) {
-			if (strieq(i.c_str(), path)) {
+			if (streq(i.c_str(), path)) {
 				first = false;
 				break;
 			}

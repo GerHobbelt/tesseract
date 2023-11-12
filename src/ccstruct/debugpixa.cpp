@@ -587,7 +587,7 @@ namespace tesseract {
 
       content_has_been_written_to_file = true;
 
-      FILE *html = ParamUtils::OpenReportFile(filename);
+	  ReportFile html(filename);
       if (!html) {
         tprintError("cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
         return;
@@ -614,7 +614,7 @@ namespace tesseract {
         languages << tesseract_->get_sub_lang(i)->lang << "</p>";
       }
 
-      fprintf(html, "<html>\n\
+      fprintf(html(), "<html>\n\
 <head>\n\
 	<meta charset=\"UTF-8\">\n\
   <title>Tesseract diagnostic image set</title>\n\
@@ -696,7 +696,7 @@ namespace tesseract {
       {
         std::string fn(partname + ".img-original.png");
 
-        write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
+        write_one_pix_for_html(html(), 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
       }
 
       // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
@@ -712,22 +712,20 @@ namespace tesseract {
 
       int current_section_index = 0; 
       while (current_section_index < section_count) {
-        current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, current_section_index);
+        current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html(), current_section_index);
       }
 
       for (int i = next_image_index; i < pics_count; i++) {
-        WriteImageToHTML(counter, partname, html, i);
+        WriteImageToHTML(counter, partname, html(), i);
       }
       //pixaClear(pixa_);
 
-      fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html);
+      fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html());
       
       tesseract::ParamsVectors *vec = tesseract_->params();
-      ParamUtils::ReportParamsUsageStatistics(html, vec, nullptr);
+      ParamUtils::ReportParamsUsageStatistics(html(), vec, nullptr);
 
-      fputs("</pre>\n</body>\n</html>\n", html);
-
-      fclose(html);
+      fputs("</pre>\n</body>\n</html>\n", html());
     }
   }
 
