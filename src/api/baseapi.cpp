@@ -179,8 +179,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
   const auto kTrainedDataSuffixUtf16 = winutils::Utf8ToUtf16(kTrainedDataSuffix);
 
   WIN32_FIND_DATAW data;
-  HANDLE handle = FindFirstFileW(
-    winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
+  HANDLE handle = FindFirstFileW(winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
   if (handle != INVALID_HANDLE_VALUE) {
     BOOL result = TRUE;
     for (; result;) {
@@ -520,15 +519,8 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     std::string fpath = tesseract::vars_report_file;
-    FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
+    ReportFile f(fpath);
     ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
-    if (f) {
-      if (f != stdout && f != stderr) {
-        fclose(f);
-      } else {
-        fflush(f);
-      }
-    }
 }
 
 /**
@@ -1279,15 +1271,15 @@ int TessBaseAPI::GetSourceYResolution() {
   return thresholder_->GetSourceYResolution();
 }
 
-// If flist exists, get data from there. Otherwise get data from buf.
+// If `flist` exists, get data from there. Otherwise get data from `buf`.
 // Seems convoluted, but is the easiest way I know of to meet multiple
 // goals. Support streaming from stdin, and also work on platforms
 // lacking fmemopen.
 // 
 // TODO: check different logic for flist/buf and simplify.
 //
-// If tessedit_page_number is non-negative, will only process that
-// single page. Works for multi-page tiff file, or filelist.
+// If `tessedit_page_number` is non-negative, will only process that
+// single page. Works for multi-page tiff file as well as or filelist.
 bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char *retry_config,
                                        int timeout_millisec, TessResultRenderer *renderer) {
   if (!flist && !buf) {
@@ -1385,6 +1377,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
   return true;
 }
 
+// If `tessedit_page_number` is non-negative, will only process that
+// single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
                                             const char *retry_config, int timeout_millisec,
                                             TessResultRenderer *renderer) {

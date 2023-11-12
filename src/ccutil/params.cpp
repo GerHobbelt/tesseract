@@ -22,6 +22,7 @@
 #include "host.h"     // tesseract/export.h, windows.h for MAX_PATH
 #include "serialis.h" // for TFile
 #include "tprintf.h"
+#include "fopenutf8.h"
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -33,6 +34,9 @@
 #include <cstring>
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::stringstream
+#include <functional>
+#include <exception>
+#include <cctype>  // for std::toupper
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/assertions.h"
@@ -59,71 +63,106 @@ bool ParamUtils::ReadParamsFile(const char *file, SetParamConstraint constraint,
                                 ParamsVectors *member_params) {
   TFile fp;
   if (!fp.Open(file, nullptr)) {
-    tprintError("read_params_file: Can't open file {}\n", file);
+    tprintError("read_params_file: Can't open/read file {}\n", file);
     return true;
   }
-  return ReadParamsFromFp(constraint, &fp, member_params);
+  return ReadParamsFromFp(&fp, constraint, member_params);
 }
 
-bool ParamUtils::ReadParamsFromFp(SetParamConstraint constraint, TFile *fp,
+bool ParamUtils::ReadParamsFromFp(TFile *fp,
+								  SetParamConstraint constraint, 
                                   ParamsVectors *member_params) {
-  char line[MAX_PATH]; // input line
-  bool anyerr = false; // true if any error
-  bool foundit;        // found parameter
-  char *valptr;        // value field
+#define LINE_SIZE 4096
+  char line[LINE_SIZE]; // input line
+  bool anyerr = false;  // true if any error
+  bool foundit;         // found parameter
+  char *nameptr;        // name field
+  char *valptr;         // value field
 
-  while (fp->FGets(line, MAX_PATH) != nullptr) {
-    if (line[0] != '\r' && line[0] != '\n' && line[0] != '#') {
-      chomp_string(line); // remove newline
-      for (valptr = line; *valptr && *valptr != ' ' && *valptr != '\t'; valptr++) {
+  while (fp->FGets(line, LINE_SIZE) != nullptr) {
+	  // trimRight:
+	  for (nameptr = line + strlen(line) - 1; nameptr >= line && std::isspace(*nameptr); nameptr--) {
+		  ;
+	  }
+	  nameptr[1] = 0;
+	  // trimLeft:
+	  for (nameptr = line; *nameptr && std::isspace(*nameptr); nameptr++) {
+		  ;
+	  }
+	if (line[0] && line[0] != '#') {
+      // jump over variable name
+      for (valptr = line; *valptr && std::isspace(*valptr); valptr++) {
         ;
       }
       if (*valptr) {    // found blank
         *valptr = '\0'; // make name a string
         do {
           valptr++; // find end of blanks
-        } while (*valptr == ' ' || *valptr == '\t');
+        } while (std::isspace(*valptr));
       }
       foundit = SetParam(line, valptr, constraint, member_params);
 
       if (!foundit) {
         anyerr = true; // had an error
-        tprintWarn("Parameter not found: {}\n", line);
+        tprintError("Parameter not found: {}\n", line);
       }
     }
   }
   return anyerr;
 }
 
-static bool strieq(const char *s1, const char *s2) {
-  return strcasecmp(s1, s2) == 0;
-}
 
-FILE* ParamUtils::OpenReportFile(const char* path) 
+
+
+
+ReportFile::ReportFile(const char *path)
 {
-  if (!path || !*path)
-    return NULL;
+	if (!path || !*path) {
+		_f = nullptr;
+		return;
+	}
 
-  FILE *f = nullptr;
+	_f = nullptr;
 
-  if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
-    f = stdout;
-  else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
-    f = stderr;
-  else {
-#if defined(HAVE_MUPDF)
-    fz_context *ctx = fz_get_global_context();
-    fz_mkdir_for_file(ctx, path);
-    f = fz_fopen_utf8(ctx, path, "w");
-#else
-    f = fopen(path, "w");
-#endif
-    if (!f) {
-      tprintError("Cannot produce parameter usage report file: '{}'\n", path);
-    }
-  }
-  return f;
+	if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
+		_f = stdout;
+	else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
+		_f = stderr;
+	else {
+		bool first = true;
+		for (std::string &i : _processed_file_paths) {
+			if (strieq(i.c_str(), path)) {
+				first = false;
+				break;
+			}
+		}
+		_f = fopenUtf8(path, first ? "w" : "a");
+		if (!_f) {
+			tprintError("Cannot produce parameter usage report file: '{}'\n", path);
+		}
+		else if (first) {
+			_processed_file_paths.push_back(path);
+		}
+	}
 }
+
+ReportFile::~ReportFile() {
+	if (_f) {
+		if (_f != stdout && _f != stderr) {
+			fclose(_f);
+		} else {
+			fflush(_f);
+		}
+	}
+}
+
+FILE * ReportFile::operator()() const {
+	return _f;
+}
+
+
+
+
 
 class ParamsReportWriter {
 public:
