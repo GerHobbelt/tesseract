@@ -291,15 +291,32 @@ public:
 
   int InitSimple(const char *datapath, const char *language);
 
-  // In-memory version reads the traineddata file directly from the given
-  // data[data_size] array, and/or reads data via a FileReader.
-  int InitFromMemory(const unsigned char *data, int data_size, const char *language,
+  // Reads the traineddata via a FileReader from path `datapath`.
+  int InitFullWithReader(const char *datapath, const char *language,
            OcrEngineMode mode, 
            const std::vector<std::string> &configs,
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
            bool set_only_non_debug_params, FileReader reader);
 
+  // In-memory version reads the traineddata directly from the given
+  // data[data_size] array.
+  int InitFromMemory(const char *data, int data_size, const char *language,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           bool set_only_non_debug_params);
+
+protected:
+  int InitFullRemainder(const char *datapath, const char *data, int data_size, const char *language,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           bool set_only_non_debug_params, FileReader reader);
+
+public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
