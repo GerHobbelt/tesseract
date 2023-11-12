@@ -167,11 +167,14 @@ public:
 
   /**
    * Set the value of an internal "parameter."
+   *
    * Supply the name of the parameter and the value as a string, just as
    * you would in a config file.
-   * Returns false if the name lookup failed.
    * E.g. `SetVariable("tessedit_char_blacklist", "xyz");` to ignore 'x', 'y' and 'z'.
    * Or `SetVariable("classify_bln_numeric_mode", "1");` to set numeric-only mode.
+   *
+   * Returns false if the name lookup failed.
+   *
    * SetVariable() may be used before Init(), but settings will revert to
    * defaults on End().
    *
@@ -180,7 +183,14 @@ public:
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
+  bool SetVariable(const char *name, bool value);
+  bool SetVariable(const char *name, double value);
+  bool SetVariable(const char *name, const std::string &value);
   bool SetDebugVariable(const char *name, const char *value);
+  bool SetDebugVariable(const char *name, int value);
+  bool SetDebugVariable(const char *name, bool value);
+  bool SetDebugVariable(const char *name, double value);
+  bool SetDebugVariable(const char *name, const std::string &value);
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
@@ -283,7 +293,7 @@ public:
 
   // In-memory version reads the traineddata file directly from the given
   // data[data_size] array, and/or reads data via a FileReader.
-  int InitFullWithReader(const char *data, int data_size, const char *language,
+  int InitFromMemory(const unsigned char *data, int data_size, const char *language,
            OcrEngineMode mode, 
            const std::vector<std::string> &configs,
            const std::vector<std::string> &vars_vec,
@@ -331,7 +341,7 @@ public:
   /**
    * Set the current page segmentation mode. Defaults to PSM_SINGLE_BLOCK.
    * The mode is stored as an IntParam so it can also be modified by
-   * ReadConfigFile or SetVariable("tessedit_pageseg_mode", mode as string).
+   * ReadConfigFile or SetVariable("tessedit_pageseg_mode").
    */
   void SetPageSegMode(PageSegMode mode);
 
@@ -342,7 +352,7 @@ public:
    * Recognize a rectangle from an image and return the result as a string.
    * May be called many times for a single Init.
    * Currently has no error checking.
-   * Greyscale of 8 and color of 24 or 32 bits per pixel may be given.
+   * Greyscale of 8 and color of 24 or 32 bits per pixel may be given (in RGB/RGBA byte layout).
    * Palette color images will not work properly and must be converted to
    * 24 bit.
    * Binary images of 1 bit per pixel may also be given but they must be
@@ -360,7 +370,7 @@ public:
                       int height);
 
   /**
-   * Call between pages or documents etc to free up memory and forget
+   * Call between pages or documents, etc., to free up memory and forget
    * adaptive data.
    */
   void ClearAdaptiveClassifier();
@@ -646,6 +656,7 @@ public:
    * monitor can be used to
    *  cancel the recognition
    *  receive progress callbacks
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetHOCRText(ETEXT_DESC *monitor, int page_number);
@@ -654,6 +665,7 @@ public:
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetHOCRText(int page_number);
@@ -661,30 +673,39 @@ public:
   /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetAltoText(ETEXT_DESC *monitor, int page_number);
 
   /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetAltoText(int page_number);
 
   /**
    * Make an XML-formatted string with PAGE markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
 
   /**
    * Make an XML-formatted string with PAGE markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetPAGEText(int page_number);
 
   /**
    * Make a TSV-formatted string from the internal data structures.
    * page_number is 0-based but will appear in the output as 1-based.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetTSVText(int page_number);
@@ -693,6 +714,7 @@ public:
    * Make a box file for LSTM training from the internal data structures.
    * Constructs coordinates in the original image - not just the rectangle.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetLSTMBoxText(int page_number);
@@ -702,6 +724,7 @@ public:
    * format as a box file used in training.
    * Constructs coordinates in the original image - not just the rectangle.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetBoxText(int page_number);
@@ -710,6 +733,7 @@ public:
    * The recognized text is returned as a char* which is coded in the same
    * format as a WordStr box file used in training.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetWordStrBoxText(int page_number);
@@ -717,6 +741,7 @@ public:
   /**
    * The recognized text is returned as a char* which is coded
    * as UNLV format Latin-1 with specific reject and suspect codes.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetUNLVText();
@@ -737,14 +762,20 @@ public:
    * The recognized text is returned as a char* which is coded
    * as UTF8 and must be freed with the delete [] operator.
    * page_number is a 0-based page index that will appear in the osd file.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetOsdText(int page_number);
 
   /** Returns the (average) confidence value between 0 and 100. */
   int MeanTextConf();
+
   /**
    * Returns all word confidences (between 0 and 100) in an array, terminated
-   * by -1.  The calling function must delete [] after use.
+   * by -1.
+   *
+   * The calling function must `delete []` after use.
+   *
    * The number of confidences should correspond to the number of space-
    * delimited words in GetUTF8Text.
    */
@@ -773,9 +804,9 @@ public:
   void Clear();
 
   /**
-   * Close down tesseract and free up all memory. End() is equivalent to
+   * Close down tesseract and free up all memory. `End()` is equivalent to
    * destructing and reconstructing your TessBaseAPI.
-   * Once End() has been used, none of the other API functions may be used
+   * Once `End()` has been used, none of the other API functions may be used
    * other than Init and anything declared above it in the class definition.
    */
   void End();
@@ -783,15 +814,17 @@ public:
   /**
    * Clear any library-level memory caches.
    * There are a variety of expensive-to-load constant data structures (mostly
-   * language dictionaries) that are cached globally -- surviving the Init()
-   * and End() of individual TessBaseAPI's.  This function allows the clearing
+   * language dictionaries) that are cached globally -- surviving the `Init()`
+   * and `End()` of individual TessBaseAPI's.  This function allows the clearing
    * of these caches.
    **/
   static void ClearPersistentCache();
 
   /**
    * Check whether a word is valid according to Tesseract's language model
+   *
    * @return 0 if the word is invalid, non-zero if valid.
+   *
    * @warning temporary! This function will be removed from here and placed
    * in a separate API at some future time.
    */
@@ -859,12 +892,13 @@ protected:
    */
   int FindLines();
 
-  /** Delete the pageres and block list ready for a new page. */
+  /** Delete the PageRes and block list, readying tesseract for OCRing a new page. */
   void ClearResults();
 
   /**
    * Return an LTR Result Iterator -- used only for training, as we really want
    * to ignore all BiDi smarts at that point.
+   *
    * delete once you're done with it.
    */
   LTRResultIterator *GetLTRIterator();
@@ -919,14 +953,14 @@ protected:
 private:
   // A list of image filenames gets special consideration
   //
-  // If tessedit_page_number is non-negative, will only process that
+  // If global parameter `tessedit_page_number` is non-negative, will only process that
   // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesFileList(FILE *fp, std::string *buf,
                             const char *retry_config, int timeout_millisec,
                             TessResultRenderer *renderer);
   // TIFF supports multipage so gets special consideration.
   //
-  // If tessedit_page_number is non-negative, will only process that
+  // If global parameter `tessedit_page_number` is non-negative, will only process that
   // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesMultipageTiff(const unsigned char *data, size_t size,
                                  const char *filename, const char *retry_config,
@@ -937,8 +971,36 @@ private:
 /** Escape a char string - replace &<>"' with HTML codes. */
 std::string HOcrEscape(const char *text);
 
+/**
+ * Construct a filename(+path) that's unique, i.e. is guaranteed to not yet exist in the filesystem.
+ */
 std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
 
+/**
+ * Helper function around leptonica's `pixWrite()` which writes the given `pic` image to file, in the `file_type` format.
+ *
+ * The `file_type` format is defined in leptonica's `imageio.h`. Here's an (possibly incomplete) extract:
+ *
+ * - IFF_BMP            = 1 (Windows BMP)
+ * - IFF_JFIF_JPEG      = 2 (regular JPEG, default quality 75%)
+ * - IFF_PNG            = 3 (PNG, lossless)
+ * - IFF_TIFF           = 4 (TIFF)
+ * - IFF_TIFF_PACKBITS  = 5 (TIFF, lossless)
+ * - IFF_TIFF_RLE       = 6 (TIFF, lossless)
+ * - IFF_TIFF_G3        = 7 (TIFF, lossless)
+ * - IFF_TIFF_G4        = 8 (TIFF, lossless)
+ * - IFF_TIFF_LZW       = 9 (TIFF, lossless)
+ * - IFF_TIFF_ZIP       = 10 (TIFF, lossless)
+ * - IFF_PNM            = 11 (PNM)
+ * - IFF_PS             = 12 (PS: PostScript)
+ * - IFF_GIF            = 13 (GIF)
+ * - IFF_JP2            = 14 (JP2
+ * - IFF_WEBP           = 15 (WebP)
+ * - IFF_LPDF           = 16 (LDPF)
+ * - IFF_TIFF_JPEG      = 17 (JPEG embedded in TIFF)
+ * - IFF_DEFAULT        = 18 (The IFF_DEFAULT flag is used to write the file out in the same (input) file format that the pix was read from.  If the pix was not read from file, the input format field will be IFF_UNKNOWN and the output file format will be chosen to be compressed and lossless; namely: IFF_TIFF_G4 for depth = 1 bit and IFF_PNG for everything else.)
+ * - IFF_SPIX           = 19 (SPIX: serialized PIX, a leptonica-specific file format)
+ */
 void WritePix(const std::string &filepath, Pix *pic, int file_type);
 
 } // namespace tesseract

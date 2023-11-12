@@ -209,6 +209,7 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
   ParamContent_LIST vclist;
   ParamContent_IT vc_it(&vclist);
   // Amount counts the number of entries for a specific char*.
+  // 
   // TODO(rays) get rid of the use of std::map.
   std::map<const char *, int> amount;
 
