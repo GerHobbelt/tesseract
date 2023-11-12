@@ -47,7 +47,7 @@ namespace tesseract {
 
   const std::vector<uint32_t>& initDiagPlotColorMap(void) {
     if (cmap_is_init)
-	  return;
+	  return cmap;
 
 	cmap.reserve(256);
 
