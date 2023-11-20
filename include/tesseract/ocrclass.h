@@ -29,6 +29,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <functional>
 
 namespace tesseract {
 
