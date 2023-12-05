@@ -372,7 +372,7 @@ public:
   // This is intended as an "debug" output window.
   template <typename S, typename... Args>
   void AddMessage(const S &format, Args &&...args) {
-    vAddMessage(format, fmt::make_args_checked<Args...>(format, args...));
+    vAddMessage(format, fmt::make_format_args(args...));
   }
 
   // Zoom the window to the rectangle given upper left corner and
@@ -390,7 +390,7 @@ public:
 
   template <typename S, typename... Args>
   void SendMsg(const S &format, Args&&... args) {
-    vSendMsg(format, fmt::make_args_checked<Args...>(format, args...));
+    vSendMsg(format, fmt::make_format_args(args...));
   }
 
   /*******************************************************************************
