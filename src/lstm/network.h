@@ -83,6 +83,10 @@ enum NetworkType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(NetworkType);
 
+static inline auto format_as(NetworkType t) {
+  return fmt::underlying(t);
+}
+
 // Enum of Network behavior flags. Can in theory be set for each individual
 // network element.
 enum NetworkFlags {

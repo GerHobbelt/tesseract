@@ -433,21 +433,21 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
 		  ;
 	  }
 	if (line[0] && line[0] != '#') {
-      chomp_string(line); // remove newline
-      for (valptr = line; *valptr && *valptr != ' ' && *valptr != '\t'; valptr++) {
+      // jump over variable name
+      for (valptr = line; *valptr && std::isspace(*valptr); valptr++) {
         ;
       }
       if (*valptr) {    // found blank
         *valptr = '\0'; // make name a string
         do {
           valptr++; // find end of blanks
-        } while (*valptr == ' ' || *valptr == '\t');
+        } while (std::isspace(*valptr));
       }
       foundit = SetParam(line, valptr, constraint, member_params);
 
       if (!foundit) {
         anyerr = true; // had an error
-        tprintWarn("Parameter not found: {}\n", line);
+        tprintError("Parameter not found: {}\n", line);
       }
     }
   }
@@ -456,6 +456,10 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
 
 
 
+
+
+// permanent lookup table:
+std::vector<std::string> ReportFile::_processed_file_paths;
 
 
 ReportFile::ReportFile(const char *path)

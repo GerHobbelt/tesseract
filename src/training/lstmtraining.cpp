@@ -28,7 +28,7 @@
 #endif
 #if defined(_MSC_VER)
 #include <float.h> // for __control87
-#pragma fenv_access (on)
+//#pragma fenv_access (on)
 #endif
 
 #include "common/commontraining.h"

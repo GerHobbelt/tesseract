@@ -520,7 +520,7 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     std::string fpath = tesseract::vars_report_file;
     ReportFile f(fpath);
-    ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
+    ParamUtils::ReportParamsUsageStatistics(f(), vec, nullptr);
 }
 
 /**
@@ -536,35 +536,70 @@ int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineM
                       const std::vector<std::string> &vars_vec,
                       const std::vector<std::string> &vars_values, 
 	                  bool set_only_non_debug_params) {
-  return InitFullWithReader(datapath, 0, language, oem, configs, vars_vec, vars_values,
+  return InitFullRemainder(datapath, nullptr, 0, language, oem, configs, vars_vec, vars_values,
               set_only_non_debug_params, nullptr);
 }
 
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
   std::vector<std::string> nil;
-  return InitFull(datapath, language, oem, nil, nil, nil, false);
+  return InitFullRemainder(datapath, nullptr, 0, language, oem, nil, nil, nil, false, nullptr);
 }
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  return InitOem(datapath, language, OEM_DEFAULT);
+  std::vector<std::string> nil;
+  return InitFullRemainder(datapath, nullptr, 0, language, OEM_DEFAULT, nil, nil, nil, false, nullptr);
 }
 
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
-int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char *language, OcrEngineMode oem,
+int TessBaseAPI::InitFromMemory(const char *data, int data_size, const char *language, OcrEngineMode oem,
 	                  const std::vector<std::string> &configs,
                       const std::vector<std::string> &vars_vec,
                       const std::vector<std::string> &vars_values, 
-                      bool set_only_non_debug_params,
-                      FileReader reader) {
+                      bool set_only_non_debug_params) 
+{
+	return InitFullRemainder(nullptr, data, data_size, language,
+		oem,
+		configs,
+		vars_vec,
+		vars_values, 
+		set_only_non_debug_params,
+		nullptr);
+}
+
+int TessBaseAPI::InitFullWithReader(const char *path, const char *language, OcrEngineMode oem,
+	const std::vector<std::string> &configs,
+	const std::vector<std::string> &vars_vec,
+	const std::vector<std::string> &vars_values, 
+	bool set_only_non_debug_params,
+	FileReader reader) 
+{
+	return InitFullRemainder(path, nullptr, 0, language,
+		oem,
+		configs,
+		vars_vec,
+		vars_values, 
+		set_only_non_debug_params,
+		reader);
+}
+
+int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_size, const char *language,
+		OcrEngineMode oem,
+		const std::vector<std::string> &configs,
+		const std::vector<std::string> &vars_vec,
+		const std::vector<std::string> &vars_values, 
+		bool set_only_non_debug_params,
+		FileReader reader) 
+{
   if (language == nullptr || language[0] == 0) {
     language = "";
   }
   if (data == nullptr) {
     data = "";
   }
-  std::string datapath = data_size == 0 ? data : language;
+  std::string datapath = path ? path : language;
+
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract_->lang stores the language

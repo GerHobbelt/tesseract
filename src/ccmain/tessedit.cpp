@@ -130,7 +130,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(SET_PARAM_CONSTRAINT_NONE, &fp, this->params());
+    ParamUtils::ReadParamsFromFp(&fp, SET_PARAM_CONSTRAINT_NONE, this->params());
   }
 
   SetParamConstraint set_params_constraint =

@@ -296,14 +296,6 @@ public:
 
   // Resets all parameters back to default values;
   static void ResetToDefaults(ParamsVectors *set, SOURCE_TYPE);
-
-  // Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular text file in UTF8 write mode.
-  //
-  // MAY return NULL, e.g. when path is empty. This is considered a legal/valid use & behaviour.
-  // On the other hand, an error line is printed via `tprintf()` when the given path is non-empty and
-  // turns out not to be valid.
-  // Either way, a return value of NULL implies that default behaviour (output via `tprintf()`) is assumed.
-  static FILE* OpenReportFile(const char *path);
 };
 
 
@@ -315,11 +307,21 @@ public:
 // as we won't ever release the memory allocated for that string in `_processed_file_paths`.
 class ReportFile {
 public:
+	// Parse '-', 'stdout' and '1' as STDIN, '+', 'stderr', and '2' as STDERR, or open a regular text file in UTF8 write mode.
+	//
+	// MAY return NULL, e.g. when path is empty. This is considered a legal/valid use & behaviour.
+	// On the other hand, an error line is printed via `tprintf()` when the given path is non-empty and
+	// turns out not to be valid.
+	// Either way, a return value of NULL implies that default behaviour (output via `tprintf()`) is assumed.
 	ReportFile(const char *path);
 	ReportFile(const std::string &path) : ReportFile(path.c_str()) {}
 	~ReportFile();
 
 	FILE * operator()() const;
+	
+	operator bool() const {
+		return _f != nullptr;
+	};
 
 private:
 	FILE *_f;

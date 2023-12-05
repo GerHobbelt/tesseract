@@ -447,8 +447,7 @@ InteractiveScrollView::~InteractiveScrollView() {
 
 #if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
-void InteractiveScrollView::vSendMsg(fmt::string_view format,
-                                     fmt::format_args args) {
+void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   if (!points_->empty) {
@@ -599,8 +598,7 @@ void InteractiveScrollView::AlwaysOnTop(bool b) {
 }
 
 // Adds a message entry to the message box.
-void InteractiveScrollView::vAddMessage(fmt::string_view format,
-                                        fmt::format_args args) {
+void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
@@ -638,15 +636,13 @@ void InteractiveScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   if (x1 == x2 && y1 == y2) {
     return; // Scrollviewer locks up.
   }
-  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
-          TranslateYCoordinate(y2));
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 }
 
 // Draw an ellipse using the current pen color.
 // The ellipse is filled with the current brush color.
 void InteractiveScrollView::Ellipse(int x1, int y1, int width, int height) {
-  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
-          height);
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width, height);
 }
 
 // Set the pen color to the given RGB values.
@@ -840,8 +836,7 @@ int InteractiveScrollView::ShowYesNoDialog(const char *msg) {
 void InteractiveScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
   y1 = TranslateYCoordinate(y1);
   y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
-          std::max(x1, x2), std::max(y1, y2));
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
 }
 
 // Send an image of type Pix.
