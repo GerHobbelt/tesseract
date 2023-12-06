@@ -68,6 +68,18 @@ Tesseract::Tesseract()
                   "Try inverted line image if necessary (deprecated, will be "
                   "removed in release 6, use the 'invert_threshold' parameter instead)",
                   this->params())
+    , BOOL_MEMBER(normalize_grayscale, false,
+                  "Try inverted line image if necessary (deprecated, will be "
+                  "removed in release 6, use the 'invert_threshold' parameter instead)",
+                  this->params())
+    , BOOL_MEMBER(normalize_thresholding, false,
+                  "Try inverted line image if necessary (deprecated, will be "
+                  "removed in release 6, use the 'invert_threshold' parameter instead)",
+                  this->params())
+    , BOOL_MEMBER(normalize_recognition, false,
+                  "Try inverted line image if necessary (deprecated, will be "
+                  "removed in release 6, use the 'invert_threshold' parameter instead)",
+                  this->params())
     , double_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image",
                     this->params())
