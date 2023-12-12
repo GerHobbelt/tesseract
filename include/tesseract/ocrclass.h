@@ -110,9 +110,8 @@ public:
   volatile int8_t ocr_alive{0}; /// ocr sets to 1, HP 0
   int8_t err_code{0};           /// for errcode use
   CANCEL_FUNC cancel{nullptr};  /// returns true to cancel
-  PROGRESS_FUNC progress_callback{
-      nullptr};                      /// called whenever progress increases
-  PROGRESS_FUNC2 progress_callback2; /// monitor-aware progress callback
+  PROGRESS_FUNC progress_callback{nullptr};   /// called whenever progress increases
+  PROGRESS_FUNC2 progress_callback2{nullptr}; /// monitor-aware progress callback
   void *cancel_this{nullptr};        /// this or other data for cancel
   std::chrono::steady_clock::time_point end_time;
   /// Time to stop. Expected to be set only
