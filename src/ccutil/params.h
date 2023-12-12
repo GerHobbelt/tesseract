@@ -440,7 +440,7 @@ public:
   virtual std::string formatted_value_str() const = 0;
 
   // Return string representing the type of the parameter value, e.g. "integer"
-  virtual const char *value_type_str() const = 0;
+  const char *value_type_str() const;
 
   // Fetches the value of the param and delivers it in a ParamValueContainer union. 
   // Does not add this access to the read counter tally. This is useful, f.e., when 
@@ -554,10 +554,6 @@ public:
     return std::to_string(value_);
   }
 
-  virtual const char *value_type_str() const override {
-	return "integer";
-  }
-
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
   IntParam(const IntParam &o) = delete;
@@ -617,10 +613,6 @@ public:
 
   virtual std::string formatted_value_str() const override {
     return value_ ? "true" : "false";
-  }
-
-  virtual const char *value_type_str() const override {
-	  return "boolean";
   }
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
@@ -702,10 +694,6 @@ public:
     return rv;
   }
 
-  virtual const char *value_type_str() const override {
-	  return "string";
-  }
-
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
   StringParam(const StringParam &o) = delete;
@@ -772,10 +760,6 @@ public:
     sbuf[39] = 0;
     return sbuf;
 #endif
-  }
-
-  virtual const char *value_type_str() const override {
-	  return "floating point";
   }
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;

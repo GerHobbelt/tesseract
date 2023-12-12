@@ -369,6 +369,28 @@ bool Param::set_value(const ParamValueContainer &v, ParamSetBySourceType source_
 }
 
 
+const char * Param::value_type_str() const {
+	switch (type_) {
+	default:
+	case UNKNOWN_PARAM:
+		return "???";
+		
+	case INT_PARAM:
+		return "integer";
+	case BOOL_PARAM:
+		return "boolean";
+	case DOUBLE_PARAM:
+		return "floating point";
+	case STRING_PARAM:
+		return "string";
+
+	case ANY_TYPE_PARAM:
+		return "any";
+	}
+}
+
+
+
 bool IntParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
 	access_counts_.writing++;
 	if (value != value_ && value != default_)
@@ -396,6 +418,111 @@ bool IntParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr sour
 	return set_value(val, source_type, source);
 }
 bool IntParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (v < INT32_MIN || v > INT32_MAX)
+		return false;
+
+	int32_t val = roundf(v);
+	return set_value(val, source_type, source);
+}
+
+
+bool BoolParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+	}
+	else {
+		value_ = value;
+	}
+}
+
+bool BoolParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = atoi(v);
+	return set_value(val, source_type, source);
+}
+bool BoolParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = v;
+	return set_value(val, source_type, source);
+}
+bool BoolParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (v < INT32_MIN || v > INT32_MAX)
+		return false;
+
+	int32_t val = roundf(v);
+	return set_value(val, source_type, source);
+}
+
+
+bool DoubleParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+	}
+	else {
+		value_ = value;
+	}
+}
+
+bool DoubleParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = atoi(v);
+	return set_value(val, source_type, source);
+}
+bool DoubleParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = v;
+	return set_value(val, source_type, source);
+}
+bool DoubleParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (v < INT32_MIN || v > INT32_MAX)
+		return false;
+
+	int32_t val = roundf(v);
+	return set_value(val, source_type, source);
+}
+
+
+bool StringParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+	}
+	else {
+		value_ = value;
+	}
+}
+
+bool StringParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = atoi(v);
+	return set_value(val, source_type, source);
+}
+bool StringParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = v;
+	return set_value(val, source_type, source);
+}
+bool StringParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
 	if (v < INT32_MIN || v > INT32_MAX)
 		return false;
 
