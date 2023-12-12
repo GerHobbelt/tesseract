@@ -141,13 +141,15 @@ bool ParamComparer::operator()( const char * lhs, const char * rhs ) const {
 #ifndef NDEBUG
 static void check_and_report_name_collisions(const char *name, const ParamsHashTableType &table) {
 	if (table.contains(name)) {
-		throw new std::logic_error(fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name));
+		std::string s = fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name, name);
+		throw new std::logic_error(s);
 	}
 }
 static void check_and_report_name_collisions(const char *name, std::vector<ParamPtr> &table) {
 	for (Param *p : table) {
 		if (ParamHash()(p->name_str(), name)) {
-			throw new std::logic_error(fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name));
+			std::string s = fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name, name);
+			throw new std::logic_error(s);
 		}
 	}
 }
