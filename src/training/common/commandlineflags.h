@@ -69,8 +69,12 @@ DECLARE_STRING_PARAM_FLAG(test_ch);
 // eg. If the input *argv is
 // { "program", "--foo=4", "--bar=true", "file1", "file2" } with *argc = 5, the
 // output *argv is { "program", "file1", "file2" } with *argc = 3
+//
+// Returns either exit code >= 0 (help command found and executed: 0, error in argv set: 1)
+// or -1 to signal the argv[] set has been parsed into the application parameters and
+// execution should continue.
 TESS_COMMON_TRAINING_API
-void ParseCommandLineFlags(const char *usage, int *argc, const char ***argv, const bool remove_flags);
+int ParseCommandLineFlags(const char *appname, int *argc, const char ***argv, const bool remove_flags);
 
 } // namespace tesseract
 

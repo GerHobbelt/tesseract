@@ -30,7 +30,7 @@
 namespace tesseract {
 
 TESS_COMMON_TRAINING_API
-void ParseArguments(int* argc, const char ***argv);
+int ParseArguments(int* argc, const char ***argv);
 
 // Check whether the shared tesseract library is the right one.
 // This function must be inline because otherwise it would be part of

@@ -50,8 +50,12 @@ public:
   void main_setup(const std::string &argv0,                 // program name
                   const std::string & output_image_basename // name of output/debug image(s)
   );
-  ParamsVectors *params() {
-    return &params_;
+  ParamsVector &params() {
+    return params_;
+  }
+
+  ParamsVectors *params_collective() {
+	  return nullptr;
   }
 
   std::string input_file_path; // name of currently processed input file
@@ -67,7 +71,7 @@ public:
   std::string directory; // main directory
 
 private:
-  ParamsVectors params_;
+  ParamsVector params_;
 
 public:
   // Member parameters.

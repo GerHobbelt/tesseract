@@ -115,15 +115,18 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #endif
 {
+  const char *appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
   if (argc > 1) {
-    tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
+    int rv = tesseract::ParseCommandLineFlags(appname, &argc, &argv, true);
+	if (rv >= 0)
+		return rv;
   }
   if (argc < 2) {
     tprintDebug(
         "Usage: {} [--output_unicharset filename] [--norm_mode mode]"
         " box_or_text_file [...]\n",
-        argv[0]);
+        appname);
     tprintDebug("Where mode means:\n");
     tprintDebug(" 1=combine graphemes (use for Latin and other simple scripts)\n");
     tprintDebug(" 2=split graphemes (use for Indic/Khmer/Myanmar)\n");

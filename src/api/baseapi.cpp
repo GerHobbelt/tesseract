@@ -517,7 +517,7 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 // answering the question:
 // "Which of all those parameters are actually *relevant* to my use case today?"
 void TessBaseAPI::ReportParamsUsageStatistics() const {
-	tesseract::ParamsVectors *vec = tesseract_->params();
+	tesseract::ParamsVectors *vec = tesseract_->params_collective();
     std::string fpath = tesseract::vars_report_file;
     ReportFile f(fpath);
     ParamUtils::ReportParamsUsageStatistics(f(), vec, nullptr);

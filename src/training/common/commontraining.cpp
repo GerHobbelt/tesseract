@@ -51,7 +51,7 @@ STRING_PARAM_FLAG(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default tempo
  * @param argv command line arguments
  * @note Exceptions: Illegal options terminate the program.
  */
-void ParseArguments(int* argc, const char ***argv) {
+int ParseArguments(int* argc, const char ***argv) {
   std::string usage;
   if (*argc) {
     usage += fz_basename((*argv)[0]);
@@ -59,7 +59,7 @@ void ParseArguments(int* argc, const char ***argv) {
     usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  return tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
 }
 
 } // namespace tesseract.
@@ -134,7 +134,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-void ParseArguments(int *argc, const char ***argv) {
+int ParseArguments(int *argc, const char ***argv) {
 	if (!ccutil)
 		ccutil = new CCUtil();
 
@@ -145,19 +145,21 @@ void ParseArguments(int *argc, const char ***argv) {
     usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  if (rv >= 0)
+	  return rv;
+
   // Set some global values based on the flags.
-  Config.MinSamples =
-      std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
+  Config.MinSamples = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
   Config.MaxIllegal = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_max_illegal)));
   Config.Independence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_independence)));
   Config.Confidence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(
-        FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
+    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
   }
+  return rv;
 }
 
 // Helper loads shape table from the given file.

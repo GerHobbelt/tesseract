@@ -54,9 +54,9 @@
 namespace tesseract {
 
 TESS_API
-tesseract::ParamsVectors *GlobalParams() {
-  static tesseract::ParamsVectors global_params; // static auto-inits at startup
-  return &global_params;
+ParamsVector &GlobalParams() {
+  static ParamsVector global_params; // static auto-inits at startup
+  return global_params;
 }
 
 
@@ -602,7 +602,7 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
   // - global / (class)local
   // - name
 
-  const ParamsVectors* globals = GlobalParams();
+  const ParamsVector* globals = GlobalParams();
 
   struct ParamInfo {
 	  Param *p;
