@@ -150,4 +150,5 @@ TEST_F(CommandlineflagsTest, ParseOldFlags) {
   TestParser(countof(argv), argv);
   EXPECT_STREQ("text", FLAGS_q.c_str());
 }
+
 } // namespace tesseract

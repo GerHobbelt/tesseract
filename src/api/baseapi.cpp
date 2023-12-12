@@ -1361,7 +1361,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       else if (page_number >= lines.size()) {
         break;
       }
-      snprintf(pagename, sizeof(pagename), "%s", lines[page_number].c_str());
+      snprintf(pagename, sizeof(pagename), "%s", lines[i].c_str());
     }
     chomp_string(pagename);
     Pix *pix = pixRead(pagename);
@@ -1420,19 +1420,19 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   Pix *pix = nullptr;
   int page_number = (tesseract_->tessedit_page_number >= 0) ? tesseract_->tessedit_page_number : 0;
   size_t offset = 0;
-  for (;; ++page_number) {
-    if (tesseract_->tessedit_page_number >= 0) {
-      page_number = tesseract_->tessedit_page_number;
-      pix = (data) ? pixReadMemTiff(data, size, page_number) : pixReadTiff(filename, page_number);
-    } else {
-      pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
-                   : pixReadFromMultipageTiff(filename, &offset);
-    }
+  for (int pgn = 1; ; ++pgn) {
+    // pix = (data) ? pixReadMemTiff(data, size, page_number) : pixReadTiff(filename, page_number);
+    pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
+                 : pixReadFromMultipageTiff(filename, &offset);
     if (pix == nullptr) {
       break;
     }
-    tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
-    SetVariable("applybox_page", page_number);
+	if (tesseract_->tessedit_page_number > 0 && pgn != tesseract_->tessedit_page_number) {
+		continue;
+	}
+	
+    tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
+    SetVariable("applybox_page", pgn);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {
