@@ -224,7 +224,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
 
 #if !GRAPHICS_DISABLED
   if (chop_debug > 2) {
-    wordrec_display_splits.set_value(true);
+    wordrec_display_splits = true;
   }
 
   draw_blob_edges(blob);
@@ -284,7 +284,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
   }
 
   if (chop_debug) {
-    wordrec_display_splits.set_value(false);
+    wordrec_display_splits = false;
   }
 
   return (seam);
