@@ -325,7 +325,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         if (tesseract_->hocr_char_boxes) {
           hocr_str << "</span>";
           tesseract::ChoiceIterator ci(*res_it);
-          if (lstm_choice_mode == 1 && ci.Timesteps() != nullptr) {
+          if ((lstm_choice_mode & 1) && ci.Timesteps() != nullptr) {
             std::vector<std::vector<std::pair<const char *, float>>> *symbol =
                 ci.Timesteps();
             hocr_str << "\n        <span class='ocr_symbol'"
@@ -351,7 +351,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
             }
             hocr_str << "\n        </span>";
             ++scnt;
-          } else if (lstm_choice_mode == 2) {
+          } 
+		  if (lstm_choice_mode & 2) {
             hocr_str << "\n        <span class='ocrx_cinfo'"
                      << " id='"
                      << "lstm_choices_" << page_id << "_" << wcnt << "_" << tcnt
@@ -383,7 +384,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
       hocr_str << "</strong>";
     }
     // If the lstm choice mode is required it is added here
-    if (lstm_choice_mode == 1 && !tesseract_->hocr_char_boxes && rawTimestepMap != nullptr) {
+    if ((lstm_choice_mode & 1) && (!tesseract_->hocr_char_boxes || (lstm_choice_mode & 2)) && rawTimestepMap != nullptr) {
       for (const auto &symbol : *rawTimestepMap) {
         hocr_str << "\n       <span class='ocr_symbol'"
                  << " id='"
@@ -408,7 +409,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         hocr_str << "</span>";
         ++scnt;
       }
-    } else if (lstm_choice_mode == 2 && !tesseract_->hocr_char_boxes && CTCMap != nullptr) {
+    } 
+	if ((lstm_choice_mode & 2) && (!tesseract_->hocr_char_boxes || (lstm_choice_mode & 1)) && CTCMap != nullptr) {
       for (const auto &timestep : *CTCMap) {
         if (timestep.size() > 0) {
           hocr_str << "\n       <span class='ocrx_cinfo'"

@@ -44,13 +44,13 @@ b) Most of the code is inline so:
 i)  The duplication in source does not affect the run time code size - the
     code is copied inline anyway!
 
-  ii) The compiler should have a bit less work to do!
+ii) The compiler should have a bit less work to do!
 **********************************************************************/
 
 /**********************************************************************
  *              CLASS - ELIST2_LINK
  *
- *              Generic link class for doubly linked lists with embedded links
+ *  Generic link class for doubly linked lists with embedded links
  *
  *  Note:  No destructor - elements are assumed to be destroyed EITHER after
  *  they have been extracted from a list OR by the ELIST2 destructor which
@@ -785,8 +785,7 @@ inline void ELIST2_ITERATOR::sort( // sort elements
  *  Add a new element to the end of the list without moving the iterator.
  *  This is provided because a single linked list cannot move to the last as
  *  the iterator couldn't set its prev pointer.  Adding to the end is
- *  essential for implementing
-              queues.
+ *  essential for implementing queues.
 **********************************************************************/
 
 inline void ELIST2_ITERATOR::add_to_end( // element to add

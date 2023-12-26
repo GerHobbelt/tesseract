@@ -275,11 +275,11 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words, lstm_choice_mode);
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
     for (int i = 0; i < lstm_choice_amount; ++i) {
-      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
+      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset());
       search_->extractSymbolChoices(&GetUnicharset());
     }
     search_->segmentTimestepsByCharacters();
