@@ -76,7 +76,7 @@ FILE *OpenBoxFile(const char *fname) {
 bool ReadAllBoxes(int target_page, bool skip_blanks, const char *filename, std::vector<TBOX> *boxes,
                   std::vector<std::string> *texts, std::vector<std::string> *box_texts,
                   std::vector<int> *pages) {
-  std::ifstream input(BoxFileName(filename).c_str(), std::ios::in | std::ios::binary);
+  std::ifstream input(BoxFileName(filename), std::ios::in | std::ios::binary);
   if (input.fail()) {
     tprintError("Cannot read box data from '{}'.\n", BoxFileName(filename));
     tprintError("Does it exist?\n");
