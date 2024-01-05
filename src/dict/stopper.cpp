@@ -112,39 +112,42 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
   }
 }
 
-bool Dict::AcceptableResult(WERD_RES *word) const {
-  if (word->best_choice == nullptr) {
+bool Dict::AcceptableResult(const WERD_RES &word) const {
+  if (word.best_choice == nullptr) {
     return false;
   }
+  if (stopper_no_acceptable_choices) {
+    return false;
+  }
+
   float CertaintyThreshold = stopper_nondict_certainty_base - reject_offset_;
   int WordSize;
 
   if (stopper_debug_level >= 1) {
     tprintDebug("\nRejecter: {} (word={}, case={}, unambig={}, multiple={})\n",
-            word->best_choice->debug_string().c_str(), (valid_word(*word->best_choice) ? "y" : "n"),
-            (case_ok(*word->best_choice) ? "y" : "n"),
-            word->best_choice->dangerous_ambig_found() ? "n" : "y",
-            word->best_choices.singleton() ? "n" : "y");
+            word.best_choice->debug_string(), (valid_word(*word.best_choice) ? "y" : "n"),
+            (case_ok(*word.best_choice) ? "y" : "n"),
+            word.best_choice->dangerous_ambig_found() ? "n" : "y",
+            word.best_choices.singleton() ? "n" : "y");
   }
 
-  if (word->best_choice->empty() || !word->best_choices.singleton()) {
+  if (word.best_choice->empty() || !word.best_choices.singleton()) {
     return false;
   }
-  if (valid_word(*word->best_choice) && case_ok(*word->best_choice)) {
-    WordSize = LengthOfShortestAlphaRun(*word->best_choice);
+  if (valid_word(*word.best_choice) && case_ok(*word.best_choice)) {
+    WordSize = LengthOfShortestAlphaRun(*word.best_choice);
     WordSize -= stopper_smallword_size;
-    if (WordSize < 0) {
-      WordSize = 0;
+    if (WordSize > 0) {
+      CertaintyThreshold += WordSize * stopper_certainty_per_char;
     }
-    CertaintyThreshold += WordSize * stopper_certainty_per_char;
   }
 
   if (stopper_debug_level >= 1) {
-    tprintDebug("Rejecter: Certainty = {}, Threshold = {}   ", word->best_choice->certainty(),
+    tprintDebug("Rejecter: Certainty = {}, Threshold = {}   ", word.best_choice->certainty(),
             CertaintyThreshold);
   }
 
-  if (word->best_choice->certainty() > CertaintyThreshold && !stopper_no_acceptable_choices) {
+  if (word.best_choice->certainty() > CertaintyThreshold) {
     if (stopper_debug_level >= 1) {
       tprintDebug("ACCEPTED\n");
     }
@@ -465,7 +468,7 @@ int Dict::LengthOfShortestAlphaRun(const WERD_CHOICE &WordChoice) const {
   return shortest;
 }
 
-int Dict::UniformCertainties(const WERD_CHOICE &word) {
+bool Dict::UniformCertainties(const WERD_CHOICE &word) {
   float Certainty;
   float WorstCertainty = FLT_MAX;
   float CertaintyThreshold;
