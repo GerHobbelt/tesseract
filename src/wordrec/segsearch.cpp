@@ -111,6 +111,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
       InitBlamerForSegSearch(word_res, &pain_points, blamer_bundle, blamer_debug);
     }
   } // end while loop exploring alternative paths
+
   if (blamer_bundle != nullptr) {
     blamer_bundle->FinishSegSearch(word_res->best_choice, wordrec_debug_blamer, blamer_debug);
   }
