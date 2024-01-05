@@ -1183,7 +1183,7 @@ private:
   // have a temporary debug config file loaded, and backup_config_file_
   // will be loaded, and set to null when debug is complete.
   const char *backup_config_file_;
-  // The filename of a config file to read when processing a debug word.
+  // The filename of a config file to read when processing a debug word via Tesseract::debug_word().
   std::string word_config_;
   // Image used for input to layout analysis and tesseract recognition.
   // May be modified by the ShiroRekhaSplitter to eliminate the top-line.
