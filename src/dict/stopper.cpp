@@ -238,7 +238,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
                                           getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                                           leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintDebug("fixpt+=({} {} {} {} {})\n", blob_index, blob_index + num_wrong_blobs, false,
+              tprintDebug("fixpt+=({} {} {} {} {})\n", blob_index, blob_index + num_wrong_blobs, replace,
                       getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                       getUnicharset().id_to_unichar(leftmost_id));
             }
