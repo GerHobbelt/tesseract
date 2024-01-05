@@ -341,7 +341,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       }
       word->reject_map.initialise(word->best_choice->length());
       word->tess_failed = false;
-      word->tess_accepted = true;
+      word->tess_accepted = false;
       word->tess_would_adapt = false;
       word->done = true;
       word->tesseract = this;
@@ -353,9 +353,11 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
                 corrected_word_certainty, corrected_word_certainty);
         word->best_choice->print();
       }
-      /* word->best_choice->set_certainty(corrected_word_certainty); */
 
-      word->tess_accepted = stopper_dict->AcceptableResult(word);
+      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
+      word->best_choice->set_certainty(corrected_word_certainty);
+
+      word->tess_accepted = stopper_dict->AcceptableResult(*word);
     }
   }
 }

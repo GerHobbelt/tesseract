@@ -843,7 +843,7 @@ void fixspace_dbg(WERD_RES *word) {
     }
   }
 
-  tprintDebug("Tess Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
+  tprintDebug("Word Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
   tprintDebug("Done flag: {}\n\n", word->done ? "TRUE" : "FALSE");
 }
 
