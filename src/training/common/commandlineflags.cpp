@@ -19,47 +19,6 @@
 
 namespace tesseract {
 
-static bool IntFlagExists(const char *flag_name, int32_t *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  IntParam *p = ParamUtils::FindParam<IntParam>(full_flag_name);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = (int32_t)(*p);
-  return true;
-}
-
-static bool DoubleFlagExists(const char *flag_name, double *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = static_cast<double>(*p);
-  return true;
-}
-
-static bool BoolFlagExists(const char *flag_name, bool *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  BoolParam *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = bool(*p);
-  return true;
-}
-
-static bool StringFlagExists(const char *flag_name, const char **value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  StringParam *p = ParamUtils::FindParam<StringParam>(full_flag_name);
-  *value = (p != nullptr) ? p->c_str() : nullptr;
-  return p != nullptr;
-}
-
 static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
