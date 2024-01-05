@@ -358,7 +358,7 @@ protected:
   DawgPositionVector beginning_active_dawgs_;
   // Set to true if acceptable choice was discovered.
   // Note: it would be nice to use this to terminate the search once an
-  // acceptable choices is found. However we do not do that and once an
+  // acceptable choice is found. However we do not do that and once an
   // acceptable choice is found we finish looking for alternative choices
   // in the current segmentation graph and then exit the search (no more
   // classifications are done after an acceptable choice is found).
