@@ -394,26 +394,19 @@ bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
+  return ParamUtils::SetParam(name, value, tesseract_->params_collective());
 }
+
 bool TessBaseAPI::SetVariable(const char *name, int value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
-  std::string v = fmt::format("{}", value);
-  return ParamUtils::SetParam(name, v.c_str(), SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
-}
-
-bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
-  if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
-  }
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_DEBUG_ONLY, tesseract_->params());
+  return ParamUtils::SetParam(name, v, tesseract_->params_collective());
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
   IntParam *p;
-  p = ParamUtils::FindParam<IntParam>(p, name, tesseract_->params());
+  p = ParamUtils::FindParam<IntParam>(p, name, tesseract_->params_collective());
   if (!p) {
     return false;
   }
@@ -423,7 +416,7 @@ bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
   BoolParam *p;
-  p = ParamUtils::FindParam(p, name, tesseract_->params());
+  p = ParamUtils::FindParam(name, tesseract_->params());
   if (!p) {
     return false;
   }
@@ -433,7 +426,7 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
   StringParam *p;
-  p = ParamUtils::FindParam(p, name, GlobalParams(), tesseract_->params());
+  p = ParamUtils::FindParam(name, GlobalParams(), tesseract_->params());
   if (!p) {
     return false;
   }
@@ -442,7 +435,7 @@ const char *TessBaseAPI::GetStringVariable(const char *name) const {
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
   DoubleParam *p;
-  p = ParamUtils::FindParam(p, name, GlobalParams(), tesseract_->params());
+  p = ParamUtils::FindParam(name, GlobalParams(), tesseract_->params());
   if (!p) {
     return false;
   }
@@ -517,7 +510,7 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 // answering the question:
 // "Which of all those parameters are actually *relevant* to my use case today?"
 void TessBaseAPI::ReportParamsUsageStatistics() const {
-	tesseract::ParamsVectors *vec = tesseract_->params_collective();
+	tesseract::ParamsVectorSet *vec = tesseract_->params_collective();
     std::string fpath = tesseract::vars_report_file;
     ReportFile f(fpath);
     ParamUtils::ReportParamsUsageStatistics(f(), vec, nullptr);

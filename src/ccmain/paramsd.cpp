@@ -28,7 +28,7 @@
 
 #include <tesseract/debugheap.h>
 
-#  include "params.h" // for ParamsVectors, StringParam, BoolParam
+#  include "params.h" // for ParamsVectorSet, StringParam, BoolParam
 #  include "paramsd.h"
 #  include "scrollview.h"     // for SVEvent, ScrollView, SVET_POPUP
 #  include "svmnode.h"        // for SVMenuNode
@@ -65,7 +65,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 ParamContent::ParamContent(tesseract::StringParam *it) {
   my_id_ = nrParams;
   nrParams++;
-  param_type_ = VT_STRING;
+  param_type_ = STRING_PARAM;
   sIt = it;
   vcMap[my_id_] = this;
 }
@@ -73,7 +73,7 @@ ParamContent::ParamContent(tesseract::StringParam *it) {
 ParamContent::ParamContent(tesseract::IntParam *it) {
   my_id_ = nrParams;
   nrParams++;
-  param_type_ = VT_INTEGER;
+  param_type_ = INT_PARAM;
   iIt = it;
   vcMap[my_id_] = this;
 }
@@ -81,7 +81,7 @@ ParamContent::ParamContent(tesseract::IntParam *it) {
 ParamContent::ParamContent(tesseract::BoolParam *it) {
   my_id_ = nrParams;
   nrParams++;
-  param_type_ = VT_BOOLEAN;
+  param_type_ = BOOL_PARAM;
   bIt = it;
   vcMap[my_id_] = this;
 }
@@ -89,7 +89,7 @@ ParamContent::ParamContent(tesseract::BoolParam *it) {
 ParamContent::ParamContent(tesseract::DoubleParam *it) {
   my_id_ = nrParams;
   nrParams++;
-  param_type_ = VT_DOUBLE;
+  param_type_ = DOUBLE_PARAM;
   dIt = it;
   vcMap[my_id_] = this;
 }
@@ -120,13 +120,13 @@ static void GetFirstWords(const char *s, // source string
 
 // Getter for the name.
 const char *ParamContent::GetName() const {
-  if (param_type_ == VT_INTEGER) {
+  if (param_type_ == INT_PARAM) {
     return iIt->name_str();
-  } else if (param_type_ == VT_BOOLEAN) {
+  } else if (param_type_ == BOOL_PARAM) {
     return bIt->name_str();
-  } else if (param_type_ == VT_DOUBLE) {
+  } else if (param_type_ == DOUBLE_PARAM) {
     return dIt->name_str();
-  } else if (param_type_ == VT_STRING) {
+  } else if (param_type_ == STRING_PARAM) {
     return sIt->name_str();
   } else {
     return "ERROR: ParamContent::GetName()";
@@ -135,13 +135,13 @@ const char *ParamContent::GetName() const {
 
 // Getter for the description.
 const char *ParamContent::GetDescription() const {
-  if (param_type_ == VT_INTEGER) {
+  if (param_type_ == INT_PARAM) {
     return iIt->info_str();
-  } else if (param_type_ == VT_BOOLEAN) {
+  } else if (param_type_ == BOOL_PARAM) {
     return bIt->info_str();
-  } else if (param_type_ == VT_DOUBLE) {
+  } else if (param_type_ == DOUBLE_PARAM) {
     return dIt->info_str();
-  } else if (param_type_ == VT_STRING) {
+  } else if (param_type_ == STRING_PARAM) {
     return sIt->info_str();
   } else {
     return nullptr;
@@ -151,13 +151,13 @@ const char *ParamContent::GetDescription() const {
 // Getter for the value.
 std::string ParamContent::GetValue() const {
   std::string result;
-  if (param_type_ == VT_INTEGER) {
+  if (param_type_ == INT_PARAM) {
     result += std::to_string(*iIt);
-  } else if (param_type_ == VT_BOOLEAN) {
+  } else if (param_type_ == BOOL_PARAM) {
     result += std::to_string(*bIt);
-  } else if (param_type_ == VT_DOUBLE) {
+  } else if (param_type_ == DOUBLE_PARAM) {
     result += std::to_string(*dIt);
-  } else if (param_type_ == VT_STRING) {
+  } else if (param_type_ == STRING_PARAM) {
     result = sIt->c_str();
   }
   return result;
@@ -168,18 +168,18 @@ void ParamContent::SetValue(const char *val) {
   // TODO (wanke) Test if the values actually are properly converted.
   // (Quickly visible impacts?)
   changed_ = true;
-  if (param_type_ == VT_INTEGER) {
+  if (param_type_ == INT_PARAM) {
     iIt->set_value(atoi(val));
-  } else if (param_type_ == VT_BOOLEAN) {
+  } else if (param_type_ == BOOL_PARAM) {
     bIt->set_value(atoi(val));
-  } else if (param_type_ == VT_DOUBLE) {
+  } else if (param_type_ == DOUBLE_PARAM) {
     std::stringstream stream(val);
     // Use "C" locale for reading double value.
     stream.imbue(std::locale::classic());
     double d = 0;
     stream >> d;
     dIt->set_value(d);
-  } else if (param_type_ == VT_STRING) {
+  } else if (param_type_ == STRING_PARAM) {
     sIt->set_value(val);
   }
 }
@@ -214,21 +214,9 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
   std::map<const char *, int> amount;
 
   // Add all parameters to a list.
-  int num_iterations = (tess->params() == nullptr) ? 1 : 2;
-  for (int v = 0; v < num_iterations; ++v) {
-    tesseract::ParamsVectors *vec = (v == 0) ? GlobalParams() : tess->params();
-    for (auto &param : vec->int_params()) {
-      vc_it.add_after_then_move(new ParamContent(param));
-    }
-    for (auto &param : vec->bool_params()) {
-      vc_it.add_after_then_move(new ParamContent(param));
-    }
-    for (auto &param : vec->string_params()) {
-      vc_it.add_after_then_move(new ParamContent(param));
-    }
-    for (auto &param : vec->double_params()) {
-      vc_it.add_after_then_move(new ParamContent(param));
-    }
+  tesseract::ParamsVectorSet vec({ GlobalParams(), tess->params() });
+  for (auto &param : vec.as_list()) {
+    vc_it.add_after_then_move(new ParamContent(param));
   }
 
   // Count the # of entries starting with a specific prefix.

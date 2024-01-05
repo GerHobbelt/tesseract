@@ -722,7 +722,7 @@ namespace tesseract {
 
       fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html());
       
-      tesseract::ParamsVectors *vec = tesseract_->params();
+      tesseract::ParamsVectorSet &vec = tesseract_->params();
       ParamUtils::ReportParamsUsageStatistics(html(), vec, nullptr);
 
       fputs("</pre>\n</body>\n</html>\n", html());
@@ -740,7 +740,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      tesseract::ParamsVectors *vec = tesseract_->params();
+      tesseract::ParamsVectorSet &vec = tesseract_->params();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, title);
     }
   }

@@ -41,8 +41,7 @@ ResultIterator::ResultIterator(const LTRResultIterator &resit) : LTRResultIterat
   at_beginning_of_minor_run_ = false;
   preserve_interword_spaces_ = false;
 
-  auto *p = ParamUtils::FindParam<BoolParam>(
-      "preserve_interword_spaces", GlobalParams()->bool_params_c(), tesseract_->params()->bool_params_c());
+  auto *p = ParamUtils::FindParam<BoolParam>("preserve_interword_spaces", GlobalParams(), tesseract_->params());
   if (p != nullptr) {
     preserve_interword_spaces_ = (bool)(*p);
   }

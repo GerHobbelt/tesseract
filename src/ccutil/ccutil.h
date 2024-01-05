@@ -54,8 +54,8 @@ public:
     return params_;
   }
 
-  ParamsVectors *params_collective() {
-	  return nullptr;
+  ParamsVectorSet &params_collective() {
+    return params_collective_;
   }
 
   std::string input_file_path; // name of currently processed input file
@@ -72,6 +72,7 @@ public:
 
 private:
   ParamsVector params_;
+  ParamsVectorSet params_collective_;
 
 public:
   // Member parameters.

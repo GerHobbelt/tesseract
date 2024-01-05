@@ -18,11 +18,11 @@
 #include "tprintf.h" // for tprintf
 
 namespace tesseract {
+
 static bool IntFlagExists(const char *flag_name, int32_t *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<IntParam *> empty;
-  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -33,8 +33,7 @@ static bool IntFlagExists(const char *flag_name, int32_t *value) {
 static bool DoubleFlagExists(const char *flag_name, double *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -45,8 +44,7 @@ static bool DoubleFlagExists(const char *flag_name, double *value) {
 static bool BoolFlagExists(const char *flag_name, bool *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<BoolParam *> empty;
-  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -57,8 +55,7 @@ static bool BoolFlagExists(const char *flag_name, bool *value) {
 static bool StringFlagExists(const char *flag_name, const char **value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name);
   *value = (p != nullptr) ? p->c_str() : nullptr;
   return p != nullptr;
 }
@@ -66,8 +63,7 @@ static bool StringFlagExists(const char *flag_name, const char **value) {
 static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<IntParam *> empty;
-  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -75,8 +71,7 @@ static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
 static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -84,9 +79,7 @@ static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
 static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<BoolParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -94,10 +87,9 @@ static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
 static void SetStringFlagValue(const char *flag_name, const char *new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str());
+  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
-  p->set_value(std::string(new_val));
+  p->set_value(new_val);
 }
 
 static bool SafeAtoi(const char *str, int *val) {
@@ -123,13 +115,13 @@ static bool SafeAtod(const char *str, double *val) {
 static void PrintCommandLineFlags() {
   const char *kFlagNamePrefix = "FLAGS_";
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
-  for (Param &param : GlobalParams()) {
-    if (!strncmp(param.name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
+  for (ParamPtr param : GlobalParams().as_list()) {
+    if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
       tprintDebug("  --{}  {}  (type:{} default:{})\n",
-             param.name_str() + kFlagNamePrefixLen,
-             param.info_str(), 
-     	  param.value_type_str(),
-		  param.formatted_value_str());
+        param->name_str() + kFlagNamePrefixLen,
+        param->info_str(), 
+        param->value_type_str(),
+		param->formatted_value_str());
     }
   }
 }
@@ -194,9 +186,15 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
 	}
 
     // Find the flag name in the list of global flags.
+    std::string full_flag_name("FLAGS_");
+    full_flag_name += lhs;
+    auto *p = ParamUtils::FindParam<Param>(full_flag_name, GlobalParams());
+    if (p == nullptr) {
+      continue;
+    }
+
     // int32_t flag
     int32_t int_val;
-    if (IntFlagExists(lhs.c_str(), &int_val)) {
       if (rhs != nullptr) {
         if (!strlen(rhs)) {
           // Bad input of the format --int_flag=
@@ -210,7 +208,7 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
-          tprintError("Could not find value argument for flag {}\n", lhs.c_str());
+          tprintError("Could not find value argument for flag {}\n", lhs);
           return 1;
         } else {
           ++i;
@@ -220,13 +218,12 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
           }
         }
       }
-      SetIntFlagValue(lhs.c_str(), int_val);
+      SetIntFlagValue(lhs, int_val);
       continue;
-    }
 
     // double flag
     double double_val;
-    if (DoubleFlagExists(lhs.c_str(), &double_val)) {
+    if (DoubleFlagExists(lhs, &double_val)) {
       if (rhs != nullptr) {
         if (!strlen(rhs)) {
           // Bad input of the format --double_flag=
@@ -240,7 +237,7 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
-          tprintError("Could not find value argument for flag {}\n", lhs.c_str());
+          tprintError("Could not find value argument for flag {}\n", lhs);
           return 1;
         } else {
           ++i;
@@ -250,14 +247,14 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
           }
         }
       }
-      SetDoubleFlagValue(lhs.c_str(), double_val);
+      SetDoubleFlagValue(lhs, double_val);
       continue;
     }
 
     // Bool flag. Allow input forms --flag (equivalent to --flag=true),
     // --flag=false, --flag=true, --flag=0 and --flag=1
     bool bool_val;
-    if (BoolFlagExists(lhs.c_str(), &bool_val)) {
+    if (BoolFlagExists(lhs, &bool_val)) {
       if (rhs == nullptr) {
         // --flag form
         bool_val = true;
@@ -276,25 +273,25 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
           return 1;
         }
       }
-      SetBoolFlagValue(lhs.c_str(), bool_val);
+      SetBoolFlagValue(lhs, bool_val);
       continue;
     }
 
     // string flag
     const char *string_val;
-    if (StringFlagExists(lhs.c_str(), &string_val)) {
+    if (StringFlagExists(lhs, &string_val)) {
       if (rhs != nullptr) {
         string_val = rhs;
       } else {
         // Pick the next argument
         if (i + 1 >= *argc) {
-          tprintError("Could not find string value for flag {}\n", lhs.c_str());
+          tprintError("Could not find string value for flag {}\n", lhs);
           return 1;
         } else {
           string_val = (*argv)[++i];
         }
       }
-      SetStringFlagValue(lhs.c_str(), string_val);
+      SetStringFlagValue(lhs, string_val);
       continue;
     }
 

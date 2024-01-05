@@ -508,6 +508,16 @@ public:
   // best raw choice, and undoing all the work done to fake out the word.
   float ClassifyBlobAsWord(int pass_n, PAGE_RES_IT *pr_it, C_BLOB *blob, std::string &best_str,
                            float *c2);
+  // Generic function for classifying a word. Can be used either for pass1 or
+  // pass2 according to the function passed to recognizer.
+  // word_data holds the word to be recognized, and its block and row, and
+  // pr_it points to the word as well, in case we are running LSTM and it wants
+  // to output multiple words.
+  // Recognizes in the current language, and if successful (a.k.a. accepted) that is all.
+  // If recognition was not successful, tries all available languages until
+  // it gets a successful result or runs out of languages. Keeps the best result,
+  // where "best" is defined as: the first language that producs an *acceptable* result
+  // (as determined by Dict::AcceptableResult() et al).
   void classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordData *word_data);
   void classify_word_pass1(const WordData &word_data, WERD_RES **in_word,
                            PointerVector<WERD_RES> *out_words);
@@ -564,10 +574,12 @@ public:
   int16_t count_alphanums(const WERD_CHOICE &word);
   int16_t count_alphas(const WERD_CHOICE &word);
 
-  void read_config_file(const char *filename, SetParamConstraint constraint);
+  void read_config_file(const char *filename);
+
   // Initialize for potentially a set of languages defined by the language
   // string and recursively any additional languages required by any language
   // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
+  // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
                      const std::string &language, OcrEngineMode oem, 

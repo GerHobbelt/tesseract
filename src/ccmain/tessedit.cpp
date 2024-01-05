@@ -43,7 +43,7 @@ namespace tesseract {
 // Read a "config" file containing a set of variable, value pairs.
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
-void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
+void Tesseract::read_config_file(const char *filename) {
   if (filename || !*filename) {
     tprintError("empty config filename specified. No config loaded.\n");
     return;
@@ -75,7 +75,7 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
       }
     }
   }
-  ParamUtils::ReadParamsFile(path.c_str(), constraint, this->params());
+  ParamUtils::ReadParamsFile(path.c_str(), this->params());
 }
 
 // Returns false if a unicharset file for the specified language was not found
@@ -130,17 +130,14 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, SET_PARAM_CONSTRAINT_NONE, this->params());
+    ParamUtils::ReadParamsFromFp(&fp, this->params());
   }
-
-  SetParamConstraint set_params_constraint =
-      set_only_non_debug_params ? SET_PARAM_CONSTRAINT_NON_DEBUG_ONLY : SET_PARAM_CONSTRAINT_NONE;
 
   // Load tesseract variables from config files. This is done after loading
   // language-specific variables from [lang].traineddata file, so that custom
   // config files can override values in [lang].traineddata file.
   for (int i = 0; i < configs.size(); ++i) {
-    read_config_file(configs[i].c_str(), set_params_constraint);
+    read_config_file(configs[i].c_str());
   }
 
   // Set params specified in vars_vec (done after setting params from config
@@ -150,8 +147,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
 	return false;
   }
   for (unsigned i = 0; i < vars_vec.size(); ++i) {
-    if (!ParamUtils::SetParam(vars_vec[i].c_str(), vars_values[i].c_str(),
-                              set_params_constraint, this->params())) {
+    if (!ParamUtils::SetParam(vars_vec[i].c_str(), vars_values[i].c_str(), this->params())) {
       tprintWarn("The parameter '{}' was not found.\n", vars_vec[i].c_str());
     }
   }
@@ -189,8 +185,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       // lstm_recognizer_->CopyDebugParameters(this, &getDict());
       // lstm_recognizer_->SetDebug(tess_debug_lstm);
       
-      ASSERT_HOST(lstm_recognizer_->Load(this->params(),
-                                         lstm_use_matrix ? language : "", mgr));
+      ASSERT_HOST(lstm_recognizer_->Load(this->params(), lstm_use_matrix ? language : "", mgr));
 	  // TODO: ConvertToInt optional extra
     } else {
       tprintError("LSTM requested, but not present!! Loading tesseract.\n");
