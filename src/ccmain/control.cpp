@@ -111,6 +111,7 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
 //   return true.
 // else
 //   If the word_box and target_word_box overlap or pass <= 1, return true.
+// 
 // Note that this function uses a fixed temporary file for storing the previous
 // configs, so it is neither thread-safe, nor process-safe, but the assumption
 // is that it will only be used for one debug window at a time.
@@ -127,14 +128,14 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
         if (config_fp == nullptr) {
           tprintError("Failed to open file \"{}\"\n", backup_config_file_);
         } else {
-          ParamUtils::PrintParams(config_fp, params(), false);
+          ParamUtils::PrintParams(config_fp, params_collective(), false);
           fclose(config_fp);
         }
-        ParamUtils::ReadParamsFile(word_config, params());
+        ParamUtils::ReadParamsFile(word_config, params_collective());
       }
     } else {
       if (backup_config_file_ != nullptr) {
-        ParamUtils::ReadParamsFile(backup_config_file_, params());
+        ParamUtils::ReadParamsFile(backup_config_file_, params_collective());
         backup_config_file_ = nullptr;
       }
     }
@@ -1825,7 +1826,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     tprintDebug("\n\nTESTWD:: ");
     switch (location) {
       default:
-        assert("Should never get here!" == nullptr);
+        ASSERT0("Should never get here!" == nullptr);
       case 0:
         tprintDebug("classify_word_pass1 start\n");
         word->word->print();
@@ -1883,7 +1884,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     } else {
       tprintDebug("(null best choice)\n");
     }
-    tprintDebug("Tess Accepted: {}\n", word->tess_accepted);
+    tprintDebug("Word Accepted: {}\n", word->tess_accepted);
     tprintDebug("Done flag: {}\n\n", word->done);
     return true;
   } else {
@@ -1891,12 +1892,13 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
   }
 }
 
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * find_modal_font
  *
  * Find the modal font and remove from the stats.
  */
-#if !DISABLED_LEGACY_ENGINE
 static void find_modal_font( // good chars in word
     STATS *fonts,            // font stats
     int16_t *font_out,       // output font
@@ -1916,6 +1918,7 @@ static void find_modal_font( // good chars in word
     *font_count = 0;
   }
 }
+
 #endif // !DISABLED_LEGACY_ENGINE
 
 /**
@@ -2006,6 +2009,7 @@ void Tesseract::set_word_fonts(WERD_RES *word) {
 }
 
 #if !DISABLED_LEGACY_ENGINE
+
 /**
  * font_recognition_pass
  *

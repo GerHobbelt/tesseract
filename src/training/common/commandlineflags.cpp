@@ -22,7 +22,7 @@ namespace tesseract {
 static bool IntFlagExists(const char *flag_name, int32_t *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name);
+  IntParam *p = ParamUtils::FindParam<IntParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -33,7 +33,7 @@ static bool IntFlagExists(const char *flag_name, int32_t *value) {
 static bool DoubleFlagExists(const char *flag_name, double *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
+  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -44,7 +44,7 @@ static bool DoubleFlagExists(const char *flag_name, double *value) {
 static bool BoolFlagExists(const char *flag_name, bool *value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
+  BoolParam *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
   if (p == nullptr) {
     return false;
   }
@@ -55,7 +55,7 @@ static bool BoolFlagExists(const char *flag_name, bool *value) {
 static bool StringFlagExists(const char *flag_name, const char **value) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name);
+  StringParam *p = ParamUtils::FindParam<StringParam>(full_flag_name);
   *value = (p != nullptr) ? p->c_str() : nullptr;
   return p != nullptr;
 }
@@ -63,7 +63,7 @@ static bool StringFlagExists(const char *flag_name, const char **value) {
 static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<IntParam>(full_flag_name);
+  IntParam *p = ParamUtils::FindParam<IntParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -71,7 +71,7 @@ static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
 static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
+  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -79,7 +79,7 @@ static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
 static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
+  BoolParam *p = ParamUtils::FindParam<BoolParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }
@@ -87,7 +87,7 @@ static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
 static void SetStringFlagValue(const char *flag_name, const char *new_val) {
   std::string full_flag_name("FLAGS_");
   full_flag_name += flag_name;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name);
+  StringParam *p = ParamUtils::FindParam<StringParam>(full_flag_name);
   ASSERT_HOST(p != nullptr);
   p->set_value(new_val);
 }

@@ -62,35 +62,12 @@ static int writeCommands[2];
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Constructors for the various ParamTypes.
-ParamContent::ParamContent(tesseract::StringParam *it) {
+ParamContent::ParamContent(tesseract::Param *it) {
+  ASSERT0(it != nullptr);
   my_id_ = nrParams;
   nrParams++;
-  param_type_ = STRING_PARAM;
-  sIt = it;
-  vcMap[my_id_] = this;
-}
-// Constructors for the various ParamTypes.
-ParamContent::ParamContent(tesseract::IntParam *it) {
-  my_id_ = nrParams;
-  nrParams++;
-  param_type_ = INT_PARAM;
-  iIt = it;
-  vcMap[my_id_] = this;
-}
-// Constructors for the various ParamTypes.
-ParamContent::ParamContent(tesseract::BoolParam *it) {
-  my_id_ = nrParams;
-  nrParams++;
-  param_type_ = BOOL_PARAM;
-  bIt = it;
-  vcMap[my_id_] = this;
-}
-// Constructors for the various ParamTypes.
-ParamContent::ParamContent(tesseract::DoubleParam *it) {
-  my_id_ = nrParams;
-  nrParams++;
-  param_type_ = DOUBLE_PARAM;
-  dIt = it;
+  param_type_ = it->type();
+  it_ = it;
   vcMap[my_id_] = this;
 }
 

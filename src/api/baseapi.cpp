@@ -401,12 +401,11 @@ bool TessBaseAPI::SetVariable(const char *name, int value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
   }
-  return ParamUtils::SetParam(name, v, tesseract_->params_collective());
+  return ParamUtils::SetParam(name, value, tesseract_->params_collective());
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
-  IntParam *p;
-  p = ParamUtils::FindParam<IntParam>(p, name, tesseract_->params_collective());
+  IntParam *p = ParamUtils::FindParam<IntParam>(name, tesseract_->params_collective());
   if (!p) {
     return false;
   }
@@ -415,8 +414,7 @@ bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
 }
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
-  BoolParam *p;
-  p = ParamUtils::FindParam(name, tesseract_->params());
+  BoolParam *p = ParamUtils::FindParam<BoolParam>(name, tesseract_->params_collective());
   if (!p) {
     return false;
   }
@@ -425,8 +423,7 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 }
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
-  StringParam *p;
-  p = ParamUtils::FindParam(name, GlobalParams(), tesseract_->params());
+  StringParam *p = ParamUtils::FindParam<StringParam>(name, tesseract_->params_collective());
   if (!p) {
     return false;
   }
@@ -434,8 +431,7 @@ const char *TessBaseAPI::GetStringVariable(const char *name) const {
 }
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
-  DoubleParam *p;
-  p = ParamUtils::FindParam(name, GlobalParams(), tesseract_->params());
+  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(name, tesseract_->params_collective());
   if (!p) {
     return false;
   }
@@ -703,12 +699,12 @@ void TessBaseAPI::InitForAnalysePage() {
  * and also accepts a relative or absolute path name.
  */
 void TessBaseAPI::ReadConfigFile(const char *filename) {
-  tesseract_->read_config_file(filename, SET_PARAM_CONSTRAINT_NON_INIT_ONLY);
+  tesseract_->read_config_file(filename);
 }
 
 /** Same as above, but only set debug params from the given config file. */
 void TessBaseAPI::ReadDebugConfigFile(const char *filename) {
-  tesseract_->read_config_file(filename, SET_PARAM_CONSTRAINT_DEBUG_ONLY);
+  tesseract_->read_config_file(filename);
 }
 
 /**
