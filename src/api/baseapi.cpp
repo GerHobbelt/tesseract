@@ -280,7 +280,7 @@ bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract;
   }
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY,
+  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NONE,
                               tesseract_->params());
 }
 
