@@ -222,8 +222,8 @@ public:
     return null_char_;
   }
 
-  // Loads a model from mgr, including the dictionary only if lang is not null.
-  bool Load(const ParamsVectorSet *params, const std::string &lang, TessdataManager *mgr);
+  // Loads a model from mgr, including the dictionary only if lang is not empty.
+  bool Load(const ParamsVectorSet &params, const std::string &lang, TessdataManager *mgr);
 
   // Writes to the given file. Returns false in case of error.
   // If mgr contains a unicharset and recoder, then they are not encoded to fp.
@@ -245,7 +245,10 @@ public:
   // on the unicharset matching. This enables training to deserialize a model
   // from checkpoint or restore without having to go back and reload the
   // dictionary.
-  bool LoadDictionary(const ParamsVectorSet *params, const std::string &lang, TessdataManager *mgr);
+  //
+  // The dictionary will be reconfigured (reset) from the source_params
+  // config set.
+  bool LoadDictionary(const ParamsVectorSet &source_params, const std::string &lang, TessdataManager *mgr);
 
   // Recognizes the line image, contained within image_data, returning the
   // recognized tesseract WERD_RES for the words.

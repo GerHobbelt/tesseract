@@ -69,97 +69,97 @@ using namespace tesseract;
 const int kRandomSeed = 0x18273645;
 
 // The text input file.
-static STRING_PARAM_FLAG(text, "", "File name of text input to process");
+STRING_PARAM_FLAG(text, "", "File name of text input to process");
 
 // The text output file.
-static STRING_PARAM_FLAG(outputbase, "", "Basename for output image/box file");
+STRING_PARAM_FLAG(outputbase, "", "Basename for output image/box file");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(create_boxfiles, true, "Create box files.");
+BOOL_PARAM_FLAG(create_boxfiles, true, "Create box files.");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(create_page, false, "Create Page XML files (automatically deactivates multipage).");
+BOOL_PARAM_FLAG(create_page, false, "Create Page XML files (automatically deactivates multipage).");
 
 // Create multipage outputformats 
-static BOOL_PARAM_FLAG(multipage, true, "Creates multipage output.");
+BOOL_PARAM_FLAG(multipage, true, "Creates multipage output.");
 
 // Degrade the rendered image to mimic scanner quality.
-static BOOL_PARAM_FLAG(degrade_image, true,
+BOOL_PARAM_FLAG(degrade_image, true,
                        "Degrade rendered image with speckle noise, dilation/erosion "
                        "and rotation");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(rotate_image, true, "Rotate the image in a random way.");
+BOOL_PARAM_FLAG(rotate_image, true, "Rotate the image in a random way.");
 
 // Degradation to apply to the image.
-static INT_PARAM_FLAG(exposure, 0, "Exposure level in photocopier");
+INT_PARAM_FLAG(exposure, 0, "Exposure level in photocopier");
 
 // Distort the rendered image by various means according to the bool flags.
-static BOOL_PARAM_FLAG(distort_image, false, "Degrade rendered image with noise, blur, invert.");
+BOOL_PARAM_FLAG(distort_image, false, "Degrade rendered image with noise, blur, invert.");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(invert, true, "Invert the image");
+BOOL_PARAM_FLAG(invert, true, "Invert the image");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(white_noise, true, "Add  Gaussian Noise");
+BOOL_PARAM_FLAG(white_noise, true, "Add  Gaussian Noise");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
+BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(blur, true, "Blur the image");
+BOOL_PARAM_FLAG(blur, true, "Blur the image");
 
 // Render PNG instead of TIF.
-static BOOL_PARAM_FLAG(output_png, false, "Render PNG instead of TIF");
+BOOL_PARAM_FLAG(output_png, false, "Render PNG instead of TIF");
 
 // Render grayscale instead of binarized image.
-static BOOL_PARAM_FLAG(grayscale, false, "Render grayscale instead of binarized image");
+BOOL_PARAM_FLAG(grayscale, false, "Render grayscale instead of binarized image");
 
 #if 0
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(perspective, false, "Generate Perspective Distortion");
+BOOL_PARAM_FLAG(perspective, false, "Generate Perspective Distortion");
 
 // Distortion to apply to the image.
-static INT_PARAM_FLAG(box_reduction, 0, "Integer reduction factor box_scale");
+INT_PARAM_FLAG(box_reduction, 0, "Integer reduction factor box_scale");
 
 #endif
 
 // Output image resolution.
-static INT_PARAM_FLAG(resolution, 300, "Pixels per inch");
+INT_PARAM_FLAG(resolution, 300, "Pixels per inch");
 
 // Width of output image (in pixels).
-static INT_PARAM_FLAG(xsize, 3600, "Width of output image");
+INT_PARAM_FLAG(xsize, 3600, "Width of output image");
 
 // Max height of output image (in pixels).
-static INT_PARAM_FLAG(ysize, 4800, "Height of output image");
+INT_PARAM_FLAG(ysize, 4800, "Height of output image");
 
 // Max number of pages to produce.
-static INT_PARAM_FLAG(max_pages, 0, "Maximum number of pages to output (0=unlimited)");
+INT_PARAM_FLAG(max_pages, 0, "Maximum number of pages to output (0=unlimited)");
 
 // Margin around text (in pixels).
-static INT_PARAM_FLAG(margin, 100, "Margin round edges of image");
+INT_PARAM_FLAG(margin, 100, "Margin round edges of image");
 
 // Size of text (in points).
-static INT_PARAM_FLAG(ptsize, 12, "Size of printed text");
+INT_PARAM_FLAG(ptsize, 12, "Size of printed text");
 
 // Inter-character space (in ems).
-static DOUBLE_PARAM_FLAG(char_spacing, 0, "Inter-character space in ems");
+DOUBLE_PARAM_FLAG(char_spacing, 0, "Inter-character space in ems");
 
 // Sets the probability (value in [0, 1]) of starting to render a word with an
 // underline. Words are assumed to be space-delimited.
-static DOUBLE_PARAM_FLAG(underline_start_prob, 0,
+DOUBLE_PARAM_FLAG(underline_start_prob, 0,
                          "Fraction of words to underline (value in [0,1])");
 // Set the probability (value in [0, 1]) of continuing a started underline to
 // the next word.
-static DOUBLE_PARAM_FLAG(underline_continuation_prob, 0,
+DOUBLE_PARAM_FLAG(underline_continuation_prob, 0,
                          "Fraction of words to underline (value in [0,1])");
 
 // Inter-line space (in pixels).
-static INT_PARAM_FLAG(leading, 12, "Inter-line space (in pixels)");
+INT_PARAM_FLAG(leading, 12, "Inter-line space (in pixels)");
 
 // Layout and glyph orientation on rendering.
-static STRING_PARAM_FLAG(writing_mode, "horizontal",
+STRING_PARAM_FLAG(writing_mode, "horizontal",
                          "Specify one of the following writing"
                          " modes.\n"
                          "'horizontal' : Render regular horizontal text. (default)\n"
@@ -168,56 +168,56 @@ static STRING_PARAM_FLAG(writing_mode, "horizontal",
                          "'vertical-upright' : Render vertical text. Glyph "
                          " orientation is set to be upright.");
 
-static INT_PARAM_FLAG(box_padding, 0, "Padding around produced bounding boxes");
+INT_PARAM_FLAG(box_padding, 0, "Padding around produced bounding boxes");
 
-static BOOL_PARAM_FLAG(strip_unrenderable_words, true,
+BOOL_PARAM_FLAG(strip_unrenderable_words, true,
                        "Remove unrenderable words from source text");
 
 // Font name.
-static STRING_PARAM_FLAG(font, "Arial", "Font description name to use");
+STRING_PARAM_FLAG(font, "Arial", "Font description name to use");
 
-static BOOL_PARAM_FLAG(ligatures, false, "Rebuild and render ligatures");
+BOOL_PARAM_FLAG(ligatures, false, "Rebuild and render ligatures");
 
-static BOOL_PARAM_FLAG(find_fonts, false, "Search for all fonts that can render the text");
-static BOOL_PARAM_FLAG(render_per_font, true,
+BOOL_PARAM_FLAG(find_fonts, false, "Search for all fonts that can render the text");
+BOOL_PARAM_FLAG(render_per_font, true,
                        "If find_fonts==true, render each font to its own image. "
                        "Image filenames are of the form output_name.font_name.tif");
-static DOUBLE_PARAM_FLAG(min_coverage, 1.0,
+DOUBLE_PARAM_FLAG(min_coverage, 1.0,
                          "If find_fonts==true, the minimum coverage the font has of "
                          "the characters in the text file to include it, between "
                          "0 and 1.");
 
-static BOOL_PARAM_FLAG(list_available_fonts, false, "List available fonts and quit.");
+BOOL_PARAM_FLAG(list_available_fonts, false, "List available fonts and quit.");
 
-static BOOL_PARAM_FLAG(render_ngrams, false,
+BOOL_PARAM_FLAG(render_ngrams, false,
                        "Put each space-separated entity from the"
                        " input file into one bounding box. The ngrams in the input"
                        " file will be randomly permuted before rendering (so that"
                        " there is sufficient variety of characters on each line).");
 
-static BOOL_PARAM_FLAG(output_word_boxes, false,
+BOOL_PARAM_FLAG(output_word_boxes, false,
                        "Output word bounding boxes instead of character boxes. "
                        "This is used for Cube training, and implied by "
                        "--render_ngrams.");
 
-static STRING_PARAM_FLAG(unicharset_file, "",
+STRING_PARAM_FLAG(unicharset_file, "",
                          "File with characters in the unicharset. If --render_ngrams"
                          " is true and --unicharset_file is specified, ngrams with"
                          " characters that are not in unicharset will be omitted");
 
-static BOOL_PARAM_FLAG(bidirectional_rotation, false, "Rotate the generated characters both ways.");
+BOOL_PARAM_FLAG(bidirectional_rotation, false, "Rotate the generated characters both ways.");
 
-static BOOL_PARAM_FLAG(only_extract_font_properties, false,
+BOOL_PARAM_FLAG(only_extract_font_properties, false,
                        "Assumes that the input file contains a list of ngrams. Renders"
                        " each ngram, extracts spacing properties and records them in"
                        " output_base/[font_name].fontinfo file.");
 
 // Use these flags to output zero-padded, square individual character images
-static BOOL_PARAM_FLAG(output_individual_glyph_images, false,
+BOOL_PARAM_FLAG(output_individual_glyph_images, false,
                        "If true also outputs individual character images");
-static INT_PARAM_FLAG(glyph_resized_size, 0,
+INT_PARAM_FLAG(glyph_resized_size, 0,
                       "Each glyph is square with this side length in pixels");
-static INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
+INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
                       "Final_size=glyph_resized_size+2*glyph_num_border_pixels_to_pad");
 
 namespace tesseract {

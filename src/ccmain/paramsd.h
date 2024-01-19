@@ -37,11 +37,6 @@ class IntParam;
 class StringParam;
 class Tesseract;
 
-#if 0
-// A list of all possible parameter types used.
-enum ParamType { VT_INTEGER, VT_BOOLEAN, VT_STRING, VT_DOUBLE };
-#endif
-
 // A rather hackish helper structure which can take any kind of parameter input
 // (defined by ParamType) and do a couple of common operations on them, like
 // comparison or getting its value. It is used in the context of the
@@ -77,8 +72,6 @@ private:
   int my_id_;
   // Whether the parameter was changed_ and thus needs to be rewritten.
   bool changed_ = false;
-  // The actual ParamType of this VC object.
-  ParamType param_type_;
 
   tesseract::Param *it_;
 };

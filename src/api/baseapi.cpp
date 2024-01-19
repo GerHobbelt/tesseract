@@ -425,7 +425,7 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
   StringParam *p = ParamUtils::FindParam<StringParam>(name, tesseract_->params_collective());
   if (!p) {
-    return false;
+    return nullptr;
   }
   return p->c_str();
 }
@@ -441,7 +441,14 @@ bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
 
 /** Get value of named variable as a string, if it exists. */
 bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const {
-  return ParamUtils::GetParamAsString(name, tesseract_, val);
+  Param *p = ParamUtils::FindParam(name, tesseract_->params_collective());
+  if (p != nullpstr) {
+    if (val != nullptr) {
+      *val = p->raw_value_str();
+    }
+    return true;
+  }
+  return false;
 }
 
 #if !DISABLED_LEGACY_ENGINE

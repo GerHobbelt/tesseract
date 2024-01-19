@@ -21,14 +21,14 @@
 
 #define TST_DECLARE_string(name)                                        \
   namespace TStest {                                                    \
-    extern const char *FLAGS_##name;                                    \
+    extern const char *name;                                            \
   }                                                                     \
-  using TStest::FLAGS_##name
+  using TStest::name
 #define TST_DEFINE_string(name, value, meaning)                         \
   namespace TStest {                                                    \
-    const char *FLAGS_##name = (value);                                 \
+    const char *name = (value);                                         \
   }                                                                     \
-  using TStest::FLAGS_##name
+  using TStest::name
 
 #if defined(BUILD_MONOLITHIC) && !defined(BUILD_MONOLITHIC_SINGLE_INSTANCE_NOW)
 

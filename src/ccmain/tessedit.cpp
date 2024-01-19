@@ -75,7 +75,7 @@ void Tesseract::read_config_file(const char *filename) {
       }
     }
   }
-  ParamUtils::ReadParamsFile(path.c_str(), this->params());
+  ParamUtils::ReadParamsFile(path, this->params_collective());
 }
 
 // Returns false if a unicharset file for the specified language was not found
@@ -185,7 +185,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       // lstm_recognizer_->CopyDebugParameters(this, &getDict());
       // lstm_recognizer_->SetDebug(tess_debug_lstm);
       
-      ASSERT_HOST(lstm_recognizer_->Load(this->params(), lstm_use_matrix ? language : "", mgr));
+      ASSERT_HOST(lstm_recognizer_->Load(this->params_collective(), lstm_use_matrix ? language : "", mgr));
 	  // TODO: ConvertToInt optional extra
     } else {
       tprintError("LSTM requested, but not present!! Loading tesseract.\n");

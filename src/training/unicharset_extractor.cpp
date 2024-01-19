@@ -41,8 +41,8 @@
 
 using namespace tesseract;
 
-static STRING_PARAM_FLAG(output_unicharset, "unicharset", "Output file path");
-static INT_PARAM_FLAG(norm_mode, 1,
+STRING_PARAM_FLAG(output_unicharset, "unicharset", "Output file path");
+INT_PARAM_FLAG(norm_mode, 1,
                       "Normalization mode: 1=Combine graphemes, "
                       "2=Split graphemes, 3=Pure unicode");
 

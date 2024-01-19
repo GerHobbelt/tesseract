@@ -471,8 +471,28 @@ public:
   // Helper to recognize the word using the given (language-specific) tesseract.
   // Returns positive if this recognizer found more new best words than the
   // number kept from best_words.
-  int RetryWithLanguage(const WordData &word_data, WordRecognizer recognizer, bool debug,
+  int RetryWithLanguage(const WordData &word_data, WordRecognizer recognizer,
                         WERD_RES **in_word, PointerVector<WERD_RES> *best_words);
+
+protected:
+  // Helper chooses the best combination of words, transferring good ones from
+  // new_words to best_words. To win, a new word must have (better rating and
+  // certainty) or (better permuter status and rating within rating ratio and
+  // certainty within certainty margin) than current best.
+  // All the new_words are consumed (moved to best_words or deleted.)
+  // The return value is the number of new_words used minus the number of
+  // best_words that remain in the output.
+  int SelectBestWords(double rating_ratio, double certainty_margin,
+                             PointerVector<WERD_RES>* new_words,
+                             PointerVector<WERD_RES>* best_words);
+  // Factored helper computes the rating, certainty, badness and validity of
+  // the permuter of the words in [first_index, end_index).
+  void EvaluateWordSpan(const PointerVector<WERD_RES>& words, unsigned int first_index, unsigned int end_index,
+                               float* rating, float* certainty, bool* bad, bool* valid_permuter);
+  // Helper finds the gap between the index word and the next.
+  void WordGap(const PointerVector<WERD_RES>& words, unsigned int index, TDimension* right, TDimension* next_left);
+
+public:
   // Moves good-looking "noise"/diacritics from the reject list to the main
   // blob list on the current word. Returns true if anything was done, and
   // sets make_next_word_fuzzy if blob(s) were added to the end of the word.
@@ -746,7 +766,7 @@ public:
       WERD_CHOICE *word_choice // after context
   );
   void tess_segment_pass_n(int pass_n, WERD_RES *word);
-  bool tess_acceptable_word(WERD_RES *word);
+  bool tess_acceptable_word(const WERD_RES &word);
 #endif
 
   //// applybox.cpp //////////////////////////////////////////////////////

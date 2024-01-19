@@ -87,8 +87,8 @@ void LSTMRecognizer::Clean() {
   search_ = nullptr;
 }
 
-// Loads a model from mgr, including the dictionary only if lang is not null.
-bool LSTMRecognizer::Load(const ParamsVectorSet *params, const std::string &lang,
+// Loads a model from mgr, including the dictionary only if lang is not empty.
+bool LSTMRecognizer::Load(const ParamsVectorSet &params, const std::string &lang,
                           TessdataManager *mgr) {
   TFile fp;
   if (!mgr->GetComponent(TESSDATA_LSTM, &fp)) {
@@ -237,7 +237,7 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
 // from checkpoint or restore without having to go back and reload the
 // dictionary.
 // Some parameters have to be passed in (from langdata/config/api via Tesseract)
-bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet *params, const std::string &lang,
+bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&ccutil_);

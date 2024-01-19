@@ -101,8 +101,8 @@ FEATURE_DEFS_STRUCT feature_defs;
 static CCUtil *ccutil = nullptr;
 
 INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
-static INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
-static STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
+INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
+STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
 STRING_PARAM_FLAG(D, "", "Directory to write output files to");
 STRING_PARAM_FLAG(F, "font_properties", "File listing font properties");
 STRING_PARAM_FLAG(X, "", "File listing font xheights");
@@ -112,14 +112,14 @@ STRING_PARAM_FLAG(output_trainer, "", "File to write trainer to");
 STRING_PARAM_FLAG(test_ch, "", "UTF8 test character string");
 STRING_PARAM_FLAG(fonts_dir, "", "");
 STRING_PARAM_FLAG(fontconfig_tmpdir, "", "");
-static DOUBLE_PARAM_FLAG(clusterconfig_min_samples_fraction, Config.MinSamples,
+DOUBLE_PARAM_FLAG(clusterconfig_min_samples_fraction, Config.MinSamples,
                          "Min number of samples per proto as % of total");
-static DOUBLE_PARAM_FLAG(clusterconfig_max_illegal, Config.MaxIllegal,
+DOUBLE_PARAM_FLAG(clusterconfig_max_illegal, Config.MaxIllegal,
                          "Max percentage of samples in a cluster which have more"
                          " than 1 feature in that cluster");
-static DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
+DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
                          "Desired independence between dimensions");
-static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
+DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
@@ -157,7 +157,7 @@ int ParseArguments(int *argc, const char ***argv) {
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile, tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
+    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective());
   }
   return rv;
 }

@@ -991,28 +991,18 @@ std::string StringParam::formatted_value_str() const {
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ParamUtils::ReadParamsFile(const char *file,
+bool ParamUtils::ReadParamsFile(const std::string &file,
                                 const ParamsVectorSet &member_params,
-								ParamSetBySourceType source_type,
-								ParamPtr source,
-								bool quietly_ignore
+								                ParamSetBySourceType source_type,
+								                ParamPtr source,
+								                bool quietly_ignore
 ) {
   TFile fp;
-  if (!fp.Open(file, nullptr)) {
+  if (!fp.Open(file.c_str(), nullptr)) {
     tprintError("read_params_file: Can't open/read file {}\n", file);
     return true;
   }
   return ReadParamsFromFp(&fp, member_params, source_type, source, quietly_ignore);
-}
-
-bool ParamUtils::ReadParamsFile(const char* file,
-								ParamsVector& member_params,
-								ParamSetBySourceType source_type,
-								ParamPtr source,
-								bool quietly_ignore
-) {
-	ParamsVectorSet pvec({ &member_params });
-	return ReadParamsFile(file, pvec, source_type, source, quietly_ignore);
 }
 
 bool ParamUtils::ReadParamsFromFp(TFile *fp,
@@ -1064,15 +1054,6 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
     }
   }
   return anyerr;
-}
-
-bool ParamUtils::ReadParamsFromFp(TFile* fp,
-	  ParamsVector& set,
-	  ParamSetBySourceType source_type, ParamPtr source,
-	  bool quietly_ignore
-) {
-	ParamsVectorSet pvec({ &set });
-	return ReadParamsFromFp(fp, pvec, source_type, source, quietly_ignore);
 }
 
 template <>

@@ -275,26 +275,8 @@ public:
   // Any Variables listed in the file, which do not match the given
   // constraint are ignored, but are reported via `tprintf()` as ignored,
   // unless you set `quietly_ignore`.
-  static bool ReadParamsFile(const char *file, // filename to read
+  static bool ReadParamsFile(const std::string &file, // filename to read
 	  const ParamsVectorSet &set, 
-	  SOURCE_REF,
-	  bool quietly_ignore = false
-  );
-
-  // Reads a file of parameter definitions and set/modify the values therein.
-  // If the filename begins with a `+` or `-`, the Variables will be
-  // ORed or ANDed with any current values.
-  // 
-  // Blank lines and lines beginning # are ignored.
-  // 
-  // Variable names are followed by one of more whitespace characters,
-  // followed by the Value, which spans the rest of line.
-  //
-  // Any Variables listed in the file, which do not match the given
-  // constraint are ignored, but are reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
-  static bool ReadParamsFile(const char *file, // filename to read
-	  ParamsVector &set, 
 	  SOURCE_REF,
 	  bool quietly_ignore = false
   );
@@ -303,14 +285,6 @@ public:
   // Otherwise identical to ReadParamsFile().
   static bool ReadParamsFromFp(TFile *fp,
 	  const ParamsVectorSet &set,
-	  SOURCE_REF,
-	  bool quietly_ignore = false
-  );
-
-  // Read parameters from the given file pointer.
-  // Otherwise identical to ReadParamsFile().
-  static bool ReadParamsFromFp(TFile *fp,
-	  ParamsVector &set, 
 	  SOURCE_REF,
 	  bool quietly_ignore = false
   );
@@ -558,11 +532,17 @@ public:
 
   void reset_access_counts();
 
-  // Fetches the value of the param as a string and does not add 
+  // Fetches the (formatted for print/display) value of the param as a string and does not add 
   // this access to the read counter tally. This is useful, f.e., when printing 'init' 
   // (only-settable-before-first-use) parameters to config file or log file, independent
   // from the actual work process. 
   virtual std::string formatted_value_str() const = 0;
+
+  // Fetches the (raw, parseble for re-use via set_value()) value of the param as a string and does not add 
+  // this access to the read counter tally. This is useful, f.e., when printing 'init' 
+  // (only-settable-before-first-use) parameters to config file or log file, independent
+  // from the actual work process. 
+  virtual std::string raw_value_str() const = 0;
 
   // Return string representing the type of the parameter value, e.g. "integer"
   const char *value_type_str() const;
