@@ -45,9 +45,10 @@ void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_
   InitFeatureDefs(&feature_defs_);
   InitAdaptiveClassifier(init_classifier);
   if (init_dict) {
-    getDict().SetupForLoad(Dict::GlobalDawgCache());
-    getDict().Load(lang, init_dict);
-    getDict().FinishLoad();
+    // Scribe edit: replaced `getDict` with `Classify::getDict`
+    Classify::getDict().SetupForLoad(Dict::GlobalDawgCache());
+    Classify::getDict().Load(lang, init_dict);
+    Classify::getDict().FinishLoad();
   }
   pass2_ok_split = chop_ok_split;
 #endif // ndef DISABLED_LEGACY_ENGINE
