@@ -355,6 +355,11 @@ public:
   void SetRectangle(int left, int top, int width, int height);
 
   /**
+   * Stores lstmf based on in-memory data for one line with pix and text
+  */
+  bool WriteLSTMFLineData(const char *name, const char *path, Pix *pix, const char *truth_text, bool vertical);
+
+  /**
    * Get a copy of the internal thresholded image from Tesseract.
    * Caller takes ownership of the Pix and must pixDestroy it.
    * May be called any time after SetImage, or after TesseractRect.
