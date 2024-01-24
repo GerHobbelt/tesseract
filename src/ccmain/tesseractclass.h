@@ -765,6 +765,9 @@ public:
   BOOL_VAR_H(tessedit_dump_pageseg_images);
   // TODO: remove deprecated tessedit_do_invert in release 6.
   BOOL_VAR_H(tessedit_do_invert);
+  BOOL_VAR_H(normalize_grayscale);
+  BOOL_VAR_H(normalize_thresholding);
+  BOOL_VAR_H(normalize_recognition);
   double_VAR_H(invert_threshold);
   INT_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(preprocess_graynorm_mode);

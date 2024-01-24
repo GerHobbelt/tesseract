@@ -353,6 +353,17 @@ public:
   bool NormalizeImage(int mode);
 
   /**
+   * Preprocessing the InputImage 
+   * Grayscale normalizatin based on nlbin (Thomas Breuel)
+   * Current modes: 
+   *  - 0 = No normalization
+   *  - 1 = Thresholding+Recognition
+   *  - 2 = Thresholding
+   *  - 3 = Recognition
+   */
+  bool NormalizeImage(int mode);
+
+  /**
    * Set the resolution of the source image in pixels per inch so font size
    * information can be calculated in results.  Call this after SetImage().
    */
