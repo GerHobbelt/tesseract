@@ -394,11 +394,6 @@ public:
  */
   void WriteImage(const int type);
 
-  /** Function added by Tesseract.js.
-   * Return gradient of page.
-   */
-  float GetGradient();
-
   /**
    * Return average gradient of lines on page.
    */
