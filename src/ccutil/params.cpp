@@ -54,7 +54,7 @@ namespace tesseract {
 
 TESS_API
 ParamsVector &GlobalParams() {
-  static ParamsVector global_params; // static auto-inits at startup
+  static ParamsVector global_params("global"); // static auto-inits at startup
   return global_params;
 }
 
@@ -193,14 +193,14 @@ bool ParamComparer::operator()( const char * lhs, const char * rhs ) const {
 #ifndef NDEBUG
 static void check_and_report_name_collisions(const char *name, const ParamsHashTableType &table) {
 	if (table.contains(name)) {
-		std::string s = fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name, name);
+		std::string s = fmt::format("tesseract param name '{}' collision: double definition of param '{}'", name, name);
 		throw new std::logic_error(s);
 	}
 }
 static void check_and_report_name_collisions(const char *name, std::vector<ParamPtr> &table) {
 	for (Param *p : table) {
 		if (ParamHash()(p->name_str(), name)) {
-			std::string s = fmt::format("tesseract param name '{}' colliion: double definition of param '{}'", name, name);
+			std::string s = fmt::format("tesseract param name '{}' collision: double definition of param '{}'", name, name);
 			throw new std::logic_error(s);
 		}
 	}
@@ -415,6 +415,13 @@ StringParam *ParamsVectorSet::find<StringParam>(
 	return static_cast<StringParam *>(find(name, STRING_PARAM));
 }
 
+template <>
+Param* ParamsVectorSet::find<Param>(
+  const char* name
+) const {
+  return static_cast<Param*>(find(name, ANY_TYPE_PARAM));
+}
+
 std::vector<ParamPtr> ParamsVectorSet::as_list(		
 	ParamType accepted_types_mask
 ) const {
@@ -450,26 +457,6 @@ bool Param::set_value2(const ParamValueContainer &v, ParamSetBySourceType source
 		throw new std::logic_error(fmt::format("tesseract param '{}' error: failed to get value from variant input arg", name_));
 }
 
-
-const char * Param::value_type_str() const {
-	switch (type_) {
-	default:
-	case UNKNOWN_PARAM:
-		return "???";
-		
-	case INT_PARAM:
-		return "integer";
-	case BOOL_PARAM:
-		return "boolean";
-	case DOUBLE_PARAM:
-		return "floating point";
-	case STRING_PARAM:
-		return "string";
-
-	case ANY_TYPE_PARAM:
-		return "any";
-	}
-}
 
 const char* Param::name_str() const {
   return name_;
@@ -529,6 +516,8 @@ Param::Param(const char* name, const char* comment, ParamsVector& owner, bool in
   access_counts_({ 0,0,0 })
 {
   debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
+
+  owner.add(this);
 }
 
 
@@ -618,6 +607,20 @@ void IntParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source
 std::string IntParam::formatted_value_str() const {
   return std::to_string(value_);
 }
+
+const char* IntParam::value_type_str() const {
+  return "integer";
+}
+
+std::string IntParam::raw_value_str() const {
+  return std::to_string(value_);
+}
+
+bool IntParam::inspect_value(ParamValueContainer & dst) const {
+  return false;
+}
+
+
 
 
 
@@ -780,6 +783,18 @@ std::string BoolParam::formatted_value_str() const {
   return value_ ? "true" : "false";
 }
 
+const char* BoolParam::value_type_str() const {
+  return "boolean";
+}
+
+std::string BoolParam::raw_value_str() const {
+  return value_ ? "true": "false";
+}
+
+bool BoolParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -872,6 +887,25 @@ std::string DoubleParam::formatted_value_str() const {
   sbuf[39] = 0;
   return sbuf;
 #endif
+}
+
+const char* DoubleParam::value_type_str() const {
+  return "floating point";
+}
+
+std::string DoubleParam::raw_value_str() const {
+#if 0
+  return std::to_string(value_);   // always outputs %.6f format style values
+#else
+  char sbuf[40];
+  snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
+  sbuf[39] = 0;
+  return sbuf;
+#endif
+}
+
+bool DoubleParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
 }
 
 
@@ -981,6 +1015,19 @@ std::string StringParam::formatted_value_str() const {
   rv += value_;
   rv += (const char*) u8"»";
   return rv;
+}
+
+const char* StringParam::value_type_str() const {
+  return "string";
+}
+
+std::string StringParam::raw_value_str() const {
+  std::string rv(value_);
+  return std::move(rv);
+}
+
+bool StringParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
 }
 
 
@@ -1105,6 +1152,7 @@ Param* ParamUtils::FindParam(
 }
 
 
+#if 0
 template <ParamDerivativeType T>
 T* ParamUtils::FindParam(
   const char* name,
@@ -1117,6 +1165,7 @@ T* ParamUtils::FindParam(
     pvec
   );
 }
+#endif
 
 
 Param* ParamUtils::FindParam(
@@ -1236,6 +1285,8 @@ bool ParamUtils::SetParam(
   return false;
 }
 
+
+#if 0
 template <ParamAcceptableValueType T>
 bool ParamUtils::SetParam(
 	const char* name, const T value,
@@ -1246,7 +1297,18 @@ bool ParamUtils::SetParam(
 	ParamsVectorSet pvec({ &set });
 	return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
 }
+#endif
 
+
+bool ParamUtils::SetParam(
+  const char* name, const char* value,
+  ParamsVector& set,
+  ParamSetBySourceType source_type, ParamPtr source,
+  bool quietly_ignore
+) {
+  ParamsVectorSet pvec({ &set });
+  return SetParam(name, value, pvec, source_type, source, quietly_ignore);
+}
 
 
 bool ParamUtils::InspectParamAsString(
@@ -1743,9 +1805,6 @@ void ParamUtils::ResetToDefaults(ParamsVectorSet *member_params) {
 		}
 	}
 }
-
-
-
 
 
 

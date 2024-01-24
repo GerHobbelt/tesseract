@@ -182,7 +182,8 @@ private:
 	std::string title_;
 
 public:
-	ParamsVector(const char *title = nullptr);
+  ParamsVector() = delete;
+  ParamsVector(const char* title);
 	ParamsVector(const char *title, std::initializer_list<ParamPtr> vecs);
 	
 	~ParamsVector();
@@ -244,6 +245,31 @@ public:
 		ParamType accepted_types_mask = ANY_TYPE_PARAM
 	) const;
 };
+
+// ready-made template instances:
+#if 01
+template <>
+IntParam* ParamsVectorSet::find<IntParam>(
+  const char* name
+) const;
+template <>
+BoolParam* ParamsVectorSet::find<BoolParam>(
+  const char* name
+) const;
+template <>
+DoubleParam* ParamsVectorSet::find<DoubleParam>(
+  const char* name
+) const;
+template <>
+StringParam* ParamsVectorSet::find<StringParam>(
+  const char* name
+) const;
+template <>
+Param* ParamsVectorSet::find<Param>(
+  const char* name
+) const;
+#endif
+//--------------------
 
 
 class Param;
@@ -461,6 +487,78 @@ public:
   static void ResetToDefaults(const ParamsVectorSet &set, SOURCE_TYPE);
 };
 
+// template instances:
+#if 01
+template <>
+IntParam* ParamUtils::FindParam<IntParam>(
+    const char* name,
+    const ParamsVectorSet& set
+);
+template <>
+BoolParam* ParamUtils::FindParam<BoolParam>(
+    const char* name,
+    const ParamsVectorSet& set
+);
+template <>
+DoubleParam* ParamUtils::FindParam<DoubleParam>(
+    const char* name,
+    const ParamsVectorSet& set
+);
+template <>
+StringParam* ParamUtils::FindParam<StringParam>(
+    const char* name,
+    const ParamsVectorSet& set
+);
+template <>
+Param* ParamUtils::FindParam<Param>(
+    const char* name,
+    const ParamsVectorSet& set
+);
+template <ParamDerivativeType T>
+T* ParamUtils::FindParam(
+  const char* name,
+  const ParamsVector& set
+) {
+  ParamsVectorSet pvec({ const_cast<ParamsVector*>(&set) });
+
+  return FindParam<T>(
+    name,
+    pvec
+  );
+}
+template <>
+bool ParamUtils::SetParam<int32_t>(
+    const char* name, const int32_t value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+);
+template <>
+bool ParamUtils::SetParam<bool>(
+    const char* name, const bool value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+);
+template <>
+bool ParamUtils::SetParam<double>(
+    const char* name, const double value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+);
+template <ParamAcceptableValueType T>
+bool ParamUtils::SetParam(
+  const char* name, const T value,
+  ParamsVector& set,
+  ParamSetBySourceType source_type, ParamPtr source,
+  bool quietly_ignore
+) {
+  ParamsVectorSet pvec({ &set });
+  return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+}
+#endif
+//--------------------
 
 // The very first time we call this one during the current run, we CREATE/OVERWRITE the target file.
 // Iff we happen to invoke this call multiple times for the same target file, any subsequent call
@@ -545,7 +643,7 @@ public:
   virtual std::string raw_value_str() const = 0;
 
   // Return string representing the type of the parameter value, e.g. "integer"
-  const char *value_type_str() const;
+  virtual const char *value_type_str() const = 0;
 
   // Fetches the value of the param and delivers it in a ParamValueContainer union. 
   // Does not add this access to the read counter tally. This is useful, f.e., when 
@@ -618,6 +716,8 @@ public:
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
 
   virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char* value_type_str() const override;
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
@@ -651,6 +751,8 @@ public:
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
 
   virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char* value_type_str() const override;
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
@@ -690,6 +792,8 @@ public:
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
 
   virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char* value_type_str() const override;
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
@@ -723,6 +827,8 @@ public:
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
 
   virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char* value_type_str() const override;
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
