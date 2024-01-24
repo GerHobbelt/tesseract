@@ -29,7 +29,7 @@
 
 namespace tesseract {
 
-double_VAR(textord_underline_threshold, 0.5, "Fraction of width occupied");
+DOUBLE_VAR(textord_underline_threshold, 0.5, "Fraction of width occupied");
 
 // Forward declarations of static functions
 static void horizontal_cblob_projection(C_BLOB *blob,  // blob to project
@@ -62,7 +62,7 @@ bool test_underline(  // look for underlines
     //              draw2d(to_win,blob_box.right(),baseline);
     //              move2d(to_win,blob_box.left(),baseline+xheight);
     //              draw2d(to_win,blob_box.right(),baseline+xheight);
-    tprintf("Testing underline on blob at ({},{})->({},{}), base={}\nOccs:",
+    tprintDebug("Testing underline on blob at ({},{})->({},{}), base={}\nOccs:",
             blob->bounding_box().left(), blob->bounding_box().bottom(),
             blob->bounding_box().right(), blob->bounding_box().top(), baseline);
   }
@@ -88,10 +88,10 @@ bool test_underline(  // look for underlines
     }
   }
   if (1) {
-    tprintf("{} {} {}\n", desc_occ, x_occ, asc_occ);
+    tprintDebug("{} {} {}\n", desc_occ, x_occ, asc_occ);
   }
   if (desc_occ == 0 && x_occ == 0 && asc_occ == 0) {
-    tprintf("Bottom={}, top={}, base={}, x={}\n", blob_box.bottom(), blob_box.top(), baseline,
+    tprintDebug("Bottom={}, top={}, base={}, x={}\n", blob_box.bottom(), blob_box.top(), baseline,
             xheight);
     projection.print();
   }

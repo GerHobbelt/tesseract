@@ -55,7 +55,7 @@ Wordrec::Wordrec()
                   " This is used for CJK where component grouping is necessary.",
                   CCUtil::params())
     , INT_MEMBER(repair_unchopped_blobs, 1, "Fix blobs that aren't chopped", params())
-    , double_MEMBER(tessedit_certainty_threshold, -2.25, "Good blob limit", params())
+    , DOUBLE_MEMBER(tessedit_certainty_threshold, -2.25, "Good blob limit", params())
     , INT_MEMBER(chop_debug, 0, "Chop debug", params())
     , BOOL_MEMBER(chop_enable, 1, "Chop enable", params())
     , BOOL_MEMBER(chop_vertical_creep, 0, "Vertical creep", params())
@@ -66,17 +66,17 @@ Wordrec::Wordrec()
     , BOOL_MEMBER(chop_new_seam_pile, 1, "Use new seam_pile", params())
     , INT_MEMBER(chop_inside_angle, -50, "Min Inside Angle Bend", params())
     , INT_MEMBER(chop_min_outline_area, 2000, "Min Outline Area", params())
-    , double_MEMBER(chop_split_dist_knob, 0.5, "Split length adjustment", params())
-    , double_MEMBER(chop_overlap_knob, 0.9, "Split overlap adjustment", params())
-    , double_MEMBER(chop_center_knob, 0.15, "Split center adjustment", params())
+    , DOUBLE_MEMBER(chop_split_dist_knob, 0.5, "Split length adjustment", params())
+    , DOUBLE_MEMBER(chop_overlap_knob, 0.9, "Split overlap adjustment", params())
+    , DOUBLE_MEMBER(chop_center_knob, 0.15, "Split center adjustment", params())
     , INT_MEMBER(chop_centered_maxwidth, 90,
                  "Width of (smaller) chopped blobs "
                  "above which we don't care that a chop is not near the center.",
                  params())
-    , double_MEMBER(chop_sharpness_knob, 0.06, "Split sharpness adjustment", params())
-    , double_MEMBER(chop_width_change_knob, 5.0, "Width change adjustment", params())
-    , double_MEMBER(chop_ok_split, 100.0, "OK split limit", params())
-    , double_MEMBER(chop_good_split, 50.0, "Good split limit", params())
+    , DOUBLE_MEMBER(chop_sharpness_knob, 0.06, "Split sharpness adjustment", params())
+    , DOUBLE_MEMBER(chop_width_change_knob, 5.0, "Width change adjustment", params())
+    , DOUBLE_MEMBER(chop_ok_split, 100.0, "OK split limit", params())
+    , DOUBLE_MEMBER(chop_good_split, 50.0, "Good split limit", params())
     , INT_MEMBER(chop_x_y_weight, 3, "X / Y  length weight", params())
     , BOOL_MEMBER(assume_fixed_pitch_char_segment, false,
                   "include fixed-pitch heuristics in char segmentation", params())
@@ -93,7 +93,7 @@ Wordrec::Wordrec()
                  "Maximum number of pain point classifications per chunk that"
                  " did not result in finding a better word choice.",
                  params())
-    , double_MEMBER(segsearch_max_char_wh_ratio, 2.0, "Maximum character width-to-height ratio",
+    , DOUBLE_MEMBER(segsearch_max_char_wh_ratio, 2.0, "Maximum character width-to-height ratio",
                     params())
     , BOOL_MEMBER(save_alt_choices, true,
                   "Save alternative paths found during chopping"

@@ -30,7 +30,7 @@
 namespace tesseract {
 
 TESS_COMMON_TRAINING_API
-void ParseArguments(int* argc, const char ***argv);
+int ParseArguments(int* argc, const char ***argv);
 
 // Check whether the shared tesseract library is the right one.
 // This function must be inline because otherwise it would be part of
@@ -38,8 +38,7 @@ void ParseArguments(int* argc, const char ***argv);
 static inline void CheckSharedLibraryVersion() {
 #ifdef HAVE_TESSERACT_CONFIG_H
   if (!!strcmp(TESSERACT_VERSION_STR, TessBaseAPI::Version())) {
-    tprintf(
-        "ERROR: Shared library version mismatch (was {}, expected {}\n"
+    tprintError("Shared library version mismatch (was {}, expected {}\n"
         "Did you use a wrong shared tesseract library?\n",
         TessBaseAPI::Version(), TESSERACT_VERSION_STR);
     exit(1);

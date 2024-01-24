@@ -46,7 +46,7 @@ void Tesseract::recog_word(WERD_RES *word) {
       (word->blamer_bundle == nullptr ||
        word->blamer_bundle->incorrect_result_reason() == IRR_NO_TRUTH)) {
     if (classify_debug_level > 0) {
-      tprintf("No truth for word - skipping\n");
+      tprintDebug("No truth for word - skipping\n");
     }
     word->tess_failed = true;
     return;
@@ -58,7 +58,7 @@ void Tesseract::recog_word(WERD_RES *word) {
   // Check that the ratings matrix size matches the sum of all the
   // segmentation states.
   if (!word->StatesAllValid()) {
-    tprintf("Not all words have valid states relative to ratings matrix!!");
+    tprintWarn("Not all words have valid states relative to ratings matrix!!");
     word->DebugWordChoices(true, nullptr);
     ASSERT_HOST(word->StatesAllValid());
   }
@@ -76,7 +76,7 @@ void Tesseract::recog_word(WERD_RES *word) {
       }
     }
     if (tessedit_rejection_debug && perm_type != word->best_choice->permuter()) {
-      tprintf("Permuter Type Flipped from {} to {}\n", perm_type, word->best_choice->permuter());
+      tprintDebug("Permuter Type Flipped from {} to {}\n", perm_type, word->best_choice->permuter());
     }
   }
   // Factored out from control.cpp
@@ -109,11 +109,11 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
   // Do sanity checks and minor fixes on best_choice.
   if (word->best_choice->length() > word_length) {
     word->best_choice->make_bad(); // should never happen
-    tprintf(
+    tprintDebug(
         "recog_word: Discarded long string \"{}\""
         " ({} characters vs {} blobs)\n",
         word->best_choice->unichar_string(), word->best_choice->length(), word_length);
-    tprintf("Word is at:");
+    tprintDebug("Word is at:");
     word->word->bounding_box().print();
   }
   if (word->best_choice->length() < word_length) {

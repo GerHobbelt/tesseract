@@ -60,8 +60,8 @@ FILE *OpenBoxFile(const char *fname) {
   std::string filename = BoxFileName(fname);
   FILE *box_file = nullptr;
   if (!(box_file = fopen(filename.c_str(), "rb"))) {
-    CANTOPENFILE.error("read_next_box", TESSEXIT, "Can't open box file %s", filename.c_str());
-    tprintf("Can't open box file %s", filename.c_str());
+    CANTOPENFILE.error("read_next_box", TESSEXIT, "Can't open box file {}", filename);
+    tprintError("Can't open box file {}", filename);
   }
   return box_file;
 }
@@ -76,15 +76,15 @@ FILE *OpenBoxFile(const char *fname) {
 bool ReadAllBoxes(int target_page, bool skip_blanks, const char *filename, std::vector<TBOX> *boxes,
                   std::vector<std::string> *texts, std::vector<std::string> *box_texts,
                   std::vector<int> *pages) {
-  std::ifstream input(BoxFileName(filename).c_str(), std::ios::in | std::ios::binary);
+  std::ifstream input(BoxFileName(filename), std::ios::in | std::ios::binary);
   if (input.fail()) {
-    tprintf("Cannot read box data from '%s'.\n", BoxFileName(filename).c_str());
-    tprintf("Does it exists?\n");
+    tprintError("Cannot read box data from '{}'.\n", BoxFileName(filename));
+    tprintError("Does it exist?\n");
     return false;
   }
   std::vector<char> box_data(std::istreambuf_iterator<char>(input), {});
   if (box_data.empty()) {
-    tprintf("No box data found in '%s'.\n", BoxFileName(filename).c_str());
+    tprintError("No box data found in '{}'.\n", BoxFileName(filename));
     return false;
   }
   // Convert the array of bytes to a string, so it can be used by the parser.
@@ -161,12 +161,11 @@ bool ReadNextBox(int target_page, int *line_number, FILE *box_file, std::string 
                  TBOX *bounding_box) {
   int page = 0;
   char buff[kBoxReadBufSize]; // boxfile read buffer
-  char *buffptr = buff;
 
   while (fgets(buff, sizeof(buff) - 1, box_file)) {
     (*line_number)++;
 
-    buffptr = buff;
+    char *buffptr = buff;
     const auto *ubuf = reinterpret_cast<const unsigned char *>(buffptr);
     if (ubuf[0] == 0xef && ubuf[1] == 0xbb && ubuf[2] == 0xbf) {
       buffptr += 3; // Skip unicode file designation.
@@ -181,7 +180,7 @@ bool ReadNextBox(int target_page, int *line_number, FILE *box_file, std::string 
     }
     if (*buffptr != '\0') {
       if (!ParseBoxFileStr(buffptr, &page, utf8_str, bounding_box)) {
-        tprintf("ERROR: Box file format error on line {}; ignored\n", *line_number);
+        tprintError("Box file format error on line {}; ignored\n", *line_number);
         continue;
       }
       if (target_page >= 0 && target_page != page) {
@@ -244,7 +243,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
   stream >> y_max;
   stream >> *page_number;
   if (x_max < x_min || y_max < y_min) {
-    tprintf("ERROR: Bad box coordinates in boxfile string! {}\n", reinterpret_cast<const char *>(ubuf));
+    tprintError("Bad box coordinates in boxfile string! {}\n", reinterpret_cast<const char *>(ubuf));
     return false;
   }
   // Test for long space-delimited string label.
@@ -260,7 +259,7 @@ bool ParseBoxFileStr(const char *boxfile_str, int *page_number, std::string &utf
     tesseract::UNICHAR ch(uch + used, uch_len - used);
     int new_used = ch.utf8_len();
     if (new_used == 0) {
-      tprintf("ERROR: Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
+      tprintError("Bad UTF-8 str {} starts with {} at col {}\n", uch + used, uch[used], used + 1);
       return false;
     }
     used += new_used;

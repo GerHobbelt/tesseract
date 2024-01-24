@@ -112,7 +112,7 @@ void LMPainPoints::GenerateFromPath(float rating_cert_scale, ViterbiStateEntry *
       GeneratePainPoint(pain_coord.col, pain_coord.row, LM_PPTYPE_PATH, priority, true,
                         max_char_wh_ratio_, word_res);
     } else if (debug_level_ > 3) {
-      tprintf("NO pain point (Classified) for col={} row={} type={}\n", pain_coord.col,
+      tprintDebug("NO pain point (Classified) for col={} row={} type={}\n", pain_coord.col,
               pain_coord.row, LMPainPointsTypeName[LM_PPTYPE_PATH]);
       BLOB_CHOICE_IT b_it(word_res->ratings->get(pain_coord.col, pain_coord.row));
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
@@ -148,7 +148,7 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
     return false;
   }
   if (debug_level_ > 3) {
-    tprintf("Generating pain point for col={} row={} type={}\n", col, row,
+    tprintDebug("Generating pain point for col={} row={} type={}\n", col, row,
             LMPainPointsTypeName[pp_type]);
   }
   // Compute associate stats.
@@ -168,7 +168,7 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
   }
   if (associate_stats.bad_shape) {
     if (debug_level_ > 3) {
-      tprintf("Discarded pain point with a bad shape\n");
+      tprintDebug("Discarded pain point with a bad shape\n");
     }
     return false;
   }
@@ -185,12 +185,12 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
     MatrixCoordPair pain_point(priority, MATRIX_COORD(col, row));
     pain_points_heaps_[pp_type].Push(&pain_point);
     if (debug_level_) {
-      tprintf("Added pain point with priority {}\n", priority);
+      tprintDebug("Added pain point with priority {}\n", priority);
     }
     return true;
   } else {
     if (debug_level_) {
-      tprintf("Pain points heap is full\n");
+      tprintDebug("Pain points heap is full\n");
     }
     return false;
   }

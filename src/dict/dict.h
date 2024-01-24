@@ -255,13 +255,13 @@ public:
   /// word (i.e. false will be returned in that case). The algorithm computes
   /// the mean and std deviation of the certainties in the word with the worst
   /// certainty thrown out.
-  int UniformCertainties(const WERD_CHOICE &word);
+  bool UniformCertainties(const WERD_CHOICE &word);
   /// Returns true if the given best_choice is good enough to stop.
   bool AcceptableChoice(const WERD_CHOICE &best_choice, XHeightConsistencyEnum xheight_consistency);
   /// Returns false if the best choice for the current word is questionable
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
-  bool AcceptableResult(WERD_RES *word) const;
+  bool AcceptableResult(const WERD_RES &word) const;
 #if !DISABLED_LEGACY_ENGINE
   void EndDangerousAmbigs();
 #endif // !DISABLED_LEGACY_ENGINE
@@ -549,31 +549,31 @@ public:
   BOOL_VAR_H(load_punc_dawg);
   BOOL_VAR_H(load_number_dawg);
   BOOL_VAR_H(load_bigram_dawg);
-  double_VAR_H(xheight_penalty_subscripts);
-  double_VAR_H(xheight_penalty_inconsistent);
-  double_VAR_H(segment_penalty_dict_frequent_word);
-  double_VAR_H(segment_penalty_dict_case_ok);
-  double_VAR_H(segment_penalty_dict_case_bad);
-  double_VAR_H(segment_penalty_dict_nonword);
-  double_VAR_H(segment_penalty_garbage);
+  DOUBLE_VAR_H(xheight_penalty_subscripts);
+  DOUBLE_VAR_H(xheight_penalty_inconsistent);
+  DOUBLE_VAR_H(segment_penalty_dict_frequent_word);
+  DOUBLE_VAR_H(segment_penalty_dict_case_ok);
+  DOUBLE_VAR_H(segment_penalty_dict_case_bad);
+  DOUBLE_VAR_H(segment_penalty_dict_nonword);
+  DOUBLE_VAR_H(segment_penalty_garbage);
   STRING_VAR_H(output_ambig_words_file);
   INT_VAR_H(dawg_debug_level);
   INT_VAR_H(hyphen_debug_level);
   BOOL_VAR_H(use_only_first_uft8_step);
-  double_VAR_H(certainty_scale);
-  double_VAR_H(stopper_nondict_certainty_base);
-  double_VAR_H(stopper_phase2_certainty_rejection_offset);
+  DOUBLE_VAR_H(certainty_scale);
+  DOUBLE_VAR_H(stopper_nondict_certainty_base);
+  DOUBLE_VAR_H(stopper_phase2_certainty_rejection_offset);
   INT_VAR_H(stopper_smallword_size);
-  double_VAR_H(stopper_certainty_per_char);
-  double_VAR_H(stopper_allowable_character_badness);
+  DOUBLE_VAR_H(stopper_certainty_per_char);
+  DOUBLE_VAR_H(stopper_allowable_character_badness);
   INT_VAR_H(stopper_debug_level);
   BOOL_VAR_H(stopper_no_acceptable_choices);
   INT_VAR_H(tessedit_truncate_wordchoice_log);
   STRING_VAR_H(word_to_debug);
   BOOL_VAR_H(segment_nonalphabetic_script);
   BOOL_VAR_H(save_doc_words);
-  double_VAR_H(doc_dict_pending_threshold);
-  double_VAR_H(doc_dict_certainty_threshold);
+  DOUBLE_VAR_H(doc_dict_pending_threshold);
+  DOUBLE_VAR_H(doc_dict_certainty_threshold);
   INT_VAR_H(max_permuter_attempts);
 };
 

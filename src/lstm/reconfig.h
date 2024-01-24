@@ -31,7 +31,7 @@ namespace tesseract {
 class Reconfig : public Network {
 public:
   TESS_API
-  Reconfig(const char *name, int ni, int x_scale, int y_scale);
+  Reconfig(const std::string &name, int ni, int x_scale, int y_scale);
   ~Reconfig() override = default;
 
   // Returns the shape output from the network given an input shape (which may
@@ -67,7 +67,7 @@ public:
 
 private:
   void DebugWeights() override {
-    tprintf("Must override Network::DebugWeights for type {}\n", type_);
+    tprintDebug("Must override Network::DebugWeights for type {}\n", type_);
   }
 
 protected:

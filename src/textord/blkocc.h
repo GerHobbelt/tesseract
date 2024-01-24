@@ -235,7 +235,7 @@ public:
 
 #define END_OF_WERD_CODE 255
 
-extern double_VAR_H(textord_underline_threshold);
+extern DOUBLE_VAR_H(textord_underline_threshold);
 
 bool test_underline(  // look for underlines
     C_BLOB *blob,     // blob to test

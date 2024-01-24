@@ -26,7 +26,7 @@ bool ValidateIndic::ConsumeGraphemeIfValid() {
     case CharClass::kZeroWidthNonJoiner:
       // Apart from within an aksara, joiners are silently dropped.
       if (report_errors_) {
-        tprintf("ERROR: Dropping isolated joiner: {}\n", codes_[codes_used_].second);
+        tprintError("Dropping isolated joiner: {}\n", codes_[codes_used_].second);
       }
       ++codes_used_;
       return true;
@@ -35,7 +35,7 @@ bool ValidateIndic::ConsumeGraphemeIfValid() {
       return true;
     default:
       if (report_errors_) {
-        tprintf("ERROR: Invalid start of grapheme sequence:{}={}\n",
+        tprintError("Invalid start of grapheme sequence:{}={}\n",
                 static_cast<int>(codes_[codes_used_].first),
                 codes_[codes_used_].second);
       }
@@ -155,7 +155,7 @@ bool ValidateIndic::ConsumeViramaIfValid(IndicPair joiner, bool post_matra) {
       // Post-matra viramas must be explicit, so no joiners allowed here.
       if (post_matra) {
         if (report_errors_) {
-          tprintf("ERROR: ZWJ after a post-matra virama!!\n");
+          tprintError("ZWJ after a post-matra virama!!\n");
         }
         return false;
       }
@@ -175,7 +175,7 @@ bool ValidateIndic::ConsumeViramaIfValid(IndicPair joiner, bool post_matra) {
       if (codes_used_ < num_codes && codes_[codes_used_].second == kZeroWidthNonJoiner) {
         if (output_used_ == output_.size() || output_[output_used_] != kRayana) {
           if (report_errors_) {
-            tprintf("ERROR: Virama ZWJ ZWNJ in non-Sinhala: base={}!\n", static_cast<int>(script_));
+            tprintError("Virama ZWJ ZWNJ in non-Sinhala: base={}!\n", static_cast<int>(script_));
           }
           return false;
         }
@@ -200,14 +200,14 @@ bool ValidateIndic::ConsumeViramaIfValid(IndicPair joiner, bool post_matra) {
     // Pre-virama joiner [{Z|z} H] requests specific conjunct.
     if (UseMultiCode(2)) {
       if (report_errors_) {
-        tprintf("ERROR: Invalid pre-virama joiner with no 2nd consonant!!\n");
+        tprintError("Invalid pre-virama joiner with no 2nd consonant!!\n");
       }
       return false;
     }
     if (codes_[codes_used_].second == kZeroWidthJoiner ||
         codes_[codes_used_].second == kZeroWidthNonJoiner) {
       if (report_errors_) {
-        tprintf("ERROR: JHJ!!: {} {} {}\n", joiner.second, output_.back(),
+        tprintError("JHJ!!: {} {} {}\n", joiner.second, output_.back(),
                 codes_[codes_used_].second);
       }
       return false;
@@ -250,7 +250,7 @@ bool ValidateIndic::ConsumeConsonantHeadIfValid() {
       joiner = codes_[codes_used_];
       if (++codes_used_ == num_codes) {
         if (report_errors_) {
-          tprintf("ERROR: Skipping ending joiner: {} {}\n", output_.back(), joiner.second);
+          tprintError("Skipping ending joiner: {} {}\n", output_.back(), joiner.second);
         }
         return true;
       }
@@ -258,7 +258,7 @@ bool ValidateIndic::ConsumeConsonantHeadIfValid() {
         output_.push_back(joiner.second);
       } else {
         if (report_errors_) {
-          tprintf("WARNING: Skipping unnecessary joiner: {} {} {}\n", output_.back(), joiner.second,
+          tprintWarn("Skipping unnecessary joiner: {} {} {}\n", output_.back(), joiner.second,
                   codes_[codes_used_].second);
         }
         joiner = std::make_pair(CharClass::kOther, 0);

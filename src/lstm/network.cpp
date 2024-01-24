@@ -207,7 +207,7 @@ static NetworkType getNetworkType(TFile *fp) {
     for (data = 0; data < NT_COUNT && type_name != kTypeNames[data]; ++data) {
     }
     if (data == NT_COUNT) {
-      tprintf("ERROR: Invalid network layer type:{}\n", type_name.c_str());
+      tprintError("Invalid network layer type:{}\n", type_name.c_str());
       return NT_NONE;
     }
   }
@@ -255,19 +255,19 @@ Network *Network::CreateFromFile(TFile *fp) {
 
   switch (type) {
     case NT_CONVOLVE:
-      network = new Convolve(name.c_str(), ni, 0, 0);
+      network = new Convolve(name, ni, 0, 0);
       break;
     case NT_INPUT:
-      network = new Input(name.c_str(), ni, no);
+      network = new Input(name, ni, no);
       break;
     case NT_LSTM:
     case NT_LSTM_SOFTMAX:
     case NT_LSTM_SOFTMAX_ENCODED:
     case NT_LSTM_SUMMARY:
-      network = new LSTM(name.c_str(), ni, no, no, false, type);
+      network = new LSTM(name, ni, no, no, false, type);
       break;
     case NT_MAXPOOL:
-      network = new Maxpool(name.c_str(), ni, 0, 0);
+      network = new Maxpool(name, ni, 0, 0);
       break;
     // All variants of Parallel.
     case NT_PARALLEL:
@@ -275,25 +275,25 @@ Network *Network::CreateFromFile(TFile *fp) {
     case NT_PAR_RL_LSTM:
     case NT_PAR_UD_LSTM:
     case NT_PAR_2D_LSTM:
-      network = new Parallel(name.c_str(), type);
+      network = new Parallel(name, type);
       break;
     case NT_RECONFIG:
-      network = new Reconfig(name.c_str(), ni, 0, 0);
+      network = new Reconfig(name, ni, 0, 0);
       break;
     // All variants of reversed.
     case NT_XREVERSED:
     case NT_YREVERSED:
     case NT_XYTRANSPOSE:
-      network = new Reversed(name.c_str(), type);
+      network = new Reversed(name, type);
       break;
     case NT_SERIES:
-      network = new Series(name.c_str());
+      network = new Series(name);
       break;
     case NT_TENSORFLOW:
 #ifdef INCLUDE_TENSORFLOW
-      network = new TFNetwork(name.c_str());
+      network = new TFNetwork(name);
 #else
-      tprintf("WARNING: TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
+      tprintWarn("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
 #endif
       break;
     // All variants of FullyConnected.
@@ -305,7 +305,7 @@ Network *Network::CreateFromFile(TFile *fp) {
     case NT_LOGISTIC:
     case NT_POSCLIP:
     case NT_SYMCLIP:
-      network = new FullyConnected(name.c_str(), ni, no, type);
+      network = new FullyConnected(name, ni, no, type);
       break;
     default:
       break;
@@ -369,7 +369,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
       height = kMaxWinSize;
     }
     window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, window_name, 80, 100, width, height, width, height, tess_coords);
-    tprintf("Created window \"{}\" of size w:{} x h:{}\n", window_name, width, height);
+    tprintDebug("Created window \"{}\" of size w:{} x h:{}\n", window_name, width, height);
   } else {
     window->Clear();
   }

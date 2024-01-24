@@ -38,19 +38,19 @@
 using namespace tesseract;
 
 /*-------------------once in subfeat---------------------------------*/
-static double_VAR(training_angle_match_scale, 1.0, "Angle Match Scale ...");
+static DOUBLE_VAR(training_angle_match_scale, 1.0, "Angle Match Scale ...");
 
-static double_VAR(training_similarity_midpoint, 0.0075, "Similarity Midpoint ...");
+static DOUBLE_VAR(training_similarity_midpoint, 0.0075, "Similarity Midpoint ...");
 
-static double_VAR(training_similarity_curl, 2.0, "Similarity Curl ...");
+static DOUBLE_VAR(training_similarity_curl, 2.0, "Similarity Curl ...");
 
 /*-----------------------------once in
  * fasttrain----------------------------------*/
-static double_VAR(training_tangent_bbox_pad, 0.5, "Tangent bounding box pad ...");
+static DOUBLE_VAR(training_tangent_bbox_pad, 0.5, "Tangent bounding box pad ...");
 
-static double_VAR(training_orthogonal_bbox_pad, 2.5, "Orthogonal bounding box pad ...");
+static DOUBLE_VAR(training_orthogonal_bbox_pad, 2.5, "Orthogonal bounding box pad ...");
 
-static double_VAR(training_angle_pad, 45.0, "Angle pad ...");
+static DOUBLE_VAR(training_angle_pad, 45.0, "Angle pad ...");
 
 /**
  * Compare protos p1 and p2 and return an estimate of the

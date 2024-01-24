@@ -138,7 +138,7 @@ public:
 #endif                                           // !GRAPHICS_DISABLED
 
 private:
-  int32_t rangemin_ = 0; // min of range
+  int32_t rangemin_ = 0;       // min of range
   int32_t rangemax_ = 0;       // max of range
   int32_t total_count_ = 0;    // no of samples
   int32_t *buckets_ = nullptr; // array of cells

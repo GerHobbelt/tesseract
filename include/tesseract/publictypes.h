@@ -70,7 +70,7 @@ enum PolyBlockType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(PolyBlockType);
 
-/** Returns true if PolyBlockType is of horizontal line type */
+/** Returns true if PolyBlockType is of line type */
 inline bool PTIsLineType(PolyBlockType type) {
   return type == PT_HORZ_LINE || type == PT_VERT_LINE;
 }

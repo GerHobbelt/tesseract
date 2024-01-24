@@ -471,7 +471,7 @@ void BlamerBundle::InitForSegSearch(const WERD_CHOICE *best_choice, MATRIX *rati
                                     WERD_RES *word_res) {
   segsearch_is_looking_for_blame_ = true;
   if (debug) {
-    tprintf("segsearch starting to look for blame\n");
+    tprintDebug("segsearch starting to look for blame\n");
   }
   // Fill pain points for any unclassifed blob corresponding to the
   // correct segmentation state.
@@ -551,7 +551,7 @@ void BlamerBundle::LastChanceBlame(bool debug, WERD_RES *word) {
       word->blamer_bundle->SetBlame(IRR_UNKNOWN, debug_str, word->best_choice, debug);
     } else if (irr != IRR_CORRECT && correct) {
       if (debug) {
-        tprintf("Corrected {}\n", word->blamer_bundle->debug_);
+        tprintDebug("Corrected {}\n", word->blamer_bundle->debug_);
       }
       word->blamer_bundle->incorrect_result_reason_ = IRR_CORRECT;
       word->blamer_bundle->debug_ = "";
@@ -568,7 +568,7 @@ void BlamerBundle::SetMisAdaptionDebug(const WERD_CHOICE *best_choice, bool debu
     misadaption_debug_ += "): ";
     FillDebugString("", best_choice, misadaption_debug_);
     if (debug) {
-      tprintf("{}\n", misadaption_debug_);
+      tprintDebug("{}\n", misadaption_debug_);
     }
   }
 }

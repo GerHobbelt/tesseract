@@ -69,20 +69,20 @@ void Wordrec::add_seam_to_queue(float new_priority, SEAM *new_seam, SeamQueue *s
     return;
   }
   if (chop_debug) {
-    tprintf("Pushing new seam with priority {} :", new_priority);
+    tprintDebug("Pushing new seam with priority {} :", new_priority);
     new_seam->Print("seam: ");
   }
   if (seams->size() >= MAX_NUM_SEAMS) {
     SeamPair old_pair(0, nullptr);
     if (seams->PopWorst(&old_pair) && old_pair.key() <= new_priority) {
       if (chop_debug) {
-        tprintf("Old seam staying with priority {}\n", old_pair.key());
+        tprintDebug("Old seam staying with priority {}\n", old_pair.key());
       }
       delete new_seam;
       seams->Push(&old_pair);
       return;
     } else if (chop_debug) {
-      tprintf("New seam with priority {} beats old worst seam with {}\n", new_priority,
+      tprintDebug("New seam with priority {} beats old worst seam with {}\n", new_priority,
               old_pair.key());
     }
   }
@@ -224,7 +224,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
 
 #if !GRAPHICS_DISABLED
   if (chop_debug > 2) {
-    wordrec_display_splits.set_value(true);
+    wordrec_display_splits = true;
   }
 
   draw_blob_edges(blob);
@@ -275,14 +275,16 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
       seam->Mark(edge_window);
       if (chop_debug > 2) {
         edge_window->UpdateWindow();
-        edge_window->Wait();
+        if (edge_window->HasInteractiveFeature()) {
+          edge_window->Wait();
+        }
       }
     }
 #endif
   }
 
   if (chop_debug) {
-    wordrec_display_splits.set_value(false);
+    wordrec_display_splits = false;
   }
 
   return (seam);

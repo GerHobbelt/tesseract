@@ -113,7 +113,7 @@ void RecodeBeamSearch::Decode(const GENERIC_2D_ARRAY<float> &output,
 
 void RecodeBeamSearch::DecodeSecondaryBeams(
     const NetworkIO &output, double dict_ratio, double cert_offset,
-    double worst_dict_cert, const UNICHARSET *charset, int lstm_choice_mode) {
+    double worst_dict_cert, const UNICHARSET *charset) {
   for (auto data : secondary_beam_) {
     delete data;
   }
@@ -189,7 +189,7 @@ void RecodeBeamSearch::calculateCharBoundaries(std::vector<int> *starts,
                                                std::vector<int> *ends,
                                                std::vector<int> *char_bounds_,
                                                int maxWidth) {
-  char_bounds_->push_back(0);
+  char_bounds_->push_back((*starts)[0]);    // fix introduced in commit b29668135e26669486430add7f4cddb9d4934366; in many cases starts[0] != 0
   for (unsigned int i = 0; i < ends->size(); ++i) {
     int middle = ((*starts)[i + 1] - (*ends)[i]) / 2;
     char_bounds_->push_back((*ends)[i] + middle);
@@ -240,8 +240,7 @@ void RecodeBeamSearch::ExtractBestPathAsUnicharIds(
 void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
                                               float scale_factor,
                                               const UNICHARSET *unicharset,
-                                              PointerVector<WERD_RES> *words,
-                                              int lstm_choice_mode) {
+                                              PointerVector<WERD_RES> *words) {
   words->truncate(0);
   std::vector<int> unichar_ids;
   std::vector<float> certs;
@@ -254,7 +253,7 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
   if (HasDebug()) {
     DebugPath(unicharset, best_nodes);
     ExtractPathAsUnicharIds(second_nodes, &unichar_ids, &certs, &ratings, &xcoords);
-    tprintf("\nSecond choice path:\n");
+    tprintDebug("\nSecond choice path:\n");
     DebugUnicharPath(unicharset, second_nodes, unichar_ids, certs, ratings, xcoords);
   }
   // If lstm choice mode is required in granularity level 2, it stores the x
@@ -356,7 +355,7 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
       break;
     }
     if (ct == character_boundaries_[cb]) {
-      tprintf("***\n");
+      tprintDebug("***\n");
       ++cb;
     }
     for (const RecodeNode *node : layer) {
@@ -391,15 +390,15 @@ void RecodeBeamSearch::PrintBeam2(bool uids, int num_outputs,
         prevCode = " ";
       }
       if (uids) {
-        tprintf("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode, node->score);
+        tprintDebug("{}(|){}(>){}(|){}\n", intPrevCode, prevScore, intCode, node->score);
       } else {
-        tprintf("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
+        tprintDebug("{}(|){}(>){}(|){}\n", prevCode, prevScore, code, node->score);
       }
     }
-    tprintf("-\n");
+    tprintDebug("-\n");
     ++ct;
   }
-  tprintf("***\n");
+  tprintDebug("***\n");
 }
 
 void RecodeBeamSearch::extractSymbolChoices(const UNICHARSET *unicharset) {
@@ -517,7 +516,7 @@ void RecodeBeamSearch::DebugBeams(const UNICHARSET *unicharset) const {
           continue;
         }
         // Print all the best scoring nodes for each unichar found.
-        tprintf("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict", kNodeContNames[c]);
+        tprintDebug("Position {}: {}+{} beam\n", p, d ? "Dict" : "Non-Dict", kNodeContNames[c]);
         DebugBeamPos(unicharset, beam_[p]->beams_[index]);
       }
     }
@@ -546,17 +545,16 @@ void RecodeBeamSearch::DebugBeamPos(const UNICHARSET *unicharset,
   for (auto &unichar_best : unichar_bests) {
     if (unichar_best != nullptr) {
       const RecodeNode &node = *unichar_best;
-      tprintf("unichar_bests: {}\n", node.Print(null_char_, unicharset, 1));
+      tprintDebug("unichar_bests: {}\n", node.Print(null_char_, unicharset, 1));
     }
   }
   if (null_best != nullptr) {
-    tprintf("null_best: {}\n", null_best->Print(null_char_, unicharset, 1));
+    tprintDebug("null_best: {}\n", null_best->Print(null_char_, unicharset, 1));
   }
 }
 
 // Returns the given best_nodes as unichar-ids/certs/ratings/xcoords skipping
 // duplicates, nulls and intermediate parts.
-/* static */
 void RecodeBeamSearch::ExtractPathAsUnicharIds(
     const std::vector<const RecodeNode *> &best_nodes,
     std::vector<int> *unichar_ids, std::vector<float> *certs,
@@ -575,11 +573,12 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
     double certainty = 0.0;
     double rating = 0.0;
     while (t < width && best_nodes[t]->unichar_id == INVALID_UNICHAR_ID) {
-      double cert = best_nodes[t++]->certainty;
+      double cert = best_nodes[t]->certainty;
       if (cert < certainty) {
         certainty = cert;
       }
       rating -= cert;
+	  t++;
     }
     starts.push_back(t);
     if (t < width) {
@@ -598,14 +597,15 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
       unichar_ids->push_back(unichar_id);
       xcoords->push_back(t);
       do {
-        double cert = best_nodes[t++]->certainty;
+        double cert = best_nodes[t]->certainty;
         // Special-case NO-PERM space to forget the certainty of the previous
         // nulls. See long comment in ContinueContext.
         if (cert < certainty || (unichar_id == UNICHAR_SPACE &&
-                                 best_nodes[t - 1]->permuter == NO_PERM)) {
+                                 best_nodes[t]->permuter == NO_PERM)) {
           certainty = cert;
         }
         rating -= cert;
+		t++;
       } while (t < width && best_nodes[t]->duplicate);
       ends.push_back(t);
       certs->push_back(certainty);
@@ -759,14 +759,14 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -830,14 +830,14 @@ void RecodeBeamSearch::DecodeSecondaryStep(
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
       beam_index = BeamIndex(false, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;
         ExtractPath(&prev->beams_[beam_index].get(i).data(), &path);
-        tprintf("Step {}: Non-Dawg beam {}:\n", t, i);
+        tprintDebug("Step {}: Non-Dawg beam {}:\n", t, i);
         DebugPath(charset, path);
       }
     }
@@ -908,7 +908,7 @@ void RecodeBeamSearch::ContinueContext(
             NetworkIO::ProbToCertainty(outputs[prev->code]) + cert_offset;
         PushDupOrNoDawgIfBetter(length, true, prev->code, prev->unichar_id,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_ANYTHING, prev, step);
+                                NC_ANYTHING, prev, step, charset);
       }
       if (prev_cont == NC_ANYTHING && top_n_flag == TN_TOP2 &&
           prev->code != null_char_) {
@@ -917,7 +917,7 @@ void RecodeBeamSearch::ContinueContext(
                      cert_offset;
         PushDupOrNoDawgIfBetter(length, true, prev->code, prev->unichar_id,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_NO_DUP, prev, step);
+                                NC_NO_DUP, prev, step, charset);
       }
     }
     if (prev_cont == NC_ONLY_DUP) {
@@ -931,7 +931,7 @@ void RecodeBeamSearch::ContinueContext(
           NetworkIO::ProbToCertainty(outputs[null_char_]) + cert_offset;
       PushDupOrNoDawgIfBetter(length, false, null_char_, INVALID_UNICHAR_ID,
                               cert, worst_dict_cert, dict_ratio, use_dawgs,
-                              NC_ANYTHING, prev, step);
+                              NC_ANYTHING, prev, step, charset);
     }
   }
   const std::vector<int> *final_codes = recoder_.GetFinalCodes(prefix);
@@ -945,7 +945,11 @@ void RecodeBeamSearch::ContinueContext(
       }
       float cert = NetworkIO::ProbToCertainty(outputs[code]) + cert_offset;
       if (cert < kMinCertainty && code != null_char_) {
-        continue;
+		full_code.Set(length, code);
+		int unichar_id = recoder_.DecodeUnichar(full_code);
+		const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
+		tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+  	    continue;
       }
       full_code.Set(length, code);
       int unichar_id = recoder_.DecodeUnichar(full_code);
@@ -985,7 +989,7 @@ void RecodeBeamSearch::ContinueContext(
       float cert = NetworkIO::ProbToCertainty(outputs[code]) + cert_offset;
       PushDupOrNoDawgIfBetter(length + 1, false, code, INVALID_UNICHAR_ID, cert,
                               worst_dict_cert, dict_ratio, use_dawgs,
-                              NC_ANYTHING, prev, step);
+                              NC_ANYTHING, prev, step, charset);
       if (top_n_flag == TN_TOP2 && code != null_char_) {
         float prob = outputs[code] + outputs[null_char_];
         if (prev != nullptr && prev_cont == NC_ANYTHING &&
@@ -997,7 +1001,7 @@ void RecodeBeamSearch::ContinueContext(
         cert = NetworkIO::ProbToCertainty(prob) + cert_offset;
         PushDupOrNoDawgIfBetter(length + 1, false, code, INVALID_UNICHAR_ID,
                                 cert, worst_dict_cert, dict_ratio, use_dawgs,
-                                NC_ONLY_DUP, prev, step);
+                                NC_ONLY_DUP, prev, step, charset);
       }
     }
   }
@@ -1160,7 +1164,7 @@ void RecodeBeamSearch::PushInitialDawgIfBetter(int code, int unichar_id,
 void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
     int length, bool dup, int code, int unichar_id, float cert,
     float worst_dict_cert, float dict_ratio, bool use_dawgs,
-    NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step) {
+    NodeContinuation cont, const RecodeNode *prev, RecodeBeam *step, const UNICHARSET *charset) {
   int index = BeamIndex(use_dawgs, cont, length);
   if (use_dawgs) {
     if (cert > worst_dict_cert) {
@@ -1169,12 +1173,17 @@ void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
                        dup, cert, prev, nullptr, &step->beams_[index]);
     }
   } else {
+	// non-dictionary word being processed: correct certainty by kDictRatio factor
     cert *= dict_ratio;
     if (cert >= kMinCertainty || code == null_char_) {
       PushHeapIfBetter(kBeamWidths[length], code, unichar_id,
                        prev ? prev->permuter : TOP_CHOICE_PERM, false, false,
                        false, dup, cert, prev, nullptr, &step->beams_[index]);
     }
+	else if (verbose_process || debug_misc) {
+      const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
+	  tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+	}
   }
 }
 
@@ -1355,7 +1364,7 @@ void RecodeBeamSearch::DebugPath(
     msg += '{';
     msg += node.Print(null_char_, unicharset, 1);
     msg += '}';
-    tprintf("path: {}\n", msg);
+    tprintDebug("path: {}\n", msg);
   }
 }
 
@@ -1369,7 +1378,7 @@ void RecodeBeamSearch::DebugUnicharPath(
   for (unsigned c = 0; c < num_ids; ++c) {
     int coord = xcoords[c];
 	auto unichar_id = unichar_ids[c];
-    tprintf("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_id,
+    tprintDebug("{} {}={} r={}, c={}, s={}, e={}, perm={}\n", coord, unichar_id,
 			(unicharset ?
 				unicharset->debug_str(unichar_id).c_str() :
 				std::string(1, (unichar_id < 0x80 && isprint(unichar_id)) ? (char)unichar_id : '.').c_str()),
@@ -1378,7 +1387,7 @@ void RecodeBeamSearch::DebugUnicharPath(
             path[coord]->permuter);
     total_rating += ratings[c];
   }
-  tprintf("Path total rating = {}\n", total_rating);
+  tprintDebug("Path total rating = {}\n", total_rating);
 }
 
 } // namespace tesseract.

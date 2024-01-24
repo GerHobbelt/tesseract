@@ -180,7 +180,7 @@ protected:
     // Check that ExtractBestPathAsWords does the same thing.
     TBOX line_box(0, 0, 100, 10);
     for (int i = 0; i < 2; ++i) {
-      beam_search.ExtractBestPathAsWords(line_box, 1.0f, false, &ccutil_.unicharset, words);
+      beam_search.ExtractBestPathAsWords(line_box, 1.0f, &ccutil_.unicharset, words);
       std::string w_decoded;
       for (int w = 0; w < words->size(); ++w) {
         const WERD_RES *word = (*words)[w];

@@ -203,13 +203,15 @@ SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
   drag_mode_ = 4;
   has_start_point_ = false;
 
-  // Build our menus and add them to the window. The flag illustrates whether
-  // this is a menu bar.
-  SVMenuNode *popup_menu = BuildPopupMenu();
-  popup_menu->BuildMenu(window_, false);
+  if (window_->HasInteractiveFeature()) {
+    // Build our menus and add them to the window. The flag illustrates whether
+    // this is a menu bar.
+    SVMenuNode *popup_menu = BuildPopupMenu();
+    popup_menu->BuildMenu(window_, false);
 
-  SVMenuNode *bar_menu = BuildMenuBar();
-  bar_menu->BuildMenu(window_, true);
+    SVMenuNode *bar_menu = BuildMenuBar();
+    bar_menu->BuildMenu(window_, true);
+  }
 
   // Set the initial color values to White (could also be done by
   // passing (rgb[0], rgb[1], rgb[2]).

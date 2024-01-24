@@ -31,8 +31,8 @@ struct TBLOB;
 ----------------------------------------------------------------------------**/
 
 /* old numbers corresponded to 10.0 degrees and 80.0 degrees */
-extern double_VAR_H(classify_min_slope);
-extern double_VAR_H(classify_max_slope);
+extern DOUBLE_VAR_H(classify_min_slope);
+extern DOUBLE_VAR_H(classify_max_slope);
 
 /*----------------------------------------------------------------------------
           Public Function Prototypes

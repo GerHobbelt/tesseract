@@ -372,7 +372,7 @@ void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
     if (bbox->left_tab_type() == TT_MAYBE_ALIGNED) {
       const TBOX &box = bbox->bounding_box();
       if (AlignedBlob::WithinTestRegion(2, box.left(), box.bottom())) {
-        tprintf("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
+        tprintDebug("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
       TabVector *vector =
@@ -484,7 +484,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
   int open_brick = round(brick_base_size / kOpenBrickToClosingBrickFraction);
   int h_v_line_brick_size = round(min_line_length);
   if (tesseract_->debug_line_finding) {
-    tprintf("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), brick hole base size = {}, closing-brick hole size = {}, opening-brick hole size = {}, h+v line brick size = {}\n", resolution,
+    tprintDebug("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), brick hole base size = {}, closing-brick hole size = {}, opening-brick hole size = {}, h+v line brick size = {}\n", resolution,
         max_line_width, resolution, kThinLineFraction,
         min_line_length, resolution, kMinLineLengthFraction,
         brick_base_size,
@@ -503,9 +503,9 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
                                 min_line_length, min_line_length);
   } else {
 #endif
-    if (tesseract_->debug_line_finding) {
-      tprintf("PROCESS:"
-      " Close up small holes (size <= {}px), making it less likely that false alarms are found"
+    if (tesseract_->debug_line_finding || verbose_process) {
+      tprintDebug("PROCESS:"
+      " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
       " in thickened text (as it will become more solid) and also smoothing over"
       " some line breaks and nicks in the edges of the lines.\n",
       closing_brick);
@@ -514,9 +514,9 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     if (tesseract_->debug_line_finding) {
       tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
     }
-    if (tesseract_->debug_line_finding) {
-      tprintf("PROCESS:"
-        " Open up with a big box to detect solid areas, which can then be"
+    if (tesseract_->debug_line_finding || verbose_process) {
+      tprintDebug("PROCESS:"
+        " Open up the image with a big box to detect solid areas, which can then be"
         " subtracted. This is very generous and will leave in even quite wide"
         " lines. (max_line_width = {})\n",
         max_line_width);
@@ -529,11 +529,13 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
 
     pix_solid.destroy();
 
-    if (tesseract_->debug_line_finding) {
-      tprintf("PROCESS:"
-        " Now open up in both directions independently to find lines of at least"
-        " 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
-        kMinLineLengthFraction, h_v_line_brick_size);
+	if (verbose_process) {
+	  tprintDebug("PROCESS:"
+		" Now open up in both directions independently to find lines of at least"
+		" 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
+		kMinLineLengthFraction, h_v_line_brick_size);
+	}
+	if (tesseract_->debug_line_finding) {
       tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);
@@ -549,8 +551,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
   bool h_empty = pix_hline->isZero();
   if (pix_music_mask != nullptr) {
     if (!v_empty && !h_empty) {
-      *pix_music_mask =
-          FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
+      *pix_music_mask = FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
     } else {
       *pix_music_mask = nullptr;
     }
@@ -720,11 +721,11 @@ void LineFinder::FindAndRemoveHLines(Image pix_intersections, int vertical_x,
 // The output vectors are owned by the list and Frozen (cannot refit) by
 // having no boxes, as there is no need to refit or merge separator lines.
 // The detected lines are removed from the pix.
-void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
                                     int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
                                     TabVector_LIST *h_lines) {
   if (pix == nullptr || vertical_x == nullptr || vertical_y == nullptr) {
-    tprintf("Error in parameters for LineFinder::FindAndRemoveLines\n");
+    tprintError("Error in parameters for LineFinder::FindAndRemoveLines\n");
     return;
   }
   Image pix_vline = nullptr;
@@ -751,11 +752,13 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   }
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
-  if (tesseract_->debug_line_finding && pix_vline != nullptr) {
-    tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
-  }
-  if (tesseract_->debug_line_finding && pix_hline != nullptr) {
-    tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : vline");
+  if (tesseract_->debug_line_finding) {
+    if (pix_vline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
+    }
+    if (pix_hline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline");
+    }
   }
   pix_intersections.destroy();
   if (pix_vline != nullptr && pix_hline != nullptr) {

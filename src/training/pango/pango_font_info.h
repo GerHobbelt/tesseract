@@ -27,9 +27,510 @@
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango/pango-font.h"
-#include "pango/pango.h"
-#include "pango/pangocairo.h"
+//#include "pango/pango-font.h"
+//#include "pango/pango.h"
+//#include "pango/pangocairo.h"
+
+#include "hb.h"
+
+typedef enum {
+	PANGO_UNDERLINE_NONE,
+	PANGO_UNDERLINE_SINGLE,
+	PANGO_UNDERLINE_DOUBLE,
+	PANGO_UNDERLINE_LOW,
+	PANGO_UNDERLINE_ERROR,
+	PANGO_UNDERLINE_SINGLE_LINE,
+	PANGO_UNDERLINE_DOUBLE_LINE,
+	PANGO_UNDERLINE_ERROR_LINE
+} PangoUnderline;
+
+enum PangoStyle : int;
+enum PangoVariant : int;
+enum PangoWeight  : int;
+enum PangoStretch  : int;
+
+typedef enum {
+	PANGO_GRAVITY_SOUTH,
+	PANGO_GRAVITY_EAST,
+	PANGO_GRAVITY_NORTH,
+	PANGO_GRAVITY_WEST,
+	PANGO_GRAVITY_AUTO
+} PangoGravity;
+
+typedef enum {
+	PANGO_GRAVITY_HINT_NATURAL,
+	PANGO_GRAVITY_HINT_STRONG,
+	PANGO_GRAVITY_HINT_LINE
+} PangoGravityHint;
+
+typedef enum {
+	PANGO_WRAP_WORD,
+	PANGO_WRAP_CHAR,
+	PANGO_WRAP_WORD_CHAR
+} PangoWrapMode;
+
+
+struct _PangoFontDescription
+{
+	char *family_name;
+
+	enum PangoStyle style;
+	enum PangoVariant variant;
+	enum PangoWeight weight;
+	enum PangoStretch stretch;
+	PangoGravity gravity;
+
+	char *variations;
+
+	unsigned short  mask;
+	unsigned static_family : 1;
+	unsigned static_variations : 1;
+	unsigned size_is_absolute : 1;
+
+	int size;
+};
+
+/**
+* PANGO_SCALE:
+*
+* The scale between dimensions used for Pango distances and device units.
+*
+* The definition of device units is dependent on the output device; it will
+* typically be pixels for a screen, and points for a printer. %PANGO_SCALE is
+* currently 1024, but this may be changed in the future.
+*
+* When setting font sizes, device units are always considered to be
+* points (as in "12 point font"), rather than pixels.
+*/
+/**
+* PANGO_PIXELS:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by rounding.
+*
+* Return value: rounded dimension in device units.
+*/
+/**
+* PANGO_PIXELS_FLOOR:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by flooring.
+*
+* Return value: floored dimension in device units.
+* Since: 1.14
+*/
+/**
+* PANGO_PIXELS_CEIL:
+* @d: a dimension in Pango units.
+*
+* Converts a dimension to device units by ceiling.
+*
+* Return value: ceiled dimension in device units.
+* Since: 1.14
+*/
+#define PANGO_SCALE 1024
+#define PANGO_PIXELS(d) (((int)(d) + 512) >> 10)
+#define PANGO_PIXELS_FLOOR(d) (((int)(d)) >> 10)
+#define PANGO_PIXELS_CEIL(d) (((int)(d) + 1023) >> 10)
+/* The above expressions are just slightly wrong for floating point d;
+* For example we'd expect PANGO_PIXELS(-512.5) => -1 but instead we get 0.
+* That's unlikely to matter for practical use and the expression is much
+* more compact and faster than alternatives that work exactly for both
+* integers and floating point.
+*
+* PANGO_PIXELS also behaves differently for +512 and -512.
+*/
+
+/**
+* PANGO_UNITS_FLOOR:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension down to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded down dimension in Pango units.
+* Since: 1.50
+*/
+#define PANGO_UNITS_FLOOR(d)                \
+  ((d) & ~(PANGO_SCALE - 1))
+
+/**
+* PANGO_UNITS_CEIL:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension up to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded up dimension in Pango units.
+* Since: 1.50
+*/
+#define PANGO_UNITS_CEIL(d)                 \
+  (((d) + (PANGO_SCALE - 1)) & ~(PANGO_SCALE - 1))
+
+/**
+* PANGO_UNITS_ROUND:
+* @d: a dimension in Pango units.
+*
+* Rounds a dimension to whole device units, but does not
+* convert it to device units.
+*
+* Return value: rounded dimension in Pango units.
+* Since: 1.18
+*/
+#define PANGO_UNITS_ROUND(d)				\
+  (((d) + (PANGO_SCALE >> 1)) & ~(PANGO_SCALE - 1))
+
+
+typedef struct _PangoFontDescription PangoFontDescription;
+
+struct _PangoFont    ;
+typedef struct _PangoFont    PangoFont;
+
+struct _PangoFontMap;
+typedef struct _PangoFontMap PangoFontMap;
+
+struct _PangoRectangle
+{
+	int x, y, w, h;
+	int width, height;
+};
+typedef struct _PangoRectangle PangoRectangle;
+
+struct _PangoContext;
+typedef struct _PangoContext PangoContext;
+
+struct _PangoLanguage ;
+typedef struct _PangoLanguage PangoLanguage;
+
+struct PangoAttrList ;
+struct PangoAttribute
+{
+	int start_index ;
+	int end_index ;
+};
+
+typedef unsigned int  guint;
+
+struct cairo_surface_t ;
+struct _cairo_t ;
+
+struct _PangoLayout;
+typedef struct _PangoLayout PangoLayout;
+
+struct _PangoFontDescription;
+typedef struct _PangoFontDescription PangoFontDescription;
+
+struct _PangoFontFamily;
+typedef struct _PangoFontFamily PangoFontFamily;
+
+struct _PangoFontFace;
+typedef struct _PangoFontFace  PangoFontFace;
+
+typedef hb_codepoint_t PangoGlyph ;
+typedef wchar_t gunichar;
+
+struct _PangoCoverage;
+typedef struct _PangoCoverage PangoCoverage;
+
+struct _PangoLayoutIter;
+typedef struct _PangoLayoutIter PangoLayoutIter ;
+
+#define PANGO_GLYPH_EMPTY           ((PangoGlyph)0x0FFFFFFF)
+#define PANGO_GLYPH_INVALID_INPUT   ((PangoGlyph)0xFFFFFFFF)
+#define PANGO_GLYPH_UNKNOWN_FLAG    ((PangoGlyph)0x10000000)
+#define PANGO_GET_UNKNOWN_GLYPH(wc) ((PangoGlyph)(wc)|PANGO_GLYPH_UNKNOWN_FLAG)
+
+struct _PangoGlyphItemIter;
+typedef struct _PangoGlyphItemIter  PangoGlyphItemIter ;
+struct _PangoGlyphItemIter
+{
+	struct {
+		PangoFont *font;
+	} analysis;
+
+	int start_index;
+	int end_index;
+	int start_glyph;
+	int end_glyph;
+
+	PangoGlyphItemIter *glyph_item;
+	
+	PangoGlyphItemIter *glyphs;
+	
+	PangoGlyph glyph;
+};
+
+struct _PangoLayoutRun
+{
+	PangoGlyphItemIter *item;
+};
+typedef _PangoLayoutRun PangoLayoutRun ;
+
+typedef int     gboolean ;
+
+struct _PangoCairoFontMap;
+typedef struct _PangoCairoFontMap  PangoCairoFontMap;
+
+struct _PangoLayoutLine
+{
+	int start_index;
+	int length;
+};
+typedef struct _PangoLayoutLine  PangoLayoutLine;
+
+
+
+
+static inline const char *pango_version_string() { return "X.X"; }
+
+static inline void
+pango_font_description_free (PangoFontDescription *desc)
+{
+	if (desc == NULL)
+		return;
+	return;
+}
+
+/**
+* pango_font_description_to_filename:
+* @desc: a `PangoFontDescription`
+*
+* Creates a filename representation of a font description.
+*
+* The filename is identical to the result from calling
+* [method@Pango.FontDescription.to_string], but with underscores
+* instead of characters that are untypical in filenames, and in
+* lower case only.
+*
+* Returns: (transfer full) (nullable): a new string that must be freed with g_free().
+*/
+static inline const char *
+pango_font_description_to_string (const PangoFontDescription *desc)
+{
+	return "Bogus";
+}
+
+static inline hb_font_t *pango_font_get_hb_font(PangoFont *font) {
+	return NULL;
+}
+
+static inline void g_free(void *desc_str) {
+}
+
+static inline void 
+pango_cairo_font_map_set_default(void *ptr) {}
+
+static inline 	PangoFontMap * pango_cairo_font_map_get_default(void) {
+	return NULL; 
+}
+static inline void	pango_font_map_list_families(PangoFontMap *font_map, PangoFontFamily ***families, int *n_families)
+{
+	*families = NULL;
+	*n_families = 0;
+}
+
+static inline 	const char * pango_font_description_get_family(const PangoFontDescription *desc) { return "XXX"; }
+static inline 	PangoFontDescription * pango_font_description_copy(const PangoFontDescription *desc) { return NULL; }
+
+static inline int pango_font_description_get_size(const PangoFontDescription *desc) { return 0; }
+static inline int pango_font_description_get_size_is_absolute(const PangoFontDescription *desc) { return 1; }
+
+static inline PangoFontDescription * pango_font_description_from_string(const char *name) { return NULL; }
+
+static inline 	PangoContext * pango_context_new() { return NULL; }
+static inline 	void pango_cairo_context_set_resolution(PangoContext *context, int resolution_) {}
+static inline 	void pango_context_set_font_map(PangoContext *context, PangoFontMap * font_map) {}
+static inline 	PangoFont *pango_font_map_load_font(PangoFontMap * font_map, PangoContext *context, const PangoFontDescription *desc_) { return NULL; }
+static inline void	g_object_unref(void *context) {}
+
+static inline 	PangoCoverage * pango_font_get_coverage(PangoFont *font, void *ptr) { return NULL; }
+static inline  int pango_is_zero_width(int it) { return 0 ; }
+static inline  int pango_coverage_get(PangoCoverage *coverage, int it) { return 0; }
+
+#define PANGO_COVERAGE_EXACT  1
+
+static inline  void  pango_coverage_unref(PangoCoverage *coverage) { return; }
+
+static inline  void  pango_font_get_glyph_extents(PangoFont *font, PangoGlyph glyph_index, PangoRectangle  *ink_rect, PangoRectangle  *logical_rect) {
+}
+
+#define PANGO_LBEARING(ink_rect)		1
+#define PANGO_RBEARING(logical_rect)	1
+
+static inline  void  			pango_layout_set_font_description(PangoLayout *layout, const PangoFontDescription *desc_) {}
+static inline  void  	pango_layout_set_text(PangoLayout *layout, const char *utf8_word, int len) {}
+static inline  PangoLayoutIter *pango_layout_get_iter(PangoLayout *layout) { return NULL; }
+static inline  		PangoLayoutRun *pango_layout_iter_get_run_readonly(PangoLayoutIter *run_iter) { return NULL; }
+static inline  		PangoFontDescription *pango_font_describe(PangoFont *font) { return NULL; }
+static inline  		int pango_glyph_item_iter_init_start(PangoGlyphItemIter *cluster_iter, PangoLayoutRun *run, const char *utf8_word) { return 0; }
+static inline  		int  pango_glyph_item_iter_next_cluster(PangoGlyphItemIter  *cluster_iter) { return 0; }
+
+static inline  void  		pango_layout_iter_free(PangoLayoutIter *run_iter) {}
+
+static inline  	bool pango_font_description_equal(const PangoFontDescription *desc, const PangoFontDescription *selected_desc) { return 0; }
+static inline  	int pango_font_description_get_weight(const PangoFontDescription *desc) { return 0; }
+
+static inline  		const char * pango_font_family_get_name(PangoFontFamily *famili) { return NULL; }
+static inline   void	pango_font_family_list_faces(PangoFontFamily *famili, PangoFontFace ***faces, int *n_faces) {
+	*faces = NULL;
+	*n_faces = 0;
+}
+static inline  	PangoFontDescription * pango_font_face_describe(const PangoFontFace *face) { return NULL; }
+static inline  	int pango_font_face_is_synthesized(const PangoFontFace *face) { return 1; }
+
+static inline PangoLayout * pango_layout_new(PangoContext *context) { return NULL; }
+
+static inline bool pango_layout_iter_next_run(PangoLayoutIter *run_iter) { return false; }
+
+
+
+
+
+
+typedef enum _cairo_font_type {
+	CAIRO_FONT_TYPE_TOY,
+	CAIRO_FONT_TYPE_FT,
+	CAIRO_FONT_TYPE_WIN32,
+	CAIRO_FONT_TYPE_QUARTZ,
+	CAIRO_FONT_TYPE_USER,
+	CAIRO_FONT_TYPE_DWRITE
+} cairo_font_type_t;
+
+static inline cairo_font_type_t pango_cairo_font_map_get_font_type(PangoCairoFontMap *font_map) { return CAIRO_FONT_TYPE_TOY; }
+
+
+
+
+
+
+
+typedef enum _cairo_format {
+	CAIRO_FORMAT_INVALID   = -1,
+	CAIRO_FORMAT_ARGB32    = 0,
+	CAIRO_FORMAT_RGB24     = 1,
+	CAIRO_FORMAT_A8        = 2,
+	CAIRO_FORMAT_A1        = 3,
+	CAIRO_FORMAT_RGB16_565 = 4,
+	CAIRO_FORMAT_RGB30     = 5,
+	CAIRO_FORMAT_RGB96F    = 6,
+	CAIRO_FORMAT_RGBA128F  = 7
+} cairo_format_t;
+
+struct _cairo_t;
+typedef struct _cairo_t  cairo_t ;
+
+
+static inline cairo_format_t cairo_image_surface_get_format(cairo_surface_t *surface) {
+	return CAIRO_FORMAT_ARGB32;
+}
+static inline int cairo_image_surface_get_width(cairo_surface_t *surface) {
+	return 0; 
+}
+static inline int cairo_image_surface_get_height(cairo_surface_t *surface) {
+	return 0;
+}
+static inline int cairo_image_surface_get_stride(cairo_surface_t *surface) {
+	return 0; 
+}
+static inline uint8_t *cairo_image_surface_get_data(cairo_surface_t *surface) {
+	return NULL;
+}
+
+static inline cairo_surface_t *cairo_image_surface_create(cairo_format_t fmt, int page_width_, int page_height_) { return NULL; }
+
+static inline cairo_t *cairo_create(cairo_surface_t *surface_) { return NULL; }
+static inline PangoLayout *pango_cairo_create_layout(cairo_t *cr_) { return NULL; }
+
+static inline  PangoContext *pango_layout_get_context(PangoLayout *layout_) { return NULL; }
+
+
+static inline void pango_context_set_base_gravity(PangoContext *context, PangoGravity grav) { return ; }
+static inline void pango_context_set_gravity_hint(PangoContext *context, PangoGravityHint hint ) { return ; }
+static inline void 		pango_layout_context_changed(PangoLayout *layout_) {}
+
+static inline void 	pango_layout_set_width(PangoLayout *layout_, double max_width ) { return ; }
+static inline void 	pango_layout_set_wrap(PangoLayout *layout_, PangoWrapMode mode) { return ; }
+
+static inline 	PangoAttrList *pango_attr_list_new(void) { return NULL; }
+static inline PangoAttribute * pango_attr_letter_spacing_new(double char_spacing_ ) { return NULL; }
+static inline void 		pango_attr_list_change(PangoAttrList *attr_list, PangoAttribute *spacing_attr) { return ; }
+
+static inline PangoAttribute * pango_attr_font_features_new(const char *str) { return NULL; }
+static inline void 	pango_layout_set_attributes(PangoLayout *layout_, PangoAttrList *attr_list) { return ; }
+static inline void 	pango_attr_list_unref(PangoAttrList *attr_list) { return ; }
+static inline void 		pango_layout_set_spacing(PangoLayout *layout_, double leading_ ) { return ; }
+
+static inline 	const char *pango_layout_get_text(PangoLayout *layout_) { return NULL; }
+
+static inline int pango_layout_iter_get_index(PangoLayoutIter *cluster_iter) { return 0; }
+
+static inline bool pango_layout_iter_next_cluster(PangoLayoutIter *cluster_iter) { return false; }
+
+
+static inline 	PangoLayoutLine *pango_layout_iter_get_line(PangoLayoutIter *line_iter) { return NULL; }
+
+static inline void pango_layout_iter_get_line_extents(PangoLayoutIter *line_iter, PangoRectangle  *ink_rect, PangoRectangle *logical_rect) { return ; }
+
+static inline int pango_layout_iter_get_baseline(PangoLayoutIter *line_iter) { return 0; }
+		
+static inline bool pango_layout_iter_next_line(PangoLayoutIter *line_iter) { return false; }
+
+static inline void pango_layout_iter_get_cluster_extents(PangoLayoutIter *cluster_iter, PangoRectangle  *cluster_rect, PangoRectangle  *ext) { return ; }
+static inline void pango_extents_to_pixels(PangoRectangle  *cluster_rect, PangoRectangle  *ext) { return ; }
+
+static inline void cairo_translate(cairo_t *cr_, int page_width_ , int v_margin_) {}
+
+static inline double pango_gravity_to_rotation(double f) { return 0.0; }
+
+static inline double pango_context_get_base_gravity(PangoContext *context) { return 0.0; }
+
+static inline void pango_cairo_update_layout(cairo_t *cr_, PangoLayout *layout_) { return ; }
+
+
+static inline void 		cairo_set_source_rgb(cairo_t *cr_, double r, double g, double b) { return ; }
+
+static inline void cairo_paint(cairo_t *cr_) { return ; }
+
+static inline void cairo_rotate(cairo_t *cr_, double rotation) { return ; }
+
+static inline PangoAttribute *pango_attr_underline_new(PangoUnderline underline_style_) { return NULL; }
+
+
+
+static inline void pango_cairo_show_layout(cairo_t *cr_, PangoLayout *layout_) { return ; }
+
+static inline void cairo_destroy(cairo_t *cr_) { return ; }
+static inline void   cairo_surface_destroy(cairo_surface_t *surface_) { return ; }
+static inline 	PangoAttrList *pango_layout_get_attributes(PangoLayout *layout_) { return NULL; }
+
+static inline void   pango_attr_list_insert(PangoAttrList *attr_list, PangoAttribute *und_attr){ return ; }
+
+static inline PangoLayoutLine *pango_layout_iter_get_line_readonly(PangoLayoutIter *line_iter) { return NULL; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//===================================================================================================================================================================================================
 
 #include <string>
 #include <unordered_map>

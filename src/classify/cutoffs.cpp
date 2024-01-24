@@ -49,7 +49,7 @@ void Classify::ReadNewCutoffs(TFile *fp, uint16_t *Cutoffs) {
 
   if (shape_table_ != nullptr) {
     if (!fp->DeSerialize(shapetable_cutoffs_)) {
-      tprintf("Error during read of shapetable pffmtable!\n");
+	  tprintError("Error during read of shapetable pffmtable!\n");
     }
   }
   for (int i = 0; i < MAX_NUM_CLASSES; i++) {

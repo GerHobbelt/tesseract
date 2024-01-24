@@ -29,9 +29,7 @@
 #include "tordmain.h"
 
 #include <leptonica/allheaders.h>
-#if LIBLEPT_MINOR_VERSION > 82
 #include <leptonica/pix_internal.h>
-#endif
 
 namespace tesseract {
 
@@ -92,9 +90,9 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg) {
   ASSERT_HOST(split_strategy == MINIMAL_SPLIT || split_strategy == MAXIMAL_SPLIT);
   ASSERT_HOST(orig_pix_);
   if (devanagari_split_debuglevel > 0) {
-    tprintf("Splitting shiro-rekha ...\n");
-    tprintf("Split strategy = {}\n", split_strategy == MINIMAL_SPLIT ? "Minimal" : "Maximal");
-    tprintf("Initial pageseg available = {}\n", segmentation_block_list_ ? "yes" : "no");
+    tprintDebug("Splitting shiro-rekha ...\n");
+    tprintDebug("Split strategy = {}\n", split_strategy == MINIMAL_SPLIT ? "Minimal" : "Maximal");
+    tprintDebug("Initial pageseg available = {}\n", segmentation_block_list_ ? "yes" : "no");
   }
   // Create a copy of original image to store the splitting output.
   splitted_image_.destroy();
@@ -111,7 +109,7 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg) {
   Image pix_for_ccs = orig_pix_.clone();
   if (perform_close_ && global_xheight_ != kUnspecifiedXheight && !segmentation_block_list_) {
     if (devanagari_split_debuglevel > 0) {
-      tprintf("Performing a global close operation..\n");
+      tprintDebug("Performing a global close operation..\n");
     }
     // A global measure is available for xheight, but no local information
     // exists.
@@ -149,7 +147,7 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg) {
     if (xheight == kUnspecifiedXheight || (w > xheight / 3 && h > xheight / 2)) {
       SplitWordShiroRekha(split_strategy, word_pix, xheight, x, y, regions_to_clear);
     } else if (devanagari_split_debuglevel > 0) {
-      tprintf("CC dropped from splitting: {},{} ({}, {})\n", x, y, w, h);
+      tprintDebug("CC dropped from splitting: {},{} ({}, {})\n", x, y, w, h);
     }
     word_pix.destroy();
     boxDestroy(&box);
@@ -252,7 +250,7 @@ void ShiroRekhaSplitter::SplitWordShiroRekha(SplitStrategy split_strategy, Image
   if (shirorekha_ylevel > height / 2) {
     // Shirorekha shouldn't be in the bottom half of the word.
     if (devanagari_split_debuglevel > 0) {
-      tprintf("Skipping splitting CC at ({}, {}): shirorekha in lower half..\n", word_left,
+      tprintDebug("Skipping splitting CC at ({}, {}): shirorekha in lower half..\n", word_left,
               word_top);
     }
     return;
@@ -260,7 +258,7 @@ void ShiroRekhaSplitter::SplitWordShiroRekha(SplitStrategy split_strategy, Image
   if (stroke_width > height / 3) {
     // Even the boldest of fonts shouldn't do this.
     if (devanagari_split_debuglevel > 0) {
-      tprintf("Skipping splitting CC at ({}, {}): stroke width too huge..\n", word_left, word_top);
+      tprintDebug("Skipping splitting CC at ({}, {}): stroke width too huge..\n", word_left, word_top);
     }
     return;
   }
@@ -350,9 +348,9 @@ void ShiroRekhaSplitter::RefreshSegmentationWithNewBlobs(C_BLOB_LIST *new_blobs)
   // The segmentation block list must have been specified.
   ASSERT_HOST(segmentation_block_list_);
   if (devanagari_split_debuglevel > 0) {
-    tprintf("Before refreshing blobs:\n");
+    tprintDebug("Before refreshing blobs:\n");
     PrintSegmentationStats(segmentation_block_list_);
-    tprintf("New Blobs found: {}\n", new_blobs->length());
+    tprintDebug("New Blobs found: {}\n", new_blobs->length());
   }
 
   C_BLOB_LIST not_found_blobs;
@@ -361,7 +359,7 @@ void ShiroRekhaSplitter::RefreshSegmentationWithNewBlobs(C_BLOB_LIST *new_blobs)
       ((devanagari_split_debugimage && debug_image_) ? &not_found_blobs : nullptr));
 
   if (devanagari_split_debuglevel > 0) {
-    tprintf("After refreshing blobs:\n");
+    tprintDebug("After refreshing blobs:\n");
     PrintSegmentationStats(segmentation_block_list_);
   }
   if (devanagari_split_debugimage && debug_image_) {

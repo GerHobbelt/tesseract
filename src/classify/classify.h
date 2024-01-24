@@ -44,8 +44,8 @@ public:
   INT_VAR_H(classify_debug_level);
   INT_VAR_H(tess_debug_lstm);
   BOOL_VAR_H(classify_bln_numeric_mode);
-  double_VAR_H(classify_max_rating_ratio);
-  double_VAR_H(classify_max_certainty_margin);
+  DOUBLE_VAR_H(classify_max_rating_ratio);
+  DOUBLE_VAR_H(classify_max_certainty_margin);
 
 private:
   Dict dict_;
@@ -370,9 +370,9 @@ public:
   /* mfoutline.cpp ***********************************************************/
   /* control knobs used to control normalization of outlines */
   INT_VAR_H(classify_norm_method);
-  double_VAR_H(classify_char_norm_range);
-  double_VAR_H(classify_max_rating_ratio);
-  double_VAR_H(classify_max_certainty_margin);
+  DOUBLE_VAR_H(classify_char_norm_range);
+  DOUBLE_VAR_H(classify_max_rating_ratio);
+  DOUBLE_VAR_H(classify_max_certainty_margin);
 
   /* adaptmatch.cpp ***********************************************************/
   BOOL_VAR_H(tess_cn_matching);
@@ -385,25 +385,25 @@ public:
   INT_VAR_H(matcher_debug_level);
   INT_VAR_H(matcher_debug_flags);
   INT_VAR_H(classify_learning_debug_level);
-  double_VAR_H(matcher_good_threshold);
-  double_VAR_H(matcher_reliable_adaptive_result);
-  double_VAR_H(matcher_perfect_threshold);
-  double_VAR_H(matcher_bad_match_pad);
-  double_VAR_H(matcher_rating_margin);
-  double_VAR_H(matcher_avg_noise_size);
+  DOUBLE_VAR_H(matcher_good_threshold);
+  DOUBLE_VAR_H(matcher_reliable_adaptive_result);
+  DOUBLE_VAR_H(matcher_perfect_threshold);
+  DOUBLE_VAR_H(matcher_bad_match_pad);
+  DOUBLE_VAR_H(matcher_rating_margin);
+  DOUBLE_VAR_H(matcher_avg_noise_size);
   INT_VAR_H(matcher_permanent_classes_min);
   INT_VAR_H(matcher_min_examples_for_prototyping);
   INT_VAR_H(matcher_sufficient_examples_for_prototyping);
-  double_VAR_H(matcher_clustering_max_angle_delta);
-  double_VAR_H(classify_misfit_junk_penalty);
-  double_VAR_H(rating_scale);
-  double_VAR_H(tessedit_class_miss_scale);
-  double_VAR_H(classify_adapted_pruning_factor);
-  double_VAR_H(classify_adapted_pruning_threshold);
+  DOUBLE_VAR_H(matcher_clustering_max_angle_delta);
+  DOUBLE_VAR_H(classify_misfit_junk_penalty);
+  DOUBLE_VAR_H(rating_scale);
+  DOUBLE_VAR_H(tessedit_class_miss_scale);
+  DOUBLE_VAR_H(classify_adapted_pruning_factor);
+  DOUBLE_VAR_H(classify_adapted_pruning_threshold);
   INT_VAR_H(classify_adapt_proto_threshold);
   INT_VAR_H(classify_adapt_feature_threshold);
   BOOL_VAR_H(disable_character_fragments);
-  double_VAR_H(classify_character_fragments_garbage_certainty_threshold);
+  DOUBLE_VAR_H(classify_character_fragments_garbage_certainty_threshold);
   BOOL_VAR_H(classify_debug_character_fragments);
   BOOL_VAR_H(matcher_debug_separate_windows);
   STRING_VAR_H(classify_learn_debug_str);
@@ -415,8 +415,8 @@ public:
   INT_VAR_H(classify_integer_matcher_multiplier);
 
   BOOL_VAR_H(classify_bln_numeric_mode);
-  double_VAR_H(speckle_large_max_size);
-  double_VAR_H(speckle_rating_penalty);
+  DOUBLE_VAR_H(speckle_large_max_size);
+  DOUBLE_VAR_H(speckle_rating_penalty);
 
   // Use class variables to hold onto built-in templates and adapted templates.
   INT_TEMPLATES_STRUCT *PreTrainedTemplates = nullptr;

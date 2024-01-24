@@ -23,6 +23,7 @@
 #include "unicharmap.h"
 
 #include <tesseract/unichar.h>
+#include <tesseract/fmt-support.h>
 #include "helpers.h"
 #include "serialis.h"
 
@@ -200,7 +201,6 @@ public:
     U_CHAR_DIRECTION_COUNT
 #endif // U_HIDE_DEPRECATED_API
   };
-
   // Create an empty UNICHARSET
   UNICHARSET();
 
@@ -434,6 +434,9 @@ public:
   // the unicharset are silently ignored.
   void set_black_and_whitelist(const char *blacklist, const char *whitelist,
                                const char *unblacklist);
+
+  // Enables or disables all punctuation unichars
+  void set_enable_punctuation(bool enable);
 
   // Set the isalpha property of the given unichar to the given value.
   void set_isalpha(UNICHAR_ID unichar_id, bool value) {
@@ -1123,6 +1126,8 @@ private:
   // The most frequently occurring script in the charset.
   int default_sid_;
 };
+
+DECL_FMT_FORMAT_TESSENUMTYPE(UNICHARSET::Direction);
 
 } // namespace tesseract
 

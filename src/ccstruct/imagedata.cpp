@@ -34,6 +34,7 @@
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm> // for max, min
+#include <fstream>   // for std::ifstream
 #include <cinttypes> // for PRId64
 
 #undef min
@@ -72,7 +73,7 @@ ImageData *ImageData::Build(const char *name, int page_number, const char *lang,
   memcpy(&image_data->image_data_[0], imagedata, imagedatasize);
   if (!image_data->AddBoxes(box_text)) {
     if (truth_text == nullptr || truth_text[0] == '\0') {
-      tprintf("ERROR: No text corresponding to page {} from image {}!\n",
+      tprintError("No text corresponding to page {} from image {}!\n",
               page_number, name);
       delete image_data;
       return nullptr;
@@ -232,7 +233,7 @@ Image ImageData::PreScale(int target_height, int max_height,
   // Get the scaled image.
   Image pix = pixScale(src_pix, im_factor, im_factor);
   if (pix == nullptr) {
-    tprintf("ERROR: Scaling pix of size {}, {} by factor {} made null pix!!\n",
+    tprintError("Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
     src_pix.destroy();
     return nullptr;
@@ -303,7 +304,9 @@ void ImageData::Display(Tesseract *tesseract_) const {
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
   win->UpdateWindow();
-  win->Wait();
+  if (win->HasInteractiveFeature()) {
+    win->Wait();
+  }
 }
 
 #endif
@@ -369,7 +372,7 @@ bool ImageData::AddBoxes(const char *box_text) {
       AddBoxes(boxes, texts, box_pages);
       return true;
     } else {
-      tprintf("ERROR: No boxes for page {} from image {}!\n", page_number_,
+      tprintError("No boxes for page {} from image {}!\n", page_number_,
               imagefilename_);
     }
   }
@@ -421,7 +424,7 @@ bool DocumentData::SaveDocument(const char *filename, FileWriter writer) {
   TFile fp;
   fp.OpenWrite(nullptr);
   if (!fp.Serialize(pages_) || !fp.CloseWrite(filename, writer)) {
-    tprintf("ERROR: Serialize failed: {}\n", filename);
+    tprintError("Serialize failed: {}\n", filename);
     return false;
   }
   return true;
@@ -519,7 +522,7 @@ int64_t DocumentData::UnCache() {
   pages_offset_ = -1;
   set_total_pages(-1);
   set_memory_used(0);
-  tprintf("Unloaded document {}, saving {} memory\n",
+  tprintDebug("Unloaded document {}, saving {} memory\n",
           document_name_, memory_saved);
   return memory_saved;
 }
@@ -529,7 +532,7 @@ void DocumentData::Shuffle() {
   TRand random;
   // Different documents get shuffled differently, but the same for the same
   // name.
-  random.set_seed(document_name_.c_str());
+  random.set_seed(document_name_);
   int num_pages = pages_.size();
   // Execute one random swap for each page in the document.
   for (int i = 0; i < num_pages; ++i) {
@@ -539,7 +542,7 @@ void DocumentData::Shuffle() {
   }
 }
 
-// Locks the pages_mutex_ and Loads as many pages can fit in max_memory_
+// Locks the pages_mutex_ and loads as many pages can fit in max_memory_
 // starting at index pages_offset_.
 bool DocumentData::ReCachePages() {
   std::lock_guard<std::mutex> lock(pages_mutex_);
@@ -551,10 +554,34 @@ bool DocumentData::ReCachePages() {
     delete page;
   }
   pages_.clear();
+#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
+  if (document_name_.ends_with("png")) {
+    // PDF image given instead of LSTMF file.
+    std::string gt_name = document_name_.substr(0, document_name_.length() - 3) + "gt.txt";
+    std::ifstream t(gt_name);
+    std::string line;
+    std::getline(t, line);
+    t.close();
+    ImageData *image_data = ImageData::Build(document_name_.c_str(), 0, "", nullptr, 0, line.c_str(), nullptr);
+    Image image = pixRead(document_name_.c_str());
+    image_data->SetPix(image);
+    pages_.push_back(image_data);
+    loaded_pages = 1;
+    pages_offset_ %= loaded_pages;
+    set_total_pages(loaded_pages);
+    set_memory_used(memory_used() + image_data->MemoryUsed());
+    if (true) {
+      tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+              loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
+              document_name_.c_str());
+    }
+    return !pages_.empty();
+  }
+#endif
   TFile fp;
   if (!fp.Open(document_name_.c_str(), reader_) ||
       !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintf("ERROR: Deserialize header failed: {}\n", document_name_);
+    tprintError("Deserialize header failed: {}\n", document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -589,7 +616,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintf("ERROR: Deserialize failed: {} read {}/{} lines\n", document_name_,
+    tprintError("Deserialize failed: {} read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;
@@ -597,7 +624,7 @@ bool DocumentData::ReCachePages() {
     pages_.clear();
   } else if (loaded_pages > 1) {
     // Avoid lots of messages for training with single line images.
-    tprintf("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
+    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
             loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
             document_name_);
   }
@@ -637,7 +664,7 @@ bool DocumentCache::LoadDocuments(const std::vector<std::string> &filenames,
     if (GetPageBySerial(0) != nullptr) {
       return true;
     }
-    tprintf("ERROR: Load of page 0 failed!\n");
+    tprintError("Load of page 0 failed!\n");
   }
   return false;
 }
@@ -705,7 +732,7 @@ const ImageData *DocumentCache::GetPageSequential(int serial) {
     documents_[0]->GetPage(0);
     num_pages_per_doc_ = documents_[0]->NumPages();
     if (num_pages_per_doc_ == 0) {
-      tprintf("ERROR: First document cannot be empty!!\n");
+      tprintError("First document cannot be empty!!\n");
       ASSERT_HOST(num_pages_per_doc_ > 0);
     }
     // Get rid of zero now if we don't need it.

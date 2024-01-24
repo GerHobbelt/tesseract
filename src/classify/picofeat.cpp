@@ -40,7 +40,7 @@ namespace tesseract {
           Variables
 ----------------------------------------------------------------------------*/
 
-double_VAR(classify_pico_feature_length, 0.05, "Pico Feature Length");
+DOUBLE_VAR(classify_pico_feature_length, 0.05, "Pico Feature Length");
 
 /*---------------------------------------------------------------------------
           Private Function Prototypes

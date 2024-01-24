@@ -894,9 +894,9 @@ bool ImageFind::ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGrid
   ColPartition *image_part = *part_ptr;
   TBOX im_part_box = image_part->bounding_box();
   if (textord_tabfind_show_images > 1) {
-    tprintf("Searching for merge with image part:");
+    tprintDebug("Searching for merge with image part:");
     im_part_box.print();
-    tprintf("Text box=");
+    tprintDebug("Text box=");
     max_image_box.print();
   }
   rectsearch->StartRectSearch(max_image_box);
@@ -905,16 +905,16 @@ bool ImageFind::ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGrid
   int best_dist = 0;
   while ((part = rectsearch->NextRectSearch()) != nullptr) {
     if (textord_tabfind_show_images > 1) {
-      tprintf("Considering merge with part:");
+      tprintDebug("Considering merge with part:");
       part->Print();
       if (im_part_box.contains(part->bounding_box())) {
-        tprintf("Fully contained\n");
+        tprintDebug("Fully contained\n");
       } else if (!max_image_box.contains(part->bounding_box())) {
-        tprintf("Not within text box\n");
+        tprintDebug("Not within text box\n");
       } else if (part->flow() == BTFT_STRONG_CHAIN) {
-        tprintf("Too strong text\n");
+        tprintDebug("Too strong text\n");
       } else {
-        tprintf("Real candidate\n");
+        tprintDebug("Real candidate\n");
       }
     }
     if (part->flow() == BTFT_STRONG_CHAIN || part->flow() == BTFT_TEXT_ON_IMAGE ||
@@ -946,9 +946,9 @@ bool ImageFind::ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGrid
     // It needs expanding. We can do it without touching text.
     TBOX box = best_part->bounding_box();
     if (textord_tabfind_show_images > 1) {
-      tprintf("Merging image part:");
+      tprintDebug("Merging image part:");
       im_part_box.print();
-      tprintf("with part:");
+      tprintDebug("with part:");
       box.print();
     }
     im_part_box += box;
@@ -1173,7 +1173,7 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
     DivideImageIntoParts(im_box, rotation, rerotation, pix, &rectsearch, &part_list);
     if (textord_tabfind_show_images) {
       tesseract_->AddPixDebugPage(pix, "ImageComponent");
-      tprintf("Component has {} parts\n", part_list.length());
+      tprintDebug("Component has {} parts\n", part_list.length());
     }
     pix.destroy();
     if (!part_list.empty()) {

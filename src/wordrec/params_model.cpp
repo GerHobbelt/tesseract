@@ -38,9 +38,9 @@ static const float kMaxFinalCost = 100.0f;
 
 void ParamsModel::Print() {
   for (int p = 0; p < PTRAIN_NUM_PASSES; ++p) {
-    tprintf("ParamsModel for pass {} lang {}\n", p, lang_.c_str());
+    tprintDebug("ParamsModel for pass {} lang {}\n", p, lang_.c_str());
     for (unsigned i = 0; i < weights_vec_[p].size(); ++i) {
-      tprintf("{} = {}\n", kParamsTrainingFeatureTypeName[i], weights_vec_[p][i]);
+      tprintDebug("{} = {}\n", kParamsTrainingFeatureTypeName[i], weights_vec_[p][i]);
     }
   }
 }
@@ -62,7 +62,7 @@ bool ParamsModel::ParseLine(char *line, char **key, float *val) {
     end_of_key++;
   }
   if (!line[end_of_key]) {
-    tprintf("ParamsModel::Incomplete line {}\n", line);
+    tprintDebug("ParamsModel::Incomplete line {}\n", line);
     return false;
   }
   line[end_of_key++] = 0;
@@ -121,7 +121,7 @@ bool ParamsModel::LoadFromFp(const char *lang, TFile *fp) {
     }
     int idx = ParamsTrainingFeatureByName(key);
     if (idx < 0) {
-      tprintf("ParamsModel::Unknown parameter {}\n", key);
+      tprintDebug("ParamsModel::Unknown parameter {}\n", key);
       continue;
     }
     if (!present[idx]) {
@@ -133,7 +133,7 @@ bool ParamsModel::LoadFromFp(const char *lang, TFile *fp) {
   if (!complete) {
     for (int i = 0; i < PTRAIN_NUM_FEATURE_TYPES; i++) {
       if (!present[i]) {
-        tprintf("Missing field {}\n", kParamsTrainingFeatureTypeName[i]);
+        tprintDebug("Missing field {}\n", kParamsTrainingFeatureTypeName[i]);
       }
     }
     lang_ = "";
@@ -145,12 +145,12 @@ bool ParamsModel::LoadFromFp(const char *lang, TFile *fp) {
 bool ParamsModel::SaveToFile(const char *full_path) const {
   const std::vector<float> &weights = weights_vec_[pass_];
   if (weights.size() != PTRAIN_NUM_FEATURE_TYPES) {
-    tprintf("Refusing to save ParamsModel that has not been initialized.\n");
+    tprintDebug("Refusing to save ParamsModel that has not been initialized.\n");
     return false;
   }
   FILE *fp = fopen(full_path, "wb");
   if (!fp) {
-    tprintf("Could not open {} for writing.\n", full_path);
+    tprintDebug("Could not open {} for writing.\n", full_path);
     return false;
   }
   bool all_good = true;

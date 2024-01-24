@@ -231,6 +231,10 @@ auto fmt::formatter<CMD_EVENTS>::format(CMD_EVENTS c, format_context &ctx) const
 
 namespace tesseract {
 
+static inline auto format_as(CMD_EVENTS e) {
+  return fmt::underlying(e);
+}
+
 enum ColorationMode {
   CM_RAINBOW,
   CM_SUBSCRIPT,
@@ -522,7 +526,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
 
   build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
-  if (debug_all) {
+  if (debug_misc) {
     word_display_mode.set(DF_BOX);
     word_display_mode.set(DF_TEXT);
     word_display_mode.set(DF_POLYGONAL);
@@ -548,6 +552,7 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   SVMenuNode *svMenuRoot = build_menu_new();
 
   svMenuRoot->BuildMenu(image_win);
+
   image_win->SetVisible(true);
 
   image_win->AwaitEvent(SVET_DESTROY);
@@ -1054,26 +1059,26 @@ namespace tesseract {
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
   BLOCK_RES *block = pr_it->block();
   if (block != nullptr && block->block != nullptr) {
-    tprintf("\nBlock data...\n");
-    block->block->print(nullptr, debug_all);
+    tprintDebug("\nBlock data...\n");
+    block->block->print(nullptr, true);
   }
-  tprintf("\nRow data...\n");
+  tprintDebug("\nRow data...\n");
   ROW_RES *row = pr_it->row();
   if (row != nullptr) {
     row->row->print(nullptr);
   } else {
-    tprintf("  (empty / nil)\n");
+    tprintDebug("  (empty / nil)\n");
   }
-  tprintf("\nWord data...\n");
+  tprintDebug("\nWord data...\n");
   WERD_RES *word_res = pr_it->word();
   if (word_res != nullptr) {
       word_res->word->print();
       if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
           word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
-        tprintf("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
+        tprintDebug("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
       }
   } else {
-      tprintf("  (empty / nil)\n");
+      tprintDebug("  (empty / nil)\n");
   }
   return true;
 }

@@ -17,6 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "unicharset_training_utils.h"
 
 #include <cstdlib>
@@ -41,7 +45,7 @@ namespace tesseract {
 // Helper sets the character attribute properties and sets up the script table.
 // Does not set tops and bottoms.
 void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicharset) {
-  for (size_t unichar_id = 0; unichar_id < unicharset->size(); ++unichar_id) {
+  for (UNICHAR_ID unichar_id = 0; unichar_id < (UNICHAR_ID)unicharset->size(); ++unichar_id) {
     // Convert any custom ligatures.
     const char *unichar_str = unicharset->id_to_unichar(unichar_id);
     for (int i = 0; UNICHARSET::kCustomLigatures[i][0] != nullptr; ++i) {
@@ -106,7 +110,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
       if (other_case_id != INVALID_UNICHAR_ID) {
         unicharset->set_other_case(unichar_id, other_case_id);
       } else if (unichar_id >= SPECIAL_UNICHAR_CODES_COUNT && report_errors) {
-        tprintf("ERROR: Other case {} of {} is not in unicharset\n", other_case_uch, unichar_str);
+        tprintError("Other case {} of {} is not in unicharset\n", other_case_uch, unichar_str);
       }
     }
 
@@ -124,7 +128,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
     if (mirror_uch_id != INVALID_UNICHAR_ID) {
       unicharset->set_mirror(unichar_id, mirror_uch_id);
     } else if (report_errors) {
-      tprintf("ERROR: Mirror {} of {} is not in unicharset\n", mirror_uch, unichar_str);
+      tprintError("Mirror {} of {} is not in unicharset\n", mirror_uch, unichar_str);
     }
 
     // Record normalized version of this unichar.
@@ -154,12 +158,12 @@ void SetScriptProperties(const std::string &script_dir, UNICHARSET *unicharset) 
     if (script_set.load_from_file(filename.c_str())) {
       unicharset->SetPropertiesFromOther(script_set);
     } else if (s != unicharset->common_sid() && s != unicharset->null_sid()) {
-      tprintf("ERROR: Failed to load script unicharset from:{}\n", filename);
+      tprintError("Failed to load script unicharset from:{}\n", filename);
     }
   }
   for (int c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
     if (unicharset->PropertiesIncomplete(c)) {
-      tprintf("WARNING: Properties incomplete for index {} = {}\n", c,
+      tprintWarn("Properties incomplete for index {} = {}\n", c,
               unicharset->id_to_unichar(c));
     }
   }
@@ -192,13 +196,13 @@ void SetPropertiesForInputFile(const std::string &script_dir,
 
   // Load the input unicharset
   unicharset.load_from_file(input_unicharset_file.c_str());
-  tprintf("Loaded unicharset of size {} from file {}\n", unicharset.size(),
+  tprintDebug("Loaded unicharset of size {} from file {}\n", unicharset.size(),
           input_unicharset_file);
 
   // Set unichar properties
-  tprintf("Setting unichar properties\n");
+  tprintDebug("Setting unichar properties\n");
   SetupBasicProperties(true, false, &unicharset);
-  tprintf("Setting script properties\n");
+  tprintDebug("Setting script properties\n");
   SetScriptProperties(script_dir, &unicharset);
   if (!output_xheights_file.empty()) {
     std::string xheights_str = GetXheightString(script_dir, unicharset);
@@ -206,7 +210,7 @@ void SetPropertiesForInputFile(const std::string &script_dir,
   }
 
   // Write the output unicharset
-  tprintf("Writing unicharset to file {}\n", output_unicharset_file);
+  tprintDebug("Writing unicharset to file {}\n", output_unicharset_file);
   unicharset.save_to_file(output_unicharset_file.c_str());
 }
 

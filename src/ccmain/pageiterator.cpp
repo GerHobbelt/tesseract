@@ -648,7 +648,7 @@ void PageIterator::BeginWord(int offset) {
     word_length_ = word_res->best_choice->length();
     if (word_res->box_word != nullptr) {
       if (word_res->box_word->length() != static_cast<unsigned>(word_length_)) {
-        tprintf("WARNING: Corrupted word! best_choice[len={}] = {}, box_word[len={}]: ",
+        tprintWarn("Corrupted word! best_choice[len={}] = {}, box_word[len={}]: ",
                 word_length_, word_res->best_choice->unichar_string(),
                 word_res->box_word->length());
         word_res->box_word->bounding_box().print();

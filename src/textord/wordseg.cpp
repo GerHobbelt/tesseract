@@ -148,7 +148,7 @@ void set_row_spaces( // find space sizes
       row->max_nonspace = static_cast<int32_t>(
           floor(row->pr_nonsp + (row->pr_space - row->pr_nonsp) * textord_words_definite_spread));
       if (textord_show_initial_words) {
-        tprintf("Assigning defaults {} non, {} space to row at {}\n", row->max_nonspace,
+        tprintDebug("Assigning defaults {} non, {} space to row at {}\n", row->max_nonspace,
                 row->min_space, row->intercept());
       }
       row->space_threshold = (row->max_nonspace + row->min_space) / 2;
@@ -194,7 +194,7 @@ int32_t row_words(    // compute space size
   testpt = ICOORD(textord_test_x, textord_test_y);
   smooth_factor = static_cast<int32_t>(block->xheight * textord_wordstats_smooth_factor + 1.5);
   //      if (testing_on)
-  //              tprintf("Row smooth factor={}\n",smooth_factor);
+  //              tprintDebug("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
   prev_x = TDIMENSION_MIN;
   testing_row = false;
@@ -244,7 +244,7 @@ int32_t row_words(    // compute space size
   // get medians
   if (cluster_count > 2) {
     if (textord_show_initial_words) {
-      tprintf("Row at {} has 3 sizes of gap:{},{},{}\n", row->intercept(),
+      tprintDebug("Row at {} has 3 sizes of gap:{},{},{}\n", row->intercept(),
               cluster_stats[1].ile(0.5), cluster_stats[2].ile(0.5), cluster_stats[3].ile(0.5));
     }
     lower = gaps[0];
@@ -259,7 +259,7 @@ int32_t row_words(    // compute space size
       upper = lower; // not nice
       lower = gaps[1];
       if (textord_show_initial_words) {
-        tprintf("Had to switch most common from lower to upper!!\n");
+        tprintDebug("Had to switch most common from lower to upper!!\n");
         gap_stats.print();
       }
     } else {
@@ -270,7 +270,7 @@ int32_t row_words(    // compute space size
   } else {
     if (gaps[1] < gaps[0]) {
       if (textord_show_initial_words) {
-        tprintf("Had to switch most common from lower to upper!!\n");
+        tprintDebug("Had to switch most common from lower to upper!!\n");
         gap_stats.print();
       }
       lower = gaps[1];
@@ -288,8 +288,8 @@ int32_t row_words(    // compute space size
   if (upper * 3 < block->min_space * 2 + block->max_nonspace ||
       lower * 3 > block->min_space * 2 + block->max_nonspace) {
     if (textord_show_initial_words) {
-      tprintf("Disagreement between block and row at {}!!\n", row->intercept());
-      tprintf("Lower={}, upper={}, Stats:\n", lower, upper);
+      tprintDebug("Disagreement between block and row at {}!!\n", row->intercept());
+      tprintDebug("Lower={}, upper={}, Stats:\n", lower, upper);
       gap_stats.print();
     }
   }
@@ -302,14 +302,14 @@ int32_t row_words(    // compute space size
   row->kern_size = lower;
   if (textord_show_initial_words) {
     if (testing_row) {
-      tprintf("GAP STATS\n");
+      tprintDebug("GAP STATS\n");
       gap_stats.print();
-      tprintf("SPACE stats\n");
+      tprintDebug("SPACE stats\n");
       cluster_stats[2].print_summary();
-      tprintf("NONSPACE stats\n");
+      tprintDebug("NONSPACE stats\n");
       cluster_stats[1].print_summary();
     }
-    tprintf("Row at {} has minspace={}({}), max_non={}({})\n", row->intercept(), row->min_space,
+    tprintDebug("Row at {} has minspace={}({}), max_non={}({})\n", row->intercept(), row->min_space,
             upper, row->max_nonspace, lower);
   }
   return cluster_stats[2].get_total();
@@ -352,7 +352,7 @@ int32_t row_words2(   // compute space size
   testpt = ICOORD(textord_test_x, textord_test_y);
   smooth_factor = static_cast<int32_t>(block->xheight * textord_wordstats_smooth_factor + 1.5);
   //      if (testing_on)
-  //              tprintf("Row smooth factor={}\n",smooth_factor);
+  //              tprintDebug("Row smooth factor={}\n",smooth_factor);
   prev_valid = false;
   prev_x = TDIMENSION_MIN;
   const bool testing_row = false;
@@ -412,11 +412,11 @@ int32_t row_words2(   // compute space size
   }
   // get medians
   if (1) {
-    tprintf("cluster_count={}:", cluster_count);
+    tprintDebug("cluster_count={}:", cluster_count);
     for (gap_index = 0; gap_index < cluster_count; gap_index++) {
-      tprintf(" {}({})", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
+      tprintDebug(" {}({})", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 
   // Try to find proportional non-space and space for row.
@@ -428,7 +428,7 @@ int32_t row_words2(   // compute space size
     lower = gaps[gap_index]; // most frequent below
   } else {
     if (1) {
-      tprintf("No cluster below block threshold!, using default={}\n", block->pr_nonsp);
+      tprintDebug("No cluster below block threshold!, using default={}\n", block->pr_nonsp);
     }
     lower = block->pr_nonsp;
   }
@@ -440,7 +440,7 @@ int32_t row_words2(   // compute space size
     upper = gaps[gap_index]; // most frequent above
   } else {
     if (1) {
-      tprintf("No cluster above block threshold!, using default={}\n", block->pr_space);
+      tprintDebug("No cluster above block threshold!, using default={}\n", block->pr_space);
     }
     upper = block->pr_space;
   }
@@ -453,14 +453,14 @@ int32_t row_words2(   // compute space size
   row->kern_size = lower;
   if (1) {
     if (testing_row) {
-      tprintf("GAP STATS\n");
+      tprintDebug("GAP STATS\n");
       gap_stats.print();
-      tprintf("SPACE stats\n");
+      tprintDebug("SPACE stats\n");
       cluster_stats[2].print_summary();
-      tprintf("NONSPACE stats\n");
+      tprintDebug("NONSPACE stats\n");
       cluster_stats[1].print_summary();
     }
-    tprintf("Row at {} has minspace={}({}), max_non={}({})\n", row->intercept(), row->min_space,
+    tprintDebug("Row at {} has minspace={}({}), max_non={}({})\n", row->intercept(), row->min_space,
             upper, row->max_nonspace, lower);
   }
   return 1;

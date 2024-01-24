@@ -35,6 +35,7 @@ class TESS_API ColPartitionGrid
     : public BBGrid<ColPartition, ColPartition_CLIST, ColPartition_C_IT> {
 public:
   // This empty constructor is here only so that the class can be ELISTIZED.
+  //
   // TODO(rays) change deep_copy in elst.h line 955 to take a callback copier
   // and eliminate CLASSNAME##_copier.
   ColPartitionGrid() = default;

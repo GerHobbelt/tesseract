@@ -130,7 +130,7 @@ struct INT_FEATURE_STRUCT {
   int8_t CP_misses;
 
   void print() const {
-    tprintf("({},{}):{}\n", X, Y, Theta);
+    tprintDebug("({},{}):{}\n", X, Y, Theta);
   }
 };
 

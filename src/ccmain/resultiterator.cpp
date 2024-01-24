@@ -41,10 +41,9 @@ ResultIterator::ResultIterator(const LTRResultIterator &resit) : LTRResultIterat
   at_beginning_of_minor_run_ = false;
   preserve_interword_spaces_ = false;
 
-  auto *p = ParamUtils::FindParam<BoolParam>(
-      "preserve_interword_spaces", GlobalParams()->bool_params_c(), tesseract_->params()->bool_params_c());
+  BoolParam *p = ParamUtils::FindParam<BoolParam>("preserve_interword_spaces", tesseract_->params_collective());
   if (p != nullptr) {
-    preserve_interword_spaces_ = (bool)(*p);
+    preserve_interword_spaces_ = static_cast<bool>(*p);
   }
 
   current_paragraph_is_ltr_ = CurrentParagraphIsLtr();
@@ -237,23 +236,23 @@ static void PrintScriptDirs(const std::vector<StrongScriptDirection> &dirs) {
   for (auto dir : dirs) {
     switch (dir) {
       case DIR_NEUTRAL:
-        tprintf("N ");
+        tprintDebug("N ");
         break;
       case DIR_LEFT_TO_RIGHT:
-        tprintf("L ");
+        tprintDebug("L ");
         break;
       case DIR_RIGHT_TO_LEFT:
-        tprintf("R ");
+        tprintDebug("R ");
         break;
       case DIR_MIX:
-        tprintf("Z ");
+        tprintDebug("Z ");
         break;
       default:
-        tprintf("? ");
+        tprintDebug("? ");
         break;
     }
   }
-  tprintf("\n");
+  tprintDebug("\n");
 }
 
 void ResultIterator::CalculateTextlineOrder(bool paragraph_is_ltr, const LTRResultIterator &resit,
@@ -514,7 +513,6 @@ bool ResultIterator::Next(PageIteratorLevel level) {
         at_beginning_of_minor_run_ = false;
         return true;
       }
-      level = RIL_WORD; // we've fallen through to the next word.
     }
       // Fall through.
     case RIL_WORD: // explicit fall-through.
@@ -543,7 +541,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
           at_beginning_of_minor_run_ = (word_indices[j - 1] == kMinorRunStart);
           // awesome, we move to word_indices[j]
           if (BidiDebug(3)) {
-            tprintf("Next(RIL_WORD): {} -> {}\n", this_word_index, word_indices[j]);
+            tprintDebug("Next(RIL_WORD): {} -> {}\n", this_word_index, word_indices[j]);
           }
           PageIterator::RestartRow();
           for (int k = 0; k < word_indices[j]; k++) {
@@ -554,7 +552,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
         }
       }
       if (BidiDebug(3)) {
-        tprintf("Next(RIL_WORD): {} -> EOL\n", this_word_index);
+        tprintDebug("Next(RIL_WORD): {} -> EOL\n", this_word_index);
       }
       // we're going off the end of the text line.
       return Next(RIL_TEXTLINE);
@@ -733,17 +731,17 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
     std::vector<int> textline_order;
     std::vector<StrongScriptDirection> dirs;
     CalculateTextlineOrder(current_paragraph_is_ltr_, *this, &dirs, &textline_order);
-    tprintf("Strong Script dirs     [{}/P={}]: ", 
+    tprintDebug("Strong Script dirs     [{}/P={}]: ", 
             static_cast<void *>(it_->row()),
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     PrintScriptDirs(dirs);
-    tprintf("Logical textline order [{}/P={}]: ", 
+    tprintDebug("Logical textline order [{}/P={}]: ", 
             static_cast<void *>(it_->row()),
             current_paragraph_is_ltr_ ? "ltr" : "rtl");
     for (int i : textline_order) {
-      tprintf("{} ", i);
+      tprintDebug("{} ", i);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 
   int words_appended = 0;
@@ -755,11 +753,11 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
     AppendUTF8WordText(text);
     words_appended++;
     if (BidiDebug(2)) {
-      tprintf("Num spaces={}, text={}\n", numSpaces, *text);
+      tprintDebug("Num spaces={}, text={}\n", numSpaces, *text);
     }
   } while (Next(RIL_WORD) && !IsAtBeginningOf(RIL_TEXTLINE));
   if (BidiDebug(1)) {
-    tprintf("{} words printed\n", words_appended);
+    tprintDebug("{} words printed\n", words_appended);
   }
   *text += line_separator_;
   // If we just finished a paragraph, add an extra newline.
@@ -781,12 +779,7 @@ void ResultIterator::AppendUTF8ParagraphText(std::string *text) const {
 }
 
 bool ResultIterator::BidiDebug(int min_level) const {
-  int debug_level = 1;
-  auto *p = ParamUtils::FindParam<IntParam>("bidi_debug", GlobalParams()->int_params_c(),
-                                            tesseract_->params()->int_params_c());
-  if (p != nullptr) {
-    debug_level = (int32_t)(*p);
-  }
+  const int debug_level = tesseract_->bidi_debug;
   return debug_level >= min_level;
 }
 

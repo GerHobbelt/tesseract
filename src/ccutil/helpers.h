@@ -49,7 +49,9 @@
 #if defined(HAVE_MUPDF)
 #include "mupdf/fitz.h"
 #include "mupdf/helpers/dir.h"
-#include "mupdf/assertions.h"
+#include "mupdf/assertions.h"		// ASSERT_EQ() et al
+#else
+#include "gtest/gtest.h"
 #endif
 
 #include <cassert>

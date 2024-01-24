@@ -19,6 +19,7 @@
 #include "detlinefit.h"
 #include "helpers.h"    // for IntCastRounded
 #include "statistc.h"
+#include "baselinedetect.h"
 #include "tprintf.h"
 
 #include <algorithm>
@@ -134,7 +135,7 @@ double DetLineFit::Fit(int skip_first, int skip_last, ICOORD *pt1, ICOORD *pt2) 
 // reduced set of points.
 // *Makes use of floating point arithmetic*
 double DetLineFit::ConstrainedFit(const FCOORD &direction, double min_dist, double max_dist,
-                                  bool debug, ICOORD *line_pt) {
+                                  ICOORD *line_pt) {
   ComputeConstrainedDistances(direction, min_dist, max_dist);
   // Do something sensible with no points or computed distances.
   if (pts_.empty() || distances_.empty()) {
@@ -145,14 +146,14 @@ double DetLineFit::ConstrainedFit(const FCOORD &direction, double min_dist, doub
   auto median_index = distances_.size() / 2;
   std::nth_element(distances_.begin(), distances_.begin() + median_index, distances_.end());
   *line_pt = distances_[median_index].data();
-  if (debug) {
-    tprintf("Constrained fit to dir {}, {} = {}, {} :{} distances:\n", direction.x(), direction.y(),
+  if (debug_baseline_detector_level > 2) {
+    tprintDebug("Constrained fit to dir {}, {} = {}, {} :{} distances:\n", direction.x(), direction.y(),
             line_pt->x(), line_pt->y(), distances_.size());
     for (unsigned i = 0; i < distances_.size(); ++i) {
-      tprintf("{}: {}, {} -> {}\n", i, distances_[i].data().x(), distances_[i].data().y(),
+      tprintDebug("{}: {}, {} -> {}\n", i, distances_[i].data().x(), distances_[i].data().y(),
               distances_[i].key());
     }
-    tprintf("Result = {}\n", median_index);
+    tprintDebug("Result = {}\n", median_index);
   }
   // Center distances on the fitted point.
   double dist_origin = direction * *line_pt;
@@ -185,7 +186,10 @@ double DetLineFit::Fit(float *m, float *c) {
 }
 
 // Backwards compatible constrained fit with a supplied gradient.
-// Deprecated. Use ConstrainedFit(const FCOORD& direction) where possible
+// 
+// Deprecated. 
+// 
+// Use ConstrainedFit(const FCOORD& direction) where possible
 // to avoid potential difficulties with infinite gradients.
 double DetLineFit::ConstrainedFit(double m, float *c) {
   // Do something sensible with no points.
@@ -196,7 +200,7 @@ double DetLineFit::ConstrainedFit(double m, float *c) {
   double cos = 1.0 / sqrt(1.0 + m * m);
   FCOORD direction(cos, m * cos);
   ICOORD line_pt;
-  double error = ConstrainedFit(direction, -FLT_MAX, FLT_MAX, false, &line_pt);
+  double error = ConstrainedFit(direction, -FLT_MAX, FLT_MAX, &line_pt);
   *c = line_pt.y() - line_pt.x() * m;
   return error;
 }

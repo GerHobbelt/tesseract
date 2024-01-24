@@ -79,13 +79,13 @@ static bool AcceptableRowArgs(int debug_level, int min_num_rows, const char *fun
                               const std::vector<RowScratchRegisters> *rows, int row_start,
                               int row_end) {
   if (row_start < 0 || static_cast<size_t>(row_end) > rows->size() || row_start > row_end) {
-    tprintf("ERROR: Invalid arguments rows[{}, {}) while rows is of size {}.\n", row_start, row_end,
+    tprintError("Invalid arguments rows[{}, {}) while rows is of size {}.\n", row_start, row_end,
             rows->size());
     return false;
   }
   if (row_end - row_start < min_num_rows) {
     if (debug_level > 1) {
-      tprintf("# Too few rows[{}, {}) for {}.\n", row_start, row_end, function_name);
+      tprintDebug("# Too few rows[{}, {}) for {}.\n", row_start, row_end, function_name);
     }
     return false;
   }
@@ -133,7 +133,7 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
       msg += fmt::format("{:<{}s}", row[c], max_col_widths[c]);
       //msg += fmt::sprintf("%-*s", max_col_widths[c], row[c].c_str());
     }
-    tprintf("{}\n", msg.c_str());
+    tprintDebug("{}\n", msg.c_str());
   }
 }
 
@@ -177,10 +177,10 @@ static void PrintDetectorState(const ParagraphTheory &theory,
   }
   PrintTable(output, " ");
 
-  tprintf("Active Paragraph Models:\n");
+  tprintDebug("Active Paragraph Models:\n");
   unsigned m = 0;
   for (const auto &model : theory.models()) {
-    tprintf(" {}: {}\n", ++m, model->ToString());
+    tprintDebug(" {}: {}\n", ++m, model->ToString());
   }
 }
 
@@ -189,18 +189,18 @@ static void DebugDump(bool should_print, const char *phase, const ParagraphTheor
   if (!should_print) {
     return;
   }
-  tprintf("# {}\n", phase);
+  tprintDebug("# {}\n", phase);
   PrintDetectorState(theory, rows);
 }
 
 // Print out the text for rows[row_start, row_end)
 static void PrintRowRange(const std::vector<RowScratchRegisters> &rows, int row_start,
                           int row_end) {
-  tprintf("======================================\n");
+  tprintDebug("======================================\n");
   for (int row = row_start; row < row_end; row++) {
-    tprintf("{}\n", rows[row].ri_->text.c_str());
+    tprintDebug("{}\n", rows[row].ri_->text.c_str());
   }
-  tprintf("======================================\n");
+  tprintDebug("======================================\n");
 }
 
 // ============= Brain Dead Language Model (ASCII Version) ===================
@@ -580,7 +580,7 @@ LineType RowScratchRegisters::GetLineType() const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
+        tprintError("Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }
@@ -608,7 +608,7 @@ LineType RowScratchRegisters::GetLineType(const ParagraphModel *model) const {
         has_body = true;
         break;
       default:
-        tprintf("ERROR: Encountered bad value in hypothesis list: {}\n", hypothese.ty);
+        tprintError("Encountered bad value in hypothesis list: {}\n", hypothese.ty);
         break;
     }
   }
@@ -621,7 +621,7 @@ LineType RowScratchRegisters::GetLineType(const ParagraphModel *model) const {
 void RowScratchRegisters::SetStartLine() {
   LineType current_lt = GetLineType();
   if (current_lt != LT_UNKNOWN && current_lt != LT_START) {
-    tprintf("Trying to set a line to be START when it's already BODY.\n");
+    tprintDebug("Trying to set a line to be START when it's already BODY.\n");
   }
   if (current_lt == LT_UNKNOWN || current_lt == LT_BODY) {
     push_back_new(hypotheses_, LineHypothesis(LT_START, nullptr));
@@ -631,7 +631,7 @@ void RowScratchRegisters::SetStartLine() {
 void RowScratchRegisters::SetBodyLine() {
   LineType current_lt = GetLineType();
   if (current_lt != LT_UNKNOWN && current_lt != LT_BODY) {
-    tprintf("Trying to set a line to be BODY when it's already START.\n");
+    tprintDebug("Trying to set a line to be BODY when it's already START.\n");
   }
   if (current_lt == LT_UNKNOWN || current_lt == LT_START) {
     push_back_new(hypotheses_, LineHypothesis(LT_BODY, nullptr));
@@ -923,7 +923,7 @@ struct GeometricClassifierState {
     tolerance = InterwordSpace(*r, r_start, r_end);
     CalculateTabStops(r, r_start, r_end, tolerance, &left_tabs, &right_tabs);
     if (debug_level >= 3) {
-      tprintf(
+      tprintDebug(
           "Geometry: TabStop cluster tolerance = {}; "
           "{} left tabs; {} right tabs\n",
           tolerance, left_tabs.size(), right_tabs.size());
@@ -986,7 +986,7 @@ struct GeometricClassifierState {
     if (debug_level < min_debug_level) {
       return;
     }
-    tprintf("# {}\n", why);
+    tprintDebug("# {}\n", why);
     PrintRows();
   }
 
@@ -1081,7 +1081,7 @@ static void GeometricClassifyThreeTabStopTextBlock(int debug_level, GeometricCla
   }
 
   if (debug_level > 0) {
-    tprintf(
+    tprintDebug(
         "# Not enough variety for clear outline classification. "
         "Guessing these are {} aligned based on script.\n",
         s.ltr ? "left" : "right");
@@ -1149,9 +1149,9 @@ static void GeometricClassify(int debug_level, std::vector<RowScratchRegisters> 
     return;
   }
   if (debug_level > 1) {
-    tprintf("###############################################\n");
-    tprintf("##### GeometricClassify( rows[{}:{}) )   ####\n", row_start, row_end);
-    tprintf("###############################################\n");
+    tprintDebug("###############################################\n");
+    tprintDebug("##### GeometricClassify( rows[{}:{}) )   ####\n", row_start, row_end);
+    tprintDebug("###############################################\n");
   }
   RecomputeMarginsAndClearHypotheses(rows, row_start, row_end, 10);
 
@@ -1225,11 +1225,11 @@ static void GeometricClassify(int debug_level, std::vector<RowScratchRegisters> 
     } else {
       // Ambiguous! Probably lineated (poetry)
       if (debug_level > 1) {
-        tprintf("# Cannot determine {} indent likely to start paragraphs.\n",
+        tprintDebug("# Cannot determine {} indent likely to start paragraphs.\n",
                 s.just == tesseract::JUSTIFICATION_LEFT ? "left" : "right");
-        tprintf("# Indent of {} looks like a first line {}% of the time.\n",
+        tprintDebug("# Indent of {} looks like a first line {}% of the time.\n",
                 s.AlignTabs()[0].center, percent0firsts);
-        tprintf("# Indent of {} looks like a first line {}% of the time.\n",
+        tprintDebug("# Indent of {} looks like a first line {}% of the time.\n",
                 s.AlignTabs()[1].center, percent1firsts);
         s.PrintRows();
       }
@@ -1339,7 +1339,7 @@ int ParagraphTheory::IndexOf(const ParagraphModel *model) const {
 bool ValidFirstLine(const std::vector<RowScratchRegisters> *rows, int row,
                     const ParagraphModel *model) {
   if (!StrongModel(model)) {
-    tprintf("WARNING: ValidFirstLine() should only be called with strong models!\n");
+    tprintWarn("ValidFirstLine() should only be called with strong models!\n");
   }
   return StrongModel(model) && model->ValidFirstLine((*rows)[row].lmargin_, (*rows)[row].lindent_,
                                                      (*rows)[row].rindent_, (*rows)[row].rmargin_);
@@ -1348,7 +1348,7 @@ bool ValidFirstLine(const std::vector<RowScratchRegisters> *rows, int row,
 bool ValidBodyLine(const std::vector<RowScratchRegisters> *rows, int row,
                    const ParagraphModel *model) {
   if (!StrongModel(model)) {
-    tprintf("WARNING: ValidBodyLine() should only be called with strong models!\n");
+    tprintWarn("ValidBodyLine() should only be called with strong models!\n");
   }
   return StrongModel(model) && model->ValidBodyLine((*rows)[row].lmargin_, (*rows)[row].lindent_,
                                                     (*rows)[row].rindent_, (*rows)[row].rmargin_);
@@ -1357,7 +1357,7 @@ bool ValidBodyLine(const std::vector<RowScratchRegisters> *rows, int row,
 bool CrownCompatible(const std::vector<RowScratchRegisters> *rows, int a, int b,
                      const ParagraphModel *model) {
   if (model != kCrownRight && model != kCrownLeft) {
-    tprintf("CrownCompatible() should only be called with crown models!\n");
+    tprintDebug("CrownCompatible() should only be called with crown models!\n");
     return false;
   }
   auto &row_a = (*rows)[a];
@@ -1690,7 +1690,7 @@ bool FirstWordWouldHaveFit(const RowScratchRegisters &before, const RowScratchRe
   }
 
   if (justification == JUSTIFICATION_UNKNOWN) {
-    tprintf("Don't call FirstWordWouldHaveFit(r, s, JUSTIFICATION_UNKNOWN).\n");
+    tprintDebug("Don't call FirstWordWouldHaveFit(r, s, JUSTIFICATION_UNKNOWN).\n");
   }
   int available_space;
   if (justification == JUSTIFICATION_CENTER) {
@@ -1770,7 +1770,7 @@ static ParagraphModel InternalParagraphModelByOutline(
   cmin = cmax = 0;
   for (int i = start + 1; i < end; i++) {
     if ((*rows)[i].lmargin_ != lmargin || (*rows)[i].rmargin_ != rmargin) {
-      tprintf("ERROR: Margins don't match! Software error.\n");
+      tprintError("Margins don't match! Software error.\n");
       *consistent = false;
       return ParagraphModel();
     }
@@ -1857,7 +1857,7 @@ static ParagraphModel ParagraphModelByOutline(int debug_level,
   ParagraphModel retval =
       InternalParagraphModelByOutline(rows, start, end, tolerance, &unused_consistent);
   if (debug_level >= 2 && retval.justification() == JUSTIFICATION_UNKNOWN) {
-    tprintf("Could not determine a model for this paragraph:\n");
+    tprintDebug("Could not determine a model for this paragraph:\n");
     PrintRowRange(*rows, start, end);
   }
   return retval;
@@ -2052,9 +2052,9 @@ static void StrongEvidenceClassify(int debug_level, std::vector<RowScratchRegist
   }
 
   if (debug_level > 1) {
-    tprintf("#############################################\n");
-    tprintf("# StrongEvidenceClassify( rows[{}:{}) )\n", row_start, row_end);
-    tprintf("#############################################\n");
+    tprintDebug("#############################################\n");
+    tprintDebug("# StrongEvidenceClassify( rows[{}:{}) )\n", row_start, row_end);
+    tprintDebug("#############################################\n");
   }
 
   RecomputeMarginsAndClearHypotheses(rows, row_start, row_end, 10);
@@ -2159,8 +2159,7 @@ static void ConvertHypothesizedModelRunsToParagraphs(int debug_level,
                           : rows[start].ri_->lword_indicates_list_item;
     for (int row = start; row < end; row++) {
       if ((*row_owners)[row] != nullptr) {
-        tprintf(
-            "ERROR: Memory leak! ConvertHypothesizeModelRunsToParagraphs() called "
+        tprintError("Memory leak! ConvertHypothesizeModelRunsToParagraphs() called "
             "more than once!\n");
         delete (*row_owners)[row];
       }

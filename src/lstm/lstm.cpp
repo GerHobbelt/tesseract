@@ -119,7 +119,7 @@ LSTM::LSTM(const std::string &name, int ni, int ns, int no, bool two_dimensional
     nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : ceil_log2(no_);
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
-    tprintf("ERROR: {} is invalid type of LSTM!\n", type);
+    tprintError("{} is invalid type of LSTM!\n", type);
     ASSERT_HOST(false);
   }
   na_ += nf_;

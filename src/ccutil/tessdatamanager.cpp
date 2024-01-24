@@ -216,11 +216,11 @@ void TessdataManager::Clear() {
 
 // Prints a directory of contents.
 void TessdataManager::Directory() const {
-  tprintf("Version:{}\n", VersionString().c_str());
+  tprintInfo("Version:{}\n", VersionString().c_str());
   auto offset = TESSDATA_NUM_ENTRIES * sizeof(int64_t);
   for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
     if (!entries_[i].empty()) {
-      tprintf("{}:{}:size={}, offset={}\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
+      tprintInfo("{}:{}:size={}, offset={}\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
               offset);
       offset += entries_[i].size();
     }
@@ -272,7 +272,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
     if (fp != nullptr) {
       fclose(fp);
       if (!LoadDataFromFile(filename.c_str(), &entries_[type])) {
-        tprintf("ERROR: Load of file {} failed!\n", filename.c_str());
+        tprintError("Load of file {} failed!\n", filename.c_str());
         return false;
       }
     }
@@ -281,8 +281,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
 
   // Make sure that the required components are present.
   if (!IsBaseAvailable() && !IsLSTMAvailable()) {
-    tprintf(
-        "ERROR: traineddata file must contain at least (a unicharset file"
+	  tprintError("traineddata file must contain at least (a unicharset file"
         " and inttemp) OR an lstm file.\n");
     return false;
   }
@@ -298,7 +297,7 @@ bool TessdataManager::OverwriteComponents(const char *new_traineddata_filename,
     TessdataType type;
     if (TessdataTypeFromFileName(component_filenames[i], &type)) {
       if (!LoadDataFromFile(component_filenames[i], &entries_[type])) {
-        tprintf("ERROR: Failed to read component file:{}\n", component_filenames[i]);
+        tprintError("Failed to read component file:{}\n", component_filenames[i]);
         return false;
       }
     }
@@ -325,8 +324,7 @@ bool TessdataManager::TessdataTypeFromFileSuffix(const char *suffix, TessdataTyp
     }
   }
 #if !defined(NDEBUG)
-  tprintf(
-      "ERROR: TessdataManager can't determine which tessdata"
+  tprintError("TessdataManager can't determine which tessdata"
       " component is represented by {}\n",
       suffix);
 #endif

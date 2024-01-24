@@ -19,7 +19,7 @@
 // expects clones of tessdata, tessdata_fast and tessdata_best repos
 
 //#include "log.h"
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <iostream>
 #include <memory> // std::unique_ptr

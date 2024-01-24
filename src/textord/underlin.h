@@ -23,7 +23,7 @@
 
 namespace tesseract {
 
-extern double_VAR_H(textord_underline_offset);
+extern DOUBLE_VAR_H(textord_underline_offset);
 extern BOOL_VAR_H(textord_restore_underlines);
 void restore_underlined_blobs( // get chop points
     TO_BLOCK *block            // block to do

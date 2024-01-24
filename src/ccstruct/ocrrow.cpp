@@ -167,14 +167,14 @@ void ROW::move(      // reposition row
 void ROW::print( // print
     FILE *fp     // file to print on
 ) const {
-  tprintf("Kerning= {}\n", kerning);
-  tprintf("Spacing= {}\n", spacing);
+  tprintDebug("Kerning= {}\n", kerning);
+  tprintDebug("Spacing= {}\n", spacing);
   bound_box.print();
-  tprintf("Xheight= {}\n", xheight);
-  tprintf("Ascrise= {}\n", ascrise);
-  tprintf("Descdrop= {}\n", descdrop);
-  tprintf("has_drop_cap= {}\n", has_drop_cap_);
-  tprintf("lmargin= {}, rmargin= {}\n", lmargin_, rmargin_);
+  tprintDebug("Xheight= {}\n", xheight);
+  tprintDebug("Ascrise= {}\n", ascrise);
+  tprintDebug("Descdrop= {}\n", descdrop);
+  tprintDebug("has_drop_cap= {}\n", has_drop_cap_);
+  tprintDebug("lmargin= {}, rmargin= {}\n", lmargin_, rmargin_);
 }
 
 /**********************************************************************

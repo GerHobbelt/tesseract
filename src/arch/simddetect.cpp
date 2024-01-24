@@ -365,20 +365,19 @@ void SIMDDetect::Update() {
     dotproduct_method = "std::inner_product";
   } else {
     // Unsupported value of config variable.
-    tprintf("WARNING: Ignoring unsupported config variable value: dotproduct={}\n",
-            dotproduct.c_str());
-    tprintf(
-        "Supported values for dotproduct: auto generic native"
+    tprintWarn("Ignoring unsupported config variable value: dotproduct={}\n"
+            "  Supported values for dotproduct: auto generic native"
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif
-		"{}{}{}{}{}{}",
-		(avx2_available_&& IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
+		"{}{}{}{}{} std::inner_product.\n",
+		dotproduct.c_str(),
+	    (avx2_available_&& IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
 		(avx_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx" : "",
 		(fma_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
 		(sse_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
-		(neon_available_&& IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : "",
-		" std::inner_product.\n");
+		(neon_available_&& IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : ""
+	);
   }
 
   dotproduct.set_value(dotproduct_method);

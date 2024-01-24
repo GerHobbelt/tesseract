@@ -26,6 +26,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "degradeimage.h"
@@ -65,97 +69,97 @@ using namespace tesseract;
 const int kRandomSeed = 0x18273645;
 
 // The text input file.
-static STRING_PARAM_FLAG(text, "", "File name of text input to process");
+STRING_PARAM_FLAG(text, "", "File name of text input to process");
 
 // The text output file.
-static STRING_PARAM_FLAG(outputbase, "", "Basename for output image/box file");
+STRING_PARAM_FLAG(outputbase, "", "Basename for output image/box file");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(create_boxfiles, true, "Create box files.");
+BOOL_PARAM_FLAG(create_boxfiles, true, "Create box files.");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(create_page, false, "Create Page XML files (automatically deactivates multipage).");
+BOOL_PARAM_FLAG(create_page, false, "Create Page XML files (automatically deactivates multipage).");
 
 // Create multipage outputformats 
-static BOOL_PARAM_FLAG(multipage, true, "Creates multipage output.");
+BOOL_PARAM_FLAG(multipage, true, "Creates multipage output.");
 
 // Degrade the rendered image to mimic scanner quality.
-static BOOL_PARAM_FLAG(degrade_image, true,
+BOOL_PARAM_FLAG(degrade_image, true,
                        "Degrade rendered image with speckle noise, dilation/erosion "
                        "and rotation");
 
 // Rotate the rendered image to have more realistic glyph borders
-static BOOL_PARAM_FLAG(rotate_image, true, "Rotate the image in a random way.");
+BOOL_PARAM_FLAG(rotate_image, true, "Rotate the image in a random way.");
 
 // Degradation to apply to the image.
-static INT_PARAM_FLAG(exposure, 0, "Exposure level in photocopier");
+INT_PARAM_FLAG(exposure, 0, "Exposure level in photocopier");
 
 // Distort the rendered image by various means according to the bool flags.
-static BOOL_PARAM_FLAG(distort_image, false, "Degrade rendered image with noise, blur, invert.");
+BOOL_PARAM_FLAG(distort_image, false, "Degrade rendered image with noise, blur, invert.");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(invert, true, "Invert the image");
+BOOL_PARAM_FLAG(invert, true, "Invert the image");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(white_noise, true, "Add  Gaussian Noise");
+BOOL_PARAM_FLAG(white_noise, true, "Add  Gaussian Noise");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
+BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(blur, true, "Blur the image");
+BOOL_PARAM_FLAG(blur, true, "Blur the image");
 
 // Render PNG instead of TIF.
-static BOOL_PARAM_FLAG(output_png, false, "Render PNG instead of TIF");
+BOOL_PARAM_FLAG(output_png, false, "Render PNG instead of TIF");
 
 // Render grayscale instead of binarized image.
-static BOOL_PARAM_FLAG(grayscale, false, "Render grayscale instead of binarized image");
+BOOL_PARAM_FLAG(grayscale, false, "Render grayscale instead of binarized image");
 
 #if 0
 
 // Distortion to apply to the image.
-static BOOL_PARAM_FLAG(perspective, false, "Generate Perspective Distortion");
+BOOL_PARAM_FLAG(perspective, false, "Generate Perspective Distortion");
 
 // Distortion to apply to the image.
-static INT_PARAM_FLAG(box_reduction, 0, "Integer reduction factor box_scale");
+INT_PARAM_FLAG(box_reduction, 0, "Integer reduction factor box_scale");
 
 #endif
 
 // Output image resolution.
-static INT_PARAM_FLAG(resolution, 300, "Pixels per inch");
+INT_PARAM_FLAG(resolution, 300, "Pixels per inch");
 
 // Width of output image (in pixels).
-static INT_PARAM_FLAG(xsize, 3600, "Width of output image");
+INT_PARAM_FLAG(xsize, 3600, "Width of output image");
 
 // Max height of output image (in pixels).
-static INT_PARAM_FLAG(ysize, 4800, "Height of output image");
+INT_PARAM_FLAG(ysize, 4800, "Height of output image");
 
 // Max number of pages to produce.
-static INT_PARAM_FLAG(max_pages, 0, "Maximum number of pages to output (0=unlimited)");
+INT_PARAM_FLAG(max_pages, 0, "Maximum number of pages to output (0=unlimited)");
 
 // Margin around text (in pixels).
-static INT_PARAM_FLAG(margin, 100, "Margin round edges of image");
+INT_PARAM_FLAG(margin, 100, "Margin round edges of image");
 
 // Size of text (in points).
-static INT_PARAM_FLAG(ptsize, 12, "Size of printed text");
+INT_PARAM_FLAG(ptsize, 12, "Size of printed text");
 
 // Inter-character space (in ems).
-static DOUBLE_PARAM_FLAG(char_spacing, 0, "Inter-character space in ems");
+DOUBLE_PARAM_FLAG(char_spacing, 0, "Inter-character space in ems");
 
 // Sets the probability (value in [0, 1]) of starting to render a word with an
 // underline. Words are assumed to be space-delimited.
-static DOUBLE_PARAM_FLAG(underline_start_prob, 0,
+DOUBLE_PARAM_FLAG(underline_start_prob, 0,
                          "Fraction of words to underline (value in [0,1])");
 // Set the probability (value in [0, 1]) of continuing a started underline to
 // the next word.
-static DOUBLE_PARAM_FLAG(underline_continuation_prob, 0,
+DOUBLE_PARAM_FLAG(underline_continuation_prob, 0,
                          "Fraction of words to underline (value in [0,1])");
 
 // Inter-line space (in pixels).
-static INT_PARAM_FLAG(leading, 12, "Inter-line space (in pixels)");
+INT_PARAM_FLAG(leading, 12, "Inter-line space (in pixels)");
 
 // Layout and glyph orientation on rendering.
-static STRING_PARAM_FLAG(writing_mode, "horizontal",
+STRING_PARAM_FLAG(writing_mode, "horizontal",
                          "Specify one of the following writing"
                          " modes.\n"
                          "'horizontal' : Render regular horizontal text. (default)\n"
@@ -164,56 +168,56 @@ static STRING_PARAM_FLAG(writing_mode, "horizontal",
                          "'vertical-upright' : Render vertical text. Glyph "
                          " orientation is set to be upright.");
 
-static INT_PARAM_FLAG(box_padding, 0, "Padding around produced bounding boxes");
+INT_PARAM_FLAG(box_padding, 0, "Padding around produced bounding boxes");
 
-static BOOL_PARAM_FLAG(strip_unrenderable_words, true,
+BOOL_PARAM_FLAG(strip_unrenderable_words, true,
                        "Remove unrenderable words from source text");
 
 // Font name.
-static STRING_PARAM_FLAG(font, "Arial", "Font description name to use");
+STRING_PARAM_FLAG(font, "Arial", "Font description name to use");
 
-static BOOL_PARAM_FLAG(ligatures, false, "Rebuild and render ligatures");
+BOOL_PARAM_FLAG(ligatures, false, "Rebuild and render ligatures");
 
-static BOOL_PARAM_FLAG(find_fonts, false, "Search for all fonts that can render the text");
-static BOOL_PARAM_FLAG(render_per_font, true,
+BOOL_PARAM_FLAG(find_fonts, false, "Search for all fonts that can render the text");
+BOOL_PARAM_FLAG(render_per_font, true,
                        "If find_fonts==true, render each font to its own image. "
                        "Image filenames are of the form output_name.font_name.tif");
-static DOUBLE_PARAM_FLAG(min_coverage, 1.0,
+DOUBLE_PARAM_FLAG(min_coverage, 1.0,
                          "If find_fonts==true, the minimum coverage the font has of "
                          "the characters in the text file to include it, between "
                          "0 and 1.");
 
-static BOOL_PARAM_FLAG(list_available_fonts, false, "List available fonts and quit.");
+BOOL_PARAM_FLAG(list_available_fonts, false, "List available fonts and quit.");
 
-static BOOL_PARAM_FLAG(render_ngrams, false,
+BOOL_PARAM_FLAG(render_ngrams, false,
                        "Put each space-separated entity from the"
                        " input file into one bounding box. The ngrams in the input"
                        " file will be randomly permuted before rendering (so that"
                        " there is sufficient variety of characters on each line).");
 
-static BOOL_PARAM_FLAG(output_word_boxes, false,
+BOOL_PARAM_FLAG(output_word_boxes, false,
                        "Output word bounding boxes instead of character boxes. "
                        "This is used for Cube training, and implied by "
                        "--render_ngrams.");
 
-static STRING_PARAM_FLAG(unicharset_file, "",
+STRING_PARAM_FLAG(unicharset_file, "",
                          "File with characters in the unicharset. If --render_ngrams"
                          " is true and --unicharset_file is specified, ngrams with"
                          " characters that are not in unicharset will be omitted");
 
-static BOOL_PARAM_FLAG(bidirectional_rotation, false, "Rotate the generated characters both ways.");
+BOOL_PARAM_FLAG(bidirectional_rotation, false, "Rotate the generated characters both ways.");
 
-static BOOL_PARAM_FLAG(only_extract_font_properties, false,
+BOOL_PARAM_FLAG(only_extract_font_properties, false,
                        "Assumes that the input file contains a list of ngrams. Renders"
                        " each ngram, extracts spacing properties and records them in"
                        " output_base/[font_name].fontinfo file.");
 
 // Use these flags to output zero-padded, square individual character images
-static BOOL_PARAM_FLAG(output_individual_glyph_images, false,
+BOOL_PARAM_FLAG(output_individual_glyph_images, false,
                        "If true also outputs individual character images");
-static INT_PARAM_FLAG(glyph_resized_size, 0,
+INT_PARAM_FLAG(glyph_resized_size, 0,
                       "Each glyph is square with this side length in pixels");
-static INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
+INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
                       "Final_size=glyph_resized_size+2*glyph_num_border_pixels_to_pad");
 
 namespace tesseract {
@@ -273,7 +277,7 @@ static void ExtractFontProperties(const std::string &utf8_text, StringRenderer *
     if (boxes.size() > 2 && !IsWhitespaceBox(boxes[boxes.size() - 1]) &&
         IsWhitespaceBox(boxes[boxes.size() - 2])) {
       if (boxes.size() > 3) {
-        tprintf("WARNING: Adjusting to bad page break after '{}{}'\n",
+        tprintWarn("Adjusting to bad page break after '{}{}'\n",
                 boxes[boxes.size() - 4]->ch().c_str(), boxes[boxes.size() - 3]->ch().c_str());
       }
       offset -= boxes[boxes.size() - 1]->ch().size();
@@ -318,7 +322,7 @@ static void ExtractFontProperties(const std::string &utf8_text, StringRenderer *
         ++ok_count;
       }
       const std::string &ch1 = boxes[b + 1]->ch();
-      tlog(3, "{}{}\n", ch0.c_str(), ch1.c_str());
+      tlog(3, "{}{}\n", ch0, ch1);
       spacing_map_it1 = spacing_map.find(ch1);
       if (spacing_map_it1 == spacing_map.end() &&
           render->font().GetSpacingProperties(ch1, &x_bearing, &x_advance)) {
@@ -361,13 +365,13 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
                                  const int input_tiff_page) {
   // If checks fail, return false without exiting text2image
   if (!pix) {
-    tprintf("ERROR: MakeIndividualGlyphs(): Input Pix* is nullptr\n");
+    tprintError("MakeIndividualGlyphs(): Input Pix* is nullptr\n");
     return false;
   } else if (FLAGS_glyph_resized_size <= 0) {
-    tprintf("ERROR: --glyph_resized_size must be positive\n");
+    tprintError("--glyph_resized_size must be positive\n");
     return false;
   } else if (FLAGS_glyph_num_border_pixels_to_pad < 0) {
-    tprintf("ERROR: --glyph_num_border_pixels_to_pad must be 0 or positive\n");
+    tprintError("--glyph_num_border_pixels_to_pad must be 0 or positive\n");
     return false;
   }
 
@@ -389,7 +393,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     boxGetGeometry(b, &x, &y, &w, &h);
     // Check present tiff page (for multipage tiff)
     if (y < y_previous - pixGetHeight(pix) / 10) {
-      tprintf("ERROR: Wrap-around encountered, at i={}\n", i);
+      tprintError("Wrap-around encountered, at i={}\n", i);
       current_tiff_page++;
     }
     if (current_tiff_page < input_tiff_page) {
@@ -399,33 +403,32 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     }
     // Check box validity
     if (x < 0 || y < 0 || (x + w - 1) >= pixGetWidth(pix) || (y + h - 1) >= pixGetHeight(pix)) {
-      tprintf(
-          "ERROR: MakeIndividualGlyphs(): Index out of range, at i={}"
+      tprintError("MakeIndividualGlyphs(): Index out of range, at i={}"
           " (x={}, y={}, w={}, h={}\n)",
           i, x, y, w, h);
       continue;
     } else if (w < FLAGS_glyph_num_border_pixels_to_pad &&
                h < FLAGS_glyph_num_border_pixels_to_pad) {
-      tprintf("ERROR: Input image too small to be a character, at i={}\n", i);
+      tprintError("Input image too small to be a character, at i={}\n", i);
       continue;
     }
     // Crop the boxed character
     Image pix_glyph = pixClipRectangle(pix, b, nullptr);
     if (!pix_glyph) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to clip, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to clip, at i={}\n", i);
       continue;
     }
     // Resize to square
     Image pix_glyph_sq =
         pixScaleToSize(pix_glyph, FLAGS_glyph_resized_size, FLAGS_glyph_resized_size);
     if (!pix_glyph_sq) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to resize, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to resize, at i={}\n", i);
       continue;
     }
     // Zero-pad
     Image pix_glyph_sq_pad = pixAddBorder(pix_glyph_sq, FLAGS_glyph_num_border_pixels_to_pad, 0);
     if (!pix_glyph_sq_pad) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to zero-pad, at i={}\n", i);
+      tprintError("MakeIndividualGlyphs(): Failed to zero-pad, at i={}\n", i);
       continue;
     }
     // Write out
@@ -433,8 +436,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     char filename[1024];
     snprintf(filename, 1024, "%s_%d.jpg", FLAGS_outputbase.c_str(), glyph_count++);
     if (pixWriteJpeg(filename, pix_glyph_sq_pad_8, 100, 0)) {
-      tprintf(
-          "ERROR: MakeIndividualGlyphs(): Failed to write JPEG to {},"
+      tprintError("MakeIndividualGlyphs(): Failed to write JPEG to {},"
           " at i={}\n",
           filename, i);
       continue;
@@ -450,7 +452,7 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
   if (n_boxes_saved == 0) {
     return false;
   } else {
-    tprintf("Total number of characters saved = {}\n", n_boxes_saved);
+    tprintDebug("Total number of characters saved = {}\n", n_boxes_saved);
     return true;
   }
 }
@@ -475,7 +477,7 @@ static int Main() {
       if (font_name.back() == ',') {
         font_name.pop_back();
       }
-      tprintf("{}: {}\n", i, font_name.c_str());
+      tprintDebug("{}: {}\n", i, font_name.c_str());
       ASSERT_HOST_MSG(FontUtils::IsAvailableFont(all_fonts[i].c_str()),
                       "Font {} is unrecognized.\n", all_fonts[i].c_str());
     }
@@ -484,15 +486,15 @@ static int Main() {
 
   // Check validity of input flags.
   if (FLAGS_text.empty()) {
-    tprintf("ERROR: '--text' option is missing!\n");
+    tprintError("'--text' option is missing!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_outputbase.empty()) {
-    tprintf("ERROR: '--outputbase' option is missing!\n");
+    tprintError("'--outputbase' option is missing!\n");
     return EXIT_FAILURE;
   }
   if (!FLAGS_unicharset_file.empty() && FLAGS_render_ngrams) {
-    tprintf("ERROR: Use '--unicharset_file' only if '--render_ngrams' is set.\n");
+    tprintError("Use '--unicharset_file' only if '--render_ngrams' is set.\n");
     return EXIT_FAILURE;
   }
 
@@ -501,11 +503,11 @@ static int Main() {
     font_name += ',';
     std::string pango_name;
     if (!FontUtils::IsAvailableFont(font_name.c_str(), &pango_name)) {
-      tprintf("ERROR: Could not find font named '{}'.\n", FLAGS_font.c_str());
+      tprintError("Could not find font named '{}'.\n", FLAGS_font.c_str());
       if (!pango_name.empty()) {
-        tprintf("  Pango suggested font '{}'.\n", pango_name.c_str());
+        tprintDebug("  Pango suggested font '{}'.\n", pango_name.c_str());
       }
-      tprintf("  Please correct --font arg.\n");
+      tprintDebug("  Please correct --font arg.\n");
       return EXIT_FAILURE;
     }
   }
@@ -551,14 +553,14 @@ static int Main() {
     render.set_gravity_hint_strong(true);
     render.set_render_fullwidth_latin(true);
   } else {
-    tprintf("ERROR: Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
+    tprintError("Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
     return EXIT_FAILURE;
   }
 
   std::string src_utf8;
   // This c_str is NOT redundant!
   if (!File::ReadFileToString(FLAGS_text.c_str(), &src_utf8)) {
-    tprintf("ERROR: Failed to read file: {}\n", FLAGS_text.c_str());
+    tprintError("Failed to read file: {}\n", FLAGS_text.c_str());
     return EXIT_FAILURE;
   }
 
@@ -580,7 +582,7 @@ static int Main() {
     UNICHARSET unicharset;
     if (FLAGS_render_ngrams && !FLAGS_unicharset_file.empty() &&
         !unicharset.load_from_file(FLAGS_unicharset_file.c_str())) {
-      tprintf("ERROR: Failed to load unicharset from file {}\n", FLAGS_unicharset_file.c_str());
+      tprintError("Failed to load unicharset from file {}\n", FLAGS_unicharset_file.c_str());
       return EXIT_FAILURE;
     }
 
@@ -628,9 +630,9 @@ static int Main() {
     src_utf8.swap(rand_utf8);
   }
   if (FLAGS_only_extract_font_properties) {
-    tprintf("Extracting font properties only\n");
+    tprintDebug("Extracting font properties only\n");
     ExtractFontProperties(src_utf8, &render, FLAGS_outputbase.c_str());
-    tprintf("Done!\n");
+    tprintDebug("Done!\n");
     return EXIT_SUCCESS;
   }
 
@@ -706,7 +708,7 @@ static int Main() {
                   pixWritePng(img_name, gray_pix, 0);
                 }
             }
-            tprintf("Rendered page {} to file {}\n", im, img_name);
+            tprintDebug("Rendered page {} to file {}\n", im, img_name);
           } else {
             font_names.push_back(font_used);
           }
@@ -727,12 +729,12 @@ static int Main() {
                 pixWritePng(img_name, gray_pix, 0);
               }
           }
-          tprintf("Rendered page {} to file {}\n", im, img_name);
+          tprintDebug("Rendered page {} to file {}\n", im, img_name);
         }
         // Make individual glyphs
         if (FLAGS_output_individual_glyph_images) {
           if (!MakeIndividualGlyphs(gray_pix, render.GetBoxes(), im)) {
-            tprintf("ERROR: Individual glyphs not saved\n");
+            tprintError("Individual glyphs not saved\n");
           }
         }
         gray_pix.destroy();
@@ -754,7 +756,7 @@ static int Main() {
     filename += ".fontlist.txt";
     FILE *fp = fopen(filename.c_str(), "wb");
     if (fp == nullptr) {
-      tprintf("ERROR: Failed to create output font list {}\n", filename.c_str());
+      tprintError("Failed to create output font list {}\n", filename.c_str());
     } else {
       for (auto &font_name : font_names) {
         fprintf(fp, "%s\n", font_name.c_str());
@@ -769,7 +771,7 @@ static int Main() {
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_text2image_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
 #endif
 {
   // Respect environment variable. could be:
@@ -782,7 +784,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
     static char envstring[] = "PANGOCAIRO_BACKEND=fc";
     putenv(envstring);
   } else {
-    tprintf(
+    tprintDebug(
         "Using '{}' as pango cairo backend based on environment "
         "variable.\n",
         backend);
@@ -791,10 +793,12 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
   if (argc > 1) {
     if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
       FontUtils::PangoFontTypeInfo();
-      tprintf("Pango version: {}\n", pango_version_string());
+      tprintDebug("Pango version: {}\n", pango_version_string());
     }
   }
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
+  if (rv >= 0)
+	  return rv;
   return Main();
 }
 
@@ -803,7 +807,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_text2image_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "text2image tool not supported in this non-PANGO build.\n");

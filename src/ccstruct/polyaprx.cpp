@@ -97,7 +97,7 @@ static void cutline(       // recursive refine
     squaresum += perp; // sum squares
     ptcount++;         // count points
     if (poly_debug) {
-      tprintf("Cutline:Final perp={}\n", perp);
+      tprintDebug("Cutline:Final perp={}\n", perp);
     }
     if (perp > maxperp) {
       maxperp = perp;
@@ -127,7 +127,7 @@ static void cutline(       // recursive refine
   }
 
   if (poly_debug) {
-    tprintf("Cutline:A={}, max={}({}%), msd={}({}%)\n", area,
+    tprintDebug("Cutline:A={}, max={}({}%), msd={}({}%)\n", area,
             maxperp / 256.0, maxperp * 200.0 / area, perp / 256.0,
             perp * 300.0 / area);
   }
@@ -472,7 +472,7 @@ static EDGEPT *poly2( // second poly
           edgept = edgept->next; // move on
         } while (!edgept->fixed && edgept != loopstart && edgesum < 126);
         if (poly_debug) {
-          tprintf("Poly2:starting at ({},{})+{}=({},{}),{} to ({},{})\n",
+          tprintDebug("Poly2:starting at ({},{})+{}=({},{}),{} to ({},{})\n",
                   linestart->pos.x, linestart->pos.y, linestart->dir,
                   linestart->vec.x, linestart->vec.y, edgesum, edgept->pos.x,
                   edgept->pos.y);

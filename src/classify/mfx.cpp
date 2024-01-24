@@ -27,8 +27,8 @@
 namespace tesseract {
 
 /* old numbers corresponded to 10.0 degrees and 80.0 degrees */
-double_VAR(classify_min_slope, 0.414213562, "Slope below which lines are called horizontal");
-double_VAR(classify_max_slope, 2.414213562, "Slope above which lines are called vertical");
+DOUBLE_VAR(classify_min_slope, 0.414213562, "Slope below which lines are called horizontal");
+DOUBLE_VAR(classify_max_slope, 2.414213562, "Slope above which lines are called vertical");
 
 /*----------------------------------------------------------------------------
           Private Function Prototypes

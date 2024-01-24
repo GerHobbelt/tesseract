@@ -29,7 +29,7 @@ using tensorflow::TensorShape;
 
 namespace tesseract {
 
-TFNetwork::TFNetwork(const char *name) : Network(NT_TENSORFLOW, name, 0, 0) {}
+TFNetwork::TFNetwork(const std::string &name) : Network(NT_TENSORFLOW, name, 0, 0) {}
 
 int TFNetwork::InitFromProtoStr(const std::string &proto_str) {
   if (!model_proto_.ParseFromString(proto_str))
@@ -103,7 +103,7 @@ void TFNetwork::Forward(bool debug, const NetworkIO &input, const TransposedArra
   std::vector<Tensor> outputs;
   Status s = session_->Run(tf_inputs, target_layers, {}, &outputs);
   if (!s.ok())
-    tprintf("ERROR: session->Run failed:{}\n", s.error_message().c_str());
+    tprintError("session->Run failed:{}\n", s.error_message().c_str());
   ASSERT_HOST(s.ok());
   ASSERT_HOST(outputs.size() == 1);
   const Tensor &output_tensor = outputs[0];

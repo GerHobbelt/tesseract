@@ -19,7 +19,6 @@
 #ifndef TESSERACT_CCUTIL_TPRINTF_H
 #define TESSERACT_CCUTIL_TPRINTF_H
 
-#include "params.h"           // for BOOL_VAR_H
 #include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 
@@ -27,13 +26,40 @@ namespace tesseract {
 
 // Note: You can disable some log messages by setting FLAGS_tlog_level > 0.
 
-// Helper function for tprintf.
-extern TESS_API void vTessPrint(fmt::string_view format, fmt::format_args args);
+enum LogLevel : int {
+	T_LOG_ERROR,
+	T_LOG_WARN,
+	T_LOG_INFO,
+	T_LOG_DEBUG,
+};
 
-// Main logging function.
+// Helper function for tprintf.
+extern TESS_API void vTessPrint(int level, fmt::string_view format, fmt::format_args args);
+
+extern TESS_API int tprintSetLogLevelElevation(int offset);
+extern TESS_API int tprintAddLogLevelElevation(int offset);
+extern TESS_API const int tprintGetLevelElevation(void);
+
+// Main logging functions.
+
 template <typename S, typename... Args>
-void tprintf(const S *format, Args &&...args) {
-  vTessPrint(format, fmt::make_format_args(args...));
+void tprintError(const S *format, Args &&...args) {
+  vTessPrint(T_LOG_ERROR + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
+}
+
+template <typename S, typename... Args>
+void tprintWarn(const S *format, Args &&...args) {
+	vTessPrint(T_LOG_WARN + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
+}
+
+template <typename S, typename... Args>
+void tprintInfo(const S *format, Args &&...args) {
+	vTessPrint(T_LOG_INFO + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
+}
+
+template <typename S, typename... Args>
+void tprintDebug(const S *format, Args &&...args) {
+	vTessPrint(T_LOG_DEBUG + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
 } // namespace tesseract

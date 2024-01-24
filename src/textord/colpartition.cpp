@@ -209,7 +209,7 @@ void ColPartition::AddBox(BLOBNBOX *bbox) {
     right_key_ = BoxRightKey();
   }
   if (TabFind::WithinTestRegion(2, box.left(), box.bottom())) {
-    tprintf("Added box ({},{})->({},{}) left_blob_x_={}, right_blob_x_ = {}\n",
+    tprintDebug("Added box ({},{})->({},{}) left_blob_x_={}, right_blob_x_ = {}\n",
             box.left(), box.bottom(), box.right(), box.top(),
             bounding_box_.left(), bounding_box_.right());
   }
@@ -367,7 +367,7 @@ void ColPartition::ReflectInYAxis() {
 bool ColPartition::IsLegal() {
   if (bounding_box_.left() > bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintf("ERROR: Bounding box invalid\n");
+      tprintError("Bounding box invalid\n");
       Print();
     }
     return false; // Bounding box invalid.
@@ -375,14 +375,14 @@ bool ColPartition::IsLegal() {
   if (left_margin_ > bounding_box_.left() ||
       right_margin_ < bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintf("ERROR: Margins invalid\n");
+      tprintError("Margins invalid\n");
       Print();
     }
     return false; // Margins invalid.
   }
   if (left_key_ > BoxLeftKey() || right_key_ < BoxRightKey()) {
     if (textord_debug_bugs) {
-      tprintf("Key inside box: {} v {} or {} v {}\n", left_key_, BoxLeftKey(),
+      tprintDebug("Key inside box: {} v {} or {} v {}\n", left_key_, BoxLeftKey(),
               right_key_, BoxRightKey());
       Print();
     }
@@ -497,7 +497,7 @@ bool ColPartition::OKDiacriticMerge(const ColPartition &candidate,
     BLOBNBOX *blob = it.data();
     if (!blob->IsDiacritic()) {
       if (debug) {
-        tprintf("Blob is not a diacritic:");
+        tprintDebug("Blob is not a diacritic:");
         blob->bounding_box().print();
       }
       return false; // All blobs must have diacritic bases.
@@ -515,9 +515,9 @@ bool ColPartition::OKDiacriticMerge(const ColPartition &candidate,
       min_top > candidate.median_bottom_ && max_bottom < candidate.median_top_;
   if (debug) {
     if (result) {
-      tprintf("OKDiacritic!\n");
+      tprintDebug("OKDiacritic!\n");
     } else {
-      tprintf("y ranges don\'t overlap: {}-{} / {}-{}\n", max_bottom, min_top,
+      tprintDebug("y ranges don\'t overlap: {}-{} / {}-{}\n", max_bottom, min_top,
               median_bottom_, median_top_);
     }
   }
@@ -686,7 +686,7 @@ void ColPartition::Absorb(ColPartition *other, const WidthCallback &cb) {
                                 bounding_box_.bottom()) ||
       TabFind::WithinTestRegion(2, other->bounding_box_.left(),
                                 other->bounding_box_.bottom())) {
-    tprintf("Merging:");
+    tprintDebug("Merging:");
     Print();
     other->Print();
   }
@@ -781,14 +781,14 @@ bool ColPartition::OKMergeOverlap(const ColPartition &merge1,
   // Vertical partitions are not allowed to be involved.
   if (IsVerticalType() || merge1.IsVerticalType() || merge2.IsVerticalType()) {
     if (debug) {
-      tprintf("Vertical partition\n");
+      tprintDebug("Vertical partition\n");
     }
     return false;
   }
   // The merging partitions must strongly overlap each other.
   if (!merge1.VSignificantCoreOverlap(merge2)) {
     if (debug) {
-      tprintf("Voverlap {} ({})\n", merge1.VCoreOverlap(merge2),
+      tprintDebug("Voverlap {} ({})\n", merge1.VCoreOverlap(merge2),
               merge1.VSignificantCoreOverlap(merge2));
     }
     return false;
@@ -800,7 +800,7 @@ bool ColPartition::OKMergeOverlap(const ColPartition &merge1,
       merged_box.bottom() < bounding_box_.top() - ok_box_overlap &&
       merged_box.top() > bounding_box_.bottom() + ok_box_overlap) {
     if (debug) {
-      tprintf("Excessive box overlap\n");
+      tprintDebug("Excessive box overlap\n");
     }
     return false;
   }
@@ -932,14 +932,14 @@ void ColPartition::ComputeLimits() {
   if (left_key_ > BoxLeftKey() && textord_debug_bugs) {
     // TODO(rays) investigate the causes of these error messages, to find
     // out if they are genuinely harmful, or just indicative of junk input.
-    tprintf("Computed left-illegal partition\n");
+    tprintDebug("Computed left-illegal partition\n");
     Print();
   }
   if (!right_key_tab_) {
     right_key_ = BoxRightKey();
   }
   if (right_key_ < BoxRightKey() && textord_debug_bugs) {
-    tprintf("Computed right-illegal partition\n");
+    tprintDebug("Computed right-illegal partition\n");
     Print();
   }
   if (it.empty()) {
@@ -982,12 +982,12 @@ void ColPartition::ComputeLimits() {
   }
 
   if (right_margin_ < bounding_box_.right() && textord_debug_bugs) {
-    tprintf("WARNING: Made partition with bad right coords, {} < {}\n", right_margin_,
+    tprintWarn("Made partition with bad right coords, {} < {}\n", right_margin_,
             bounding_box_.right());
     Print();
   }
   if (left_margin_ > bounding_box_.left() && textord_debug_bugs) {
-    tprintf("WARNING: Made partition with bad left coords, {} > {}\n", left_margin_,
+    tprintWarn("Made partition with bad left coords, {} > {}\n", left_margin_,
             bounding_box_.left());
     Print();
   }
@@ -1006,7 +1006,7 @@ void ColPartition::ComputeLimits() {
   }
   if (TabFind::WithinTestRegion(2, bounding_box_.left(),
                                 bounding_box_.bottom())) {
-    tprintf("Recomputed box for partition (x:{}, y:{})\n", vertical_.x(), vertical_.y());
+    tprintDebug("Recomputed box for partition (x:{}, y:{})\n", vertical_.x(), vertical_.y());
     Print();
   }
 }
@@ -1160,7 +1160,7 @@ bool ColPartition::MarkAsLeaderIfMonospaced() {
   double min_width = std::min(median_gap, median_width);
   double gap_iqr = gap_stats.ile(0.75f) - gap_stats.ile(0.25f);
   if (textord_debug_tabfind > 3) {
-    tprintf("gap iqr = {}, blob_count={}, limits={},{}\n", gap_iqr, blob_count,
+    tprintDebug("gap iqr = {}, blob_count={}, limits={},{}\n", gap_iqr, blob_count,
             max_width * kMaxLeaderGapFractionOfMax,
             min_width * kMaxLeaderGapFractionOfMin);
   }
@@ -1225,9 +1225,9 @@ bool ColPartition::MarkAsLeaderIfMonospaced() {
       flow_ = BTFT_LEADER;
     } else if (textord_debug_tabfind > 0) {
       if (best_end == nullptr) {
-        tprintf("No path\n");
+        tprintDebug("No path\n");
       } else {
-        tprintf("Total cost = {} vs allowed {}\n", best_end->total_cost(),
+        tprintDebug("Total cost = {} vs allowed {}\n", best_end->total_cost(),
                 blob_count);
       }
     }
@@ -1317,9 +1317,9 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
   }
   if (TabFind::WithinTestRegion(2, bounding_box_.left(),
                                 bounding_box_.bottom())) {
-    tprintf("RegionFlowTypesFromProjectionValue count={}, noisy={}, score={},",
+    tprintDebug("RegionFlowTypesFromProjectionValue count={}, noisy={}, score={},",
             blob_count, noisy_count, good_blob_score_);
-    tprintf(" Projection value={}, flow={}, blob_type={}\n", value, flow_,
+    tprintDebug(" Projection value={}, flow={}, blob_type={}\n", value, flow_,
             blob_type_);
     Print();
   }
@@ -1430,7 +1430,7 @@ void ColPartition::AddToWorkingSet(const ICOORD &bleft, const ICOORD &tright,
     return;
   }
   if (partner != nullptr && textord_debug_bugs) {
-    tprintf("Partition with partner has no working set!:");
+    tprintDebug("Partition with partner has no working set!:");
     Print();
     partner->Print();
   }
@@ -1443,11 +1443,11 @@ void ColPartition::AddToWorkingSet(const ICOORD &bleft, const ICOORD &tright,
     ;
   }
   if (textord_debug_tabfind > 1) {
-    tprintf("Match is {} for:", (col_index & 1) ? "Real" : "Between");
+    tprintDebug("Match is {} for:", (col_index & 1) ? "Real" : "Between");
     Print();
   }
   if (it.cycled_list() && textord_debug_bugs) {
-    tprintf("Target column={}, only had {}\n", first_column_, col_index);
+    tprintDebug("Target column={}, only had {}\n", first_column_, col_index);
   }
   ASSERT_HOST(!it.cycled_list());
   work_set = it.data();
@@ -1522,7 +1522,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
     }
     if (textord_debug_tabfind > 0) {
       part->Print();
-      tprintf("side step = {}, top spacing = {}, bottom spacing={}\n",
+      tprintDebug("side step = {}, top spacing = {}, bottom spacing={}\n",
               side_steps.median(), part->top_spacing(), part->bottom_spacing());
     }
     ++part_count;
@@ -1553,7 +1553,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
         // its matched size, otherwise it goes with the smallest spacing.
         ColPartition *third_part = it.at_last() ? nullptr : it.data_relative(1);
         if (textord_debug_tabfind > 0) {
-          tprintf(
+          tprintDebug(
               "Spacings unequal: upper:{}/{}, lower:{}/{},"
               " sizes {} {} {}\n",
               part->top_spacing(), part->bottom_spacing(),
@@ -1580,7 +1580,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
             sp_block_it.add_to_end(it.extract());
             it.forward();
             if (textord_debug_tabfind > 0) {
-              tprintf("Added line to current block.\n");
+              tprintDebug("Added line to current block.\n");
             }
           }
         }
@@ -1594,7 +1594,7 @@ void ColPartition::LineSpacingBlocks(const ICOORD &bleft, const ICOORD &tright,
     } else {
       if (textord_debug_tabfind > 0 && !it.empty()) {
         ColPartition *next_part = it.data();
-        tprintf("Spacings equal: upper:{}/{}, lower:{}/{}, median:{}/{}\n",
+        tprintDebug("Spacings equal: upper:{}/{}, lower:{}/{}, median:{}/{}\n",
                 part->top_spacing(), part->bottom_spacing(),
                 next_part->top_spacing(), next_part->bottom_spacing(),
                 part->median_height(), next_part->median_height());
@@ -1645,14 +1645,14 @@ static TO_BLOCK *MoveBlobsToBlock(bool vertical_text, int line_spacing,
     for (BLOBNBOX_C_IT bb_it(part->boxes()); !bb_it.empty(); bb_it.forward()) {
       BLOBNBOX *bblob = bb_it.extract();
       if (bblob->owner() != part) {
-        tprintf("Ownership incorrect for blob:");
+        tprintDebug("Ownership incorrect for blob:");
         bblob->bounding_box().print();
-        tprintf("Part=");
+        tprintDebug("Part=");
         part->Print();
         if (bblob->owner() == nullptr) {
-          tprintf("Not owned\n");
+          tprintDebug("Not owned\n");
         } else {
-          tprintf("Owner part:");
+          tprintDebug("Owner part:");
           bblob->owner()->Print();
         }
       }
@@ -1750,7 +1750,7 @@ TO_BLOCK *ColPartition::MakeBlock(const ICOORD &bleft, const ICOORD &tright,
     }
   } while (iteration < 2);
   if (textord_debug_tabfind > 0) {
-    tprintf("Making block at ({},{})->({},{})\n", min_x, min_y, max_x, max_y);
+    tprintDebug("Making block at ({},{})->({},{})\n", min_x, min_y, max_x, max_y);
   }
   auto *block = new BLOCK("", true, 0, 0, min_x, min_y, max_x, max_y);
   block->pdblk.set_poly_block(new POLY_BLOCK(&vertices, type));
@@ -1775,7 +1775,7 @@ TO_BLOCK *ColPartition::MakeVerticalTextBlock(const ICOORD &bleft,
     block_box += it.data()->bounding_box();
   }
   if (textord_debug_tabfind > 0) {
-    tprintf("Making block at:");
+    tprintDebug("Making block at:");
     block_box.print();
   }
   auto *block = new BLOCK("", true, 0, 0, block_box.left(), block_box.bottom(),
@@ -1866,20 +1866,20 @@ static char kBlobTypes[BRT_COUNT + 1] = "NHSRIUVT";
 // Prints debug information on this.
 void ColPartition::Print() const {
   int y = MidY();
-  tprintf("ColPartition: {} ", boxes_.empty() ? "(Empty)" : fmt::format("boxcount:{}", boxes_.length()));
-  tprintf("(margin: left:{}, right:{}) ", left_margin_, right_margin_);
-  tprintf("AtY:(left: {}{}, right: {}{}) ", LeftAtY(y), left_key_tab_ ? "(TabVector)" : "(Box)", RightAtY(y), right_key_tab_ ? "(TabVector)" : "(Box)");
-  tprintf("bbox:(l:{},b:{} - r:{},t:{}) ", bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(), bounding_box_.top());
-  tprintf("median:(l:{},b:{} - r:{},t:{}) ", median_left_, median_bottom_, median_right_, median_top_);
-  tprintf("good:(width={}, column={}, score={}, type={} {} {}) ", good_width_, good_column_, good_blob_score_, type_, kBlobTypes[blob_type_], flow_);
-  tprintf("flow={}, column:(first:{}, last:{}) ", flow_, first_column_, last_column_);
-  tprintf("space:(above={}, below={}, left={}, right={}, top={}, bottom={}) ", space_above_, space_below_, space_to_left_, space_to_right_, top_spacing_, bottom_spacing_);
-  tprintf("skew:(x={}, y={})\n", vertical_.x(), vertical_.y());
+  tprintDebug("ColPartition: {} ", boxes_.empty() ? "(Empty)" : fmt::format("boxcount:{}", boxes_.length()));
+  tprintDebug("(margin: left:{}, right:{}) ", left_margin_, right_margin_);
+  tprintDebug("AtY:(left: {}{}, right: {}{}) ", LeftAtY(y), left_key_tab_ ? "(TabVector)" : "(Box)", RightAtY(y), right_key_tab_ ? "(TabVector)" : "(Box)");
+  tprintDebug("bbox:(l:{},b:{} - r:{},t:{}) ", bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(), bounding_box_.top());
+  tprintDebug("median:(l:{},b:{} - r:{},t:{}) ", median_left_, median_bottom_, median_right_, median_top_);
+  tprintDebug("good:(width={}, column={}, score={}, type={} {} {}) ", good_width_, good_column_, good_blob_score_, type_, kBlobTypes[blob_type_], flow_);
+  tprintDebug("flow={}, column:(first:{}, last:{}) ", flow_, first_column_, last_column_);
+  tprintDebug("space:(above={}, below={}, left={}, right={}, top={}, bottom={}) ", space_above_, space_below_, space_to_left_, space_to_right_, top_spacing_, bottom_spacing_);
+  tprintDebug("skew:(x={}, y={})\n", vertical_.x(), vertical_.y());
 }
 
 // Prints debug information on the colors.
 void ColPartition::PrintColors() {
-  tprintf("Colors:({}, {}, {}){} -> ({}, {}, {})\n", color1_[COLOR_RED],
+  tprintDebug("Colors:({}, {}, {}){} -> ({}, {}, {})\n", color1_[COLOR_RED],
           color1_[COLOR_GREEN], color1_[COLOR_BLUE], color1_[L_ALPHA_CHANNEL],
           color2_[COLOR_RED], color2_[COLOR_GREEN], color2_[COLOR_BLUE]);
 }
@@ -2016,7 +2016,7 @@ void ColPartition::RefinePartnersByType(bool upper,
   bool debug = TabFind::WithinTestRegion(2, bounding_box_.left(),
                                          bounding_box_.bottom());
   if (debug) {
-    tprintf("Refining {} {} partners by type for:\n", partners->length(),
+    tprintDebug("Refining {} {} partners by type for:\n", partners->length(),
             upper ? "Upper" : "Lower");
     Print();
   }
@@ -2030,13 +2030,13 @@ void ColPartition::RefinePartnersByType(bool upper,
       ColPartition *partner = it.data();
       if (!TypesSimilar(type_, partner->type_)) {
         if (debug) {
-          tprintf("Removing partner:");
+          tprintDebug("Removing partner:");
           partner->Print();
         }
         partner->RemovePartner(!upper, this);
         it.extract();
       } else if (debug) {
-        tprintf("Keeping partner:");
+        tprintDebug("Keeping partner:");
         partner->Print();
       }
     }
@@ -2047,13 +2047,13 @@ void ColPartition::RefinePartnersByType(bool upper,
       if (partner->blob_type() != BRT_POLYIMAGE ||
           blob_type() != BRT_POLYIMAGE) {
         if (debug) {
-          tprintf("Removing partner:");
+          tprintDebug("Removing partner:");
           partner->Print();
         }
         partner->RemovePartner(!upper, this);
         it.extract();
       } else if (debug) {
-        tprintf("Keeping partner:");
+        tprintDebug("Keeping partner:");
         partner->Print();
       }
     }
@@ -2122,7 +2122,7 @@ void ColPartition::RefineTextPartnersByMerge(bool upper, bool desperate,
   bool debug = TabFind::WithinTestRegion(2, bounding_box_.left(),
                                          bounding_box_.bottom());
   if (debug) {
-    tprintf("Refining {} {} partners by merge for:\n", partners->length(),
+    tprintDebug("Refining {} {} partners by merge for:\n", partners->length(),
             upper ? "Upper" : "Lower");
     Print();
   }
@@ -2147,7 +2147,7 @@ void ColPartition::RefineTextPartnersByMerge(bool upper, bool desperate,
         part, &candidates, debug, nullptr, &overlap_increase);
     if (candidate != nullptr && (overlap_increase <= 0 || desperate)) {
       if (debug) {
-        tprintf("Merging:hoverlap={}, voverlap={}, OLI={}\n",
+        tprintDebug("Merging:hoverlap={}, voverlap={}, OLI={}\n",
                 part->HCoreOverlap(*candidate), part->VCoreOverlap(*candidate),
                 overlap_increase);
       }
@@ -2173,7 +2173,7 @@ void ColPartition::RefinePartnersByOverlap(bool upper,
   bool debug = TabFind::WithinTestRegion(2, bounding_box_.left(),
                                          bounding_box_.bottom());
   if (debug) {
-    tprintf("Refining {} {} partners by overlap for:\n", partners->length(),
+    tprintDebug("Refining {} {} partners by overlap for:\n", partners->length(),
             upper ? "Upper" : "Lower");
     Print();
   }
@@ -2196,7 +2196,7 @@ void ColPartition::RefinePartnersByOverlap(bool upper,
     ColPartition *partner = it.data();
     if (partner != best_partner) {
       if (debug) {
-        tprintf("Removing partner:");
+        tprintDebug("Removing partner:");
         partner->Print();
       }
       partner->RemovePartner(!upper, this);
@@ -2227,7 +2227,7 @@ bool ColPartition::ThisPartitionBetter(BLOBNBOX *bbox,
   int this_miss = median_top_ - median_bottom_ - this_overlap;
   int other_miss = other.median_top_ - other.median_bottom_ - other_overlap;
   if (TabFind::WithinTestRegion(3, box.left(), box.bottom())) {
-    tprintf("Unique on ({},{})->({},{}) overlap {}/{}, miss {}/{}, mt={}/{}\n",
+    tprintDebug("Unique on ({},{})->({},{}) overlap {}/{}, miss {}/{}, mt={}/{}\n",
             box.left(), box.bottom(), box.right(), box.top(), this_overlap,
             other_overlap, this_miss, other_miss, median_top_,
             other.median_top_);
@@ -2367,33 +2367,33 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
         int top_spacing = static_cast<int>(total_top / total_count + 0.5);
         int bottom_spacing = static_cast<int>(total_bottom / total_count + 0.5);
         if (textord_debug_tabfind > 0) {
-          tprintf("Spacing run ended. Cause:");
+          tprintDebug("Spacing run ended. Cause:");
           if (neighbourhood[PN_LOWER] == nullptr) {
-            tprintf("No more lines\n");
+            tprintDebug("No more lines\n");
           } else {
-            tprintf("Spacing change. Spacings:\n");
+            tprintDebug("Spacing change. Spacings:\n");
             for (int i = 0; i < PN_COUNT; ++i) {
               if (neighbourhood[i] == nullptr) {
-                tprintf("NULL");
+                tprintDebug("NULL");
                 if (i > 0 && neighbourhood[i - 1] != nullptr) {
                   if (neighbourhood[i - 1]->SingletonPartner(false) !=
                       nullptr) {
-                    tprintf(" Lower partner:");
+                    tprintDebug(" Lower partner:");
                     neighbourhood[i - 1]->SingletonPartner(false)->Print();
                   } else {
-                    tprintf(" nullptr lower partner:\n");
+                    tprintDebug(" nullptr lower partner:\n");
                   }
                 } else {
-                  tprintf("\n");
+                  tprintDebug("\n");
                 }
               } else {
-                tprintf("Top = {}, bottom = {}\n",
+                tprintDebug("Top = {}, bottom = {}\n",
                         neighbourhood[i]->top_spacing(),
                         neighbourhood[i]->bottom_spacing());
               }
             }
           }
-          tprintf("Mean spacing = {}/{}\n", top_spacing, bottom_spacing);
+          tprintDebug("Mean spacing = {}/{}\n", top_spacing, bottom_spacing);
         }
         sum_it = start_it;
         upper = sum_it.data();
@@ -2401,7 +2401,7 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
           upper->set_top_spacing(top_spacing);
           upper->set_bottom_spacing(bottom_spacing);
           if (textord_debug_tabfind > 0) {
-            tprintf("Setting mean on:");
+            tprintDebug("Setting mean on:");
             upper->Print();
           }
           sum_it.forward();
@@ -2545,7 +2545,6 @@ void ColPartition::LeftEdgeRun(ColPartition_IT *part_it, ICOORD *start,
       start_y = (start_y + prev_bottom) / 2;
     }
   }
-  int end_y = part->bounding_box_.bottom();
   int margin_right = INT32_MAX;
   int margin_left = -INT32_MAX;
   UpdateLeftMargin(*part, &margin_left, &margin_right);
@@ -2578,7 +2577,7 @@ void ColPartition::LeftEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   }
   // Now calculate the end_y.
   part = part_it->data_relative(-1);
-  end_y = part->bounding_box_.bottom();
+  int end_y = part->bounding_box_.bottom();
   if (!part_it->at_first() && part_it->data()->bounding_box_.top() < end_y) {
     end_y = (end_y + part_it->data()->bounding_box_.top()) / 2;
   }
@@ -2587,7 +2586,7 @@ void ColPartition::LeftEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   end->set_y(end_y);
   end->set_x(part->XAtY(margin_right, end_y));
   if (textord_debug_tabfind > 0 && !part_it->at_first()) {
-    tprintf("Left run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
+    tprintDebug("Left run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
             start_y, end_y, part->XAtY(margin_left, end_y), end->x(),
             part->left_margin_, part->bounding_box_.left());
   }
@@ -2635,7 +2634,6 @@ void ColPartition::RightEdgeRun(ColPartition_IT *part_it, ICOORD *start,
       start_y = (start_y + next_y) / 2;
     }
   }
-  int end_y = part->bounding_box_.top();
   int margin_right = INT32_MAX;
   int margin_left = -INT32_MAX;
   UpdateRightMargin(*part, &margin_left, &margin_right);
@@ -2667,7 +2665,7 @@ void ColPartition::RightEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   }
   // Now calculate the end_y.
   part = part_it->data_relative(1);
-  end_y = part->bounding_box().top();
+  int end_y = part->bounding_box().top();
   if (!part_it->at_last() && part_it->data()->bounding_box_.bottom() > end_y) {
     end_y = (end_y + part_it->data()->bounding_box_.bottom()) / 2;
   }
@@ -2676,7 +2674,7 @@ void ColPartition::RightEdgeRun(ColPartition_IT *part_it, ICOORD *start,
   end->set_y(end_y);
   end->set_x(part->XAtY(margin_left, end_y));
   if (textord_debug_tabfind > 0 && !part_it->at_last()) {
-    tprintf("Right run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
+    tprintDebug("Right run from y={} to {} terminated with sum {}-{}, new {}-{}\n",
             start_y, end_y, end->x(), part->XAtY(margin_right, end_y),
             part->bounding_box_.right(), part->right_margin_);
   }
