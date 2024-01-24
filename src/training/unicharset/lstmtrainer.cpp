@@ -80,7 +80,7 @@ LSTMTrainer::LSTMTrainer()
   debug_interval_ = 0;
 }
 
-LSTMTrainer::LSTMTrainer(const char *model_base, const char *checkpoint_name,
+LSTMTrainer::LSTMTrainer(const std::string &model_base, const std::string &checkpoint_name,
                          int debug_interval, int64_t max_memory)
     : randomly_rotate_(false),
       training_data_(max_memory),
@@ -102,12 +102,12 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   if (!LoadDataFromFile(filename, &data)) {
     return false;
   }
-  tprintf("Loaded file {}, unpacking...\n", filename);
+  tprintDebug("Loaded file {}, unpacking...\n", filename);
   if (!ReadTrainingDump(data, *this)) {
     return false;
   }
   if (IsIntMode()) {
-    tprintf("ERROR: {} is an integer (fast) model, cannot continue training.\n",
+    tprintError("{} is an integer (fast) model, cannot continue training.\n",
             filename);
     return false;
   }
@@ -116,10 +116,10 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
       filename == old_traineddata) {
     return true; // Normal checkpoint load complete.
   }
-  tprintf("Code range changed from {} to {}!\n", network_->NumOutputs(),
+  tprintDebug("Code range changed from {} to {}!\n", network_->NumOutputs(),
           recoder_.code_range());
   if (old_traineddata == nullptr || *old_traineddata == '\0') {
-    tprintf("ERROR: Must supply the old traineddata for code conversion!\n");
+    tprintError("Must supply the old traineddata for code conversion!\n");
     return false;
   }
   TessdataManager old_mgr;
@@ -145,7 +145,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   SetNullChar();
   // Map the softmax(s) in the network.
   network_->RemapOutputs(old_recoder.code_range(), code_map);
-  tprintf("Previous null char={} mapped to {}\n", old_null_char, null_char_);
+  tprintDebug("Previous null char={} mapped to {}\n", old_null_char, null_char_);
   return true;
 }
 
@@ -170,13 +170,13 @@ bool LSTMTrainer::InitNetwork(const char *network_spec, int append_index,
     return false;
   }
   network_str_ += network_spec;
-  tprintf("Built network:{} from request {}\n", network_->spec(),
+  tprintDebug("Built network:{} from request {}\n", network_->spec(),
           network_spec);
-  tprintf(
+  tprintDebug(
       "Training parameters:\n  Debug interval = {},"
       " weights = {}, learning rate = {}, momentum={}\n",
       debug_interval_, weight_range, learning_rate_, momentum_);
-  tprintf("null char={}\n", null_char_);
+  tprintDebug("null char={}\n", null_char_);
   return true;
 }
 
@@ -188,7 +188,7 @@ int LSTMTrainer::InitTensorFlowNetwork(const std::string &tf_proto) {
   TFNetwork *tf_net = new TFNetwork("TensorFlow");
   training_iteration_ = tf_net->InitFromProtoStr(tf_proto);
   if (training_iteration_ == 0) {
-    tprintf("InitFromProtoStr failed!!\n");
+    tprintError("InitFromProtoStr failed!!\n");
     return 0;
   }
   network_ = tf_net;
@@ -269,7 +269,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
           !std::isfinite(word_error)) {
         std::string t = DecodeLabels(truth_labels);
         std::string o = DecodeLabels(ocr_labels);
-        tprintf("r={}, c={}, truth={}, ocr={}, wderr={}, truth[0]={}\n", r, c,
+        tprintDebug("r={}, c={}, truth={}, ocr={}, wderr={}, truth[0]={}\n", r, c,
                 t.c_str(), o.c_str(), word_error, truth_labels[0]);
       }
       results += " " + std::to_string(r);
@@ -511,7 +511,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
     // Special case. If we successfully decoded the recognizer, but fail here
     // then it means we were just given a recognizer, so issue a warning and
     // allow it.
-    tprintf("WARNING: LSTMTrainer deserialized an LSTMRecognizer!\n");
+    tprintWarn("LSTMTrainer deserialized an LSTMRecognizer!\n");
     learning_iteration_ = 0;
     network_->SetEnableTraining(TS_ENABLED);
     return true;
@@ -645,7 +645,7 @@ SubTrainerResult LSTMTrainer::UpdateSubtrainer(std::stringstream &log_msg) {
       batch_log.imbue(std::locale::classic());
       sub_trainer_->PrepareLogMsg(batch_log);
       batch_log << "\n";
-      tprintf("UpdateSubtrainer:{}", batch_log.str());
+      tprintDebug("UpdateSubtrainer:{}", batch_log.str());
       log_msg << batch_log.str();
       sub_error = sub_trainer_->CharError();
       sub_margin = (training_error - sub_error) / sub_error;
@@ -782,14 +782,14 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     TFloat total_same = bad_sums[LR_SAME][i] + ok_sums[LR_SAME][i];
     TFloat frac_down = bad_sums[LR_DOWN][i] / total_down;
     TFloat frac_same = bad_sums[LR_SAME][i] / total_same;
-    tprintf("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
+    tprintDebug("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
             lr * factor, 100.0 * frac_down, lr, 100.0 * frac_same);
     if (frac_down < frac_same * kImprovementFraction) {
-      tprintf(" REDUCED\n");
+      tprintDebug(" REDUCED\n");
       ScaleLayerLearningRate(layers[i], factor);
       ++num_lowered;
     } else {
-      tprintf(" SAME\n");
+      tprintDebug(" SAME\n");
     }
   }
   if (num_lowered == 0) {
@@ -812,7 +812,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
                                const UnicharCompress *recoder, bool simple_text,
                                int null_char, std::vector<int> *labels) {
   if (str.c_str() == nullptr || str.length() <= 0) {
-    tprintf("ERROR: Empty truth string!\n");
+    tprintError("Empty truth string!\n");
     return false;
   }
   unsigned err_index;
@@ -825,7 +825,8 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   if (unicharset.encode_string(cleaned.c_str(), true, &internal_labels, nullptr,
                                &err_index)) {
     bool success = true;
-    for (auto internal_label : internal_labels) {
+	for (int i = 0, l = internal_labels.size(); i < l; i++) {
+	  auto internal_label = internal_labels[i];
       if (recoder != nullptr) {
         // Re-encode labels via recoder.
         RecodedCharID code;
@@ -853,12 +854,13 @@ bool LSTMTrainer::EncodeString(const std::string &str,
       return true;
     }
   }
-  tprintf("ERROR: Encoding of string failed!\n");
-  tprintf("  Failure bytes:");
+  tprintError("Encoding of string failed!\n");
+  tprintError("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintf(" {}", cleaned[err_index++] & 0xff);
+    tprintError(" {}", static_cast<unsigned int>(cleaned[err_index++] & 0xff));
   }
-  tprintf("\n");
+  tprintError("\n");
+  tprintError("  Source string fed to encoder: {}\n", unicharset.debug_utf8_str(str.c_str()));
   return false;
 }
 
@@ -901,7 +903,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
                                              NetworkIO *fwd_outputs,
                                              NetworkIO *targets) {
   if (trainingdata == nullptr) {
-    tprintf("ERROR: Null trainingdata.\n");
+    tprintError("Null trainingdata.\n");
     return UNENCODABLE;
   }
   // Ensure repeatability of random elements even across checkpoints.
@@ -909,7 +911,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
       debug_interval_ > 0 && training_iteration() % debug_interval_ == 0;
   std::vector<int> truth_labels;
   if (!EncodeString(trainingdata->transcription(), &truth_labels)) {
-    tprintf("ERROR: Can't encode transcription: '{}' in language '{}'\n",
+    tprintError("Can't encode transcription: '{}' in language '{}'\n",
             trainingdata->transcription(),
             trainingdata->language());
     return UNENCODABLE;
@@ -938,7 +940,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
     ++w;
   }
   if (w == truth_labels.size()) {
-    tprintf("ERROR: Blank transcription: {}\n", trainingdata->transcription());
+    tprintError("Blank transcription: {}\n", trainingdata->transcription());
     return UNENCODABLE;
   }
   float image_scale;
@@ -947,25 +949,25 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   TBOX line_box(0, 0, 100, 100);
   if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down, line_box, 
                      &image_scale, &inputs, fwd_outputs)) {
-    tprintf("ERROR: Image {} not trainable\n", trainingdata->imagefilename());
+    tprintError("Image {} not trainable\n", trainingdata->imagefilename());
     return UNENCODABLE;
   }
   targets->Resize(*fwd_outputs, network_->NumOutputs());
   LossType loss_type = OutputLossType();
   if (loss_type == LT_SOFTMAX) {
     if (!ComputeTextTargets(*fwd_outputs, truth_labels, targets)) {
-      tprintf("ERROR: Compute simple targets failed for {}!\n",
+      tprintError("Compute simple targets failed for {}!\n",
               trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else if (loss_type == LT_CTC) {
     if (!ComputeCTCTargets(truth_labels, fwd_outputs, targets)) {
-      tprintf("ERROR: Compute CTC targets failed for {}!\n",
+      tprintError("Compute CTC targets failed for {}!\n",
               trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else {
-    tprintf("ERROR: Logistic outputs not implemented yet!\n");
+    tprintError("Logistic outputs not implemented yet!\n");
     return UNENCODABLE;
   }
   std::vector<int> ocr_labels;
@@ -977,7 +979,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   }
   if (!DebugLSTMTraining(inputs, *trainingdata, *fwd_outputs, truth_labels,
                          *targets)) {
-    tprintf("ERROR: Input width was {}\n", inputs.Width());
+    tprintError("Input width was {}\n", inputs.Width());
     return UNENCODABLE;
   }
   std::string ocr_text = DecodeLabels(ocr_labels);
@@ -985,7 +987,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   targets->SubtractAllFromFloat(*fwd_outputs);
   if (debug_interval_ != 0) {
     if (truth_text != ocr_text) {
-      tprintf("Iteration {}: BEST OCR TEXT : {}\n", training_iteration(),
+      tprintDebug("Iteration {}: BEST OCR TEXT : {}\n", training_iteration(),
               ocr_text.c_str());
     }
   }
@@ -993,7 +995,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   double word_error = ComputeWordError(&truth_text, &ocr_text);
   double delta_error = ComputeErrorRates(*targets, char_error, word_error);
   if (debug_interval_ != 0) {
-    tprintf("File {} line {} {}:\n", trainingdata->imagefilename(),
+    tprintDebug("File {} line {} {}:\n", trainingdata->imagefilename(),
             trainingdata->page_number(), delta_error == 0.0 ? "(Perfect)" : "");
   }
   if (delta_error == 0.0) {
@@ -1021,7 +1023,7 @@ bool LSTMTrainer::SaveTrainingDump(SerializeAmount serialize_amount,
 bool LSTMTrainer::ReadLocalTrainingDump(const TessdataManager *mgr,
                                         const char *data, int size) {
   if (size == 0) {
-    tprintf("WARNING: Data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
+    tprintWarn("Data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
     return false;
   }
   TFile fp;
@@ -1155,7 +1157,7 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
                                     const NetworkIO &outputs) {
   const std::string &truth_text = DecodeLabels(truth_labels);
   if (truth_text.c_str() == nullptr || truth_text.length() <= 0) {
-    tprintf("ERROR: Empty truth string at decode time!\n");
+    tprintError("Empty truth string at decode time!\n");
     return false;
   }
   if (debug_interval_ != 0) {
@@ -1164,14 +1166,14 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
     std::vector<int> xcoords;
     LabelsFromOutputs(outputs, &labels, &xcoords);
     std::string text = DecodeLabels(labels);
-    tprintf("Iteration {}: GROUND  TRUTH : {}\n", training_iteration(),
+    tprintDebug("Iteration {}: GROUND  TRUTH : {}\n", training_iteration(),
             truth_text);
     if (truth_text != text) {
-      tprintf("Iteration {}: ALIGNED TRUTH : {}\n", training_iteration(),
+      tprintDebug("Iteration {}: ALIGNED TRUTH : {}\n", training_iteration(),
               text);
     }
     if (debug_interval_ > 0 && training_iteration() % debug_interval_ == 0) {
-      tprintf("TRAINING activation path for truth string {}\n",
+      tprintDebug("TRAINING activation path for truth string {}\n",
               truth_text);
       DebugActivationPath(outputs, labels, xcoords);
 #if !GRAPHICS_DISABLED
@@ -1230,7 +1232,7 @@ bool LSTMTrainer::ComputeTextTargets(const NetworkIO &outputs,
                                      const std::vector<int> &truth_labels,
                                      NetworkIO *targets) {
   if (truth_labels.size() > targets->Width()) {
-    tprintf("ERROR: Transcription {} too long to fit into target of width {}\n",
+    tprintError("Transcription {} too long to fit into target of width {}\n",
             DecodeLabels(truth_labels), targets->Width());
     return false;
   }
@@ -1408,7 +1410,7 @@ void LSTMTrainer::RollErrorBuffers() {
   }
   ++training_iteration_;
   if (debug_interval_ != 0) {
-    tprintf("Mean rms={}%, delta={}%, train={}%({}%), skip ratio={}%\n",
+    tprintDebug("Mean rms={}%, delta={}%, train={}%({}%), skip ratio={}%\n",
             error_rates_[ET_RMS], error_rates_[ET_DELTA],
             error_rates_[ET_CHAR_ERROR], error_rates_[ET_WORD_RECERR],
             error_rates_[ET_SKIP_RATIO]);
@@ -1463,7 +1465,7 @@ std::string LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
     }
     int old_iteration = i >= 0 ? best_error_iterations_[i] : 0;
     improvement_steps_ = iteration - old_iteration;
-    tprintf("2 Percent improvement time={}, best error was {} @ {}\n",
+    tprintDebug("2 Percent improvement time={}, best error was {} @ {}\n",
             improvement_steps_, i >= 0 ? best_error_history_[i] : 100.0,
             old_iteration);
   } else if (error_rate > best_error_rate_) {

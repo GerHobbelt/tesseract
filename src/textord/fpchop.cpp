@@ -111,7 +111,7 @@ ROW *fixed_pitch_words( // find lines
     xstarts[0] = rep_left;
   }
   if (cell_it.empty() || row->char_cells.singleton()) {
-    tprintf("WARNING: Row without enough char cells!\n"
+    tprintWarn("Row without enough char cells!\n"
             "Leftmost blob is at ({},{})\n", box_it.data()->bounding_box().left(),
             box_it.data()->bounding_box().bottom());
     return nullptr;

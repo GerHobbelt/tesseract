@@ -25,7 +25,7 @@
 namespace tesseract {
 
 // ni_ and no_ will be set by AddToStack.
-Series::Series(const char *name) : Plumbing(name) {
+Series::Series(const std::string &name) : Plumbing(name) {
   type_ = NT_SERIES;
 }
 
@@ -45,13 +45,13 @@ StaticShape Series::OutputShape(const StaticShape &input_shape) const {
 // Note that series has its own implementation just for debug purposes.
 int Series::InitWeights(float range, TRand *randomizer) {
   num_weights_ = 0;
-  tprintf("Num outputs,weights in Series:\n");
+  tprintDebug("Num outputs,weights in Series:\n");
   for (auto &i : stack_) {
     int weights = i->InitWeights(range, randomizer);
-    tprintf("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
+    tprintDebug("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
     num_weights_ += weights;
   }
-  tprintf("Total weights = {}\n", num_weights_);
+  tprintDebug("Total weights = {}\n", num_weights_);
   return num_weights_;
 }
 
@@ -59,13 +59,13 @@ int Series::InitWeights(float range, TRand *randomizer) {
 // and remaps their outputs according to code_map. See network.h for details.
 int Series::RemapOutputs(int old_no, const std::vector<int> &code_map) {
   num_weights_ = 0;
-  tprintf("Num (Extended) outputs,weights in Series:\n");
+  tprintDebug("Num (Extended) outputs,weights in Series:\n");
   for (auto &i : stack_) {
     int weights = i->RemapOutputs(old_no, code_map);
-    tprintf("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
+    tprintDebug("  {}:{}, {}\n", i->spec().c_str(), i->NumOutputs(), weights);
     num_weights_ += weights;
   }
-  tprintf("Total weights = {}\n", num_weights_);
+  tprintDebug("Total weights = {}\n", num_weights_);
   no_ = stack_.back()->NumOutputs();
   return num_weights_;
 }
@@ -164,7 +164,7 @@ void Series::SplitAt(unsigned last_start, Series **start, Series **end) {
   *start = nullptr;
   *end = nullptr;
   if (last_start >= stack_.size()) {
-    tprintf("ERROR: Invalid split index {} must be in range [0,{}]!\n", last_start, stack_.size() - 1);
+    tprintError("Invalid split index {} must be in range [0,{}]!\n", last_start, stack_.size() - 1);
     return;
   }
   auto *master_series = new Series("MasterSeries");

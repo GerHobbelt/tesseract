@@ -142,27 +142,27 @@ void SEAM::UndoSeam(TBLOB *blob, TBLOB *other_blob) const {
 
 // Prints everything in *this SEAM.
 void SEAM::Print(const char *label) const {
-  tprintf("{}", label);
-  tprintf(" {} @ ({},{}), p={}, n={} ", priority_, location_.x, location_.y, widthp_, widthn_);
+  tprintDebug("{}", label);
+  tprintDebug(" {} @ ({},{}), p={}, n={} ", priority_, location_.x, location_.y, widthp_, widthn_);
   for (int s = 0; s < num_splits_; ++s) {
     splits_[s].Print();
     if (s + 1 < num_splits_) {
-      tprintf(",   ");
+      tprintDebug(",   ");
     }
   }
-  tprintf("\n");
+  tprintDebug("\n");
 }
 
 // Prints a collection of SEAMs.
 /* static */
 void SEAM::PrintSeams(const char *label, const std::vector<SEAM *> &seams) {
   if (!seams.empty()) {
-    tprintf("{}\n", label);
+    tprintDebug("{}\n", label);
     for (unsigned x = 0; x < seams.size(); ++x) {
-      tprintf("{}:   ", x);
+      tprintDebug("{}:   ", x);
       seams[x]->Print("");
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 

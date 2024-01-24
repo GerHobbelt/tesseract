@@ -927,6 +927,212 @@ protected:
 #endif // !GRAPHICS_DISABLED
 };
 
+/////////////////////////////////////////////////////////////////////////
+
+// The DummyScrollView class is a 'null' sink for all things ScrollView.
+class TESS_API DummyScrollView : public ScrollView {
+public:
+	using Color = ScrollView::Color;
+
+	virtual ~DummyScrollView();
+
+#if !GRAPHICS_DISABLED
+
+	// Create a window. The pixel size of the window may be 0,0, in which case
+	// a default size is selected based on the size of your canvas.
+	// The canvas may not be 0,0 in size!
+	// With a flag whether the x axis is reversed.
+	// Connect to a server other than localhost.
+	DummyScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos,
+		int x_size, int y_size, int x_canvas_size, int y_canvas_size,
+		bool y_axis_reversed, const char *server_name);
+
+public:
+	/*******************************************************************************
+	* Event handling
+	* To register as listener, the class has to derive from the SVEventHandler
+	* class, which consists of a notifyMe(SVEvent*) function that should be
+	* overwritten to process the event the way you want.
+	*******************************************************************************/
+
+	// Add an Event Listener to this ScrollView Window.
+	virtual void AddEventHandler(SVEventHandler *listener);
+
+	// Block until an event of the given type is received.
+	virtual std::unique_ptr<SVEvent> AwaitEvent(SVEventType type);
+
+	/*******************************************************************************
+	* API functions for LUA calls
+	* the implementations for these can be found in svapi.cc
+	* (keep in mind that the window is actually created through the ScrollView
+	* constructor, so this is not listed here)
+	*******************************************************************************/
+
+	// Add comment
+	virtual void Comment(std::string msg);
+
+	// Draw an image on (x,y).
+	virtual void Draw(Image image, int x_pos, int y_pos, const char *title);
+
+	// Helper function to exit the program.
+	virtual void ExitHelper();
+
+	// Update the contents of a specific window.
+	virtual void UpdateWindow();
+
+	// Erase all content from the window, but do not destroy it.
+	virtual void Clear();
+
+	// Set pen color with an enum.
+	virtual void Pen(Color color);
+
+	// Set pen color to RGB (0-255).
+	virtual void Pen(int red, int green, int blue);
+
+	// Set pen color to RGBA (0-255).
+	virtual void Pen(int red, int green, int blue, int alpha);
+
+	// Set brush color with an enum.
+	virtual void Brush(Color color);
+
+	// Set brush color to RGB (0-255).
+	virtual void Brush(int red, int green, int blue);
+
+	// Set brush color to RGBA (0-255).
+	virtual void Brush(int red, int green, int blue, int alpha);
+
+	// Set attributes for future text, like font name (e.g.
+	// "Times New Roman"), font size etc..
+	// Note: The underlined flag is currently not supported
+	virtual void TextAttributes(const char *font, int pixel_size, bool bold,
+		bool italic, bool underlined);
+
+	// Set up a X/Y offset for the subsequent drawing primitives.
+	virtual void SetXYOffset(int x, int y);
+
+	// Draw line from (x1,y1) to (x2,y2) with the current pencolor.
+	virtual void Line(int x1, int y1, int x2, int y2);
+
+	// Set the stroke width of the pen.
+	virtual void Stroke(float width);
+
+	// Draw a rectangle given upper left corner and lower right corner.
+	// The current pencolor is used as outline, the brushcolor to fill the shape.
+	virtual void Rectangle(int x1, int y1, int x2, int y2);
+
+	// Draw an ellipse centered on (x,y).
+	// The current pencolor is used as outline, the brushcolor to fill the shape.
+	virtual void Ellipse(int x, int y, int width, int height);
+
+	// Draw text with the current pencolor
+	virtual void Text(int x, int y, const char *mystring);
+
+	// Draw an image from a local filename. This should be faster than
+	// createImage. WARNING: This only works on a local machine. This also only
+	// works image types supported by java (like bmp,jpeg,gif,png) since the image
+	// is opened by the server.
+	virtual void Draw(const char *image, int x_pos, int y_pos);
+
+	// Set the current position to draw from (x,y). In conjunction with...
+	virtual void SetCursor(int x, int y);
+
+	// ...this function, which draws a line from the current to (x,y) and then
+	// sets the new position to the new (x,y), this can be used to easily draw
+	// polygons using vertices
+	virtual void DrawTo(int x, int y);
+
+	// Set the SVWindow visible/invisible.
+	virtual void SetVisible(bool visible);
+
+	// Set the SVWindow always on top or not always on top.
+	virtual void AlwaysOnTop(bool b);
+
+	// Shows a modal dialog with "msg" as question and returns 'y' or 'n'.
+	virtual int ShowYesNoDialog(const char *msg);
+
+	// Shows a modal dialog with "msg" as question and returns a char* string.
+	// Constraint: As return, only words (e.g. no whitespaces etc.) are allowed.
+	virtual char *ShowInputDialog(const char *msg);
+
+	// Adds a messagebox to the SVWindow. This way, it can show the messages...
+	virtual void AddMessageBox();
+
+	virtual void vAddMessage(fmt::string_view format, fmt::format_args args);
+
+	// Zoom the window to the rectangle given upper left corner and
+	// lower right corner.
+	virtual void ZoomToRectangle(int x1, int y1, int x2, int y2);
+
+	// Custom messages (manipulating java code directly) can be send through this.
+	// Send a message to the server and attach the Id of the corresponding window.
+	// Note: This should only be called if you are know what you are doing, since
+	// you are fiddling with the Java objects on the server directly. Calling
+	// this just for fun will likely break your application!
+	// It is public so you can actually take use of the LUA functionalities, but
+	// be careful!
+	virtual void vSendMsg(fmt::string_view format, fmt::format_args args);
+
+	/*******************************************************************************
+	* Add new menu entries to parent. If parent is "", the entry gets added to
+	*the main menubar (toplevel).
+	*******************************************************************************/
+
+	// This adds a new submenu to the menubar.
+	virtual void MenuItem(const char *parent, const char *name);
+
+	// This adds a new (normal) menu entry with an associated eventID, which
+	// should be unique among menubar eventIDs.
+	virtual void MenuItem(const char *parent, const char *name, int cmdEvent);
+
+	// This adds a new checkbox entry, which might initially be flagged.
+	virtual void MenuItem(const char *parent, const char *name, int cmdEvent,
+		bool flagged);
+
+	// This adds a new popup submenu to the popup menu. If parent is "", the entry
+	// gets added at "toplevel" popupmenu.
+	virtual void PopupItem(const char *parent, const char *name);
+
+	// This adds a new popup entry with the associated eventID, which should be
+	// unique among popup eventIDs.
+	// If value and desc are given, on a click the server will ask you to modify
+	// the value and return the new value.
+	virtual void PopupItem(const char *parent, const char *name, int cmdEvent,
+		const char *value, const char *desc);
+
+	// Returns the correct Y coordinate for a window, depending on whether it
+	// might have to be flipped (by ySize).
+	virtual int TranslateYCoordinate(int y);
+
+	virtual char Wait();
+
+protected:
+	// Sets up ScrollView, depending on the variables from the constructor.
+	virtual void Initialize(Tesseract *tess, const char *name, int x_pos,
+		int y_pos, int x_size, int y_size, int x_canvas_size,
+		int y_canvas_size, bool y_axis_reversed,
+		const char *server_name);
+
+	// Send the current buffered polygon (if any) and clear it.
+	virtual void SendPolygon();
+
+	// Start the message receiving thread.
+	static void MessageReceiver();
+
+	// Place an event into the event_table (synchronized).
+	virtual void SetEvent(const SVEvent *svevent);
+
+	// Wake up the semaphore.
+	virtual void Signal();
+
+	// Starts a new event handler.
+	// Called asynchronously whenever a new window is created.
+	virtual void StartEventHandler();
+
+	void PrepCanvas(void);
+
+#endif // !GRAPHICS_DISABLED
+};
+
 // singleton
 class TESS_API ScrollViewManager {
 protected:

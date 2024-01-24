@@ -38,18 +38,29 @@ namespace tesseract {
   // the --tlog_level commandline argument. Otherwise it must be specified in a
   // config file like other params.
   template <typename S, typename... Args>
-  void tlog(int level, const S* format, Args &&...args) {
+  static inline void TLOG(int level, const S* format, Args &&...args) {
     if (FLAGS_tlog_level >= level) {
       //tprintf(format, ...);
-      vTessPrint(format, fmt::make_format_args(args...));
+      vTessPrint(4 - level, format, fmt::make_format_args(args...));
     }
   }
 
-  static inline bool
-    TLOG_IS_ON(int level) {
+  template <typename S, typename... Args>
+  static inline void VTLOG(int level, const S* format, fmt::format_args args) {
+	  if (FLAGS_tlog_level >= level) {
+		  vTessPrint(4 - level, format, args);
+	  }
+  }
+
+  static inline bool TLOG_IS_ON(int level) {
     return (FLAGS_tlog_level >= level);
   }
 
+
+  template<typename... Args>
+  static inline void tlog(int level, const char* format, Args &&...args) {
+	  TLOG<char>(level, format, args...);
+  }
 }
 
 #endif // TESSERACT_TRAINING_TLOG_H_

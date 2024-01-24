@@ -76,7 +76,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     }
     if (debug_it && error_samples > 0) {
       // Running debug, keep the correct answer, and debug the classifier.
-      tprintf("Error on sample {}: {} Classifier debug output:\n", it->GlobalSampleIndex(),
+      tprintDebug("Error on sample {}: {} Classifier debug output:\n", it->GlobalSampleIndex(),
               it->sample_set()->SampleToString(*mutable_sample).c_str());
 #if !GRAPHICS_DISABLED
       classifier->DebugDisplay(*mutable_sample, correct_id);
@@ -94,7 +94,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   }
   if (report_level > 1 && total_samples > 0) {
     // It is useful to know the time in microseconds/char.
-    tprintf("Errors computed in {} at {} μs/char\n", total_time,
+    tprintDebug("Errors computed in {} at {} μs/char\n", total_time,
             1000000.0 * total_time / total_samples);
   }
   return unscaled_error;
@@ -134,7 +134,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
                                             &results);
       if (correct_id != 0 && new_counter.AccumulateErrors(true, boosting_mode, fontinfo_table,
                                                           results, mutable_sample)) {
-        tprintf("New Error on sample {}: Classifier debug output:\n", it->GlobalSampleIndex());
+        tprintDebug("New Error on sample {}: Classifier debug output:\n", it->GlobalSampleIndex());
         ++total_new_errors;
         new_classifier->UnicharClassifySample(*mutable_sample, 1, correct_id, &results);
         if (results.size() > 0 && error_samples > 0) {
@@ -146,7 +146,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
       }
     }
   }
-  tprintf("Total new errors = {}\n", total_new_errors);
+  tprintDebug("Total new errors = {}\n", total_new_errors);
 }
 
 // Constructor is private. Only anticipated use of ErrorCounter is via
@@ -281,10 +281,10 @@ bool ErrorCounter::AccumulateErrors(bool debug, CountTypes boosting_mode,
   if (sample->is_error()) {
     scaled_error_ += sample->weight();
     if (debug) {
-      tprintf("{} results for char {} font {} :", num_results,
+      tprintDebug("{} results for char {} font {} :", num_results,
               unicharset_.id_to_unichar(unichar_id), font_id);
       for (int i = 0; i < num_results; ++i) {
-        tprintf(" {} : {}\n", results[i].rating,
+        tprintDebug(" {} : {}\n", results[i].rating,
                 unicharset_.id_to_unichar(results[i].unichar_id));
       }
       return true;
@@ -335,7 +335,7 @@ bool ErrorCounter::AccumulateJunk(bool debug, const std::vector<UnicharRating> &
 }
 
 // Creates a report of the error rate. The report_level controls the detail
-// that is reported to stderr via tprintf:
+// that is reported to stderr via tprintDebug:
 // 0   -> no output.
 // >=1 -> bottom-line error rate.
 // >=3 -> font-level error rate.
@@ -366,7 +366,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
       }
       if (report_level > 2) {
         // Report individual font error rates.
-        tprintf("{}: {}\n", fontinfo_table.at(f).name, font_report.c_str());
+        tprintDebug("{}: {}\n", fontinfo_table.at(f).name, font_report.c_str());
       }
     }
   }
@@ -383,7 +383,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
     // Report the totals.
     std::string total_report;
     if (any_results) {
-      tprintf("TOTAL Scaled Err={}%, {}\n", scaled_error_ * 100.0, total_report.c_str());
+      tprintDebug("TOTAL Scaled Err={}%, {}\n", scaled_error_ * 100.0, total_report.c_str());
     }
     // Report the worst substitution error only for now.
     if (totals.n[CT_UNICHAR_TOP1_ERR] > 0) {
@@ -401,22 +401,22 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
         }
       }
       if (worst_err > 0) {
-        tprintf("Worst error = {}:{} -> {} with {}/{}={}% errors\n", worst_uni_id,
+        tprintDebug("Worst error = {}:{} -> {} with {}/{}={}% errors\n", worst_uni_id,
                 unicharset_.id_to_unichar(worst_uni_id), unicharset_.id_to_unichar(worst_result_id),
                 worst_err, totals.n[CT_UNICHAR_TOP1_ERR],
                 100.0 * worst_err / totals.n[CT_UNICHAR_TOP1_ERR]);
       }
     }
-    tprintf("Multi-unichar shape use:\n");
+    tprintDebug("Multi-unichar shape use:\n");
     for (int u = 0; u < multi_unichar_counts_.size(); ++u) {
       if (multi_unichar_counts_[u] > 0) {
-        tprintf("{} multiple answers for unichar: {}\n", multi_unichar_counts_[u],
+        tprintDebug("{} multiple answers for unichar: {}\n", multi_unichar_counts_[u],
                 unicharset_.id_to_unichar(u));
       }
     }
-    tprintf("OK Score histogram:\n");
+    tprintDebug("OK Score histogram:\n");
     ok_score_hist_.print();
-    tprintf("ERROR Score histogram:\n");
+    tprintDebug("ERROR Score histogram:\n");
     bad_score_hist_.print();
   }
 

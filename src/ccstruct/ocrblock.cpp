@@ -162,7 +162,7 @@ void BLOCK::compress() { // squash it up
  */
 
 void BLOCK::check_pitch() { // check prop
-  //      tprintf("Missing FFT fixed pitch stuff!\n");
+  tprintDebug("Missing FFT fixed pitch stuff!\n");
   pitch = -1;
 }
 
@@ -192,24 +192,24 @@ void BLOCK::print( // print list of sides
   ICOORDELT_IT it = &pdblk.leftside; // iterator
 
   pdblk.box.print();
-  tprintf("Proportional= {}\n", proportional ? "TRUE" : "FALSE");
-  tprintf("Kerning= {}\n", kerning);
-  tprintf("Spacing= {}\n", spacing);
-  tprintf("Fixed_pitch={}\n", pitch);
-  tprintf("Filename= {}\n", filename);
+  tprintDebug("Proportional= {}\n", proportional ? "TRUE" : "FALSE");
+  tprintDebug("Kerning= {}\n", kerning);
+  tprintDebug("Spacing= {}\n", spacing);
+  tprintDebug("Fixed_pitch={}\n", pitch);
+  tprintDebug("Filename= {}\n", filename);
 
   if (dump) {
-    tprintf("Left side coords are:\n");
+    tprintDebug("Left side coords are:\n");
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      tprintf("({},{}) ", it.data()->x(), it.data()->y());
+      tprintDebug("({},{}) ", it.data()->x(), it.data()->y());
     }
-    tprintf("\n");
-    tprintf("Right side coords are:\n");
+    tprintDebug("\n");
+    tprintDebug("Right side coords are:\n");
     it.set_to_list(&pdblk.rightside);
     for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-      tprintf("({},{}) ", it.data()->x(), it.data()->y());
+      tprintDebug("({},{}) ", it.data()->x(), it.data()->y());
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 
@@ -426,7 +426,7 @@ void PrintSegmentationStats(BLOCK_LIST *block_list) {
       }
     }
   }
-  tprintf("Block list stats:\nBlocks = {}\nRows = {}\nWords = {}\nBlobs = {}\n", num_blocks,
+  tprintDebug("Block list stats:\nBlocks = {}\nRows = {}\nWords = {}\nBlobs = {}\n", num_blocks,
           num_rows, num_words, num_blobs);
 }
 

@@ -29,6 +29,7 @@
 #include "paragraphs_internal.h"
 #include "dawg.h"
 #include "thresholder.h"
+#include "unicharset.h"
 
 #include <algorithm>
 #include <string>
@@ -739,6 +740,95 @@ auto fmt::formatter<ThresholdMethod>::format(ThresholdMethod c, format_context &
 
   return formatter<string_view>::format(id, ctx);
 }
+
+auto fmt::formatter<UNICHARSET::Direction>::format(UNICHARSET::Direction c, format_context &ctx) const
+-> decltype(ctx.out()) {
+	const char *name;
+	// enum UNICHARSET::Direction:
+	switch (c) {
+	case UNICHARSET::Direction::U_LEFT_TO_RIGHT:
+		name = "U_LEFT_TO_RIGHT";
+		break;
+	case UNICHARSET::Direction::U_RIGHT_TO_LEFT:
+		name = "U_RIGHT_TO_LEFT";
+		break;
+	case UNICHARSET::Direction::U_EUROPEAN_NUMBER:
+		name = "U_EUROPEAN_NUMBER";
+		break;
+	case UNICHARSET::Direction::U_EUROPEAN_NUMBER_SEPARATOR:
+		name = "U_EUROPEAN_NUMBER_SEPARATOR";
+		break;
+	case UNICHARSET::Direction::U_EUROPEAN_NUMBER_TERMINATOR:
+		name = "U_EUROPEAN_NUMBER_TERMINATOR";
+		break;
+	case UNICHARSET::Direction::U_ARABIC_NUMBER:
+		name = "U_ARABIC_NUMBER";
+		break;
+	case UNICHARSET::Direction::U_COMMON_NUMBER_SEPARATOR:
+		name = "U_COMMON_NUMBER_SEPARATOR";
+		break;
+	case UNICHARSET::Direction::U_BLOCK_SEPARATOR:
+		name = "U_BLOCK_SEPARATOR";
+		break;
+	case UNICHARSET::Direction::U_SEGMENT_SEPARATOR:
+		name = "U_SEGMENT_SEPARATOR";
+		break;
+	case UNICHARSET::Direction::U_WHITE_SPACE_NEUTRAL:
+		name = "U_WHITE_SPACE_NEUTRAL";
+		break;
+	case UNICHARSET::Direction::U_OTHER_NEUTRAL:
+		name = "U_OTHER_NEUTRAL";
+		break;
+	case UNICHARSET::Direction::U_LEFT_TO_RIGHT_EMBEDDING:
+		name = "U_LEFT_TO_RIGHT_EMBEDDING";
+		break;
+	case UNICHARSET::Direction::U_LEFT_TO_RIGHT_OVERRIDE:
+		name = "U_LEFT_TO_RIGHT_OVERRIDE";
+		break;
+	case UNICHARSET::Direction::U_RIGHT_TO_LEFT_ARABIC:
+		name = "U_RIGHT_TO_LEFT_ARABIC";
+		break;
+	case UNICHARSET::Direction::U_RIGHT_TO_LEFT_EMBEDDING:
+		name = "U_RIGHT_TO_LEFT_EMBEDDING";
+		break;
+	case UNICHARSET::Direction::U_RIGHT_TO_LEFT_OVERRIDE:
+		name = "U_RIGHT_TO_LEFT_OVERRIDE";
+		break;
+	case UNICHARSET::Direction::U_POP_DIRECTIONAL_FORMAT:
+		name = "U_POP_DIRECTIONAL_FORMAT";
+		break;
+	case UNICHARSET::Direction::U_DIR_NON_SPACING_MARK:
+		name = "U_DIR_NON_SPACING_MARK";
+		break;
+	case UNICHARSET::Direction::U_BOUNDARY_NEUTRAL:
+		name = "U_BOUNDARY_NEUTRAL";
+		break;
+	case UNICHARSET::Direction::U_FIRST_STRONG_ISOLATE:
+		name = "U_FIRST_STRONG_ISOLATE";
+		break;
+	case UNICHARSET::Direction::U_LEFT_TO_RIGHT_ISOLATE:
+		name = "U_LEFT_TO_RIGHT_ISOLATE";
+		break;
+	case UNICHARSET::Direction::U_RIGHT_TO_LEFT_ISOLATE:
+		name = "U_RIGHT_TO_LEFT_ISOLATE";
+		break;
+	case UNICHARSET::Direction::U_POP_DIRECTIONAL_ISOLATE:
+		name = "U_POP_DIRECTIONAL_ISOLATE";
+		break;
+#ifndef U_HIDE_DEPRECATED_API
+	case UNICHARSET::Direction::U_CHAR_DIRECTION_COUNT:
+		name = "U_CHAR_DIRECTION_COUNT";
+		break;
+#endif // U_HIDE_DEPRECATED_API
+	default:
+		name = "unknown_threshold_method";
+		break;
+	}
+	auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+	return formatter<string_view>::format(id, ctx);
+}
+
 
 #if 0
 

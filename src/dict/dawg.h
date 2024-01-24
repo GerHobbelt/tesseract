@@ -74,6 +74,10 @@ enum DawgType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
 
+static inline auto format_as(DawgType dt) {
+  return fmt::underlying(dt);
+}
+
 /*----------------------------------------------------------------------
               C o n s t a n t s
 ----------------------------------------------------------------------*/
@@ -113,7 +117,7 @@ static const char kWildcard[] = "*";
 class TESS_API Dawg {
 public:
   /// Magic number to determine endianness when reading the Dawg from file.
-  static const int16_t kDawgMagicNumber = 42;
+  const int16_t kDawgMagicNumber = 42;
   /// A special unichar id that indicates that any appropriate pattern
   /// (e.g.dictionary word, 0-9 digit, etc) can be inserted instead
   /// Used for expressing patterns in punctuation and number Dawgs.
@@ -392,7 +396,7 @@ public:
     }
     push_back(new_pos);
     if (debug) {
-      tprintf("{}[{}, {}] [punc: {}{}]\n", debug_msg,
+      tprintDebug("{}[{}, {}] [punc: {}{}]\n", debug_msg,
               new_pos.dawg_index, new_pos.dawg_ref, new_pos.punc_ref,
               new_pos.back_to_punc ? " returned" : "");
     }
@@ -498,11 +502,11 @@ public:
     TFile file;
     file.OpenWrite(nullptr);
     if (!this->write_squished_dawg(&file)) {
-      tprintf("ERROR: Error serializing {}\n", filename);
+      tprintError("Error serializing {}\n", filename);
       return false;
     }
     if (!file.CloseWrite(filename, nullptr)) {
-      tprintf("ERROR: Error writing file {}\n", filename);
+      tprintError("Error writing file {}\n", filename);
       return false;
     }
     return true;
@@ -557,11 +561,11 @@ private:
 
   /// Prints the contents of the SquishedDawg.
   void print_all(const char *msg) {
-    tprintf("\n__________________________\n{}\n", msg);
+    tprintDebug("\n__________________________\n{}\n", msg);
     for (int i = 0; i < num_edges_; ++i) {
       print_edge(i);
     }
-    tprintf("__________________________\n");
+	tprintDebug("__________________________\n");
   }
   /// Constructs a mapping from the memory node indices to disk node indices.
   std::unique_ptr<EDGE_REF[]> build_node_map(int32_t *num_nodes) const;

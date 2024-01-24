@@ -85,59 +85,59 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
     , INT_MEMBER(tosp_short_row, 20, "No.gaps reqd with few cert spaces to use certs",
                  ccstruct_->params())
     , INT_MEMBER(tosp_sanity_method, 1, "How to avoid being silly", ccstruct_->params())
-    , double_MEMBER(tosp_old_sp_kn_th_factor, 2.0,
+    , DOUBLE_MEMBER(tosp_old_sp_kn_th_factor, 2.0,
                     "Factor for defining space threshold in terms of space and "
                     "kern sizes",
                     ccstruct_->params())
-    , double_MEMBER(tosp_threshold_bias1, 0, "how far between kern and space?", ccstruct_->params())
-    , double_MEMBER(tosp_threshold_bias2, 0, "how far between kern and space?", ccstruct_->params())
-    , double_MEMBER(tosp_narrow_fraction, 0.3, "Fract of xheight for narrow", ccstruct_->params())
-    , double_MEMBER(tosp_narrow_aspect_ratio, 0.48, "narrow if w/h less than this",
+    , DOUBLE_MEMBER(tosp_threshold_bias1, 0, "how far between kern and space?", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_threshold_bias2, 0, "how far between kern and space?", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_narrow_fraction, 0.3, "Fract of xheight for narrow", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_narrow_aspect_ratio, 0.48, "narrow if w/h less than this",
                     ccstruct_->params())
-    , double_MEMBER(tosp_wide_fraction, 0.52, "Fract of xheight for wide", ccstruct_->params())
-    , double_MEMBER(tosp_wide_aspect_ratio, 0.0, "wide if w/h less than this", ccstruct_->params())
-    , double_MEMBER(tosp_fuzzy_space_factor, 0.6, "Fract of xheight for fuzz sp",
+    , DOUBLE_MEMBER(tosp_wide_fraction, 0.52, "Fract of xheight for wide", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_wide_aspect_ratio, 0.0, "wide if w/h less than this", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_fuzzy_space_factor, 0.6, "Fract of xheight for fuzz sp",
                     ccstruct_->params())
-    , double_MEMBER(tosp_fuzzy_space_factor1, 0.5, "Fract of xheight for fuzz sp",
+    , DOUBLE_MEMBER(tosp_fuzzy_space_factor1, 0.5, "Fract of xheight for fuzz sp",
                     ccstruct_->params())
-    , double_MEMBER(tosp_fuzzy_space_factor2, 0.72, "Fract of xheight for fuzz sp",
+    , DOUBLE_MEMBER(tosp_fuzzy_space_factor2, 0.72, "Fract of xheight for fuzz sp",
                     ccstruct_->params())
-    , double_MEMBER(tosp_gap_factor, 0.83, "gap ratio to flip sp->kern", ccstruct_->params())
-    , double_MEMBER(tosp_kern_gap_factor1, 2.0, "gap ratio to flip kern->sp", ccstruct_->params())
-    , double_MEMBER(tosp_kern_gap_factor2, 1.3, "gap ratio to flip kern->sp", ccstruct_->params())
-    , double_MEMBER(tosp_kern_gap_factor3, 2.5, "gap ratio to flip kern->sp", ccstruct_->params())
-    , double_MEMBER(tosp_ignore_big_gaps, -1, "xht multiplier", ccstruct_->params())
-    , double_MEMBER(tosp_ignore_very_big_gaps, 3.5, "xht multiplier", ccstruct_->params())
-    , double_MEMBER(tosp_rep_space, 1.6, "rep gap multiplier for space", ccstruct_->params())
-    , double_MEMBER(tosp_enough_small_gaps, 0.65, "Fract of kerns reqd for isolated row stats",
+    , DOUBLE_MEMBER(tosp_gap_factor, 0.83, "gap ratio to flip sp->kern", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_kern_gap_factor1, 2.0, "gap ratio to flip kern->sp", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_kern_gap_factor2, 1.3, "gap ratio to flip kern->sp", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_kern_gap_factor3, 2.5, "gap ratio to flip kern->sp", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_ignore_big_gaps, -1, "xht multiplier", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_ignore_very_big_gaps, 3.5, "xht multiplier", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_rep_space, 1.6, "rep gap multiplier for space", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_enough_small_gaps, 0.65, "Fract of kerns reqd for isolated row stats",
                     ccstruct_->params())
-    , double_MEMBER(tosp_table_kn_sp_ratio, 2.25, "Min difference of kn & sp in table",
+    , DOUBLE_MEMBER(tosp_table_kn_sp_ratio, 2.25, "Min difference of kn & sp in table",
                     ccstruct_->params())
-    , double_MEMBER(tosp_table_xht_sp_ratio, 0.33, "Expect spaces bigger than this",
+    , DOUBLE_MEMBER(tosp_table_xht_sp_ratio, 0.33, "Expect spaces bigger than this",
                     ccstruct_->params())
-    , double_MEMBER(tosp_table_fuzzy_kn_sp_ratio, 3.0, "Fuzzy if less than this",
+    , DOUBLE_MEMBER(tosp_table_fuzzy_kn_sp_ratio, 3.0, "Fuzzy if less than this",
                     ccstruct_->params())
-    , double_MEMBER(tosp_fuzzy_kn_fraction, 0.5, "New fuzzy kn alg", ccstruct_->params())
-    , double_MEMBER(tosp_fuzzy_sp_fraction, 0.5, "New fuzzy sp alg", ccstruct_->params())
-    , double_MEMBER(tosp_min_sane_kn_sp, 1.5, "Don't trust spaces less than this time kn",
+    , DOUBLE_MEMBER(tosp_fuzzy_kn_fraction, 0.5, "New fuzzy kn alg", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_fuzzy_sp_fraction, 0.5, "New fuzzy sp alg", ccstruct_->params())
+    , DOUBLE_MEMBER(tosp_min_sane_kn_sp, 1.5, "Don't trust spaces less than this time kn",
                     ccstruct_->params())
-    , double_MEMBER(tosp_init_guess_kn_mult, 2.2, "Thresh guess - mult kn by this",
+    , DOUBLE_MEMBER(tosp_init_guess_kn_mult, 2.2, "Thresh guess - mult kn by this",
                     ccstruct_->params())
-    , double_MEMBER(tosp_init_guess_xht_mult, 0.28, "Thresh guess - mult xht by this",
+    , DOUBLE_MEMBER(tosp_init_guess_xht_mult, 0.28, "Thresh guess - mult xht by this",
                     ccstruct_->params())
-    , double_MEMBER(tosp_max_sane_kn_thresh, 5.0, "Multiplier on kn to limit thresh",
+    , DOUBLE_MEMBER(tosp_max_sane_kn_thresh, 5.0, "Multiplier on kn to limit thresh",
                     ccstruct_->params())
-    , double_MEMBER(tosp_flip_caution, 0.0, "Don't autoflip kn to sp when large separation",
+    , DOUBLE_MEMBER(tosp_flip_caution, 0.0, "Don't autoflip kn to sp when large separation",
                     ccstruct_->params())
-    , double_MEMBER(tosp_large_kerning, 0.19, "Limit use of xht gap with large kns",
+    , DOUBLE_MEMBER(tosp_large_kerning, 0.19, "Limit use of xht gap with large kns",
                     ccstruct_->params())
-    , double_MEMBER(tosp_dont_fool_with_small_kerns, -1, "Limit use of xht gap with odd small kns",
+    , DOUBLE_MEMBER(tosp_dont_fool_with_small_kerns, -1, "Limit use of xht gap with odd small kns",
                     ccstruct_->params())
-    , double_MEMBER(tosp_near_lh_edge, 0, "Don't reduce box if the top left is non blank",
+    , DOUBLE_MEMBER(tosp_near_lh_edge, 0, "Don't reduce box if the top left is non blank",
                     ccstruct_->params())
-    , double_MEMBER(tosp_silly_kn_sp_gap, 0.2, "Don't let sp minus kn get too small",
+    , DOUBLE_MEMBER(tosp_silly_kn_sp_gap, 0.2, "Don't let sp minus kn get too small",
                     ccstruct_->params())
-    , double_MEMBER(tosp_pass_wide_fuzz_sp_to_context, 0.75, "How wide fuzzies need context",
+    , DOUBLE_MEMBER(tosp_pass_wide_fuzz_sp_to_context, 0.75, "How wide fuzzies need context",
                     ccstruct_->params())
     ,
     // tordmain.cpp ///////////////////////////////////////////
@@ -146,32 +146,32 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
     , BOOL_MEMBER(textord_show_boxes, false, "Display unsorted blobs", ccstruct_->params())
     , INT_MEMBER(textord_max_noise_size, 7, "Pixel size of noise", ccstruct_->params())
     , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level", ccstruct_->params())
-    , double_MEMBER(textord_noise_area_ratio, 0.7, "Fraction of bounding box for noise",
+    , DOUBLE_MEMBER(textord_noise_area_ratio, 0.7, "Fraction of bounding box for noise",
                     ccstruct_->params())
-    , double_MEMBER(textord_initialx_ile, 0.75, "Ile of sizes for xheight guess",
+    , DOUBLE_MEMBER(textord_initialx_ile, 0.75, "Ile of sizes for xheight guess",
                     ccstruct_->params())
-    , double_MEMBER(textord_initialasc_ile, 0.90, "Ile of sizes for xheight guess",
+    , DOUBLE_MEMBER(textord_initialasc_ile, 0.90, "Ile of sizes for xheight guess",
                     ccstruct_->params())
     , INT_MEMBER(textord_noise_sizefraction, 10, "Fraction of size for maxima", ccstruct_->params())
-    , double_MEMBER(textord_noise_sizelimit, 0.5, "Fraction of x for big t count",
+    , DOUBLE_MEMBER(textord_noise_sizelimit, 0.5, "Fraction of x for big t count",
                     ccstruct_->params())
     , INT_MEMBER(textord_noise_translimit, 16, "Transitions for normal blob", ccstruct_->params())
-    , double_MEMBER(textord_noise_normratio, 2.0, "Dot to norm ratio for deletion",
+    , DOUBLE_MEMBER(textord_noise_normratio, 2.0, "Dot to norm ratio for deletion",
                     ccstruct_->params())
     , BOOL_MEMBER(textord_noise_rejwords, true, "Reject noise-like words", ccstruct_->params())
     , BOOL_MEMBER(textord_noise_rejrows, true, "Reject noise-like rows", ccstruct_->params())
-    , double_MEMBER(textord_noise_syfract, 0.2, "xh fract height error for norm blobs",
+    , DOUBLE_MEMBER(textord_noise_syfract, 0.2, "xh fract height error for norm blobs",
                     ccstruct_->params())
-    , double_MEMBER(textord_noise_sxfract, 0.4, "xh fract width error for norm blobs",
+    , DOUBLE_MEMBER(textord_noise_sxfract, 0.4, "xh fract width error for norm blobs",
                     ccstruct_->params())
-    , double_MEMBER(textord_noise_hfract, 1.0 / 64,
+    , DOUBLE_MEMBER(textord_noise_hfract, 1.0 / 64,
                     "Height fraction to discard outlines as speckle noise", ccstruct_->params())
     , INT_MEMBER(textord_noise_sncount, 1, "super norm blobs to save row", ccstruct_->params())
-    , double_MEMBER(textord_noise_rowratio, 6.0, "Dot to norm ratio for deletion",
+    , DOUBLE_MEMBER(textord_noise_rowratio, 6.0, "Dot to norm ratio for deletion",
                     ccstruct_->params())
     , BOOL_MEMBER(textord_noise_debug, false, "Debug row garbage detector", ccstruct_->params())
-    , double_MEMBER(textord_blshift_maxshift, 0.00, "Max baseline shift", ccstruct_->params())
-    , double_MEMBER(textord_blshift_xfraction, 9.99, "Min size of baseline shift",
+    , DOUBLE_MEMBER(textord_blshift_maxshift, 0.00, "Max baseline shift", ccstruct_->params())
+    , DOUBLE_MEMBER(textord_blshift_xfraction, 9.99, "Min size of baseline shift",
                     ccstruct_->params()) {
   ASSERT0(tess != nullptr);
 }
@@ -231,7 +231,9 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   } else {
     gradient = 0.0f;
   }
-  BaselineDetect baseline_detector(textord_baseline_debug, reskew, to_blocks);
+  int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
+  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+  BaselineDetect baseline_detector(reskew, to_blocks);
   baseline_detector.ComputeStraightBaselines(use_box_bottoms);
   baseline_detector.ComputeBaselineSplinesAndXheights(
       page_tr_, pageseg_mode != PSM_RAW_LINE, textord_heavy_nr, textord_show_final_rows, this);
@@ -256,6 +258,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
+  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
 #if !GRAPHICS_DISABLED
   close_to_win();
 #endif

@@ -31,7 +31,8 @@
 namespace tesseract {
 
 CCUtil::CCUtil()
-    : params_()
+    : params_("tesseract")
+    , params_collective_({&params_, &GlobalParams()})
       , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
       , BOOL_MEMBER(use_ambigs_for_adaption, false,
                   "Use ambigs for deciding"

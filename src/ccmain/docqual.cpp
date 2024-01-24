@@ -232,12 +232,12 @@ void Tesseract::doc_and_block_rejection( // reject big chunks
       tessedit_reject_doc_percent) {
     reject_whole_page(page_res_it);
     if (tessedit_debug_doc_rejection) {
-      tprintf("REJECT ALL #chars: {} #Rejects: {}; \n", page_res_it.page_res->char_count,
+      tprintDebug("REJECT ALL #chars: {} #Rejects: {}; \n", page_res_it.page_res->char_count,
               page_res_it.page_res->rej_count);
     }
   } else {
     if (tessedit_debug_doc_rejection) {
-      tprintf("NO PAGE REJECTION #chars: {}  # Rejects: {}; \n", page_res_it.page_res->char_count,
+      tprintDebug("NO PAGE REJECTION #chars: {}  # Rejects: {}; \n", page_res_it.page_res->char_count,
               page_res_it.page_res->rej_count);
     }
 
@@ -252,7 +252,7 @@ void Tesseract::doc_and_block_rejection( // reject big chunks
           (current_block->rej_count * 100.0 / current_block->char_count) >
               tessedit_reject_block_percent) {
         if (tessedit_debug_block_rejection) {
-          tprintf("REJECTING BLOCK {}  #chars: {};  #Rejects: {}\n", block_no,
+          tprintDebug("REJECTING BLOCK {}  #chars: {};  #Rejects: {}\n", block_no,
                   current_block->char_count, current_block->rej_count);
         }
         prev_word_rejected = false;
@@ -288,7 +288,7 @@ void Tesseract::doc_and_block_rejection( // reject big chunks
         }
       } else {
         if (tessedit_debug_block_rejection) {
-          tprintf("NOT REJECTING BLOCK {} #chars: {}  # Rejects: {}; \n", block_no,
+          tprintDebug("NOT REJECTING BLOCK {} #chars: {}  # Rejects: {}; \n", block_no,
                   page_res_it.block()->char_count, page_res_it.block()->rej_count);
         }
 
@@ -308,7 +308,7 @@ void Tesseract::doc_and_block_rejection( // reject big chunks
               (current_row->whole_word_rej_count * 100.0 / current_row->rej_count) <
                   tessedit_whole_wd_rej_row_percent) {
             if (tessedit_debug_block_rejection) {
-              tprintf("REJECTING ROW {}  #chars: {};  #Rejects: {}\n", row_no,
+              tprintDebug("REJECTING ROW {}  #chars: {};  #Rejects: {}\n", row_no,
                       current_row->char_count, current_row->rej_count);
             }
             prev_word_rejected = false;
@@ -350,7 +350,7 @@ void Tesseract::doc_and_block_rejection( // reject big chunks
             }
           } else {
             if (tessedit_debug_block_rejection) {
-              tprintf("NOT REJECTING ROW {} #chars: {}  # Rejects: {}; \n", row_no,
+              tprintDebug("NOT REJECTING ROW {} #chars: {}  # Rejects: {}; \n", row_no,
                       current_row->char_count, current_row->rej_count);
             }
             while (page_res_it.word() != nullptr && page_res_it.row() == current_row) {
@@ -417,13 +417,13 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
 
       if ((garbage_level != G_NEVER_CRUNCH) && (terrible_word_crunch(word, garbage_level))) {
         if (crunch_debug > 0) {
-          tprintf("T CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
+          tprintDebug("T CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
         }
         word->unlv_crunch_mode = CR_KEEP_SPACE;
         if (prev_potential_marked) {
           while (copy_it.word() != word) {
             if (crunch_debug > 0) {
-              tprintf("P1 CRUNCHING: \"{}\"\n",
+              tprintDebug("P1 CRUNCHING: \"{}\"\n",
                       copy_it.word()->best_choice->unichar_string());
             }
             copy_it.word()->unlv_crunch_mode = CR_KEEP_SPACE;
@@ -436,14 +436,14 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
                  (potential_word_crunch(word, garbage_level, ok_dict_word))) {
         if (found_terrible_word) {
           if (crunch_debug > 0) {
-            tprintf("P2 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
+            tprintDebug("P2 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
           }
           word->unlv_crunch_mode = CR_KEEP_SPACE;
         } else if (!prev_potential_marked) {
           copy_it = page_res_it;
           prev_potential_marked = true;
           if (crunch_debug > 1) {
-            tprintf("P3 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
+            tprintDebug("P3 CRUNCHING: \"{}\"\n", word->best_choice->unichar_string());
           }
         }
       } else {
@@ -451,7 +451,7 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
         // Forget earlier potential crunches
         prev_potential_marked = false;
         if (crunch_debug > 2) {
-          tprintf("NO CRUNCH: \"{}\"\n", word->best_choice->unichar_string());
+          tprintDebug("NO CRUNCH: \"{}\"\n", word->best_choice->unichar_string());
         }
       }
     }
@@ -489,7 +489,7 @@ bool Tesseract::terrible_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_level
   }
   if (crunch_mode > 0) {
     if (crunch_debug > 2) {
-      tprintf("Terrible_word_crunch ({}) on \"{}\"\n", crunch_mode,
+      tprintDebug("Terrible_word_crunch ({}) on \"{}\"\n", crunch_mode,
               word->best_choice->unichar_string());
     }
     return true;
@@ -519,21 +519,21 @@ bool Tesseract::potential_word_crunch(WERD_RES *word, GARBAGE_LEVEL garbage_leve
 
   if (rating_per_ch > crunch_pot_poor_rate) {
     if (crunch_debug > 2) {
-      tprintf("Potential poor rating on \"{}\"\n", word->best_choice->unichar_string());
+      tprintDebug("Potential poor rating on \"{}\"\n", word->best_choice->unichar_string());
     }
     poor_indicator_count++;
   }
 
   if (word_crunchable && word->best_choice->certainty() < crunch_pot_poor_cert) {
     if (crunch_debug > 2) {
-      tprintf("Potential poor cert on \"{}\"\n", word->best_choice->unichar_string());
+      tprintDebug("Potential poor cert on \"{}\"\n", word->best_choice->unichar_string());
     }
     poor_indicator_count++;
   }
 
   if (garbage_level != G_OK) {
     if (crunch_debug > 2) {
-      tprintf("Potential garbage on \"{}\"\n", word->best_choice->unichar_string());
+      tprintDebug("Potential garbage on \"{}\"\n", word->best_choice->unichar_string());
     }
     poor_indicator_count++;
   }
@@ -561,7 +561,7 @@ void Tesseract::tilde_delete(PAGE_RES_IT &page_res_it) {
     if (delete_mode != CR_NONE) {
       if (word->word->flag(W_BOL) || deleting_from_bol) {
         if (crunch_debug > 0) {
-          tprintf("BOL CRUNCH DELETING({}): \"{}\"\n", debug_delete_mode,
+          tprintDebug("BOL CRUNCH DELETING({}): \"{}\"\n", debug_delete_mode,
                   word->best_choice->unichar_string());
         }
         word->unlv_crunch_mode = delete_mode;
@@ -571,7 +571,7 @@ void Tesseract::tilde_delete(PAGE_RES_IT &page_res_it) {
           while (copy_it.word() != word) {
             x_delete_mode = word_deletable(copy_it.word(), x_debug_delete_mode);
             if (crunch_debug > 0) {
-              tprintf("EOL CRUNCH DELETING({}): \"{}\"\n", x_debug_delete_mode,
+              tprintDebug("EOL CRUNCH DELETING({}): \"{}\"\n", x_debug_delete_mode,
                       copy_it.word()->best_choice->unichar_string());
             }
             copy_it.word()->unlv_crunch_mode = x_delete_mode;
@@ -579,7 +579,7 @@ void Tesseract::tilde_delete(PAGE_RES_IT &page_res_it) {
           }
         }
         if (crunch_debug > 0) {
-          tprintf("EOL CRUNCH DELETING({}): \"{}\"\n", debug_delete_mode,
+          tprintDebug("EOL CRUNCH DELETING({}): \"{}\"\n", debug_delete_mode,
                   word->best_choice->unichar_string());
         }
         word->unlv_crunch_mode = delete_mode;
@@ -795,8 +795,8 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
   ok_chars = len - bad_char_count - isolated_digits - isolated_alphas - tess_rejs;
 
   if (crunch_debug > 3) {
-    tprintf("garbage_word: \"{}\"\n", word->best_choice->unichar_string());
-    tprintf("LEN: {}  bad: {}  iso_N: {}  iso_A: {}  rej: {}\n", len, bad_char_count,
+    tprintDebug("garbage_word: \"{}\"\n", word->best_choice->unichar_string());
+    tprintDebug("LEN: {}  bad: {}  iso_N: {}  iso_A: {}  rej: {}\n", len, bad_char_count,
             isolated_digits, isolated_alphas, tess_rejs);
   }
   if (bad_char_count == 0 && tess_rejs == 0 &&

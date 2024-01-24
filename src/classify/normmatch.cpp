@@ -81,8 +81,8 @@ static double NormEvidenceOf(double NormAdj) {
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 /** control knobs used to control the normalization adjustment process */
-double_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
-double_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
+DOUBLE_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
+DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
 /** Weight of width variance against height and vertical position. */
 const double kWidthErrorWeighting = 0.125;
 
@@ -122,7 +122,7 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
   LIST Protos = NormProtos->Protos[ClassId];
 
   if (DebugMatch) {
-    tprintf("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
+    tprintDebug("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
   }
 
   iterate(Protos) {
@@ -130,26 +130,26 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
     float Delta = feature.Params[CharNormY] - Proto->Mean[CharNormY];
     float Match = Delta * Delta * Proto->Weight.Elliptical[CharNormY];
     if (DebugMatch) {
-      tprintf("YMiddle: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormY], Delta,
+      tprintDebug("YMiddle: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormY], Delta,
               Proto->Weight.Elliptical[CharNormY], Match);
     }
     Delta = feature.Params[CharNormRx] - Proto->Mean[CharNormRx];
     Match += Delta * Delta * Proto->Weight.Elliptical[CharNormRx];
     if (DebugMatch) {
-      tprintf("Height: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormRx], Delta,
+      tprintDebug("Height: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormRx], Delta,
               Proto->Weight.Elliptical[CharNormRx], Match);
     }
     // Ry is width! See intfx.cpp.
     Delta = feature.Params[CharNormRy] - Proto->Mean[CharNormRy];
     if (DebugMatch) {
-      tprintf("Width: Proto={}, Delta={}, Var={}\n", Proto->Mean[CharNormRy], Delta,
+      tprintDebug("Width: Proto={}, Delta={}, Var={}\n", Proto->Mean[CharNormRy], Delta,
               Proto->Weight.Elliptical[CharNormRy]);
     }
     Delta = Delta * Delta * Proto->Weight.Elliptical[CharNormRy];
     Delta *= kWidthErrorWeighting;
     Match += Delta;
     if (DebugMatch) {
-      tprintf("Total Dist={}, scaled={}, sigmoid={}, penalty={}\n", Match,
+      tprintDebug("Total Dist={}, scaled={}, sigmoid={}, penalty={}\n", Match,
               Match / classify_norm_adj_midpoint, NormEvidenceOf(Match),
               256 * (1 - NormEvidenceOf(Match)));
     }
@@ -212,7 +212,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
       }
       NormProtos->Protos[unichar_id] = Protos;
     } else {
-      tprintf("ERROR: unichar {} in normproto file is not in unichar set.\n", unichar);
+      tprintError("unichar {} in normproto file is not in unichar set.\n", unichar);
       for (int i = 0; i < NumProtos; i++) {
         FreePrototype(ReadPrototype(fp, NormProtos->NumParams));
       }

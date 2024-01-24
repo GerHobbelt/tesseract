@@ -737,7 +737,7 @@ TO_ROW::TO_ROW(     // constructor
 }
 
 void TO_ROW::print() const {
-  tprintf(
+  tprintDebug(
       "pitch={}, fp={}, fps={}, fpns={}, prs={}, prns={},"
       " spacing={} xh={} y_origin={} xev={}, asc={}, desc={},"
       " body={}, minsp={} maxnsp={}, thr={} kern={} sp={}\n",

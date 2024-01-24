@@ -25,14 +25,15 @@ namespace tesseract {
 
 class Tesseract;
 
-extern BOOL_VAR_H(textord_debug_pitch_test);
+extern BOOL_VAR_H(textord_debug_fixed_pitch_test);
+extern BOOL_VAR_H(textord_debug_pitch);
 extern BOOL_VAR_H(textord_debug_pitch_metric);
 extern BOOL_VAR_H(textord_show_row_cuts);
 extern BOOL_VAR_H(textord_show_page_cuts);
 extern BOOL_VAR_H(textord_blockndoc_fixed);
 extern BOOL_VAR_H(textord_fast_pitch_test);
-extern double_VAR_H(textord_projection_scale);
-extern double_VAR_H(textord_balance_factor);
+extern DOUBLE_VAR_H(textord_projection_scale);
+extern DOUBLE_VAR_H(textord_balance_factor);
 
 void compute_fixed_pitch(ICOORD page_tr,             // top right
                          TO_BLOCK_LIST *port_blocks, // input list

@@ -152,8 +152,7 @@ bool TrainingSampleSet::DeSerialize(bool swap, FILE *fp) {
 // Load an initial unicharset, or set one up if the file cannot be read.
 void TrainingSampleSet::LoadUnicharset(const char *filename) {
   if (!unicharset_.load_from_file(filename)) {
-    tprintf(
-        "ERROR: Failed to load unicharset from file {}\n"
+    tprintError("Failed to load unicharset from file {}\n"
         "Building unicharset from scratch...\n",
         filename);
     unicharset_.clear();
@@ -171,8 +170,7 @@ int TrainingSampleSet::AddSample(const char *unichar, TrainingSample *sample) {
   if (!unicharset_.contains_unichar(unichar)) {
     unicharset_.unichar_insert(unichar);
     if (unicharset_.size() > MAX_NUM_CLASSES) {
-      tprintf(
-          "ERROR: Size of unicharset in TrainingSampleSet::AddSample is "
+      tprintError("Size of unicharset in TrainingSampleSet::AddSample is "
           "greater than MAX_NUM_CLASSES\n");
       return -1;
     }
@@ -299,7 +297,7 @@ float TrainingSampleSet::UnicharDistance(const UnicharAndFonts &uf1, const Unich
         int f2 = uf2.font_ids[j];
         dist_sum += ClusterDistance(f1, c1, f2, c2, feature_map);
         if (debug) {
-          tprintf("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
+          tprintDebug("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
                   ClusterDistance(f1, c1, f2, c2, feature_map));
         }
         ++dist_count;
@@ -315,7 +313,7 @@ float TrainingSampleSet::UnicharDistance(const UnicharAndFonts &uf1, const Unich
       int f1 = uf1.font_ids[i % num_fonts1];
       int f2 = uf2.font_ids[index % num_fonts2];
       if (debug) {
-        tprintf("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
+        tprintDebug("Cluster dist {} {} {} {} = {}\n", f1, c1, f2, c2,
                 ClusterDistance(f1, c1, f2, c2, feature_map));
       }
       dist_sum += ClusterDistance(f1, c1, f2, c2, feature_map);
@@ -566,7 +564,7 @@ void TrainingSampleSet::OrganizeByFontAndClass() {
     int font_id = samples_[s]->font_id();
     int class_id = samples_[s]->class_id();
     if (font_id < 0 || font_id >= font_id_map_.SparseSize()) {
-      tprintf("Font id = {}/{}, class id = {}/{} on sample {}\n", font_id,
+      tprintDebug("Font id = {}/{}, class id = {}/{} on sample {}\n", font_id,
               font_id_map_.SparseSize(), class_id, unicharset_size_, s);
     }
     ASSERT_HOST(font_id >= 0 && font_id < font_id_map_.SparseSize());
@@ -612,7 +610,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
   ASSERT_HOST(font_class_array_ != nullptr);
   IntFeatureDist f_table;
   if (debug) {
-    tprintf("Feature table size {}\n", map.sparse_size());
+    tprintDebug("Feature table size {}\n", map.sparse_size());
   }
   f_table.Init(&map);
   int worst_s1 = 0;
@@ -629,7 +627,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
         fcinfo.canonical_sample = -1;
         fcinfo.canonical_dist = 0.0f;
         if (debug) {
-          tprintf("Skipping class {}\n", c);
+          tprintDebug("Skipping class {}\n", c);
         }
         continue;
       }
@@ -684,7 +682,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
         worst_s2 = max_s2;
       }
       if (debug) {
-        tprintf(
+        tprintDebug(
             "Found {} samples of class {}={}, font {}, "
             "dist range [{}, {}], worst pair= {}, {}\n",
             samples_found, c, unicharset_.debug_str(c).c_str(), font_index, min_max_dist,
@@ -694,7 +692,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
     }
   }
   if (debug) {
-    tprintf("Global worst dist = {}, between sample {} and {}\n", global_worst_dist, worst_s1,
+    tprintDebug("Global worst dist = {}, between sample {} and {}\n", global_worst_dist, worst_s1,
             worst_s2);
   }
 }

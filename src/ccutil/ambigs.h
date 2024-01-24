@@ -93,17 +93,17 @@ public:
   static inline void print(const UNICHAR_ID array[], const UNICHARSET &unicharset) {
     const UNICHAR_ID *ptr = array;
     if (*ptr == INVALID_UNICHAR_ID) {
-      tprintf("[Empty]");
+      tprintDebug("[Empty]");
     }
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("{} ", unicharset.id_to_unichar(*ptr++));
+      tprintDebug("{} ", unicharset.id_to_unichar(*ptr++));
     }
-    tprintf("( ");
+	tprintDebug("( ");
     ptr = array;
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("{} ", *ptr++);
+      tprintDebug("{} ", *ptr++);
     }
-    tprintf(")\n");
+	tprintDebug(")\n");
   }
 };
 

@@ -54,7 +54,7 @@ public:
 
 protected:
   void handleFailure() const override {
-    tprintf("ERROR: ICU: {}\n", errorName());
+    tprintError("ICU: {}\n", errorName());
     exit(errorCode);
   }
 

@@ -25,6 +25,8 @@ namespace tesseract {
 constexpr ERRCODE BADERRACTION("Illegal error action");
 #define MAX_MSG 1024
 
+[[noreturn]] static void abort_application();
+
 static void error_action(TessErrorLogCode action) {
   switch (action) {
     case DBG:
@@ -32,20 +34,24 @@ static void error_action(TessErrorLogCode action) {
       return; // report only
     case TESSEXIT:
     case ABORT:
+      abort_application();
+    default:
+      BADERRACTION.abort("error");
+  }
+}
+
+[[noreturn]] static void abort_application() {
 #if !defined(NDEBUG)
-      // Create a deliberate abnormal exit as the stack trace is more useful
-      // that way. This is done only in debug builds, because the
-      // error message "segmentation fault" confuses most normal users.
+  // Create a deliberate abnormal exit as the stack trace is more useful
+  // that way. This is done only in debug builds, because the
+  // error message "segmentation fault" confuses most normal users.
 #  if defined(__GNUC__)
-      __builtin_trap();
+  __builtin_trap();
 #  else
-      *reinterpret_cast<int *>(0) = 0;
+  * reinterpret_cast<int*>(0) = 0;
 #  endif
 #endif
-      abort();
-    default:
-      BADERRACTION.error("error", ABORT);
-  }
+  ::abort();
 }
 
 /**********************************************************************
@@ -58,9 +64,9 @@ static void error_action(TessErrorLogCode action) {
 void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   if (caller != nullptr) {
     // name of caller
-    tprintf("ERROR: {}\n", fmt::format("{}:{}", caller, message).c_str());
+    tprintError("{}:{}\n", caller, message);
   } else {
-    tprintf("ERROR: {}\n", fmt::format("{}", message).c_str());
+    tprintError("{}\n", message);
   }
   error_action(action);
 }
@@ -68,11 +74,33 @@ void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
 void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const {
   if (caller != nullptr) {
     // name of caller
-    tprintf("ERROR: {}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
   } else {
-    tprintf("ERROR: {}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
   }
   error_action(action);
+}
+
+[[noreturn]] void ERRCODE::abort(const char* caller) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}:{}\n", caller, message);
+  }
+  else {
+    tprintError("{}\n", message);
+  }
+  abort_application();
+}
+
+[[noreturn]] void ERRCODE::vabort(const char* caller, fmt::string_view format, fmt::format_args args) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+  }
+  else {
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+  }
+  abort_application();
 }
 
 } // namespace tesseract

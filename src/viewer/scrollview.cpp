@@ -63,7 +63,7 @@ struct SVPolyLineBuffer {
 
 // A map between the window IDs and their corresponding pointers.
 static std::vector<ScrollViewReference> svmap;
-static std::mutex *svmap_mu;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
+static std::mutex *svmap_mu = nullptr;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
 
 // A map of all semaphores waiting for a specific event on a specific window.
 static std::map<std::pair<ScrollViewReference, SVEventType>,
@@ -276,6 +276,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
   tesseract_ = tess;
   ref_of_ref_ = nullptr;
 
+  ASSERT0(svmap_mu != nullptr);
 #if 0
   if (!svmap_mu) {
     svmap_mu = new std::mutex();
@@ -303,7 +304,7 @@ void ScrollView::Initialize(Tesseract *tess, const char *name, int x_pos,
 
 
 void ScrollView::ExitHelper() {
-  tprintf("Nuking ScrollView #{}.\n", GetId());
+  tprintDebug("Nuking ScrollView #{}.\n", GetId());
 
   if (ref_of_ref_) {
     *ref_of_ref_ = nullptr;
@@ -446,8 +447,7 @@ InteractiveScrollView::~InteractiveScrollView() {
 
 #if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
-void InteractiveScrollView::vSendMsg(fmt::string_view format,
-                                     fmt::format_args args) {
+void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   if (!points_->empty) {
@@ -598,8 +598,7 @@ void InteractiveScrollView::AlwaysOnTop(bool b) {
 }
 
 // Adds a message entry to the message box.
-void InteractiveScrollView::vAddMessage(fmt::string_view format,
-                                        fmt::format_args args) {
+void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
@@ -637,15 +636,13 @@ void InteractiveScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   if (x1 == x2 && y1 == y2) {
     return; // Scrollviewer locks up.
   }
-  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
-          TranslateYCoordinate(y2));
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 }
 
 // Draw an ellipse using the current pen color.
 // The ellipse is filled with the current brush color.
 void InteractiveScrollView::Ellipse(int x1, int y1, int width, int height) {
-  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
-          height);
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width, height);
 }
 
 // Set the pen color to the given RGB values.
@@ -767,10 +764,7 @@ void InteractiveScrollView::UpdateWindow() {
 
 // Note: this is an update to all windows
 void ScrollView::Update() {
-  if (!svmap_mu) {
-    svmap_mu = new std::mutex();
-  }
-
+  ASSERT0(svmap_mu != nullptr);
   std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
@@ -788,10 +782,7 @@ void ScrollView::Update() {
 
 // 
 void ScrollView::Exit() {
-  if (!svmap_mu) {
-    svmap_mu = new std::mutex();
-  }
-
+  ASSERT0(svmap_mu != nullptr);
   std::vector<ScrollViewReference> worklist;
   // limit scope of lock
   {
@@ -845,8 +836,7 @@ int InteractiveScrollView::ShowYesNoDialog(const char *msg) {
 void InteractiveScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
   y1 = TranslateYCoordinate(y1);
   y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
-          std::max(x1, x2), std::max(y1, y2));
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
 }
 
 // Send an image of type Pix.
@@ -991,7 +981,7 @@ BackgroundScrollView::~BackgroundScrollView() {
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
   auto message = fmt::vformat(format, args);
-  tprintf("DEBUG-DRAW: {}\n", message);
+  tprintDebug("DEBUG-DRAW: {}\n", message);
 }
 
 /// Add an Event Listener to this ScrollView Window
@@ -1082,6 +1072,7 @@ void BackgroundScrollView::SendPolygon() {
         //SendMsg("drawPolyline({})", decimal_coords.c_str());
 
         PTA *ptas = ptaCreate(length);
+        ASSERT0(ptas != NULL);
         for (int i = 0; i < length; ++i) {
           ptaAddPt(ptas, points_->xcoords[i], points_->ycoords[i]);
         }
@@ -1223,6 +1214,8 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   //SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 
   PTA *ptas = ptaCreate(5);
+  ASSERT0(ptas != NULL);
+
   ptaAddPt(ptas, x1, TranslateYCoordinate(y1));
   ptaAddPt(ptas, x2, TranslateYCoordinate(y1));
   ptaAddPt(ptas, x2, TranslateYCoordinate(y2));
@@ -1490,15 +1483,10 @@ int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
 // Zoom the window to the rectangle given upper left corner and
 // lower right corner.
 void BackgroundScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
-  ASSERT0(!"Should never get here!");
-  x1 += x_offset;
-  y1 += y_offset;
-  x1 += x_offset;
-  y1 += y_offset;
-  y1 = TranslateYCoordinate(y1);
-  y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
-          std::max(x1, x2), std::max(y1, y2));
+  // draw zoom rectangle instead...
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
+  Pen(255, 128, 0);
+  Rectangle(x1, y1, x2, y2);
 }
 
 // Send an image of type Pix.
@@ -1535,6 +1523,238 @@ int BackgroundScrollView::TranslateYCoordinate(int y) {
 char BackgroundScrollView::Wait() {
   ASSERT0(!"Should never get here!");
   return '\0';
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Calls Initialize with all arguments given.
+DummyScrollView::DummyScrollView(Tesseract *tess, const char *name,
+	int x_pos, int y_pos, int x_size,
+	int y_size, int x_canvas_size,
+	int y_canvas_size,
+	bool y_axis_reversed,
+	const char *server_name)
+	: ScrollView(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+		y_canvas_size, y_axis_reversed, server_name)
+{
+	Initialize(tess, name, x_pos, y_pos, x_size, y_size, x_canvas_size,
+		y_canvas_size, y_axis_reversed, server_name);
+}
+
+void DummyScrollView::PrepCanvas(void) {
+}
+
+/// Sets up a ScrollView window, depending on the constructor variables.
+void DummyScrollView::Initialize(Tesseract *tess, const char *name,
+	int x_pos, int y_pos, int x_size,
+	int y_size, int x_canvas_size,
+	int y_canvas_size, bool y_axis_reversed,
+	const char *server_name) {
+}
+
+/// Sits and waits for events on this window.
+void DummyScrollView::StartEventHandler() {
+	ASSERT0(!"Should never get here!");
+}
+#endif // !GRAPHICS_DISABLED
+
+DummyScrollView::~DummyScrollView() {
+}
+
+#if !GRAPHICS_DISABLED
+/// Send a message to the server, attaching the window id.
+void DummyScrollView::vSendMsg(fmt::string_view format,	fmt::format_args args) {
+}
+
+/// Add an Event Listener to this ScrollView Window
+void DummyScrollView::AddEventHandler(SVEventHandler *listener) {
+	ASSERT0(!"Should never get here!");
+}
+
+void DummyScrollView::Signal() {
+	ASSERT0(!"Should never get here!");
+}
+
+void DummyScrollView::SetEvent(const SVEvent *svevent) {
+	ASSERT0(!"Should never get here!");
+}
+
+/// Block until an event of the given type is received.
+/// Note: The calling function is responsible for deleting the returned
+/// SVEvent afterwards!
+std::unique_ptr<SVEvent> DummyScrollView::AwaitEvent(SVEventType type) {
+	ASSERT0(!"Should never get here!");
+	return std::make_unique<SVEvent>();
+}
+
+// Send the current buffered polygon (if any) and clear it.
+void DummyScrollView::SendPolygon() {
+}
+
+/*******************************************************************************
+* LUA "API" functions.
+*******************************************************************************/
+
+void DummyScrollView::Comment(std::string text) {
+}
+
+// Sets the position from which to draw to (x,y).
+void DummyScrollView::SetCursor(int x, int y) {
+}
+
+// Draws from the current position to (x,y) and sets the new position to it.
+void DummyScrollView::DrawTo(int x, int y) {
+}
+
+// Draw a line using the current pen color.
+void DummyScrollView::Line(int x1, int y1, int x2, int y2) {
+}
+
+// Set the visibility of the window.
+void DummyScrollView::SetVisible(bool visible) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Set the alwaysOnTop flag.
+void DummyScrollView::AlwaysOnTop(bool b) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Adds a message entry to the message box.
+void DummyScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
+}
+
+// Set a messagebox.
+void DummyScrollView::AddMessageBox() {
+	ASSERT0(!"Should never get here!");
+}
+
+// Exit the client completely (and notify the server of it).
+void DummyScrollView::ExitHelper() {
+	// invoke super::ExitHelper():
+	ScrollView::ExitHelper();
+}
+
+// Clear the canvas.
+void DummyScrollView::Clear() {
+}
+
+// Set the stroke width.
+void DummyScrollView::Stroke(float width) {
+}
+
+// Draw a rectangle using the current pen color.
+// The rectangle is filled with the current brush color.
+void DummyScrollView::Rectangle(int x1, int y1, int x2, int y2) {
+}
+
+// Draw an ellipse using the current pen color.
+// The ellipse is filled with the current brush color.
+void DummyScrollView::Ellipse(int x1, int y1, int width, int height) {
+}
+
+// Set the pen color to the given RGB values.
+void DummyScrollView::Pen(int red, int green, int blue) {
+}
+
+// Set the pen color to the given RGB values.
+void DummyScrollView::Pen(int red, int green, int blue, int alpha) {
+}
+
+// Set the brush color to the given RGB values.
+void DummyScrollView::Brush(int red, int green, int blue) {
+}
+
+// Set the brush color to the given RGB values.
+void DummyScrollView::Brush(int red, int green, int blue, int alpha) {
+}
+
+// Set the attributes for future Text(..) calls.
+void DummyScrollView::TextAttributes(const char *font, int pixel_size,
+	bool bold, bool italic,
+	bool underlined) {
+}
+
+
+// Set up a X/Y offset for the subsequent drawing primitives.
+void DummyScrollView::SetXYOffset(int x, int y) {
+}
+
+// Draw text at the given coordinates.
+void DummyScrollView::Text(int x, int y, const char *mystring) {
+}
+
+// Open and draw an image given a name at (x,y).
+void DummyScrollView::Draw(const char *image, int x_pos, int y_pos) {
+}
+
+// Add new checkboxmenuentry to menubar.
+void DummyScrollView::MenuItem(const char *parent, const char *name, int cmdEvent, bool flag) {
+}
+
+// Add new menuentry to menubar.
+void DummyScrollView::MenuItem(const char *parent, const char *name, int cmdEvent) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Add new submenu to menubar.
+void DummyScrollView::MenuItem(const char *parent, const char *name) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Add new submenu to popupmenu.
+void DummyScrollView::PopupItem(const char *parent, const char *name) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Add new submenuentry to popupmenu.
+void DummyScrollView::PopupItem(const char *parent, const char *name,
+	int cmdEvent, const char *value,
+	const char *desc) {
+	ASSERT0(!"Should never get here!");
+}
+
+// Send an update message for a single window.
+void DummyScrollView::UpdateWindow() {
+}
+
+// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+void DummyScrollView::Pen(Color color) {
+}
+
+// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+void DummyScrollView::Brush(Color color) {
+}
+
+// Shows a modal Input Dialog which can return any kind of String
+char *DummyScrollView::ShowInputDialog(const char *msg) {
+	ASSERT0(!"Should never get here!");
+	return nullptr;
+}
+
+// Shows a modal Yes/No Dialog which will return 'y' or 'n'
+int DummyScrollView::ShowYesNoDialog(const char *msg) {
+	ASSERT0(!"Should never get here!");
+	return 0;
+}
+
+// Zoom the window to the rectangle given upper left corner and
+// lower right corner.
+void DummyScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
+}
+
+// Send an image of type Pix.
+void DummyScrollView::Draw(Image image, int x_pos, int y_pos, const char *title) {
+}
+
+// Inverse the Y axis if the coordinates are actually inversed.
+int DummyScrollView::TranslateYCoordinate(int y) {
+	return y;
+}
+
+char DummyScrollView::Wait() {
+	ASSERT0(!"Should never get here!");
+	return '\0';
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1675,11 +1895,14 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
 
 ////////////////////////////////////////////////////////////////////////
 
-// if (tesseract_->interactive_display_mode &&
-// !tesseract_->debug_do_not_use_scrollview_app) ...
+// if (tesseract_->SupportsInteractiveScrollView()) ...
 
 ScrollViewManager::ScrollViewManager() {
   active = nullptr;
+
+  if (!svmap_mu) {
+	svmap_mu = new std::mutex();
+  }
 }
 
 ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
@@ -1689,7 +1912,8 @@ ScrollViewManager &ScrollViewManager::GetScrollViewManager() {
 }
 
 ScrollViewManager::~ScrollViewManager() {
-
+  delete svmap_mu;
+  svmap_mu = nullptr;
 }
 
 ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
@@ -1699,14 +1923,20 @@ ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const cha
 
   ScrollViewReference rv; 
 
-  if (tess->interactive_display_mode && !tess->debug_do_not_use_scrollview_app) {
+  if (scrollview_support) {
+    if (tess->SupportsInteractiveScrollView()) {
       rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,
                                        x_canvas_size, y_canvas_size,
                                        y_axis_reversed, server_name);
-  } else {
+    } else {
       rv = new BackgroundScrollView(tess, name, x_pos, y_pos, x_size, y_size,
                                        x_canvas_size, y_canvas_size,
                                        y_axis_reversed, server_name);
+    }
+  } else {
+    rv = new DummyScrollView(tess, name, x_pos, y_pos, x_size, y_size,
+		  x_canvas_size, y_canvas_size,
+		  y_axis_reversed, server_name);
   }
 
   // Only update the global svmap[] table here, as we want to keep a reference count of the number of references to ScrollView instances via ScrollViewReference

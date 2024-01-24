@@ -23,6 +23,7 @@
 
 #include "helpers.h"
 #include "serialis.h"
+#include "fopenutf8.h"
 
 #include <algorithm>
 #include <cassert>
@@ -139,7 +140,7 @@ public:
   // Delete objects pointed to by data_[i]
   void delete_data_pointers();
 
-  // This method clears the current object, then, does a shallow copy of
+  // This method clears the current object, then does a shallow copy of
   // its argument, and finally invalidates its argument.
   // Callbacks are moved to the current object;
   void move(GenericVector<T> *from);
@@ -155,6 +156,7 @@ public:
   bool read(TFile *f, const std::function<bool(TFile *, T *)> &cb);
   // Writes a vector of simple types to the given file. Assumes that bitwise
   // read/write of T will work. Returns false in case of error.
+  // 
   // TODO(rays) Change all callers to use TFile and remove deprecated methods.
   bool Serialize(FILE *fp) const;
   bool Serialize(TFile *fp) const;
@@ -234,9 +236,9 @@ protected:
 
 // The default FileReader loads the whole file into the vector of char,
 // returning false on error.
-inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
+static inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
   bool result = false;
-  FILE *fp = fopen(filename, "rb");
+  FILE *fp = fopenUtf8(filename, "rb");
   if (fp != nullptr) {
     fseek(fp, 0, SEEK_END);
     auto size = std::ftell(fp);
@@ -255,8 +257,8 @@ inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
 
 // The default FileWriter writes the vector of char to the filename file,
 // returning false on error.
-inline bool SaveDataToFile(const GenericVector<char> &data, const char *filename) {
-  FILE *fp = fopen(filename, "wb");
+static inline bool SaveDataToFile(const GenericVector<char> &data, const char *filename) {
+  FILE *fp = fopenUtf8(filename, "wb");
   if (fp == nullptr) {
     return false;
   }

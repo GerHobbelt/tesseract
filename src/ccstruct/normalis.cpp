@@ -513,31 +513,31 @@ void DENORM::XHeightRange(int unichar_id, const UNICHARSET &unicharset, const TB
 // Prints the content of the DENORM for debug purposes.
 void DENORM::Print() const {
   if (inverse_) {
-    tprintf("Inverse\n");
+    tprintDebug("Inverse\n");
   }
   if (block_ && block_->re_rotation().x() != 1.0f) {
-    tprintf("Block rotation {}, {}\n", block_->re_rotation().x(), block_->re_rotation().y());
+    tprintDebug("Block rotation {}, {}\n", block_->re_rotation().x(), block_->re_rotation().y());
   }
-  tprintf("Input Origin = ({}, {})\n", x_origin_, y_origin_);
+  tprintDebug("Input Origin = ({}, {})\n", x_origin_, y_origin_);
   if (x_map_ != nullptr && y_map_ != nullptr) {
-    tprintf("x map:\n");
+    tprintDebug("x map:\n");
     for (auto x : *x_map_) {
-      tprintf("{} ", x);
+      tprintDebug("{} ", x);
     }
-    tprintf("\ny map:\n");
+    tprintDebug("\ny map:\n");
     for (auto y : *y_map_) {
-      tprintf("{} ", y);
+      tprintDebug("{} ", y);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   } else {
-    tprintf("Scale = ({}, {})\n", x_scale_, y_scale_);
+    tprintDebug("Scale = ({}, {})\n", x_scale_, y_scale_);
     if (rotation_ != nullptr) {
-      tprintf("Rotation = ({}, {})\n", rotation_->x(), rotation_->y());
+      tprintDebug("Rotation = ({}, {})\n", rotation_->x(), rotation_->y());
     }
   }
-  tprintf("Final Origin = ({}, {})\n", final_xshift_, final_xshift_);
+  tprintDebug("Final Origin = ({}, {})\n", final_xshift_, final_xshift_);
   if (predecessor_ != nullptr) {
-    tprintf("Predecessor:\n");
+    tprintDebug("Predecessor:\n");
     predecessor_->Print();
   }
 }

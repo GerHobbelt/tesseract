@@ -43,7 +43,7 @@ private:
 extern BOOL_VAR_H(gapmap_debug);
 extern BOOL_VAR_H(gapmap_use_ends);
 extern BOOL_VAR_H(gapmap_no_isolated_quanta);
-extern double_VAR_H(gapmap_big_gaps);
+extern DOUBLE_VAR_H(gapmap_big_gaps);
 
 } // namespace tesseract
 

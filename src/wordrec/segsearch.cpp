@@ -51,6 +51,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
     if (chop_enable && word_res->chopped_word != nullptr) {
       improve_by_chopping(rating_cert_scale, word_res, best_choice_bundle, blamer_bundle,
                           &pain_points, &pending);
+      InitialSegSearch(word_res, &pain_points, &pending, best_choice_bundle, blamer_bundle);
     }
     if (chop_debug) {
       SEAM::PrintSeams("Final seam list:", word_res->seam_array);
@@ -84,7 +85,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
     }
     if (found_nothing) {
       if (segsearch_debug_level > 0) {
-        tprintf("Pain points queue is empty\n");
+        tprintDebug("Pain points queue is empty\n");
       }
       break;
     }
@@ -99,7 +100,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
     }
 
     if (segsearch_debug_level > 0) {
-      tprintf("num_futile_classifications {}\n", num_futile_classifications);
+      tprintDebug("num_futile_classifications {}\n", num_futile_classifications);
     }
 
     best_choice_bundle->updated = false; // reset updated
@@ -111,12 +112,13 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
       InitBlamerForSegSearch(word_res, &pain_points, blamer_bundle, blamer_debug);
     }
   } // end while loop exploring alternative paths
+
   if (blamer_bundle != nullptr) {
     blamer_bundle->FinishSegSearch(word_res->best_choice, wordrec_debug_blamer, blamer_debug);
   }
 
   if (segsearch_debug_level > 0) {
-    tprintf("Done with SegSearch (AcceptableChoiceFound: {})\n",
+    tprintDebug("Done with SegSearch (AcceptableChoiceFound: {})\n",
             language_model_->AcceptableChoiceFound());
   }
 }
@@ -128,7 +130,7 @@ void Wordrec::InitialSegSearch(WERD_RES *word_res, LMPainPoints *pain_points,
                                std::vector<SegSearchPending> *pending,
                                BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle) {
   if (segsearch_debug_level > 0) {
-    tprintf("Starting SegSearch on ratings matrix{}:\n",
+    tprintDebug("Starting SegSearch on ratings matrix{}:\n",
             wordrec_enable_assoc ? " (with assoc)" : "");
     word_res->ratings->print(getDict().getUnicharset());
   }
@@ -183,7 +185,7 @@ void Wordrec::UpdateSegSearchNodes(float rating_cert_scale, int starting_col,
       first_row = last_row = (*pending)[col].SingleRow();
     }
     if (segsearch_debug_level > 0) {
-      tprintf("\n\nUpdateSegSearchNodes: col={}, rows=[{},{}], alljust={}\n", col, first_row,
+      tprintDebug("\n\nUpdateSegSearchNodes: col={}, rows=[{},{}], alljust={}\n", col, first_row,
               last_row, (*pending)[col].IsRowJustClassified(INT32_MAX));
     }
     // Iterate over the pending list for this column.
@@ -200,7 +202,7 @@ void Wordrec::UpdateSegSearchNodes(float rating_cert_scale, int starting_col,
         // the child column.
         (*pending)[row + 1].RevisitWholeColumn();
         if (segsearch_debug_level > 0) {
-          tprintf("Added child col={} to pending\n", row + 1);
+          tprintDebug("Added child col={} to pending\n", row + 1);
         }
       } // end if UpdateState.
     }   // end for row.
@@ -232,7 +234,7 @@ void Wordrec::ProcessSegSearchPainPoint(float pain_point_priority, const MATRIX_
                                         WERD_RES *word_res, LMPainPoints *pain_points,
                                         BlamerBundle *blamer_bundle) {
   if (segsearch_debug_level > 0) {
-    tprintf("Classifying pain point {} priority={}, col={}, row={}\n", pain_point_type,
+    tprintDebug("Classifying pain point {} priority={}, col={}, row={}\n", pain_point_type,
             pain_point_priority, pain_point.col, pain_point.row);
   }
   ASSERT_HOST(pain_points != nullptr);

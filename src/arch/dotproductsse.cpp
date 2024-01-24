@@ -30,7 +30,7 @@
 // run on.
 // See also the SIMDDetect::SIMDDetect() code.
 //
-#if defined(__SSE4_1__) || defined(_M_IX86) || defined(_M_X64)
+#if defined(__SSE4_1__) || defined(__AVX__) || defined(_M_IX86) || defined(_M_X64)
 
 #  include <emmintrin.h>
 #  include <smmintrin.h>

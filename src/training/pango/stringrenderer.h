@@ -29,13 +29,18 @@
 #define TESSERACT_TRAINING_STRINGRENDERER_H_
 
 #include "export.h"
+
 #include <tesseract/export.h>
+
+#include "fmt/format.h"
 
 #if defined(PANGO_ENABLE_ENGINE)
 
-#include "pango/pango-layout.h"
-#include "pango/pangocairo.h"
+//#include "pango/pango-layout.h"
+//#include "pango/pangocairo.h"
+
 #include "pango_font_info.h"
+
 
 #include "image.h"
 
@@ -238,8 +243,23 @@ private:
   StringRenderer(const StringRenderer &) = delete;
   void operator=(const StringRenderer &) = delete;
 };
+
 } // namespace tesseract
 
-#endif
+
+
+// fmt lib formatter for enum type:
+namespace fmt {                                                                              
+                                                                                             
+  template <>                                                                                
+  struct formatter<cairo_format_t> : formatter<std::string_view> {                          
+    /* parse is inherited from formatter<string_view>. */                                    
+                                                                                             
+    auto format(cairo_format_t c, format_context &ctx) const -> decltype(ctx.out());        
+  };                                                                                         
+                                                                                             
+}                                                                                            
+
+#endif  // PANGO_ENABLE_ENGINE
 
 #endif  // THIRD_PARTY_TESSERACT_TRAINING_STRINGRENDERER_H_

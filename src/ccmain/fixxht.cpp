@@ -90,7 +90,7 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
         ++bad_blobs;
       }
       if (debug_x_ht_level >= 1) {
-        tprintf("Class {} is {} with top {} vs limits of {}->{}, +/-{}\n",
+        tprintDebug("Class {} is {} with top {} vs limits of {}->{}, +/-{}\n",
                 unicharset.id_to_unichar(class_id), bad ? "Misfit" : "OK", top, min_top, max_top,
                 static_cast<int>(x_ht_acceptance_tolerance));
       }
@@ -129,7 +129,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
                                    top - (max_top + x_ht_acceptance_tolerance));
         int height = top - kBlnBaselineOffset;
         if (debug_x_ht_level >= 2) {
-          tprintf("Class {}: height={}, bottom={},{} top={},{}, actual={},{}: ",
+          tprintDebug("Class {}: height={}, bottom={},{} top={},{}, actual={},{}: ",
                   unicharset.id_to_unichar(class_id), height, min_bottom, max_bottom, min_top,
                   max_top, bottom, top);
         }
@@ -143,7 +143,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
           int min_xht = DivRounded(height * kBlnXHeight, max_top - kBlnBaselineOffset);
           int max_xht = DivRounded(height * kBlnXHeight, min_top - kBlnBaselineOffset);
           if (debug_x_ht_level >= 2) {
-            tprintf(" xht range min={}, max={}\n", min_xht, max_xht);
+            tprintDebug(" xht range min={}, max={}\n", min_xht, max_xht);
           }
           // The range of expected heights gets a vote equal to the distance
           // of the actual top from the expected top.
@@ -157,7 +157,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
           int min_shift = min_bottom - bottom;
           int max_shift = max_bottom - bottom;
           if (debug_x_ht_level >= 2) {
-            tprintf(" bottom shift min={}, max={}\n", min_shift, max_shift);
+            tprintDebug(" bottom shift min={}, max={}\n", min_shift, max_shift);
           }
           // The range of expected shifts gets a vote equal to the min distance
           // of the actual bottom from the expected bottom, spread over the
@@ -176,7 +176,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
             shift_stats.add(0, kBlnBaselineOffset);
           }
           if (debug_x_ht_level >= 2) {
-            tprintf(" already OK\n");
+            tprintDebug(" already OK\n");
           }
         }
       }
@@ -184,14 +184,14 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
     if (shift_stats.get_total() > top_stats.get_total()) {
       bottom_shift = IntCastRounded(shift_stats.median());
       if (debug_x_ht_level >= 2) {
-        tprintf("Applying bottom shift={}\n", bottom_shift);
+        tprintDebug("Applying bottom shift={}\n", bottom_shift);
       }
     }
   } while (bottom_shift != 0 && top_stats.get_total() < shift_stats.get_total());
   // Baseline shift is opposite sign to the bottom shift.
   *baseline_shift = -bottom_shift / word_res->denorm.y_scale();
   if (debug_x_ht_level >= 2) {
-    tprintf("baseline shift={}\n", *baseline_shift);
+    tprintDebug("baseline shift={}\n", *baseline_shift);
   }
   if (top_stats.get_total() == 0) {
     return bottom_shift != 0 ? word_res->x_height : 0.0f;
@@ -200,8 +200,8 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
   // of BLN space back to pixel space to get the x-height in pixel space.
   float new_xht = top_stats.median();
   if (debug_x_ht_level >= 2) {
-    tprintf("Median xht={}\n", new_xht);
-    tprintf("Mode20:A: New x-height = {} (norm), {} (orig)\n", new_xht,
+    tprintDebug("Median xht={}\n", new_xht);
+    tprintDebug("Mode20:A: New x-height = {} (norm), {} (orig)\n", new_xht,
             new_xht / word_res->denorm.y_scale());
   }
   // The xheight must change by at least x_ht_min_change to be used.

@@ -131,6 +131,33 @@ namespace tesseract {
 
   Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image);
 
+  typedef int AutoExecOnScopeExitFunction_f(void);
+
+  class AutoExecOnScopeExit {
+  public:
+	  AutoExecOnScopeExit() = delete;
+	  AutoExecOnScopeExit(auto&& callback) {
+		  handler_ = callback;
+	  }
+
+	  // auto-pop via end-of-scope i.e. object destructor:
+	  ~AutoExecOnScopeExit() {
+		  pop();
+	  }
+
+	  // forced (early) pop by explicit pop() call:
+	  void pop() {
+		  --depth_;
+		  if (depth_ == 0 && handler_ != nullptr) {
+			  (*handler_)();
+		  }
+	  }
+
+  protected:
+	  int depth_ {1};
+	  const AutoExecOnScopeExitFunction_f *handler_ {nullptr};
+  };
+
   class AutoPopDebugSectionLevel {
   public:
     AutoPopDebugSectionLevel(Tesseract *tess, int section_handle)

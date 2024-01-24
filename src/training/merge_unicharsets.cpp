@@ -28,17 +28,18 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    tprintf("{}\n", TessBaseAPI::Version());
+    tprintInfo("{}\n", TessBaseAPI::Version());
     return EXIT_SUCCESS;
   } else if (argc < 4) {
     // Print usage
-    tprintf(
+    tprintInfo(
         "Usage: {} -v | --version |\n"
         "       {} unicharset-in-1 ... unicharset-in-n unicharset-out\n",
-        argv[0], argv[0]);
+        appname, appname);
     return EXIT_FAILURE;
   }
 
@@ -46,19 +47,19 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
   for (int arg = 1; arg < argc - 1; ++arg) {
     // Load the input unicharset
     if (input_unicharset.load_from_file(argv[arg])) {
-      tprintf("Loaded unicharset of size {} from file {}\n", input_unicharset.size(), argv[arg]);
+      tprintDebug("Loaded unicharset of size {} from file {}\n", input_unicharset.size(), argv[arg]);
       result_unicharset.AppendOtherUnicharset(input_unicharset);
     } else {
-      tprintf("ERROR: Failed to load unicharset from file {}!!\n", argv[arg]);
+      tprintError("Failed to load unicharset from file {}!!\n", argv[arg]);
       return EXIT_FAILURE;
     }
   }
 
   // Save the combined unicharset.
   if (result_unicharset.save_to_file(argv[argc - 1])) {
-    tprintf("Wrote unicharset file {}\n", argv[argc - 1]);
+    tprintDebug("Wrote unicharset file {}\n", argv[argc - 1]);
   } else {
-    tprintf("ERROR: Cannot save unicharset file {}\n", argv[argc - 1]);
+    tprintError("Cannot save unicharset file {}\n", argv[argc - 1]);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

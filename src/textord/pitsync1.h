@@ -82,8 +82,8 @@ ELISTIZEH(FPSEGPT);
 CLISTIZEH(FPSEGPT_LIST);
 
 extern INT_VAR_H(pitsync_linear_version);
-extern double_VAR_H(pitsync_joined_edge);
-extern double_VAR_H(pitsync_offset_freecut_fraction);
+extern DOUBLE_VAR_H(pitsync_joined_edge);
+extern DOUBLE_VAR_H(pitsync_offset_freecut_fraction);
 
 double check_pitch_sync(   // find segmentation
     BLOBNBOX_IT *blob_it,  // blobs to do

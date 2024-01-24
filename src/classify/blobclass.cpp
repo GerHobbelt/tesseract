@@ -57,7 +57,7 @@ void Classify::LearnBlob(const std::string &fontname, TBLOB *blob, const DENORM 
     // write micro-features to file and clean up
     WriteCharDescription(feature_defs_, CharDesc.get(), tr_file_data_);
   } else {
-    tprintf("Blob learned was invalid!\n");
+    tprintError("Blob learned was invalid!\n");
   }
 } // LearnBlob
 

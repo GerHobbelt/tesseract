@@ -53,7 +53,7 @@ void ViterbiStateEntry::Print(const char *msg) const {
   if (this->associate_stats.shape_cost > 0.0f) {
     s += fmt::format(" shape_cost={}", this->associate_stats.shape_cost);
   }
-  tprintf("{} {}\n", s, XHeightConsistencyEnumName[this->consistency_info.xht_decision]);
+  tprintDebug("{} {}\n", s, XHeightConsistencyEnumName[this->consistency_info.xht_decision]);
 }
 
 /// Clears the viterbi search state back to its initial conditions.
@@ -65,7 +65,7 @@ void LanguageModelState::Clear() {
 }
 
 void LanguageModelState::Print(const char *msg) {
-  tprintf("{} VSEs (max_cost={} prn_len={} tot_len={}):\n", msg,
+  tprintDebug("{} VSEs (max_cost={} prn_len={} tot_len={}):\n", msg,
           viterbi_state_entries_prunable_max_cost, 
           viterbi_state_entries_prunable_length,
           viterbi_state_entries_length);

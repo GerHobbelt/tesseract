@@ -127,7 +127,7 @@ int OSResults::get_best_script(int orientation_id) const {
 // Print the script scores for all possible orientations.
 void OSResults::print_scores(void) const {
   for (int i = 0; i < 4; ++i) {
-    tprintf("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
+    tprintDebug("Orientation id #{}: {} degrees", i, OrientationIdToValue(i));
     print_scores(i);
   }
 }
@@ -136,7 +136,7 @@ void OSResults::print_scores(void) const {
 void OSResults::print_scores(int orientation_id) const {
   for (int j = 0; j < kMaxNumberOfScripts; ++j) {
     if (scripts_na[orientation_id][j]) {
-      tprintf("{}\t: {}\n", unicharset->get_script_from_script_id(j),
+      tprintDebug("{}\t: {}\n", unicharset->get_script_from_script_id(j),
               scripts_na[orientation_id][j]);
     }
   }
@@ -167,13 +167,12 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
   int resolution;
   if (kMinCredibleResolution > pixGetXRes(pix)) {
     resolution = kMinCredibleResolution;
-    tprintf("WARNING: Invalid resolution {} dpi. Using {} instead.\n", pixGetXRes(pix), resolution);
+    tprintWarn("Invalid resolution {} dpi. Using {} instead.\n", pixGetXRes(pix), resolution);
   } else {
     resolution = pixGetXRes(pix);
   }
 
-  line_finder_.FindAndRemoveLines(resolution, false, pix, &vertical_x, &vertical_y,
-                                            nullptr, &v_lines, &h_lines);
+  line_finder_.FindAndRemoveLines(resolution, pix, &vertical_x, &vertical_y, nullptr, &v_lines, &h_lines);
   AddPixDebugPage(pix, "Removing nontext regions: after FindAndRemoveLines : result");
   Image im_pix = image_finder_.FindImages(pix);
   AddPixDebugPage(im_pix, "Removing nontext regions: after FindAndRemoveLines : mask or image on-text) areas");
@@ -292,13 +291,13 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
   BLOBNBOX_C_IT filtered_it(blob_list);
   int real_max = std::min(filtered_it.length(), maxCharactersToTry);
 #if 0
-  tprintf("Number of blobs post-filtering = {}\n", filtered_it.length());
-  tprintf("Number of blobs to try = {}\n", real_max);
+  tprintDebug("Number of blobs post-filtering = {}\n", filtered_it.length());
+  tprintDebug("Number of blobs to try = {}\n", real_max);
 #endif
 
   // If there are too few characters, skip this page entirely.
   if (real_max < minCharactersToTry / 2) {
-    tprintf("Too few characters. Skipping this page\n");
+    tprintInfo("Too few characters. Skipping this page\n");
     return 0;
   }
 
@@ -484,7 +483,6 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
     int prev_id = -1;
     int prev_fontinfo_id = -1;
     const char *prev_unichar = "";
-    const char *unichar = "";
 
     for (choice_it.mark_cycle_pt(); !choice_it.cycled_list(); choice_it.forward()) {
       BLOB_CHOICE *choice = choice_it.data();
@@ -509,7 +507,7 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
       }
       done[id] = true;
 
-      unichar = tess_->unicharset.id_to_unichar(choice->unichar_id());
+      const char *unichar = tess_->unicharset.id_to_unichar(choice->unichar_id());
       // Save data from the first match
       if (prev_score < 0) {
         prev_score = -choice->certainty();
@@ -542,7 +540,7 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
       if (prev_id == latin_id_) {
         if (prev_fontinfo_id >= 0) {
           const tesseract::FontInfo &fi = tess_->get_fontinfo_table().at(prev_fontinfo_id);
-          // tprintf("Font: {} i:{} b:{} f:{} s:{} k:{} ({})\n", fi.name,
+          // tprintDebug("Font: {} i:{} b:{} f:{} s:{} k:{} ({})\n", fi.name,
           //       fi.is_italic(), fi.is_bold(), fi.is_fixed_pitch(),
           //       fi.is_serif(), fi.is_fraktur(),
           //       prev_unichar);

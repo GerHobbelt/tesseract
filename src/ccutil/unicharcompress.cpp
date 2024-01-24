@@ -83,7 +83,7 @@ static bool DecodeRadicalTable(std::string &radical_data, RSMap *radical_map) {
   std::vector<std::string> lines = split(radical_data, '\n');
   for (unsigned i = 0; i < lines.size(); ++i) {
     if (!DecodeRadicalLine(lines[i], radical_map)) {
-      tprintf("ERROR: Invalid format in radical table at line {}: {}\n", i, lines[i].c_str());
+      tprintError("Invalid format in radical table at line {}: {}\n", i, lines[i].c_str());
       return false;
     }
   }
@@ -185,7 +185,7 @@ bool UnicharCompress::ComputeEncoding(const UNICHARSET &unicharset, int null_id,
         for (int uni : unicodes) {
           int position = code.length();
           if (position >= RecodedCharID::kMaxCodeLen) {
-            tprintf("ERROR: Unichar {}={} is too long to encode!!\n", u, unicharset.id_to_unichar(u));
+            tprintError("Unichar {}={} is too long to encode!!\n", u, unicharset.id_to_unichar(u));
             return false;
           }
           UNICHAR unichar(uni);
@@ -197,7 +197,7 @@ bool UnicharCompress::ComputeEncoding(const UNICHARSET &unicharset, int null_id,
           delete[] utf8;
           if (direct_set.size() > unicharset.size() + !unicharset.has_special_codes()) {
             // Code space got bigger!
-            tprintf("Code space expanded from original unicharset!!\n");
+            tprintWarn("Code space expanded from original unicharset!!\n");
             return false;
           }
         }

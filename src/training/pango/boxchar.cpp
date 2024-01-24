@@ -19,6 +19,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "boxchar.h"
 
 #include "../unicharset/fileio.h"
@@ -33,6 +37,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <vector>
+
+#include <leptonica/allheaders.h>
+#include <leptonica/pix.h>                 // for BOX
+#include <leptonica/pix_internal.h>        // for BOX
 
 // Absolute Ratio of dx:dy or dy:dx to be a newline.
 const int kMinNewlineRatio = 5;
@@ -61,11 +69,11 @@ void BoxChar::GetDirection(int *num_rtl, int *num_ltr) const {
   // Convert the unichar to UTF32 representation
   std::vector<char32> uni_vector = UNICHAR::UTF8ToUTF32(ch_.c_str());
   if (uni_vector.empty()) {
-    tprintf("ERROR: Illegal utf8 in boxchar string:{} = ", ch_.c_str());
+    tprintError("Illegal utf8 in boxchar string:{} = ", ch_.c_str());
     for (char c : ch_) {
-      tprintf(" {}", c);
+      tprintError(" {}", c);
     }
-    tprintf("\n");
+    tprintError("\n");
     return;
   }
   for (char32 ch : uni_vector) {
@@ -126,7 +134,7 @@ void BoxChar::PrepareToWrite(std::vector<BoxChar *> *boxes) {
   InsertSpaces(rtl_rules, vertical_rules, boxes);
   for (size_t i = 0; i < boxes->size(); ++i) {
     if ((*boxes)[i]->box_ == nullptr) {
-      tprintf("Null box at index {}\n", i);
+      tprintDebug("Null box at index {}\n", i);
     }
   }
   if (rtl_rules) {
@@ -184,7 +192,7 @@ void BoxChar::InsertNewlines(bool rtl_rules, bool vertical_rules, std::vector<Bo
         } else if (rtl_rules) {
           x = prev_box_x - width;
           if (x < 0) {
-            tprintf("prev x = {}, width={}\n", prev_box->x, width);
+            tprintDebug("prev x = {}, width={}\n", prev_box->x, width);
             x = 0;
           }
         }
@@ -400,7 +408,7 @@ std::string BoxChar::GetTesseractBoxStr(int height, const std::vector<BoxChar *>
   for (auto boxe : boxes) {
     const Box *box = boxe->box_;
     if (box == nullptr) {
-      tprintf("ERROR: Call PrepareToWrite before WriteTesseractBoxFile!!\n");
+      tprintError("Call PrepareToWrite before WriteTesseractBoxFile!!\n");
       return "";
     }
     int32_t box_x;

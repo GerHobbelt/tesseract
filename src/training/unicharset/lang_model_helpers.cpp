@@ -74,7 +74,7 @@ std::string ReadFile(const std::string &filename, FileReader reader) {
   if (read_result) {
     return std::string(&data[0], data.size());
   }
-  tprintf("ERROR: Failed to read data from: {}\n", filename);
+  tprintError("Failed to read data from: {}\n", filename);
   return std::string();
 }
 
@@ -110,9 +110,9 @@ bool WriteRecoder(const UNICHARSET &unicharset, bool pass_through, const std::st
     recoder.SetupPassThrough(unicharset);
   } else {
     int null_char = unicharset.has_special_codes() ? UNICHAR_BROKEN : unicharset.size();
-    tprintf("Null char={}\n", null_char);
+    tprintDebug("Null char={}\n", null_char);
     if (!recoder.ComputeEncoding(unicharset, null_char, radical_table_data)) {
-      tprintf("ERROR: Creation of encoded unicharset failed!!\n");
+      tprintError("Creation of encoded unicharset failed!!\n");
       return false;
     }
   }
@@ -140,7 +140,7 @@ static bool WriteDawg(const std::vector<std::string> &words, const UNICHARSET &u
   // The first 3 arguments are not used in this case.
   Trie trie(DAWG_TYPE_WORD, "", SYSTEM_DAWG_PERM, unicharset.size(), 0);
   trie.add_word_list(words, unicharset, reverse_policy);
-  tprintf("Reducing Trie to SquishedDawg\n");
+  tprintDebug("Reducing Trie to SquishedDawg\n");
   std::unique_ptr<SquishedDawg> dawg(trie.trie_to_dawg());
   if (dawg == nullptr || dawg->NumEdges() == 0) {
     return false;
@@ -162,7 +162,7 @@ static bool WriteDawgs(const std::vector<std::string> &words, const std::vector<
                        const std::vector<std::string> &numbers, bool lang_is_rtl,
                        const UNICHARSET &unicharset, TessdataManager *traineddata) {
   if (puncs.empty()) {
-    tprintf("ERROR: Must have non-empty puncs list to use language models!!\n");
+    tprintError("Must have non-empty puncs list to use language models!!\n");
     return false;
   }
   // For each of the dawg types, make the dawg, and write to traineddata.
@@ -204,10 +204,10 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
   }
   // Unicharset and recoder.
   if (!WriteUnicharset(unicharset, output_dir, lang, writer, &traineddata)) {
-    tprintf("ERROR: Error writing unicharset!!\n");
+    tprintError("Error writing unicharset!!\n");
     return EXIT_FAILURE;
   } else {
-    tprintf("Config file is optional, continuing...\n");
+    tprintDebug("Config file is optional, continuing...\n");
   }
   // If there is a config file, read it and add to traineddata.
   std::string config_filename = script_dir + "/" + lang + "/" + lang + ".config";
@@ -218,16 +218,16 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
   std::string radical_filename = script_dir + "/radical-stroke.txt";
   std::string radical_data = ReadFile(radical_filename, reader);
   if (radical_data.empty()) {
-    tprintf("ERROR: Error reading radical code table {}\n", radical_filename);
+    tprintError("Error reading radical code table {}\n", radical_filename);
     return EXIT_FAILURE;
   }
   if (!WriteRecoder(unicharset, pass_through_recoder, output_dir, lang, writer, &radical_data,
                     &traineddata)) {
-    tprintf("ERROR: Error writing recoder!!\n");
+    tprintError("Error writing recoder!!\n");
   }
   if (!words.empty() || !puncs.empty() || !numbers.empty()) {
     if (!WriteDawgs(words, puncs, numbers, lang_is_rtl, unicharset, &traineddata)) {
-      tprintf("ERROR: Error during conversion of wordlists to DAWGs!!\n");
+      tprintError("Error during conversion of wordlists to DAWGs!!\n");
       return EXIT_FAILURE;
     }
   }
@@ -236,10 +236,10 @@ int CombineLangModel(const UNICHARSET &unicharset, const std::string &script_dir
   std::vector<char> traineddata_data;
   traineddata.Serialize(&traineddata_data);
   if (!WriteFile(output_dir, lang, ".traineddata", traineddata_data, writer)) {
-    tprintf("ERROR: Error writing output traineddata file!!\n");
+    tprintError("Error writing output traineddata file!!\n");
     return EXIT_FAILURE;
   }
-  tprintf("Created %s/%s/%s.traineddata", output_dir.c_str(), lang.c_str(), lang.c_str());
+  tprintDebug("Created %s/%s/%s.traineddata", output_dir.c_str(), lang.c_str(), lang.c_str());
   return EXIT_SUCCESS;
 }
 

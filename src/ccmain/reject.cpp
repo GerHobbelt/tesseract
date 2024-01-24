@@ -69,19 +69,19 @@ void Tesseract::set_done(WERD_RES *word, int16_t pass) {
   if (word->done && (pass == 1) && (!word_from_dict || word_is_ambig) &&
       one_ell_conflict(word, false)) {
     if (tessedit_rejection_debug) {
-      tprintf("one_ell_conflict detected\n");
+      tprintDebug("one_ell_conflict detected\n");
     }
     word->done = false;
   }
   if (word->done &&
       ((!word_from_dict && word->best_choice->permuter() != NUMBER_PERM) || word_is_ambig)) {
     if (tessedit_rejection_debug) {
-      tprintf("non-dict or ambig word detected\n");
+      tprintDebug("non-dict or ambig word detected\n");
     }
     word->done = false;
   }
   if (tessedit_rejection_debug) {
-    tprintf("set_done(): done={}\n", word->done);
+    tprintDebug("set_done(): done={}\n", word->done);
     word->best_choice->print("");
   }
 }
@@ -159,7 +159,7 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
       /* Ambig word rejection was here once !!*/
     }
   } else {
-    tprintf("ERROR: BAD tessedit_reject_mode\n");
+    tprintError("BAD tessedit_reject_mode\n");
     ASSERT_HOST(!"Fatal error encountered!");
   }
 
@@ -169,10 +169,10 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
 
   check_debug_pt(word, 10);
   if (tessedit_rejection_debug) {
-    tprintf("Permuter Type = {}\n", word->best_choice->permuter());
-    tprintf("Certainty: {}     Rating: {}\n", word->best_choice->certainty(),
+    tprintDebug("Permuter Type = {}\n", word->best_choice->permuter());
+    tprintDebug("Certainty: {}     Rating: {}\n", word->best_choice->certainty(),
             word->best_choice->rating());
-    tprintf("Dict word: {}\n", dict_word(*(word->best_choice)));
+    tprintDebug("Dict word: {}\n", dict_word(*(word->best_choice)));
   }
 
   flip_hyphens(word);

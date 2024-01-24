@@ -113,6 +113,10 @@ private:
   POLY_BLOCK *block;
 };
 
+static inline auto format_as(PolyBlockType t) {
+  return fmt::underlying(t);
+}
+
 } // namespace tesseract
 
 #endif

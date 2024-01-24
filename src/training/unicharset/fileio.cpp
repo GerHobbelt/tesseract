@@ -45,7 +45,7 @@ FILE *File::Open(const std::string &filename, const std::string &mode) {
 FILE *File::OpenOrDie(const std::string &filename, const std::string &mode) {
   FILE *stream = fopen(filename.c_str(), mode.c_str());
   if (stream == nullptr) {
-    tprintf("ERROR: Unable to open '{}' in mode '{}': {}\n", filename, mode,
+    tprintError("Unable to open '{}' in mode '{}': {}\n", filename, mode,
             strerror(errno));
   }
   return stream;
@@ -54,7 +54,7 @@ FILE *File::OpenOrDie(const std::string &filename, const std::string &mode) {
 void File::WriteStringToFileOrDie(const std::string &str, const std::string &filename) {
   FILE *stream = fopen(filename.c_str(), "wb");
   if (stream == nullptr) {
-    tprintf("ERROR: Unable to open '{}' for writing: {}\n", filename, strerror(errno));
+    tprintError("Unable to open '{}' for writing: {}\n", filename, strerror(errno));
     return;
   }
   fputs(str.c_str(), stream);
@@ -93,7 +93,7 @@ bool File::Delete(const char *pathname) {
   const int status = _unlink(pathname);
 #endif
   if (status != 0) {
-    tprintf("ERROR: Unable to delete file '{}$: {}\n", pathname, strerror(errno));
+    tprintError("Unable to delete file '{}$: {}\n", pathname, strerror(errno));
     return false;
   }
   return true;

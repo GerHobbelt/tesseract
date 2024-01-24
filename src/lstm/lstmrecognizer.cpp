@@ -44,9 +44,9 @@
 namespace tesseract {
 
 // Default ratio between dict and non-dict words.
-const double kDictRatio = 2.25;
+static const double kDictRatio = 1.25;
 // Default certainty offset to give the dictionary a chance.
-const double kCertOffset = -0.085;
+static const double kCertOffset = -0.085;
 
 //LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
 //    : LSTMRecognizer::LSTMRecognizer() {
@@ -87,8 +87,8 @@ void LSTMRecognizer::Clean() {
   search_ = nullptr;
 }
 
-// Loads a model from mgr, including the dictionary only if lang is not null.
-bool LSTMRecognizer::Load(const ParamsVectors *params, const std::string &lang,
+// Loads a model from mgr, including the dictionary only if lang is not empty.
+bool LSTMRecognizer::Load(const ParamsVectorSet &params, const std::string &lang,
                           TessdataManager *mgr) {
   TFile fp;
   if (!mgr->GetComponent(TESSDATA_LSTM, &fp)) {
@@ -219,7 +219,7 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
     RecodedCharID code;
     recoder_.EncodeUnichar(UNICHAR_SPACE, &code);
     if (code(0) != UNICHAR_SPACE) {
-      tprintf("ERROR: Space was garbled in recoding!!\n");
+      tprintError("Space was garbled in recoding!!\n");
       return false;
     }
   } else {
@@ -237,7 +237,7 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
 // from checkpoint or restore without having to go back and reload the
 // dictionary.
 // Some parameters have to be passed in (from langdata/config/api via Tesseract)
-bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::string &lang,
+bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&ccutil_);
@@ -250,7 +250,7 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectors *params, const std::stri
   if (dict_->FinishLoad()) {
     return true; // Success.
   }
-  tlog(0, "ERROR: Failed to load any lstm-specific dictionaries for lang {}!!\n", lang);
+  tprintError("Failed to load any lstm-specific dictionaries for lang {}!!\n", lang);
   delete dict_;
   dict_ = nullptr;
   return false;
@@ -275,11 +275,11 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words, lstm_choice_mode);
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
     for (int i = 0; i < lstm_choice_amount; ++i) {
-      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
+      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset());
       search_->extractSymbolChoices(&GetUnicharset());
     }
     search_->segmentTimestepsByCharacters();
@@ -340,13 +340,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   int min_width = network_->XScaleFactor();
   Image pix = Input::PrepareLSTMInputs(image_data, network_, min_width, &randomizer_, scale_factor);
   if (pix == nullptr) {
-    tprintf("ERROR: Line cannot be recognized!!\n");
+    tprintError("Line cannot be recognized!!\n");
     return false;
   }
   // Maximum width of image to train on.
   const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
-    tprintf("ERROR: Image too large to learn!! Size = {}x{}\n", pixGetWidth(pix), pixGetHeight(pix));
+    tprintError("Image too large to learn!! Size = {}x{}\n", pixGetWidth(pix), pixGetHeight(pix));
     pix.destroy();
     return false;
   }
@@ -357,7 +357,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   *scale_factor = min_width / *scale_factor;
   inputs->set_int_mode(IsIntMode());
   if (HasDebug()) {
-    tprintf("Scale_factor:{}, upside_down:{}, invert_threshold:{}, int_mode:{}\n",
+    tprintDebug("Scale_factor:{}, upside_down:{}, invert_threshold:{}, int_mode:{}\n",
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
@@ -368,7 +368,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     float pos_min, pos_mean, pos_sd;
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
     if (HasDebug()) {
-      tprintf("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
+      tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
           pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
     }
     if (pos_mean < invert_threshold) {
@@ -382,8 +382,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
-      if (HasDebug()) {
-        tprintf("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
+      if (HasDebug() || 1) {
+        tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
@@ -505,7 +505,7 @@ void LSTMRecognizer::DebugActivationPath(const NetworkIO &outputs, const std::ve
 // of positions.
 void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *label,
                                           int best_choice, int x_start, int x_end) {
-  tprintf("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
+  tprintDebug("{}={} On [{}, {}), scores=", label, best_choice, x_start, x_end);
   double max_score = 0.0;
   double mean_score = 0.0;
   const int width = x_end - x_start;
@@ -524,9 +524,9 @@ void LSTMRecognizer::DebugActivationRange(const NetworkIO &outputs, const char *
         best_score = line[c];
       }
     }
-    tprintf(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
+    tprintDebug(" {}({}={}={})", score, DecodeSingleLabel(best_c), best_c, best_score * 100.0);
   }
-  tprintf(", Mean={}, max={}\n", mean_score, max_score);
+  tprintDebug(", Mean={}, max={}\n", mean_score, max_score);
 }
 
 // Helper returns true if the null_char is the winner at t, and it beats the
@@ -563,7 +563,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
 	search_->SetDebug(HasDebug() - 1);
   }
-  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 0);
+  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2 /* 0 */);
   search_->ExtractBestPathAsLabels(labels, xcoords);
 }
 
@@ -671,42 +671,42 @@ void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
   }
 
   if (dict_ != nullptr && dict_ != dict_src) {
-      dict_->user_words_file = dict_src->user_words_file.c_str();
-      dict_->user_words_suffix = dict_src->user_words_suffix.c_str();
-      dict_->user_patterns_file = dict_src->user_patterns_file.c_str();
-      dict_->user_patterns_suffix = dict_src->user_patterns_suffix.c_str();
-      dict_->load_system_dawg = (bool)dict_src->load_system_dawg;
-      dict_->load_freq_dawg = (bool)dict_src->load_freq_dawg;
-      dict_->load_unambig_dawg = (bool)dict_src->load_unambig_dawg;
-      dict_->load_punc_dawg = (bool)dict_src->load_punc_dawg;
-      dict_->load_number_dawg = (bool)dict_src->load_number_dawg;
-      dict_->load_bigram_dawg = (bool)dict_src->load_bigram_dawg;
-      dict_->xheight_penalty_subscripts = (double)dict_src->xheight_penalty_subscripts;
-      dict_->xheight_penalty_inconsistent = (double)dict_src->xheight_penalty_inconsistent;
-      dict_->segment_penalty_dict_frequent_word = (double)dict_src->segment_penalty_dict_frequent_word;
-      dict_->segment_penalty_dict_case_ok = (double)dict_src->segment_penalty_dict_case_ok;
-      dict_->segment_penalty_dict_case_bad = (double)dict_src->segment_penalty_dict_case_bad;
-      dict_->segment_penalty_dict_nonword = (double)dict_src->segment_penalty_dict_nonword;
-      dict_->segment_penalty_garbage = (double)dict_src->segment_penalty_garbage;
-      dict_->output_ambig_words_file = dict_src->output_ambig_words_file.c_str();
-      dict_->dawg_debug_level = (int)dict_src->dawg_debug_level;
-      dict_->hyphen_debug_level = (int)dict_src->hyphen_debug_level;
-      dict_->use_only_first_uft8_step = (bool)dict_src->use_only_first_uft8_step;
-      dict_->certainty_scale = (double)dict_src->certainty_scale;
-      dict_->stopper_nondict_certainty_base = (double)dict_src->stopper_nondict_certainty_base;
-      dict_->stopper_phase2_certainty_rejection_offset = (double)dict_src->stopper_phase2_certainty_rejection_offset;
-      dict_->stopper_smallword_size = (int)dict_src->stopper_smallword_size;
-      dict_->stopper_certainty_per_char = (double)dict_src->stopper_certainty_per_char;
-      dict_->stopper_allowable_character_badness = (double)dict_src->stopper_allowable_character_badness;
-      dict_->stopper_debug_level = (int)dict_src->stopper_debug_level;
-      dict_->stopper_no_acceptable_choices = (bool)dict_src->stopper_no_acceptable_choices;
-      dict_->tessedit_truncate_wordchoice_log = (int)dict_src->tessedit_truncate_wordchoice_log;
-      dict_->word_to_debug = dict_src->word_to_debug.c_str();
-      dict_->segment_nonalphabetic_script = (bool)dict_src->segment_nonalphabetic_script;
-      dict_->save_doc_words = (bool)dict_src->save_doc_words;
-      dict_->doc_dict_pending_threshold = (double)dict_src->doc_dict_pending_threshold;
-      dict_->doc_dict_certainty_threshold = (double)dict_src->doc_dict_certainty_threshold;
-      dict_->max_permuter_attempts = (int)dict_src->max_permuter_attempts;
+      dict_->user_words_file = dict_src->user_words_file.value();
+      dict_->user_words_suffix = dict_src->user_words_suffix.value();
+      dict_->user_patterns_file = dict_src->user_patterns_file.value();
+      dict_->user_patterns_suffix = dict_src->user_patterns_suffix.value();
+      dict_->load_system_dawg = dict_src->load_system_dawg.value();
+      dict_->load_freq_dawg = dict_src->load_freq_dawg.value();
+      dict_->load_unambig_dawg = dict_src->load_unambig_dawg.value();
+      dict_->load_punc_dawg = dict_src->load_punc_dawg.value();
+      dict_->load_number_dawg = dict_src->load_number_dawg.value();
+      dict_->load_bigram_dawg = dict_src->load_bigram_dawg.value();
+      dict_->xheight_penalty_subscripts = dict_src->xheight_penalty_subscripts.value();
+      dict_->xheight_penalty_inconsistent = dict_src->xheight_penalty_inconsistent.value();
+      dict_->segment_penalty_dict_frequent_word = dict_src->segment_penalty_dict_frequent_word.value();
+      dict_->segment_penalty_dict_case_ok = dict_src->segment_penalty_dict_case_ok.value();
+      dict_->segment_penalty_dict_case_bad = dict_src->segment_penalty_dict_case_bad.value();
+      dict_->segment_penalty_dict_nonword = dict_src->segment_penalty_dict_nonword.value();
+      dict_->segment_penalty_garbage = dict_src->segment_penalty_garbage.value();
+      dict_->output_ambig_words_file = dict_src->output_ambig_words_file.value();
+      dict_->dawg_debug_level = dict_src->dawg_debug_level.value();
+      dict_->hyphen_debug_level = dict_src->hyphen_debug_level.value();
+      dict_->use_only_first_uft8_step = dict_src->use_only_first_uft8_step.value();
+      dict_->certainty_scale = dict_src->certainty_scale.value();
+      dict_->stopper_nondict_certainty_base = dict_src->stopper_nondict_certainty_base.value();
+      dict_->stopper_phase2_certainty_rejection_offset = dict_src->stopper_phase2_certainty_rejection_offset.value();
+      dict_->stopper_smallword_size = dict_src->stopper_smallword_size.value();
+      dict_->stopper_certainty_per_char = dict_src->stopper_certainty_per_char.value();
+      dict_->stopper_allowable_character_badness = dict_src->stopper_allowable_character_badness.value();
+      dict_->stopper_debug_level = dict_src->stopper_debug_level.value();
+      dict_->stopper_no_acceptable_choices = dict_src->stopper_no_acceptable_choices.value();
+      dict_->tessedit_truncate_wordchoice_log = dict_src->tessedit_truncate_wordchoice_log.value();
+      dict_->word_to_debug = dict_src->word_to_debug.value();
+      dict_->segment_nonalphabetic_script = dict_src->segment_nonalphabetic_script.value();
+      dict_->save_doc_words = dict_src->save_doc_words.value();
+      dict_->doc_dict_pending_threshold = dict_src->doc_dict_pending_threshold.value();
+      dict_->doc_dict_certainty_threshold = dict_src->doc_dict_certainty_threshold.value();
+      dict_->max_permuter_attempts = dict_src->max_permuter_attempts.value();
   }
 }
 

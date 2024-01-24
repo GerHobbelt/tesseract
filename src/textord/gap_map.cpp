@@ -17,7 +17,7 @@ namespace tesseract {
 BOOL_VAR(gapmap_debug, false, "Say which blocks have tables");
 BOOL_VAR(gapmap_use_ends, false, "Use large space at start and end of rows");
 BOOL_VAR(gapmap_no_isolated_quanta, false, "Ensure gaps not less than 2quanta wide");
-double_VAR(gapmap_big_gaps, 1.75, "xht multiplier");
+DOUBLE_VAR(gapmap_big_gaps, 1.75, "xht multiplier");
 
 /*************************************************************************
  * A block gap map is a quantised histogram of whitespace regions in the
@@ -153,7 +153,7 @@ GAPMAP::GAPMAP(     // Constructor
     }
   }
   if (gapmap_debug && any_tabs) {
-    tprintf("Table found\n");
+    tprintDebug("Table found\n");
   }
 }
 

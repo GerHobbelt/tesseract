@@ -12,6 +12,10 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "icuerrorcode.h"
 
 #if defined(HAS_LIBICU)

@@ -46,7 +46,7 @@ static bool ReadNFloats(TFile *fp, uint16_t N, float Buffer[]) {
   const int kMaxLineSize = 1024;
   char line[kMaxLineSize];
   if (fp->FGets(line, kMaxLineSize) == nullptr) {
-    tprintf("Hit EOF in ReadNFloats!\n");
+    tprintError("Hit EOF in ReadNFloats!\n");
     return false;
   }
 
@@ -57,7 +57,7 @@ static bool ReadNFloats(TFile *fp, uint16_t N, float Buffer[]) {
     float f = NAN;
     stream >> f;
     if (std::isnan(f)) {
-      tprintf("ERROR: Read of {} floats failed!\n", N);
+      tprintError("Read of {} floats failed!\n", N);
       return false;
     }
     Buffer[i] = f;
@@ -175,7 +175,7 @@ PROTOTYPE *ReadPrototype(TFile *fp, uint16_t N) {
   if (fp->FGets(line, kMaxLineSize) == nullptr ||
       sscanf(line, "%" QUOTED_TOKENSIZE "s %" QUOTED_TOKENSIZE "s %d", sig_token, shape_token,
              &SampleCount) != 3) {
-    tprintf("ERROR: Invalid prototype: {}\n", line);
+    tprintError("Invalid prototype: {}\n", line);
     return nullptr;
   }
   auto Proto = new PROTOTYPE;
@@ -193,7 +193,7 @@ PROTOTYPE *ReadPrototype(TFile *fp, uint16_t N) {
       Proto->Style = automatic;
       break;
     default:
-      tprintf("ERROR: Invalid prototype style specification: {}\n", shape_token);
+      tprintError("Invalid prototype style specification: {}\n", shape_token);
       Proto->Style = elliptical;
   }
 
@@ -228,7 +228,7 @@ PROTOTYPE *ReadPrototype(TFile *fp, uint16_t N) {
       break;
     default:
       delete Proto;
-      tprintf("Invalid prototype style\n");
+	  tprintError("Invalid prototype style\n");
       return nullptr;
   }
   return Proto;

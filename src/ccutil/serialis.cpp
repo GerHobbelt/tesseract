@@ -42,7 +42,7 @@ bool LoadDataFromFile(const char *filename, std::vector<char> *data) {
     if (size > 0 && size < LONG_MAX) {
       // reserve an extra byte in case caller wants to append a '\0' character
       data->reserve(size + 1);
-      data->resize(size); // TODO: optimize no init
+      data->resize(size); // TODO: optimize no init; however: https://stackoverflow.com/questions/7689406/resizing-a-c-stdvectorchar-without-initializing-data/38151722
       result = static_cast<long>(fread(&(*data)[0], 1, size, fp)) == size;
     }
     fclose(fp);

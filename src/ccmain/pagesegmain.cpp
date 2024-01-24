@@ -145,7 +145,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     if (pageseg_mode == PSM_OSD_ONLY) {
       if (blocks->empty()) {
         if (textord_debug_tabfind > 0) {
-          tprintf("WARNING: Empty page\n");
+          tprintWarn("Empty page\n");
         }
         return 0; // AutoPageSeg found an empty page.
       }
@@ -174,7 +174,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
 
   if (blocks->empty()) {
     if (textord_debug_tabfind > 0) {
-      tprintf("WARNING: Empty page\n");
+      tprintWarn("Empty page\n");
     }
     return 0; // AutoPageSeg found an empty page.
   }
@@ -189,15 +189,17 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
                        pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, gradient_);
   
-  tprintf("Page Gradient OSR estimate: {}\n", osr->gradient);
-  tprintf("Page Gradient TextOrd estimate: {}\n", gradient_);
+  if (verbose_process) {
+    tprintInfo("Page Gradient OSR estimate: {}\n", osr->gradient);
+    tprintInfo("Page Gradient TextOrd estimate: {}\n", gradient_);
+  }
 
   if (isnan(osr->gradient)) {
     osr->gradient = gradient_;
   }
   
   if ( max_page_gradient_recognize != 100 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
-    tprintf("Returning early due to high page gradient.\n");
+    tprintInfo("Returning early due to high page gradient.\n");
     return -1; 
   }
 
@@ -229,7 +231,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
  *
  * If osd (orientation and script detection) is true then that is performed
  * as well. If only_osd is true, then only orientation and script detection is
- * performed. If osd is desired, (osd or only_osd) then osr_tess must be
+ * performed. If osd is desired, (osd or only_osd) then osd_tess must be
  * another Tesseract that was initialized especially for osd, and the results
  * will be output into osr (orientation and script result).
  */
@@ -324,7 +326,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
   }
   // Leptonica is used to find the rule/separator lines in the input.
-  line_finder_.FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
+  line_finder_.FindAndRemoveLines(source_resolution_, pix_binary_,
                                  &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines);
   if (tessedit_dump_pageseg_images) {
     AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : Lines Removed");
@@ -332,15 +334,12 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   // Leptonica is used to find a mask of the photo regions in the input.
   *photo_mask_pix = image_finder_.FindImages(pix_binary_);
   if (tessedit_dump_pageseg_images) {
-    Image pix_no_image_ = nullptr;
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
-      pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-    } else {
-      pix_no_image_ = pix_binary_.clone();
+      Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
+      pix_no_image_.destroy();
     }
-    AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
-    pix_no_image_.destroy();
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) {
     v_lines.clear();
@@ -362,7 +361,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
     if (res > estimated_resolution && res < kMaxCredibleResolution) {
       estimated_resolution = res;
-      tprintf("Estimating resolution as {}\n", estimated_resolution);
+      tprintInfo("Estimating resolution as {}\n", estimated_resolution);
     }
   }
 
@@ -434,13 +433,13 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         // The margin is weak.
         if (!cjk && !vertical_text && osd_orientation == 2) {
           // upside down latin text is improbable with such a weak margin.
-          tprintf(
+          tprintInfo(
               "OSD: Weak margin ({}), horiz textlines, not CJK: "
               "Don't rotate.\n",
               osd_margin);
           osd_orientation = 0;
         } else {
-          tprintf(
+          tprintInfo(
               "OSD: Weak margin ({}) for {} blob text block, "
               "but using orientation anyway: {}\n",
               osd_margin, osd_blobs.length(), osd_orientation);

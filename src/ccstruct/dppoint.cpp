@@ -35,7 +35,7 @@ DPPoint *DPPoint::Solve(int min_step, int max_step, bool debug, CostFunc cost_fu
   }
   ASSERT_HOST(min_step > 0); // Infinite loop possible if this is not true.
   if (debug) {
-    tprintf("min = {}, max={}\n", min_step, max_step);
+    tprintDebug("min = {}, max={}\n", min_step, max_step);
   }
   // Evaluate the total cost at each point.
   for (int i = 0; i < size; ++i) {
@@ -49,7 +49,7 @@ DPPoint *DPPoint::Solve(int min_step, int max_step, bool debug, CostFunc cost_fu
     }
     points[i].total_cost_ += points[i].local_cost_;
     if (debug) {
-      tprintf("At point {}, local cost={}, total_cost={}, steps={}\n", i, points[i].local_cost_,
+      tprintDebug("At point {}, local cost={}, total_cost={}, steps={}\n", i, points[i].local_cost_,
               points[i].total_cost_, points[i].total_steps_);
     }
   }

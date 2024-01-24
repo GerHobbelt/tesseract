@@ -9,6 +9,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #if defined(PANGO_ENABLE_ENGINE)
 
 #include "include_gunit.h"
@@ -18,7 +22,7 @@
 #include "commandlineflags.h"
 #include "stringrenderer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <memory>
 #include <string>

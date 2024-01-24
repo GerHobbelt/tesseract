@@ -30,7 +30,7 @@ LSTMTester::LSTMTester(int64_t max_memory) : test_data_(max_memory) {}
 bool LSTMTester::LoadAllEvalData(const char *filenames_file) {
   std::vector<std::string> filenames;
   if (!LoadFileLinesToStrings(filenames_file, &filenames)) {
-    tprintf("ERROR: Failed to load list of eval filenames from {}\n", filenames_file);
+    tprintError("Failed to load list of eval filenames from {}\n", filenames_file);
     return false;
   }
   return LoadAllEvalData(filenames);
@@ -108,14 +108,14 @@ std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors
       word_error += trainer.NewSingleError(tesseract::ET_WORD_RECERR);
       ++error_count;
       if (verbosity > 1 || (verbosity > 0 && result != PERFECT)) {
-        tprintf("Truth:{}\n", truth_text.c_str());
+        tprintDebug("Truth:{}\n", truth_text.c_str());
         std::vector<int> ocr_labels;
         std::vector<int> xcoords;
         trainer.LabelsFromOutputs(fwd_outputs, &ocr_labels, &xcoords);
         std::string ocr_text = trainer.DecodeLabels(ocr_labels);
-        tprintf("OCR  :{}\n", ocr_text.c_str());
+        tprintDebug("OCR  :{}\n", ocr_text.c_str());
         if (verbosity > 2 || (verbosity > 1 && result != PERFECT)) {
-          tprintf("Line Char error rate (BCER)={}, Word error rate (BWER)={}, Confidence={}\n\n",
+          tprintDebug("Line Char error rate (BCER)={}, Word error rate (BWER)={}, Confidence={}\n\n",
                   trainer.NewSingleError(tesseract::ET_CHAR_ERROR),
                   trainer.NewSingleError(tesseract::ET_WORD_RECERR),
                   confidence);

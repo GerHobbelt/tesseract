@@ -291,7 +291,7 @@ int TextlineProjection::VerticalDistance(bool debug, int x, int y1, int y2) cons
     data += wpl;
     int pixel = GET_DATA_BYTE(data, x);
     if (debug) {
-      tprintf("At ({},{}), pix = {}, prev={}\n", x, y + step, pixel, prev_pixel);
+      tprintDebug("At ({},{}), pix = {}, prev={}\n", x, y + step, pixel, prev_pixel);
     }
     if (pixel < prev_pixel) {
       distance += kWrongWayPenalty;
@@ -323,7 +323,7 @@ int TextlineProjection::HorizontalDistance(bool debug, int x1, int x2, int y) co
   for (int x = x1; x != x2; x += step) {
     int pixel = GET_DATA_BYTE(data, x + step);
     if (debug) {
-      tprintf("At ({},{}), pix = {}, prev={}\n", x + step, y, pixel, prev_pixel);
+      tprintDebug("At ({},{}), pix = {}, prev={}\n", x + step, y, pixel, prev_pixel);
     }
     if (pixel < prev_pixel) {
       distance += kWrongWayPenalty;
@@ -382,7 +382,7 @@ int TextlineProjection::EvaluateColPartition(const ColPartition &part, const DEN
   box.set_bottom(part.median_bottom());
   int hresult = EvaluateBox(box, denorm, debug);
   if (debug) {
-    tprintf("Partition hresult={}, vresult={} from:", hresult, vresult);
+    tprintDebug("Partition hresult={}, vresult={} from:", hresult, vresult);
     part.bounding_box().print();
     part.Print();
   }
@@ -435,7 +435,7 @@ int TextlineProjection::EvaluateBoxInternal(const TBOX &box, const DENORM *denor
   int left_clipped = std::max(left_gradient, 0);
   int right_clipped = std::max(right_gradient, 0);
   if (debug) {
-    tprintf("Gradients: top = {}, bottom = {}, left= {}, right= {} for box:", top_gradient,
+    tprintDebug("Gradients: top = {}, bottom = {}, left= {}, right= {} for box:", top_gradient,
             bottom_gradient, left_gradient, right_gradient);
     box.print();
   }

@@ -30,10 +30,10 @@ Classify::Classify()
 
     , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
 
-    , double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
+    , DOUBLE_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
                   this->params())
 
-    , double_MEMBER(classify_max_certainty_margin, 5.5,
+    , DOUBLE_MEMBER(classify_max_certainty_margin, 5.5,
                   "Veto difference between classifier certainties", this->params())
 
     , dict_(this) {}
@@ -62,11 +62,11 @@ Classify::Classify()
     , INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
 	, INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", this->params())
 	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
-    , double_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
+    , DOUBLE_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
                     this->params())
-    , double_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
+    , DOUBLE_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
                     this->params())
-    , double_MEMBER(classify_max_certainty_margin, 5.5,
+    , DOUBLE_MEMBER(classify_max_certainty_margin, 5.5,
                     "Veto difference between classifier certainties", this->params())
     , BOOL_MEMBER(tess_cn_matching, 0, "Character Normalized Matching", this->params())
     , BOOL_MEMBER(tess_bn_matching, 0, "Baseline Normalized Matching", this->params())
@@ -81,29 +81,29 @@ Classify::Classify()
     , INT_MEMBER(matcher_debug_level, 0, "Matcher Debug Level (0..3)", this->params())
     , INT_MEMBER(matcher_debug_flags, 0, "Matcher Debug Flags", this->params())
     , INT_MEMBER(classify_learning_debug_level, 0, "Learning Debug Level (0..4)", this->params())
-    , double_MEMBER(matcher_good_threshold, 0.125, "Good Match (0-1)", this->params())
-    , double_MEMBER(matcher_reliable_adaptive_result, 0.0, "Great Match (0-1)", this->params())
-    , double_MEMBER(matcher_perfect_threshold, 0.02, "Perfect Match (0-1)", this->params())
-    , double_MEMBER(matcher_bad_match_pad, 0.15, "Bad Match Pad (0-1)", this->params())
-    , double_MEMBER(matcher_rating_margin, 0.1, "New template margin (0-1)", this->params())
-    , double_MEMBER(matcher_avg_noise_size, 12.0, "Avg. noise blob length", this->params())
+    , DOUBLE_MEMBER(matcher_good_threshold, 0.125, "Good Match (0-1)", this->params())
+    , DOUBLE_MEMBER(matcher_reliable_adaptive_result, 0.0, "Great Match (0-1)", this->params())
+    , DOUBLE_MEMBER(matcher_perfect_threshold, 0.02, "Perfect Match (0-1)", this->params())
+    , DOUBLE_MEMBER(matcher_bad_match_pad, 0.15, "Bad Match Pad (0-1)", this->params())
+    , DOUBLE_MEMBER(matcher_rating_margin, 0.1, "New template margin (0-1)", this->params())
+    , DOUBLE_MEMBER(matcher_avg_noise_size, 12.0, "Avg. noise blob length", this->params())
     , INT_MEMBER(matcher_permanent_classes_min, 1, "Min # of permanent classes", this->params())
     , INT_MEMBER(matcher_min_examples_for_prototyping, 3, "Reliable Config Threshold",
                  this->params())
     , INT_MEMBER(matcher_sufficient_examples_for_prototyping, 5,
                  "Enable adaption even if the ambiguities have not been seen", this->params())
-    , double_MEMBER(matcher_clustering_max_angle_delta, 0.015,
+    , DOUBLE_MEMBER(matcher_clustering_max_angle_delta, 0.015,
                     "Maximum angle delta for prototype clustering", this->params())
-    , double_MEMBER(classify_misfit_junk_penalty, 0.0,
+    , DOUBLE_MEMBER(classify_misfit_junk_penalty, 0.0,
                     "Penalty to apply when a non-alnum is vertically out of "
                     "its expected textline position",
                     this->params())
-    , double_MEMBER(rating_scale, 1.5, "Rating scaling factor", this->params())
-    , double_MEMBER(tessedit_class_miss_scale, 0.00390625, "Scale factor for features not used",
+    , DOUBLE_MEMBER(rating_scale, 1.5, "Rating scaling factor", this->params())
+    , DOUBLE_MEMBER(tessedit_class_miss_scale, 0.00390625, "Scale factor for features not used",
                     this->params())
-    , double_MEMBER(classify_adapted_pruning_factor, 2.5,
+    , DOUBLE_MEMBER(classify_adapted_pruning_factor, 2.5,
                     "Prune poor adapted results this much worse than best result", this->params())
-    , double_MEMBER(classify_adapted_pruning_threshold, -1.0,
+    , DOUBLE_MEMBER(classify_adapted_pruning_threshold, -1.0,
                     "Threshold at which classify_adapted_pruning_factor starts", this->params())
     , INT_MEMBER(classify_adapt_proto_threshold, 230,
                  "Threshold for good protos during adaptive 0-255", this->params())
@@ -113,7 +113,7 @@ Classify::Classify()
                   "Do not include character fragments in the"
                   " results of the classifier",
                   this->params())
-    , double_MEMBER(classify_character_fragments_garbage_certainty_threshold, -3.0,
+    , DOUBLE_MEMBER(classify_character_fragments_garbage_certainty_threshold, -3.0,
                     "Exclude fragments that do not look like whole"
                     " characters from training and adaption",
                     this->params())
@@ -134,8 +134,8 @@ Classify::Classify()
                  "Integer Matcher Multiplier  0-255:   ", this->params())
     , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].",
                   this->params())
-    , double_MEMBER(speckle_large_max_size, 0.30, "Max large speckle size", this->params())
-    , double_MEMBER(speckle_rating_penalty, 10.0, "Penalty to add to worst rating for noise",
+    , DOUBLE_MEMBER(speckle_large_max_size, 0.30, "Max large speckle size", this->params())
+    , DOUBLE_MEMBER(speckle_rating_penalty, 10.0, "Penalty to add to worst rating for noise",
                     this->params())
     , im_(&classify_debug_level)
     , dict_(this) {

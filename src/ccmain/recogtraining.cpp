@@ -50,7 +50,7 @@ FILE *Tesseract::init_recog_training(const char *filename) {
   output_fname += ".txt";
   FILE *output_file = fopen(output_fname.c_str(), "a+");
   if (output_file == nullptr) {
-    tprintf("ERROR: Could not open file {}\n", output_fname.c_str());
+    tprintError("Could not open file {}\n", output_fname.c_str());
     ASSERT_HOST(output_file);
   }
   return output_file;
@@ -95,7 +95,7 @@ void Tesseract::recog_training_segmented(const char *filename, PAGE_RES *page_re
   // ReadNextBox() will close box_file
   FILE *box_file = fopen(box_fname.c_str(), "r");
   if (box_file == nullptr) {
-    tprintf("ERROR: Could not open file {}\n", box_fname.c_str());
+    tprintError("Could not open file {}\n", box_fname.c_str());
     ASSERT_HOST(box_file);
   }
 
@@ -153,11 +153,11 @@ void Tesseract::recog_training_segmented(const char *filename, PAGE_RES *page_re
     }
   }
   if (examined_words < 0.85 * total_words) {
-    tprintf(
+    tprintInfo(
         "TODO(antonova): clean up recog_training_segmented; "
         " It examined only a small fraction of the ambigs image.\n");
   }
-  tprintf("recog_training_segmented: examined {} / {} words.\n", examined_words, total_words);
+  tprintInfo("recog_training_segmented: examined {} / {} words.\n", examined_words, total_words);
 }
 
 // Helper prints the given set of blob choices.
@@ -215,7 +215,7 @@ void Tesseract::ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it
   // Compute the number of unichars in the label.
   std::vector<UNICHAR_ID> encoding;
   if (!unicharset.encode_string(label, true, &encoding, nullptr, nullptr)) {
-    tprintf("Not outputting illegal unichar {}\n", label);
+    tprintError("Not outputting illegal unichar {}\n", label);
     return;
   }
 
