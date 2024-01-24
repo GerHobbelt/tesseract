@@ -442,7 +442,7 @@ bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
 /** Get value of named variable as a string, if it exists. */
 bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const {
   Param *p = ParamUtils::FindParam(name, tesseract_->params_collective());
-  if (p != nullpstr) {
+  if (p != nullptr) {
     if (val != nullptr) {
       *val = p->raw_value_str();
     }
