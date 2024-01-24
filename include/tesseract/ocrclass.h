@@ -29,6 +29,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <functional>
 
 namespace tesseract {
 
@@ -95,9 +96,13 @@ struct EANYCODE_CHAR { /*single character */
  **********************************************************************/
 class ETEXT_DESC;
 
-using CANCEL_FUNC = bool (*)(void *, int);
-using PROGRESS_FUNC = bool (*)(int progress, int left, int right, int top, int bottom);
-using PROGRESS_FUNC2 = bool (*)(ETEXT_DESC *self, int left, int right, int top, int bottom);
+typedef bool tesseract_cancel_func_t(void* cancel_this, int words_count);
+typedef bool tesseract_progress_func_t(int progress, int left, int right, int top, int bottom);
+typedef bool tesseract_progress2_func_t(ETEXT_DESC* self, int left, int right, int top, int bottom);
+
+using CANCEL_FUNC    = std::function<tesseract_cancel_func_t>;
+using PROGRESS_FUNC  = std::function<tesseract_progress_func_t>;
+using PROGRESS_FUNC2 = std::function<tesseract_progress2_func_t>;
 
 class ETEXT_DESC { // output header
 public:
@@ -142,7 +147,7 @@ public:
 private:
   static bool default_progress_func(ETEXT_DESC *ths, int left, int right, int top, int bottom) {
     if (ths->progress_callback != nullptr) {
-      return (*(ths->progress_callback))(ths->progress, left, right, top, bottom);
+      return (ths->progress_callback)(ths->progress, left, right, top, bottom);
     }
     return true;
   }

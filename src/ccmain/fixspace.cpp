@@ -112,7 +112,7 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
             monitor->progress = 90 + 5 * word_index / word_count;
             if (monitor->deadline_exceeded() ||
                 (monitor->cancel != nullptr &&
-                 (*monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+                 (monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
               return;
             }
           }
@@ -138,7 +138,7 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
             monitor->progress = 90 + 5 * word_index / word_count;
             if (monitor->deadline_exceeded() ||
                 (monitor->cancel != nullptr &&
-                 (*monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+                 (monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
               return;
             }
           }
