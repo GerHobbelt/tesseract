@@ -94,9 +94,9 @@ ParamContent *ParamContent::GetParamContentById(int id) {
 
 // Copy the first N words from the source string to the target string.
 // Words are delimited by "_".
-void ParamsEditor::GetFirstWords(const char *s, // source string
-                                 int n,         // number of words
-                                 char *t        // target string
+static void GetFirstWords(const char *s, // source string
+                          int n,         // number of words
+                          std::string &d // target string
 ) {
   int full_length = strlen(s);
   int reqd_len = 0; // No. of chars required
@@ -104,11 +104,11 @@ void ParamsEditor::GetFirstWords(const char *s, // source string
 
   while ((n > 0) && reqd_len < full_length) {
     reqd_len += strcspn(next_word, "_") + 1;
-    next_word += reqd_len;
+    next_word = s + reqd_len;
     n--;
   }
-  strncpy(t, s, reqd_len);
-  t[reqd_len] = '\0'; // ensure null terminal
+  std::string rv(s, reqd_len);  // don't copy beyond s[reqd_len]
+  d = std::move(rv);
 }
 
 // Getter for the name.
@@ -178,16 +178,12 @@ void ParamContent::SetValue(const char *val) {
 }
 
 // Gets the up to the first 3 prefixes from s (split by _).
-// For example, tesseract_foo_bar will be split into tesseract,foo and bar.
-void ParamsEditor::GetPrefixes(const char *s, std::string *level_one, std::string *level_two,
-                               std::string *level_three) {
-  std::unique_ptr<char[]> p(new char[1024]);
-  GetFirstWords(s, 1, p.get());
-  *level_one = p.get();
-  GetFirstWords(s, 2, p.get());
-  *level_two = p.get();
-  GetFirstWords(s, 3, p.get());
-  *level_three = p.get();
+// For example, tesseract_foo_bar will be split into tesseract, foo and bar.
+static void GetPrefixes(const char *s, std::string &level_one, std::string &level_two,
+                        std::string &level_three) {
+  GetFirstWords(s, 1, level_one);
+  GetFirstWords(s, 2, level_two);
+  GetFirstWords(s, 3, level_three);
 }
 
 // Compare two VC objects by their name.
@@ -233,7 +229,7 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
     std::string tag2;
     std::string tag3;
 
-    GetPrefixes(vc->GetName(), &tag, &tag2, &tag3);
+    GetPrefixes(vc->GetName(), tag, tag2, tag3);
     amount[tag.c_str()]++;
     amount[tag2.c_str()]++;
     amount[tag3.c_str()]++;
@@ -250,7 +246,7 @@ SVMenuNode *ParamsEditor::BuildListOfAllLeaves(tesseract::Tesseract *tess) {
     std::string tag;
     std::string tag2;
     std::string tag3;
-    GetPrefixes(vc->GetName(), &tag, &tag2, &tag3);
+    GetPrefixes(vc->GetName(), tag, tag2, tag3);
 
     if (amount[tag.c_str()] == 1) {
       other->AddChild(vc->GetName(), vc->GetId(), vc->GetValue().c_str(), vc->GetDescription());
