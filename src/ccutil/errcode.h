@@ -60,11 +60,18 @@ public:
 
   void error(const char *caller, TessErrorLogCode action) const;
   
+  [[noreturn]] void vabort(const char* caller, fmt::string_view format, fmt::format_args args) const;
+
+  template <typename S, typename... Args>
   [[noreturn]] void abort(     // print function for fatal errors
-      const char *caller,      // function location
-      const char *format, ...  // fprintf format
-  ) const __attribute__((format(printf, 3, 4)));
-  [[noreturn]] void abort(const char *caller) const;
+      const char* caller,      // function location
+      const S* format,
+      Args&&... args
+  ) const {
+    vabort(caller, format, fmt::make_format_args(args...));
+  }
+
+  [[noreturn]] void abort(const char* caller) const;
   
   constexpr ERRCODE(const char *string) : message(string) {} // initialize with string
 };
