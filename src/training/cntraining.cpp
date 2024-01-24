@@ -108,7 +108,7 @@ static const CLUSTERCONFIG CNConfig = {elliptical, 0.025, 0.05, 0.8, 1e-3, 0};
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_cn_training_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
@@ -116,7 +116,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   // Set the global Config parameters before parsing the command line.
   Config = CNConfig;
 
-  int rv = EXIT_SUCCESS;
+  int rv;
   LIST CharList = NIL_LIST;
   CLUSTERER *Clusterer = nullptr;
   LIST ProtoList = NIL_LIST;
@@ -126,7 +126,12 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   FEATURE_DEFS_STRUCT FeatureDefs;
   InitFeatureDefs(&FeatureDefs);
 
-  ParseArguments(&argc, &argv);
+  rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
+  rv = EXIT_SUCCESS;
+
   // int num_fonts = 0;
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     tprintDebug("Reading {} ...\n", PageName);
@@ -261,7 +266,11 @@ static void WriteProtos(FILE *File, uint16_t N, LIST ProtoList, bool WriteSigPro
 
 #else
 
-TESS_API int tesseract_cn_training_main(int argc, const char** argv)
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
+#endif
 {
 	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
 	return 1;

@@ -34,11 +34,21 @@ static STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicha
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
-  int rv = tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
+
+  if (argc == 1) {
+    tprintDebug(
+        "Usage: {} -v | --version |\n"
+        "       {} -U file -O file -X file --script_dir path\n",
+        appname, appname);
+    return EXIT_FAILURE;
+  }
+
+  int rv = tesseract::ParseCommandLineFlags(appname, &argc, &argv, true);
   if (rv >= 0)
 	  return rv;
 
@@ -62,7 +72,7 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "set_unicharset_properties tool not supported in this non-ICU / Unicode build.\n");

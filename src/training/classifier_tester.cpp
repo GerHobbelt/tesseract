@@ -111,11 +111,14 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
   std::string file_prefix;
   auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
   tesseract::TessBaseAPI *api;
@@ -143,7 +146,11 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
 
 #else
 
-TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
+#endif
 {
 	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
 	return 1;

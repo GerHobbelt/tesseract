@@ -19,6 +19,10 @@
 // Given a file that contains a list of words (one word per line) this program
 // generates the corresponding squished DAWG file.
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "classify.h"
 #include "common/commontraining.h"     // CheckSharedLibraryVersion
 #include "dawg.h"
@@ -36,6 +40,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
@@ -47,7 +52,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
         "Usage: {} -v | --version |\n"
         "       {} [-t | -r [reverse policy] ] word_list_file"
         " dawg_file unicharset_file\n",
-        argv[0], argv[0]);
+        appname, appname);
     return EXIT_FAILURE;
   }
   tesseract::Classify classify;

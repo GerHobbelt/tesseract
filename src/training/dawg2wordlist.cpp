@@ -74,6 +74,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_dawg2wordlist_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
@@ -84,7 +85,7 @@ extern "C" int tesseract_dawg2wordlist_main(int argc, const char** argv)
     tprintInfo(
         "Usage: {} -v | --version | {} <unicharset> <dawgfile> "
         "<wordlistfile>\n",
-        argv[0], argv[0]);
+        appname, appname);
     return EXIT_FAILURE;
   }
   const char *unicharset_file = argv[1];

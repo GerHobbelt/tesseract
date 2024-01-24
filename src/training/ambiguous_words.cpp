@@ -39,6 +39,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
 
   // Parse input arguments.
@@ -49,7 +50,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
     tesseract::tprintInfo(
         "Usage: {} -v | --version | {} [-l lang] tessdata_dir wordlist_file"
         " output_ambiguous_wordlist_file\n",
-        argv[0], argv[0]);
+        appname, appname);
     return EXIT_FAILURE;
   }
   int argv_offset = 0;
@@ -95,7 +96,11 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 
 #else
 
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
 extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+#endif
 {
 	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
     return EXIT_FAILURE;
