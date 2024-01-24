@@ -25,6 +25,8 @@ namespace tesseract {
 constexpr ERRCODE BADERRACTION("Illegal error action");
 #define MAX_MSG 1024
 
+[[noreturn]] static void abort_application();
+
 static void error_action(TessErrorLogCode action) {
   switch (action) {
     case DBG:
@@ -32,20 +34,24 @@ static void error_action(TessErrorLogCode action) {
       return; // report only
     case TESSEXIT:
     case ABORT:
-#if !defined(NDEBUG)
-      // Create a deliberate abnormal exit as the stack trace is more useful
-      // that way. This is done only in debug builds, because the
-      // error message "segmentation fault" confuses most normal users.
-#  if defined(__GNUC__)
-      __builtin_trap();
-#  else
-      *reinterpret_cast<int *>(0) = 0;
-#  endif
-#endif
-      ::abort();
+      abort_application();
     default:
       BADERRACTION.abort("error");
   }
+}
+
+[[noreturn]] static void abort_application() {
+#if !defined(NDEBUG)
+  // Create a deliberate abnormal exit as the stack trace is more useful
+  // that way. This is done only in debug builds, because the
+  // error message "segmentation fault" confuses most normal users.
+#  if defined(__GNUC__)
+  __builtin_trap();
+#  else
+  * reinterpret_cast<int*>(0) = 0;
+#  endif
+#endif
+  ::abort();
 }
 
 /**********************************************************************
@@ -75,47 +81,26 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
   error_action(action);
 }
 
-[[noreturn]] void ERRCODE::abort( // handle error
-    const char *caller,      // name of caller
-    const char *format, ...  // special message
-    ) const {
-  va_list args; // variable args
-  std::stringstream msg;
-
+[[noreturn]] void ERRCODE::abort(const char* caller) const {
   if (caller != nullptr) {
     // name of caller
-    msg << caller << ':';
+    tprintError("{}:{}\n", caller, message);
   }
-  // actual message
-  msg << "Error:" << message;
-  if (format != nullptr) {
-    char str[MAX_MSG];
-    va_start(args, format); // variable list
-    // print remainder
-    std::vsnprintf(str, sizeof(str), format, args);
-    // ensure termination
-    str[sizeof(str) - 1] = '\0';
-    va_end(args);
-    msg << ':' << str;
+  else {
+    tprintError("{}\n", message);
   }
-
-  std::cerr << msg.str() << '\n';
-
-#if !defined(NDEBUG)
-  // Create a deliberate abnormal exit as the stack trace is more useful
-  // that way. This is done only in debug builds, because the
-  // error message "segmentation fault" confuses most normal users.
-#  if defined(__GNUC__)
-  __builtin_trap();
-#  else
-  *reinterpret_cast<int *>(0) = 0;
-#  endif
-#endif
-  ::abort();
+  abort_application();
 }
 
-[[noreturn]] void ERRCODE::abort(const char *caller) const {
-  abort(caller, nullptr);
+[[noreturn]] void ERRCODE::vabort(const char* caller, fmt::string_view format, fmt::format_args args) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+  }
+  else {
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+  }
+  abort_application();
 }
 
 } // namespace tesseract
