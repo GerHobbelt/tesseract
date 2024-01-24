@@ -130,7 +130,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, this->params());
+    ParamUtils::ReadParamsFromFp(&fp, this->params_collective());
   }
 
   // Load tesseract variables from config files. This is done after loading
@@ -155,7 +155,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   if (!tessedit_write_params_to_file.empty()) {
     FILE *params_file = fopen(tessedit_write_params_to_file.c_str(), "wb");
     if (params_file != nullptr) {
-      ParamUtils::PrintParams(params_file, this->params());
+      ParamUtils::PrintParams(params_file, this->params_collective());
       fclose(params_file);
     } else {
       tprintError("Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
