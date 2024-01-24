@@ -1512,8 +1512,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-  SetVariable("applybox_page", page_number);
-  bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
+    SetVariable("applybox_page", page_number);
+    bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
     bool two_pass = false;
 
@@ -1526,6 +1526,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);
+      api.SetVariable("thresholding_method", "0");
       // SetPageSegMode(PSM_SPARSE_TEXT);
 
       SetImage(newpix);
