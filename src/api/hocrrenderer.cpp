@@ -240,12 +240,14 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-            if (tesseract_->hocr_images) {
-              hocr_str << "ocr_photo";
-            }
+          if (tesseract_->hocr_images) {
+            hocr_str << "ocr_photo";
+          }
+          ASSERT_HOST(false);
           break;
         default:
           hocr_str << "ocr_line";
+		  break;
       }
       hocr_str << "' id='"
                << "line_" << page_id << "_" << lcnt << "'";
