@@ -478,7 +478,7 @@ public:
    */
   void WriteImage(const int type);
 
-  /** 
+  /**
    * Return average gradient of lines on page.
    */
   float GetGradient();
