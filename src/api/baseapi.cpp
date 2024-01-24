@@ -101,6 +101,7 @@ static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
 static STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output)");
 #ifdef HAVE_LIBCURL
 static INT_VAR(curl_timeout, 0, "Timeout for curl in seconds");
+static STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 
 /** Minimum sensible image size to be worth running Tesseract. */
@@ -1230,6 +1231,10 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       if (curlcode != CURLE_OK) {
         return error("curl_easy_setopt");
       }
+      curlcode = curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+      if (curlcode != CURLE_OK) {
+        return error("curl_easy_setopt");
+      }
       // Follow HTTP, HTTPS, FTP and FTPS redirects.
       curlcode = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
       if (curlcode != CURLE_OK) {
@@ -1247,6 +1252,13 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
           return error("curl_easy_setopt");
         }
         curlcode = curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+        if (curlcode != CURLE_OK) {
+          return error("curl_easy_setopt");
+        }
+      }
+      std::string cookiefile = curl_cookiefile;
+      if (!cookiefile.empty()) {
+        curlcode = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookiefile.c_str());
         if (curlcode != CURLE_OK) {
           return error("curl_easy_setopt");
         }
