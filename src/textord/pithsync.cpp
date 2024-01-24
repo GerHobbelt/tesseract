@@ -550,7 +550,6 @@ double check_pitch_sync3(    // find segmentation
   }
 
   best_cost = FLT_MAX;
-  best_end = nullptr;
   for (offset = -pitch_error, minindex = 0; offset < pitch_error; offset++, minindex++) {
     mins[minindex] = projection->local_min(x + offset);
   }
