@@ -34,6 +34,7 @@
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string
 #include "host.h"    // for MAX_PATH
+#include "imagedata.h" // for ImageData, DocumentData
 #include <leptonica/imageio.h> // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #if !DISABLED_LEGACY_ENGINE
 #  include "intfx.h" // for INT_FX_RESULT_STRUCT
@@ -68,6 +69,7 @@
 #include <cmath>    // for round, M_PI
 #include <cstdint>  // for int32_t
 #include <cstring>  // for strcmp, strcpy
+#include <filesystem> // for path
 #include <fstream>  // for size_t
 #include <iostream> // for std::cin
 #include <locale>   // for std::locale::classic
@@ -1108,6 +1110,79 @@ Boxa *TessBaseAPI::GetComponentImages(PageIteratorLevel level, bool text_only, b
     }
   } while (page_it->Next(level));
   return boxa;
+}
+
+/**
+ * Stores lstmf based on in-memory data for one line with pix and text
+ * This function is (atm) not used in the current processing,
+ * but can be used via CAPI e.g. tesserocr
+ */
+bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
+                                     Pix *pix, const char *truth_text,
+                                     bool vertical) {
+  // Check if path exists
+  std::ifstream test(path);
+  if (!test) {
+    tprintf("The path %s doesn't exist.\n", path);
+    return false;
+  }
+  // Check if truth_text exists
+  if ((truth_text != NULL) && (truth_text[0] == '\0') ||
+      (truth_text[0] == '\n')) {
+    tprintf("Ground truth text is empty or starts with newline.\n");
+    return false;
+  }
+  // Check if pix exists
+  if (!pix) {
+    tprintf("No image provided.\n");
+    return false;
+  }
+  // Variables for ImageData for just one line
+  std::vector<TBOX> boxes;
+  std::vector<std::string> line_texts;
+  std::string current_char, last_char, textline_str;
+  unsigned text_index = 0;
+  std::string truth_text_str = std::string(truth_text);
+  TBOX bounding_box = TBOX(0, 0, pixGetWidth(pix), pixGetHeight(pix));
+  // Take only the first line from the truth_text, replace tabs with whitespaces
+  // and reduce multiple whitespaces to just one
+  while (text_index < truth_text_str.size() &&
+         truth_text_str[text_index] != '\n') {
+    current_char = truth_text_str[text_index];
+    if (current_char == "\t") {
+      current_char = " ";
+    }
+    if (last_char != " " || current_char != " ") {
+      textline_str.append(current_char);
+      last_char = current_char;
+    }
+    text_index++;
+  }
+  if (textline_str.empty() || textline_str != " ") {
+    tprintf("There is no first line information.\n");
+    return false;
+  } else {
+    boxes.push_back(bounding_box);
+    line_texts.push_back(textline_str);
+  }
+
+  std::vector<int> page_numbers(boxes.size(), 1);
+
+  // Init ImageData
+  auto *image_data = new ImageData(vertical, pix);
+  image_data->set_page_number(1);
+  image_data->AddBoxes(boxes, line_texts, page_numbers);
+
+  // Write it to a lstmf-file
+  std::filesystem::path filename = path;
+  filename /= std::string(name) + std::string(".lstmf");
+  DocumentData doc_data(filename);
+  doc_data.AddPageToDocument(image_data);
+  if (!doc_data.SaveDocument(filename.c_str(), nullptr)) {
+    tprintf("Failed to write training data to %s!\n", filename.c_str());
+    return false;
+  }
+  return true;
 }
 
 int TessBaseAPI::GetThresholdedImageScaleFactor() const {
