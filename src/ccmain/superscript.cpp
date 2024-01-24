@@ -427,9 +427,10 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   }
 
   if (suffix) {
-    // Turn off Tesseract's y-position penalties for the trailing superscript.
+    // Turn off Tesseract's y-position penalties for the trailing superscript, disable punctuation unichars
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
+    unicharset.set_enable_punctuation(false);
 
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing last {} chopped blobs\n", num_chopped_trailing);
@@ -439,9 +440,12 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
       tprintDebug(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
     }
 
-    // Restore the normal y-position penalties.
+    // Restore the normal y-position penalties, blacklist/whitelist
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
+    unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+                                     tessedit_char_whitelist.c_str(),
+                                     tessedit_char_unblacklist.c_str());
   }
 
   // Evaluate whether we think the results are believably better
@@ -490,7 +494,6 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
  *
  * We insist that:
  *   + there are no punctuation marks.
- *   + there are no italics.
  *   + no normal-sized character is smaller than superscript_scaledown_ratio
  *     of what it ought to be, and
  *   + each character is at least as certain as certainty_threshold.
@@ -517,15 +520,6 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
     float char_certainty = wc.certainty(i);
     bool bad_certainty = char_certainty < certainty_threshold;
     bool is_punc = wc.unicharset()->get_ispunctuation(unichar_id);
-    bool is_italic = word.fontinfo && word.fontinfo->is_italic();
-    BLOB_CHOICE *choice = word.GetBlobChoice(i);
-    if (choice && fontinfo_table.size() > 0) {
-      // Get better information from the specific choice, if available.
-      int font_id1 = choice->fontinfo_id();
-      bool font1_is_italic = font_id1 >= 0 ? fontinfo_table.at(font_id1).is_italic() : false;
-      int font_id2 = choice->fontinfo_id2();
-      is_italic = font1_is_italic && (font_id2 < 0 || fontinfo_table.at(font_id2).is_italic());
-    }
 
     float height_fraction = 1.0f;
     float char_height = blob->bounding_box().height();
@@ -545,9 +539,6 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
     bool bad_height = height_fraction < superscript_scaledown_ratio;
 
     if (debug) {
-      if (is_italic) {
-        tprintDebug(" Rejecting: superscript is italic.\n");
-      }
       if (is_punc) {
         tprintDebug(" Rejecting: punctuation present.\n");
       }
@@ -563,7 +554,7 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
             char_str, char_height, normal_height);
       }
     }
-    if (bad_certainty || bad_height || is_punc || is_italic) {
+    if (bad_certainty || bad_height || is_punc) {
       if (ok_run_count == i) {
         initial_ok_run_count = ok_run_count;
       }
