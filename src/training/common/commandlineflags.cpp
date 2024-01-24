@@ -64,6 +64,11 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
       PrintCommandLineFlags();
       return 0;
     }
+    if (!strcmp(current_arg, "help-extra")) {
+      tprintDebug("Usage:\n  {} [OPTION ...]\n\n", appname);
+      PrintCommandLineFlags();
+      return 0;
+    }
     // Find the starting position of the value if it was specified in this
     // string.
     const char *equals_position = strchr(current_arg, '=');
