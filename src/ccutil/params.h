@@ -923,6 +923,7 @@ extern BOOL_VAR_H(scrollview_support);
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);
+extern BOOL_VAR_H(two_pass);
 
 } // namespace tesseract
 

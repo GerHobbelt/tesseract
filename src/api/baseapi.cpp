@@ -122,6 +122,7 @@ BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which ste
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
 BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
 DOUBLE_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
+BOOL_VAR(two_pass, false, "Enable double analysis: this will analyse every image twice. Once with the given page segmentation mode (typically 3), and then once with a single block page segmentation mode. The second run runs on a modified image where any earlier blocks are turned black, causing Tesseract to skip them for the second analysis. Currently two pages are output for a single image, so this is clearly a hack, but it's not as computationally intensive as running two full runs. (In fact, it might add as little as ~10% overhead, depending on the input image)   WARNING: This will probably break weird non-filepath file input patterns like \"-\" for stdin, or things that resolve using libcurl.");
 
 
 /** Minimum sensible image size to be worth running Tesseract. */
@@ -1123,18 +1124,18 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
   // Check if path exists
   std::ifstream test(path);
   if (!test) {
-    tprintf("The path %s doesn't exist.\n", path);
+    tprintError("The path {} doesn't exist.\n", path);
     return false;
   }
   // Check if truth_text exists
   if ((truth_text != NULL) && (truth_text[0] == '\0') ||
       (truth_text[0] == '\n')) {
-    tprintf("Ground truth text is empty or starts with newline.\n");
+    tprintError("Ground truth text is empty or starts with newline.\n");
     return false;
   }
   // Check if pix exists
   if (!pix) {
-    tprintf("No image provided.\n");
+    tprintError("No image provided.\n");
     return false;
   }
   // Variables for ImageData for just one line
@@ -1159,7 +1160,7 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
     text_index++;
   }
   if (textline_str.empty() || textline_str != " ") {
-    tprintf("There is no first line information.\n");
+    tprintError("There is no first line information.\n");
     return false;
   } else {
     boxes.push_back(bounding_box);
@@ -1176,10 +1177,10 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
   // Write it to a lstmf-file
   std::filesystem::path filename = path;
   filename /= std::string(name) + std::string(".lstmf");
-  DocumentData doc_data(filename);
+  DocumentData doc_data(filename.string());
   doc_data.AddPageToDocument(image_data);
-  if (!doc_data.SaveDocument(filename.c_str(), nullptr)) {
-    tprintf("Failed to write training data to %s!\n", filename.c_str());
+  if (!doc_data.SaveDocument(filename.string().c_str(), nullptr)) {
+    tprintError("Failed to write training data to {}!\n", filename.string());
     return false;
   }
   return true;
@@ -1512,10 +1513,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-    SetVariable("applybox_page", page_number);
+    tesseract_->applybox_page = page_number;
     bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
-
-    bool two_pass = false;
 
     if (two_pass) {
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
@@ -1526,7 +1525,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);
-      api.SetVariable("thresholding_method", "0");
+      // Set thresholding method to 0 for second pass regardless
+      tesseract_->thresholding_method = (int)ThresholdMethod::Otsu;
       // SetPageSegMode(PSM_SPARSE_TEXT);
 
       SetImage(newpix);
