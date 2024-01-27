@@ -325,7 +325,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   }
 
   if (to_block->line_size >= 2) {
-    finder = new ColumnFinder(static_cast<int>(to_block->line_size), blkbox.botleft(),
+    finder = new ColumnFinder(static_cast<int>(to_block->line_size / 2), blkbox.botleft(),
                               blkbox.topright(), estimated_resolution, textord_use_cjk_fp_model,
                               textord_tabfind_aligned_gap_fraction, &v_lines, &h_lines, vertical_x,
                               vertical_y);

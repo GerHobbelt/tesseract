@@ -182,6 +182,19 @@ IntGrid *CCNonTextDetect::ComputeNoiseDensity(bool debug, Image photo_map, BlobG
       }
     }
   }
+
+  for (int y = 0; y < gridheight(); ++y) {
+    for (int x = 0; x < gridwidth(); ++x) {
+      int noise = noise_density->GridCellValue(x, y);
+      int noisePrev = noise_density->GridCellValue(x-1, y);
+      int noiseNext = noise_density->GridCellValue(x+1, y);
+
+      if (noise > max_noise_count_ && noisePrev <= max_noise_count_ && noiseNext <= max_noise_count_) {
+        noise_density->SetGridCell(x, y, 0);
+      }
+    }
+  }
+  
   delete noise_counts;
   delete good_counts;
   return noise_density;
