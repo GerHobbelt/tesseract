@@ -35,9 +35,13 @@ using namespace tesseract;
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-static STRING_PARAM_FLAG(classifier, "", "Classifier to test");
-static STRING_PARAM_FLAG(lang, "eng", "Language to test");
-static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
+STRING_PARAM_FLAG(classifier, "", "Classifier to test");
+#if !defined(BUILD_MONOLITHIC)
+STRING_PARAM_FLAG(lang, "eng", "Language to test");
+#else
+DECLARE_STRING_PARAM_FLAG(lang);        // already declared in combine_lang_model.cpp
+#endif
+STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
 
 enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
