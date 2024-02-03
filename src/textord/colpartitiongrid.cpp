@@ -1666,6 +1666,7 @@ void ColPartitionGrid::AccumulatePartDistances(
   while ((neighbour = rsearch.NextRectSearch()) != nullptr) {
     if (neighbour->IsUnMergeableType() ||
         !base_part.ConfirmNoTabViolation(*neighbour) ||
+        !base_part.ConfirmNoSizeViolation(*neighbour) ||
         neighbour == &base_part) {
       continue;
     }

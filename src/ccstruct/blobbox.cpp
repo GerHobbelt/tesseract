@@ -1000,12 +1000,16 @@ static void SizeFilterBlobs(int min_height, int max_height, BLOBNBOX_LIST *src_l
     int width = blob->bounding_box().width();
     int height = blob->bounding_box().height();
     if (height < min_height && (width < min_height || width > max_height)) {
+      blob->set_medium(false);
       noise_it.add_after_then_move(blob);
     } else if (height > max_height) {
+      blob->set_medium(false);
       large_it.add_after_then_move(blob);
     } else if (height < min_height) {
+      blob->set_medium(false);
       small_it.add_after_then_move(blob);
     } else {
+      blob->set_medium(true);
       medium_it.add_after_then_move(blob);
     }
   }
