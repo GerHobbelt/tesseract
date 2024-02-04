@@ -609,6 +609,24 @@ static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD 
 static void DivideImageIntoParts(const TBOX &im_box, const FCOORD &rotation,
                                  const FCOORD &rerotation, Image pix,
                                  ColPartitionGridSearch *rectsearch, ColPartition_LIST *part_list) {
+
+  int textParts = 0;
+  int totalParts = 0;
+
+  rectsearch->StartRectSearch(im_box);
+  ColPartition *part;
+  while ((part = rectsearch->NextRectSearch()) != nullptr) {
+
+    totalParts++;
+    if (part->flow() >= BTFT_CHAIN) {
+      textParts++;
+    }
+  }
+
+  if (textParts * 2 > totalParts) {
+    return;
+  } 
+
   // Add the full im_box partition to the list to begin with.
   ColPartition *pix_part =
       ColPartition::FakePartition(im_box, PT_UNKNOWN, BRT_RECTIMAGE, BTFT_NONTEXT);
@@ -616,7 +634,7 @@ static void DivideImageIntoParts(const TBOX &im_box, const FCOORD &rotation,
   part_it.add_after_then_move(pix_part);
 
   rectsearch->StartRectSearch(im_box);
-  ColPartition *part;
+  
   while ((part = rectsearch->NextRectSearch()) != nullptr) {
     TBOX part_box = part->bounding_box();
     if (part_box.contains(im_box) && part->flow() >= BTFT_CHAIN) {
