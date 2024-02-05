@@ -36,6 +36,10 @@ extern TESS_API void tprintf( // Trace printf
     const char *format, ...)  // Message
     __attribute__((format(printf, 1, 2)));
 
+extern TESS_API void scrollprintf( // Trace printf
+    const char *format, ...)  // Message
+    __attribute__((format(printf, 1, 2)));
+
 } // namespace tesseract
 
 #undef __attribute__

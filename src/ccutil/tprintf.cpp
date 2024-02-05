@@ -63,4 +63,33 @@ void tprintf(const char *format, ...) {
 
 }
 
+// Added by ScribeOCR build.  This is identical to `tprintf` but uses a different file named `vis_file` rather than `debug_file`.
+static STRING_VAR(vis_file, "", "File to send tprintf output to");
+
+void scrollprintf(const char *format, ...) {
+  const char *vis_file_name = vis_file.c_str();
+  FILE *visfp = nullptr; // vis file
+
+  if (vis_file_name == nullptr) {
+    // This should not happen.
+    return;
+  }
+
+  va_list args;           // variable args
+  va_start(args, format); // variable list
+  if (vis_file_name[0] != '\0') {
+    visfp = fopen(vis_file_name, "a+");
+    vfprintf(visfp, format, args);
+    // Webassembly build does not always flush properly if not explicitly called for. 
+    // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
+    fclose(visfp);
+  } else {
+    vfprintf(stderr, format, args);
+  }
+  va_end(args);
+
+
+}
+
+
 } // namespace tesseract
