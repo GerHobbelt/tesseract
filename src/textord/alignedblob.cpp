@@ -473,7 +473,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       if (bbox->right_tab_type() >= TT_MAYBE_ALIGNED) {
         bbox->set_right_tab_type(TT_DELETED);
       }
-      *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
+      // *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintf("gutter\n");
       }
@@ -486,7 +486,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       if (bbox->left_tab_type() >= TT_MAYBE_ALIGNED) {
         bbox->set_left_tab_type(TT_DELETED);
       }
-      *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
+      // *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintf("gutter\n");
       }

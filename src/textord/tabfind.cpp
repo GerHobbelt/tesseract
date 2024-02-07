@@ -524,10 +524,11 @@ ScrollView *TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_g
   InsertBlobsToGrid(true, false, &block->blobs, this);
   ScrollView *initial_win = FindTabBoxes(min_gutter_width, tabfind_aligned_gap_fraction);
   FindAllTabVectors(min_gutter_width);
+  SortVectors();
+  EvaluateTabs();
 
   TabVector::MergeSimilarTabVectors(vertical_skew_, &vectors_, this);
   SortVectors();
-  EvaluateTabs();
 #ifndef GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs && initial_win != nullptr) {
     initial_win = DisplayTabVectors(initial_win);
