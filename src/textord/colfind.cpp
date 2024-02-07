@@ -543,6 +543,30 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
   }
 }
 
+void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
+  ScrollView *col_win = MakeWindow(50, 300, "Columns");
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+  for (int i = 0; i < sets->size(); ++i) {
+    ColPartitionSet *columns = sets->at(i);
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges(0, gridheight_ * gridsize_, col_win);
+    }
+  }
+}
+
+void ColumnFinder::DisplayColumnBounds3(PartSetVector *sets) {
+  ScrollView *col_win = MakeWindow(50, 300, "Columns");
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+  for (int i = 0; i < gridheight_; ++i) {
+    ColPartitionSet *columns = sets->at(i);
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
+    }
+  }
+}
+
 #endif // !GRAPHICS_DISABLED
 
 // Sets up column_sets_ (the determined column layout at each horizontal
@@ -571,6 +595,14 @@ bool ColumnFinder::MakeColumns(bool single_column) {
       }
       good_only = !good_only;
     } while (column_sets_.empty() && !good_only);
+
+#ifndef GRAPHICS_DISABLED
+    if (textord_tabfind_show_columns) {
+      DisplayColumnBounds3(&part_sets);
+      DisplayColumnBounds2(&column_sets_);
+    }
+#endif
+
     if (textord_debug_tabfind) {
       PrintColumnCandidates("Column candidates");
     }

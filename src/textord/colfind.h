@@ -172,6 +172,10 @@ private:
   // Displays the column edges at each grid y coordinate defined by
   // best_columns_.
   void DisplayColumnBounds(PartSetVector *sets);
+  
+  void DisplayColumnBounds2(PartSetVector *sets);
+
+  void DisplayColumnBounds3(PartSetVector *sets);
 
   ////// Functions involved in determining the columns used on the page. /////
 
