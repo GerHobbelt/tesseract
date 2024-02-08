@@ -59,6 +59,7 @@
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
 #include "winutils.h"
+#include "scrollview.h"
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -110,6 +111,7 @@ namespace tesseract {
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
+BOOL_VAR(show_threshold_images, false, "Show grey/binary images in ScrollView. Non-interactive mode only.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
@@ -2900,6 +2902,36 @@ bool TessBaseAPI::Threshold(Pix **pix) {
             pix_binary.destroy();
       }
   }
+
+#ifndef GRAPHICS_DISABLED
+#ifdef SCROLLVIEW_NONINTERACTIVE
+  if (show_threshold_images) {
+    tprintf("Drawing grey image\n");
+    Pix *pix_grey = tesseract_->pix_grey();
+    if (pix_grey != nullptr) {
+      int width = pixGetWidth(pix_grey);
+      int height = pixGetHeight(pix_grey);
+      auto *win = new ScrollView("Grey", 0, 0, width, height, width, height);
+      win->Draw(pix_grey, 0, 0);
+      win->Update();
+      delete win;
+    }
+
+    tprintf("Drawing binary image\n");
+    Pix *pix_binary = tesseract_->pix_binary();
+    if (pix_binary != nullptr) {
+      int width = pixGetWidth(pix_binary);
+      int height = pixGetHeight(pix_binary);
+      auto *win = new ScrollView("Binary", 0, 0, width, height, width, height);
+      win->Draw(pix_binary, 0, 0);
+      win->Update();
+      delete win;
+    }
+
+  }
+#endif // SCROLLVIEW_NONINTERACTIVE
+#endif // !GRAPHICS_DISABLED
+
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
                               &image_height_);
