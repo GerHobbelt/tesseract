@@ -766,7 +766,7 @@ endif
 
 # Rules for thirdparty software src/fmt.
 
-noinst_HEADERS += src/fmt/include/fmt/core.h
+noinst_HEADERS += src/fmt/include/fmt/base.h
 noinst_HEADERS += src/fmt/include/fmt/format.h
 noinst_HEADERS += src/fmt/include/fmt/format-inl.h
 libtesseract_la_SOURCES += src/fmt/src/format.cc

@@ -41,7 +41,7 @@
 #include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID, U8
 
 #include <fmt/printf.h> 
-#include <fmt/core.h> 
+#include <fmt/base.h> 
 #include <fmt/format.h>       // for fmt
 
 #include <algorithm> // for max
