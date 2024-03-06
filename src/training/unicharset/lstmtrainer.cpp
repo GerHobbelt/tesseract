@@ -46,7 +46,7 @@ namespace tesseract {
 // Min actual error rate increase to constitute divergence.
 const double kMinDivergenceRate = 50.0;
 // Min iterations since last best before acting on a stall.
-const int kMinStallIterations = 10000;
+const int kMinStallIterations = 999999;
 // Fraction of current char error rate that sub_trainer_ has to be ahead
 // before we declare the sub_trainer_ a success and switch to it.
 const double kSubTrainerMarginFraction = 3.0 / 128;
