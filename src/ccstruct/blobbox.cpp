@@ -482,7 +482,7 @@ ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFl
         return ScrollView::LIGHT_BLUE;
       }
       if (flow_type == BTFT_CHAIN) {
-        return ScrollView::MEDIUM_BLUE;
+        return ScrollView::AQUAMARINE;
       }
       if (flow_type == BTFT_LEADER) {
         return ScrollView::WHEAT;
