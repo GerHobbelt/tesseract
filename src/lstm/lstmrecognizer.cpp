@@ -389,8 +389,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       }
       if (inv_mean > pos_mean) {
         // Inverted did better. Use inverted data.
-        *outputs = inv_outputs;
-        *inputs = inv_inputs;
+        *outputs = std::move(inv_outputs);
+        *inputs = std::move(inv_inputs);
       } else if (re_invert) {
         // Inverting was not an improvement, so undo and run again, so the
         // outputs match the best forward result.
