@@ -2,9 +2,9 @@
 
 # Installation paths
 prefix = @CMAKE_INSTALL_PREFIX@
-exec_prefix = ${prefix}/bin
-libdir = ${prefix}/@CMAKE_INSTALL_LIBDIR@
-includedir = ${prefix}/include
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_LIBDIR@
+includedir=@CMAKE_INSTALL_INCLUDEDIR@
 
 # Package Information
 Name: @tesseract_NAME@
