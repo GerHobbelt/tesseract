@@ -3,7 +3,6 @@
  * Description: Utilities to normalize and manipulate UTF-32 and
  *              UTF-8 strings.
  * Author:      Ranjith Unnikrishnan
- * Created:     Thu July 4 2013
  *
  * (C) Copyright 2013, Google Inc.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,8 +42,7 @@
 namespace tesseract {
 
 static bool is_hyphen_punc(const char32 ch) {
-  static const int kNumHyphenPuncUnicodes = 14;
-  static const char32 kHyphenPuncUnicodes[kNumHyphenPuncUnicodes] = {
+  static const char32 kHyphenPuncUnicodes[] = {
       '-',
       0x2010, // hyphen
       0x2011, // non-breaking hyphen
@@ -71,8 +69,7 @@ static bool is_hyphen_punc(const char32 ch) {
 }
 
 static bool is_single_quote(const char32 ch) {
-  static const int kNumSingleQuoteUnicodes = 9;
-  static const char32 kSingleQuoteUnicodes[kNumSingleQuoteUnicodes] = {
+  static const char32 kSingleQuoteUnicodes[] = {
       '\'', '`',
       0x2018, // left single quotation mark (English, others)
       0x2019, // right single quotation mark (Danish, Finnish, Swedish, Norw.)
@@ -92,8 +89,7 @@ static bool is_single_quote(const char32 ch) {
 }
 
 static bool is_double_quote(const char32 ch) {
-  static const int kNumDoubleQuoteUnicodes = 9;
-  static const char32 kDoubleQuoteUnicodes[kNumDoubleQuoteUnicodes] = {
+  static const char32 kDoubleQuoteUnicodes[] = {
       '"',
       0x201C, // left double quotation mark (English, others)
       0x201D, // right double quotation mark (Danish, Finnish, Swedish, Norw.)
