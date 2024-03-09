@@ -741,7 +741,7 @@ public:
    *
    * Returned string must be freed with the delete [] operator.
    */
-  char *GetTSVText(int page_number);
+  char *GetTSVText(int page_number, bool lang_info=false);
 
   /**
    * Make a box file for LSTM training from the internal data structures.
