@@ -34,7 +34,7 @@ static void PrintCommandLineFlags() {
   }
 }
 
-int ParseCommandLineFlags(const char *extra_usage, int* argc_ref, const char ***argv_ref, const bool remove_flags, std::function<void()> print_version_f) {
+int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char* exename)> extra_usage_f, int* argc_ref, const char ***argv_ref, const bool remove_flags, std::function<void()> print_version_f) {
   int argc = *argc_ref;
   const char** argv = *argv_ref;
   if (!extra_usage)
@@ -44,6 +44,10 @@ int ParseCommandLineFlags(const char *extra_usage, int* argc_ref, const char ***
   if (argc == 1) {
     tprintInfo("USAGE:\n  {} -v | --version | {}\n", appname, extra_usage);
     PrintCommandLineFlags();
+    if (extra_usage_f) {
+      tprintInfo("\n");
+      extra_usage_f(appname);
+    }
     return 0;
   }
 

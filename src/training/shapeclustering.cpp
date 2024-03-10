@@ -58,6 +58,7 @@ extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** a
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  tesseract::SetConsoleModeToUTF8();
 
   int rv = ParseArguments(&argc, &argv);
   if (rv >= 0) {

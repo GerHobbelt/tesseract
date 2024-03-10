@@ -811,6 +811,8 @@ extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
         backend);
   }
   tesseract::CheckSharedLibraryVersion();
+  tesseract::SetConsoleModeToUTF8();
+
   auto print_version_f = []() {
     FontUtils::PangoFontTypeInfo();
     tprintInfo("Pango {}\n", pango_version_string());
