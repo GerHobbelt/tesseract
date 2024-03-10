@@ -2853,9 +2853,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     if (m != (int)ThresholdMethod::Max)
     {
       if (!tesseract_->showcase_threshold_methods) {
-	    m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
+      m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
         continue;
-	  }
+    }
 
       thresholding_method = (ThresholdMethod)m;
     }

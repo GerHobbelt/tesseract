@@ -245,9 +245,9 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
   }
   std::vector<std::string> configs;
   if (configs_vec != nullptr) {
-	for (size_t i = 0; i < configs_size; i++) {
-	  configs.emplace_back(configs_vec[i]);
-	}
+  for (size_t i = 0; i < configs_size; i++) {
+    configs.emplace_back(configs_vec[i]);
+  }
   }
 
   return handle->InitFull(datapath, language, mode, configs, varNames, varValues,
@@ -259,9 +259,9 @@ int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *lang
   std::vector<std::string> nil;
   std::vector<std::string> configs;
   if (configs_vec != nullptr) {
-	for (size_t i = 0; i < configs_size; i++) {
-	  configs.emplace_back(configs_vec[i]);
-	}
+  for (size_t i = 0; i < configs_size; i++) {
+    configs.emplace_back(configs_vec[i]);
+  }
   }
   return handle->InitFull(datapath, language, oem, configs, nil, nil, false);
 }
@@ -288,9 +288,9 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
   }
   std::vector<std::string> configs;
   if (configs_vec != nullptr) {
-	for (size_t i = 0; i < configs_size; i++) {
-	  configs.emplace_back(configs_vec[i]);
-	}
+  for (size_t i = 0; i < configs_size; i++) {
+    configs.emplace_back(configs_vec[i]);
+  }
   }
 
   return handle->InitFromMemory(data, data_size, language, mode, configs, varNames, varValues,
