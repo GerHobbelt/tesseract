@@ -25,6 +25,7 @@
 #include <tesseract/capi_training_tools.h>
 
 #include <cstdlib>
+#include <functional>
 
 #define INT_PARAM_FLAG(name, val, comment) INT_VAR(FLAGS_##name, val, comment)
 #define DECLARE_INT_PARAM_FLAG(name) extern INT_VAR_H(FLAGS_##name)
@@ -74,7 +75,14 @@ DECLARE_STRING_PARAM_FLAG(test_ch);
 // or -1 to signal the argv[] set has been parsed into the application parameters and
 // execution should continue.
 TESS_COMMON_TRAINING_API
-int ParseCommandLineFlags(const char *appname, int *argc, const char ***argv, const bool remove_flags);
+int ParseCommandLineFlags(const char* extra_usage, std::function<void(const char* exename)> extra_usage_f, int* argc, const char*** argv, const bool remove_flags = true, std::function<void()> print_version_f = nullptr);
+
+static inline int ParseCommandLineFlags(const char* extra_usage, int* argc, const char*** argv, const bool remove_flags = true, std::function<void()> print_version_f = nullptr) {
+  return ParseCommandLineFlags(extra_usage, nullptr, argc, argv, remove_flags, print_version_f);
+}
+
+TESS_COMMON_TRAINING_API
+bool SetConsoleModeToUTF8(void);
 
 } // namespace tesseract
 

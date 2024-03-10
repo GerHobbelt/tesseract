@@ -556,7 +556,7 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
 }
 
 void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
-  ScrollView *col_win = MakeWindow(50, 300, "Columns");
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
   DisplayBoxes(col_win);
   col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
   for (int i = 0; i < sets->size(); ++i) {
@@ -568,7 +568,7 @@ void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
 }
 
 void ColumnFinder::DisplayColumnBounds3(PartSetVector *sets) {
-  ScrollView *col_win = MakeWindow(50, 300, "Columns");
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
   DisplayBoxes(col_win);
   col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
   for (int i = 0; i < gridheight_; ++i) {

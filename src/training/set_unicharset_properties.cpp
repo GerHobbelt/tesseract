@@ -41,18 +41,10 @@ extern "C" int main(int argc, const char** argv)
 extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const char** argv)
 #endif
 {
-  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
-  if (argc == 1) {
-    tprintDebug(
-        "Usage: {} -v | --version |\n"
-        "       {} -U file -O file -X file --script_dir path\n",
-        appname, appname);
-    return EXIT_FAILURE;
-  }
-
-  int rv = tesseract::ParseCommandLineFlags(appname, &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags("-U file -O file -X file --script_dir path", &argc, &argv);
   if (rv >= 0)
 	  return rv;
 

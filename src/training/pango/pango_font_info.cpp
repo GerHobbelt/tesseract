@@ -717,19 +717,19 @@ void FontUtils::PangoFontTypeInfo() {
   PangoFontMap *font_map = pango_cairo_font_map_get_default();
   if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
       CAIRO_FONT_TYPE_TOY) {
-    tprintDebug("Using CAIRO_FONT_TYPE_TOY.\n");
+    tprintInfo("Using CAIRO_FONT_TYPE_TOY.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_FT) {
-    tprintDebug("Using CAIRO_FONT_TYPE_FT.\n");
+    tprintInfo("Using CAIRO_FONT_TYPE_FT.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_WIN32) {
-    tprintDebug("Using CAIRO_FONT_TYPE_WIN32.\n");
+    tprintInfo("Using CAIRO_FONT_TYPE_WIN32.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_QUARTZ) {
-    tprintDebug("Using CAIRO_FONT_TYPE_QUARTZ.\n");
+    tprintInfo("Using CAIRO_FONT_TYPE_QUARTZ.\n");
   } else if (pango_cairo_font_map_get_font_type(reinterpret_cast<PangoCairoFontMap *>(font_map)) ==
              CAIRO_FONT_TYPE_USER) {
-    tprintDebug("Using CAIRO_FONT_TYPE_USER.\n");
+    tprintInfo("Using CAIRO_FONT_TYPE_USER.\n");
   } else if (!font_map) {
     tprintError("Cannot create pango cairo font map!\n");
   }

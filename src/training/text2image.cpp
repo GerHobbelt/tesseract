@@ -811,13 +811,13 @@ extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
         backend);
   }
   tesseract::CheckSharedLibraryVersion();
-  if (argc > 1) {
-    if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
-      FontUtils::PangoFontTypeInfo();
-      tprintDebug("Pango version: {}\n", pango_version_string());
-    }
-  }
-  int rv = tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
+  (void)tesseract::SetConsoleModeToUTF8();
+
+  auto print_version_f = []() {
+    FontUtils::PangoFontTypeInfo();
+    tprintInfo("Pango {}\n", pango_version_string());
+  };
+  int rv = tesseract::ParseCommandLineFlags("", &argc, &argv, true, print_version_f);
   if (rv >= 0)
 	  return rv;
   return Main();

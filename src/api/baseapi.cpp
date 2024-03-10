@@ -59,7 +59,6 @@
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
 #include "winutils.h"
-#include "scrollview.h"
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -111,7 +110,7 @@ namespace tesseract {
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
-BOOL_VAR(show_threshold_images, false, "Show grey/binary images in ScrollView. Non-interactive mode only.");
+BOOL_VAR(show_threshold_images, false, "Show grey/binary 'thresholded' (pre-processed) images.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
@@ -2839,68 +2838,39 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
-  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(tesseract_->thresholding_method.value());
   auto thresholding_method = selected_thresholding_method;
 
   AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(tesseract_->showcase_threshold_methods ? "Showcase threshold methods..." : fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
 
+  // debug_all/showcase_threshold_methods: assist diagnostics by cycling through all thresholding methods and applying each,
+  // saving each result to a separate diagnostic image for later evaluation, before commencing
+  // and finally applying the *user-selected* threshold method and continue with the OCR process:
   for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
   {
     bool go = false;
 
-    // debug_all/showcase_threshold_methods: assist diagnostics by cycling through all thresholding methods and applying each,
-    // saving each result to a separate diagnostic image for later evaluation, before commencing
-    // and finally applying the *user-selected* threshold method and continue with the OCR process:
     if (m != (int)ThresholdMethod::Max)
     {
-      if (!tesseract_->showcase_threshold_methods)
+      if (!tesseract_->showcase_threshold_methods) {
+	    m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
         continue;
+	  }
 
       thresholding_method = (ThresholdMethod)m;
     }
     else
     {
-          if (tesseract_->showcase_threshold_methods) {
-            tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-          }
+      if (tesseract_->showcase_threshold_methods) {
+        tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
+      }
 
-          // on last round, we reset to the selected threshold method
+      // on last round, we reset to the selected threshold method
       thresholding_method = selected_thresholding_method;
       go = true;
     }
 
-    if (thresholding_method == ThresholdMethod::Otsu) {
-      Image pix_binary(*pix);
-      if (!thresholder_->ThresholdToPix(&pix_binary)) {
-        return false;
-      }
-
-      if (go)
-        *pix = pix_binary;
-
-      if (!thresholder_->IsBinary()) {
-        tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-        tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-      } else {
-        tesseract_->set_pix_thresholds(nullptr);
-        tesseract_->set_pix_grey(nullptr);
-      }
-
-          if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods) {
-            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-            tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-
-            const char *sequence = "c1.1 + d3.3";
-            const int dispsep = 0;
-            Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
-            pix_post.destroy();
-          }
-
-          if (!go)
-            pix_binary.destroy();
-    } else {
+    {
       auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
 
       if (!ok) {
@@ -2913,54 +2883,24 @@ bool TessBaseAPI::Threshold(Pix **pix) {
       tesseract_->set_pix_thresholds(pix_thresholds);
       tesseract_->set_pix_grey(pix_grey);
 
-          std::string caption = ThresholdMethodName(thresholding_method);
+      std::string caption = ThresholdMethodName(thresholding_method);
 
-          if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods) {
-            tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-            tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
-            tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+      if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods || show_threshold_images) {
+        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+        tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
 
-            const char *sequence = "c1.1 + d3.3";
-            const int dispsep = 0;
-            Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
-            pix_post.destroy();
-          }
-
-          if (!go)
-            pix_binary.destroy();
+        const char *sequence = "c1.1 + d3.3";
+        const int dispsep = 0;
+        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+        tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
+        pix_post.destroy();
       }
-  }
 
-#ifndef GRAPHICS_DISABLED
-#ifdef SCROLLVIEW_NONINTERACTIVE
-  if (show_threshold_images) {
-    tprintf("Drawing grey image\n");
-    Pix *pix_grey = tesseract_->pix_grey();
-    if (pix_grey != nullptr) {
-      int width = pixGetWidth(pix_grey);
-      int height = pixGetHeight(pix_grey);
-      auto *win = new ScrollView("Grey", 0, 0, width, height, width, height);
-      win->Draw(pix_grey, 0, 0);
-      win->Update();
-      delete win;
+      if (!go)
+        pix_binary.destroy();
     }
-
-    tprintf("Drawing binary image\n");
-    Pix *pix_binary = tesseract_->pix_binary();
-    if (pix_binary != nullptr) {
-      int width = pixGetWidth(pix_binary);
-      int height = pixGetHeight(pix_binary);
-      auto *win = new ScrollView("Binary", 0, 0, width, height, width, height);
-      win->Draw(pix_binary, 0, 0);
-      win->Update();
-      delete win;
-    }
-
   }
-#endif // SCROLLVIEW_NONINTERACTIVE
-#endif // !GRAPHICS_DISABLED
-
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
                               &image_height_);

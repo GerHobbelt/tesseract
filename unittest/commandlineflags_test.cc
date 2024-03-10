@@ -37,7 +37,7 @@ protected:
   int TestParser(const char *usage, int argc, const char **const_argv) {
     // Make a copy of the pointer since it can be altered by the function.
     const char **argv = const_argv;
-    return tesseract::ParseCommandLineFlags(usage, &argc, &argv, true);
+    return tesseract::ParseCommandLineFlags(usage, &argc, &argv);
   }
 };
 
@@ -45,7 +45,7 @@ TEST_F(CommandlineflagsTest, RemoveFlags) {
   const char *const_argv[] = {"Progname", "--foo_int", "3", "file1.h", "file2.h"};
   int argc = countof(const_argv);
   const char **argv = const_argv;
-  int rv = tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags("", &argc, &argv);
 
   // argv should be rearranged to look like { "Progname", "file1.h", "file2.h" }
   EXPECT_EQ(3, argc);
@@ -58,7 +58,7 @@ TEST_F(CommandlineflagsTest, RemoveFlags) {
 // TODO: this test needs an update (it currently fails).
 TEST_F(CommandlineflagsTest, PrintUsageAndExit) {
   const char* argv[] = { "Progname", "--help" };
-  EXPECT_EXIT(TestParser("Progname [flags]", countof(argv), argv),
+  EXPECT_EXIT(TestParser("[flags]", countof(argv), argv),
               ::testing::ExitedWithCode(0),
               "USAGE: Progname \\[flags\\]");
 }
