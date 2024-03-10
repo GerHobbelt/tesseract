@@ -708,34 +708,7 @@ auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
 
 auto fmt::formatter<ThresholdMethod>::format(ThresholdMethod c, format_context &ctx) const
     -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-    case ThresholdMethod::Otsu:
-      name = "Otsu";
-      break;
-    case ThresholdMethod::LeptonicaOtsu:
-      name = "Leptonica_Otsu";
-      break;
-    case ThresholdMethod::Sauvola:
-      name = "Sauvola";
-      break;
-    case ThresholdMethod::OtsuOnNormalizedBackground:
-      name = "Otsu_On_Normalized_Background";
-      break;
-    case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
-      name = "Masking_And_Otsu_On_Normalized_Background";
-      break;
-    case ThresholdMethod::Nlbin:
-      name = "Nlbin";
-      break;
-    case ThresholdMethod::Max:
-      name = "MaxThreshold";
-      break;
-    default:
-      name = "unknown_threshold_method";
-      break;
-  }
+  const char* name = ThresholdMethodName(c);
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
 
   return formatter<string_view>::format(id, ctx);

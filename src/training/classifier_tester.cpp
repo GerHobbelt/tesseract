@@ -119,6 +119,8 @@ extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** 
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
+
   int rv = ParseArguments(&argc, &argv);
   if (rv >= 0) {
     return rv;

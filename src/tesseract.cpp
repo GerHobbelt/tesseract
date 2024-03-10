@@ -92,22 +92,6 @@ static void Win32WarningHandler(const char *module, const char *fmt, va_list ap)
 
 #  endif /* HAVE_TIFFIO_H */
 
-class AutoWin32ConsoleOutputCP {
-public:
-  explicit AutoWin32ConsoleOutputCP(UINT codeCP) {
-    oldCP_ = GetConsoleOutputCP();
-    SetConsoleOutputCP(codeCP);
-  }
-  ~AutoWin32ConsoleOutputCP() {
-    SetConsoleOutputCP(oldCP_);
-  }
-
-private:
-  UINT oldCP_;
-};
-
-static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
-
 #endif // _WIN32
 
 static void PrintVersionInfo() {
@@ -1062,6 +1046,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #if 0
   atexit(pause_key);
 #endif
+
+  (void)tesseract::SetConsoleModeToUTF8();
 
   const char *lang = nullptr;
   const char *image = nullptr;

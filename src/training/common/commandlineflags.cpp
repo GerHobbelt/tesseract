@@ -15,7 +15,8 @@
 #include <sstream>             // for std::stringstream
 #include <vector>              // for std::vector
 #include "errcode.h"
-#include "tprintf.h" // for tprintf
+#include "helpers.h"
+#include "tprintf.h"
 
 namespace tesseract {
 
@@ -24,7 +25,7 @@ static void PrintCommandLineFlags() {
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
   for (ParamPtr param : GlobalParams().as_list()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintDebug("  --{}  {}  (type:{} default:{})\n",
+      tprintInfo("  --{}  {}  (type:{} default:{})\n",
         param->name_str() + kFlagNamePrefixLen,
         param->info_str(), 
         param->value_type_str(),
@@ -33,21 +34,33 @@ static void PrintCommandLineFlags() {
   }
 }
 
-int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, const bool remove_flags) {
-  if (*argc == 1) {
-    tprintDebug("USAGE: {}\n", appname);
+int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char* exename)> extra_usage_f, int* argc_ref, const char ***argv_ref, const bool remove_flags, std::function<void()> print_version_f) {
+  int argc = *argc_ref;
+  const char** argv = *argv_ref;
+  if (!extra_usage)
+    extra_usage = "";
+  const char* appname = ((argc > 0 && argv[0]) ? fz_basename(argv[0]) : "???");
+
+  if (argc == 1) {
+    tprintInfo("USAGE:\n  {} -v | --version | {}\n", appname, extra_usage);
     PrintCommandLineFlags();
+    if (extra_usage_f) {
+      tprintInfo("\n");
+      extra_usage_f(appname);
+    }
     return 0;
   }
 
-  if (*argc > 1 && (!strcmp((*argv)[1], "-v") || !strcmp((*argv)[1], "--version"))) {
-    tprintDebug("{}\n", TessBaseAPI::Version());
+  if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
+    if (print_version_f)
+      print_version_f();
+    tprintInfo("{} (tesseract) v{}\n", appname, TessBaseAPI::Version());
     return 0;
   }
 
   int i;
-  for (i = 1; i < *argc; ++i) {
-    const char *current_arg = (*argv)[i];
+  for (i = 1; i < argc; ++i) {
+    const char *current_arg = argv[i];
     // If argument does not start with a hyphen then break.
     if (current_arg[0] != '-') {
       break;
@@ -60,12 +73,12 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
     }
     // If this is asking for usage, print the help message and abort.
     if (!strcmp(current_arg, "help")) {
-      tprintDebug("Usage:\n  {} [OPTION ...]\n\n", appname);
+      tprintInfo("USAGE:\n  {} -v | --version | [OPTION ...] {}\n", appname, extra_usage);
       PrintCommandLineFlags();
       return 0;
     }
     if (!strcmp(current_arg, "help-extra")) {
-      tprintDebug("Usage:\n  {} [OPTION ...]\n\n", appname);
+      tprintInfo("USAGE:\n  {} -v | --version | [OPTION ...] {}\n", appname, extra_usage);
       PrintCommandLineFlags();
       return 0;
     }
@@ -84,7 +97,7 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
       lhs.assign(current_arg, equals_position - current_arg);
     }
     if (!lhs.length()) {
-      tprintError("Bad argument: {}\n", (*argv)[i]);
+      tprintError("Bad argument: {}\n", argv[i]);
       return 1;
     }
 
@@ -93,7 +106,14 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
     full_flag_name += lhs;
     auto *p = ParamUtils::FindParam<Param>(full_flag_name.c_str(), GlobalParams());
     if (p == nullptr) {
-      // Flag was not found. Exit with an error message.
+      // Flag was not found. Exit with an error message?
+
+      // When the commandline option is a single character, it's probably
+      // an application specific command. Keep it.
+      if (lhs.length() == 1) {
+        break;
+      }
+
       tprintError("Non-existent flag '{}'\n", lhs);
       return 1;
     }
@@ -101,7 +121,7 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
     // do not require rhs when parameter is the boolean type:
     if (rhs == nullptr) {
       // Pick the next argument
-      if (i + 1 >= *argc) {
+      if (i + 1 >= argc) {
         if (p->type() != BOOL_PARAM) {
           tprintError("Could not find value for flag {}\n", lhs);
           return 1;
@@ -112,7 +132,7 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
         }
       }
       else {
-        rhs = (*argv)[++i];
+        rhs = argv[++i];
       }
     }
     if (p->type() == BOOL_PARAM && strlen(rhs) == 0) {
@@ -126,12 +146,54 @@ int ParseCommandLineFlags(const char *appname, int* argc, const char ***argv, co
       return 1;
     }
   } // for each argv
-  if (remove_flags) {
-    (*argv)[i - 1] = (*argv)[0];
-    (*argv) += (i - 1);
-    (*argc) -= (i - 1);
+  if (remove_flags && i > 1) {
+    (*argv_ref)[i - 1] = argv[0];
+    (*argv_ref) += (i - 1);
+    (*argc_ref) -= (i - 1);
   }
   return -1;		// continue executing the application
+}
+
+
+// as per https://stackoverflow.com/questions/15826188/what-most-correct-way-to-set-the-encoding-in-c
+
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+
+#include <windows.h>
+
+class AutoWin32ConsoleOutputCP {
+public:
+  explicit AutoWin32ConsoleOutputCP(UINT codeCP) {
+    oldCCP_ = GetConsoleCP();
+    oldCP_ = GetConsoleOutputCP();
+
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(codeCP);
+  }
+  ~AutoWin32ConsoleOutputCP() {
+    SetConsoleOutputCP(oldCP_);
+    SetConsoleCP(oldCCP_);
+  }
+
+  bool activated() {
+    return !!(oldCP_ | oldCCP_);
+  }
+
+private:
+  UINT oldCP_;
+  UINT oldCCP_;
+};
+
+static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
+
+#endif // _WIN32
+
+bool SetConsoleModeToUTF8(void) {
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+  return autoWin32ConsoleOutputCP.activated();
+#else
+  return true;
+#endif
 }
 
 } // namespace tesseract
