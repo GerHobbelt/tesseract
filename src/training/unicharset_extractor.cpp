@@ -116,7 +116,7 @@ extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   int rv = tesseract::ParseCommandLineFlags(
     "[--output_unicharset filename] [--norm_mode mode] box_or_text_file [...]\n"

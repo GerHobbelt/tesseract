@@ -40,7 +40,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   // Parse input arguments.
   for (int err_round = 0;; err_round++) {

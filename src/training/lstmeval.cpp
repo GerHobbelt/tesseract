@@ -43,7 +43,7 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   int rv = ParseArguments(&argc, &argv);
   if (rv >= 0) {

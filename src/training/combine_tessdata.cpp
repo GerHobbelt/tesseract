@@ -132,7 +132,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   int tess_debug_lstm = 0;
 

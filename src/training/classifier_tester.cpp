@@ -119,7 +119,7 @@ extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** 
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   int rv = ParseArguments(&argc, &argv);
   if (rv >= 0) {

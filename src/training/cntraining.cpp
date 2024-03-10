@@ -112,7 +112,7 @@ extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   // Set the global Config parameters before parsing the command line.
   Config = CNConfig;

@@ -41,7 +41,7 @@ extern "C" int tesseract_wordlist2dawg_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::SetConsoleModeToUTF8();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   for (int err_round = 0;; err_round++) {
     int rv = tesseract::ParseCommandLineFlags("[ -t | -r [reverse policy] ] word_list_file dawg_file unicharset_file", &argc, &argv);

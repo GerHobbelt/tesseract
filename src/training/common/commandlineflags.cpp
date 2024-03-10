@@ -154,18 +154,46 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
   return -1;		// continue executing the application
 }
 
+
 // as per https://stackoverflow.com/questions/15826188/what-most-correct-way-to-set-the-encoding-in-c
-void SetConsoleModeToUTF8(void) {
-  if (!SetConsoleCP(CP_UTF8))
-  {
-    // An error occurred; handle it. Call GetLastError() for more information.
-    // ...
+
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+
+#include <windows.h>
+
+class AutoWin32ConsoleOutputCP {
+public:
+  explicit AutoWin32ConsoleOutputCP(UINT codeCP) {
+    oldCCP_ = GetConsoleCP();
+    oldCP_ = GetConsoleOutputCP();
+
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(codeCP);
   }
-  if (!SetConsoleOutputCP(CP_UTF8))
-  {
-    // An error occurred; handle it. Call GetLastError() for more information.
-    // ...
+  ~AutoWin32ConsoleOutputCP() {
+    SetConsoleOutputCP(oldCP_);
+    SetConsoleCP(oldCCP_);
   }
+
+  bool activated() {
+    return !!(oldCP_ | oldCCP_);
+  }
+
+private:
+  UINT oldCP_;
+  UINT oldCCP_;
+};
+
+static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
+
+#endif // _WIN32
+
+bool SetConsoleModeToUTF8(void) {
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+  return autoWin32ConsoleOutputCP.activated();
+#else
+  return true;
+#endif
 }
 
 } // namespace tesseract
