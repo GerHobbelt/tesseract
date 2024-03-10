@@ -407,6 +407,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                     params())
     // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
+    , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())
     , BOOL_INIT_MEMBER(tessedit_init_config_only, false,

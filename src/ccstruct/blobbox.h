@@ -297,6 +297,13 @@ public:
   int32_t enclosed_area() const {
     return area;
   }
+  bool medium() const {
+    return medium_;
+  }
+  void set_medium(bool val) {
+    medium_ = val;
+  }
+
   bool joined_to_prev() const {
     return joined;
   }
@@ -570,6 +577,7 @@ private:
   BlobSpecialTextType spt_type_;             // Special text type.
   bool joined = false;                       // joined to prev
   bool reduced = false;                      // reduced box set
+  bool medium_ = false;
   int16_t left_rule_ = 0;                    // x-coord of nearest but not crossing rule line
   int16_t right_rule_ = 0;                   // x-coord of nearest but not crossing rule line
   int16_t left_crossing_rule_;               // x-coord of nearest or crossing rule line

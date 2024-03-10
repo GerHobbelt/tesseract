@@ -59,6 +59,7 @@
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
 #include "winutils.h"
+#include "scrollview.h"
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -110,6 +111,7 @@ namespace tesseract {
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
+BOOL_VAR(show_threshold_images, false, "Show grey/binary images in ScrollView. Non-interactive mode only.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
@@ -644,7 +646,7 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
   }
 
   // Update datapath and language requested for the last valid initialization.
-  datapath_ = datapath;
+  datapath_ = std::move(datapath);
   if (datapath_.empty() && !tesseract_->datadir.empty()) {
     datapath_ = tesseract_->datadir;
   }
@@ -2111,7 +2113,7 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
  * page_number is 0-based but will appear in the output as 1-based.
  * Returned string must be freed with the delete [] operator.
  */
-char *TessBaseAPI::GetTSVText(int page_number) {
+char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
   if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(nullptr) < 0)) {
     return nullptr;
   }
@@ -2124,6 +2126,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   int line_num = 0;
   int word_num = 0;
   int symbol_num = 0;
+  std::string lang;
 
   std::string tsv_str;
   tsv_str += "1\t" + std::to_string(page_num); // level 1 - page
@@ -2136,7 +2139,11 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   tsv_str += "\t" + std::to_string(rect_top_);
   tsv_str += "\t" + std::to_string(rect_width_);
   tsv_str += "\t" + std::to_string(rect_height_);
-  tsv_str += "\t-1\t\n";
+  tsv_str += "\t-1";
+  if (lang_info) {
+    tsv_str += "\t" + lang;
+  }
+  tsv_str += "\t\n";
 
   const std::unique_ptr</*non-const*/ ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
@@ -2159,9 +2166,16 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_BLOCK, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for block
+      tsv_str += "\t-1";
+      if (lang_info) {
+        tsv_str += "\t";
+      }
+      tsv_str += "\t\n"; // end of row for block
     }
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
+      if (lang_info) {
+        lang = res_it->WordRecognitionLanguage();
+      }
       par_num++;
       line_num = 0;
       word_num = 0;
@@ -2173,7 +2187,11 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_PARA, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for para
+      tsv_str += "\t-1";
+      if (lang_info) {
+        tsv_str += "\t" + lang;
+      }
+      tsv_str += "\t\n"; // end of row for para
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       line_num++;
@@ -2186,7 +2204,11 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_TEXTLINE, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for line
+      tsv_str += "\t-1";
+      if (lang_info) {
+        tsv_str += "\t";
+      }
+      tsv_str += "\t\n"; // end of row for line
     }
 
     // Now, process the word...
@@ -2205,6 +2227,15 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     tsv_str += "\t" + std::to_string(right - left);
     tsv_str += "\t" + std::to_string(bottom - top);
     tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_WORD));
+
+    if (lang_info) {
+      const char *word_lang = res_it->WordRecognitionLanguage();
+      tsv_str += "\t";
+      if (word_lang) {
+        tsv_str += word_lang;
+      }
+    }
+
     tsv_str += "\t";
 
     std::string tsv_symbol_lines;
@@ -2900,6 +2931,36 @@ bool TessBaseAPI::Threshold(Pix **pix) {
             pix_binary.destroy();
       }
   }
+
+#ifndef GRAPHICS_DISABLED
+#ifdef SCROLLVIEW_NONINTERACTIVE
+  if (show_threshold_images) {
+    tprintf("Drawing grey image\n");
+    Pix *pix_grey = tesseract_->pix_grey();
+    if (pix_grey != nullptr) {
+      int width = pixGetWidth(pix_grey);
+      int height = pixGetHeight(pix_grey);
+      auto *win = new ScrollView("Grey", 0, 0, width, height, width, height);
+      win->Draw(pix_grey, 0, 0);
+      win->Update();
+      delete win;
+    }
+
+    tprintf("Drawing binary image\n");
+    Pix *pix_binary = tesseract_->pix_binary();
+    if (pix_binary != nullptr) {
+      int width = pixGetWidth(pix_binary);
+      int height = pixGetHeight(pix_binary);
+      auto *win = new ScrollView("Binary", 0, 0, width, height, width, height);
+      win->Draw(pix_binary, 0, 0);
+      win->Update();
+      delete win;
+    }
+
+  }
+#endif // SCROLLVIEW_NONINTERACTIVE
+#endif // !GRAPHICS_DISABLED
+
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
                               &image_height_);

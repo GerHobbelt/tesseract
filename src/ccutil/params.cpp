@@ -23,7 +23,7 @@
 #include "tprintf.h"
 #include "fopenutf8.h"
 
-#include <fmt/core.h>
+#include <fmt/base.h>
 #include <fmt/format.h>
 
 #include <climits> // for INT_MIN, INT_MAX

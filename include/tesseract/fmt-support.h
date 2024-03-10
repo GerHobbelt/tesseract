@@ -21,7 +21,7 @@
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#include <fmt/core.h>
+#include <fmt/base.h>
 #include <fmt/format.h>
 
 

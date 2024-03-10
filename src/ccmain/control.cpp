@@ -491,8 +491,8 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
     std::vector<WERD_CHOICE *> overrides_word1;
     std::vector<WERD_CHOICE *> overrides_word2;
 
-    const auto orig_w1_str = w_prev->best_choice->unichar_string();
-    const auto orig_w2_str = w->best_choice->unichar_string();
+    const auto &orig_w1_str = w_prev->best_choice->unichar_string();
+    const auto &orig_w2_str = w->best_choice->unichar_string();
     WERD_CHOICE prev_best(w->uch_set);
     {
       int w1start, w1end;
@@ -566,8 +566,8 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
         }
         continue;
       }
-      const auto new_w1_str = overrides_word1[best_idx]->unichar_string();
-      const auto new_w2_str = overrides_word2[best_idx]->unichar_string();
+      const auto &new_w1_str = overrides_word1[best_idx]->unichar_string();
+      const auto &new_w2_str = overrides_word2[best_idx]->unichar_string();
       if (new_w1_str != orig_w1_str) {
         w_prev->ReplaceBestChoice(overrides_word1[best_idx]);
       }
@@ -971,7 +971,7 @@ bool Tesseract::ReassignDiacritics(int pass, PAGE_RES_IT *pr_it, bool *make_next
     }
   }
   if (debug_noise_removal) {
-    tprintDebug("Used {}/{} overlapped {}/{} non-overlaped diacritics on word:", num_overlapped_used,
+    tprintDebug("Used {}/{} overlapped {}/{} non-overlapped diacritics on word:", num_overlapped_used,
             num_overlapped, non_overlapped_used, non_overlapped);
     real_word->bounding_box().print();
   }

@@ -600,7 +600,7 @@ public:
    * timeout_millisec terminates processing if any single page
    * takes too long. Set to 0 for unlimited time.
    *
-   * renderer is responible for creating the output. For example,
+   * renderer is responsible for creating the output. For example,
    * use the TessTextRenderer if you want plaintext output, or
    * the TessPDFRender to produce searchable PDF.
    *
@@ -741,7 +741,7 @@ public:
    *
    * Returned string must be freed with the delete [] operator.
    */
-  char *GetTSVText(int page_number);
+  char *GetTSVText(int page_number, bool lang_info=false);
 
   /**
    * Make a box file for LSTM training from the internal data structures.

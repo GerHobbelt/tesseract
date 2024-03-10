@@ -237,6 +237,19 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       tprintError("Failed to write modified traineddata:{}!\n", argv[2]);
       return EXIT_FAILURE;
     }
+  } else if (argc == 3 && strcmp(argv[1], "-t") == 0) {
+#if defined(HAVE_LIBARCHIVE)
+      if (!tm.Init(argv[2])) {
+        tprintError("Failed to read %s\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      if (!tm.SaveFile(argv[2], nullptr)) {
+        tprintError("Failed to tranform traineddata:%s!\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+#else
+      tprintError("Failed to load libarchive. Is tesseract compiled with libarchive support?\n");
+#endif
   } else if (argc == 3 && strcmp(argv[1], "-d") == 0) {
     return list_components(tm, argv[2]);
   } else if (argc == 3 && strcmp(argv[1], "-l") == 0) {
@@ -290,6 +303,10 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     tprintInfo(
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
+        exename);
+    tprintInfo(
+        "Usage for transforming the proprietary .traineddata file to a zip archive:\n"
+        "  %s -t traineddata_file\n",
         exename);
     return EXIT_FAILURE;
   }

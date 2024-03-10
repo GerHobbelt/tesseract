@@ -88,7 +88,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    tprintError("Unexpected surface format {}\n", cairo_image_surface_get_format(surface));
+    tprintError("Unexpected surface format {}\n", (int)cairo_image_surface_get_format(surface));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -411,7 +411,7 @@ bool StringRenderer::GetClusterStrings(std::vector<std::string> *cluster_text) {
         // decided to use an unmapped glyph.
         text = LigatureTable::Get()->AddLigatures(text, nullptr);
       }
-      start_byte_to_text[start_byte_index] = text;
+      start_byte_to_text[start_byte_index] = std::move(text);
     }
   } while (pango_layout_iter_next_run(run_iter));
   pango_layout_iter_free(run_iter);
