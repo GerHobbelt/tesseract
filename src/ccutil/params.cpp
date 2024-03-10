@@ -1011,10 +1011,10 @@ void StringParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType sou
 }
 
 std::string StringParam::formatted_value_str() const {
-  std::string rv = (const char*) u8"«";
+  std::string rv = "\u00AB";
   rv += value_;
-  rv += (const char*) u8"»";
-  return rv;
+  rv += "\u00BB";
+  return std::move(rv);
 }
 
 const char* StringParam::value_type_str() const {
