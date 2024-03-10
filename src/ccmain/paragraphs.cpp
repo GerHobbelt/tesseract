@@ -41,7 +41,7 @@
 #include <tesseract/unichar.h>      // for UNICHAR, UNICHAR_ID, U8
 
 #include <fmt/printf.h> 
-#include <fmt/core.h> 
+#include <fmt/base.h> 
 #include <fmt/format.h>       // for fmt
 
 #include <algorithm> // for max
@@ -1410,7 +1410,7 @@ void ParagraphModelSmearer::CalculateOpenModels(int row_start, int row_end) {
           push_back_new(still_open, m);
         }
       }
-      OpenModels(row + 1) = still_open;
+      OpenModels(row + 1) = std::move(still_open);
     }
   }
 }

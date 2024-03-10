@@ -459,6 +459,44 @@ bool ColPartition::ConfirmNoTabViolation(const ColPartition &other) const {
   return true;
 }
 
+// Added for Scribe build.
+// Returns false if this partition includes 1+ medium blob but the partition being compared to does not.
+// This avoids cases where partitions that include likely text are smoothed to match the type of partitions including only noise.
+bool ColPartition::ConfirmNoSizeViolation(const ColPartition &other) const {
+  if (boxes_.empty() || other.boxes_.empty()) {
+    return true;
+  }
+
+  bool medium_this = false;
+  bool medium_other = false;
+
+  BLOBNBOX_C_IT box_it(const_cast<BLOBNBOX_CLIST *>(&boxes_));
+  BLOBNBOX_C_IT other_it(const_cast<BLOBNBOX_CLIST *>(&other.boxes_));
+
+  for (box_it.mark_cycle_pt(); !box_it.cycled_list(); box_it.forward()) {
+    BLOBNBOX *blob = box_it.data();
+    if (blob->medium()) {
+      medium_this = true;
+      break;
+    }
+  }
+  for (other_it.mark_cycle_pt(); !other_it.cycled_list(); other_it.forward()) {
+    BLOBNBOX *blob = other_it.data();
+    if (blob->medium()) {
+      medium_other = true;
+      break;
+    }
+  }
+
+  if (medium_this && !medium_other) {
+    return false;
+  } 
+
+  return true;
+
+}
+
+
 // Returns true if other has a similar stroke width to this.
 bool ColPartition::MatchingStrokeWidth(const ColPartition &other,
                                        double fractional_tolerance,
