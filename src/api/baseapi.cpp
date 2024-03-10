@@ -2838,7 +2838,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
-  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(tesseract_->thresholding_method.value());
   auto thresholding_method = selected_thresholding_method;
 
   AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(tesseract_->showcase_threshold_methods ? "Showcase threshold methods..." : fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
@@ -2870,38 +2870,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
       go = true;
     }
 
-    if (thresholding_method == ThresholdMethod::Otsu) {
-      Image pix_binary(*pix);
-      if (!thresholder_->ThresholdToPix(&pix_binary)) {
-        return false;
-      }
-
-      if (go)
-        *pix = pix_binary;
-
-      if (!thresholder_->IsBinary()) {
-        tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-        tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-      } else {
-        tesseract_->set_pix_thresholds(nullptr);
-        tesseract_->set_pix_grey(nullptr);
-      }
-
-      if (tesseract_->tessedit_dump_pageseg_images || tesseract_->showcase_threshold_methods || show_threshold_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
-        pix_post.destroy();
-      }
-
-      if (!go)
-        pix_binary.destroy();
-    } else {
+    {
       auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
 
       if (!ok) {
