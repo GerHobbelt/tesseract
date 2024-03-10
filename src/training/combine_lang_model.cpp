@@ -62,7 +62,7 @@ extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char**
   // The output unicharset and charset_size files are just for
   // human readability.
   tesseract::CheckSharedLibraryVersion();
-  int rv = tesseract::ParseCommandLineFlags(fz_basename(argv[0]), &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags("", &argc, &argv);
   if (rv >= 0)
 	  return rv;
 
