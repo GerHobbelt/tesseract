@@ -12,27 +12,57 @@
 // object, fills it with properties about the unichars it contains and writes
 // the result back to a file.
 
-#include "commandlineflags.h"
-#include "commontraining.h" // CheckSharedLibraryVersion
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
+#include "common/commandlineflags.h"
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "tprintf.h"
-#include "unicharset_training_utils.h"
+#include "unicharset/unicharset_training_utils.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if defined(HAS_LIBICU)
 
 using namespace tesseract;
 
 // The directory that is searched for universal script unicharsets.
-static STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
+#if !defined(BUILD_MONOLITHIC)
+STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
+#else
+DECLARE_STRING_PARAM_FLAG(script_dir);        // already declared in combine_lang_model.cpp
+#endif
 
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const char** argv)
+#endif
+{
+  const char* appname = fz_basename(argv[0]);
   tesseract::CheckSharedLibraryVersion();
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+
+  if (argc == 1) {
+    tprintDebug(
+        "Usage: {} -v | --version |\n"
+        "       {} -U file -O file -X file --script_dir path\n",
+        appname, appname);
+    return EXIT_FAILURE;
+  }
+
+  int rv = tesseract::ParseCommandLineFlags(appname, &argc, &argv, true);
+  if (rv >= 0)
+	  return rv;
 
   // Check validity of input flags.
   if (FLAGS_U.empty() || FLAGS_O.empty()) {
-    tprintf("Specify both input and output unicharsets!\n");
+    tprintError("Specify both input and output unicharsets!\n");
     return EXIT_FAILURE;
   }
   if (FLAGS_script_dir.empty()) {
-    tprintf("Must specify a script_dir!\n");
+    tprintError("Must specify a script_dir!\n");
     return EXIT_FAILURE;
   }
 
@@ -40,3 +70,17 @@ int main(int argc, char **argv) {
                                        FLAGS_X.c_str());
   return EXIT_SUCCESS;
 }
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "set_unicharset_properties tool not supported in this non-ICU / Unicode build.\n");
+  return EXIT_FAILURE;
+}
+
+#endif

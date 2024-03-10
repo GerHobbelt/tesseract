@@ -19,7 +19,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -314,9 +314,9 @@ double StructuredTable::CalculateCellFilledPercentage(unsigned row, unsigned col
   return std::min(1.0, area_covered / current_area);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
-void StructuredTable::Display(ScrollView *window, ScrollView::Color color) {
+void StructuredTable::Display(ScrollViewReference &window, ScrollView::Color color) {
   window->Brush(ScrollView::NONE);
   window->Pen(color);
   window->Rectangle(bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(),
@@ -331,6 +331,39 @@ void StructuredTable::Display(ScrollView *window, ScrollView::Color color) {
 }
 
 #endif
+
+std::vector<TBOX> StructuredTable::getRows()
+{
+  if (cell_y_.size() < 2) {
+    return std::vector<TBOX>();
+  }
+
+  std::vector<TBOX> rows(cell_y_.size() - 1);
+  unsigned ct = cell_y_.size() - 2;
+  for(unsigned i = 0; i + 1 < cell_y_.size(); i++) {
+    const ICOORD left(bounding_box_.left(), cell_y_[i]);
+    const ICOORD right(bounding_box_.right(), cell_y_[i + 1]);
+    rows[ct - i] = TBOX(left, right);
+  }
+
+  return rows;
+}
+
+std::vector<TBOX> StructuredTable::getCols()
+{
+  if (cell_x_.size() < 2) {
+    return std::vector<TBOX>();
+  }
+
+  std::vector<TBOX> cols(cell_x_.size() - 1);
+  for(unsigned i = 0; i + 1 < cell_x_.size(); i++) {
+    const ICOORD top(cell_x_[i], bounding_box_.top());
+    const ICOORD bot(cell_x_[i+1], bounding_box_.bottom());
+    cols[i] = TBOX(top, bot);
+  }
+
+  return cols;
+}
 
 // Clear structure information.
 void StructuredTable::ClearStructure() {
@@ -855,7 +888,6 @@ bool TableRecognizer::FindLinesBoundingBox(TBOX *bounding_box) {
   // The box can only get bigger, increasing area.
   bool changed = true;
   while (changed) {
-    changed = false;
     int old_area = bounding_box->area();
     bool check = FindLinesBoundingBoxIteration(bounding_box);
     // At this point, the function will return true.

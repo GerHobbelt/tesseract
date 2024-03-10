@@ -16,6 +16,12 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <cmath>
 
 #include "blamer.h"
@@ -34,12 +40,13 @@
  * Convert the output back to editor form.
  **********************************************************************/
 namespace tesseract {
+
 void Tesseract::recog_word(WERD_RES *word) {
   if (wordrec_skip_no_truth_words &&
       (word->blamer_bundle == nullptr ||
        word->blamer_bundle->incorrect_result_reason() == IRR_NO_TRUTH)) {
-    if (classify_debug_level) {
-      tprintf("No truth for word - skipping\n");
+    if (classify_debug_level > 0) {
+      tprintDebug("No truth for word - skipping\n");
     }
     word->tess_failed = true;
     return;
@@ -51,7 +58,7 @@ void Tesseract::recog_word(WERD_RES *word) {
   // Check that the ratings matrix size matches the sum of all the
   // segmentation states.
   if (!word->StatesAllValid()) {
-    tprintf("Not all words have valid states relative to ratings matrix!!");
+    tprintWarn("Not all words have valid states relative to ratings matrix!!");
     word->DebugWordChoices(true, nullptr);
     ASSERT_HOST(word->StatesAllValid());
   }
@@ -69,7 +76,7 @@ void Tesseract::recog_word(WERD_RES *word) {
       }
     }
     if (tessedit_rejection_debug && perm_type != word->best_choice->permuter()) {
-      tprintf("Permuter Type Flipped from %d to %d\n", perm_type, word->best_choice->permuter());
+      tprintDebug("Permuter Type Flipped from {} to {}\n", perm_type, word->best_choice->permuter());
     }
   }
   // Factored out from control.cpp
@@ -102,11 +109,11 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
   // Do sanity checks and minor fixes on best_choice.
   if (word->best_choice->length() > word_length) {
     word->best_choice->make_bad(); // should never happen
-    tprintf(
-        "recog_word: Discarded long string \"%s\""
-        " (%d characters vs %d blobs)\n",
-        word->best_choice->unichar_string().c_str(), word->best_choice->length(), word_length);
-    tprintf("Word is at:");
+    tprintDebug(
+        "recog_word: Discarded long string \"{}\""
+        " ({} characters vs {} blobs)\n",
+        word->best_choice->unichar_string(), word->best_choice->length(), word_length);
+    tprintDebug("Word is at:");
     word->word->bounding_box().print();
   }
   if (word->best_choice->length() < word_length) {
@@ -297,3 +304,5 @@ void Tesseract::join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_b
 }
 
 } // namespace tesseract
+
+#endif

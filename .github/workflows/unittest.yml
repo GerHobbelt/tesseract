@@ -2,9 +2,11 @@ name: unittest
 # autotools build on ubuntu. unittests with address sanitizers. with openmp.
 # ubuntu-20.04-gcc-unittest - CI runs out of diskspace.
 on:
-  #push:
+  push:
   schedule:
     - cron: 0 0 * * *
+  workflow_dispatch:
+
   workflow_dispatch:
 
 jobs:
@@ -18,7 +20,7 @@ jobs:
           - { name: ubuntu-20.04-gcc-unittest, os: ubuntu-20.04, cxx: g++, cxxflags: '-g -O2 -fsanitize=address,undefined' }
           - { name: ubuntu-22.04-clang-unittest, os: ubuntu-22.04, cxx: clang++, cxxflags: '-g -O2 -fsanitize=address,undefined -stdlib=libc++' }
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -34,6 +36,8 @@ jobs:
            sudo apt-get update
            sudo apt-get install autoconf libleptonica-dev libpango1.0-dev -y
            sudo apt-get install cabextract -y
+           # Remove g++-13 which conflicts with clang and breaks ci.
+           sudo apt-get purge g++-13 -y || true
 
     - name: Setup
       run: |

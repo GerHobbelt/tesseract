@@ -16,28 +16,42 @@
 //            but doesn't have to be the same as the training data.
 //  Author:   Ray Smith
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h>
 #include <algorithm>
 #include <cstdio>
-#include "commontraining.h"
-#include "mastertrainer.h"
+#include "common/commontraining.h"
+#include "common/mastertrainer.h"
 #include "params.h"
 #include "tessclassifier.h"
 #include "tesseractclass.h"
 
+#include "tesseract/capi_training_tools.h"
+
+
 using namespace tesseract;
 
-static STRING_PARAM_FLAG(classifier, "", "Classifier to test");
-static STRING_PARAM_FLAG(lang, "eng", "Language to test");
-static STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
+#if !DISABLED_LEGACY_ENGINE
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
+STRING_PARAM_FLAG(classifier, "", "Classifier to test");
+#if !defined(BUILD_MONOLITHIC)
+STRING_PARAM_FLAG(lang, "eng", "Language to test");
+#else
+DECLARE_STRING_PARAM_FLAG(lang);        // already declared in combine_lang_model.cpp
+#endif
+STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
 
 enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
 static const char *names[] = {"pruner", "full"};
 
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
 static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_name,
                                                         const UNICHARSET &unicharset, int argc,
-                                                        char **argv, tesseract::TessBaseAPI **api) {
+                                                        const char **argv, tesseract::TessBaseAPI **api) {
   // Decode the classifier string.
   ClassifierName classifier = CN_COUNT;
   for (int c = 0; c < CN_COUNT; ++c) {
@@ -47,7 +61,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
     }
   }
   if (classifier == CN_COUNT) {
-    fprintf(stderr, "Invalid classifier name:%s\n", FLAGS_classifier.c_str());
+    tprintError("Invalid classifier name:{}\n", FLAGS_classifier.c_str());
     return nullptr;
   }
 
@@ -57,14 +71,14 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   tesseract::Tesseract *tesseract = nullptr;
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
-    if ((*api)->Init(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
-      fprintf(stderr, "Tesseract initialization failed!\n");
+    if ((*api)->InitOem(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
+      tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
     tesseract = const_cast<tesseract::Tesseract *>((*api)->tesseract());
     classify = static_cast<tesseract::Classify *>(tesseract);
     if (classify->shape_table() == nullptr) {
-      fprintf(stderr, "Tesseract must contain a ShapeTable!\n");
+      tprintError("Tesseract must contain a ShapeTable!\n");
       return nullptr;
     }
   }
@@ -75,7 +89,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   } else if (classifier == CN_FULL) {
     shape_classifier = new tesseract::TessClassifier(false, classify);
   }
-  tprintf("Testing classifier %s:\n", classifer_name);
+  tprintDebug("Testing classifier {}:\n", classifer_name);
   return shape_classifier;
 }
 
@@ -98,9 +112,17 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
 // pruner   : Tesseract class pruner only.
 // full     : Tesseract full classifier.
 //            with an input trainer.)
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
   std::string file_prefix;
   auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
   tesseract::TessBaseAPI *api;
@@ -108,7 +130,7 @@ int main(int argc, char **argv) {
   tesseract::ShapeClassifier *shape_classifier =
       InitializeClassifier(FLAGS_classifier.c_str(), trainer->unicharset(), argc, argv, &api);
   if (shape_classifier == nullptr) {
-    fprintf(stderr, "Classifier init failed!:%s\n", FLAGS_classifier.c_str());
+    tprintError("Classifier init failed!:{}\n", FLAGS_classifier.c_str());
     return EXIT_FAILURE;
   }
 
@@ -125,3 +147,17 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 } /* main */
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** argv)
+#endif
+{
+	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
+	return 1;
+}
+
+#endif

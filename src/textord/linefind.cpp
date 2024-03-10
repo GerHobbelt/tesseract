@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -27,18 +27,25 @@
 #include "edgblob.h"
 #include "linefind.h"
 #include "tabvector.h"
+#include "tesseractclass.h"
+
 #if defined(USE_OPENCL)
 #  include "openclwrapper.h" // for OpenclDevice
 #endif
 
 #include <algorithm>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#include "mupdf/assertions.h"
+#endif
+
 namespace tesseract {
 
 /// Denominator of resolution makes max pixel width to allow thin lines.
-const int kThinLineFraction = 20;
+const float kThinLineFraction = 20;
 /// Denominator of resolution makes min pixels to demand line lengths to be.
-const int kMinLineLengthFraction = 4;
+const float kMinLineLengthFraction = 4;
 /// Spacing of cracks across the page to break up tall vertical lines.
 const int kCrackSpacing = 100;
 /// Grid size used by line finder. Not very critical.
@@ -51,13 +58,21 @@ const int kMinThickLineWidth = 12;
 const int kMaxLineResidue = 6;
 // Min length in inches of a line segment that exceeds kMinThickLineWidth in
 // thickness. (Such lines shouldn't break by simple image degradation.)
-const double kThickLengthMultiple = 0.75;
+const float kThickLengthMultiple = 0.75;
 // Max fraction of line box area that can be occupied by non-line pixels.
-const double kMaxNonLineDensity = 0.25;
+const float kMaxNonLineDensity = 0.25;
 // Max height of a music stave in inches.
-const double kMaxStaveHeight = 1.0;
+const float kMaxStaveHeight = 1.0;
 // Minimum fraction of pixels in a music rectangle connected to the staves.
 const double kMinMusicPixelFraction = 0.75;
+// Reduction factor from line width to dilate/erode brick kernel size
+const float kClosingBrickToLineWidthFraction = 2.0;  // original: 3;
+const float kOpenBrickToClosingBrickFraction = 1.5;
+
+LineFinder::LineFinder(Tesseract* tess) :
+  tesseract_(tess) {
+  ASSERT0(tess != nullptr);
+}
 
 // Erases the unused blobs from the line_pix image, taking into account
 // whether this was a horizontal or vertical line set.
@@ -184,7 +199,7 @@ static int CountPixelsAdjacentToLine(int line_width, Box *line_box, Image nonlin
 // Returns the number of remaining connected components.
 static int FilterFalsePositives(int resolution, Image nonline_pix, Image intersection_pix,
                                 Image line_pix) {
-  int min_thick_length = static_cast<int>(resolution * kThickLengthMultiple);
+  int min_thick_length = round(resolution * kThickLengthMultiple);
   Pixa *pixa = nullptr;
   Boxa *boxa = pixConnComp(line_pix, &pixa, 8);
   // Iterate over the boxes to remove false positives.
@@ -324,14 +339,14 @@ static void GetLineBoxes(bool horizontal_lines, Image pix_lines, Image pix_inter
 // The input line_bblobs list is const really.
 // The output vertical_x and vertical_y are the total of all the vectors.
 // The output list of TabVector makes no reference to the input BLOBNBOXes.
-static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
+void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
                             BLOBNBOX_LIST *line_bblobs, int *vertical_x, int *vertical_y,
                             TabVector_LIST *vectors) {
   BLOBNBOX_IT bbox_it(line_bblobs);
   int b_count = 0;
   // Put all the blobs into the grid to find the lines, and move the blobs
   // to the output lists.
-  AlignedBlob blob_grid(kLineFindGridSize, bleft, tright);
+  AlignedBlob blob_grid(tesseract_, kLineFindGridSize, bleft, tright);
   for (bbox_it.mark_cycle_pt(); !bbox_it.cycled_list(); bbox_it.forward()) {
     BLOBNBOX *bblob = bbox_it.data();
     bblob->set_left_tab_type(TT_MAYBE_ALIGNED);
@@ -357,7 +372,7 @@ static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
     if (bbox->left_tab_type() == TT_MAYBE_ALIGNED) {
       const TBOX &box = bbox->bounding_box();
       if (AlignedBlob::WithinTestRegion(2, box.left(), box.bottom())) {
-        tprintf("Finding line vector starting at bbox (%d,%d)\n", box.left(), box.bottom());
+        tprintDebug("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
       TabVector *vector =
@@ -377,7 +392,7 @@ static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
 // Returns nullptr and does minimal work if no music is found.
 static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Image pix_hline,
                         bool &v_empty, bool &h_empty) {
-  int max_stave_height = static_cast<int>(resolution * kMaxStaveHeight);
+  float max_stave_height = resolution * kMaxStaveHeight;
   Image intersection_pix = pix_vline & pix_hline;
   Boxa *boxa = pixConnComp(pix_vline, nullptr, 8);
   // Iterate over the boxes to find music bars.
@@ -389,7 +404,9 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
     boxGetGeometry(box, &x, &y, &box_width, &box_height);
     int joins = NumTouchingIntersections(box, intersection_pix);
     // Test for the join density being at least 5 per max_stave_height,
-    // ie (joins-1)/box_height >= (5-1)/max_stave_height.
+    // i.e. (joins-1)/box_height >= (5-1)/max_stave_height.
+    //
+    // TODO: adjust comparison now that I've turned this into a float expresion instead of int [GHo]
     if (joins >= 5 && (joins - 1) * max_stave_height >= 4 * box_height) {
       // This is a music bar. Add to the mask.
       if (music_mask == nullptr) {
@@ -453,21 +470,26 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
 // This function promises to initialize all the output (2nd level) pointers,
 // but any of the returns that are empty will be nullptr on output.
 // None of the input (1st level) pointers may be nullptr except
-// pix_music_mask, which will disable music detection, and pixa_display, which
-// is for debug.
-static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image *pix_non_vline,
+// pix_music_mask, which will disable music detection.
+void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image *pix_non_vline,
                          Image *pix_hline, Image *pix_non_hline, Image *pix_intersections,
-                         Image *pix_music_mask, Pixa *pixa_display) {
+                         Image *pix_music_mask) {
   Image pix_closed = nullptr;
   Image pix_hollow = nullptr;
 
-  int max_line_width = resolution / kThinLineFraction;
-  int min_line_length = resolution / kMinLineLengthFraction;
-  if (pixa_display != nullptr) {
-    tprintf("Image resolution = %d, max line width = %d, min length=%d\n", resolution,
-            max_line_width, min_line_length);
+  float max_line_width = resolution / kThinLineFraction;
+  float min_line_length = resolution / kMinLineLengthFraction;
+  float brick_base_size = max_line_width / kClosingBrickToLineWidthFraction;
+  int closing_brick = round(brick_base_size);
+  int open_brick = round(brick_base_size / kOpenBrickToClosingBrickFraction);
+  int h_v_line_brick_size = round(min_line_length);
+  if (tesseract_->debug_line_finding) {
+    tprintDebug("Image resolution = {}, max line width = {} (<={}/{}), min length = {} (<={}/{}), brick hole base size = {}, closing-brick hole size = {}, opening-brick hole size = {}, h+v line brick size = {}\n", resolution,
+        max_line_width, resolution, kThinLineFraction,
+        min_line_length, resolution, kMinLineLengthFraction,
+        brick_base_size,
+        closing_brick, open_brick, h_v_line_brick_size);
   }
-  int closing_brick = max_line_width / 3;
 
 // only use opencl if compiled w/ OpenCL and selected device is opencl
 #ifdef USE_OPENCL
@@ -481,31 +503,43 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
                                 min_line_length, min_line_length);
   } else {
 #endif
-    // Close up small holes, making it less likely that false alarms are found
-    // in thickened text (as it will become more solid) and also smoothing over
-    // some line breaks and nicks in the edges of the lines.
-    pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
-    if (pixa_display != nullptr) {
-      pixaAddPix(pixa_display, pix_closed, L_CLONE);
+    if (tesseract_->debug_line_finding || verbose_process) {
+      tprintDebug("PROCESS:"
+      " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
+      " in thickened text (as it will become more solid) and also smoothing over"
+      " some line breaks and nicks in the edges of the lines.\n",
+      closing_brick);
     }
-    // Open up with a big box to detect solid areas, which can then be
-    // subtracted. This is very generous and will leave in even quite wide
-    // lines.
-    Image pix_solid = pixOpenBrick(nullptr, pix_closed, max_line_width, max_line_width);
-    if (pixa_display != nullptr) {
-      pixaAddPix(pixa_display, pix_solid, L_CLONE);
+    pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
+    if (tesseract_->debug_line_finding) {
+      tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
+    }
+    if (tesseract_->debug_line_finding || verbose_process) {
+      tprintDebug("PROCESS:"
+        " Open up the image with a big box to detect solid areas, which can then be"
+        " subtracted. This is very generous and will leave in even quite wide"
+        " lines. (max_line_width = {})\n",
+        max_line_width);
+    }
+    Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
+    if (tesseract_->debug_line_finding) {
+      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
     }
     pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
     pix_solid.destroy();
 
-    // Now open up in both directions independently to find lines of at least
-    // 1 inch/kMinLineLengthFraction in length.
-    if (pixa_display != nullptr) {
-      pixaAddPix(pixa_display, pix_hollow, L_CLONE);
+	if (verbose_process) {
+	  tprintDebug("PROCESS:"
+		" Now open up in both directions independently to find lines of at least"
+		" 1 inch/kMinLineLengthFraction({}) in length. (h_v_line_brick_size = {})\n", 
+		kMinLineLengthFraction, h_v_line_brick_size);
+	}
+	if (tesseract_->debug_line_finding) {
+      tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
     }
-    *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, min_line_length);
-    *pix_hline = pixOpenBrick(nullptr, pix_hollow, min_line_length, 1);
+    *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);
+    *pix_hline = pixOpenBrick(nullptr, pix_hollow, h_v_line_brick_size, 1);
 
     pix_hollow.destroy();
 #ifdef USE_OPENCL
@@ -517,8 +551,7 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
   bool h_empty = pix_hline->isZero();
   if (pix_music_mask != nullptr) {
     if (!v_empty && !h_empty) {
-      *pix_music_mask =
-          FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
+      *pix_music_mask = FilterMusic(resolution, pix_closed, *pix_vline, *pix_hline, v_empty, h_empty);
     } else {
       *pix_music_mask = nullptr;
     }
@@ -573,27 +606,27 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
       pix_hline->destroy(); // No candidates left.
     }
   }
-  if (pixa_display != nullptr) {
+  if (tesseract_->debug_line_finding) {
     if (*pix_vline != nullptr) {
-      pixaAddPix(pixa_display, *pix_vline, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_vline, "line finding results : vline");
     }
     if (*pix_hline != nullptr) {
-      pixaAddPix(pixa_display, *pix_hline, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_hline, "line finding results : hline");
     }
     if (pix_nonlines != nullptr) {
-      pixaAddPix(pixa_display, pix_nonlines, L_CLONE);
+      tesseract_->AddPixDebugPage(pix_nonlines, "line finding results : non-lines");
     }
     if (*pix_non_vline != nullptr) {
-      pixaAddPix(pixa_display, *pix_non_vline, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_non_vline, "line finding results : non-vline");
     }
     if (*pix_non_hline != nullptr) {
-      pixaAddPix(pixa_display, *pix_non_hline, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_non_vline, "line finding results : non-hline");
     }
     if (*pix_intersections != nullptr) {
-      pixaAddPix(pixa_display, *pix_intersections, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_intersections, "line finding results : intersections");
     }
     if (pix_music_mask != nullptr && *pix_music_mask != nullptr) {
-      pixaAddPix(pixa_display, *pix_music_mask, L_CLONE);
+      tesseract_->AddPixDebugPage(*pix_music_mask, "line finding results : music mask");
     }
   }
   pix_nonlines.destroy();
@@ -609,7 +642,7 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
 // If no good lines are found, pix_vline is destroyed.
 // None of the input pointers may be nullptr, and if *pix_vline is nullptr then
 // the function does nothing.
-static void FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
+void LineFinder::FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
                                 int *vertical_y, Image *pix_vline, Image pix_non_vline,
                                 Image src_pix, TabVector_LIST *vectors) {
   if (pix_vline == nullptr || *pix_vline == nullptr) {
@@ -644,7 +677,7 @@ static void FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
 // If no good lines are found, pix_hline is destroyed.
 // None of the input pointers may be nullptr, and if *pix_hline is nullptr then
 // the function does nothing.
-static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
+void LineFinder::FindAndRemoveHLines(Image pix_intersections, int vertical_x,
                                 int vertical_y, Image *pix_hline, Image pix_non_hline,
                                 Image src_pix, TabVector_LIST *vectors) {
   if (pix_hline == nullptr || *pix_hline == nullptr) {
@@ -688,11 +721,11 @@ static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
 // The output vectors are owned by the list and Frozen (cannot refit) by
 // having no boxes, as there is no need to refit or merge separator lines.
 // The detected lines are removed from the pix.
-void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
                                     int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
                                     TabVector_LIST *h_lines) {
   if (pix == nullptr || vertical_x == nullptr || vertical_y == nullptr) {
-    tprintf("Error in parameters for LineFinder::FindAndRemoveLines\n");
+    tprintError("Error in parameters for LineFinder::FindAndRemoveLines\n");
     return;
   }
   Image pix_vline = nullptr;
@@ -700,9 +733,10 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   Image pix_hline = nullptr;
   Image pix_non_hline = nullptr;
   Image pix_intersections = nullptr;
-  Pixa *pixa_display = debug ? pixaCreate(0) : nullptr;
+  //Pixa *pixa_display = debug ? pixaCreate(0) : nullptr;
+
   GetLineMasks(resolution, pix, &pix_vline, &pix_non_vline, &pix_hline, &pix_non_hline,
-               &pix_intersections, pix_music_mask, pixa_display);
+               &pix_intersections, pix_music_mask);
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(pix_intersections, vertical_x, vertical_y, &pix_vline,
                       pix_non_vline, pix, v_lines);
@@ -718,11 +752,13 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   }
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
-  if (pixa_display != nullptr && pix_vline != nullptr) {
-    pixaAddPix(pixa_display, pix_vline, L_CLONE);
-  }
-  if (pixa_display != nullptr && pix_hline != nullptr) {
-    pixaAddPix(pixa_display, pix_hline, L_CLONE);
+  if (tesseract_->debug_line_finding) {
+    if (pix_vline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
+    }
+    if (pix_hline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline");
+    }
   }
   pix_intersections.destroy();
   if (pix_vline != nullptr && pix_hline != nullptr) {
@@ -739,13 +775,13 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   }
   // Remove any detected music.
   if (pix_music_mask != nullptr && *pix_music_mask != nullptr) {
-    if (pixa_display != nullptr) {
-      pixaAddPix(pixa_display, *pix_music_mask, L_CLONE);
+    if (tesseract_->debug_line_finding) {
+      tesseract_->AddPixDebugPage(*pix_music_mask, "find & remove H/V lines : music mask");
     }
     pixSubtract(pix, pix, *pix_music_mask);
   }
-  if (pixa_display != nullptr) {
-    pixaAddPix(pixa_display, pix, L_CLONE);
+  if (tesseract_->debug_line_finding) {
+    tesseract_->AddPixDebugPage(pix, "find & remove H/V lines : pix -> result");
   }
 
   pix_vline.destroy();
@@ -753,10 +789,6 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   pix_hline.destroy();
   pix_non_hline.destroy();
   pix_intersections.destroy();
-  if (pixa_display != nullptr) {
-    pixaConvertToPdf(pixa_display, resolution, 1.0f, 0, 0, "LineFinding", "vhlinefinding.pdf");
-    pixaDestroy(&pixa_display);
-  }
 }
 
 } // namespace tesseract.

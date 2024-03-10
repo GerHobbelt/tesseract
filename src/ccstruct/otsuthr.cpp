@@ -18,7 +18,7 @@
 
 #include "otsuthr.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <cstring>
 #include "helpers.h"
 #if defined(USE_OPENCL)

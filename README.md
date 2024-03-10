@@ -1,13 +1,56 @@
+# tesseract-ocr with --visible-pdf-image
+
+This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
+
+Dependencies:
+* leptonica: (tested with leptonica 1.82.0)
+
+The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that is used in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with this fork is to give us the best of both worlds. This is very useful for digitizing documents.
+
+To clean an image for OCR, try using textcleaner from Fred's ImageMagick Scripts: http://www.fmwconcepts.com/imagemagick/textcleaner/
+
+For the visible image, you can use a compressed version to save space. The only requirement is that the dimensions of the "cleaned" and "visible" images are the same.
+
+Once you've built the visible_pdf_image branch along with the other Tesseract dependencies, just add `--visible-pdf-image <image>` to the arguments. For example:
+
+	tesseract -l eng --visible-pdf-image compressed.webp cleaned.pnm out pdf
+
+Here's the original feature request upstream: https://github.com/tesseract-ocr/tesseract/issues/210
+
+-------------------------------------------------------------------------------
+
 # Tesseract OCR
 
 [![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819/branch/master?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
-[![Build status](https://github.com/tesseract-ocr/tesseract/workflows/sw/badge.svg)](https://github.com/tesseract-ocr/tesseract/actions/workflows/sw.yml)\
+[![Build status](https://github.com/tesseract-ocr/tesseract/actions/workflows/sw.yml/badge.svg)](https://github.com/tesseract-ocr/tesseract/actions/workflows/sw.yml)\
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/tesseract-ocr/badge.svg)](https://scan.coverity.com/projects/tesseract-ocr)
 [![CodeQL](https://github.com/tesseract-ocr/tesseract/workflows/CodeQL/badge.svg)](https://github.com/tesseract-ocr/tesseract/security/code-scanning)
 [![OSS-Fuzz](https://img.shields.io/badge/oss--fuzz-fuzzing-brightgreen)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=2&q=proj:tesseract-ocr)
 \
 [![GitHub license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/tesseract-ocr/tesseract/main/LICENSE)
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
+
+
+# tesseract-ocr with visible_pdf_image
+
+This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
+
+Dependencies:
+* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+
+The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
+
+To clean an image for OCR, I suggest using textcleaner from Fred's ImageMagick Scripts: http://www.fmwconcepts.com/imagemagick/textcleaner/
+
+For the visible image you can use the original copy, but I suggest using a compressed version instead to save space. The only requirement is that the dimensions of the "cleaned" and "visible" images are the same.
+
+Once you've built the visible_pdf_image branch along with the other Tesseract dependencies, just add `--visible-pdf-image <image>` to the arguments. For example:
+
+	tesseract -l eng --visible-pdf-image compressed.webp cleaned.pnm out pdf
+
+I've found this to be very helpful when creating searchable PDFs from scanned documents, receipts, etc. YMMV. Here's the original feature request upstream: https://github.com/tesseract-ocr/tesseract/issues/210
+
+
 
 ## Table of Contents
 
@@ -69,7 +112,7 @@ and **[Change Log](https://github.com/tesseract-ocr/tesseract/blob/main/ChangeLo
 You can either [Install Tesseract via pre-built binary package](https://tesseract-ocr.github.io/tessdoc/Installation.html)
 or [build it from source](https://tesseract-ocr.github.io/tessdoc/Compiling.html).
 
-A C++ compiler with good C++17 support is required for building Tesseract from source.
+Before building Tesseract from source, please check that your system has a compiler which is one of the [supported compilers](https://tesseract-ocr.github.io/tessdoc/supported-compilers.html).
 
 ## Windows Installation clarification
 

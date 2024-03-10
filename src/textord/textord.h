@@ -25,6 +25,7 @@
 #include "blobbox.h"
 #include "ccstruct.h"
 #include "gap_map.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 
 #include <tesseract/publictypes.h> // For PageSegMode.
 
@@ -69,13 +70,20 @@ private:
 };
 
 // Make it usable by BBGrid.
-CLISTIZEH(WordWithBox)
-using WordGrid = BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
+CLISTIZEH(WordWithBox);
+
+class WordGrid : public BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT> {
+public:
+  WordGrid(Tesseract* tess, int gridsize, const ICOORD& bleft, const ICOORD& tright) :
+    BBGrid<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>(tess, gridsize, bleft, tright) {
+  }
+};
+
 using WordSearch = GridSearch<WordWithBox, WordWithBox_CLIST, WordWithBox_C_IT>;
 
 class Textord {
 public:
-  explicit Textord(CCStruct *ccstruct);
+  explicit Textord(Tesseract* tess, CCStruct *ccstruct);
   ~Textord() = default;
 
   // Make the textlines and words inside each block.
@@ -90,7 +98,7 @@ public:
   void TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
                    Image binary_pix, Image thresholds_pix, Image grey_pix, bool use_box_bottoms,
                    BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks,
-                   float *gradient);
+                   float &gradient);
 
   // If we were supposed to return only a single textline, and there is more
   // than one, clean up and leave only the best.
@@ -115,9 +123,11 @@ public:
   );
   // tordmain.cpp ///////////////////////////////////////////
   void find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks);
-  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks, bool testing_on);
+  void filter_blobs(ICOORD page_tr, TO_BLOCK_LIST *blocks);
 
 private:
+  Tesseract* tesseract_;   // reference to the active instance
+
   // For underlying memory management and other utilities.
   CCStruct *ccstruct_;
 
@@ -132,7 +142,7 @@ private:
                 TO_BLOCK_LIST *to_blocks);
   // Make the textlines inside a single block.
   void MakeBlockRows(int min_spacing, int max_spacing, const FCOORD &skew, TO_BLOCK *block,
-                     ScrollView *win);
+                     ScrollViewReference &win);
 
 public:
   void compute_block_xheight(TO_BLOCK *block, float gradient);
@@ -140,14 +150,12 @@ public:
                            const FCOORD &rotation,
                            float gradient, // global skew
                            int block_line_size);
-  void make_spline_rows(TO_BLOCK *block, // block to do
-                        float gradient,  // gradient to fit
-                        bool testing_on);
+  void make_spline_rows(TO_BLOCK* block, // block to do
+                        float gradient);  // gradient to fit
 
 private:
   //// oldbasel.cpp ////////////////////////////////////////
   void make_old_baselines(TO_BLOCK *block, // block to do
-                          bool testing_on, // correct orientation
                           float gradient);
   void correlate_lines(TO_BLOCK *block, float gradient);
   void correlate_neighbours(TO_BLOCK *block, // block rows are in.
@@ -164,44 +172,44 @@ private:
   // DEBUG USE ONLY
   void block_spacing_stats(TO_BLOCK *block, GAPMAP *gapmap, bool &old_text_ord_proportional,
                            // resulting estimate
-                           int16_t &block_space_gap_width,
+                           TDimension &block_space_gap_width,
                            // resulting estimate
-                           int16_t &block_non_space_gap_width);
+                           TDimension &block_non_space_gap_width);
   void row_spacing_stats(TO_ROW *row, GAPMAP *gapmap, int16_t block_idx, int16_t row_idx,
                          // estimate for block
-                         int16_t block_space_gap_width,
+                         TDimension block_space_gap_width,
                          // estimate for block
-                         int16_t block_non_space_gap_width);
+                         TDimension block_non_space_gap_width);
   void old_to_method(TO_ROW *row, STATS *all_gap_stats, STATS *space_gap_stats,
-                     STATS *small_gap_stats, int16_t block_space_gap_width,
+                     STATS *small_gap_stats, TDimension block_space_gap_width,
                      // estimate for block
-                     int16_t block_non_space_gap_width);
+                     TDimension block_non_space_gap_width);
   bool isolated_row_stats(TO_ROW *row, GAPMAP *gapmap, STATS *all_gap_stats, bool suspected_table,
                           int16_t block_idx, int16_t row_idx);
   int16_t stats_count_under(STATS *stats, int16_t threshold);
   void improve_row_threshold(TO_ROW *row, STATS *all_gap_stats);
   bool make_a_word_break(TO_ROW *row,   // row being made
                          TBOX blob_box, // for next_blob // how many blanks?
-                         int16_t prev_gap, TBOX prev_blob_box, int16_t real_current_gap,
-                         int16_t within_xht_current_gap, TBOX next_blob_box, int16_t next_gap,
+                         TDimension prev_gap, TBOX prev_blob_box, TDimension real_current_gap,
+                         TDimension within_xht_current_gap, TBOX next_blob_box, TDimension next_gap,
                          uint8_t &blanks, bool &fuzzy_sp, bool &fuzzy_non,
                          bool &prev_gap_was_a_space, bool &break_at_next_gap);
   bool narrow_blob(TO_ROW *row, TBOX blob_box);
   bool wide_blob(TO_ROW *row, TBOX blob_box);
   bool suspected_punct_blob(TO_ROW *row, TBOX box);
-  void peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_box, int16_t &next_gap,
-                        int16_t &next_within_xht_gap);
+  void peek_at_next_gap(TO_ROW *row, BLOBNBOX_IT box_it, TBOX &next_blob_box, TDimension &next_gap,
+                        TDimension &next_within_xht_gap);
   void mark_gap(TBOX blob,    // blob following gap
                 int16_t rule, // heuristic id
-                int16_t prev_gap, int16_t prev_blob_width, int16_t current_gap,
-                int16_t next_blob_width, int16_t next_gap);
+                TDimension prev_gap, TDimension prev_blob_width, TDimension current_gap,
+                TDimension next_blob_width, TDimension next_gap);
   float find_mean_blob_spacing(WERD *word);
-  bool ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, int16_t left, int16_t right);
+  bool ignore_big_gap(TO_ROW *row, int32_t row_length, GAPMAP *gapmap, TDimension left, TDimension right);
   // get bounding box
   TBOX reduced_box_next(TO_ROW *row,    // current row
                         BLOBNBOX_IT *it // iterator to blobds
   );
-  TBOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, int16_t *left_above_xht);
+  TBOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, TDimension *left_above_xht);
   // tordmain.cpp ///////////////////////////////////////////
   float filter_noise_blobs(BLOBNBOX_LIST *src_list, BLOBNBOX_LIST *noise_list,
                            BLOBNBOX_LIST *small_list, BLOBNBOX_LIST *large_list);
@@ -257,62 +265,62 @@ public:
   INT_VAR_H(tosp_few_samples);
   INT_VAR_H(tosp_short_row);
   INT_VAR_H(tosp_sanity_method);
-  double_VAR_H(tosp_old_sp_kn_th_factor);
-  double_VAR_H(tosp_threshold_bias1);
-  double_VAR_H(tosp_threshold_bias2);
-  double_VAR_H(tosp_narrow_fraction);
-  double_VAR_H(tosp_narrow_aspect_ratio);
-  double_VAR_H(tosp_wide_fraction);
-  double_VAR_H(tosp_wide_aspect_ratio);
-  double_VAR_H(tosp_fuzzy_space_factor);
-  double_VAR_H(tosp_fuzzy_space_factor1);
-  double_VAR_H(tosp_fuzzy_space_factor2);
-  double_VAR_H(tosp_gap_factor);
-  double_VAR_H(tosp_kern_gap_factor1);
-  double_VAR_H(tosp_kern_gap_factor2);
-  double_VAR_H(tosp_kern_gap_factor3);
-  double_VAR_H(tosp_ignore_big_gaps);
-  double_VAR_H(tosp_ignore_very_big_gaps);
-  double_VAR_H(tosp_rep_space);
-  double_VAR_H(tosp_enough_small_gaps);
-  double_VAR_H(tosp_table_kn_sp_ratio);
-  double_VAR_H(tosp_table_xht_sp_ratio);
-  double_VAR_H(tosp_table_fuzzy_kn_sp_ratio);
-  double_VAR_H(tosp_fuzzy_kn_fraction);
-  double_VAR_H(tosp_fuzzy_sp_fraction);
-  double_VAR_H(tosp_min_sane_kn_sp);
-  double_VAR_H(tosp_init_guess_kn_mult);
-  double_VAR_H(tosp_init_guess_xht_mult);
-  double_VAR_H(tosp_max_sane_kn_thresh);
-  double_VAR_H(tosp_flip_caution);
-  double_VAR_H(tosp_large_kerning);
-  double_VAR_H(tosp_dont_fool_with_small_kerns);
-  double_VAR_H(tosp_near_lh_edge);
-  double_VAR_H(tosp_silly_kn_sp_gap);
-  double_VAR_H(tosp_pass_wide_fuzz_sp_to_context);
+  DOUBLE_VAR_H(tosp_old_sp_kn_th_factor);
+  DOUBLE_VAR_H(tosp_threshold_bias1);
+  DOUBLE_VAR_H(tosp_threshold_bias2);
+  DOUBLE_VAR_H(tosp_narrow_fraction);
+  DOUBLE_VAR_H(tosp_narrow_aspect_ratio);
+  DOUBLE_VAR_H(tosp_wide_fraction);
+  DOUBLE_VAR_H(tosp_wide_aspect_ratio);
+  DOUBLE_VAR_H(tosp_fuzzy_space_factor);
+  DOUBLE_VAR_H(tosp_fuzzy_space_factor1);
+  DOUBLE_VAR_H(tosp_fuzzy_space_factor2);
+  DOUBLE_VAR_H(tosp_gap_factor);
+  DOUBLE_VAR_H(tosp_kern_gap_factor1);
+  DOUBLE_VAR_H(tosp_kern_gap_factor2);
+  DOUBLE_VAR_H(tosp_kern_gap_factor3);
+  DOUBLE_VAR_H(tosp_ignore_big_gaps);
+  DOUBLE_VAR_H(tosp_ignore_very_big_gaps);
+  DOUBLE_VAR_H(tosp_rep_space);
+  DOUBLE_VAR_H(tosp_enough_small_gaps);
+  DOUBLE_VAR_H(tosp_table_kn_sp_ratio);
+  DOUBLE_VAR_H(tosp_table_xht_sp_ratio);
+  DOUBLE_VAR_H(tosp_table_fuzzy_kn_sp_ratio);
+  DOUBLE_VAR_H(tosp_fuzzy_kn_fraction);
+  DOUBLE_VAR_H(tosp_fuzzy_sp_fraction);
+  DOUBLE_VAR_H(tosp_min_sane_kn_sp);
+  DOUBLE_VAR_H(tosp_init_guess_kn_mult);
+  DOUBLE_VAR_H(tosp_init_guess_xht_mult);
+  DOUBLE_VAR_H(tosp_max_sane_kn_thresh);
+  DOUBLE_VAR_H(tosp_flip_caution);
+  DOUBLE_VAR_H(tosp_large_kerning);
+  DOUBLE_VAR_H(tosp_dont_fool_with_small_kerns);
+  DOUBLE_VAR_H(tosp_near_lh_edge);
+  DOUBLE_VAR_H(tosp_silly_kn_sp_gap);
+  DOUBLE_VAR_H(tosp_pass_wide_fuzz_sp_to_context);
   // tordmain.cpp ///////////////////////////////////////////
   BOOL_VAR_H(textord_no_rejects);
   BOOL_VAR_H(textord_show_blobs);
   BOOL_VAR_H(textord_show_boxes);
   INT_VAR_H(textord_max_noise_size);
   INT_VAR_H(textord_baseline_debug);
-  double_VAR_H(textord_noise_area_ratio);
-  double_VAR_H(textord_initialx_ile);
-  double_VAR_H(textord_initialasc_ile);
+  DOUBLE_VAR_H(textord_noise_area_ratio);
+  DOUBLE_VAR_H(textord_initialx_ile);
+  DOUBLE_VAR_H(textord_initialasc_ile);
   INT_VAR_H(textord_noise_sizefraction);
-  double_VAR_H(textord_noise_sizelimit);
+  DOUBLE_VAR_H(textord_noise_sizelimit);
   INT_VAR_H(textord_noise_translimit);
-  double_VAR_H(textord_noise_normratio);
+  DOUBLE_VAR_H(textord_noise_normratio);
   BOOL_VAR_H(textord_noise_rejwords);
   BOOL_VAR_H(textord_noise_rejrows);
-  double_VAR_H(textord_noise_syfract);
-  double_VAR_H(textord_noise_sxfract);
-  double_VAR_H(textord_noise_hfract);
+  DOUBLE_VAR_H(textord_noise_syfract);
+  DOUBLE_VAR_H(textord_noise_sxfract);
+  DOUBLE_VAR_H(textord_noise_hfract);
   INT_VAR_H(textord_noise_sncount);
-  double_VAR_H(textord_noise_rowratio);
+  DOUBLE_VAR_H(textord_noise_rowratio);
   BOOL_VAR_H(textord_noise_debug);
-  double_VAR_H(textord_blshift_maxshift);
-  double_VAR_H(textord_blshift_xfraction);
+  DOUBLE_VAR_H(textord_blshift_maxshift);
+  DOUBLE_VAR_H(textord_blshift_xfraction);
 };
 
 } // namespace tesseract

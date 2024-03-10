@@ -22,39 +22,38 @@
 namespace tesseract {
 
 void ViterbiStateEntry::Print(const char *msg) const {
-  tprintf("%s ViterbiStateEntry", msg);
+  std::string s = fmt::format("{} ViterbiStateEntry", msg);
   if (updated) {
-    tprintf("(NEW)");
+    s += fmt::format("(NEW)");
   }
   if (this->debug_str != nullptr) {
-    tprintf(" str=%s", this->debug_str->c_str());
+    s += fmt::format(" str={}", this->debug_str->c_str());
   }
-  tprintf(" with ratings_sum=%.4f length=%d cost=%.6f", this->ratings_sum, this->length,
-          this->cost);
+  s += fmt::format(" with ratings_sum={} length={} cost={}", this->ratings_sum, this->length, this->cost);
   if (this->top_choice_flags) {
-    tprintf(" top_choice_flags=0x%x", this->top_choice_flags);
+    s += fmt::format(" top_choice_flags={}", this->top_choice_flags);
   }
   if (!this->Consistent()) {
-    tprintf(" inconsistent=(punc %d case %d chartype %d script %d font %d)",
+    s += fmt::format(" inconsistent=(punc {} case {} chartype {} script {} font {})",
             this->consistency_info.NumInconsistentPunc(),
             this->consistency_info.NumInconsistentCase(),
             this->consistency_info.NumInconsistentChartype(),
-            this->consistency_info.inconsistent_script, this->consistency_info.inconsistent_font);
+            this->consistency_info.inconsistent_script, 
+            this->consistency_info.inconsistent_font);
   }
   if (this->dawg_info) {
-    tprintf(" permuter=%d", this->dawg_info->permuter);
+    s += fmt::format(" permuter={}", this->dawg_info->permuter);
   }
   if (this->ngram_info) {
-    tprintf(" ngram_cl_cost=%g context=%s ngram pruned=%d",
-            this->ngram_info->ngram_and_classifier_cost, this->ngram_info->context.c_str(),
+    s += fmt::format(" ngram_cl_cost={} context={} ngram pruned={}",
+            this->ngram_info->ngram_and_classifier_cost, 
+            this->ngram_info->context.c_str(),
             this->ngram_info->pruned);
   }
   if (this->associate_stats.shape_cost > 0.0f) {
-    tprintf(" shape_cost=%g", this->associate_stats.shape_cost);
+    s += fmt::format(" shape_cost={}", this->associate_stats.shape_cost);
   }
-  tprintf(" %s", XHeightConsistencyEnumName[this->consistency_info.xht_decision]);
-
-  tprintf("\n");
+  tprintDebug("{} {}\n", s, XHeightConsistencyEnumName[this->consistency_info.xht_decision]);
 }
 
 /// Clears the viterbi search state back to its initial conditions.
@@ -66,8 +65,9 @@ void LanguageModelState::Clear() {
 }
 
 void LanguageModelState::Print(const char *msg) {
-  tprintf("%s VSEs (max_cost=%g prn_len=%d tot_len=%d):\n", msg,
-          viterbi_state_entries_prunable_max_cost, viterbi_state_entries_prunable_length,
+  tprintDebug("{} VSEs (max_cost={} prn_len={} tot_len={}):\n", msg,
+          viterbi_state_entries_prunable_max_cost, 
+          viterbi_state_entries_prunable_length,
           viterbi_state_entries_length);
   ViterbiStateEntry_IT vit(&viterbi_state_entries);
   for (vit.mark_cycle_pt(); !vit.cycled_list(); vit.forward()) {

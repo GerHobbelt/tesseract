@@ -9,7 +9,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/resultiterator.h>
 #include <string>
@@ -17,6 +17,8 @@
 #include "rect.h"
 
 #include "include_gunit.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -44,7 +46,7 @@ protected:
     bool found = false;
     src_pix_.destroy();
     src_pix_ = pixRead(TestDataNameToPath(filename).c_str());
-    if (api_.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
+    if (api_.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY) != -1) {
       api_.SetPageSegMode(tesseract::PSM_SINGLE_BLOCK);
       api_.SetImage(src_pix_);
       api_.SetVariable("tessedit_make_boxes_from_boxes", "1");

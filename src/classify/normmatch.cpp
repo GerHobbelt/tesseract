@@ -17,6 +17,15 @@
 /*----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
+
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
+#include <tesseract/debugheap.h>
+
 #include "normmatch.h"
 
 #include "classify.h"
@@ -69,11 +78,15 @@ static double NormEvidenceOf(double NormAdj) {
         Variables
 ----------------------------------------------------------------------------*/
 
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
 /** control knobs used to control the normalization adjustment process */
-double_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
-double_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
+DOUBLE_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
+DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
 /** Weight of width variance against height and vertical position. */
 const double kWidthErrorWeighting = 0.125;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /*----------------------------------------------------------------------------
               Public Code
@@ -109,35 +122,34 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
   LIST Protos = NormProtos->Protos[ClassId];
 
   if (DebugMatch) {
-    tprintf("\nChar norm for class %s\n", unicharset.id_to_unichar(ClassId));
+    tprintDebug("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
   }
 
-  int ProtoId = 0;
   iterate(Protos) {
     auto Proto = reinterpret_cast<PROTOTYPE *>(Protos->first_node());
     float Delta = feature.Params[CharNormY] - Proto->Mean[CharNormY];
     float Match = Delta * Delta * Proto->Weight.Elliptical[CharNormY];
     if (DebugMatch) {
-      tprintf("YMiddle: Proto=%g, Delta=%g, Var=%g, Dist=%g\n", Proto->Mean[CharNormY], Delta,
+      tprintDebug("YMiddle: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormY], Delta,
               Proto->Weight.Elliptical[CharNormY], Match);
     }
     Delta = feature.Params[CharNormRx] - Proto->Mean[CharNormRx];
     Match += Delta * Delta * Proto->Weight.Elliptical[CharNormRx];
     if (DebugMatch) {
-      tprintf("Height: Proto=%g, Delta=%g, Var=%g, Dist=%g\n", Proto->Mean[CharNormRx], Delta,
+      tprintDebug("Height: Proto={}, Delta={}, Var={}, Dist={}\n", Proto->Mean[CharNormRx], Delta,
               Proto->Weight.Elliptical[CharNormRx], Match);
     }
     // Ry is width! See intfx.cpp.
     Delta = feature.Params[CharNormRy] - Proto->Mean[CharNormRy];
     if (DebugMatch) {
-      tprintf("Width: Proto=%g, Delta=%g, Var=%g\n", Proto->Mean[CharNormRy], Delta,
+      tprintDebug("Width: Proto={}, Delta={}, Var={}\n", Proto->Mean[CharNormRy], Delta,
               Proto->Weight.Elliptical[CharNormRy]);
     }
     Delta = Delta * Delta * Proto->Weight.Elliptical[CharNormRy];
     Delta *= kWidthErrorWeighting;
     Match += Delta;
     if (DebugMatch) {
-      tprintf("Total Dist=%g, scaled=%g, sigmoid=%g, penalty=%g\n", Match,
+      tprintDebug("Total Dist={}, scaled={}, sigmoid={}, penalty={}\n", Match,
               Match / classify_norm_adj_midpoint, NormEvidenceOf(Match),
               256 * (1 - NormEvidenceOf(Match)));
     }
@@ -146,7 +158,6 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
       BestMatch = Match;
     }
 
-    ProtoId++;
   }
   return 1.0 - NormEvidenceOf(BestMatch);
 } /* ComputeNormMatch */
@@ -201,7 +212,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
       }
       NormProtos->Protos[unichar_id] = Protos;
     } else {
-      tprintf("Error: unichar %s in normproto file is not in unichar set.\n", unichar);
+      tprintError("unichar {} in normproto file is not in unichar set.\n", unichar);
       for (int i = 0; i < NumProtos; i++) {
         FreePrototype(ReadPrototype(fp, NormProtos->NumParams));
       }
@@ -211,3 +222,5 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
 } /* ReadNormProtos */
 
 } // namespace tesseract
+
+#endif

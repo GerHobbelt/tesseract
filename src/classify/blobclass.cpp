@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <cstdio>
 
 #include "classify.h"
@@ -51,7 +57,7 @@ void Classify::LearnBlob(const std::string &fontname, TBLOB *blob, const DENORM 
     // write micro-features to file and clean up
     WriteCharDescription(feature_defs_, CharDesc.get(), tr_file_data_);
   } else {
-    tprintf("Blob learned was invalid!\n");
+    tprintError("Blob learned was invalid!\n");
   }
 } // LearnBlob
 
@@ -71,3 +77,5 @@ bool Classify::WriteTRFile(const char *filename) {
 }
 
 } // namespace tesseract
+
+#endif

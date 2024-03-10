@@ -19,7 +19,7 @@
 #ifndef PDBLOCK_H
 #define PDBLOCK_H
 
-#include "clst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 #include "polyblk.h"
 
 struct Pix;
@@ -28,7 +28,8 @@ namespace tesseract {
 
 class PDBLK; // forward decl
 
-CLISTIZEH(PDBLK)
+CLISTIZEH(PDBLK);
+
 /// page block
 class PDBLK {
   friend class BLOCK_RECT_IT; ///< block iterator
@@ -93,13 +94,13 @@ public:
   // mask image.
   Image render_mask(const FCOORD &rerotation, TBOX *mask_box);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   /// draw histogram
   ///@param window window to draw in
   ///@param serial serial number
   ///@param colour colour to draw in
-  void plot(ScrollView *window, int32_t serial, ScrollView::Color colour);
-#endif // !GRAPHICS_DISABLED
+  void plot(ScrollViewReference &window, int32_t serial, ScrollView::Color colour);
+#endif
 
   /// assignment
   ///@param source from this

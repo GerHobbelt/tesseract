@@ -19,7 +19,7 @@
 #ifndef TESSERACT_TEXTORD_STROKEWIDTH_H_
 #define TESSERACT_TEXTORD_STROKEWIDTH_H_
 
-#include "blobbox.h"  // BlobNeighourDir.
+#include "blobbox.h"  // BlobNeighbourDir.
 #include "blobgrid.h" // Base class.
 #include "colpartitiongrid.h"
 #include "textlineprojection.h"
@@ -52,7 +52,7 @@ enum PartitionFindResult {
  */
 class StrokeWidth : public BlobGrid {
 public:
-  StrokeWidth(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  StrokeWidth(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~StrokeWidth() override;
 
   // Sets the neighbours member of the medium-sized blobs in the block.
@@ -296,13 +296,13 @@ private:
   // Returns true if there is no significant noise in between the boxes.
   bool NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Displays the blobs colored according to the number of good neighbours
   // and the vertical/horizontal flow.
-  ScrollView *DisplayGoodBlobs(const char *window_name, int x, int y);
+  ScrollViewReference DisplayGoodBlobs(const char *window_name, int x, int y);
 
   // Displays blobs colored according to whether or not they are diacritics.
-  ScrollView *DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block);
+  ScrollViewReference DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block);
 #endif
 
 private:
@@ -316,15 +316,15 @@ private:
   TBOX grid_box_;
   // Rerotation to get back to the original image.
   FCOORD rerotation_;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Windows for debug display.
-  ScrollView *leaders_win_ = nullptr;
-  ScrollView *initial_widths_win_ = nullptr;
-  ScrollView *widths_win_ = nullptr;
-  ScrollView *chains_win_ = nullptr;
-  ScrollView *diacritics_win_ = nullptr;
-  ScrollView *textlines_win_ = nullptr;
-  ScrollView *smoothed_win_ = nullptr;
+  ScrollViewReference leaders_win_;
+  ScrollViewReference initial_widths_win_;
+  ScrollViewReference widths_win_;
+  ScrollViewReference chains_win_;
+  ScrollViewReference diacritics_win_;
+  ScrollViewReference textlines_win_;
+  ScrollViewReference smoothed_win_;
 #endif
 };
 

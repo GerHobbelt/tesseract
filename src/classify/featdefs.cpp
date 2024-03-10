@@ -174,7 +174,7 @@ CHAR_DESC_STRUCT *ReadCharDescription(const FEATURE_DEFS_STRUCT &FeatureDefs, FI
   char ShortName[FEAT_NAME_SIZE];
   int Type;
 
-  ASSERT_HOST(tfscanf(File, "%d", &NumSetsToRead) == 1);
+  ASSERT_HOST(tfscanf(File, "{}", &NumSetsToRead) == 1);
   ASSERT_HOST(NumSetsToRead >= 0);
   ASSERT_HOST(NumSetsToRead <= FeatureDefs.NumFeatureTypes);
 

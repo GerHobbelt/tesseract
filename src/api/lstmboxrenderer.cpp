@@ -16,9 +16,11 @@
  *
  **********************************************************************/
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
+
 
 namespace tesseract {
 
@@ -91,7 +93,7 @@ char *TessBaseAPI::GetLSTMBoxText(int page_number = 0) {
  * LSTMBox Renderer interface implementation
  **********************************************************************/
 TessLSTMBoxRenderer::TessLSTMBoxRenderer(const char *outputbase)
-    : TessResultRenderer(outputbase, "box") {}
+    : TessResultRenderer(outputbase, "lstm.box") {}
 
 bool TessLSTMBoxRenderer::AddImageHandler(TessBaseAPI *api) {
   const std::unique_ptr<const char[]> lstmbox(api->GetLSTMBoxText(imagenum()));

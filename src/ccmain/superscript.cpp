@@ -18,6 +18,8 @@
 
 #include "normalis.h"
 #include "tesseractclass.h"
+#include "blobs.h"
+
 
 namespace tesseract {
 
@@ -169,29 +171,29 @@ bool Tesseract::SubAndSuperscriptFix(WERD_RES *word) {
   }
 
   if (superscript_debug >= 1) {
-    tprintf("Candidate for superscript detection: %s (",
+    tprintDebug("Candidate for superscript detection: {} (",
             word->best_choice->unichar_string().c_str());
     if (num_leading || num_remainder_leading) {
-      tprintf("%d.%d %s-leading ", num_leading, num_remainder_leading, leading_pos);
+      tprintDebug("{}.{} {}-leading ", num_leading, num_remainder_leading, leading_pos);
     }
     if (num_trailing || num_remainder_trailing) {
-      tprintf("%d.%d %s-trailing ", num_trailing, num_remainder_trailing, trailing_pos);
+      tprintDebug("{}.{} {}-trailing ", num_trailing, num_remainder_trailing, trailing_pos);
     }
-    tprintf(")\n");
+    tprintDebug(")\n");
   }
   if (superscript_debug >= 3) {
     word->best_choice->print();
   }
   if (superscript_debug >= 2) {
-    tprintf(" Certainties -- Average: %.2f  Unlikely thresh: %.2f  ", avg_certainty,
+    tprintDebug(" Certainties -- Average: {}  Unlikely thresh: {}  ", avg_certainty,
             unlikely_threshold);
     if (num_leading) {
-      tprintf("Orig. leading (min): %.2f  ", leading_certainty);
+      tprintDebug("Orig. leading (min): {}  ", leading_certainty);
     }
     if (num_trailing) {
-      tprintf("Orig. trailing (min): %.2f  ", trailing_certainty);
+      tprintDebug("Orig. trailing (min): {}  ", trailing_certainty);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 
   // We've now calculated the number of rebuilt blobs we want to carve off.
@@ -342,6 +344,9 @@ void Tesseract::GetSubAndSuperscriptCandidates(const WERD_RES *word, int *num_re
   }
 }
 
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * Try splitting off the given number of (chopped) blobs from the front and
  * back of the given word and recognizing the pieces.
@@ -404,12 +409,11 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
 
     // Adjust our expectations about the baseline for this prefix.
     if (superscript_debug >= 3) {
-      tprintf(" recognizing first %d chopped blobs\n", num_chopped_leading);
+      tprintDebug(" recognizing first {} chopped blobs\n", num_chopped_leading);
     }
     recog_word_recursive(prefix);
     if (superscript_debug >= 2) {
-      tprintf(" The leading bits look like %s %s\n", ScriptPosToString(leading_pos),
-              prefix->best_choice->unichar_string().c_str());
+      tprintDebug(" The leading bits look like {} \"{}\"\n", ScriptPosToString(leading_pos), prefix->best_choice->unichar_string());
     }
 
     // Restore the normal y-position penalties.
@@ -418,7 +422,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   }
 
   if (superscript_debug >= 3) {
-    tprintf(" recognizing middle %d chopped blobs\n",
+    tprintDebug(" recognizing middle {} chopped blobs\n",
             num_chopped - num_chopped_leading - num_chopped_trailing);
   }
 
@@ -429,12 +433,11 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     unicharset.set_enable_punctuation(false);
 
     if (superscript_debug >= 3) {
-      tprintf(" recognizing last %d chopped blobs\n", num_chopped_trailing);
+      tprintDebug(" recognizing last {} chopped blobs\n", num_chopped_trailing);
     }
     recog_word_recursive(suffix);
     if (superscript_debug >= 2) {
-      tprintf(" The trailing bits look like %s %s\n", ScriptPosToString(trailing_pos),
-              suffix->best_choice->unichar_string().c_str());
+      tprintDebug(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
     }
 
     // Restore the normal y-position penalties, blacklist/whitelist
@@ -480,8 +483,8 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   }
 
   if (superscript_debug >= 1) {
-    tprintf("%s superscript fix: %s\n", *is_good ? "ACCEPT" : "REJECT",
-            core->best_choice->unichar_string().c_str());
+    tprintDebug("{} superscript fix: {}\n", *is_good ? "ACCEPT" : "REJECT",
+            core->best_choice->unichar_string());
   }
   return core;
 }
@@ -537,19 +540,17 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
 
     if (debug) {
       if (is_punc) {
-        tprintf(" Rejecting: punctuation present.\n");
+        tprintDebug(" Rejecting: punctuation present.\n");
       }
       const char *char_str = wc.unicharset()->id_to_unichar(unichar_id);
       if (bad_certainty) {
-        tprintf(
-            " Rejecting: don't believe character %s with certainty %.2f "
-            "which is less than threshold %.2f\n",
+        tprintDebug(" Rejecting: don't believe character {} with certainty {} "
+            "which is less than threshold {}\n",
             char_str, char_certainty, certainty_threshold);
       }
       if (bad_height) {
-        tprintf(
-            " Rejecting: character %s seems too small @ %.2f versus "
-            "expected %.2f\n",
+        tprintDebug(" Rejecting: character {} seems too small @ {} versus "
+            "expected {}\n",
             char_str, char_height, normal_height);
       }
     }
@@ -567,7 +568,7 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
   }
   bool all_ok = ok_run_count == wc.length();
   if (all_ok && debug) {
-    tprintf(" Accept: worst revised certainty is %.2f\n", worst_certainty);
+    tprintDebug(" Accept: worst revised certainty is {}\n", worst_certainty);
   }
   if (!all_ok) {
     if (left_ok) {
@@ -579,5 +580,7 @@ bool Tesseract::BelievableSuperscript(bool debug, const WERD_RES &word, float ce
   }
   return all_ok;
 }
+
+#endif
 
 } // namespace tesseract

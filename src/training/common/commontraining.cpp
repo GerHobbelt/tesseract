@@ -13,9 +13,12 @@
 
 #define _USE_MATH_DEFINES // for M_PI
 
+#include <tesseract/debugheap.h>
+#include <tesseract/assert.h>
+
 #include "commontraining.h"
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "params.h"
 #  include "tprintf.h"
@@ -48,22 +51,22 @@ STRING_PARAM_FLAG(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default tempo
  * @param argv command line arguments
  * @note Exceptions: Illegal options terminate the program.
  */
-void ParseArguments(int *argc, char ***argv) {
+int ParseArguments(int* argc, const char ***argv) {
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  return tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
 }
 
 } // namespace tesseract.
 
 #else
 
-#  include <allheaders.h>
+#  include <leptonica/allheaders.h>
 #  include "ccutil.h"
 #  include "classify.h"
 #  include "cluster.h"
@@ -80,7 +83,14 @@ void ParseArguments(int *argc, char ***argv) {
 #  include "tprintf.h"
 #  include "unicity_table.h"
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"     // for ASSERT
+#endif
+
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Global Variables.
 
@@ -88,11 +98,11 @@ namespace tesseract {
 // -M 0.625   -B 0.05   -I 1.0   -C 1e-6.
 CLUSTERCONFIG Config = {elliptical, 0.625, 0.05, 1.0, 1e-6, 0};
 FEATURE_DEFS_STRUCT feature_defs;
-static CCUtil ccutil;
+static CCUtil *ccutil = nullptr;
 
 INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
-static INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
-static STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
+INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
+STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
 STRING_PARAM_FLAG(D, "", "Directory to write output files to");
 STRING_PARAM_FLAG(F, "font_properties", "File listing font properties");
 STRING_PARAM_FLAG(X, "", "File listing font xheights");
@@ -102,15 +112,17 @@ STRING_PARAM_FLAG(output_trainer, "", "File to write trainer to");
 STRING_PARAM_FLAG(test_ch, "", "UTF8 test character string");
 STRING_PARAM_FLAG(fonts_dir, "", "");
 STRING_PARAM_FLAG(fontconfig_tmpdir, "", "");
-static DOUBLE_PARAM_FLAG(clusterconfig_min_samples_fraction, Config.MinSamples,
+DOUBLE_PARAM_FLAG(clusterconfig_min_samples_fraction, Config.MinSamples,
                          "Min number of samples per proto as % of total");
-static DOUBLE_PARAM_FLAG(clusterconfig_max_illegal, Config.MaxIllegal,
+DOUBLE_PARAM_FLAG(clusterconfig_max_illegal, Config.MaxIllegal,
                          "Max percentage of samples in a cluster which have more"
                          " than 1 feature in that cluster");
-static DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
+DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
                          "Desired independence between dimensions");
-static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
+DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * This routine parses the command line arguments that were
@@ -122,26 +134,32 @@ static DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-void ParseArguments(int *argc, char ***argv) {
+int ParseArguments(int *argc, const char ***argv) {
+	if (!ccutil)
+		ccutil = new CCUtil();
+
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += fz_basename((*argv)[0]);
   }
   usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  if (rv >= 0)
+	  return rv;
+
   // Set some global values based on the flags.
-  Config.MinSamples =
-      std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
+  Config.MinSamples = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
   Config.MaxIllegal = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_max_illegal)));
   Config.Independence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_independence)));
   Config.Confidence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
-    tesseract::ParamUtils::ReadParamsFile(
-        FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil.params());
+    ASSERT0(ccutil != nullptr);
+    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective());
   }
+  return rv;
 }
 
 // Helper loads shape table from the given file.
@@ -155,13 +173,13 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
     if (!shape_table->DeSerialize(&shape_fp)) {
       delete shape_table;
       shape_table = nullptr;
-      tprintf("Error: Failed to read shape table %s\n", shape_table_file.c_str());
+      tprintError("Failed to read shape table {}\n", shape_table_file.c_str());
     } else {
       int num_shapes = shape_table->NumShapes();
-      tprintf("Read shape table %s of %d shapes\n", shape_table_file.c_str(), num_shapes);
+      tprintDebug("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
     }
   } else {
-    tprintf("Warning: No shape table file present: %s\n", shape_table_file.c_str());
+    tprintWarn("No shape table file present: {}\n", shape_table_file.c_str());
   }
   return shape_table;
 }
@@ -173,11 +191,11 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
   FILE *fp = fopen(shape_table_file.c_str(), "wb");
   if (fp != nullptr) {
     if (!shape_table.Serialize(fp)) {
-      fprintf(stderr, "Error writing shape table: %s\n", shape_table_file.c_str());
+      tprintError("Error writing shape table: {}\n", shape_table_file.c_str());
     }
     fclose(fp);
   } else {
-    fprintf(stderr, "Error creating shape table: %s\n", shape_table_file.c_str());
+    tprintError("Error creating shape table: {}\n", shape_table_file.c_str());
   }
 }
 
@@ -238,7 +256,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   trainer->SetFeatureSpace(fs);
   // Load training data from .tr files in filelist (terminated by nullptr).
   for (const char *page_name = *filelist++; page_name != nullptr; page_name = *filelist++) {
-    tprintf("Reading %s ...\n", page_name);
+    tprintDebug("Reading {} ...\n", page_name);
     trainer->ReadTrainingSamples(page_name, feature_defs, false);
 
     // If there is a file with [lang].[fontname].exp[num].fontinfo present,
@@ -264,7 +282,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   if (!FLAGS_output_trainer.empty()) {
     FILE *fp = fopen(FLAGS_output_trainer.c_str(), "wb");
     if (fp == nullptr) {
-      tprintf("Can't create saved trainer data!\n");
+      tprintError("Can't create saved trainer data!\n");
     } else {
       trainer->Serialize(fp);
       fclose(fp);
@@ -272,7 +290,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   }
   trainer->PreTrainingSetup();
   if (!FLAGS_O.empty() && !trainer->unicharset().save_to_file(FLAGS_O.c_str())) {
-    fprintf(stderr, "Failed to save unicharset to file %s\n", FLAGS_O.c_str());
+    tprintError("Failed to save unicharset to file {}\n", FLAGS_O.c_str());
     return {};
   }
 
@@ -282,7 +300,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     if (*shape_table == nullptr) {
       *shape_table = new ShapeTable;
       trainer->SetupFlatShapeTable(*shape_table);
-      tprintf("Flat shape table summary: %s\n", (*shape_table)->SummaryStr().c_str());
+      tprintDebug("Flat shape table summary: {}\n", (*shape_table)->SummaryStr().c_str());
     }
     (*shape_table)->set_unicharset(trainer->unicharset());
   }
@@ -352,8 +370,7 @@ void ReadTrainingSamples(const FEATURE_DEFS_STRUCT &feature_definitions, const c
     if (unicharset != nullptr && !unicharset->contains_unichar(unichar)) {
       unicharset->unichar_insert(unichar);
       if (unicharset->size() > MAX_NUM_CLASSES) {
-        tprintf(
-            "Error: Size of unicharset in training is "
+        tprintError("Size of unicharset in training is "
             "greater than MAX_NUM_CLASSES\n");
         exit(1);
       }
@@ -491,10 +508,10 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
     }
     if (best_match != nullptr && !best_match->Significant) {
       if (debug) {
-        auto bestMatchNumSamples = best_match->NumSamples;
-        auto prototypeNumSamples = Prototype->NumSamples;
-        tprintf("Merging red clusters (%d+%d) at %g,%g and %g,%g\n", bestMatchNumSamples,
-                prototypeNumSamples, best_match->Mean[0], best_match->Mean[1], Prototype->Mean[0],
+        auto BestMatchNumSamples = best_match->NumSamples;
+        auto PrototypeNumSamples = Prototype->NumSamples;
+        tprintDebug("Merging red clusters ({}+{}) at {},{} and {},{}\n", BestMatchNumSamples,
+                PrototypeNumSamples, best_match->Mean[0], best_match->Mean[1], Prototype->Mean[0],
                 Prototype->Mean[1]);
       }
       best_match->NumSamples =
@@ -504,7 +521,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
       Prototype->Merged = true;
     } else if (best_match != nullptr) {
       if (debug) {
-        tprintf("Red proto at %g,%g matched a green one at %g,%g\n", Prototype->Mean[0],
+        tprintDebug("Red proto at {},{} matched a green one at {},{}\n", Prototype->Mean[0],
                 Prototype->Mean[1], best_match->Mean[0], best_match->Mean[1]);
       }
       Prototype->Merged = true;
@@ -518,7 +535,7 @@ void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clus
     // Process insignificant protos that do not match a green one
     if (!Prototype->Significant && Prototype->NumSamples >= min_samples && !Prototype->Merged) {
       if (debug) {
-        tprintf("Red proto at %g,%g becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
+        tprintDebug("Red proto at {},{} becoming green\n", Prototype->Mean[0], Prototype->Mean[1]);
       }
       Prototype->Significant = true;
     }
@@ -641,7 +658,7 @@ CLASS_STRUCT *SetUpForFloat2Int(const UNICHARSET &unicharset, LIST LabeledClassL
   BIT_VECTOR NewConfig;
   BIT_VECTOR OldConfig;
 
-  //  printf("Float2Int ...\n");
+  //  tprintDebug("Float2Int ...\n");
 
   auto *float_classes = new CLASS_STRUCT[unicharset.size()];
   iterate(LabeledClassList) {
@@ -742,4 +759,4 @@ int NumberOfProtos(LIST ProtoList, bool CountSigProtos, bool CountInsigProtos) {
 
 } // namespace tesseract.
 
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE

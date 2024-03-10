@@ -129,20 +129,21 @@ public:
   void print(    // print
       FILE *fp) const; // file to print on
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                     // draw one
-      ScrollView *window,        // window to draw in
+      ScrollViewReference &window,        // window to draw in
       ScrollView::Color colour); // uniform colour
   void plot(                     // draw one
-      ScrollView *window);       // in rainbow colours
+      ScrollViewReference &window);       // in rainbow colours
 
   void plot_baseline(             // draw the baseline
-      ScrollView *window,         // window to draw in
+      ScrollViewReference &window,         // window to draw in
       ScrollView::Color colour) { // colour to draw
     // draw it
     baseline.plot(window, colour);
   }
 #endif // !GRAPHICS_DISABLED
+
   ROW &operator=(const ROW &source);
 
 private:
@@ -169,7 +170,7 @@ private:
   PARA *para_; // Paragraph of which this row is part.
 };
 
-ELISTIZEH(ROW)
+ELISTIZEH(ROW);
 
 } // namespace tesseract
 

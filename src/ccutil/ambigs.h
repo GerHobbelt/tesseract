@@ -20,14 +20,14 @@
 #ifndef TESSERACT_CCUTIL_AMBIGS_H_
 #define TESSERACT_CCUTIL_AMBIGS_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
 
 #  include <tesseract/unichar.h>
-#  include "elst.h"
+#  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #  include "tprintf.h"
 #  include "unicharset.h"
 
@@ -93,17 +93,17 @@ public:
   static inline void print(const UNICHAR_ID array[], const UNICHARSET &unicharset) {
     const UNICHAR_ID *ptr = array;
     if (*ptr == INVALID_UNICHAR_ID) {
-      tprintf("[Empty]");
+      tprintDebug("[Empty]");
     }
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("%s ", unicharset.id_to_unichar(*ptr++));
+      tprintDebug("{} ", unicharset.id_to_unichar(*ptr++));
     }
-    tprintf("( ");
+	tprintDebug("( ");
     ptr = array;
     while (*ptr != INVALID_UNICHAR_ID) {
-      tprintf("%d ", *ptr++);
+      tprintDebug("{} ", *ptr++);
     }
-    tprintf(")\n");
+	tprintDebug(")\n");
   }
 };
 
@@ -133,7 +133,8 @@ public:
   AmbigType type;
   int wrong_ngram_size;
 };
-ELISTIZEH(AmbigSpec)
+
+ELISTIZEH(AmbigSpec);
 
 // AMBIG_TABLE[i] stores a set of ambiguities whose
 // wrong ngram starts with unichar id i.
@@ -230,6 +231,6 @@ private:
 
 } // namespace tesseract
 
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
 
 #endif // TESSERACT_CCUTIL_AMBIGS_H_

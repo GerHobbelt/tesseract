@@ -15,7 +15,7 @@
 
 #ifdef USE_OPENCL
 
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #    include <io.h>
 #    include <windows.h>
 #  else
@@ -34,7 +34,7 @@
 
 // platform preprocessor commands
 #  if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(__CYGWIN__) || \
-      defined(__MINGW32__)
+      defined(__MINGW32__) || defined(_WIN64)
 #    define ON_WINDOWS 1
 #    define ON_APPLE 0
 #  elif defined(__linux__)
@@ -519,7 +519,7 @@ fwrite(DS_DEVICE_NATIVE_CPU_STRING,sizeof(char),
        strlen(DS_DEVICE_NATIVE_CPU_STRING), profileFile);
 fwrite(DS_TAG_DEVICE_NAME_END, sizeof(char),
        strlen(DS_TAG_DEVICE_NAME_END), profileFile);
-*/
+		  */
         } break;
         case DS_DEVICE_OPENCL_DEVICE: {
           fwrite(DS_TAG_DEVICE_NAME, sizeof(char), strlen(DS_TAG_DEVICE_NAME), profileFile);
@@ -556,23 +556,23 @@ fwrite(DS_TAG_DEVICE_NAME_END, sizeof(char),
 
 // substitute invalid characters in device name with _
 static void legalizeFileName(char *fileName) {
-  // tprintf("fileName: %s\n", fileName);
+  // tprintf("fileName: {}\n", fileName);
   const char *invalidChars = "/\?:*\"><| "; // space is valid but can cause headaches
   // for each invalid char
   for (unsigned i = 0; i < strlen(invalidChars); i++) {
     char invalidStr[4];
     invalidStr[0] = invalidChars[i];
     invalidStr[1] = '\0';
-    // tprintf("eliminating %s\n", invalidStr);
+    // tprintf("eliminating {}\n", invalidStr);
     // char *pos = strstr(fileName, invalidStr);
     // initial ./ is valid for present directory
     // if (*pos == '.') pos++;
     // if (*pos == '/') pos++;
     for (char *pos = strstr(fileName, invalidStr); pos != nullptr;
          pos = strstr(pos + 1, invalidStr)) {
-      // tprintf("\tfound: %s, ", pos);
+      // tprintf("\tfound: {}, ", pos);
       pos[0] = '_';
-      // tprintf("fileName: %s\n", fileName);
+      // tprintf("fileName: {}\n", fileName);
     }
   }
 }
@@ -607,7 +607,7 @@ static void populateGPUEnvFromDevice(GPUEnv *gpuInfo, cl_device_id device) {
 }
 
 int OpenclDevice::LoadOpencl() {
-#  ifdef WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   HINSTANCE HOpenclDll = nullptr;
   void *OpenclDll = nullptr;
   // fprintf(stderr, " LoadOpenclDllxx... \n");
@@ -644,11 +644,11 @@ static Image mapOutputCLBuffer(const KernelEnv &rEnv, cl_mem clbuffer, Image pix
   if (!pixd) {
     if (memcopy) {
       if ((pixd = pixCreateTemplate(pixs)) == nullptr)
-        tprintf("pixd not made\n");
+        tprintError("pixd not made.\n");
     } else {
       if ((pixd = pixCreateHeader(pixGetWidth(pixs), pixGetHeight(pixs), pixGetDepth(pixs))) ==
           nullptr)
-        tprintf("pixd not made\n");
+        tprintError("pixd not made.\n");
     }
   }
   l_uint32 *pValues =
@@ -821,6 +821,7 @@ int OpenclDevice::BinaryGenerated(const char *clFileName, FILE **fhandle) {
   memcpy(cl_name, clFileName, str - clFileName);
   cl_name[str - clFileName] = '\0';
   snprintf(fileName, sizeof(fileName), "%s-%s.bin", cl_name, deviceName);
+  fileName[sizeof(fileName) - 1] = 0;
   legalizeFileName(fileName);
   fd = fopen(fileName, "rb");
   status = (fd != nullptr) ? 1 : 0;
@@ -906,12 +907,13 @@ int OpenclDevice::GeneratBinFromKernelSource(cl_program program, const char *clF
       memcpy(cl_name, clFileName, str - clFileName);
       cl_name[str - clFileName] = '\0';
       snprintf(fileName, sizeof(fileName), "%s-%s.bin", cl_name, deviceName);
+      fileName[sizeof(fileName) - 1] = 0;
       legalizeFileName(fileName);
       if (!WriteBinaryToFile(fileName, binaries[i], binarySizes[i])) {
-        tprintf("[OD] write binary[%s] failed\n", fileName);
+        tprintf("[OD] write binary[{}] failed\n", fileName);
         return 0;
       } // else
-      tprintf("[OD] write binary[%s] successfully\n", fileName);
+      tprintf("[OD] write binary[{}] successfully\n", fileName);
     }
   }
 
@@ -999,7 +1001,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                               nullptr, nullptr);
   }
   if (clStatus != CL_SUCCESS) {
-    tprintf("BuildProgram error!\n");
+    tprintError("BuildProgram error!\n");
     size_t length;
     if (!gpuInfo->mnIsUserCreated) {
       clStatus = clGetProgramBuildInfo(gpuInfo->mpArryPrograms[idx], gpuInfo->mpArryDevsID[0],
@@ -1009,7 +1011,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                                        CL_PROGRAM_BUILD_LOG, 0, nullptr, &length);
     }
     if (clStatus != CL_SUCCESS) {
-      tprintf("opencl create build log fail\n");
+      tprintError("opencl create build log fail.\n");
       return 0;
     }
     std::vector<char> buildLog(length);
@@ -1021,7 +1023,7 @@ int OpenclDevice::CompileKernelFile(GPUEnv *gpuInfo, const char *buildOption) {
                                        CL_PROGRAM_BUILD_LOG, length, &buildLog[0], &length);
     }
     if (clStatus != CL_SUCCESS) {
-      tprintf("opencl program build info fail\n");
+      tprintError("opencl program build info fail.\n");
       return 0;
     }
 
@@ -1826,7 +1828,7 @@ static void populateTessScoreEvaluationInputData(TessScoreEvaluationInputData *i
   for (int i = 0; i < numLines; i++) {
     int lineWidth = rand() % maxLineWidth;
     int vertLinePos = lineWidth + rand() % (width - 2 * lineWidth);
-    // tprintf("[PI] VerticalLine @ %i (w=%i)\n", vertLinePos, lineWidth);
+    // tprintf("[PI] VerticalLine @ {} (w={})\n", vertLinePos, lineWidth);
     for (int row = vertLinePos - lineWidth / 2; row < vertLinePos + lineWidth / 2; row++) {
       for (int col = 0; col < height; col++) {
         // imageData4[row*width+col] = pixelBlack;
@@ -1841,12 +1843,12 @@ static void populateTessScoreEvaluationInputData(TessScoreEvaluationInputData *i
   for (int i = 0; i < numLines; i++) {
     int lineWidth = rand() % maxLineWidth;
     int horLinePos = lineWidth + rand() % (height - 2 * lineWidth);
-    // tprintf("[PI] HorizontalLine @ %i (w=%i)\n", horLinePos, lineWidth);
+    // tprintf("[PI] HorizontalLine @ {} (w={})\n", horLinePos, lineWidth);
     for (int row = 0; row < width; row++) {
       for (int col = horLinePos - lineWidth / 2; col < horLinePos + lineWidth / 2;
            col++) { // for (int row = vertLinePos-lineWidth/2; row <
                     // vertLinePos+lineWidth/2; row++) {
-        // tprintf("[PI] HoizLine pix @ (%3i, %3i)\n", row, col);
+        // tprintf("[PI] HoizLine pix @ ({}, {})\n", row, col);
         // imageData4[row*width+col] = pixelBlack;
         imageData4[row * width + col][0] = pixelBlack[0];
         imageData4[row * width + col][1] = pixelBlack[1];
@@ -1862,10 +1864,10 @@ static void populateTessScoreEvaluationInputData(TessScoreEvaluationInputData *i
     int lineWidth = rand() % maxLineWidth;
     int col = lineWidth + rand() % (width - 2 * lineWidth);
     int row = lineWidth + rand() % (height - 2 * lineWidth);
-    // tprintf("[PI] Spot[%i/%i] @ (%3i, %3i)\n", i, numSpots, row, col );
+    // tprintf("[PI] Spot[{}/{}] @ ({}, {})\n", i, numSpots, row, col );
     for (int r = row - lineWidth / 2; r < row + lineWidth / 2; r++) {
       for (int c = col - lineWidth / 2; c < col + lineWidth / 2; c++) {
-        // tprintf("[PI] \tSpot[%i/%i] @ (%3i, %3i)\n", i, numSpots, r, c );
+        // tprintf("[PI] \tSpot[{}/{}] @ ({}, {})\n", i, numSpots, r, c );
         // imageData4[row*width+col] = pixelBlack;
         imageData4[r * width + c][0] = pixelBlack[0];
         imageData4[r * width + c][1] = pixelBlack[1];
@@ -2289,7 +2291,7 @@ static ds_status releaseScore(TessDeviceScore *score) {
 static ds_status evaluateScoreForDevice(ds_device *device, void *inputData) {
   // overwrite statuc gpuEnv w/ current device
   // so native opencl calls can be used; they use static gpuEnv
-  tprintf("\n[DS] Device: \"%s\" (%s) evaluation...\n", device->oclDeviceName,
+  tprintf("\n[DS] Device: \"{}\" ({}) evaluation...\n", device->oclDeviceName,
           device->type == DS_DEVICE_OPENCL_DEVICE ? "OpenCL" : "Native");
   GPUEnv *env = nullptr;
   if (device->type == DS_DEVICE_OPENCL_DEVICE) {
@@ -2331,15 +2333,15 @@ static ds_status evaluateScoreForDevice(ds_device *device, void *inputData) {
   device->score = new TessDeviceScore;
   device->score->time = weightedTime;
 
-  tprintf("[DS] Device: \"%s\" (%s) evaluated\n", device->oclDeviceName,
+  tprintf("[DS] Device: \"{}\" ({}) evaluated\n", device->oclDeviceName,
           device->type == DS_DEVICE_OPENCL_DEVICE ? "OpenCL" : "Native");
-  tprintf("[DS]%25s: %f (w=%.1f)\n", "composeRGBPixel", composeRGBPixelTime, composeRGBPixelWeight);
-  tprintf("[DS]%25s: %f (w=%.1f)\n", "HistogramRect", histogramRectTime, histogramRectWeight);
-  tprintf("[DS]%25s: %f (w=%.1f)\n", "ThresholdRectToPix", thresholdRectToPixTime,
+  tprintf("[DS]{}: {} (w={})\n", "composeRGBPixel", composeRGBPixelTime, composeRGBPixelWeight);
+  tprintf("[DS]{}: {} (w={})\n", "HistogramRect", histogramRectTime, histogramRectWeight);
+  tprintf("[DS]{}: {} (w={})\n", "ThresholdRectToPix", thresholdRectToPixTime,
           thresholdRectToPixWeight);
-  tprintf("[DS]%25s: %f (w=%.1f)\n", "getLineMasksMorph", getLineMasksMorphTime,
+  tprintf("[DS]{}: {} (w={})\n", "getLineMasksMorph", getLineMasksMorphTime,
           getLineMasksMorphWeight);
-  tprintf("[DS]%25s: %f\n", "Score", device->score->time);
+  tprintf("[DS]{}: {}\n", "Score", device->score->time);
   return DS_SUCCESS;
 }
 
@@ -2358,7 +2360,7 @@ ds_device OpenclDevice::getDeviceSelection() {
       status = readProfileFromFile(profile, deserializeScore, fileName);
       if (status != DS_SUCCESS) {
         // need to run evaluation
-        tprintf("[DS] Profile file not available (%s); performing profiling.\n", fileName);
+        tprintf("[DS] Profile file not available ({}); performing profiling.\n", fileName);
 
         // create input data
         TessScoreEvaluationInputData input;
@@ -2371,10 +2373,10 @@ ds_device OpenclDevice::getDeviceSelection() {
         if (status == DS_SUCCESS) {
           status = writeProfileToFile(profile, serializeScore, fileName);
           if (status == DS_SUCCESS) {
-            tprintf("[DS] Scores written to file (%s).\n", fileName);
+            tprintf("[DS] Scores written to file ({}).\n", fileName);
           } else {
             tprintf(
-                "[DS] Error saving scores to file (%s); scores not written to "
+                "[DS] Error saving scores to file ({}); scores not written to "
                 "file.\n",
                 fileName);
           }
@@ -2384,7 +2386,7 @@ ds_device OpenclDevice::getDeviceSelection() {
               "file.\n");
         }
       } else {
-        tprintf("[DS] Profile read from file (%s).\n", fileName);
+        tprintf("[DS] Profile read from file ({}).\n", fileName);
       }
 
       // we now have device scores either from file or evaluation
@@ -2398,7 +2400,7 @@ ds_device OpenclDevice::getDeviceSelection() {
         TessDeviceScore score = *device.score;
 
         float time = score.time;
-        tprintf("[DS] Device[%u] %i:%s score is %f\n", d + 1, device.type, device.oclDeviceName,
+        tprintf("[DS] Device[{}] {}:{} score is {}\n", d + 1, device.type, device.oclDeviceName,
                 time);
         if (time < bestTime) {
           bestTime = time;
@@ -2407,7 +2409,7 @@ ds_device OpenclDevice::getDeviceSelection() {
       }
       if (bestDeviceIdx >= 0) {
         tprintf(
-            "[DS] Selected Device[%i]: \"%s\" (%s)\n", bestDeviceIdx + 1,
+            "[DS] Selected Device[{}]: \"{}\" ({})\n", bestDeviceIdx + 1,
             profile->devices[bestDeviceIdx].oclDeviceName,
             profile->devices[bestDeviceIdx].type == DS_DEVICE_OPENCL_DEVICE ? "OpenCL" : "Native");
       }
@@ -2420,14 +2422,14 @@ ds_device OpenclDevice::getDeviceSelection() {
         int overrideDeviceIdx = atoi(overrideDeviceStr);
         if (overrideDeviceIdx > 0 && overrideDeviceIdx <= profile->numDevices) {
           tprintf(
-              "[DS] Overriding Device Selection (TESSERACT_OPENCL_DEVICE=%s, "
-              "%i)\n",
+              "[DS] Overriding Device Selection (TESSERACT_OPENCL_DEVICE={}, "
+              "{})\n",
               overrideDeviceStr, overrideDeviceIdx);
           bestDeviceIdx = overrideDeviceIdx - 1;
           overridden = true;
         } else {
           tprintf(
-              "[DS] Ignoring invalid TESSERACT_OPENCL_DEVICE=%s ([1,%i] are "
+              "[DS] Ignoring invalid TESSERACT_OPENCL_DEVICE={} ([1,{}] are "
               "valid devices).\n",
               overrideDeviceStr, profile->numDevices);
         }
@@ -2435,7 +2437,7 @@ ds_device OpenclDevice::getDeviceSelection() {
 
       if (overridden) {
         tprintf(
-            "[DS] Overridden Device[%i]: \"%s\" (%s)\n", bestDeviceIdx + 1,
+            "[DS] Overridden Device[{}]: \"{}\" ({})\n", bestDeviceIdx + 1,
             profile->devices[bestDeviceIdx].oclDeviceName,
             profile->devices[bestDeviceIdx].type == DS_DEVICE_OPENCL_DEVICE ? "OpenCL" : "Native");
       }

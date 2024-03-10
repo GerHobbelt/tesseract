@@ -214,7 +214,7 @@ protected:
 
   // Debugger function that print the math blobs density values for a
   // ColPartition object.
-  void PrintSpecialBlobsDensity(const ColPartition *part) const;
+  void PrintSpecialBlobsDensity(const ColPartition &part) const;
 
   // The tesseract engine initialized from equation training data.
   Tesseract equ_tesseract_;

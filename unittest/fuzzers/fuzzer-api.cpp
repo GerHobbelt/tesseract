@@ -1,4 +1,4 @@
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
 #include <libgen.h> // for dirname
@@ -13,6 +13,9 @@
 #ifndef TESSERACT_FUZZER_HEIGHT
 #  define TESSERACT_FUZZER_HEIGHT 100
 #endif
+
+static unsigned tesseractFuzzerHeight = TESSERACT_FUZZER_HEIGHT;
+static unsigned tesseractFuzzerWidth = TESSERACT_FUZZER_WIDTH;
 
 class BitReader {
 private:
@@ -64,6 +67,14 @@ extern "C" int LLVMFuzzerInitialize(int * /*pArgc*/, char ***pArgv) {
   /* Silence output */
   api->SetVariable("debug_file", "/dev/null");
 
+  // Get width and height from executable name.
+  std::string argv0 = *pArgv[0];
+  const std::string filename = basename(&argv0[0]);
+  sscanf(filename.c_str(), "fuzzer-api-%ux%u",
+                  &tesseractFuzzerWidth, &tesseractFuzzerHeight);
+  printf("Fuzzing with image size %u x %u\n",
+         tesseractFuzzerWidth, tesseractFuzzerHeight);
+
   return 0;
 }
 
@@ -87,7 +98,7 @@ static PIX *createPix(BitReader &BR, const size_t width, const size_t height) {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   BitReader BR(data, size);
 
-  auto pix = createPix(BR, TESSERACT_FUZZER_WIDTH, TESSERACT_FUZZER_HEIGHT);
+  auto pix = createPix(BR, tesseractFuzzerWidth, tesseractFuzzerHeight);
 
   api->SetImage(pix);
 
@@ -98,3 +109,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   return 0;
 }
+
+#ifdef NEEDS_MAIN
+int main(int argc, char* argv[]) {
+  LLVMFuzzerInitialize(&argc, &argv);
+  if (argc == 2) {
+    FILE* f = fopen(argv[1], "rb");
+    if (f) {
+      fseek(f, 0, SEEK_END);
+      long size = ftell(f);
+      fseek(f, 0, SEEK_SET);
+      auto data = new uint8_t[size];
+      fread(data, 1, size, f);
+      fclose(f);
+      LLVMFuzzerTestOneInput(data, size);
+      delete[] data;
+    }
+  }
+  return 0;
+}
+#endif

@@ -9,7 +9,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <string> // for std::string
 
 #include "include_gunit.h"
@@ -22,6 +22,8 @@
 #include "pageres.h"
 #include "tesseractclass.h"
 #include "textlineprojection.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -53,7 +55,7 @@ protected:
   void SetImage(const char *filename) {
     src_pix_.destroy();
     src_pix_ = pixRead(file::JoinPath(TESTING_DIR, filename).c_str());
-    api_.Init(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TESSDATA_DIR, "eng", tesseract::OEM_TESSERACT_ONLY);
     api_.SetPageSegMode(tesseract::PSM_AUTO_OSD);
     api_.SetImage(src_pix_);
   }
@@ -77,7 +79,7 @@ protected:
                                          nullptr, 0, nullptr, nullptr, false, &mgr),
               0);
     bin_pix_ = api_.GetThresholdedImage();
-    *tesseract_->mutable_pix_binary() = bin_pix_.clone();
+    tesseract_->set_pix_binary(bin_pix_.clone());
     osd_tess->set_source_resolution(api_.tesseract()->source_resolution());
     tesseract_->set_source_resolution(api_.tesseract()->source_resolution());
     int width = pixGetWidth(bin_pix_);
@@ -93,7 +95,7 @@ protected:
     BLOCK_LIST found_blocks;
     TO_BLOCK_LIST temp_blocks;
     finder_ =
-        tesseract_->SetupPageSegAndDetectOrientation(tesseract::PSM_AUTO_OSD, &src_blocks, osd_tess.get(),
+        tesseract_->SetupPageSegAndDetectOrientation(tesseract::PSM_AUTO_OSD, &src_blocks, 
                                                      &osr, &temp_blocks, &photomask_pix, nullptr);
     TO_BLOCK_IT to_block_it(&temp_blocks);
     TO_BLOCK *to_block = to_block_it.data();

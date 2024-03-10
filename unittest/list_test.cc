@@ -10,8 +10,8 @@
 // limitations under the License.
 
 #include "include_gunit.h"
-#include "clst.h"
-#include "elst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "elst2.h"
 
 namespace tesseract {
@@ -43,9 +43,9 @@ public:
   unsigned value;
 };
 
-CLISTIZEH(Clst)
-ELISTIZEH(Elst)
-ELIST2IZEH(Elst2)
+CLISTIZEH(Clst);
+ELISTIZEH(Elst);
+ELIST2IZEH(Elst2);
 
 TEST_F(ListTest, TestCLIST) {
   Clst_CLIST list;

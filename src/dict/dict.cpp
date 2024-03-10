@@ -62,81 +62,81 @@ Dict::Dict(CCUtil *ccutil)
                        "Load dawg with special word "
                        "bigrams.",
                        getCCUtil()->params())
-    , double_MEMBER(xheight_penalty_subscripts, 0.125,
+    , DOUBLE_MEMBER(xheight_penalty_subscripts, 0.125,
                     "Score penalty (0.1 = 10%) added if there are subscripts "
                     "or superscripts in a word, but it is otherwise OK.",
                     getCCUtil()->params())
-    , double_MEMBER(xheight_penalty_inconsistent, 0.25,
+    , DOUBLE_MEMBER(xheight_penalty_inconsistent, 0.25,
                     "Score penalty (0.1 = 10%) added if an xheight is "
                     "inconsistent.",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_frequent_word, 1.0,
+    , DOUBLE_MEMBER(segment_penalty_dict_frequent_word, 1.0,
                     "Score multiplier for word matches which have good case and"
                     " are frequent in the given language (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_case_ok, 1.1,
+    , DOUBLE_MEMBER(segment_penalty_dict_case_ok, 1.1,
                     "Score multiplier for word matches that have good case "
                     "(lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_case_bad, 1.3125,
+    , DOUBLE_MEMBER(segment_penalty_dict_case_bad, 1.3125,
                     "Default score multiplier for word matches, which may have "
                     "case issues (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_dict_nonword, 1.25,
+    , DOUBLE_MEMBER(segment_penalty_dict_nonword, 1.25,
                     "Score multiplier for glyph fragment segmentations which "
                     "do not match a dictionary word (lower is better).",
                     getCCUtil()->params())
-    , double_MEMBER(segment_penalty_garbage, 1.50,
+    , DOUBLE_MEMBER(segment_penalty_garbage, 1.50,
                     "Score multiplier for poorly cased strings that are not in"
                     " the dictionary and generally look like garbage (lower is"
                     " better).",
                     getCCUtil()->params())
     , STRING_MEMBER(output_ambig_words_file, "",
-                    "Output file for ambiguities found in the dictionary", getCCUtil()->params())
+                    "Output file for ambiguities found in the dictionary.", getCCUtil()->params())
     , INT_MEMBER(dawg_debug_level, 0,
                  "Set to 1 for general debug info"
-                 ", to 2 for more details, to 3 to see all the debug messages",
+                 ", to 2 for more details, to 3 to see all the debug messages.",
                  getCCUtil()->params())
     , INT_MEMBER(hyphen_debug_level, 0, "Debug level for hyphenated words.", getCCUtil()->params())
     , BOOL_MEMBER(use_only_first_uft8_step, false,
                   "Use only the first UTF8 step of the given string"
                   " when computing log probabilities.",
                   getCCUtil()->params())
-    , double_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
-    , double_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words",
+    , DOUBLE_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
+    , DOUBLE_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words.",
                     getCCUtil()->params())
-    , double_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset",
+    , DOUBLE_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset.",
                     getCCUtil()->params())
-    , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word",
+    , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word.",
                  getCCUtil()->params())
-    , double_MEMBER(stopper_certainty_per_char, -0.50,
+    , DOUBLE_MEMBER(stopper_certainty_per_char, -0.50,
                     "Certainty to add"
                     " for each dict char above small word size.",
                     getCCUtil()->params())
-    , double_MEMBER(stopper_allowable_character_badness, 3.0,
-                    "Max certainty variation allowed in a word (in sigma)", getCCUtil()->params())
-    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level", getCCUtil()->params())
+    , DOUBLE_MEMBER(stopper_allowable_character_badness, 3.0,
+                    "Max certainty variation allowed in a word (in sigma).", getCCUtil()->params())
+    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level. (0..3)", getCCUtil()->params())
     , BOOL_MEMBER(stopper_no_acceptable_choices, false,
                   "Make AcceptableChoice() always return false. Useful"
-                  " when there is a need to explore all segmentations",
+                  " when there is a need to explore all segmentations.",
                   getCCUtil()->params())
-    , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list",
+    , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list.",
                  getCCUtil()->params())
     , STRING_MEMBER(word_to_debug, "",
                     "Word for which stopper debug"
-                    " information should be printed to stdout",
+                    " information should be printed to stdout.",
                     getCCUtil()->params())
     , BOOL_MEMBER(segment_nonalphabetic_script, false,
                   "Don't use any alphabetic-specific tricks."
                   " Set to true in the traineddata config file for"
-                  " scripts that are cursive or inherently fixed-pitch",
+                  " scripts that are cursive or inherently fixed-pitch.",
                   getCCUtil()->params())
     , BOOL_MEMBER(save_doc_words, 0, "Save Document Words", getCCUtil()->params())
-    , double_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary",
+    , DOUBLE_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary.",
                     getCCUtil()->params())
-    , double_MEMBER(doc_dict_certainty_threshold, -2.25,
+    , DOUBLE_MEMBER(doc_dict_certainty_threshold, -2.25,
                     "Worst certainty for words that can be inserted into the"
-                    " document dictionary",
+                    " document dictionary.",
                     getCCUtil()->params())
     , INT_MEMBER(max_permuter_attempts, 10000,
                  "Maximum number of different"
@@ -169,11 +169,23 @@ Dict::~Dict() {
   }
 }
 
+static DawgCache *cache = nullptr;  // only set it up when needed, via Dict::GlobalDawgCache()
+
 DawgCache *Dict::GlobalDawgCache() {
   // This global cache (a singleton) will outlive every Tesseract instance
-  // (even those that someone else might declare as global static variables).
-  static DawgCache cache;
-  return &cache;
+  // (even those that someone else might declare as global variables) unless
+  // someone calls CleanGlobalDawgCache().
+  if (cache == nullptr) {
+    cache = new DawgCache();
+  }
+  return cache;
+}
+
+void Dict::CleanGlobalDawgCache() {
+  if (cache != nullptr) {
+    delete cache;
+    cache = nullptr;
+  }
 }
 
 // Sets up ready for a Load or LoadLSTM.
@@ -253,7 +265,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
     }
     if (!trie_ptr->read_and_add_word_list(name.c_str(), getUnicharset(),
                                           Trie::RRP_REVERSE_IF_HAS_RTL)) {
-      tprintf("Error: failed to load %s\n", name.c_str());
+      tprintError("failed to load {}\n", name);
       delete trie_ptr;
     } else {
       dawgs_.push_back(trie_ptr);
@@ -261,8 +273,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
   }
 
   if (!user_patterns_suffix.empty() || !user_patterns_file.empty()) {
-    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(),
-                              dawg_debug_level);
+    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(), dawg_debug_level);
     trie_ptr->initialize_patterns(&(getUnicharset()));
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
@@ -271,7 +282,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
       name += user_patterns_suffix;
     }
     if (!trie_ptr->read_pattern_list(name.c_str(), getUnicharset())) {
-      tprintf("Error: failed to load %s\n", name.c_str());
+      tprintError("failed to load {}\n", name);
       delete trie_ptr;
     } else {
       dawgs_.push_back(trie_ptr);
@@ -326,7 +337,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
     }
     if (!trie_ptr->read_and_add_word_list(name.c_str(), getUnicharset(),
                                           Trie::RRP_REVERSE_IF_HAS_RTL)) {
-      tprintf("Error: failed to load %s\n", name.c_str());
+      tprintError("failed to load {}\n", name);
       delete trie_ptr;
     } else {
       dawgs_.push_back(trie_ptr);
@@ -334,8 +345,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
   }
 
   if (!user_patterns_suffix.empty() || !user_patterns_file.empty()) {
-    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(),
-                              dawg_debug_level);
+    Trie *trie_ptr = new Trie(DAWG_TYPE_PATTERN, lang, USER_PATTERN_PERM, getUnicharset().size(), dawg_debug_level);
     trie_ptr->initialize_patterns(&(getUnicharset()));
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
@@ -344,7 +354,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
       name += user_patterns_suffix;
     }
     if (!trie_ptr->read_pattern_list(name.c_str(), getUnicharset())) {
-      tprintf("Error: failed to load %s\n", name.c_str());
+      tprintError("failed to load {}\n", name);
       delete trie_ptr;
     } else {
       dawgs_.push_back(trie_ptr);
@@ -385,11 +395,13 @@ void Dict::End() {
       delete dawg;
     }
   }
-  dawg_cache_->FreeDawg(bigram_dawg_);
+  if (dawg_cache_ != nullptr) {
+    dawg_cache_->FreeDawg(bigram_dawg_);
+  }
   if (dawg_cache_is_ours_) {
     delete dawg_cache_;
-    dawg_cache_ = nullptr;
   }
+  dawg_cache_ = nullptr;
   for (auto successor : successors_) {
     delete successor;
   }
@@ -398,6 +410,16 @@ void Dict::End() {
   document_words_ = nullptr;
   delete pending_words_;
   pending_words_ = nullptr;
+
+  delete hyphen_word_;
+  hyphen_word_ = nullptr;
+
+  go_deeper_fxn_ = nullptr;
+  dawg_cache_is_ours_ = false;
+  bigram_dawg_ = nullptr;
+  freq_dawg_ = nullptr;
+  punc_dawg_ = nullptr;
+  unambig_dawg_ = nullptr;
 }
 
 // Returns true if in light of the current state unichar_id is allowed
@@ -407,19 +429,19 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
                              UNICHAR_ID unichar_id, bool word_end) const {
   auto *dawg_args = static_cast<DawgArgs *>(void_dawg_args);
 
-  ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
+  //ASSERT_HOST(unicharset.contains_unichar_id(unichar_id));
 
-  if (dawg_debug_level >= 3) {
-    tprintf(
-        "def_letter_is_okay: current unichar=%s word_end=%d"
-        " num active dawgs=%zu\n",
-        getUnicharset().debug_str(unichar_id).c_str(), word_end, dawg_args->active_dawgs->size());
+  if (dawg_debug_level > 2) {
+    tprintDebug(
+        "def_letter_is_okay: current unichar={} word_end={}"
+        " num active dawgs={} unicharset.contains_unichar_id={}\n",
+        getUnicharset().debug_str(unichar_id).c_str(), word_end, dawg_args->active_dawgs->size(), unicharset.contains_unichar_id(unichar_id));
   }
 
   // Do not accept words that contain kPatternUnicharID.
   // (otherwise pattern dawgs would not function correctly).
   // Do not accept words containing INVALID_UNICHAR_IDs.
-  if (unichar_id == Dawg::kPatternUnicharID || unichar_id == INVALID_UNICHAR_ID) {
+  if (unichar_id == Dawg::kPatternUnicharID || unichar_id == INVALID_UNICHAR_ID || !unicharset.contains_unichar_id(unichar_id)) {
     dawg_args->permuter = NO_PERM;
     return NO_PERM;
   }
@@ -439,7 +461,7 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
 
     if (!dawg && !punc_dawg) {
       // shouldn't happen.
-      tprintf("Received DawgPosition with no dawg or punc_dawg.  wth?\n");
+      tprintError("Received DawgPosition with no dawg or punc_dawg.  wth?\n");
       continue;
     }
     if (!dawg) {
@@ -455,8 +477,8 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
           UNICHAR_ID ch = char_for_dawg(unicharset, unichar_id, sdawg);
           EDGE_REF dawg_edge = sdawg->edge_char_of(0, ch, word_end);
           if (dawg_edge != NO_EDGE) {
-            if (dawg_debug_level >= 3) {
-              tprintf("Letter found in dawg %d\n", sdawg_index);
+            if (dawg_debug_level > 2) {
+              tprintDebug("Letter found in dawg {}\n", sdawg_index);
             }
             dawg_args->updated_dawgs->add_unique(
                 DawgPosition(sdawg_index, dawg_edge, pos.punc_index, punc_transition_edge, false),
@@ -472,8 +494,8 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
       }
       EDGE_REF punc_edge = punc_dawg->edge_char_of(punc_node, unichar_id, word_end);
       if (punc_edge != NO_EDGE) {
-        if (dawg_debug_level >= 3) {
-          tprintf("Letter found in punctuation dawg\n");
+        if (dawg_debug_level > 2) {
+          tprintDebug("Letter found in punctuation dawg\n");
         }
         dawg_args->updated_dawgs->add_unique(
             DawgPosition(-1, NO_EDGE, pos.punc_index, punc_edge, false), dawg_debug_level > 0,
@@ -528,17 +550,17 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
             ? NO_EDGE
             : dawg->edge_char_of(node, char_for_dawg(unicharset, unichar_id, dawg), word_end);
 
-    if (dawg_debug_level >= 3) {
-      tprintf("Active dawg: [%d, " REFFORMAT "] edge=" REFFORMAT "\n", pos.dawg_index, node, edge);
+    if (dawg_debug_level > 2) {
+      tprintDebug("Active dawg: [{}, {}] edge={}\n", pos.dawg_index, node, edge);
     }
 
     if (edge != NO_EDGE) { // the unichar was found in the current dawg
-      if (dawg_debug_level >= 3) {
-        tprintf("Letter found in dawg %d\n", pos.dawg_index);
+      if (dawg_debug_level > 2) {
+        tprintDebug("Letter found in dawg {}\n", pos.dawg_index);
       }
       if (word_end && punc_dawg && !punc_dawg->end_of_word(pos.punc_ref)) {
-        if (dawg_debug_level >= 3) {
-          tprintf("Punctuation constraint not satisfied at end of word.\n");
+        if (dawg_debug_level > 2) {
+          tprintDebug("Punctuation constraint not satisfied at end of word.\n");
         }
         continue;
       }
@@ -562,8 +584,8 @@ int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
       (curr_perm != PUNC_PERM && dawg_args->permuter != COMPOUND_PERM)) {
     dawg_args->permuter = curr_perm;
   }
-  if (dawg_debug_level >= 2) {
-    tprintf("Returning %d for permuter code for this character.\n", dawg_args->permuter);
+  if (dawg_debug_level > 1) {
+    tprintDebug("Returning {} for permuter code for this character.\n", dawg_args->permuter);
   }
   return dawg_args->permuter;
 }
@@ -586,10 +608,10 @@ void Dict::ProcessPatternEdges(const Dawg *dawg, const DawgPosition &pos, UNICHA
       if (edge == NO_EDGE) {
         continue;
       }
-      if (dawg_debug_level >= 3) {
-        tprintf("Pattern dawg: [%d, " REFFORMAT "] edge=" REFFORMAT "\n", pos.dawg_index, node,
+      if (dawg_debug_level > 2) {
+        tprintDebug("Pattern dawg: [{}, {}] edge={}\n", pos.dawg_index, node,
                 edge);
-        tprintf("Letter found in pattern dawg %d\n", pos.dawg_index);
+        tprintDebug("Letter found in pattern dawg {}\n", pos.dawg_index);
       }
       if (dawg->permuter() > *curr_perm) {
         *curr_perm = dawg->permuter();
@@ -610,9 +632,9 @@ void Dict::ProcessPatternEdges(const Dawg *dawg, const DawgPosition &pos, UNICHA
 void Dict::init_active_dawgs(DawgPositionVector *active_dawgs, bool ambigs_mode) const {
   if (hyphenated()) {
     *active_dawgs = hyphen_active_dawgs_;
-    if (dawg_debug_level >= 3) {
+    if (dawg_debug_level > 2) {
       for (unsigned i = 0; i < hyphen_active_dawgs_.size(); ++i) {
-        tprintf("Adding hyphen beginning dawg [%d, " REFFORMAT "]\n",
+        tprintDebug("Adding hyphen beginning dawg [{}, {}]\n",
                 hyphen_active_dawgs_[i].dawg_index, hyphen_active_dawgs_[i].dawg_ref);
       }
     }
@@ -631,13 +653,13 @@ void Dict::default_dawgs(DawgPositionVector *dawg_pos_vec, bool suppress_pattern
       bool subsumed_by_punc = kDawgSuccessors[DAWG_TYPE_PUNCTUATION][dawg_ty];
       if (dawg_ty == DAWG_TYPE_PUNCTUATION) {
         dawg_pos_vec->push_back(DawgPosition(-1, NO_EDGE, i, NO_EDGE, false));
-        if (dawg_debug_level >= 3) {
-          tprintf("Adding beginning punc dawg [%d, " REFFORMAT "]\n", i, NO_EDGE);
+        if (dawg_debug_level > 2) {
+          tprintDebug("Adding beginning punc dawg [{}, {}]\n", i, NO_EDGE);
         }
       } else if (!punc_dawg_available || !subsumed_by_punc) {
         dawg_pos_vec->push_back(DawgPosition(i, NO_EDGE, -1, NO_EDGE, false));
-        if (dawg_debug_level >= 3) {
-          tprintf("Adding beginning dawg [%d, " REFFORMAT "]\n", i, NO_EDGE);
+        if (dawg_debug_level > 2) {
+          tprintDebug("Adding beginning dawg [{}, {}]\n", i, NO_EDGE);
         }
       }
     }
@@ -698,7 +720,7 @@ void Dict::add_document_word(const WERD_CHOICE &best_choice) {
     filename += ".doc";
     FILE *doc_word_file = fopen(filename.c_str(), "a");
     if (doc_word_file == nullptr) {
-      tprintf("Error: Could not open file %s\n", filename.c_str());
+      tprintError("Could not open file {}\n", filename);
       ASSERT_HOST(doc_word_file);
     }
     fprintf(doc_word_file, "%s\n", best_choice.debug_string().c_str());
@@ -737,11 +759,11 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     // word, negate nonword status.
   } else {
     if (debug) {
-      tprintf("Consistency could not be calculated.\n");
+      tprintDebug("Consistency could not be calculated.\n");
     }
   }
   if (debug) {
-    tprintf("%sWord: %s %4.2f%s", nonword ? "Non-" : "", word->unichar_string().c_str(),
+    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
             word->rating(), xheight_triggered);
   }
 
@@ -750,17 +772,17 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
       adjust_factor += segment_penalty_dict_nonword;
       new_rating *= adjust_factor;
       if (debug) {
-        tprintf(", W");
+        tprintDebug(", W");
       }
     } else {
       adjust_factor += segment_penalty_garbage;
       new_rating *= adjust_factor;
       if (debug) {
         if (!case_is_ok) {
-          tprintf(", C");
+          tprintDebug(", C");
         }
         if (!punc_is_ok) {
-          tprintf(", P");
+          tprintDebug(", P");
         }
       }
     }
@@ -771,20 +793,20 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
         adjust_factor += segment_penalty_dict_frequent_word;
         new_rating *= adjust_factor;
         if (debug) {
-          tprintf(", F");
+          tprintDebug(", F");
         }
       } else {
         adjust_factor += segment_penalty_dict_case_ok;
         new_rating *= adjust_factor;
         if (debug) {
-          tprintf(", ");
+          tprintDebug(", ");
         }
       }
     } else {
       adjust_factor += segment_penalty_dict_case_bad;
       new_rating *= adjust_factor;
       if (debug) {
-        tprintf(", C");
+        tprintDebug(", C");
       }
     }
   }
@@ -793,7 +815,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     word->set_rating(new_rating);
   }
   if (debug) {
-    tprintf(" %4.2f --> %4.2f\n", adjust_factor, new_rating);
+    tprintDebug(" {} --> {}\n", adjust_factor, new_rating);
   }
   word->set_adjust_factor(adjust_factor);
 }

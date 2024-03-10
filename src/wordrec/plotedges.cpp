@@ -18,7 +18,7 @@
  *****************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -27,14 +27,14 @@
 #include "render.h"
 #include "split.h"
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
-ScrollView *edge_window = nullptr;
+ScrollViewReference edge_window;
 
 /*----------------------------------------------------------------------
               F u n c t i o n s
@@ -46,13 +46,14 @@ ScrollView *edge_window = nullptr;
  **********************************************************************/
 void display_edgepts(LIST outlines) {
   /* Set up window */
-  if (edge_window == nullptr) {
-    edge_window = new ScrollView("Edges", 750, 150, 400, 128, 800, 256, true);
+  if (!edge_window) {
+    edge_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Edges", 750, 150, 400, 128, 800, 256, true);
+    edge_window->RegisterGlobalRefToMe(&edge_window);
   } else {
     edge_window->Clear();
   }
   /* Render the outlines */
-  auto window = edge_window;
+  ScrollViewReference &window = edge_window;
   /* Reclaim old memory */
   iterate(outlines) {
     render_edgepts(window, reinterpret_cast<EDGEPT *>(outlines->first_node()), ScrollView::WHITE);
@@ -81,7 +82,7 @@ void draw_blob_edges(TBLOB *blob) {
  * Make a mark on the edges window at a particular location.
  **********************************************************************/
 void mark_outline(EDGEPT *edgept) { /* Start of point list */
-  auto window = edge_window;
+  ScrollViewReference &window = edge_window;
   float x = edgept->pos.x;
   float y = edgept->pos.y;
 
@@ -104,7 +105,7 @@ void mark_outline(EDGEPT *edgept) { /* Start of point list */
   y += 6;
   window->DrawTo(x, y);
 
-  window->Update();
+  window->UpdateWindow();
 }
 
 } // namespace tesseract

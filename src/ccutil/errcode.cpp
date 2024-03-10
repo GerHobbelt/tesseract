@@ -17,18 +17,42 @@
  **********************************************************************/
 
 #include "errcode.h"
+#include "tprintf.h"
 
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream> // for std::cerr
-#include <sstream>  // for std::stringstream
 
 namespace tesseract {
 
 constexpr ERRCODE BADERRACTION("Illegal error action");
 #define MAX_MSG 1024
+
+[[noreturn]] static void abort_application();
+
+static void error_action(TessErrorLogCode action) {
+  switch (action) {
+    case DBG:
+    case TESSLOG:
+      return; // report only
+    case TESSEXIT:
+    case ABORT:
+      abort_application();
+    default:
+      BADERRACTION.abort("error");
+  }
+}
+
+[[noreturn]] static void abort_application() {
+#if !defined(NDEBUG)
+  // Create a deliberate abnormal exit as the stack trace is more useful
+  // that way. This is done only in debug builds, because the
+  // error message "segmentation fault" confuses most normal users.
+#  if defined(__GNUC__)
+  __builtin_trap();
+#  else
+  * reinterpret_cast<int*>(0) = 0;
+#  endif
+#endif
+  ::abort();
+}
 
 /**********************************************************************
  * error
@@ -37,57 +61,46 @@ constexpr ERRCODE BADERRACTION("Illegal error action");
  * Makes use of error messages and numbers in a common place.
  *
  **********************************************************************/
-void ERRCODE::error(         // handle error
-    const char *caller,      // name of caller
-    TessErrorLogCode action, // action to take
-    const char *format, ...  // special message
-    ) const {
-  va_list args; // variable args
-  std::stringstream msg;
-
+void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   if (caller != nullptr) {
     // name of caller
-    msg << caller << ':';
+    tprintError("{}:{}\n", caller, message);
+  } else {
+    tprintError("{}\n", message);
   }
-  // actual message
-  msg << "Error:" << message;
-  if (format != nullptr) {
-    char str[MAX_MSG];
-    va_start(args, format); // variable list
-    // print remainder
-    std::vsnprintf(str, sizeof(str), format, args);
-    // ensure termination
-    str[sizeof(str) - 1] = '\0';
-    va_end(args);
-    msg << ':' << str;
-  }
-
-  std::cerr << msg.str() << '\n';
-
-  switch (action) {
-    case DBG:
-    case TESSLOG:
-      return; // report only
-    case TESSEXIT:
-    case ABORT:
-#if !defined(NDEBUG)
-      // Create a deliberate abnormal exit as the stack trace is more useful
-      // that way. This is done only in debug builds, because the
-      // error message "segmentation fault" confuses most normal users.
-#  if defined(__GNUC__)
-      __builtin_trap();
-#  else
-      *reinterpret_cast<int *>(0) = 0;
-#  endif
-#endif
-      abort();
-    default:
-      BADERRACTION.error("error", ABORT);
-  }
+  error_action(action);
 }
 
-void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
-  error(caller, action, nullptr);
+void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+  } else {
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+  }
+  error_action(action);
+}
+
+[[noreturn]] void ERRCODE::abort(const char* caller) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}:{}\n", caller, message);
+  }
+  else {
+    tprintError("{}\n", message);
+  }
+  abort_application();
+}
+
+[[noreturn]] void ERRCODE::vabort(const char* caller, fmt::string_view format, fmt::format_args args) const {
+  if (caller != nullptr) {
+    // name of caller
+    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+  }
+  else {
+    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+  }
+  abort_application();
 }
 
 } // namespace tesseract

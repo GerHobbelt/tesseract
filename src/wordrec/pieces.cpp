@@ -20,17 +20,20 @@
           I n c l u d e s
 ----------------------------------------------------------------------*/
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "blobs.h"
 #include "helpers.h"
 #include "matrix.h"
 #include "ratngs.h"
 #include "seam.h"
 #include "wordrec.h"
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include "fontinfo.h"
 
 using tesseract::ScoredFont;
 
@@ -87,3 +90,5 @@ int SortByRating(const void *void1, const void *void2) {
 }
 
 } // namespace tesseract
+
+#endif

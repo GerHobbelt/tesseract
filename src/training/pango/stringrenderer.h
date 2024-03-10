@@ -30,9 +30,17 @@
 
 #include "export.h"
 
-#include "pango/pango-layout.h"
-#include "pango/pangocairo.h"
+#include <tesseract/export.h>
+
+#include "fmt/format.h"
+
+#if defined(PANGO_ENABLE_ENGINE)
+
+//#include "pango/pango-layout.h"
+//#include "pango/pangocairo.h"
+
 #include "pango_font_info.h"
+
 
 #include "image.h"
 
@@ -141,6 +149,9 @@ public:
   // Get the boxchars of all clusters rendered thus far (or since the last call
   // to ClearBoxes()).
   const std::vector<BoxChar *> &GetBoxes() const;
+  // Get the boxchars of all clusters rendered thus far (or since the last call
+  // to ClearBoxes()).
+  const std::vector<BoxChar *> &GetLineBoxes() const;
   // Get the rendered page bounding boxes of all pages created thus far (or
   // since last call to ClearBoxes()).
   Boxa *GetPageBoxes() const;
@@ -153,6 +164,10 @@ public:
   std::string GetBoxesStr();
   // Writes the boxes to a boxfile.
   void WriteAllBoxes(const std::string &filename);
+  // Writes the boxes page by page as boxfile or pagexmlfile.
+  void WriteAllBoxesPagebyPage(const std::string &filename, bool pagebypage,  bool as_box, bool as_pagexml);
+  // Converts the boxesinformation to a pagefile.
+  void WriteTesseractBoxAsPAGEFile(const std::string &filename, const std::vector<BoxChar *> &boxes);
   // Removes space-delimited words from the string that are not renderable by
   // the current font and returns the count of such words.
   int StripUnrenderableWords(std::string *utf8_text) const;
@@ -206,10 +221,14 @@ protected:
   // Internal state of current page number, updated on successive calls to
   // RenderToImage()
   int start_box_;
+  int start_line_box_;
   int page_;
   // Boxes and associated text for all pages rendered with RenderToImage() since
   // the last call to ClearBoxes().
   std::vector<BoxChar *> boxchars_;
+  // Boxes for each line and associated text for all pages rendered with RenderToImage() since
+  // the last call to ClearBoxes().
+  std::vector<BoxChar *> line_boxchars_;
   int box_padding_;
   // Bounding boxes for pages since the last call to ClearBoxes().
   Boxa *page_boxes_;
@@ -224,6 +243,23 @@ private:
   StringRenderer(const StringRenderer &) = delete;
   void operator=(const StringRenderer &) = delete;
 };
+
 } // namespace tesseract
 
-#endif // THIRD_PARTY_TESSERACT_TRAINING_STRINGRENDERER_H_
+
+
+// fmt lib formatter for enum type:
+namespace fmt {                                                                              
+                                                                                             
+  template <>                                                                                
+  struct formatter<cairo_format_t> : formatter<std::string_view> {                          
+    /* parse is inherited from formatter<string_view>. */                                    
+                                                                                             
+    auto format(cairo_format_t c, format_context &ctx) const -> decltype(ctx.out());        
+  };                                                                                         
+                                                                                             
+}                                                                                            
+
+#endif  // PANGO_ENABLE_ENGINE
+
+#endif  // THIRD_PARTY_TESSERACT_TRAINING_STRINGRENDERER_H_

@@ -17,20 +17,21 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "blobbox.h"
 #include "blobs.h"   // for TPOINT
 #include "coutln.h"  // for C_OUTLINE_IT, C_OUTLINE, C_OUTLINE_LIST
-#include "environ.h" // for l_uint32
+#include <leptonica/environ.h> // for l_uint32
 #include "host.h"    // for NearlyEqual
 #include "points.h"  // for operator+=, ICOORD::rotate
 
 #include "helpers.h" // for UpdateRange, IntCastRounded
+#include "diagnostics_io.h"
 
-#include <allheaders.h> // for pixGetHeight, pixGetPixel
+#include <leptonica/allheaders.h> // for pixGetHeight, pixGetPixel
 
 #include <algorithm> // for max, min
 #include <cmath>
@@ -121,11 +122,11 @@ void BLOBNBOX::chop(       // chop blobs
     FCOORD rotation,       // for landscape
     float xheight          // of line
 ) {
-  int16_t blobcount;          // no of blobs
+  int blobcount;              // no of blobs
   BLOBNBOX *newblob;          // fake blob
   BLOBNBOX *blob;             // current blob
-  int16_t blobindex;          // number of chop
-  int16_t leftx;              // left edge of blob
+  int blobindex;              // number of chop
+  TDimension leftx;           // left edge of blob
   float blobwidth;            // width of each
   float rightx;               // right edge to scan
   float ymin, ymax;           // limits of new blob
@@ -134,14 +135,14 @@ void BLOBNBOX::chop(       // chop blobs
   BLOBNBOX_IT blob_it;        // blob iterator
 
   // get no of chops
-  blobcount = static_cast<int16_t>(std::floor(box.width() / xheight));
+  blobcount = static_cast<int>(std::floor(box.width() / xheight));
   if (blobcount > 1 && cblob_ptr != nullptr) {
     // width of each
     blobwidth = static_cast<float>(box.width() + 1) / blobcount;
     for (blobindex = blobcount - 1, rightx = box.right(); blobindex >= 0;
          blobindex--, rightx -= blobwidth) {
-      ymin = static_cast<float>(INT32_MAX);
-      ymax = static_cast<float>(-INT32_MAX);
+      ymin = static_cast<float>(TDIMENSION_MAX);
+      ymax = static_cast<float>(TDIMENSION_MIN);
       blob_it = *start_it;
       do {
         blob = blob_it.data();
@@ -150,13 +151,14 @@ void BLOBNBOX::chop(       // chop blobs
         blob_it.forward();
         UpdateRange(test_ymin, test_ymax, &ymin, &ymax);
       } while (blob != end_it->data());
+
       if (ymin < ymax) {
-        leftx = static_cast<int16_t>(std::floor(rightx - blobwidth));
+        leftx = static_cast<TDimension>(std::floor(rightx - blobwidth));
         if (leftx < box.left()) {
           leftx = box.left(); // clip to real box
         }
-        bl = ICOORD(leftx, static_cast<int16_t>(std::floor(ymin)));
-        tr = ICOORD(static_cast<int16_t>(std::ceil(rightx)), static_cast<int16_t>(std::ceil(ymax)));
+        bl = ICOORD(leftx, static_cast<TDimension>(std::floor(ymin)));
+        tr = ICOORD(static_cast<TDimension>(std::ceil(rightx)), static_cast<TDimension>(std::ceil(ymax)));
         if (blobindex == 0) {
           box = TBOX(bl, tr); // change box
         } else {
@@ -177,7 +179,7 @@ void BLOBNBOX::chop(       // chop blobs
 // indexed by BlobNeighbourDir.
 void BLOBNBOX::NeighbourGaps(int gaps[BND_COUNT]) const {
   for (int dir = 0; dir < BND_COUNT; ++dir) {
-    gaps[dir] = INT16_MAX;
+    gaps[dir] = TDIMENSION_MAX;
     BLOBNBOX *neighbour = neighbours_[dir];
     if (neighbour != nullptr) {
       const TBOX &n_box = neighbour->bounding_box();
@@ -414,11 +416,12 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Helper to draw all the blobs on the list in the given body_colour,
-// with child outlines in the child_colour.
+// with child outlines in the child_colour: outer bits are done in body_colour,
+// while holes will be done in child_colour.
 void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                         ScrollView::Color child_colour, ScrollView *win) {
+                         ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);
@@ -429,7 +432,7 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
 // given list in the given body_colour, with child outlines in the
 // child_colour.
 void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                              ScrollView::Color child_colour, ScrollView *win) {
+                              ScrollView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
@@ -438,7 +441,19 @@ void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour
     }
   }
 }
+#endif
 
+// Helper to draw all the blobs on the list in the given body_colour,
+// with child outlines in the child_colour.
+void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> &cmap, int cmap_offset) {
+  BLOBNBOX_IT it(list);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    BLOBNBOX* blob = it.data();
+    blob->plot(pix, cmap, cmap_offset, blob->DeletableNoise());
+  }
+}
+
+#if !GRAPHICS_DISABLED
 ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
@@ -467,7 +482,7 @@ ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFl
         return ScrollView::LIGHT_BLUE;
       }
       if (flow_type == BTFT_CHAIN) {
-        return ScrollView::MEDIUM_BLUE;
+        return ScrollView::AQUAMARINE;
       }
       if (flow_type == BTFT_LEADER) {
         return ScrollView::WHEAT;
@@ -486,14 +501,21 @@ ScrollView::Color BLOBNBOX::BoxColor() const {
   return TextlineColor(region_type_, flow_);
 }
 
-void BLOBNBOX::plot(ScrollView *window,               // window to draw in
-                    ScrollView::Color blob_colour,    // for outer bits
-                    ScrollView::Color child_colour) { // for holes
+void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
+                    ScrollView::Color blob_colour,             // for outer bits
+                    ScrollView::Color child_colour) {          // for holes
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
 }
 #endif
+
+void BLOBNBOX::plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise) {
+  if (cblob_ptr != nullptr) {
+    cblob_ptr->plot(pix, cmap, cmap_offset, noise);
+  }
+}
+
 /**********************************************************************
  * find_cblob_limits
  *
@@ -508,7 +530,6 @@ void find_cblob_limits( // get y limits
     FCOORD rotation, // for landscape
     float &ymin,     // output y limits
     float &ymax) {
-  int16_t stepindex;  // current point
   ICOORD pos;         // current coords
   ICOORD vec;         // rotated step
   C_OUTLINE *outline; // current outline
@@ -521,7 +542,7 @@ void find_cblob_limits( // get y limits
     outline = out_it.data();
     pos = outline->start_pos(); // get coords
     pos.rotate(rotation);
-    for (stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
+    for (int32_t stepindex = 0; stepindex < outline->pathlength(); stepindex++) {
       // inside
       if (pos.x() >= leftx && pos.x() <= rightx) {
         UpdateRange(pos.y(), &ymin, &ymax);
@@ -716,10 +737,10 @@ TO_ROW::TO_ROW(     // constructor
 }
 
 void TO_ROW::print() const {
-  tprintf(
-      "pitch=%d, fp=%g, fps=%g, fpns=%g, prs=%g, prns=%g,"
-      " spacing=%g xh=%g y_origin=%g xev=%d, asc=%g, desc=%g,"
-      " body=%g, minsp=%d maxnsp=%d, thr=%d kern=%g sp=%g\n",
+  tprintDebug(
+      "pitch={}, fp={}, fps={}, fpns={}, prs={}, prns={},"
+      " spacing={} xh={} y_origin={} xev={}, asc={}, desc={},"
+      " body={}, minsp={} maxnsp={}, thr={} kern={} sp={}\n",
       pitch_decision, fixed_pitch, fp_space, fp_nonsp, pr_space, pr_nonsp, spacing, xheight,
       y_origin, xheight_evidence, ascrise, descdrop, body_size, min_space, max_nonspace,
       space_threshold, kern_size, space_size);
@@ -979,12 +1000,16 @@ static void SizeFilterBlobs(int min_height, int max_height, BLOBNBOX_LIST *src_l
     int width = blob->bounding_box().width();
     int height = blob->bounding_box().height();
     if (height < min_height && (width < min_height || width > max_height)) {
+      blob->set_medium(false);
       noise_it.add_after_then_move(blob);
     } else if (height > max_height) {
+      blob->set_medium(false);
       large_it.add_after_then_move(blob);
     } else if (height < min_height) {
+      blob->set_medium(false);
       small_it.add_after_then_move(blob);
     } else {
+      blob->set_medium(true);
       medium_it.add_after_then_move(blob);
     }
   }
@@ -1045,9 +1070,9 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
   BLOBNBOX::ComputeEdgeOffsets(thresholds, grey, &noise_blobs);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
-void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
+void TO_BLOCK::plot_noise_blobs(ScrollViewReference &win) {
   BLOBNBOX::PlotNoiseBlobs(&noise_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&small_blobs, ScrollView::RED, ScrollView::RED, win);
   BLOBNBOX::PlotNoiseBlobs(&large_blobs, ScrollView::RED, ScrollView::RED, win);
@@ -1055,12 +1080,27 @@ void TO_BLOCK::plot_noise_blobs(ScrollView *win) {
 }
 
 // Draw the blobs on the various lists in the block in different colors.
-void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
+void TO_BLOCK::plot_graded_blobs(ScrollViewReference &win) {
   BLOBNBOX::PlotBlobs(&noise_blobs, ScrollView::CORAL, ScrollView::BLUE, win);
   BLOBNBOX::PlotBlobs(&small_blobs, ScrollView::GOLDENROD, ScrollView::YELLOW, win);
   BLOBNBOX::PlotBlobs(&large_blobs, ScrollView::DARK_GREEN, ScrollView::YELLOW, win);
   BLOBNBOX::PlotBlobs(&blobs, ScrollView::WHITE, ScrollView::BROWN, win);
 }
+
+// Draw the blobs on the various lists in the block in different colors.
+void TO_BLOCK::plot_graded_blobs(Image &pix) {
+  auto cmap = initDiagPlotColorMap();
+
+  // hsv(204, 100%, 71%) - hsv(262, 100%, 71%)
+  BLOBNBOX::PlotBlobs(&noise_blobs, pix, cmap, 0);
+  // hsv(143, 100%, 64%) - hsv(115, 77%, 71%)
+  BLOBNBOX::PlotBlobs(&small_blobs, pix, cmap, 64);
+  // hsv(297, 100%, 81%) - hsv(321, 100%, 82%)
+  BLOBNBOX::PlotBlobs(&large_blobs, pix, cmap, 2 * 64);
+  // hsv(61, 100%, 76%) - hsv(26, 100%, 94%)
+  BLOBNBOX::PlotBlobs(&blobs, pix, cmap, 3 * 64);
+}
+
 
 /**********************************************************************
  * plot_blob_list
@@ -1068,7 +1108,7 @@ void TO_BLOCK::plot_graded_blobs(ScrollView *win) {
  * Draw a list of blobs.
  **********************************************************************/
 
-void plot_blob_list(ScrollView *win,                  // window to draw in
+void plot_blob_list(ScrollViewReference &win,                  // window to draw in
                     BLOBNBOX_LIST *list,              // blob list
                     ScrollView::Color body_colour,    // colour to draw
                     ScrollView::Color child_colour) { // colour of child

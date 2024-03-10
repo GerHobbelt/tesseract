@@ -19,7 +19,7 @@
 // expects clones of tessdata, tessdata_fast and tessdata_best repos
 
 //#include "log.h"
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <iostream>
 #include <memory> // std::unique_ptr
@@ -27,17 +27,19 @@
 #include "include_gunit.h"
 #include "image.h"
 
+#include "testdata.h"
+
 namespace tesseract {
 
 class TestClass : public testing::Test {
 protected:
 };
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 static void OSDTester(int expected_deg, const char *imgname, const char *tessdatadir) {
   // log.info() << tessdatadir << " for image: " << imgname << std::endl;
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, "osd")) << "Could not initialize tesseract.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, "osd")) << "Could not initialize tesseract.";
   Image image = pixRead(imgname);
   ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
   api->SetImage(image);
@@ -63,7 +65,7 @@ class OSDTest : public TestClass,
 };
 
 TEST_P(OSDTest, MatchOrientationDegrees) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because TessBaseAPI::DetectOrientationScript is missing.
   GTEST_SKIP();
 #else

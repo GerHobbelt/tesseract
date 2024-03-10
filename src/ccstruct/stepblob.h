@@ -35,7 +35,7 @@ namespace tesseract {
 class C_BLOB;
 class DENORM;
 
-ELISTIZEH(C_BLOB)
+ELISTIZEH(C_BLOB);
 
 class TESS_API C_BLOB : public ELIST_LINK {
 public:
@@ -95,16 +95,21 @@ public:
   // pixDestroy after use.
   Image render_outline();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw one
-      ScrollView *window,              // window to draw in
+      ScrollViewReference &window,              // window to draw in
       ScrollView::Color blob_colour,   // for outer bits
       ScrollView::Color child_colour); // for holes
+#endif // !GRAPHICS_DISABLED
+
+  void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise);
+
+#if !GRAPHICS_DISABLED
   // Draws the blob in the given colour, and child_colour, normalized
   // using the given denorm, making use of sub-pixel accurate information
   // if available.
   void plot_normed(const DENORM &denorm, ScrollView::Color blob_colour,
-                   ScrollView::Color child_colour, ScrollView *window);
+                   ScrollView::Color child_colour, ScrollViewReference &window);
 #endif // !GRAPHICS_DISABLED
 
   C_BLOB &operator=(const C_BLOB &source) {

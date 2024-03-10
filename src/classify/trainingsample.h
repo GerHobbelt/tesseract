@@ -16,7 +16,7 @@
 #ifndef TESSERACT_TRAINING_TRAININGSAMPLE_H_
 #define TESSERACT_TRAINING_TRAININGSAMPLE_H_
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "featdefs.h"
 #include "intfx.h"
 #include "intmatcher.h"
@@ -107,7 +107,7 @@ public:
   // Returns a pix representing the sample. (Int features only.)
   Image RenderToPix(const UNICHARSET *unicharset) const;
   // Displays the features in the given window with the given color.
-  void DisplayFeatures(ScrollView::Color color, ScrollView *window) const;
+  void DisplayFeatures(ScrollView::Color color, ScrollViewReference &window) const;
 
   // Returns a pix of the original sample image. The pix is padded all round
   // by padding wherever possible.
@@ -253,7 +253,7 @@ private:
   static const double kScaleValues[kSampleScaleSize];
 };
 
-ELISTIZEH(TrainingSample)
+ELISTIZEH(TrainingSample);
 
 } // namespace tesseract
 

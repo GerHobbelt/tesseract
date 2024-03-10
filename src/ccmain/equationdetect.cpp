@@ -17,12 +17,15 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
+#include <tesseract/debugheap.h>
+
 #include "equationdetect.h"
 
+#include "blobs.h"   // for TPOINT, TWERD, TBLOB
 #include "bbgrid.h"
 #include "classify.h"
 #include "colpartition.h"
@@ -39,13 +42,18 @@
 #include <limits>
 #include <memory>
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Config variables.
 static BOOL_VAR(equationdetect_save_bi_image, false, "Save input bi image");
 static BOOL_VAR(equationdetect_save_spt_image, false, "Save special character image");
 static BOOL_VAR(equationdetect_save_seed_image, false, "Save the seed image");
 static BOOL_VAR(equationdetect_save_merged_image, false, "Save the merged image");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 ///////////////////////////////////////////////////////////////////////////
 // Utility ColParition sort functions.
@@ -105,9 +113,8 @@ EquationDetect::EquationDetect(const char *equ_datapath, const char *equ_name) {
   page_count_ = 0;
 
   if (equ_tesseract_.init_tesseract(equ_datapath, equ_name, OEM_TESSERACT_ONLY)) {
-    tprintf(
-        "Warning: equation region detection requested,"
-        " but %s failed to load from %s\n",
+    tprintError("Equation region detection requested,"
+        " but {} failed to load from {}\n",
         equ_name, equ_datapath);
   }
 
@@ -128,7 +135,7 @@ void EquationDetect::SetResolution(const int resolution) {
 
 int EquationDetect::LabelSpecialText(TO_BLOCK *to_block) {
   if (to_block == nullptr) {
-    tprintf("Warning: input to_block is nullptr!\n");
+    tprintError("EquationDetect::LabelSpecialText: input to_block is nullptr!\n");
     return -1;
   }
 
@@ -144,6 +151,8 @@ int EquationDetect::LabelSpecialText(TO_BLOCK *to_block) {
 
   return 0;
 }
+
+#if !DISABLED_LEGACY_ENGINE
 
 void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th) {
   ASSERT_HOST(blobnbox != nullptr);
@@ -166,7 +175,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
   const float x_orig = (box.left() + box.right()) / 2.0f, y_orig = box.bottom();
   std::unique_ptr<TBLOB> normed_blob(new TBLOB(*tblob));
   normed_blob->Normalize(nullptr, nullptr, nullptr, x_orig, y_orig, scaling, scaling, 0.0f,
-                         static_cast<float>(kBlnBaselineOffset), false, nullptr);
+                         static_cast<float>(kBlnBaselineOffset), false);
   equ_tesseract_.AdaptiveClassifier(normed_blob.get(), &ratings_equ);
   lang_tesseract_->AdaptiveClassifier(normed_blob.get(), &ratings_lang);
   delete tblob;
@@ -206,7 +215,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
     type = EstimateTypeForUnichar(lang_tesseract_->unicharset, lang_choice->unichar_id());
   }
 
-  if (type == BSTT_NONE &&
+  if (type == BSTT_NONE && lang_choice &&
       lang_tesseract_->get_fontinfo_table().at(lang_choice->fontinfo_id()).is_italic()) {
     // For text symbol, we still check if it is italic.
     blobnbox->set_special_text_type(BSTT_ITALIC);
@@ -294,6 +303,9 @@ void EquationDetect::IdentifySpecialText() {
   }
 }
 
+#endif
+
+
 void EquationDetect::IdentifyBlobsToSkip(ColPartition *part) {
   ASSERT_HOST(part);
   BLOBNBOX_C_IT blob_it(part->boxes());
@@ -342,11 +354,11 @@ void EquationDetect::IdentifyBlobsToSkip(ColPartition *part) {
 
 int EquationDetect::FindEquationParts(ColPartitionGrid *part_grid, ColPartitionSet **best_columns) {
   if (!lang_tesseract_) {
-    tprintf("Warning: lang_tesseract_ is nullptr!\n");
+    tprintError("EquationDetect::FindEquationParts: lang_tesseract_ is nullptr!\n");
     return -1;
   }
   if (!part_grid || !best_columns) {
-    tprintf("part_grid/best_columns is nullptr!!\n");
+    tprintError("EquationDetect::FindEquationParts: part_grid/best_columns is nullptr!!\n");
     return -1;
   }
   cp_seeds_.clear();
@@ -391,7 +403,7 @@ int EquationDetect::FindEquationParts(ColPartitionGrid *part_grid, ColPartitionS
     for (auto &i : seeds_expanded) {
       InsertPartAfterAbsorb(i);
     }
-    cp_seeds_ = seeds_expanded;
+    cp_seeds_ = std::move(seeds_expanded);
   }
 
   // Pass 4: find math block satellite text partitions and merge them.
@@ -823,7 +835,7 @@ void EquationDetect::IdentifyInlinePartsHorizontal() {
   }
 
   // Reset the cp_seeds_ using the new_seeds.
-  cp_seeds_ = new_seeds;
+  cp_seeds_ = std::move(new_seeds);
 }
 
 int EquationDetect::EstimateTextPartLineSpacing() {
@@ -891,7 +903,7 @@ void EquationDetect::IdentifyInlinePartsVertical(const bool top_to_bottom,
       new_seeds.push_back(part);
     }
   }
-  cp_seeds_ = new_seeds;
+  cp_seeds_ = std::move(new_seeds);
 }
 
 bool EquationDetect::IsInline(const bool search_bottom, const int textparts_linespacing,
@@ -1392,7 +1404,8 @@ void EquationDetect::GetOutputTiffName(const char *name, std::string &image_name
   ASSERT_HOST(name);
   char page[50];
   snprintf(page, sizeof(page), "%04d", page_count_);
-  image_name = (lang_tesseract_->imagebasename) + page + name + ".tif";
+  // name: _spt, _bi, _seed, _merged
+  image_name = (lang_tesseract_->imagebasename) + page + name + ".tiff";
 }
 
 void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
@@ -1413,7 +1426,7 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {
-  Image pix = pixConvertTo32(lang_tesseract_->BestPix());
+  Image pix = lang_tesseract_->GetPixForDebugView();
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
@@ -1431,22 +1444,21 @@ void EquationDetect::PaintColParts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  pix.destroy();
+  lang_tesseract_->ClearPixForDebugView();
 }
 
-void EquationDetect::PrintSpecialBlobsDensity(const ColPartition *part) const {
-  ASSERT_HOST(part);
-  TBOX box(part->bounding_box());
-  int h = pixGetHeight(lang_tesseract_->BestPix());
-  tprintf("Printing special blobs density values for ColParition (t=%d,b=%d) ", h - box.top(),
+void EquationDetect::PrintSpecialBlobsDensity(const ColPartition &part) const {
+  TBOX box(part.bounding_box());
+  int h = lang_tesseract_->ImageHeight();
+  tprintDebug("Printing special blobs density values for ColPartition (t={},b={}) ", h - box.top(),
           h - box.bottom());
   box.print();
-  tprintf("blobs count = %d, density = ", part->boxes_count());
+  tprintDebug("blobs count = {}, density = ", part.boxes_count());
   for (int i = 0; i < BSTT_COUNT; ++i) {
     auto type = static_cast<BlobSpecialTextType>(i);
-    tprintf("%d:%f ", i, part->SpecialBlobsDensity(type));
+    tprintDebug("{}:{} ", i, part.SpecialBlobsDensity(type));
   }
-  tprintf("\n");
+  tprintDebug("\n");
 }
 
 } // namespace tesseract

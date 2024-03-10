@@ -40,7 +40,7 @@ public:
 
 // Tests the IntFeatureMap and implicitly the IntFeatureSpace underneath.
 TEST_F(IntFeatureMapTest, Exhaustive) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test because IntFeatureSpace is missing.
   GTEST_SKIP();
 #else

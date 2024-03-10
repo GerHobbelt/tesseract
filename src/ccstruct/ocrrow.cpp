@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -167,14 +167,14 @@ void ROW::move(      // reposition row
 void ROW::print( // print
     FILE *fp     // file to print on
 ) const {
-  tprintf("Kerning= %d\n", kerning);
-  tprintf("Spacing= %d\n", spacing);
+  tprintDebug("Kerning= {}\n", kerning);
+  tprintDebug("Spacing= {}\n", spacing);
   bound_box.print();
-  tprintf("Xheight= %f\n", xheight);
-  tprintf("Ascrise= %f\n", ascrise);
-  tprintf("Descdrop= %f\n", descdrop);
-  tprintf("has_drop_cap= %d\n", has_drop_cap_);
-  tprintf("lmargin= %d, rmargin= %d\n", lmargin_, rmargin_);
+  tprintDebug("Xheight= {}\n", xheight);
+  tprintDebug("Ascrise= {}\n", ascrise);
+  tprintDebug("Descdrop= {}\n", descdrop);
+  tprintDebug("has_drop_cap= {}\n", has_drop_cap_);
+  tprintDebug("lmargin= {}, rmargin= {}\n", lmargin_, rmargin_);
 }
 
 /**********************************************************************
@@ -183,9 +183,9 @@ void ROW::print( // print
  * Draw the ROW in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void ROW::plot(              // draw it
-    ScrollView *window,      // window to draw in
+    ScrollViewReference &window,      // window to draw in
     ScrollView::Color colour // colour to draw in
 ) {
   WERD *word;          // current word
@@ -204,7 +204,7 @@ void ROW::plot(              // draw it
  **********************************************************************/
 
 void ROW::plot(        // draw it
-    ScrollView *window // window to draw in
+    ScrollViewReference &window // window to draw in
 ) {
   WERD *word;          // current word
   WERD_IT it = &words; // words of ROW

@@ -16,9 +16,11 @@
  *
  **********************************************************************/
 
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
+
 
 namespace tesseract {
 
@@ -90,7 +92,7 @@ char *TessBaseAPI::GetWordStrBoxText(int page_number = 0) {
  * WordStrBox Renderer interface implementation
  **********************************************************************/
 TessWordStrBoxRenderer::TessWordStrBoxRenderer(const char *outputbase)
-    : TessResultRenderer(outputbase, "box") {}
+    : TessResultRenderer(outputbase, "wordstr.box") {}
 
 bool TessWordStrBoxRenderer::AddImageHandler(TessBaseAPI *api) {
   const std::unique_ptr<const char[]> wordstrbox(api->GetWordStrBoxText(imagenum()));

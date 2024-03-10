@@ -18,6 +18,12 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include <cstdio>
 #include <sstream> // for std::istringstream
 #include <string>  // for std::string
@@ -43,7 +49,7 @@ void Classify::ReadNewCutoffs(TFile *fp, uint16_t *Cutoffs) {
 
   if (shape_table_ != nullptr) {
     if (!fp->DeSerialize(shapetable_cutoffs_)) {
-      tprintf("Error during read of shapetable pffmtable!\n");
+	  tprintError("Error during read of shapetable pffmtable!\n");
     }
   }
   for (int i = 0; i < MAX_NUM_CLASSES; i++) {
@@ -72,3 +78,5 @@ void Classify::ReadNewCutoffs(TFile *fp, uint16_t *Cutoffs) {
 }
 
 } // namespace tesseract
+
+#endif

@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -173,7 +173,7 @@ double STATS::ile(double frac) const {
   if (buckets_ == nullptr || total_count_ == 0) {
     return static_cast<double>(rangemin_);
   }
-#if 0
+#if 01
   // TODO(rays) The existing code doesn't seem to be doing the right thing
   // with target a double but this substitute crashes the code that uses it.
   // Investigate and fix properly.
@@ -189,8 +189,14 @@ double STATS::ile(double frac) const {
     ;
   }
   if (index > 0) {
-    ASSERT_HOST(buckets_[index - 1] > 0);
-    return rangemin_ + index - static_cast<double>(sum - target) / buckets_[index - 1];
+	int v_delta = buckets_[index - 1];
+	int s_delta = sum - target;
+	ASSERT_HOST(s_delta >= 0);
+	ASSERT_HOST(v_delta > 0);
+	if (s_delta > 0)
+	  return rangemin_ + index - static_cast<double>(s_delta) / v_delta;
+	else
+      return rangemin_ + index;
   } else {
     return static_cast<double>(rangemin_);
   }
@@ -554,13 +560,13 @@ void STATS::print() const {
   int num_printed = 0;
   for (int index = min; index <= max; index++) {
     if (buckets_[index] != 0) {
-      tprintf("%4d:%-3d ", rangemin_ + index, buckets_[index]);
+      tprintDebug("{}:{} ", rangemin_ + index, buckets_[index]);
       if (++num_printed % 8 == 0) {
-        tprintf("\n");
+        tprintDebug("\n");
       }
     }
   }
-  tprintf("\n");
+  tprintDebug("\n");
   print_summary();
 }
 
@@ -575,15 +581,15 @@ void STATS::print_summary() const {
   }
   int32_t min = min_bucket();
   int32_t max = max_bucket();
-  tprintf("Total count=%d\n", total_count_);
-  tprintf("Min=%.2f Really=%d\n", ile(0.0), min);
-  tprintf("Lower quartile=%.2f\n", ile(0.25));
-  tprintf("Median=%.2f, ile(0.5)=%.2f\n", median(), ile(0.5));
-  tprintf("Upper quartile=%.2f\n", ile(0.75));
-  tprintf("Max=%.2f Really=%d\n", ile(1.0), max);
-  tprintf("Range=%d\n", max + 1 - min);
-  tprintf("Mean= %.2f\n", mean());
-  tprintf("SD= %.2f\n", sd());
+  tprintDebug("Total count={}\n", total_count_);
+  tprintDebug("Min={} Really={}\n", ile(0.0), min);
+  tprintDebug("Lower quartile={}\n", ile(0.25));
+  tprintDebug("Median={}, ile(0.5)={}\n", median(), ile(0.5));
+  tprintDebug("Upper quartile={}\n", ile(0.75));
+  tprintDebug("Max={} Really={}\n", ile(1.0), max);
+  tprintDebug("Range={}\n", max + 1 - min);
+  tprintDebug("Mean= {}\n", mean());
+  tprintDebug("SD= {}\n", sd());
 }
 
 /**********************************************************************
@@ -592,8 +598,8 @@ void STATS::print_summary() const {
  * Draw a histogram of the stats table.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
-void STATS::plot(ScrollView *window, // to draw in
+#if !GRAPHICS_DISABLED
+void STATS::plot(ScrollViewReference &window, // to draw in
                  float xorigin,      // bottom left
                  float yorigin,
                  float xscale,                     // one x unit
@@ -617,8 +623,8 @@ void STATS::plot(ScrollView *window, // to draw in
  * Draw a histogram of the stats table. (Line only)
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
-void STATS::plotline(ScrollView *window, // to draw in
+#if !GRAPHICS_DISABLED
+void STATS::plotline(ScrollViewReference &window, // to draw in
                      float xorigin,      // bottom left
                      float yorigin,
                      float xscale,                     // one x unit

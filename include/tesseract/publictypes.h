@@ -17,6 +17,8 @@
 #ifndef TESSERACT_CCSTRUCT_PUBLICTYPES_H_
 #define TESSERACT_CCSTRUCT_PUBLICTYPES_H_
 
+#include <tesseract/fmt-support.h>
+
 namespace tesseract {
 
 // This file contains types that are used both by the API and internally
@@ -40,7 +42,7 @@ constexpr int kMaxCredibleResolution = 2400;
  * Ratio between median blob size and likely resolution. Used to estimate
  * resolution when none is provided. This is basically 1/usual text size in
  * inches.  */
-constexpr int kResolutionEstimationFactor = 10;
+constexpr int kResolutionEstimationFactor = 6; // 10;
 
 /**
  * Possible types for a POLY_BLOCK or ColPartition.
@@ -66,8 +68,9 @@ enum PolyBlockType {
   PT_NOISE,           // Lies outside of any column.
   PT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PolyBlockType);
 
-/** Returns true if PolyBlockType is of horizontal line type */
+/** Returns true if PolyBlockType is of line type */
 inline bool PTIsLineType(PolyBlockType type) {
   return type == PT_HORZ_LINE || type == PT_VERT_LINE;
 }
@@ -117,6 +120,7 @@ enum Orientation {
   ORIENTATION_PAGE_DOWN = 2,
   ORIENTATION_PAGE_LEFT = 3,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(Orientation);
 
 /**
  * The grapheme clusters within a line of text are laid out logically
@@ -131,6 +135,7 @@ enum WritingDirection {
   WRITING_DIRECTION_RIGHT_TO_LEFT = 1,
   WRITING_DIRECTION_TOP_TO_BOTTOM = 2,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(WritingDirection);
 
 /**
  * The text lines are read in the given sequence.
@@ -148,6 +153,7 @@ enum TextlineOrder {
   TEXTLINE_ORDER_RIGHT_TO_LEFT = 1,
   TEXTLINE_ORDER_TOP_TO_BOTTOM = 2,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(TextlineOrder);
 
 /**
  * Possible modes for page layout analysis. These *must* be kept in order
@@ -168,14 +174,14 @@ enum PageSegMode {
   PSM_SINGLE_WORD = 8,  ///< Treat the image as a single word.
   PSM_CIRCLE_WORD = 9,  ///< Treat the image as a single word in a circle.
   PSM_SINGLE_CHAR = 10, ///< Treat the image as a single character.
-  PSM_SPARSE_TEXT =
-      11, ///< Find as much text as possible in no particular order.
+  PSM_SPARSE_TEXT = 11, ///< Find as much text as possible in no particular order.
   PSM_SPARSE_TEXT_OSD = 12, ///< Sparse text with orientation and script det.
   PSM_RAW_LINE = 13, ///< Treat the image as a single text line, bypassing
                      ///< hacks that are Tesseract-specific.
 
   PSM_COUNT ///< Number of enum entries.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PageSegMode);
 
 /**
  * Inline functions that act on a PageSegMode to determine whether components of
@@ -212,7 +218,7 @@ inline bool PSM_WORD_FIND_ENABLED(int pageseg_mode) {
  * have 5x as many functions.
  */
 enum PageIteratorLevel {
-  RIL_BLOCK,    // Block of text/image/separator line.
+  RIL_BLOCK,    // Block of text/image/separator lines.
   RIL_PARA,     // Paragraph within a block.
   RIL_TEXTLINE, // Line within a paragraph.
   RIL_WORD,     // Word within a textline.

@@ -15,15 +15,21 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+#include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
 #include <cstring>
 #include <memory>     // std::unique_ptr
 #include <string>     // std::string
 #include "serialis.h" // Serialize
+
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/helpers/dir.h"
+#endif
 
 namespace tesseract {
 
@@ -39,7 +45,18 @@ TessResultRenderer::TessResultRenderer(const char *outputbase, const char *exten
     , happy_(true) {
   if (strcmp(outputbase, "-") && strcmp(outputbase, "stdout")) {
     std::string outfile = std::string(outputbase) + "." + extension;
-    fout_ = fopen(outfile.c_str(), "wb");
+
+	// mupdf-monolith has extra features: automatically create the path
+	// (directories) contained in the `outputbase` path, iff they
+	// don't already exist. (UNIX `mkdir -p` style)
+#if defined(HAVE_MUPDF)
+	fz_context *ctx = fz_get_global_context();
+	fz_mkdir_for_file(ctx, outfile.c_str());
+	fout_ = fz_fopen_utf8(ctx, outfile.c_str(), "wb");
+#else
+	fout_ = fopen(outfile.c_str(), "wb");
+#endif
+
     if (fout_ == nullptr) {
       happy_ = false;
     }
@@ -156,19 +173,23 @@ bool TessTextRenderer::AddImageHandler(TessBaseAPI *api) {
  * TSV Text Renderer interface implementation
  **********************************************************************/
 TessTsvRenderer::TessTsvRenderer(const char *outputbase) : TessResultRenderer(outputbase, "tsv") {
-  font_info_ = false;
+  lang_info_ = false;
 }
 
-TessTsvRenderer::TessTsvRenderer(const char *outputbase, bool font_info)
+TessTsvRenderer::TessTsvRenderer(const char *outputbase, bool lang_info)
     : TessResultRenderer(outputbase, "tsv") {
-  font_info_ = font_info;
+  lang_info_ = lang_info;
 }
 
 bool TessTsvRenderer::BeginDocumentHandler() {
   // Output TSV column headings
   AppendString(
       "level\tpage_num\tblock_num\tpar_num\tline_num\tword_"
-      "num\tleft\ttop\twidth\theight\tconf\ttext\n");
+      "num\tsymbol_num\tleft\ttop\twidth\theight\tconf\t");
+  if (lang_info_) {
+    AppendString("lang\t");
+  }
+  AppendString("text\n");
   return true;
 }
 
@@ -177,7 +198,7 @@ bool TessTsvRenderer::EndDocumentHandler() {
 }
 
 bool TessTsvRenderer::AddImageHandler(TessBaseAPI *api) {
-  const std::unique_ptr<const char[]> tsv(api->GetTSVText(imagenum()));
+  const std::unique_ptr<const char[]> tsv(api->GetTSVText(imagenum(), lang_info_));
   if (tsv == nullptr) {
     return false;
   }
@@ -208,7 +229,7 @@ bool TessUnlvRenderer::AddImageHandler(TessBaseAPI *api) {
  * BoxText Renderer interface implementation
  **********************************************************************/
 TessBoxTextRenderer::TessBoxTextRenderer(const char *outputbase)
-    : TessResultRenderer(outputbase, "box") {}
+    : TessResultRenderer(outputbase, "boxtext.box") {}
 
 bool TessBoxTextRenderer::AddImageHandler(TessBaseAPI *api) {
   const std::unique_ptr<const char[]> text(api->GetBoxText(imagenum()));
@@ -221,7 +242,7 @@ bool TessBoxTextRenderer::AddImageHandler(TessBaseAPI *api) {
   return true;
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**********************************************************************
  * Osd Text Renderer interface implementation
@@ -239,6 +260,6 @@ bool TessOsdRenderer::AddImageHandler(TessBaseAPI *api) {
   return true;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 } // namespace tesseract

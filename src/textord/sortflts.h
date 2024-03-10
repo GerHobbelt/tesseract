@@ -19,7 +19,7 @@
 #ifndef SORTFLTS_H
 #define SORTFLTS_H
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
@@ -40,7 +40,8 @@ private:
   int32_t address; // key
 };
 
-ELISTIZEH(SORTED_FLOAT)
+ELISTIZEH(SORTED_FLOAT);
+
 class SORTED_FLOATS {
 public:
   /** empty constructor */

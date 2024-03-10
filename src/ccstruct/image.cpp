@@ -11,13 +11,13 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "image.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 namespace tesseract {
 
@@ -34,9 +34,19 @@ void Image::destroy() {
 }
 
 bool Image::isZero() const {
-  l_int32 r = 0;
-  pixZero(pix_, &r);
+  l_int32 r = 1;
+  if (pix_ != nullptr) {
+    pixZero(pix_, &r);
+  }
   return r == 1;
+}
+
+Image& Image::operator =(Pix* pix) {
+  if (pix_ != nullptr) {
+    pixDestroy(&pix_);
+  }
+  pix_ = pix;
+  return *this;
 }
 
 Image Image::operator|(Image i) const {

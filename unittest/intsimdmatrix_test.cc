@@ -23,6 +23,7 @@
 #include "matrix.h"
 #include "simddetect.h"
 #include "tprintf.h"
+#include "tesstypes.h"
 
 namespace tesseract {
 
@@ -109,28 +110,32 @@ TEST_F(IntSimdMatrixTest, C) {
 
 // Tests that the SSE implementation gets the same result as the vanilla.
 TEST_F(IntSimdMatrixTest, SSE) {
-#if defined(HAVE_SSE4_1)
   if (!SIMDDetect::IsSSEAvailable()) {
     GTEST_LOG_(INFO) << "No SSE found! Not tested!";
     GTEST_SKIP();
   }
-  ExpectEqualResults(IntSimdMatrix::intSimdMatrixSSE);
-#else
-  GTEST_LOG_(INFO) << "SSE unsupported! Not tested!";
-  GTEST_SKIP();
-#endif
+  ExpectEqualResults(*IntSimdMatrix::intSimdMatrixSSE);
 }
 
 // Tests that the AVX2 implementation gets the same result as the vanilla.
 TEST_F(IntSimdMatrixTest, AVX2) {
-#if defined(HAVE_AVX2)
   if (!SIMDDetect::IsAVX2Available()) {
     GTEST_LOG_(INFO) << "No AVX2 found! Not tested!";
     GTEST_SKIP();
   }
-  ExpectEqualResults(IntSimdMatrix::intSimdMatrixAVX2);
+  ExpectEqualResults(*IntSimdMatrix::intSimdMatrixAVX2);
+}
+
+// Tests that the AVX512VNNI implementation gets the same result as the vanilla.
+TEST_F(IntSimdMatrixTest, AVX512VNNI) {
+#if defined(HAVE_AVX512VNNI)
+  if (!SIMDDetect::IsAVX512VNNIAvailable()) {
+    GTEST_LOG_(INFO) << "No AVX512VNNI found! Not tested!";
+    GTEST_SKIP();
+  }
+  ExpectEqualResults(IntSimdMatrix::intSimdMatrixAVX512VNNI);
 #else
-  GTEST_LOG_(INFO) << "AVX2 unsupported! Not tested!";
+  GTEST_LOG_(INFO) << "AVX512VNNI unsupported! Not tested!";
   GTEST_SKIP();
 #endif
 }

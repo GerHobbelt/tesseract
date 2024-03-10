@@ -17,9 +17,12 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
+#include <tesseract/fmt-support.h>
 
 #include "pgedit.h"
 
@@ -40,8 +43,11 @@
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::stringstream
 
-#ifndef GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
+
 namespace tesseract {
+
 #  define ASC_HEIGHT (2 * kBlnBaselineOffset + kBlnXHeight)
 #  define X_HEIGHT (kBlnBaselineOffset + kBlnXHeight)
 #  define BL_HEIGHT kBlnBaselineOffset
@@ -79,6 +85,155 @@ enum CMD_EVENTS {
   SHOW_SMALLCAPS_CMD_EVENT,
   SHOW_DROPCAPS_CMD_EVENT,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(CMD_EVENTS);
+
+} // namespace tesseract
+
+namespace fmt {
+
+using namespace tesseract;
+
+auto fmt::formatter<CMD_EVENTS>::format(CMD_EVENTS c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum PITCH_TYPE:
+  switch (c) {
+      case CMD_EVENTS::NULL_CMD_EVENT:
+        name = "null";
+        break;
+
+      case CMD_EVENTS::CHANGE_DISP_CMD_EVENT:
+        name = "change_disp";
+        break;
+
+      case CMD_EVENTS::DUMP_WERD_CMD_EVENT:
+        name = "dump_werd";
+        break;
+
+      case CMD_EVENTS::SHOW_POINT_CMD_EVENT:
+        name = "show_point";
+        break;
+
+      case CMD_EVENTS::SHOW_BLN_WERD_CMD_EVENT:
+        name = "show_bln_werd";
+        break;
+
+      case CMD_EVENTS::DEBUG_WERD_CMD_EVENT:
+        name = "debug_werd";
+        break;
+
+      case CMD_EVENTS::BLAMER_CMD_EVENT:
+        name = "blamer";
+        break;
+
+      case CMD_EVENTS::BOUNDING_BOX_CMD_EVENT:
+        name = "bounding_box";
+        break;
+
+      case CMD_EVENTS::CORRECT_TEXT_CMD_EVENT:
+        name = "correct_text";
+        break;
+
+      case CMD_EVENTS::POLYGONAL_CMD_EVENT:
+        name = "polygonal";
+        break;
+
+      case CMD_EVENTS::BL_NORM_CMD_EVENT:
+        name = "bl_norm";
+        break;
+
+      case CMD_EVENTS::BITMAP_CMD_EVENT:
+        name = "bitmap";
+        break;
+
+      case CMD_EVENTS::IMAGE_CMD_EVENT:
+        name = "image";
+        break;
+
+      case CMD_EVENTS::BLOCKS_CMD_EVENT:
+        name = "blocks";
+        break;
+
+      case CMD_EVENTS::BASELINES_CMD_EVENT:
+        name = "baselines";
+        break;
+
+      case CMD_EVENTS::UNIFORM_DISP_CMD_EVENT:
+        name = "uniform_disp";
+        break;
+
+      case CMD_EVENTS::REFRESH_CMD_EVENT:
+        name = "refresh";
+        break;
+
+      case CMD_EVENTS::QUIT_CMD_EVENT:
+        name = "quit";
+        break;
+
+      case CMD_EVENTS::RECOG_WERDS:
+        name = "recognize_werds";
+        break;
+
+      case CMD_EVENTS::RECOG_PSEUDO:
+        name = "recognize_peudo";
+        break;
+
+      case CMD_EVENTS::SHOW_BLOB_FEATURES:
+        name = "show_blob_features";
+        break;
+
+      case CMD_EVENTS::SHOW_SUBSCRIPT_CMD_EVENT:
+        name = "show_subscript";
+        break;
+
+      case CMD_EVENTS::SHOW_SUPERSCRIPT_CMD_EVENT:
+        name = "show_superscript";
+        break;
+
+      case CMD_EVENTS::SHOW_ITALIC_CMD_EVENT:
+        name = "show_italic";
+        break;
+
+      case CMD_EVENTS::SHOW_BOLD_CMD_EVENT:
+        name = "show_bold";
+        break;
+
+      case CMD_EVENTS::SHOW_UNDERLINE_CMD_EVENT:
+        name = "show_underline";
+        break;
+
+      case CMD_EVENTS::SHOW_FIXEDPITCH_CMD_EVENT:
+        name = "show_fixed_pitch";
+        break;
+
+      case CMD_EVENTS::SHOW_SERIF_CMD_EVENT:
+        name = "show_serif";
+        break;
+
+      case CMD_EVENTS::SHOW_SMALLCAPS_CMD_EVENT:
+        name = "show_smallcaps";
+        break;
+
+      case CMD_EVENTS::SHOW_DROPCAPS_CMD_EVENT:
+        name = "show_dropcaps";
+        break;
+
+    default:
+      name = "unknown_cmd";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<int>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+} // namespace fmt
+
+namespace tesseract {
+
+static inline auto format_as(CMD_EVENTS e) {
+  return fmt::underlying(e);
+}
 
 enum ColorationMode {
   CM_RAINBOW,
@@ -99,11 +254,13 @@ enum ColorationMode {
  *
  */
 
-static ScrollView *image_win;
-static ParamsEditor *pe;
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
+static ScrollViewReference image_win;
+static ParamsEditor *pe = nullptr;
 static bool stillRunning = false;
 
-static ScrollView *bln_word_window = nullptr; // baseline norm words
+static ScrollViewReference bln_word_window; // baseline norm words
 
 static CMD_EVENTS mode = CHANGE_DISP_CMD_EVENT; // selected words op
 
@@ -111,11 +268,8 @@ static bool recog_done = false; // recog_all_words was called
 
 // These variables should remain global, since they are only used for the
 // debug mode (in which only a single Tesseract thread/instance will exist).
-static std::bitset<16> word_display_mode;
+static std::bitset<DF_COUNT> word_display_mode;
 static ColorationMode color_mode = CM_RAINBOW;
-static bool display_image = false;
-static bool display_blocks = false;
-static bool display_baselines = false;
 
 static PAGE_RES *current_page_res = nullptr;
 
@@ -131,6 +285,8 @@ INT_VAR(editor_word_xpos, 60, "Word window X Pos");
 INT_VAR(editor_word_ypos, 510, "Word window Y Pos");
 INT_VAR(editor_word_height, 240, "Word window height");
 INT_VAR(editor_word_width, 655, "Word window width");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * show_point()
@@ -196,14 +352,15 @@ public:
  *
  *  @return a WINDOW for the word window, creating it if necessary
  */
-static ScrollView *bln_word_window_handle() { // return handle
+static ScrollViewReference &bln_word_window_handle(Tesseract *tess) { // return handle
                                               // not opened yet
-  if (bln_word_window == nullptr) {
+  if (!bln_word_window) {
     pgeditor_msg("Creating BLN word window...");
-    bln_word_window = new ScrollView(editor_word_name.c_str(), editor_word_xpos, editor_word_ypos,
+    bln_word_window = ScrollViewManager::MakeScrollView(tess, editor_word_name.c_str(), editor_word_xpos, editor_word_ypos,
                                      editor_word_width, editor_word_height, 4000, 4000, true);
     auto *a = new BlnEventHandler();
     bln_word_window->AddEventHandler(a);
+    bln_word_window->RegisterGlobalRefToMe(&bln_word_window);
     pgeditor_msg("Creating BLN word window...Done");
   }
   return bln_word_window;
@@ -215,11 +372,14 @@ static ScrollView *bln_word_window_handle() { // return handle
  *  Destroy the existing image window if there is one.  Work out how big the
  *  new window needs to be. Create it and re-display.
  */
-
-static void build_image_window(int width, int height) {
-  delete image_win;
-  image_win = new ScrollView(editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
-                             width + 1, height + editor_image_menuheight + 1, width, height, true);
+static void build_image_window(Tesseract *tess, int width, int height) {
+  if (!image_win) {
+      image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
+                                 width + 1, height + editor_image_menuheight + 1, width, height, true);
+      image_win->RegisterGlobalRefToMe(&image_win);
+  } else {
+      image_win->Clear();
+  }
 }
 
 /**
@@ -227,8 +387,7 @@ static void build_image_window(int width, int height) {
  *
  *  Display normalized baseline, x-height, ascender limit and descender limit
  */
-
-static void display_bln_lines(ScrollView *window, ScrollView::Color colour, float scale_factor,
+static void display_bln_lines(ScrollViewReference &window, ScrollView::Color colour, float scale_factor,
                               float y_offset, float minx, float maxx) {
   window->Pen(colour);
   window->Line(minx, y_offset + scale_factor * DESC_HEIGHT, maxx,
@@ -245,9 +404,7 @@ static void display_bln_lines(ScrollView *window, ScrollView::Color colour, floa
  *
  *  Event handler that processes incoming events, either forwarding
  *  them to process_cmd_win_event or process_image_event.
- *
  */
-
 void PGEventHandler::Notify(const SVEvent *event) {
   char myval = '0';
   if (event->type == SVET_POPUP) {
@@ -322,26 +479,34 @@ SVMenuNode *Tesseract::build_menu_new() {
  *
  *  Redisplay page
  */
-void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it)) {
+void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it)) {
+  current_page_res = page_res;
+
   int block_count = 1;
 
   image_win->Clear();
-  if (display_image) {
-    image_win->Draw(pix_binary_, 0, 0);
+  if (debug_display_page) {
+    image_win->Draw(pix_binary(), 0, image_win->TranslateYCoordinate(0), "Tesseract::do_re_display B&W source image");
   }
 
+  {
+    PAGE_RES_IT pr_it(page_res);
+    word_dumper(&pr_it);
+  }
+
+
   image_win->Brush(ScrollView::NONE);
-  PAGE_RES_IT pr_it(current_page_res);
+  PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     (this->*word_painter)(&pr_it);
-    if (display_baselines && pr_it.row() != pr_it.prev_row()) {
+    if (debug_display_page_baselines && pr_it.row() != pr_it.prev_row()) {
       pr_it.row()->row->plot_baseline(image_win, ScrollView::GREEN);
     }
-    if (display_blocks && pr_it.block() != pr_it.prev_block()) {
+    if (debug_display_page_blocks && pr_it.block() != pr_it.prev_block()) {
       pr_it.block()->block->pdblk.plot(image_win, block_count++, ScrollView::RED);
     }
   }
-  image_win->Update();
+  image_win->UpdateWindow();
 }
 
 /**
@@ -349,24 +514,36 @@ void Tesseract::do_re_display(bool (tesseract::Tesseract::*word_painter)(PAGE_RE
  *
  *  Top level editor operation:
  *  Setup a new window and an according event handler
- *
  */
-
 void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   current_page_res = page_res;
-  if (current_page_res->block_res_list.empty()) {
+  if (page_res->block_res_list.empty()) {
     return;
   }
 
   recog_done = false;
   stillRunning = true;
 
-  build_image_window(width, height);
+  build_image_window(this, width, height);
   word_display_mode.set(DF_EDGE_STEP);
-  do_re_display(&tesseract::Tesseract::word_set_display);
-#  ifndef GRAPHICS_DISABLED
+  if (debug_misc) {
+    word_display_mode.set(DF_BOX);
+    word_display_mode.set(DF_TEXT);
+    word_display_mode.set(DF_POLYGONAL);
+    word_display_mode.set(DF_EDGE_STEP);
+    word_display_mode.set(DF_BN_POLYGONAL);
+    word_display_mode.set(DF_BLAMER);
+  }
+  do_re_display(page_res, &tesseract::Tesseract::word_set_display);
+
+  ASSERT0(image_win);
+  if (!image_win->HasInteractiveFeature()) {
+    return;
+  }
+
+#if !GRAPHICS_DISABLED
   pe = new ParamsEditor(this, image_win);
-#  endif
+#endif
   PGEventHandler pgEventHandler(this);
 
   image_win->AddEventHandler(&pgEventHandler);
@@ -375,10 +552,13 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
   SVMenuNode *svMenuRoot = build_menu_new();
 
   svMenuRoot->BuildMenu(image_win);
+
   image_win->SetVisible(true);
 
   image_win->AwaitEvent(SVET_DESTROY);
   image_win->AddEventHandler(nullptr);
+
+  delete svMenuRoot;
 }
 
 /**
@@ -387,12 +567,10 @@ void Tesseract::pgeditor_main(int width, int height, PAGE_RES *page_res) {
  *  Process a command returned from the command window
  * (Just call the appropriate command handler)
  */
-
 bool Tesseract::process_cmd_win_event( // UI command semantics
     int32_t cmd_event,                 // which menu item?
-    char *new_value                    // any prompt data
+    const char *new_value              // any prompt data
 ) {
-  char msg[160];
   bool exit = false;
 
   color_mode = CM_RAINBOW;
@@ -453,7 +631,7 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       } else {
         word_display_mode.reset(DF_BLAMER);
       }
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       mode = CHANGE_DISP_CMD_EVENT;
       break;
     case CORRECT_TEXT_CMD_EVENT:
@@ -489,58 +667,58 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       mode = CHANGE_DISP_CMD_EVENT;
       break;
     case UNIFORM_DISP_CMD_EVENT:
-      do_re_display(&tesseract::Tesseract::word_set_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_set_display);
       break;
     case IMAGE_CMD_EVENT:
-      display_image = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      debug_display_page = (new_value[0] == 'T');
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case BLOCKS_CMD_EVENT:
-      display_blocks = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      debug_display_page_blocks = (new_value[0] == 'T');
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case BASELINES_CMD_EVENT:
-      display_baselines = (new_value[0] == 'T');
-      do_re_display(&tesseract::Tesseract::word_display);
+      debug_display_page_baselines = (new_value[0] == 'T');
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SUBSCRIPT_CMD_EVENT:
       color_mode = CM_SUBSCRIPT;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SUPERSCRIPT_CMD_EVENT:
       color_mode = CM_SUPERSCRIPT;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_ITALIC_CMD_EVENT:
       color_mode = CM_ITALIC;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_BOLD_CMD_EVENT:
       color_mode = CM_BOLD;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_UNDERLINE_CMD_EVENT:
       color_mode = CM_UNDERLINE;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_FIXEDPITCH_CMD_EVENT:
       color_mode = CM_FIXEDPITCH;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SERIF_CMD_EVENT:
       color_mode = CM_SERIF;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_SMALLCAPS_CMD_EVENT:
       color_mode = CM_SMALLCAPS;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case SHOW_DROPCAPS_CMD_EVENT:
       color_mode = CM_DROPCAPS;
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case REFRESH_CMD_EVENT:
-      do_re_display(&tesseract::Tesseract::word_display);
+      do_re_display(current_page_res, &tesseract::Tesseract::word_display);
       break;
     case QUIT_CMD_EVENT:
       exit = true;
@@ -548,8 +726,7 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
       break;
 
     default:
-      snprintf(msg, sizeof(msg), "Unrecognised event %" PRId32 "(%s)", cmd_event, new_value);
-      image_win->AddMessage(msg);
+      image_win->AddMessage("Unrecognised event {} ({})", cmd_event, new_value);
       break;
   }
   return exit;
@@ -571,7 +748,6 @@ void Tesseract::process_image_event( // action in image win
   static ICOORD down;
   ICOORD up;
   TBOX selection_box;
-  char msg[80];
 
   switch (event.type) {
     case SVET_SELECTION:
@@ -608,11 +784,11 @@ void Tesseract::process_image_event( // action in image win
           break; // ignore up event
 
         case RECOG_WERDS:
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
           image_win->AddMessage("Recogging selected words");
           this->process_selected_words(current_page_res, selection_box,
                                        &Tesseract::recog_interactive);
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
           break;
         case RECOG_PSEUDO:
           image_win->AddMessage("Recogging selected blobs");
@@ -623,8 +799,7 @@ void Tesseract::process_image_event( // action in image win
           break;
 
         default:
-          snprintf(msg, sizeof(msg), "Mode %d not yet implemented", mode);
-          image_win->AddMessage(msg);
+          image_win->AddMessage("Mode {} not yet implemented", mode);
           break;
       }
     default:
@@ -638,7 +813,7 @@ void Tesseract::process_image_event( // action in image win
  * Process the whole image, but load word_config_ for the selected word(s).
  */
 void Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
   ResetAdaptiveClassifier();
 #  endif
   recog_all_words(page_res, nullptr, &selection_box, word_config_.c_str(), 0);
@@ -678,19 +853,20 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   if (word_res->chopped_word == nullptr) {
     // Setup word normalization parameters.
-    word_res->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
-  bln_word_window_handle()->Clear();
-  display_bln_lines(bln_word_window_handle(), ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
+  ScrollViewReference win = bln_word_window_handle(this);
+  win->Clear();
+  display_bln_lines(win, ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
   C_BLOB_IT it(word_res->word->cblob_list());
   ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, bln_word_window_handle());
+    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, win);
     color = WERD::NextColor(color);
   }
-  bln_word_window_handle()->Update();
+  win->UpdateWindow();
   return true;
 }
 
@@ -708,7 +884,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   float shift; // from bot left
 
   if (color_mode != CM_RAINBOW && word_res->box_word != nullptr) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
     BoxWord *box_word = word_res->box_word;
     WERD_CHOICE *best_choice = word_res->best_choice;
     int length = box_word->length();
@@ -771,7 +947,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     return true;
 #  else
     return false;
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
   }
   /*
   Note the double coercions of(COLOUR)((int32_t)editor_image_word_bb_color)
@@ -814,6 +990,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   if (word->display_flag(DF_TEXT) && word->text() != nullptr) {
     text = word->text();
   }
+  
   if (word->display_flag(DF_BLAMER) &&
       !(word_res->blamer_bundle != nullptr &&
         word_res->blamer_bundle->incorrect_result_reason() == IRR_CORRECT)) {
@@ -831,14 +1008,20 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     } else {
       word_res->best_choice->string_and_lengths(&best_choice_str, nullptr);
     }
-    text += best_choice_str;
-    IncorrectResultReason reason =
-        (blamer_bundle == nullptr) ? IRR_PAGE_LAYOUT : blamer_bundle->incorrect_result_reason();
+
+    if (blamer_bundle == nullptr && word_res->best_choice == nullptr) {
+      text = "";
+    } else {
+      text += best_choice_str;
+    }
+
+    IncorrectResultReason reason = (blamer_bundle == nullptr) ? IRR_PAGE_LAYOUT : blamer_bundle->incorrect_result_reason();
     ASSERT_HOST(reason < IRR_NUM_REASONS);
     blame += " [";
     blame += BlamerBundle::IncorrectReasonName(reason);
     blame += "]";
   }
+
   if (text.length() > 0) {
     word_bb = word->bounding_box();
     image_win->Pen(ScrollView::RED);
@@ -851,8 +1034,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     shift = (word_height < word_bb.width()) ? 0.25 * word_height : 0.0f;
     image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height, text.c_str());
     if (blame.length() > 0) {
-      image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height,
-                      blame.c_str());
+      image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height, blame.c_str());
     }
 
     displayed_something = true;
@@ -875,23 +1057,33 @@ namespace tesseract {
  * Dump members to the debug window
  */
 bool Tesseract::word_dumper(PAGE_RES_IT *pr_it) {
-  if (pr_it->block()->block != nullptr) {
-    tprintf("\nBlock data...\n");
-    pr_it->block()->block->print(nullptr, false);
+  BLOCK_RES *block = pr_it->block();
+  if (block != nullptr && block->block != nullptr) {
+    tprintDebug("\nBlock data...\n");
+    block->block->print(nullptr, true);
   }
-  tprintf("\nRow data...\n");
-  pr_it->row()->row->print(nullptr);
-  tprintf("\nWord data...\n");
+  tprintDebug("\nRow data...\n");
+  ROW_RES *row = pr_it->row();
+  if (row != nullptr) {
+    row->row->print(nullptr);
+  } else {
+    tprintDebug("  (empty / nil)\n");
+  }
+  tprintDebug("\nWord data...\n");
   WERD_RES *word_res = pr_it->word();
-  word_res->word->print();
-  if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
-      word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
-    tprintf("Current blamer debug: %s\n", word_res->blamer_bundle->debug().c_str());
+  if (word_res != nullptr) {
+      word_res->word->print();
+      if (word_res->blamer_bundle != nullptr && wordrec_debug_blamer &&
+          word_res->blamer_bundle->incorrect_result_reason() != IRR_CORRECT) {
+        tprintDebug("Current blamer debug: {}\n", word_res->blamer_bundle->debug());
+      }
+  } else {
+      tprintDebug("  (empty / nil)\n");
   }
   return true;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * word_set_display()  Word processor
  *
@@ -911,12 +1103,12 @@ bool Tesseract::word_set_display(PAGE_RES_IT *pr_it) {
 // page_res is non-const because the iterator doesn't know if you are going
 // to change the items it points to! Really a const here though.
 void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_box) {
-#  ifndef DISABLED_LEGACY_ENGINE
+#  if !DISABLED_LEGACY_ENGINE
   PAGE_RES_IT *it = make_pseudo_word(page_res, selection_box);
   if (it != nullptr) {
     WERD_RES *word_res = it->word();
     word_res->x_height = it->row()->row->x_height();
-    word_res->SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, it->row()->row, it->block()->block);
     TWERD *bln_word = word_res->chopped_word;
@@ -927,24 +1119,24 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     Classify::ExtractFeatures(*bln_blob, classify_nonlinear_norm, &bl_features, &cn_features,
                               &fx_info, nullptr);
     // Display baseline features.
-    ScrollView *bl_win = CreateFeatureSpaceWindow("BL Features", 512, 0);
+    ScrollViewReference bl_win = CreateFeatureSpaceWindow(this, "BL Features", 512, 0);
     ClearFeatureSpaceWindow(baseline, bl_win);
     for (auto &bl_feature : bl_features) {
       RenderIntFeature(bl_win, &bl_feature, ScrollView::GREEN);
     }
-    bl_win->Update();
+    bl_win->UpdateWindow();
     // Display cn features.
-    ScrollView *cn_win = CreateFeatureSpaceWindow("CN Features", 512, 0);
+    ScrollViewReference cn_win = CreateFeatureSpaceWindow(this, "CN Features", 512, 0);
     ClearFeatureSpaceWindow(character, cn_win);
     for (auto &cn_feature : cn_features) {
       RenderIntFeature(cn_win, &cn_feature, ScrollView::GREEN);
     }
-    cn_win->Update();
+    cn_win->UpdateWindow();
 
     it->DeleteCurrentWord();
     delete it;
   }
-#  endif // ndef DISABLED_LEGACY_ENGINE
+#  endif // !DISABLED_LEGACY_ENGINE
 }
 
 #endif // !GRAPHICS_DISABLED

@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "mfoutline.h"
 
 #include "blobs.h"
@@ -415,3 +421,5 @@ MFOUTLINE NextDirectionChange(MFOUTLINE EdgePoint) {
 }
 
 } // namespace tesseract
+
+#endif

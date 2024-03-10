@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -182,12 +182,12 @@ void ColPartitionSet::AddToColumnSetsIfUnique(PartSetVector *column_sets,
   bool debug = TabFind::WithinTestRegion(2, bounding_box_.left(),
                                          bounding_box_.bottom());
   if (debug) {
-    tprintf("Considering new column candidate:\n");
+    tprintDebug("Considering new column candidate:\n");
     Print();
   }
   if (!LegalColumnCandidate()) {
     if (debug) {
-      tprintf("Not a legal column candidate:\n");
+      tprintDebug("Not a legal column candidate:\n");
       Print();
     }
     delete this;
@@ -207,21 +207,21 @@ void ColPartitionSet::AddToColumnSetsIfUnique(PartSetVector *column_sets,
     if (better) {
       // The new one is better so add it.
       if (debug) {
-        tprintf("Good one\n");
+        tprintDebug("Good one\n");
       }
       column_sets->insert(column_sets->begin() + i, this);
       return;
     }
     if (columns->CompatibleColumns(false, this, cb)) {
       if (debug) {
-        tprintf("Duplicate\n");
+        tprintDebug("Duplicate\n");
       }
       delete this;
       return; // It is not unique.
     }
   }
   if (debug) {
-    tprintf("Added to end\n");
+    tprintDebug("Added to end\n");
   }
   column_sets->push_back(this);
 }
@@ -231,13 +231,13 @@ void ColPartitionSet::AddToColumnSetsIfUnique(PartSetVector *column_sets,
 bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
                                         const WidthCallback &cb) {
   if (debug) {
-    tprintf("CompatibleColumns testing compatibility\n");
+    tprintDebug("CompatibleColumns testing compatibility\n");
     Print();
     other->Print();
   }
   if (other->parts_.empty()) {
     if (debug) {
-      tprintf("CompatibleColumns true due to empty other\n");
+      tprintDebug("CompatibleColumns true due to empty other\n");
     }
     return true;
   }
@@ -246,7 +246,7 @@ bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
     ColPartition *part = it.data();
     if (part->blob_type() < BRT_UNKNOWN) {
       if (debug) {
-        tprintf("CompatibleColumns ignoring image partition\n");
+        tprintDebug("CompatibleColumns ignoring image partition\n");
         part->Print();
       }
       continue; // Image partitions are irrelevant to column compatibility.
@@ -258,14 +258,14 @@ bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
     ColPartition *right_col = ColumnContaining(right, y);
     if (right_col == nullptr || left_col == nullptr) {
       if (debug) {
-        tprintf("CompatibleColumns false due to partition edge outside\n");
+        tprintDebug("CompatibleColumns false due to partition edge outside\n");
         part->Print();
       }
       return false; // A partition edge lies outside of all columns
     }
     if (right_col != left_col && cb(right - left)) {
       if (debug) {
-        tprintf("CompatibleColumns false due to good width in multiple cols\n");
+        tprintDebug("CompatibleColumns false due to good width in multiple cols\n");
         part->Print();
       }
       return false; // Partition with a good width must be in a single column.
@@ -294,8 +294,8 @@ bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
         if (part->good_width() && next_part->good_width()) {
           if (debug) {
             int next_right = next_part->bounding_box().right();
-            tprintf("CompatibleColumns false due to 2 parts of good width\n");
-            tprintf("part1 %d-%d, part2 %d-%d\n", left, right, next_left,
+            tprintDebug("CompatibleColumns false due to 2 parts of good width\n");
+            tprintDebug("part1 {}-{}, part2 {}-{}\n", left, right, next_left,
                     next_right);
             right_col->Print();
           }
@@ -306,7 +306,7 @@ bool ColPartitionSet::CompatibleColumns(bool debug, ColPartitionSet *other,
     }
   }
   if (debug) {
-    tprintf("CompatibleColumns true!\n");
+    tprintDebug("CompatibleColumns true!\n");
   }
   return true;
 }
@@ -398,11 +398,11 @@ void ColPartitionSet::GetColumnBoxes(int y_bottom, int y_top,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the edges of the columns at the given y coords.
 void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
-                                         ScrollView *win) {
+                                         ScrollViewReference &win) {
   ColPartition_IT it(&parts_);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     ColPartition *part = it.data();
@@ -608,9 +608,9 @@ void ColPartitionSet::AccumulateColumnWidthsAndGaps(int *total_width,
 // Provide debug output for this ColPartitionSet and all the ColPartitions.
 void ColPartitionSet::Print() {
   ColPartition_IT it(&parts_);
-  tprintf(
-      "Partition set of %d parts, %d good, coverage=%d+%d"
-      " (%d,%d)->(%d,%d)\n",
+  tprintDebug(
+      "Partition set of {} parts, {} good, coverage={}+{}"
+      " ({},{})->({},{})\n",
       it.length(), good_column_count_, good_coverage_, bad_coverage_,
       bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(),
       bounding_box_.top());
@@ -646,7 +646,7 @@ void ColPartitionSet::AddPartition(ColPartition *new_part,
 // |        Double     width    heading                              |
 // |-----------------------------------------------------------------|
 // |-------------------------------| |-------------------------------|
-// |   Common width ColParition    | |  Common width ColPartition    |
+// |   Common width ColPartition   | |  Common width ColPartition    |
 // |-------------------------------| |-------------------------------|
 // the layout with two common-width columns has better coverage than the
 // double width heading, because the coverage is "good," even though less in

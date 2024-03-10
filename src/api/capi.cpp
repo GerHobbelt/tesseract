@@ -15,7 +15,9 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/debugheap.h>
 #include <tesseract/capi.h>
+
 
 const char *TessVersion() {
   return TessBaseAPI::Version();
@@ -66,6 +68,10 @@ TessResultRenderer *TessHOcrRendererCreate2(const char *outputbase, BOOL font_in
 
 TessResultRenderer *TessAltoRendererCreate(const char *outputbase) {
   return new tesseract::TessAltoRenderer(outputbase);
+}
+
+TessResultRenderer *TessPAGERendererCreate(const char *outputbase) {
+  return new tesseract::TessPAGERenderer(outputbase);
 }
 
 TessResultRenderer *TessTsvRendererCreate(const char *outputbase) {
@@ -227,8 +233,8 @@ BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle, const char *filen
 }
 
 int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode mode, char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     TessOcrEngineMode mode, const char **configs_vec, size_t configs_size, const char **vars_vec,
+                     const char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -237,28 +243,41 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
       varValues.emplace_back(vars_values[i]);
     }
   }
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
 
-  return handle->Init(datapath, language, mode, configs, configs_size, &varNames, &varValues,
+  return handle->InitFull(datapath, language, mode, configs, varNames, varValues,
                       set_only_non_debug_params != 0);
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
-                     TessOcrEngineMode oem, char **configs, int configs_size) {
-  return handle->Init(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
+                     TessOcrEngineMode oem, const char **configs_vec, size_t configs_size) {
+  std::vector<std::string> nil;
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
+  return handle->InitFull(datapath, language, oem, configs, nil, nil, false);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode oem) {
-  return handle->Init(datapath, language, oem);
+  return handle->InitOem(datapath, language, oem);
 }
 
 int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *language) {
-  return handle->Init(datapath, language);
+  return handle->InitSimple(datapath, language);
 }
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
-                     TessOcrEngineMode mode, char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     TessOcrEngineMode mode, const char **configs_vec, size_t configs_size, const char **vars_vec,
+                     const char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -267,9 +286,15 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
       varValues.emplace_back(vars_values[i]);
     }
   }
+  std::vector<std::string> configs;
+  if (configs_vec != nullptr) {
+	for (size_t i = 0; i < configs_size; i++) {
+	  configs.emplace_back(configs_vec[i]);
+	}
+  }
 
-  return handle->Init(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
-                      set_only_non_debug_params != 0, nullptr);
+  return handle->InitFromMemory(data, data_size, language, mode, configs, varNames, varValues,
+                      set_only_non_debug_params != 0);
 }
 
 const char *TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI *handle) {
@@ -314,7 +339,7 @@ char *TessBaseAPIRect(TessBaseAPI *handle, const unsigned char *imagedata, int b
                                height);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI *handle) {
   handle->ClearAdaptiveClassifier();
 }
@@ -349,7 +374,7 @@ void TessBaseAPIClearPersistentCache(TessBaseAPI * /*handle*/) {
   TessBaseAPI::ClearPersistentCache();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 BOOL TessBaseAPIDetectOrientationScript(TessBaseAPI *handle, int *orient_deg, float *orient_conf,
                                         const char **script_name, float *script_conf) {
@@ -415,11 +440,11 @@ BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename, const ch
   return static_cast<int>(handle->ProcessPages(filename, retry_config, timeout_millisec, renderer));
 }
 
-BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix, int page_index,
+BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                             const char *filename, const char *retry_config, int timeout_millisec,
                             TessResultRenderer *renderer) {
   return static_cast<int>(
-      handle->ProcessPage(pix, page_index, filename, retry_config, timeout_millisec, renderer));
+      handle->ProcessPage(pix, filename, retry_config, timeout_millisec, renderer));
 }
 
 TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle) {
@@ -440,6 +465,10 @@ char *TessBaseAPIGetHOCRText(TessBaseAPI *handle, int page_number) {
 
 char *TessBaseAPIGetAltoText(TessBaseAPI *handle, int page_number) {
   return handle->GetAltoText(page_number);
+}
+
+char *TessBaseAPIGetPAGEText(TessBaseAPI *handle, int page_number) {
+  return handle->GetPAGEText(page_number);
 }
 
 char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number) {
@@ -470,7 +499,7 @@ int *TessBaseAPIAllWordConfidences(TessBaseAPI *handle) {
   return handle->AllWordConfidences();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI *handle, TessPageSegMode mode, const char *wordstr) {
   return static_cast<int>(handle->AdaptToWordStr(mode, wordstr));
 }

@@ -2118,7 +2118,7 @@ static PROTOTYPE *TestEllipticalProto(CLUSTERER *Clusterer, CLUSTERCONFIG *Confi
   }
   double err = InvertMatrix(&Covariance[0], N, &Inverse[0]);
   if (err > 1) {
-    tprintf("Clustering error: Matrix inverse failed with error %g\n", err);
+    tprintError("Clustering error: Matrix inverse failed with error {}\n", err);
   }
   int EssentialN = 0;
   for (int dim = 0; dim < N; ++dim) {
@@ -3238,10 +3238,10 @@ static bool MultipleCharSamples(CLUSTERER *Clusterer, CLUSTER *Cluster, float Ma
   InitSampleSearch(SearchState, Cluster);
   while ((Sample = NextSample(&SearchState)) != nullptr) {
     CharID = Sample->CharID;
-    if (CharFlags[CharID] == false) {
-      CharFlags[CharID] = true;
+    if (CharFlags[CharID] == 0) {
+      CharFlags[CharID] = 1;
     } else {
-      if (CharFlags[CharID] == true) {
+      if (CharFlags[CharID] == 1) {
         NumIllegalInCluster++;
         CharFlags[CharID] = ILLEGAL_CHAR;
       }

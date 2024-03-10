@@ -74,15 +74,11 @@ public:
       int left,         // new left edge
       int right);       // new right edge
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw it
-      ScrollView *window,              // in window
+      ScrollViewReference &window,     // in window
       ScrollView::Color colour) const; // in colour
 #endif
-
-  // Paint the baseline over pix. If pix has depth of 32, then the line will
-  // be painted in red. Otherwise it will be painted in black.
-  void plot(Image pix) const;
 
   QSPLINE &operator=(const QSPLINE &source); // from this
 

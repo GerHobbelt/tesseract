@@ -21,6 +21,7 @@
 #include "export.h" // for TESS_API
 
 #include <vector> // for std::vector
+#include <cmath>
 
 namespace tesseract {
 
@@ -45,7 +46,7 @@ struct OSBestResult {
 };
 
 struct OSResults {
-  OSResults() : unicharset(nullptr) {
+  OSResults() : unicharset(nullptr), gradient(NAN) {
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < kMaxNumberOfScripts; ++j) {
         scripts_na[i][j] = 0;
@@ -75,6 +76,10 @@ struct OSResults {
   float orientations[4];
   // Script confidence scores for each of 4 possible orientations.
   float scripts_na[4][kMaxNumberOfScripts];
+
+  // Gradient of page.
+  // Generally arctan(gradient) gives the angle (in radians) of the median baseline.
+  float gradient;
 
   UNICHARSET *unicharset;
   OSBestResult best_result;
@@ -116,6 +121,7 @@ private:
   const std::vector<int> *allowed_scripts_;
 };
 
+#if 0   // moved to Tesseract class.
 int orientation_and_script_detection(const char *filename, OSResults *,
                                      tesseract::Tesseract *);
 
@@ -128,6 +134,7 @@ int os_detect_blobs(const std::vector<int> *allowed_scripts,
 
 bool os_detect_blob(BLOBNBOX *bbox, OrientationDetector *o, ScriptDetector *s,
                     OSResults *, tesseract::Tesseract *tess);
+#endif
 
 // Helper method to convert an orientation index to its value in degrees.
 // The value represents the amount of clockwise rotation in degrees that must be

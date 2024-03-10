@@ -47,7 +47,7 @@ public:
   void ConstructProjection(TO_BLOCK *input_block, const FCOORD &rotation, Image nontext_map);
 
   // Display the blobs in the window colored according to textline quality.
-  void PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollView *win);
+  void PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReference &win);
 
   // Moves blobs that look like they don't sit well on a textline from the
   // input blobs list to the output small_blobs list.

@@ -89,7 +89,7 @@ void build(Solution &s)
             libtesseract += "src/arch/dotproductneon.cpp";
         }
 
-        libtesseract.Public += "HAVE_CONFIG_H"_d;
+        libtesseract.Public += "HAVE_TESSERACT_CONFIG_H"_d;
         libtesseract.Public += "_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS=1"_d;
         libtesseract.Public += "HAVE_LIBARCHIVE"_d;
 

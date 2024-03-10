@@ -40,7 +40,9 @@ enum WERD_FLAGS {
   W_REP_CHAR,           ///< repeated character
   W_FUZZY_SP,           ///< fuzzy space
   W_FUZZY_NON,          ///< fuzzy nonspace
-  W_INVERSE             ///< white on black
+  W_INVERSE,            ///< white on black
+
+  W_COUNT
 };
 
 enum DISPLAY_FLAGS {
@@ -50,7 +52,9 @@ enum DISPLAY_FLAGS {
   DF_POLYGONAL,    ///< Polyg approx
   DF_EDGE_STEP,    ///< Edge steps
   DF_BN_POLYGONAL, ///< BL normalisd polyapx
-  DF_BLAMER        ///< Blamer information
+  DF_BLAMER,       ///< Blamer information
+
+  DF_COUNT
 };
 
 class ROW; // forward decl
@@ -153,18 +157,18 @@ public:
   // tprintf word metadata (but not blob innards)
   void print() const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // plot word on window in a uniform colour
-  void plot(ScrollView *window, ScrollView::Color colour);
+  void plot(ScrollViewReference &window, ScrollView::Color colour);
 
   // Get the next color in the (looping) rainbow.
   static ScrollView::Color NextColor(ScrollView::Color colour);
 
   // plot word on window in a rainbow of colours
-  void plot(ScrollView *window);
+  void plot(ScrollViewReference &window);
 
   // plot rejected blobs in a rainbow of colours
-  void plot_rej_blobs(ScrollView *window);
+  void plot_rej_blobs(ScrollViewReference &window);
 #endif // !GRAPHICS_DISABLED
 
   // Removes noise from the word by moving small outlines to the rej_cblobs
@@ -188,8 +192,8 @@ public:
 
 private:
   uint8_t blanks = 0;     // no of blanks
-  std::bitset<16> flags;  // flags about word
-  std::bitset<16> disp_flags; // display flags
+  std::bitset<W_COUNT> flags;  // flags about word
+  std::bitset<DF_COUNT> disp_flags; // display flags
   int16_t script_id_ = 0; // From unicharset.
   std::string correct;    // correct text
   C_BLOB_LIST cblobs;     // compacted blobs

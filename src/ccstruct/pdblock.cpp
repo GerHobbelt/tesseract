@@ -17,13 +17,13 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "pdblock.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cinttypes> // for PRId32
 #include <cstdlib>
@@ -181,9 +181,9 @@ Image PDBLK::render_mask(const FCOORD &rerotation, TBOX *mask_box) {
  * Plot the outline of a block in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void PDBLK::plot(            // draw outline
-    ScrollView *window,      // window to draw in
+    ScrollViewReference &window,      // window to draw in
     int32_t serial,          // serial number
     ScrollView::Color colour // colour to draw in
 ) {
@@ -200,10 +200,10 @@ void PDBLK::plot(            // draw outline
     hand_poly->plot(window, serial);
   } else if (!leftside.empty()) {
     startpt = *(it.data()); // bottom left corner
-    //              tprintf("Block %d bottom left is (%d,%d)\n",
+    //              tprintf("Block {} bottom left is ({},{})\n",
     //                      serial,startpt.x(),startpt.y());
     char temp_buff[34];
-#  if !defined(_WIN32) || defined(__MINGW32__)
+#  if defined(PRId32)
     snprintf(temp_buff, sizeof(temp_buff), "%" PRId32, serial);
 #  else
     _ultoa(serial, temp_buff, 10);
@@ -361,7 +361,7 @@ TDimension BLOCK_LINE_IT::get_line( // get a line
   block->bounding_box(bleft, tright);
   if (y < bleft.y() || y >= tright.y()) {
     //              block->print(stderr,false);
-    BADBLOCKLINE.error("BLOCK_LINE_IT::get_line", ABORT, "Y=%d", y);
+    BADBLOCKLINE.abort("BLOCK_LINE_IT::get_line", "Y=%d", y);
   }
 
   // get rectangle box
@@ -382,7 +382,7 @@ TDimension BLOCK_LINE_IT::get_line( // get a line
       return bleft.x(); // start of line
     }
   }
-  LOSTBLOCKLINE.error("BLOCK_LINE_IT::get_line", ABORT, "Y=%d", y);
+  LOSTBLOCKLINE.abort("BLOCK_LINE_IT::get_line", "Y=%d", y);
   return 0; // dummy to stop warning
 }
 

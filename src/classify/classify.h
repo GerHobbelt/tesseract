@@ -20,18 +20,18 @@
 #define TESSERACT_CLASSIFY_CLASSIFY_H_
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include "ccstruct.h"
 #  include "dict.h"
 
 namespace tesseract {
 
-class Classify : public CCStruct {
+class TESS_API Classify : public CCStruct {
 public:
   Classify();
   virtual ~Classify();
@@ -42,9 +42,10 @@ public:
   // Member variables.
 
   INT_VAR_H(classify_debug_level);
+  INT_VAR_H(tess_debug_lstm);
   BOOL_VAR_H(classify_bln_numeric_mode);
-  double_VAR_H(classify_max_rating_ratio);
-  double_VAR_H(classify_max_certainty_margin);
+  DOUBLE_VAR_H(classify_max_rating_ratio);
+  DOUBLE_VAR_H(classify_max_certainty_margin);
 
 private:
   Dict dict_;
@@ -94,7 +95,8 @@ enum CharSegmentationType {
 class TESS_API Classify : public CCStruct {
 public:
   Classify();
-  ~Classify() override;
+  virtual ~Classify() override;
+
   virtual Dict &getDict() {
     return dict_;
   }
@@ -195,9 +197,9 @@ public:
   void AddNewResult(const UnicharRating &new_result, ADAPT_RESULTS *results);
   int GetAdaptiveFeatures(TBLOB *Blob, INT_FEATURE_ARRAY IntFeatures, FEATURE_SET *FloatFeatures);
 
-#  ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void DebugAdaptiveClassifier(TBLOB *Blob, ADAPT_RESULTS *Results);
-#  endif
+#endif
   PROTO_ID MakeNewTempProtos(FEATURE_SET Features, int NumBadFeat, FEATURE_ID BadFeat[],
                              INT_CLASS_STRUCT *IClass, ADAPT_CLASS_STRUCT *Class, BIT_VECTOR TempProtoMask);
   int MakeNewTemporaryConfig(ADAPT_TEMPLATES_STRUCT *Templates, CLASS_ID ClassId, int FontinfoId,
@@ -269,8 +271,8 @@ public:
     return AdaptedTemplates->NumPermClasses == 0;
   }
   bool LooksLikeGarbage(TBLOB *blob);
-#ifndef GRAPHICS_DISABLED
-  void RefreshDebugWindow(ScrollView **win, const char *msg, int y_offset, const TBOX &wbox);
+#if !GRAPHICS_DISABLED
+  void RefreshDebugWindow(ScrollViewReference &win, const char *msg, int y_offset, const TBOX &wbox);
 #endif
   // intfx.cpp
   // Computes the DENORMS for bl(baseline) and cn(character) normalization
@@ -363,13 +365,14 @@ public:
   BOOL_VAR_H(prioritize_division);
   BOOL_VAR_H(classify_enable_learning);
   INT_VAR_H(classify_debug_level);
+  INT_VAR_H(tess_debug_lstm);
 
   /* mfoutline.cpp ***********************************************************/
   /* control knobs used to control normalization of outlines */
   INT_VAR_H(classify_norm_method);
-  double_VAR_H(classify_char_norm_range);
-  double_VAR_H(classify_max_rating_ratio);
-  double_VAR_H(classify_max_certainty_margin);
+  DOUBLE_VAR_H(classify_char_norm_range);
+  DOUBLE_VAR_H(classify_max_rating_ratio);
+  DOUBLE_VAR_H(classify_max_certainty_margin);
 
   /* adaptmatch.cpp ***********************************************************/
   BOOL_VAR_H(tess_cn_matching);
@@ -382,25 +385,25 @@ public:
   INT_VAR_H(matcher_debug_level);
   INT_VAR_H(matcher_debug_flags);
   INT_VAR_H(classify_learning_debug_level);
-  double_VAR_H(matcher_good_threshold);
-  double_VAR_H(matcher_reliable_adaptive_result);
-  double_VAR_H(matcher_perfect_threshold);
-  double_VAR_H(matcher_bad_match_pad);
-  double_VAR_H(matcher_rating_margin);
-  double_VAR_H(matcher_avg_noise_size);
+  DOUBLE_VAR_H(matcher_good_threshold);
+  DOUBLE_VAR_H(matcher_reliable_adaptive_result);
+  DOUBLE_VAR_H(matcher_perfect_threshold);
+  DOUBLE_VAR_H(matcher_bad_match_pad);
+  DOUBLE_VAR_H(matcher_rating_margin);
+  DOUBLE_VAR_H(matcher_avg_noise_size);
   INT_VAR_H(matcher_permanent_classes_min);
   INT_VAR_H(matcher_min_examples_for_prototyping);
   INT_VAR_H(matcher_sufficient_examples_for_prototyping);
-  double_VAR_H(matcher_clustering_max_angle_delta);
-  double_VAR_H(classify_misfit_junk_penalty);
-  double_VAR_H(rating_scale);
-  double_VAR_H(tessedit_class_miss_scale);
-  double_VAR_H(classify_adapted_pruning_factor);
-  double_VAR_H(classify_adapted_pruning_threshold);
+  DOUBLE_VAR_H(matcher_clustering_max_angle_delta);
+  DOUBLE_VAR_H(classify_misfit_junk_penalty);
+  DOUBLE_VAR_H(rating_scale);
+  DOUBLE_VAR_H(tessedit_class_miss_scale);
+  DOUBLE_VAR_H(classify_adapted_pruning_factor);
+  DOUBLE_VAR_H(classify_adapted_pruning_threshold);
   INT_VAR_H(classify_adapt_proto_threshold);
   INT_VAR_H(classify_adapt_feature_threshold);
   BOOL_VAR_H(disable_character_fragments);
-  double_VAR_H(classify_character_fragments_garbage_certainty_threshold);
+  DOUBLE_VAR_H(classify_character_fragments_garbage_certainty_threshold);
   BOOL_VAR_H(classify_debug_character_fragments);
   BOOL_VAR_H(matcher_debug_separate_windows);
   STRING_VAR_H(classify_learn_debug_str);
@@ -412,8 +415,8 @@ public:
   INT_VAR_H(classify_integer_matcher_multiplier);
 
   BOOL_VAR_H(classify_bln_numeric_mode);
-  double_VAR_H(speckle_large_max_size);
-  double_VAR_H(speckle_rating_penalty);
+  DOUBLE_VAR_H(speckle_large_max_size);
+  DOUBLE_VAR_H(speckle_rating_penalty);
 
   // Use class variables to hold onto built-in templates and adapted templates.
   INT_TEMPLATES_STRUCT *PreTrainedTemplates = nullptr;
@@ -453,10 +456,10 @@ protected:
 private:
   // The currently active static classifier.
   ShapeClassifier *static_classifier_ = nullptr;
-#ifndef GRAPHICS_DISABLED
-  ScrollView *learn_debug_win_ = nullptr;
-  ScrollView *learn_fragmented_word_debug_win_ = nullptr;
-  ScrollView *learn_fragments_debug_win_ = nullptr;
+#if !GRAPHICS_DISABLED
+  ScrollViewReference learn_debug_win_ = nullptr;
+  ScrollViewReference learn_fragmented_word_debug_win_ = nullptr;
+  ScrollViewReference learn_fragments_debug_win_ = nullptr;
 #endif
 
   // Training data gathered here for all the images in a document.

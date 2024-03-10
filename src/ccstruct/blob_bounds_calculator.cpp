@@ -21,6 +21,9 @@
 #include <cassert>
 #include <iostream>
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 std::ostream& operator<<(std::ostream& out, const CharBoundaryByBoxIndex& d) {
@@ -37,6 +40,7 @@ std::ostream& operator<<(std::ostream& out, const CharBoundaryByBoxIndex& d) {
 std::ostream& operator<<(std::ostream& out, const CharacterPlaceDecision& d) {
   out << "CharacterPlaceDecision{"
       << " prev_index: " << d.prev_index
+      << " has_boxes: " << d.has_boxes
       << " begin: " << d.begin
       << " end: " << d.end
       << " prev_pos_diff: " << d.prev_pos_diff
@@ -45,7 +49,7 @@ std::ostream& operator<<(std::ostream& out, const CharacterPlaceDecision& d) {
   return out;
 }
 
-void CharacterPlaceDecisions::add_place(unsigned prev_index,
+void CharacterPlaceDecisions::add_place(unsigned prev_index, bool has_boxes,
                                         CharBoundaryByBoxIndex begin,
                                         CharBoundaryByBoxIndex end,
                                         double prev_pos_diff,
@@ -67,7 +71,7 @@ void CharacterPlaceDecisions::add_place(unsigned prev_index,
     }
   }
 
-  CharacterPlaceDecision new_decision{prev_index, begin, end,
+  CharacterPlaceDecision new_decision{prev_index, has_boxes, begin, end,
                                       prev_pos_diff, cost};
   if (replace_existing_decision_index >= 0) {
       decisions[replace_existing_decision_index] = new_decision;
@@ -126,7 +130,7 @@ std::vector<CharacterBoundaries>
 
   // The initial state
   CharacterPlaceDecisions init_decisions;
-  init_decisions.add_place(0, {0, 0, 0}, {0, 0, 0}, 0, 0,
+  init_decisions.add_place(0, true, {0, 0, 0}, {0, 0, 0}, 0, 0,
                            config_.max_character_cost_diff);
 
   for (std::size_t is = 0; is != symbols.size(); ++is) {
@@ -147,15 +151,19 @@ std::vector<CharacterBoundaries>
       // We ignore everything that affects the cost for this symbol because the
       // cost will be the same for all decision paths, thus will not affect
       // which decision path is ultimately selected.
-      //
+      auto new_cost = prev_farthest_decision.cost +
+          config_.symbol_with_no_box_cost;
+
       // We reset prev_pos_diff as we are effectively starting over.
-      next_decisions.add_place(prev_farthest_index, {{}, 0, 0}, {{}, 0, 0},
-                               0, prev_farthest_decision.cost,
+      next_decisions.add_place(prev_farthest_index, false, {{}, 0, 0},
+                               prev_farthest_decision.end,
+                               0, new_cost,
                                config_.max_character_cost_diff);
       continue;
     }
 
-    if (prev_farthest_decision.end.index < symbol_min_box) {
+	assert(prev_farthest_decision.end.index.has_value());
+    if (prev_farthest_decision.end.index.value() < symbol_min_box) {
       // There are boxes that can't be attributed to any of the symbols because
       // they are too far away. In this case we pick the previous decision path
       // that went farthest and force the first box to be attributed to the
@@ -164,11 +172,17 @@ std::vector<CharacterBoundaries>
       // We ignore everything that affects the cost for this symbol because the
       // cost will be the same for all decision paths, thus will not affect
       // which decision path is ultimately selected.
-      //
+
+      auto boxes_with_no_symbols =
+          symbol_min_box - prev_farthest_decision.end.index.value();
+
+      auto new_cost = prev_farthest_decision.cost +
+          config_.box_with_no_symbol_cost * boxes_with_no_symbols;
+
       // We reset prev_pos_diff as we are effectively starting over.
       try_decisions_from_prev_decision(next_decisions, prev_farthest_index,
                                        {symbol_min_box, 0, 0},
-                                       0, prev_farthest_decision.cost,
+                                       0, new_cost,
                                        symbol, symbol_max_box);
       continue;
     }
@@ -183,6 +197,7 @@ std::vector<CharacterBoundaries>
     }
   }
 
+  add_costs_for_remaining_boxes(decisions.back());
   auto best_decision_path = pick_best_decision_path(decisions);
   fix_decisions_split_count(best_decision_path);
   return decisions_to_results(symbols, best_decision_path);
@@ -198,6 +213,7 @@ void BoxBoundariesCalculator::try_decisions_from_prev_decision(
 {
   if (start_bound.split_index > 0) {
     // attempt to split the start box once again
+    assert(start_bound.index.has_value());
     try_decision_from_prev_decision(next_decisions, prev_decision_index,
                                     start_bound,
                                     {start_bound.index,
@@ -211,6 +227,7 @@ void BoxBoundariesCalculator::try_decisions_from_prev_decision(
                                     prev_decision_pos_diff, prev_decision_cost,
                                     symbol);
   }
+  assert(start_bound.index.has_value());
   for (unsigned end_box = start_bound.index.value() + 1;
        end_box <= symbol_max_box; ++end_box) {
     // try one or more full boxes
@@ -256,6 +273,8 @@ void BoxBoundariesCalculator::try_decision_from_prev_decision(
     cost += config_.split_cost;
   }
 
+  assert(end_bound.index.has_value());
+  assert(start_bound.index.has_value());
   unsigned merge_count = end_bound.index.value() - start_bound.index.value();
   if (start_bound.split_index == 0) {
     merge_count--;
@@ -288,7 +307,7 @@ void BoxBoundariesCalculator::try_decision_from_prev_decision(
 
   cost += config_.pos_diff_cost * pos_diff_for_cost / average_box_width_;
 
-  next_decisions.add_place(prev_decision_index, start_bound, end_bound,
+  next_decisions.add_place(prev_decision_index, true, start_bound, end_bound,
                            pos_diff, cost, config_.max_character_cost_diff);
 }
 
@@ -298,7 +317,7 @@ double BoxBoundariesCalculator::get_box_pos_begin(CharBoundaryByBoxIndex bound)
   assert(bound.index.has_value());
 
   if (bound.split_index == 0) {
-    return bounds_[*bound.index].begin;
+    return bounds_[bound.index.value()].begin;
   }
   assert(bound.index.value() > 0);
   return get_box_split_pos(bounds_[bound.index.value() - 1],
@@ -323,16 +342,20 @@ int BoxBoundariesCalculator::farthest_decision_index(
 {
     unsigned best_decision = 0;
     unsigned max_box_index = 0;
+    double best_decision_cost = std::numeric_limits<double>::infinity();
+
     for (std::size_t i = 0; i < decisions.decisions.size(); ++i) {
       const auto& decision = decisions.decisions[i];
-      if (!decision.end.index.has_value()) {
-        continue;
-      }
 
-      if (decision.end.split_index == 0 &&
-          decision.end.index.value() > max_box_index) {
-        max_box_index = decision.end.index.value();
-        best_decision = i;
+	  assert(decision.end.index.has_value());
+      if (decision.end.split_index == 0) {
+        if ((decision.end.index.value() == max_box_index &&
+             decision.cost < best_decision_cost) ||
+            decision.end.index.value() < max_box_index) {
+          max_box_index = decision.end.index.value();
+          best_decision_cost = decision.cost;
+          best_decision = i;
+        }
       }
     }
     return best_decision;
@@ -359,6 +382,22 @@ std::pair<unsigned, unsigned>
     }
     return { std::distance(bounds_.begin(), range_begin),
              std::distance(bounds_.begin(), range_end) };
+}
+
+void BoxBoundariesCalculator::add_costs_for_remaining_boxes(
+    CharacterPlaceDecisions& decisions) {
+
+  for (auto& decision : decisions.decisions) {
+    if (decision.end.split_index != 0) {
+      // We don't care about decisions that don't end on a box boundary.
+      continue;
+    }
+	assert(decision.end.index.has_value());
+	assert(decision.end.index.value() > 0);
+
+    auto unused_boxes = bounds_.size() - decision.end.index.value();
+    decision.cost += unused_boxes * config_.box_with_no_symbol_cost;
+  }
 }
 
 std::vector<CharacterPlaceDecision>
@@ -407,8 +446,10 @@ void BoxBoundariesCalculator::fix_decisions_split_count(
   };
 
   for (auto it = decisions.rbegin(); it != decisions.rend(); it++) {
-    adjust_index(it->end);
-    adjust_index(it->begin);
+    if (it->has_boxes) {
+      adjust_index(it->end);
+      adjust_index(it->begin);
+    }
   }
 }
 
@@ -424,11 +465,13 @@ std::vector<CharacterBoundaries> BoxBoundariesCalculator::decisions_to_results(
     const auto& decision = decisions[curr_index];
     const auto& symbol = symbols[curr_index];
 
-    if (!decision.begin.index.has_value() ||
-        !decision.end.index.has_value()) {
+    if (!decision.has_boxes) {
       results[curr_index] = CharacterBoundaries{symbol.begin, 0, symbol.end, 0};
       continue;
     }
+
+	assert(decision.begin.index.has_value());
+	assert(decision.end.index.has_value());
 
     // The result is in terms of boxes that are at least partially assigned to
     // characters. Decisions store bounds which need adjustment in case of

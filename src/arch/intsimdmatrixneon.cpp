@@ -16,10 +16,10 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#if defined(__ARM_NEON)
+#include "intsimdmatrix.h"
+#include "tesstypes.h"
 
-#  include "intsimdmatrix.h"
-#  include "tesstypes.h"
+#if defined(HAVE_NEON)
 
 #  include <algorithm>
 #  include <cstdint>
@@ -52,6 +52,7 @@ constexpr int kNumInputsPerGroup = 8;
 // bias weights, before continuing with any more weights.
 // u must be padded out with zeros to
 // kNumInputsPerGroup*ceil(num_in/kNumInputsPerGroup) elements.
+template <class TFloat>
 static inline void PartialMatrixDotVector8(const int8_t *__restrict wi,
                                            const TFloat *__restrict scales,
                                            const int8_t *__restrict u, int num_in,
@@ -164,6 +165,7 @@ static inline void PartialMatrixDotVector8(const int8_t *__restrict wi,
   }
 }
 
+template <class TFloat>
 static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *scales,
                             const int8_t *u, TFloat *v) {
   const int num_out = dim1;
@@ -187,7 +189,7 @@ static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *
                             num_out & (kNumOutputsPerRegister - 1));
 }
 
-const IntSimdMatrix IntSimdMatrix::intSimdMatrixNEON = {
+static const IntSimdMatrix simdMatrix = {
     // Function.
     matrixDotVector,
     // Number of 32 bit outputs held in each register.
@@ -199,6 +201,16 @@ const IntSimdMatrix IntSimdMatrix::intSimdMatrixNEON = {
     // Number of inputs in each weight group.
     kNumInputsPerGroup
 };
+
+const IntSimdMatrix *IntSimdMatrix::intSimdMatrixNEON = &simdMatrix;
+
+} // namespace tesseract.
+
+#else
+
+namespace tesseract {
+
+	const IntSimdMatrix* IntSimdMatrix::intSimdMatrixNEON = nullptr;
 
 } // namespace tesseract.
 

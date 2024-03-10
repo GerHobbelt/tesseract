@@ -20,7 +20,7 @@
 
 #include "wordrec.h"
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "chop.h"
 #  include "featdefs.h"
 #  include "pageres.h"
@@ -39,9 +39,12 @@ namespace tesseract {
 void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_classifier,
                              TessdataManager *init_dict) {
   if (!textbase.empty()) {
-    imagefile = textbase;
+    if (textbase == "-" /* stdout */)
+      imagefile = "tesseract-stdio-session";
+    else
+      imagefile = textbase;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   InitFeatureDefs(&feature_defs_);
   InitAdaptiveClassifier(init_classifier);
   if (init_dict) {
@@ -50,7 +53,7 @@ void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_
     getDict().FinishLoad();
   }
   pass2_ok_split = chop_ok_split;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
 /**
@@ -70,10 +73,10 @@ int Wordrec::end_recog() {
  * This function holds any necessary post processing for the Wise Owl
  * program.
  */
-void Wordrec::program_editdown(int32_t elasped_time) {
-#ifndef DISABLED_LEGACY_ENGINE
+void Wordrec::program_editdown(int32_t elapsed_time) {
+#if !DISABLED_LEGACY_ENGINE
   EndAdaptiveClassifier();
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   getDict().End();
 }
 
@@ -87,7 +90,7 @@ int Wordrec::dict_word(const WERD_CHOICE &word) {
   return getDict().valid_word(word);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * @name set_pass1
@@ -143,6 +146,6 @@ BLOB_CHOICE_LIST *Wordrec::call_matcher(TBLOB *tessblob) {
   return ratings;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 } // namespace tesseract

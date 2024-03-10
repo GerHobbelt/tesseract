@@ -21,11 +21,11 @@
 // - A LMB dragging either draws a line, a rectangle or ellipse.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #  include "scrollview.h"
 #  include "svmnode.h"
 
@@ -39,7 +39,7 @@ static int rgb[3] = {255, 255, 255};
 
 class SVPaint : public SVEventHandler {
 public:
-  explicit SVPaint(const char *server_name);
+  explicit SVPaint(Tesseract *tess, const char *server_name);
   // This is the main event handling function that we need to overwrite, defined
   // in SVEventHandler.
   void Notify(const SVEvent *sv_event) override;
@@ -57,7 +57,7 @@ private:
   SVMenuNode *BuildMenuBar();
 
   // Our window.
-  ScrollView *window_;
+  ScrollViewReference window_;
 
   // The mode we are in when an SVET_CLICK or an SVET_SELECTION event occurs.
   int click_mode_;
@@ -185,8 +185,9 @@ void SVPaint::Notify(const SVEvent *sv_event) {
 
 // Builds a new window, initializes the variables and event handler and builds
 // the menu.
-SVPaint::SVPaint(const char *server_name) {
-  window_ = new ScrollView("ScrollView Paint Example", // window caption
+SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
+  window_ = ScrollViewManager::MakeScrollView(tess,
+                           "ScrollView Paint Example", // window caption
                            0, 0,                       // x,y window position
                            500, 500,                   // window size
                            500, 500,                   // canvas size
@@ -202,13 +203,15 @@ SVPaint::SVPaint(const char *server_name) {
   drag_mode_ = 4;
   has_start_point_ = false;
 
-  // Bild our menus and add them to the window. The flag illustrates whether
-  // this is a menu bar.
-  SVMenuNode *popup_menu = BuildPopupMenu();
-  popup_menu->BuildMenu(window_, false);
+  if (window_->HasInteractiveFeature()) {
+    // Build our menus and add them to the window. The flag illustrates whether
+    // this is a menu bar.
+    SVMenuNode *popup_menu = BuildPopupMenu();
+    popup_menu->BuildMenu(window_, false);
 
-  SVMenuNode *bar_menu = BuildMenuBar();
-  bar_menu->BuildMenu(window_, true);
+    SVMenuNode *bar_menu = BuildMenuBar();
+    bar_menu->BuildMenu(window_, true);
+  }
 
   // Set the initial color values to White (could also be done by
   // passing (rgb[0], rgb[1], rgb[2]).
@@ -225,7 +228,7 @@ SVPaint::SVPaint(const char *server_name) {
   window_->SetVisible(true);
 
   // Rest this thread until its window is destroyed.
-  // Note that a special eventhandling thread was created when constructing
+  // Note that a special event handling thread was created when constructing
   // the window. Due to this, the application will not deadlock here.
   window_->AwaitEvent(SVET_DESTROY);
   // We now have 3 Threads running:
@@ -238,14 +241,22 @@ SVPaint::SVPaint(const char *server_name) {
 
 // If a parameter is given, we try to connect to the given server.
 // This enables us to test the remote capabilities of ScrollView.
-int main(int argc, char **argv) {
+
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char **argv)
+#else
+extern "C" int tesseract_svpaint_main(int argc, const char **argv)
+#endif
+{
   const char *server_name;
   if (argc > 1) {
     server_name = argv[1];
   } else {
     server_name = "localhost";
   }
-  tesseract::SVPaint svp(server_name);
+  tesseract::SVPaint svp(nullptr, server_name);
+  return EXIT_SUCCESS;
 }
 
 #endif // !GRAPHICS_DISABLED

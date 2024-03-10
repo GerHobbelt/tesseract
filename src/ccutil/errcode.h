@@ -19,6 +19,9 @@
 #ifndef ERRCODE_H
 #define ERRCODE_H
 
+#include <fmt/printf.h> 
+#include <fmt/base.h> 
+#include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 
 namespace tesseract {
@@ -31,19 +34,45 @@ enum TessErrorLogCode {
   ABORT = 2     /*abort after error */
 };
 
-#if !defined(__GNUC__) && !defined(__attribute__)
-# define __attribute__(attr) // compiler without support for __attribute__
+#if 0
+/* Explicit Error Abort codes */
+#define NO_ABORT_CODE 0
+#define LIST_ABORT 1
+#define MEMORY_ABORT 2
+#define FILE_ABORT 3
 #endif
 
 class TESS_API ERRCODE { // error handler class
   const char *message;   // error message
+
 public:
+  void verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const;
+
+  template <typename S, typename... Args>
   void error(                  // error print function
       const char *caller,      // function location
       TessErrorLogCode action, // action to take
-      const char *format, ...  // fprintf format
-  ) const __attribute__((format(printf, 4, 5)));
+      const S *format,
+      Args&&... args
+  ) const {
+    verror(caller, action, format, fmt::make_format_args(args...));
+  }
+
   void error(const char *caller, TessErrorLogCode action) const;
+  
+  [[noreturn]] void vabort(const char* caller, fmt::string_view format, fmt::format_args args) const;
+
+  template <typename S, typename... Args>
+  [[noreturn]] void abort(     // print function for fatal errors
+      const char* caller,      // function location
+      const S* format,
+      Args&&... args
+  ) const {
+    vabort(caller, format, fmt::make_format_args(args...));
+  }
+
+  [[noreturn]] void abort(const char* caller) const;
+  
   constexpr ERRCODE(const char *string) : message(string) {} // initialize with string
 };
 
@@ -52,12 +81,12 @@ constexpr ERRCODE ASSERT_FAILED("Assert failed");
 #define DO_NOTHING static_cast<void>(0)
 
 #define ASSERT_HOST(x) \
-  (x) ? DO_NOTHING : ASSERT_FAILED.error(#x, ABORT, "in file %s, line %d", __FILE__, __LINE__)
+  (x) ? DO_NOTHING : ASSERT_FAILED.abort(#x, "in file {}, line {}", __FILE__, __LINE__)
 
 #define ASSERT_HOST_MSG(x, ...)                                                \
   if (!(x)) {                                                                  \
-    tprintf(__VA_ARGS__);                                                      \
-    ASSERT_FAILED.error(#x, ABORT, "in file %s, line %d", __FILE__, __LINE__); \
+    tprintError(__VA_ARGS__);                                                  \
+    ASSERT_FAILED.abort(#x, "in file {}, line {}", __FILE__, __LINE__);        \
   }
 
 } // namespace tesseract

@@ -25,6 +25,9 @@
 
 #include <iostream>
 
+// nuke collision with #define ERROR in MSWindows system header files:
+#undef ERROR
+
 enum LogLevel { INFO, WARNING, ERROR, FATAL };
 
 // Avoid conflict with logging.h from TensorFlow.

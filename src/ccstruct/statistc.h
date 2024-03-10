@@ -119,9 +119,9 @@ public:
   // Prints summary stats only of the histogram.
   void print_summary() const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draws the histogram as a series of rectangles.
-  void plot(ScrollView *window,              // window to draw in
+  void plot(ScrollViewReference &window,              // window to draw in
             float xorigin,                   // origin of histo
             float yorigin,                   // gram
             float xscale,                    // size of one unit
@@ -129,7 +129,7 @@ public:
             ScrollView::Color colour) const; // colour to draw in
 
   // Draws a line graph of the histogram.
-  void plotline(ScrollView *window,              // window to draw in
+  void plotline(ScrollViewReference &window,              // window to draw in
                 float xorigin,                   // origin of histo
                 float yorigin,                   // gram
                 float xscale,                    // size of one unit
@@ -138,7 +138,7 @@ public:
 #endif                                           // !GRAPHICS_DISABLED
 
 private:
-  int32_t rangemin_ = 0; // min of range
+  int32_t rangemin_ = 0;       // min of range
   int32_t rangemax_ = 0;       // max of range
   int32_t total_count_ = 0;    // no of samples
   int32_t *buckets_ = nullptr; // array of cells

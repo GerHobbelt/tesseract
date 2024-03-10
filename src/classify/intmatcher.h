@@ -17,6 +17,8 @@
 #ifndef INTMATCHER_H
 #define INTMATCHER_H
 
+#if !DISABLED_LEGACY_ENGINE
+
 #include "intproto.h"
 #include "params.h"
 
@@ -98,7 +100,7 @@ private:
   int FindBestMatch(INT_CLASS_STRUCT *ClassTemplate, const ScratchEvidence &tables,
                     tesseract::UnicharRating *Result);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void DebugFeatureProtoError(INT_CLASS_STRUCT *ClassTemplate, BIT_VECTOR ProtoMask, BIT_VECTOR ConfigMask,
                               const ScratchEvidence &tables, int16_t NumFeatures, int Debug);
 
@@ -120,5 +122,7 @@ private:
 };
 
 } // namespace tesseract
+
+#endif
 
 #endif

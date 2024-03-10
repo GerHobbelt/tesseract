@@ -20,6 +20,8 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+#include <tesseract/unichar.h>  // for U8 macro
+
 #include "trie.h"
 
 #include "dawg.h"
@@ -35,12 +37,12 @@ const char kForceReverse[] = "RRP_FORCE_REVERSE";
 
 const char *const RTLReversePolicyNames[] = {kDoNotReverse, kReverseIfHasRTL, kForceReverse};
 
-const char Trie::kAlphaPatternUnicode[] = "\u2000";
-const char Trie::kDigitPatternUnicode[] = "\u2001";
-const char Trie::kAlphanumPatternUnicode[] = "\u2002";
-const char Trie::kPuncPatternUnicode[] = "\u2003";
-const char Trie::kLowerPatternUnicode[] = "\u2004";
-const char Trie::kUpperPatternUnicode[] = "\u2005";
+const char* Trie::kAlphaPatternUnicode = U8("\u2000");
+const char* Trie::kDigitPatternUnicode = U8("\u2001");
+const char* Trie::kAlphanumPatternUnicode = U8("\u2002");
+const char* Trie::kPuncPatternUnicode = U8("\u2003");
+const char* Trie::kLowerPatternUnicode = U8("\u2004");
+const char* Trie::kUpperPatternUnicode = U8("\u2005");
 
 const char *Trie::get_reverse_policy_name(RTLReversePolicy reverse_policy) {
   return RTLReversePolicyNames[reverse_policy];
@@ -61,8 +63,8 @@ bool Trie::edge_char_of(NODE_REF node_ref, NODE_REF next_node, int direction, bo
                         UNICHAR_ID unichar_id, EDGE_RECORD **edge_ptr,
                         EDGE_INDEX *edge_index) const {
   if (debug_level_ == 3) {
-    tprintf("edge_char_of() given node_ref " REFFORMAT " next_node " REFFORMAT
-            " direction %d word_end %d unichar_id %d, exploring node:\n",
+    tprintDebug("edge_char_of() given node_ref {} next_node {}"
+            " direction {} word_end {} unichar_id {}, exploring node:\n",
             node_ref, next_node, direction, word_end, unichar_id);
     if (node_ref != NO_EDGE) {
       print_node(node_ref, nodes_[node_ref]->forward_edges.size());
@@ -133,9 +135,9 @@ bool Trie::add_edge_linkage(NODE_REF node1, NODE_REF node2, bool marker_flag, in
     vec->push_back(edge_rec);
   }
   if (debug_level_ > 1) {
-    tprintf("new edge in nodes_[" REFFORMAT "]: ", node1);
+    tprintDebug("new edge in nodes_[{}]: ", node1);
     print_edge_rec(edge_rec);
-    tprintf("\n");
+    tprintDebug("\n");
   }
   num_edges_++;
   return true;
@@ -190,13 +192,13 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     unichar_id = word.unichar_id(i);
     marker_flag = (repetitions != nullptr) ? (*repetitions)[i] : false;
     if (debug_level_ > 1) {
-      tprintf("Adding letter %d\n", unichar_id);
+      tprintDebug("Adding letter {}\n", unichar_id);
     }
     if (still_finding_chars) {
       found = edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, word_end, unichar_id, &edge_ptr,
                            &edge_index);
       if (found && debug_level_ > 1) {
-        tprintf("exploring edge " REFFORMAT " in node " REFFORMAT "\n", edge_index, last_node);
+        tprintDebug("Exploring edge {} in node {}\n", edge_index, last_node);
       }
       if (!found) {
         still_finding_chars = false;
@@ -222,7 +224,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     if (!still_finding_chars) {
       the_next_node = new_dawg_node();
       if (debug_level_ > 1) {
-        tprintf("adding node " REFFORMAT "\n", the_next_node);
+        tprintDebug("Adding node {}\n", the_next_node);
       }
       if (the_next_node == 0) {
         add_failed = true;
@@ -240,7 +242,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
   unichar_id = word.unichar_id(i);
   marker_flag = (repetitions != nullptr) ? (*repetitions)[i] : false;
   if (debug_level_ > 1) {
-    tprintf("Adding letter %d\n", unichar_id);
+    tprintDebug("Adding letter {}\n", unichar_id);
   }
   if (still_finding_chars &&
       edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, false, unichar_id, &edge_ptr, &edge_index)) {
@@ -256,7 +258,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
     }
   }
   if (add_failed) {
-    tprintf("Re-initializing document dictionary...\n");
+    tprintDebug("Re-initializing document dictionary...\n");
     clear();
     return false;
   } else {
@@ -296,12 +298,12 @@ bool Trie::read_word_list(const char *filename, std::vector<std::string> *words)
     std::string word_str(line_str);
     ++word_count;
     if (debug_level_ && word_count % 10000 == 0) {
-      tprintf("Read %d words so far\n", word_count);
+      tprintDebug("Read {} words so far\n", word_count);
     }
     words->push_back(word_str);
   }
   if (debug_level_) {
-    tprintf("Read %d words total.\n", word_count);
+    tprintDebug("Read {} words total.\n", word_count);
   }
   fclose(word_file);
   return true;
@@ -321,7 +323,7 @@ bool Trie::add_word_list(const std::vector<std::string> &words, const UNICHARSET
     if (!word_in_dawg(word)) {
       add_word_to_dawg(word);
       if (!word_in_dawg(word)) {
-        tprintf("Error: word '%s' not in DAWG after adding it\n", i.c_str());
+        tprintError("Word '{}' not in DAWG after adding it\n", i.c_str());
         return false;
       }
     }
@@ -389,13 +391,13 @@ UNICHAR_ID Trie::character_class_to_pattern(char ch) {
 
 bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset) {
   if (!initialized_patterns_) {
-    tprintf("please call initialize_patterns() before read_pattern_list()\n");
+    tprintWarn("Please call initialize_patterns() before read_pattern_list()\n");
     return false;
   }
 
   FILE *pattern_file = fopen(filename, "rb");
   if (pattern_file == nullptr) {
-    tprintf("Error opening pattern file %s\n", filename);
+    tprintError("Error opening pattern file {}\n", filename);
     return false;
   }
 
@@ -417,16 +419,13 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
         if (*str_ptr == '\\') { // regular '\' unichar that was escaped
           curr_unichar_id = unicharset.unichar_to_id(str_ptr, step);
         } else {
-#if 0 // TODO: This code should be enabled if kSaneNumConcreteChars != 0.
-          if (word.length() < kSaneNumConcreteChars) {
-            tprintf(
-                "Please provide at least %d concrete characters at the"
-                " beginning of the pattern\n",
+          if (kSaneNumConcreteChars > 0 && word.length() < kSaneNumConcreteChars) {
+            tprintError("Please provide at least {} concrete characters at the"
+                " beginning of the pattern.\n",
                 kSaneNumConcreteChars);
             failed = true;
             break;
           }
-#endif
           // Parse character class from expression.
           curr_unichar_id = character_class_to_pattern(*str_ptr);
         }
@@ -449,23 +448,23 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
       }
     }
     if (failed) {
-      tprintf("Invalid user pattern %s\n", string);
+      tprintError("Invalid user pattern {}\n", string);
       continue;
     }
     // Insert the pattern into the trie.
     if (debug_level_ > 2) {
-      tprintf("Inserting expanded user pattern %s\n", word.debug_string().c_str());
+      tprintDebug("Inserting expanded user pattern {}\n", word.debug_string());
     }
     if (!this->word_in_dawg(word)) {
       this->add_word_to_dawg(word, &repetitions_vec);
       if (!this->word_in_dawg(word)) {
-        tprintf("Error: failed to insert pattern '%s'\n", string);
+        tprintError("failed to insert pattern '{}'\n", string);
       }
     }
     ++pattern_count;
   }
   if (debug_level_) {
-    tprintf("Read %d valid patterns from %s\n", pattern_count, filename);
+    tprintDebug("Read {} valid patterns from {}\n", pattern_count, filename);
   }
   fclose(pattern_file);
   return true;
@@ -477,9 +476,9 @@ void Trie::remove_edge_linkage(NODE_REF node1, NODE_REF node2, int direction, bo
   EDGE_INDEX edge_index = 0;
   ASSERT_HOST(edge_char_of(node1, node2, direction, word_end, unichar_id, &edge_ptr, &edge_index));
   if (debug_level_ > 1) {
-    tprintf("removed edge in nodes_[" REFFORMAT "]: ", node1);
+    tprintDebug("Removed edge in nodes_[{}]: ", node1);
     print_edge_rec(*edge_ptr);
-    tprintf("\n");
+    tprintDebug("\n");
   }
   if (direction == FORWARD_EDGE) {
     nodes_[node1]->forward_edges.erase(nodes_[node1]->forward_edges.begin() + edge_index);
@@ -553,13 +552,13 @@ SquishedDawg *Trie::trie_to_dawg() {
 bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
                                      const EDGE_RECORD &edge2) {
   if (debug_level_ > 1) {
-    tprintf("\nCollapsing node %" PRIi64 ":\n", node);
+    tprintDebug("\nCollapsing node {}:\n", node);
     print_node(node, MAX_NODE_EDGES_DISPLAY);
-    tprintf("Candidate edges: ");
+    tprintDebug("Candidate edges: ");
     print_edge_rec(edge1);
-    tprintf(", ");
+    tprintDebug(", ");
     print_edge_rec(edge2);
-    tprintf("\n\n");
+    tprintDebug("\n\n");
   }
   NODE_REF next_node1 = next_node_from_edge_rec(edge1);
   NODE_REF next_node2 = next_node_from_edge_rec(edge2);
@@ -585,7 +584,7 @@ bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
   int next_node2_num_edges =
       (next_node2_ptr->forward_edges.size() + next_node2_ptr->backward_edges.size());
   if (debug_level_ > 1) {
-    tprintf("removed %d edges from node " REFFORMAT "\n", next_node2_num_edges, next_node2);
+    tprintDebug("Removed {} edges from node {}\n", next_node2_num_edges, next_node2);
   }
   next_node2_ptr->forward_edges.clear();
   next_node2_ptr->backward_edges.clear();
@@ -596,7 +595,7 @@ bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
 bool Trie::reduce_lettered_edges(EDGE_INDEX edge_index, UNICHAR_ID unichar_id, NODE_REF node,
                                  EDGE_VECTOR *backward_edges, std::vector<bool> &reduced_nodes) {
   if (debug_level_ > 1) {
-    tprintf("reduce_lettered_edges(edge=" REFFORMAT ")\n", edge_index);
+    tprintDebug("reduce_lettered_edges(edge={})\n", edge_index);
   }
   // Compare each of the edge pairs with the given unichar_id.
   bool did_something = false;
@@ -661,7 +660,7 @@ void Trie::reduce_node_input(NODE_REF node, std::vector<bool> &reduced_nodes) {
   EDGE_VECTOR &backward_edges = nodes_[node]->backward_edges;
   sort_edges(&backward_edges);
   if (debug_level_ > 1) {
-    tprintf("reduce_node_input(node=" REFFORMAT ")\n", node);
+    tprintDebug("reduce_node_input(node={})\n", node);
     print_node(node, MAX_NODE_EDGES_DISPLAY);
   }
 
@@ -684,7 +683,7 @@ void Trie::reduce_node_input(NODE_REF node, std::vector<bool> &reduced_nodes) {
   reduced_nodes[node] = true; // mark as reduced
 
   if (debug_level_ > 1) {
-    tprintf("Node " REFFORMAT " after reduction:\n", node);
+    tprintDebug("Node {} after reduction:\n", node);
     print_node(node, MAX_NODE_EDGES_DISPLAY);
   }
 
@@ -710,10 +709,10 @@ void Trie::print_node(NODE_REF node, int max_num_edges) const {
   for (int dir = 0; dir < 2; ++dir) {
     if (dir == 0) {
       vec = &(node_ptr->forward_edges);
-      tprintf(REFFORMAT " (%d %d): ", node, num_fwd, num_bkw);
+      tprintDebug("{} ({} {}): ", node, num_fwd, num_bkw);
     } else {
       vec = &(node_ptr->backward_edges);
-      tprintf("\t");
+      tprintDebug("\t");
     }
     int i;
     for (i = 0; (dir == 0 ? i < num_fwd : i < num_bkw) && i < max_num_edges; ++i) {
@@ -721,12 +720,12 @@ void Trie::print_node(NODE_REF node, int max_num_edges) const {
         continue;
       }
       print_edge_rec((*vec)[i]);
-      tprintf(" ");
+      tprintDebug(" ");
     }
     if (dir == 0 ? i < num_fwd : i < num_bkw) {
-      tprintf("...");
+      tprintDebug("...");
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 

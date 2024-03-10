@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -39,15 +39,16 @@
 namespace tesseract {
 
 static BOOL_VAR(textord_all_prop, false, "All doc is proportial text");
-BOOL_VAR(textord_debug_pitch_test, false, "Debug on fixed pitch test");
+BOOL_VAR(textord_debug_fixed_pitch_test, false, "Debug on fixed pitch test");
+BOOL_VAR(textord_debug_pitch, false, "Debug pitch detection");
 static BOOL_VAR(textord_disable_pitch_test, false, "Turn off dp fixed pitch algorithm");
 BOOL_VAR(textord_fast_pitch_test, false, "Do even faster pitch algorithm");
 BOOL_VAR(textord_debug_pitch_metric, false, "Write full metric stuff");
 BOOL_VAR(textord_show_row_cuts, false, "Draw row-level cuts");
 BOOL_VAR(textord_show_page_cuts, false, "Draw page-level cuts");
 BOOL_VAR(textord_blockndoc_fixed, false, "Attempt whole doc/block fixed pitch");
-double_VAR(textord_projection_scale, 0.200, "Ding rate for mid-cuts");
-double_VAR(textord_balance_factor, 1.0, "Ding rate for unbalanced char cells");
+DOUBLE_VAR(textord_projection_scale, 0.200, "Ding rate for mid-cuts");
+DOUBLE_VAR(textord_balance_factor, 1.0, "Ding rate for unbalanced char cells");
 
 #define BLOCK_STATS_CLUSTERS 10
 #define MAX_ALLOWED_PITCH 100 // max pixel pitch.
@@ -75,17 +76,17 @@ static int sort_floats(const void *arg1, const void *arg2) {
 void compute_fixed_pitch(ICOORD page_tr,             // top right
                          TO_BLOCK_LIST *port_blocks, // input list
                          float gradient,             // page skew
-                         FCOORD rotation,            // for drawing
-                         bool testing_on) {          // correct orientation
+                         FCOORD rotation             // for drawing
+) {   
   TO_BLOCK_IT block_it;                              // iterator
   TO_BLOCK *block;                                   // current block;
   TO_ROW *row;                                       // current row
   int block_index;                                   // block number
   int row_index;                                     // row number
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_initial_words && testing_on) {
-    if (to_win == nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_initial_words) {
+    if (!to_win) {
       create_to_win(page_tr);
     }
   }
@@ -95,7 +96,7 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
   block_index = 1;
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
     block = block_it.data();
-    compute_block_pitch(block, rotation, block_index, testing_on);
+    compute_block_pitch(block, rotation, block_index);
     block_index++;
   }
 
@@ -104,7 +105,7 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
     for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
       block = block_it.data();
       if (!try_block_fixed(block, block_index)) {
-        try_rows_fixed(block, block_index, testing_on);
+        try_rows_fixed(block, block_index);
       }
       block_index++;
     }
@@ -127,8 +128,8 @@ void compute_fixed_pitch(ICOORD page_tr,             // top right
     }
     block_index++;
   }
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_initial_words && testing_on) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_initial_words) {
     ScrollView::Update();
   }
 #endif
@@ -151,7 +152,6 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
   int like_votes;                // votes over page
   int other_votes;               // votes of unlike blocks
   int block_index;               // number of block
-  int row_index;                 // number of row
   int maxwidth;                  // max pitch
   TO_BLOCK_IT block_it = blocks; // block iterator
   TO_BLOCK *block;               // current block
@@ -172,7 +172,6 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       if (pb != nullptr && !pb->IsText()) {
         continue; // Non text doesn't exist!
       }
-      row_index = 1;
       TO_ROW_IT row_it(block->get_rows());
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
         row = row_it.data();
@@ -226,7 +225,6 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
             other_votes--;
           }
         }
-        row_index++;
       }
       block_index++;
     }
@@ -239,17 +237,15 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
     } else {
       bad_row->pitch_decision = PITCH_CORR_PROP;
       if (block_votes == 0 && like_votes == 0 && other_votes > 0 &&
-          (textord_debug_pitch_test || textord_debug_pitch_metric)) {
-        tprintf(
-            "Warning:row %d of block %d set prop with no like rows against "
-            "trend\n",
+          (textord_debug_pitch || textord_debug_fixed_pitch_test || textord_debug_pitch_metric)) {
+        tprintWarn("row {} of block {} set prop with no like rows against trend.\n",
             row_target, block_target);
       }
     }
   }
   if (textord_debug_pitch_metric) {
-    tprintf(":b_votes=%d:l_votes=%d:o_votes=%d", block_votes, like_votes, other_votes);
-    tprintf("x=%g:asc=%g\n", bad_row->xheight, bad_row->ascrise);
+    tprintDebug(":block_votes={}:like_votes={}:other_votes={}", block_votes, like_votes, other_votes);
+    tprintDebug("xheight={}:ascrise={}\n", bad_row->xheight, bad_row->ascrise);
   }
   if (bad_row->pitch_decision == PITCH_CORR_FIXED) {
     if (bad_row->fixed_pitch < textord_min_xheight) {
@@ -258,7 +254,7 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       } else if (block_votes == 0 && like_votes > 0) {
         bad_row->fixed_pitch = like_stats.ile(0.5);
       } else {
-        tprintf("Warning:guessing pitch as xheight on row %d, block %d\n", row_target,
+        tprintWarn("Guessing pitch as xheight on row {}, block {}\n", row_target,
                 block_target);
         bad_row->fixed_pitch = bad_row->xheight;
       }
@@ -275,7 +271,7 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
       tune_row_pitch(bad_row, &bad_row->projection, bad_row->projection_left,
                      bad_row->projection_right,
                      (bad_row->fixed_pitch + bad_row->max_nonspace * 3) / 4, bad_row->fixed_pitch,
-                     sp_sd, mid_cuts, &bad_row->char_cells, false);
+                     sp_sd, mid_cuts, &bad_row->char_cells);
     }
   } else if (bad_row->pitch_decision == PITCH_CORR_PROP ||
              bad_row->pitch_decision == PITCH_DEF_PROP) {
@@ -292,13 +288,13 @@ void fix_row_pitch(TO_ROW *bad_row,        // row to fix
 
 void compute_block_pitch(TO_BLOCK *block,     // input list
                          FCOORD rotation,     // for drawing
-                         int32_t block_index, // block number
-                         bool testing_on) {   // correct orientation
+                         int32_t block_index  // block number
+) {
   TBOX block_box;                             // bounding box
 
   block_box = block->block->pdblk.bounding_box();
-  if (testing_on && textord_debug_pitch_test) {
-    tprintf("Block %d at (%d,%d)->(%d,%d)\n", block_index, block_box.left(), block_box.bottom(),
+  if (textord_debug_fixed_pitch_test) {
+    tprintDebug("Block {} at ({},{})->({},{})\n", block_index, block_box.left(), block_box.bottom(),
             block_box.right(), block_box.top());
   }
   block->min_space = static_cast<int32_t>(floor(block->xheight * textord_words_default_minspace));
@@ -310,14 +306,14 @@ void compute_block_pitch(TO_BLOCK *block,     // input list
   block->pr_space = block->pr_nonsp * textord_spacesize_ratioprop;
   if (!block->get_rows()->empty()) {
     ASSERT_HOST(block->xheight > 0);
-    find_repeated_chars(block, textord_show_initial_words && testing_on);
-#ifndef GRAPHICS_DISABLED
-    if (textord_show_initial_words && testing_on) {
+    find_repeated_chars(block);
+#if !GRAPHICS_DISABLED
+    if (textord_show_initial_words) {
       // overlap_picture_ops(true);
       ScrollView::Update();
     }
 #endif
-    compute_rows_pitch(block, block_index, textord_debug_pitch_test && testing_on);
+    compute_rows_pitch(block, block_index);
   }
 }
 
@@ -329,8 +325,7 @@ void compute_block_pitch(TO_BLOCK *block,     // input list
 
 bool compute_rows_pitch( // find line stats
     TO_BLOCK *block,     // block to do
-    int32_t block_index, // block number
-    bool testing_on      // correct orientation
+    int32_t block_index  // block number
 ) {
   int32_t maxwidth;   // of spaces
   TO_ROW *row;        // current row
@@ -344,9 +339,8 @@ bool compute_rows_pitch( // find line stats
     ASSERT_HOST(row->xheight > 0);
     row->compute_vertical_projection();
     maxwidth = static_cast<int32_t>(ceil(row->xheight * textord_words_maxspace));
-    if (row_pitch_stats(row, maxwidth, testing_on) &&
-        find_row_pitch(row, maxwidth, textord_dotmatrix_gap + 1, block, block_index, row_index,
-                       testing_on)) {
+    if (row_pitch_stats(row, maxwidth) &&
+        find_row_pitch(row, maxwidth, textord_dotmatrix_gap + 1, block, block_index, row_index)) {
       if (row->fixed_pitch == 0) {
         lower = row->pr_nonsp;
         upper = row->pr_space;
@@ -383,10 +377,10 @@ bool try_doc_fixed(             // determine pitch
   TO_BLOCK_IT block_it = port_blocks;
   TO_BLOCK *block;         // current block;
   TO_ROW *row;             // current row
-  int16_t projection_left; // edges
-  int16_t projection_right;
-  int16_t row_left; // edges of row
-  int16_t row_right;
+  TDimension projection_left; // edges
+  TDimension projection_right;
+  TDimension row_left; // edges of row
+  TDimension row_right;
   float master_y;     // uniform shifts
   float shift_factor; // page skew correction
   float final_pitch;  // output pitch
@@ -407,8 +401,8 @@ bool try_doc_fixed(             // determine pitch
   TO_ROW_IT row_it(block_it.data()->get_rows());
   master_x = row_it.data()->projection_left;
   master_y = row_it.data()->baseline.y(master_x);
-  projection_left = INT16_MAX;
-  projection_right = -INT16_MAX;
+  projection_left = TDIMENSION_MAX;
+  projection_right = TDIMENSION_MIN;
   prop_blocks = 0;
   fixed_blocks = 0;
   total_row_count = 0;
@@ -424,8 +418,8 @@ bool try_doc_fixed(             // determine pitch
       }
       // find median
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
-      row_right = static_cast<int16_t>(row->projection_right - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
+      row_right = static_cast<TDimension>(row->projection_right - shift_factor * (master_y - row_y));
       if (row_left < projection_left) {
         projection_left = row_left;
       }
@@ -445,7 +439,7 @@ bool try_doc_fixed(             // determine pitch
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row = row_it.data();
       row_y = row->baseline.y(master_x);
-      row_left = static_cast<int16_t>(row->projection_left - shift_factor * (master_y - row_y));
+      row_left = static_cast<TDimension>(row->projection_left - shift_factor * (master_y - row_y));
       for (x = row->projection_left; x < row->projection_right; x++, row_left++) {
         projection.add(row_left, row->projection.pile_count(x));
       }
@@ -454,26 +448,26 @@ bool try_doc_fixed(             // determine pitch
 
   row_it.set_to_list(block_it.data()->get_rows());
   row = row_it.data();
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_page_cuts && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_page_cuts && to_win) {
     projection.plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
 #endif
   final_pitch = pitches.ile(0.5);
   pitch = static_cast<int16_t>(final_pitch);
   pitch_sd = tune_row_pitch(row, &projection, projection_left, projection_right, pitch * 0.75,
-                            final_pitch, sp_sd, mid_cuts, &row->char_cells, false);
+                            final_pitch, sp_sd, mid_cuts, &row->char_cells);
 
   if (textord_debug_pitch_metric) {
-    tprintf(
-        "try_doc:props=%d:fixed=%d:pitch=%d:final_pitch=%g:pitch_sd=%g:sp_sd=%"
-        "g:sd/trc=%g:sd/p=%g:sd/trc/p=%g\n",
-        prop_blocks, fixed_blocks, pitch, final_pitch, pitch_sd, sp_sd, pitch_sd / total_row_count,
+    tprintDebug(
+        "try_doc:prop_blocks={}:fixed_blocks={}:pitch={}:final_pitch={}:pitch_sd={}:sp_sd={},trc(rowcount)={}"
+        ":sd/trc={}:sd/pitch={}:sd/trc/pitch={}\n",
+        prop_blocks, fixed_blocks, pitch, final_pitch, pitch_sd, sp_sd, total_row_count, pitch_sd / total_row_count,
         pitch_sd / pitch, pitch_sd / total_row_count / pitch);
   }
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_page_cuts && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_page_cuts && to_win) {
     float row_shift;              // shift for row
     ICOORDELT_LIST *master_cells; // cells for page
     master_cells = &row->char_cells;
@@ -514,11 +508,9 @@ bool try_block_fixed(   // find line stats
 
 bool try_rows_fixed(     // find line stats
     TO_BLOCK *block,     // block to do
-    int32_t block_index, // block number
-    bool testing_on      // correct orientation
+    int32_t block_index  // block number
 ) {
   TO_ROW *row;           // current row
-  int32_t row_index;     // row number.
   int32_t def_fixed = 0; // counters
   int32_t def_prop = 0;
   int32_t maybe_fixed = 0;
@@ -529,7 +521,6 @@ bool try_rows_fixed(     // find line stats
   float lower, upper; // cluster thresholds
   TO_ROW_IT row_it = block->get_rows();
 
-  row_index = 1;
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     row = row_it.data();
     ASSERT_HOST(row->xheight > 0);
@@ -541,13 +532,11 @@ bool try_rows_fixed(     // find line stats
         row->kern_size = lower;
       }
     }
-    row_index++;
   }
   count_block_votes(block, def_fixed, def_prop, maybe_fixed, maybe_prop, corr_fixed, corr_prop,
                     dunno);
-  if (testing_on &&
-      (textord_debug_pitch_test || textord_blocksall_prop || textord_blocksall_fixed)) {
-    tprintf("Initially:");
+  if (textord_debug_fixed_pitch_test || textord_blocksall_prop || textord_blocksall_fixed) {
+    tprintDebug("Initially:");
     print_block_counts(block, block_index);
   }
   if (def_fixed > def_prop * textord_words_veto_power) {
@@ -586,15 +575,15 @@ void print_block_counts( // find line stats
 
   count_block_votes(block, def_fixed, def_prop, maybe_fixed, maybe_prop, corr_fixed, corr_prop,
                     dunno);
-  tprintf("Block %d has (%d,%d,%d)", block_index, def_fixed, maybe_fixed, corr_fixed);
+  tprintDebug("Block {} has ({},{},{})", block_index, def_fixed, maybe_fixed, corr_fixed);
   if (textord_blocksall_prop && (def_fixed || maybe_fixed || corr_fixed)) {
-    tprintf(" (Wrongly)");
+    tprintDebug(" (Wrongly)");
   }
-  tprintf(" fixed, (%d,%d,%d)", def_prop, maybe_prop, corr_prop);
+  tprintDebug(" fixed, ({},{},{})", def_prop, maybe_prop, corr_prop);
   if (textord_blocksall_fixed && (def_prop || maybe_prop || corr_prop)) {
-    tprintf(" (Wrongly)");
+    tprintDebug(" (Wrongly)");
   }
-  tprintf(" prop, %d dunno\n", dunno);
+  tprintDebug(" prop, {} dunno\n", dunno);
 }
 
 /**********************************************************************
@@ -647,8 +636,7 @@ void count_block_votes( // find line stats
 
 bool row_pitch_stats( // find line stats
     TO_ROW *row,      // current row
-    int32_t maxwidth, // of spaces
-    bool testing_on   // correct orientation
+    int32_t maxwidth  // of spaces
 ) {
   BLOBNBOX *blob;        // current blob
   int gap_index;         // current gap
@@ -701,12 +689,12 @@ bool row_pitch_stats( // find line stats
     gaps[gap_index] = cluster_stats[gap_index + 1].ile(0.5);
   }
   // get medians
-  if (testing_on) {
-    tprintf("cluster_count=%d:", cluster_count);
+  if (textord_debug_pitch) {
+    tprintDebug("cluster_count={}:", cluster_count);
     for (gap_index = 0; gap_index < cluster_count; gap_index++) {
-      tprintf(" %g(%d)", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
+      tprintDebug(" {}({})", gaps[gap_index], cluster_stats[gap_index + 1].get_total());
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
   qsort(gaps, cluster_count, sizeof(float), sort_floats);
 
@@ -717,8 +705,8 @@ bool row_pitch_stats( // find line stats
     ;
   }
   if (gap_index == 0) {
-    if (testing_on) {
-      tprintf("No clusters below nonspace threshold!!\n");
+    if (textord_debug_pitch) {
+      tprintDebug("No clusters below nonspace threshold!!\n");
     }
     if (cluster_count > 1) {
       row->pr_nonsp = gaps[0];
@@ -733,8 +721,8 @@ bool row_pitch_stats( // find line stats
       gap_index++;
     }
     if (gap_index == cluster_count) {
-      if (testing_on) {
-        tprintf("No clusters above nonspace threshold!!\n");
+      if (textord_debug_pitch) {
+        tprintDebug("No clusters above nonspace threshold!!\n");
       }
       row->pr_space = lower * textord_spacesize_ratioprop;
     } else {
@@ -748,26 +736,26 @@ bool row_pitch_stats( // find line stats
     ;
   }
   if (gap_index == 0) {
-    if (testing_on) {
-      tprintf("No clusters below space threshold!!\n");
+    if (textord_debug_pitch) {
+      tprintDebug("No clusters below space threshold!!\n");
     }
     row->fp_nonsp = upper;
     row->fp_space = gaps[0];
   } else {
     row->fp_nonsp = gaps[gap_index - 1];
     if (gap_index == cluster_count) {
-      if (testing_on) {
-        tprintf("No clusters above space threshold!!\n");
+      if (textord_debug_pitch) {
+        tprintDebug("No clusters above space threshold!!\n");
       }
       row->fp_space = row->xheight;
     } else {
       row->fp_space = gaps[gap_index];
     }
   }
-  if (testing_on) {
-    tprintf(
-        "Initial estimates:pr_nonsp=%g, pr_space=%g, fp_nonsp=%g, "
-        "fp_space=%g\n",
+  if (textord_debug_pitch) {
+    tprintDebug(
+        "Initial estimates: pr_nonsp={}, pr_space={}, fp_nonsp={}, "
+        "fp_space={}\n",
         row->pr_nonsp, row->pr_space, row->fp_nonsp, row->fp_space);
   }
   return true; // computed some stats
@@ -787,8 +775,7 @@ bool find_row_pitch(     // find lines
     int32_t dm_gap,      // ignorable gaps
     TO_BLOCK *block,     // block of row
     int32_t block_index, // block_number
-    int32_t row_index,   // number of row
-    bool testing_on      // correct orientation
+    int32_t row_index    // number of row
 ) {
   bool used_dm_model; // looks like dot matrix
   float min_space;    // estimate threshold
@@ -833,10 +820,10 @@ bool find_row_pitch(     // find lines
   } else {
     gap_iqr = gap_stats.ile(0.75) - gap_stats.ile(0.25);
     pitch_iqr = pitch_stats.ile(0.75) - pitch_stats.ile(0.25);
-    if (testing_on) {
-      tprintf(
-          "First fp iteration:initial_pitch=%g, gap_iqr=%g, pitch_iqr=%g, "
-          "pitch=%g\n",
+    if (textord_debug_pitch) {
+      tprintDebug(
+          "First fp iteration:initial_pitch={}, gap_iqr={}, pitch_iqr={}, "
+          "pitch={}\n",
           initial_pitch, gap_iqr, pitch_iqr, pitch_stats.ile(0.5));
     }
     initial_pitch = pitch_stats.ile(0.5);
@@ -845,34 +832,34 @@ bool find_row_pitch(     // find lines
       min_space = initial_pitch;
       gap_iqr = gap_stats.ile(0.75) - gap_stats.ile(0.25);
       pitch_iqr = pitch_stats.ile(0.75) - pitch_stats.ile(0.25);
-      if (testing_on) {
-        tprintf(
-            "Revised fp iteration:initial_pitch=%g, gap_iqr=%g, pitch_iqr=%g, "
-            "pitch=%g\n",
+      if (textord_debug_pitch) {
+        tprintDebug(
+            "Revised fp iteration:initial_pitch={}, gap_iqr={}, pitch_iqr={}, "
+            "pitch={}\n",
             initial_pitch, gap_iqr, pitch_iqr, pitch_stats.ile(0.5));
       }
       initial_pitch = pitch_stats.ile(0.5);
     }
   }
   if (textord_debug_pitch_metric) {
-    tprintf("Blk=%d:Row=%d:%c:p_iqr=%g:g_iqr=%g:dm_p_iqr=%g:dm_g_iqr=%g:%c:", block_index,
-            row_index, 'X', pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr,
+    tprintDebug("Blk={}:Row={}:{}:p_iqr={}:g_iqr={}:dm_p_iqr={}:dm_g_iqr={}:{}:", block_index,
+            row_index, "X", pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr,
             pitch_iqr > maxwidth && dm_pitch_iqr > maxwidth
-                ? 'D'
-                : (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr ? 'S' : 'M'));
+                ? "D"
+                : (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr ? "S" : "M"));
   }
   if (pitch_iqr > maxwidth && dm_pitch_iqr > maxwidth) {
     row->pitch_decision = PITCH_DUNNO;
     if (textord_debug_pitch_metric) {
-      tprintf("\n");
+      tprintDebug("\n");
     }
     return false; // insufficient data
   }
   if (pitch_iqr * dm_gap_iqr <= dm_pitch_iqr * gap_iqr) {
-    if (testing_on) {
-      tprintf(
-          "Choosing non dm version:pitch_iqr=%g, gap_iqr=%g, dm_pitch_iqr=%g, "
-          "dm_gap_iqr=%g\n",
+    if (textord_debug_pitch) {
+      tprintDebug(
+          "Choosing non dm version:pitch_iqr={}, gap_iqr={}, dm_pitch_iqr={}, "
+          "dm_gap_iqr={}\n",
           pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr);
     }
     gap_iqr = gap_stats.ile(0.75) - gap_stats.ile(0.25);
@@ -880,10 +867,10 @@ bool find_row_pitch(     // find lines
     pitch = pitch_stats.ile(0.5);
     used_dm_model = false;
   } else {
-    if (testing_on) {
-      tprintf(
-          "Choosing dm version:pitch_iqr=%g, gap_iqr=%g, dm_pitch_iqr=%g, "
-          "dm_gap_iqr=%g\n",
+    if (textord_debug_pitch) {
+      tprintDebug(
+          "Choosing dm version:pitch_iqr={}, gap_iqr={}, dm_pitch_iqr={}, "
+          "dm_gap_iqr={}\n",
           pitch_iqr, gap_iqr, dm_pitch_iqr, dm_gap_iqr);
     }
     gap_iqr = dm_gap_iqr;
@@ -892,13 +879,13 @@ bool find_row_pitch(     // find lines
     used_dm_model = true;
   }
   if (textord_debug_pitch_metric) {
-    tprintf("rev_p_iqr=%g:rev_g_iqr=%g:pitch=%g:", pitch_iqr, gap_iqr, pitch);
-    tprintf("p_iqr/g=%g:p_iqr/x=%g:iqr_res=%c:", pitch_iqr / gap_iqr, pitch_iqr / block->xheight,
+    tprintDebug("rev_p_iqr={}:rev_g_iqr={}:pitch={}:", pitch_iqr, gap_iqr, pitch);
+    tprintDebug("p_iqr/g={}:p_iqr/x={}:iqr_res={}:", pitch_iqr / gap_iqr, pitch_iqr / block->xheight,
             pitch_iqr < gap_iqr * textord_fpiqr_ratio &&
                     pitch_iqr < block->xheight * textord_max_pitch_iqr &&
                     pitch < block->xheight * textord_words_default_maxspace
-                ? 'F'
-                : 'P');
+                ? "F"
+                : "P");
   }
   if (pitch_iqr < gap_iqr * textord_fpiqr_ratio &&
       pitch_iqr < block->xheight * textord_max_pitch_iqr &&
@@ -950,7 +937,7 @@ bool fixed_pitch_row(TO_ROW *row, // row to do
   } else {
     pitch_sd = tune_row_pitch(row, &row->projection, row->projection_left, row->projection_right,
                               (row->fixed_pitch + non_space * 3) / 4, row->fixed_pitch, sp_sd,
-                              mid_cuts, &row->char_cells, block_index == textord_debug_block);
+                              mid_cuts, &row->char_cells);
     if (pitch_sd < textord_words_pitchsd_threshold * row->fixed_pitch &&
         ((pitsync_linear_version & 3) < 3 ||
          ((pitsync_linear_version & 3) >= 3 &&
@@ -989,9 +976,9 @@ bool fixed_pitch_row(TO_ROW *row, // row to do
         res_string = "MF";
         break;
       default:
-        res_string = "??";
+        ;
     }
-    tprintf(":sd/p=%g:occ=%g:init_res=%s\n", pitch_sd / row->fixed_pitch, sp_sd, res_string);
+    tprintDebug(":sd/p={}:occ={}:init_res={}\n", pitch_sd / row->fixed_pitch, sp_sd, res_string);
   }
   return true;
 }
@@ -1067,10 +1054,10 @@ bool count_pitch_stats(  // find lines
         if (prev_valid && width_units >= 0) {
           //                                              if (width_units>0)
           //                                              {
-          //                                                      tprintf("wu=%d,
-          //                                                      width=%d,
-          //                                                      xc=%d, adding
-          //                                                      %d\n",
+          //                                                      tprintDebug("wu={},
+          //                                                      width={},
+          //                                                      xc={}, adding
+          //                                                      {}\n",
           //                                                              width_units,blob_width,x_centre,x_centre-prev_centre);
           //                                              }
           gap_stats->add(joined_box.left() - prev_right, 1);
@@ -1097,14 +1084,13 @@ bool count_pitch_stats(  // find lines
 float tune_row_pitch(           // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
     int16_t &best_mid_cuts,     // no of cheap cuts
-    ICOORDELT_LIST *best_cells, // row cells
-    bool testing_on             // individual words
+    ICOORDELT_LIST *best_cells  // row cells
 ) {
   int pitch_delta;           // offset pitch
   int16_t mid_cuts;          // cheap cuts
@@ -1120,25 +1106,25 @@ float tune_row_pitch(           // find fp cells
     return tune_row_pitch2(row, projection, projection_left, projection_right, space_size,
                            initial_pitch, best_sp_sd,
                            // space sd
-                           best_mid_cuts, best_cells, testing_on);
+                           best_mid_cuts, best_cells);
   }
   if (textord_disable_pitch_test) {
     best_sp_sd = initial_pitch;
     return initial_pitch;
   }
   initial_sd = compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
-                                initial_pitch, best_sp_sd, best_mid_cuts, best_cells, testing_on);
+                                initial_pitch, best_sp_sd, best_mid_cuts, best_cells);
   best_sd = initial_sd;
   best_pitch = initial_pitch;
-  if (testing_on) {
-    tprintf("tune_row_pitch:start pitch=%g, sd=%g\n", best_pitch, best_sd);
+  if (textord_debug_pitch) {
+    tprintDebug("tune_row_pitch:start pitch={}, sd={}\n", best_pitch, best_sd);
   }
   for (pitch_delta = 1; pitch_delta <= textord_pitch_range; pitch_delta++) {
     pitch_sd =
         compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
-                         initial_pitch + pitch_delta, sp_sd, mid_cuts, &test_cells, testing_on);
-    if (testing_on) {
-      tprintf("testing pitch at %g, sd=%g\n", initial_pitch + pitch_delta, pitch_sd);
+                         initial_pitch + pitch_delta, sp_sd, mid_cuts, &test_cells);
+    if (textord_debug_pitch) {
+      tprintDebug("testing pitch at {}, sd={}\n", initial_pitch + pitch_delta, pitch_sd);
     }
     if (pitch_sd < best_sd) {
       best_sd = pitch_sd;
@@ -1158,9 +1144,9 @@ float tune_row_pitch(           // find fp cells
   for (pitch_delta = 1; pitch_delta <= textord_pitch_range; pitch_delta++) {
     pitch_sd =
         compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
-                         initial_pitch - pitch_delta, sp_sd, mid_cuts, &test_cells, testing_on);
-    if (testing_on) {
-      tprintf("testing pitch at %g, sd=%g\n", initial_pitch - pitch_delta, pitch_sd);
+                         initial_pitch - pitch_delta, sp_sd, mid_cuts, &test_cells);
+    if (textord_debug_pitch) {
+      tprintDebug("testing pitch at {}, sd={}\n", initial_pitch - pitch_delta, pitch_sd);
     }
     if (pitch_sd < best_sd) {
       best_sd = pitch_sd;
@@ -1196,14 +1182,13 @@ float tune_row_pitch(           // find fp cells
 float tune_row_pitch2(          // find fp cells
     TO_ROW *row,                // row to do
     STATS *projection,          // vertical projection
-    int16_t projection_left,    // edge of projection
-    int16_t projection_right,   // edge of projection
+    TDimension projection_left,    // edge of projection
+    TDimension projection_right,   // edge of projection
     float space_size,           // size of blank
     float &initial_pitch,       // guess at pitch
     float &best_sp_sd,          // space sd
     int16_t &best_mid_cuts,     // no of cheap cuts
-    ICOORDELT_LIST *best_cells, // row cells
-    bool testing_on             // individual words
+    ICOORDELT_LIST *best_cells  // row cells
 ) {
   int pitch_delta;    // offset pitch
   int16_t pixel;      // pixel coord
@@ -1244,8 +1229,8 @@ float tune_row_pitch2(          // find fp cells
       }
     }
   }
-  if (testing_on) {
-    tprintf("tune_row_pitch:start pitch=%g, best_delta=%d, count=%d\n", initial_pitch, best_delta,
+  if (textord_debug_pitch) {
+    tprintDebug("tune_row_pitch:start pitch={}, best_delta={}, count={}\n", initial_pitch, best_delta,
             best_count);
   }
   best_pitch += best_delta;
@@ -1266,10 +1251,10 @@ float tune_row_pitch2(          // find fp cells
   }
 
   best_sd = compute_pitch_sd(row, projection, projection_left, projection_right, space_size,
-                             initial_pitch, best_sp_sd, best_mid_cuts, best_cells, testing_on,
+                             initial_pitch, best_sp_sd, best_mid_cuts, best_cells, 
                              start, end);
-  if (testing_on) {
-    tprintf("tune_row_pitch:output pitch=%g, sd=%g\n", initial_pitch, best_sd);
+  if (textord_debug_pitch) {
+    tprintDebug("tune_row_pitch:output pitch={}, best_sd={}\n", initial_pitch, best_sd);
   }
 
   if (textord_debug_pitch_metric) {
@@ -1289,14 +1274,13 @@ float tune_row_pitch2(          // find fp cells
 float compute_pitch_sd(        // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float space_size,          // size of blank
     float initial_pitch,       // guess at pitch
     float &sp_sd,              // space sd
     int16_t &mid_cuts,         // no of free cuts
     ICOORDELT_LIST *row_cells, // list of chop pts
-    bool testing_on,           // individual words
     int16_t start,             // start of good range
     int16_t end                // end of good range
 ) {
@@ -1313,8 +1297,8 @@ float compute_pitch_sd(        // find fp cells
   int32_t sp_count;      // spaces
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
-  int16_t cellpos;       // previous cell boundary
+  TDimension segpos;     // position of segment
+  TDimension cellpos;    // previous cell boundary
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;     // new cell
@@ -1326,7 +1310,7 @@ float compute_pitch_sd(        // find fp cells
 
   if ((pitsync_linear_version & 3) > 1) {
     word_sync = compute_pitch_sd2(row, projection, projection_left, projection_right, initial_pitch,
-                                  occupation, mid_cuts, row_cells, testing_on, start, end);
+                                  occupation, mid_cuts, row_cells, start, end);
     sp_sd = occupation;
     return word_sync;
   }
@@ -1340,8 +1324,8 @@ float compute_pitch_sd(        // find fp cells
   if (blob_it.empty()) {
     return space_size * 10;
   }
-#ifndef GRAPHICS_DISABLED
-  if (testing_on && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (to_win) {
     blob_box = blob_it.data()->bounding_box();
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
@@ -1369,24 +1353,24 @@ float compute_pitch_sd(        // find fp cells
       word_sync = check_pitch_sync(&start_it, blob_count, static_cast<int16_t>(initial_pitch), 2,
                                    projection, &seg_list);
     }
-    if (testing_on) {
-      tprintf("Word ending at (%d,%d), len=%d, sync rating=%g, ", prev_box.right(), prev_box.top(),
+    if (textord_debug_pitch) {
+      tprintDebug("Word ending at ({},{}), len={}, sync rating={}, positions: ", prev_box.right(), prev_box.top(),
               seg_list.length() - 1, word_sync);
       seg_it.set_to_list(&seg_list);
       for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
         if (seg_it.data()->faked) {
-          tprintf("(F)");
+          tprintDebug("(F)");
         }
-        tprintf("%d, ", seg_it.data()->position());
-        //                              tprintf("C=%g, s=%g, sq=%g\n",
+        tprintDebug("x={}, ", seg_it.data()->position());
+        //                              tprintDebug("C={}, s={}, sq={}\n",
         //                                      seg_it.data()->cost_function(),
         //                                      seg_it.data()->sum(),
         //                                      seg_it.data()->squares());
       }
-      tprintf("\n");
+      tprintDebug("\n");
     }
-#ifndef GRAPHICS_DISABLED
-    if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+    if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
       plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
     }
 #endif
@@ -1403,9 +1387,9 @@ float compute_pitch_sd(        // find fp cells
       if (cell_it.empty() || segpos > cellpos + initial_pitch / 2) {
         // big gap
         while (!cell_it.empty() && segpos > cellpos + initial_pitch * 3 / 2) {
-          cell = new ICOORDELT(cellpos + static_cast<int16_t>(initial_pitch), 0);
+          cell = new ICOORDELT(cellpos + static_cast<TDimension>(initial_pitch), 0);
           cell_it.add_after_then_move(cell);
-          cellpos += static_cast<int16_t>(initial_pitch);
+          cellpos += static_cast<TDimension>(initial_pitch);
         }
         // make new one
         cell = new ICOORDELT(segpos, 0);
@@ -1446,13 +1430,12 @@ float compute_pitch_sd(        // find fp cells
 float compute_pitch_sd2(       // find fp cells
     TO_ROW *row,               // row to do
     STATS *projection,         // vertical projection
-    int16_t projection_left,   // edge
-    int16_t projection_right,  // edge
+    TDimension projection_left,   // edge
+    TDimension projection_right,  // edge
     float initial_pitch,       // guess at pitch
     int16_t &occupation,       // no of occupied cells
     int16_t &mid_cuts,         // no of free cuts
     ICOORDELT_LIST *row_cells, // list of chop pts
-    bool testing_on,           // individual words
     int16_t start,             // start of good range
     int16_t end                // end of good range
 ) {
@@ -1463,7 +1446,7 @@ float compute_pitch_sd2(       // find fp cells
   TBOX blob_box;         // bounding box
   FPSEGPT_LIST seg_list; // char cells
   FPSEGPT_IT seg_it;     // iterator
-  int16_t segpos;        // position of segment
+  TDimension segpos;     // position of segment
                          // iterator
   ICOORDELT_IT cell_it = row_cells;
   ICOORDELT *cell;  // new cell
@@ -1474,8 +1457,8 @@ float compute_pitch_sd2(       // find fp cells
     occupation = 0;
     return initial_pitch * 10;
   }
-#ifndef GRAPHICS_DISABLED
-  if (testing_on && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (to_win) {
     projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, ScrollView::CORAL);
   }
 #endif
@@ -1488,26 +1471,26 @@ float compute_pitch_sd2(       // find fp cells
   } while (!blob_it.cycled_list());
   plot_it = blob_it;
   word_sync = check_pitch_sync2(
-      &blob_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+      &blob_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
       projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, start, end);
-  if (testing_on) {
-    tprintf("Row ending at (%d,%d), len=%d, sync rating=%g, ", blob_box.right(), blob_box.top(),
+  if (textord_debug_pitch) {
+    tprintDebug("Row ending at ({},{}), len={}, sync rating={}, ", blob_box.right(), blob_box.top(),
             seg_list.length() - 1, word_sync);
     seg_it.set_to_list(&seg_list);
     for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
       if (seg_it.data()->faked) {
-        tprintf("(F)");
+        tprintDebug("(F)");
       }
-      tprintf("%d, ", seg_it.data()->position());
-      //                              tprintf("C=%g, s=%g, sq=%g\n",
-      //                                      seg_it.data()->cost_function(),
-      //                                      seg_it.data()->sum(),
-      //                                      seg_it.data()->squares());
+      tprintDebug("{}, ", seg_it.data()->position());
+      tprintDebug("Cost={}, sum={}, squared={}\n",
+			seg_it.data()->cost_function(),
+			seg_it.data()->sum(),
+			seg_it.data()->squares());
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_fixed_cuts && blob_count > 0 && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
     plot_fp_cells2(to_win, ScrollView::GOLDENROD, row, &seg_list);
   }
 #endif
@@ -1535,8 +1518,9 @@ float compute_pitch_sd2(       // find fp cells
 void print_pitch_sd(         // find fp cells
     TO_ROW *row,             // row to do
     STATS *projection,       // vertical projection
-    int16_t projection_left, // edges //size of blank
-    int16_t projection_right, float space_size,
+    TDimension projection_left, // edges //size of blank
+    TDimension projection_right, 
+	float space_size,
     float initial_pitch // guess at pitch
 ) {
   const char *res2;   // pitch result
@@ -1587,7 +1571,7 @@ void print_pitch_sd(         // find fp cells
       blob_box = box_next(&blob_it);
     } while (!blob_it.cycled_list() && blob_box.left() - prev_box.right() < space_size);
     word_sync = check_pitch_sync2(
-        &start_it, blob_count, static_cast<int16_t>(initial_pitch), 2, projection, projection_left,
+        &start_it, blob_count, static_cast<TDimension>(initial_pitch), 2, projection, projection_left,
         projection_right, row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
     total_blob_count += blob_count;
     seg_it.set_to_list(&seg_list);
@@ -1614,13 +1598,13 @@ void print_pitch_sd(         // find fp cells
   } while (!blob_it.cycled_list());
   sp_sd = sp_count > 0 ? sqrt(spsum / sp_count) : 0;
   word_sync = total_count > 0 ? sqrt(sqsum / total_count) : space_size * 10;
-  tprintf("new_sd=%g:sd/p=%g:new_sp_sd=%g:res=%c:", word_sync, word_sync / initial_pitch, sp_sd,
-          word_sync < textord_words_pitchsd_threshold * initial_pitch ? 'F' : 'P');
+  tprintDebug("new_sd={}:sd/p={}:new_sp_sd={}:res={}:", word_sync, word_sync / initial_pitch, sp_sd,
+          word_sync < textord_words_pitchsd_threshold * initial_pitch ? "F" : "P");
 
   start_it = row_start;
   blob_it = row_start;
   word_sync =
-      check_pitch_sync2(&blob_it, total_blob_count, static_cast<int16_t>(initial_pitch), 2,
+      check_pitch_sync2(&blob_it, total_blob_count, static_cast<TDimension>(initial_pitch), 2,
                         projection, projection_left, projection_right,
                         row->xheight * textord_projection_scale, occupation, &seg_list, 0, 0);
   if (occupation > 1) {
@@ -1628,8 +1612,8 @@ void print_pitch_sd(         // find fp cells
   }
   word_sync = sqrt(word_sync);
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_row_cuts && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_row_cuts && to_win) {
     plot_fp_cells2(to_win, ScrollView::CORAL, row, &seg_list);
   }
 #endif
@@ -1643,11 +1627,11 @@ void print_pitch_sd(         // find fp cells
   } else {
     res2 = word_sync < textord_words_def_prop * initial_pitch ? "MP" : "DP";
   }
-  tprintf(
-      "row_sd=%g:sd/p=%g:res=%c:N=%d:res2=%s,init pitch=%g, row_pitch=%g, "
-      "all_caps=%d\n",
+  tprintDebug(
+      "row_sd={}:sd/p={}:res={}:N={}:res2={},init pitch={}, row_pitch={}, "
+      "all_caps={}\n",
       word_sync, word_sync / initial_pitch,
-      word_sync < textord_words_pitchsd_threshold * initial_pitch ? 'F' : 'P', occupation, res2,
+      word_sync < textord_words_pitchsd_threshold * initial_pitch ? "F" : "P", occupation, res2,
       initial_pitch, row->fixed_pitch, row->all_caps);
 }
 
@@ -1657,8 +1641,8 @@ void print_pitch_sd(         // find fp cells
  * Extract marked leader blobs and put them
  * into words in advance of fixed pitch checking and word generation.
  **********************************************************************/
-void find_repeated_chars(TO_BLOCK *block,   // Block to search.
-                         bool testing_on) { // Debug mode.
+void find_repeated_chars(TO_BLOCK *block    // Block to search.
+) {
   POLY_BLOCK *pb = block->block->pdblk.poly_block();
   if (pb != nullptr && !pb->IsText()) {
     return; // Don't find repeated chars in non-text blocks.
@@ -1704,9 +1688,9 @@ void find_repeated_chars(TO_BLOCK *block,   // Block to search.
         // set to point to the blob after the end of the extracted sequence.
         word = make_real_word(&box_it, blobcount, box_it.at_first(), 1);
         if (!box_it.empty() && box_it.data()->joined_to_prev()) {
-          tprintf("Bad box joined to prev at");
+          tprintDebug("Bad box joined to prev at ");
           box_it.data()->bounding_box().print();
-          tprintf("After repeated word:");
+          tprintDebug("After repeated word: ");
           word->bounding_box().print();
         }
         ASSERT_HOST(box_it.empty() || !box_it.data()->joined_to_prev());
@@ -1726,7 +1710,7 @@ void find_repeated_chars(TO_BLOCK *block,   // Block to search.
  * Plot a block of words as if fixed pitch.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 void plot_fp_word(   // draw block of words
     TO_BLOCK *block, // block to draw
     float pitch,     // pitch to draw with
@@ -1740,7 +1724,7 @@ void plot_fp_word(   // draw block of words
     row->min_space = static_cast<int32_t>((pitch + nonspace) / 2);
     row->max_nonspace = row->min_space;
     row->space_threshold = row->min_space;
-    plot_word_decisions(to_win, static_cast<int16_t>(pitch), row);
+    plot_word_decisions(to_win, static_cast<TDimension>(pitch), row);
   }
 }
 #endif

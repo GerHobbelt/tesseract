@@ -1,6 +1,16 @@
+
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "validate_grapheme.h"
 #include "tprintf.h"
+
+#if defined(HAS_LIBICU)
+
 #include "unicode/uchar.h" // From libicu
+
+#endif
 
 namespace tesseract {
 
@@ -20,13 +30,14 @@ bool ValidateGrapheme::ConsumeGraphemeIfValid() {
 #if 0
     // Reject easily detected badly formed sequences.
     if (prev_cc == CharClass::kWhitespace && is_combiner) {
-      if (report_errors_) tprintf("Word started with a combiner:0x%x\n", ch);
+      if (report_errors_)
+		  tprintError("Word started with a combiner:{}\n", ch);
      return false;
     }
 #endif
     if (prev_cc == CharClass::kVirama && cc == CharClass::kVirama) {
       if (report_errors_) {
-        tprintf("Two grapheme links in a row:0x%x 0x%x\n", prev_ch, ch);
+        tprintError("Two grapheme links in a row:{} {}\n", prev_ch, ch);
       }
       return false;
     }
@@ -56,6 +67,9 @@ Validator::CharClass ValidateGrapheme::UnicodeToCharClass(char32 ch) const {
   if (IsVedicAccent(ch)) {
     return CharClass::kVedicMark;
   }
+
+#if defined(HAS_LIBICU)
+
   // The ZeroWidth[Non]Joiner characters are mapped to kCombiner as they
   // always combine with the previous character.
   if (u_hasBinaryProperty(ch, UCHAR_GRAPHEME_LINK)) {
@@ -74,6 +88,9 @@ Validator::CharClass ValidateGrapheme::UnicodeToCharClass(char32 ch) const {
       ch == kZeroWidthJoiner) {
     return CharClass::kCombiner;
   }
+
+#endif
+
   return CharClass::kOther;
 }
 
@@ -82,13 +99,13 @@ bool ValidateGrapheme::IsBadlyFormed(char32 prev_ch, char32 ch) {
   // Reject badly formed Indic vowels.
   if (IsBadlyFormedIndicVowel(prev_ch, ch)) {
     if (report_errors_) {
-      tprintf("Badly formed Indic vowel sequence:0x%x 0x%x\n", prev_ch, ch);
+      tprintError("Badly formed Indic vowel sequence:{} {}\n", prev_ch, ch);
     }
     return true;
   }
   if (IsBadlyFormedThai(prev_ch, ch)) {
     if (report_errors_) {
-      tprintf("Badly formed Thai:0x%x 0x%x\n", prev_ch, ch);
+      tprintError("Badly formed Thai:{} {}\n", prev_ch, ch);
     }
     return true;
   }

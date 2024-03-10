@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -83,23 +83,23 @@ ROW *fixed_pitch_words( // find lines
   WERD_IT rep_it = &row->rep_words;
   WERD *word;         // new word
   int32_t xstarts[2]; // row ends
-  int32_t prev_x;     // end of prev blob
+  TDimension prev_x;     // end of prev blob
                       // iterator
   BLOBNBOX_IT box_it = row->blob_list();
   // boundaries
   ICOORDELT_IT cell_it = &row->char_cells;
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_page_cuts && to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_page_cuts && to_win) {
     plot_row_cells(to_win, ScrollView::RED, row, 0, &row->char_cells);
   }
 #endif
 
-  prev_x = -INT16_MAX;
+  prev_x = TDIMENSION_MIN;
   bol = true;
   blanks = 0;
   if (rep_it.empty()) {
-    rep_left = INT16_MAX;
+    rep_left = TDIMENSION_MAX;
   } else {
     rep_left = rep_it.data()->bounding_box().left();
   }
@@ -111,8 +111,8 @@ ROW *fixed_pitch_words( // find lines
     xstarts[0] = rep_left;
   }
   if (cell_it.empty() || row->char_cells.singleton()) {
-    tprintf("Row without enough char cells!\n");
-    tprintf("Leftmost blob is at (%d,%d)\n", box_it.data()->bounding_box().left(),
+    tprintWarn("Row without enough char cells!\n"
+            "Leftmost blob is at ({},{})\n", box_it.data()->bounding_box().left(),
             box_it.data()->bounding_box().bottom());
     return nullptr;
   }
@@ -206,8 +206,7 @@ ROW *fixed_pitch_words( // find lines
     prev_x = prev_chop_coord;
   }
   xstarts[1] = prev_x + 1;
-  real_row =
-      new ROW(row, static_cast<int16_t>(row->kern_size), static_cast<int16_t>(row->space_size));
+  real_row = new ROW(row, static_cast<TDimension>(row->kern_size), static_cast<TDimension>(row->space_size));
   word_it.set_to_list(real_row->word_list());
   // put words in row
   word_it.add_list_after(&words);
@@ -242,7 +241,7 @@ static WERD *add_repeated_word( // move repeated word
   word->set_blanks(blanks);
   rep_it->forward();
   if (rep_it->empty()) {
-    rep_left = INT16_MAX;
+    rep_left = TDIMENSION_MAX;
   } else {
     rep_left = rep_it->data()->bounding_box().left();
   }
@@ -416,7 +415,6 @@ static bool fixed_chop_coutline(     // chop the outline
   int16_t left_edge;       // of outline
   int16_t startindex;      // in first fragment
   int32_t length;          // of outline
-  int16_t stepindex;       // into outline
   int16_t head_index;      // start of fragment
   ICOORD head_pos;         // start of fragment
   int16_t tail_index;      // end of fragment
@@ -430,7 +428,7 @@ static bool fixed_chop_coutline(     // chop the outline
   left_edge = pos.x();
   tail_index = 0;
   tail_pos = pos;
-  for (stepindex = 0; stepindex < length; stepindex++) {
+  for (int32_t stepindex = 0; stepindex < length; stepindex++) {
     if (pos.x() < left_edge) {
       left_edge = pos.x();
       tail_index = stepindex;

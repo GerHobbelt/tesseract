@@ -24,7 +24,7 @@
 #include "tesstypes.h"  // for TDimension
 #include "tprintf.h"    // for tprintf
 
-#include <tesseract/export.h> // for DLLSYM
+#include <tesseract/export.h> // for TESS_API, DLLSYM
 
 #include <algorithm> // for std::max, std::min
 #include <cmath>     // for std::ceil, std::floor
@@ -32,14 +32,17 @@
 #include <cstdio>    // for FILE
 #include <string>    // for std::string
 
+#undef max
+#undef min
+
 namespace tesseract {
 
 class TESS_API TBOX { // bounding box
 public:
   TBOX()
       : // empty constructor making a null box
-      bot_left(INT16_MAX, INT16_MAX)
-      , top_right(-INT16_MAX, -INT16_MAX) {}
+        bot_left(TDIMENSION_MAX, TDIMENSION_MAX),
+        top_right(TDIMENSION_MIN, TDIMENSION_MIN) {}
 
   TBOX(                  // constructor
       const ICOORD pt1,  // one corner
@@ -56,6 +59,8 @@ public:
 
   TBOX( // box around FCOORD
       const FCOORD pt);
+
+  TBOX(const Image &pix);
 
   bool null_box() const { // Is box null
     return ((left() >= right()) || (top() <= bottom()));
@@ -208,9 +213,13 @@ public:
   // and top-right corners. Use rotate_large if you want to guarantee
   // that all content is contained within the rotated box.
   void rotate(const FCOORD &vec) { // by vector
+    ICOORD top_left(bot_left.x(), top_right.y());
+    bot_left -= top_left;
+    top_right -= top_left;
     bot_left.rotate(vec);
     top_right.rotate(vec);
-    *this = TBOX(bot_left, top_right);
+    bot_left += top_left;
+    top_right += top_left;
   }
   // rotate_large constructs the containing bounding box of all 4
   // corners after rotating them. It therefore guarantees that all
@@ -287,19 +296,24 @@ public:
   }
 
   void print() const { // print
-    tprintf("Bounding box=(%d,%d)->(%d,%d)\n", left(), bottom(), right(), top());
+    tprintDebug("Bounding box=(l:{},b:{}->r:{},t:{})\n", left(), bottom(), right(), top());
   }
   // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
   void print_to_str(std::string &str) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                  // use current settings
-      ScrollView *fd) const { // where to paint
+      ScrollViewReference &fd) const { // where to paint
     fd->Rectangle(bot_left.x(), bot_left.y(), top_right.x(), top_right.y());
   }
+#endif
 
+  void plot(                  // use current settings
+    Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const;        // where to paint
+
+#if !GRAPHICS_DISABLED
   void plot(                                  // paint box
-      ScrollView *fd,                         // where to paint
+      ScrollViewReference &fd,                         // where to paint
       ScrollView::Color fill_colour,          // colour for inside
       ScrollView::Color border_colour) const; // colour for border
 #endif

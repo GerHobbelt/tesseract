@@ -20,13 +20,12 @@
 #ifndef TESSERACT_CCSTRUCT_BLAMER_H_
 #define TESSERACT_CCSTRUCT_BLAMER_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
+
 #include "boxword.h" // for BoxWord
-#ifndef DISABLED_LEGACY_ENGINE
-#  include "params_training_featdef.h" // for ParamsTrainingBundle, ParamsTra...
-#endif                                 //  ndef DISABLED_LEGACY_ENGINE
+#include "params_training_featdef.h" // for ParamsTrainingBundle, ParamsTra...
 #include "ratngs.h"                    // for BLOB_CHOICE_LIST (ptr only)
 #include "rect.h"                      // for TBOX
 #include "tprintf.h"                   // for tprintf
@@ -172,15 +171,15 @@ struct BlamerBundle {
     lattice_data_ = new char[lattice_size_];
     memcpy(lattice_data_, data, lattice_size_);
   }
-#ifndef DISABLED_LEGACY_ENGINE
+
   const tesseract::ParamsTrainingBundle &params_training_bundle() const {
     return params_training_bundle_;
   }
+
   // Adds a new ParamsTrainingHypothesis to the current hypothesis list.
   void AddHypothesis(const tesseract::ParamsTrainingHypothesis &hypo) {
     params_training_bundle_.AddHypothesis(hypo);
   }
-#endif // ndef DISABLED_LEGACY_ENGINE
 
   // Functions to setup the blamer.
   // Whole word string, whole word bounding box.
@@ -299,7 +298,7 @@ private:
     debug_ += " to blame: ";
     FillDebugString(msg, choice, debug_);
     if (debug) {
-      tprintf("SetBlame(): %s", debug_.c_str());
+      tprintDebug("SetBlame(): {}", debug_);
     }
   }
 
@@ -340,9 +339,7 @@ private:
   // Serialized segmentation search lattice.
   char *lattice_data_;
   // Information about hypotheses (paths) explored by the segmentation search.
-#ifndef DISABLED_LEGACY_ENGINE
   tesseract::ParamsTrainingBundle params_training_bundle_;
-#endif // ndef DISABLED_LEGACY_ENGINE
 };
 
 } // namespace tesseract

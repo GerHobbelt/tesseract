@@ -23,13 +23,14 @@
 
 #include "otsuthr.h"
 #include "thresholder.h"
+#include "tesseractclass.h"
 #include "tprintf.h" // for tprintf
 
 #if defined(USE_OPENCL)
 #  include "openclwrapper.h" // for OpenclDevice
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h> // for api->GetIntVariable()
 
 #include <algorithm> // for std::max, std::min
@@ -37,10 +38,16 @@
 #include <cstring>
 #include <tuple>
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"
+#endif
+
+
 namespace tesseract {
 
-ImageThresholder::ImageThresholder()
-    : pix_(nullptr)
+ImageThresholder::ImageThresholder(Tesseract* tess)
+    : tesseract_(tess)
+    , pix_(nullptr)
     , image_width_(0)
     , image_height_(0)
     , pix_channels_(0)
@@ -48,6 +55,7 @@ ImageThresholder::ImageThresholder()
     , scale_(1)
     , yres_(300)
     , estimated_res_(300) {
+  ASSERT0(tess != nullptr);
   SetRectangle(0, 0, 0, 0);
 }
 
@@ -79,6 +87,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
   if (bpp == 0) {
     bpp = 1;
   }
+  // pixRotate(pixCreate(width, height, bpp == 24 ? 32 : bpp), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
   Image pix = pixCreate(width, height, bpp == 24 ? 32 : bpp);
   l_uint32 *data = pixGetData(pix);
   int wpl = pixGetWpl(pix);
@@ -126,8 +135,9 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       break;
 
     default:
-      tprintf("Cannot convert RAW image to Pix with bpp = %d\n", bpp);
+      tprintError("Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
+
   SetImage(pix, exif, angle);
   pix.destroy();
 }
@@ -209,8 +219,232 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
   Init();
 }
 
+/*----------------------------------------------------------------------*
+ *                  Non-linear contrast normalization                   *
+ *----------------------------------------------------------------------*/
+/*!
+ * \brief   pixNLNorm2()
+ *
+ * \param[in]    pixs          8 or 32 bpp
+ * \param[out]   ptresh        l_int32 global threshold value
+ * \return       pixd          8 bpp grayscale, or NULL on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This composite operation is good for adaptively removing
+ *          dark background. Adaption of Thomas Breuel's nlbin version
+ *          from ocropus.
+ *      (2) A good thresholder together with NLNorm is WAN
+ * </pre>
+ */
+Pix *ImageThresholder::pixNLNorm2(Pix *pixs, int *pthresh) {
+  l_int32 d, thresh, w1, h1, w2, h2, fgval, bgval;
+  //l_uint32 black_val, white_val;
+  l_float32 factor, threshpos, avefg, avebg, numfg, numbg;
+  PIX *pixg, *pixd, *pixd2;
+  BOX *pixbox;
+  NUMA *na;
+
+  PROCNAME("pixNLNorm");
+
+  if (!pixs || (d = pixGetDepth(pixs)) < 8) {
+    return (PIX *)ERROR_PTR("pixs undefined or d < 8 bpp", procName, NULL);
+  }
+  if (d == 32) {
+    // ITU-R 601-2 luma
+    pixg = pixConvertRGBToGray(pixs, 0.299, 0.587, 0.114);
+    // Legacy converting
+    // pixg = pixConvertRGBToGray(pixs, 0.3, 0.4, 0.3);
+  } else {
+    pixg = pixConvertTo8(pixs, 0);
+  }
+
+  /// Normalize contrast
+  //  pixGetBlackOrWhiteVal(pixg, L_GET_BLACK_VAL, &black_val);
+  //  if (black_val>0) pixAddConstantGray(pixg, -1 * black_val);
+  //  pixGetBlackOrWhiteVal(pixg, L_GET_WHITE_VAL, &white_val);
+  //  if (white_val<255) pixMultConstantGray(pixg, (255. / white_val));
+  pixd = pixMaxDynamicRange(pixg, L_LINEAR_SCALE);
+  pixDestroy(&pixg);
+  pixg = pixCopy(nullptr, pixd);
+  pixDestroy(&pixd);
+
+  /// Calculate flat version
+  pixGetDimensions(pixg, &w1, &h1, NULL);
+  pixd = pixScaleGeneral(pixg, 0.5, 0.5, 0.0, 0);
+  pixd2 = pixRankFilter(pixd, 20, 2, 0.8);
+  pixDestroy(&pixd);
+  pixd = pixRankFilter(pixd2, 2, 20, 0.8);
+  pixDestroy(&pixd2);
+  pixGetDimensions(pixd, &w2, &h2, NULL);
+  pixd2 = pixScaleGrayLI(pixd, (l_float32)w1 / (l_float32)w2,
+                         (l_float32)h1 / (l_float32)h2);
+  pixDestroy(&pixd);
+  pixInvert(pixd2, pixd2);
+  pixAddGray(pixg, pixg, pixd2);
+  pixDestroy(&pixd2);
+
+  /// Local contrast enhancement
+  //  Ignore a border of 10% and get a mean threshold,
+  //  background and foreground value
+  pixbox = boxCreate(w1 * 0.1, h1 * 0.1, w1 * 0.9, h1 * 0.9);
+  na = pixGetGrayHistogramInRect(pixg, pixbox, 1);
+  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, &numfg, &numbg, NULL);
+  boxDestroy(&pixbox);
+  numaDestroy(&na);
+
+  if (numfg > numbg) {
+    // white = fg --> swap the values produced by numaSplitDistribution()
+    l_float32 tmp = avefg;
+    avefg = avebg;
+    avebg = tmp;
+
+    tmp = numfg;
+    numfg = numbg;
+    numbg = tmp;
+  }
+
+  /// Subtract by a foreground value and multiply by factor to
+  //  set a background value to 255
+  fgval = (l_int32)(avefg + 0.5);
+  bgval = (l_int32)(avebg + 0.5);
+  threshpos = (l_float32)(thresh - fgval) / (bgval - fgval);
+  // Todo: fgval or fgval + slightly offset
+  fgval = fgval; // + (l_int32) ((thresh - fgval)*.25);
+  bgval = bgval +
+          (l_int32)std::min((l_int32)((bgval - thresh) * .5), (255 - bgval));
+  factor = 255. / (bgval - fgval);
+  if (pthresh) {
+    *pthresh = (l_int32)threshpos * factor - threshpos * .1;
+  }
+  pixAddConstantGray(pixg, -1 * fgval);
+  pixMultConstantGray(pixg, factor);
+  
+  return pixg;
+}
+
+/*----------------------------------------------------------------------*
+ *                  Non-linear contrast normalization                   *
+ *----------------------------------------------------------------------*/
+/*!
+ * \brief   pixNLNorm1()
+ *
+ * \param[in]    pixs          8 or 32 bpp
+ * \param[out]   ptresh        l_int32 global threshold value
+ * \param[out]   pfgval        l_int32 global foreground value
+ * \param[out]   pbgval        l_int32 global background value
+ * \return  pixd    8 bpp grayscale, or NULL on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This composite operation is good for adaptively removing
+ *          dark background. Adaption of Thomas Breuel's nlbin version from ocropus.
+ * </pre>
+ */
+PIX  *
+ImageThresholder::pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval,int *pbgval)
+{
+  l_int32   d, fgval, bgval, thresh, w1, h1, w2, h2;
+  l_float32 factor;
+  PIX       *pixg, *pixd;
+
+  PROCNAME("pixNLNorm");
+
+  if (!pixs || (d = pixGetDepth(pixs)) < 8)
+      return (PIX *)ERROR_PTR("pixs undefined or d < 8 bpp", procName, NULL);
+  if (d == 32)
+      pixg = pixConvertRGBToGray(pixs, 0.3, 0.4, 0.3);
+  else
+      pixg = pixConvertTo8(pixs, 0);
+
+
+  /* Normalize contrast */
+  pixd = pixMaxDynamicRange(pixg, L_LINEAR_SCALE);
+
+  /* Calculate flat version */
+  pixGetDimensions(pixd, &w1, &h1, NULL);
+  pixd = pixScaleSmooth(pixd, 0.5, 0.5);
+  pixd = pixRankFilter(pixd, 2, 20, 0.8);
+  pixd = pixRankFilter(pixd, 20, 2, 0.8);
+  pixGetDimensions(pixd, &w2, &h2, NULL);
+  pixd = pixScaleGrayLI(pixd, (l_float32)w1 / (l_float32)w2, (l_float32)h1 / (l_float32)h2);
+  pixInvert(pixd, pixd);
+  pixg = pixAddGray(NULL, pixg, pixd);
+  pixDestroy(&pixd);
+
+  /* Local contrast enhancement */
+  pixSplitDistributionFgBg(pixg, 0.1, 2, &thresh, &fgval, &bgval, NULL);
+  if (pthresh)
+    *pthresh = thresh;
+  if (pfgval)
+    *pfgval = fgval;
+  if (pbgval)
+    *pbgval = bgval;
+  fgval = fgval+((thresh-fgval)*0.25);
+  if (fgval<0)
+    fgval = 0;
+  pixAddConstantGray(pixg, -1*fgval);
+  factor = 255/(bgval-fgval);
+  pixMultConstantGray(pixg, factor);
+  pixd = pixGammaTRC(NULL, pixg, 1.0, 0, bgval-((bgval-thresh)*0.5));
+  pixDestroy(&pixg);
+
+  return pixd;
+}
+
+
+/*----------------------------------------------------------------------*
+ *                  Non-linear contrast normalization                   *
+ *                            and thresholding                          *
+ *----------------------------------------------------------------------*/
+/*!
+ * \brief   pixNLBin()
+ *
+ * \param[in]    pixs          8 or 32 bpp
+ * \oaram[in]    adaptive      bool if set to true it uses adaptive thresholding
+ *                             recommended for images, which contain dark and light text
+ *                             at the same time (it doubles the processing time)
+ * \return  pixd    1 bpp thresholded image, or NULL on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This composite operation is good for adaptively removing
+ *          dark background. Adaption of Thomas Breuel's nlbin version from ocropus.
+ *      (2) The threshold for the binarization uses an
+ *          Sauvola adaptive thresholding.
+ * </pre>
+ */
+PIX  *
+ImageThresholder::pixNLBin(PIX *pixs, bool adaptive)
+{
+	int thresh;
+	int fgval, bgval;
+  PIX        *pixb;
+
+  PROCNAME("pixNLBin");
+
+  pixb = pixNLNorm1(pixs, &thresh, &fgval, &bgval);
+  if (!pixb)
+    return (PIX *)ERROR_PTR("invalid normalization result", procName, NULL);
+
+  /* Binarize */
+
+  if (adaptive) {
+    l_int32    w, h, nx, ny;
+    pixGetDimensions(pixb, &w, &h, NULL);
+    nx = L_MAX(1, (w + 64) / 128);
+    ny = L_MAX(1, (h + 64) / 128);
+    /* whsize needs to be this small to use it also for lineimages for tesseract */
+    pixSauvolaBinarizeTiled(pixb, 16, 0.5, nx, ny, NULL, &pixb);
+  } else {
+    pixb =pixDitherToBinarySpec(pixb, bgval-((bgval-thresh)*0.75), fgval+((thresh-fgval)*0.25));
+    //pixb = pixThresholdToBinary(pixb, fgval+((thresh-fgval)*.1));  /* for bg and light fg */
+  }
+
+  return pixb;
+}
+
 std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
-                                                      TessBaseAPI *api,
                                                       ThresholdMethod method) {
   Image pix_binary = nullptr;
   Image pix_thresholds = nullptr;
@@ -226,22 +460,19 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
 
   auto pix_grey = GetPixRectGrey();
 
-  int r;
+  int r = 0;
+  l_int32 threshold_val = 0;
 
   l_int32 pix_w, pix_h;
-  pixGetDimensions(pix_grey, &pix_w, &pix_h, nullptr);
+  pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
-  bool thresholding_debug;
-  api->GetBoolVariable("thresholding_debug", &thresholding_debug);
-  if (thresholding_debug) {
-    tprintf("\nimage width: %d  height: %d  ppi: %d\n", pix_w, pix_h, yres_);
+  if (tesseract_->thresholding_debug) {
+    tprintDebug("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   if (method == ThresholdMethod::Sauvola) {
     int window_size;
-    double window_size_factor;
-    api->GetDoubleVariable("thresholding_window_size", &window_size_factor);
-    window_size = window_size_factor * yres_;
+    window_size = tesseract_->thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
     window_size = std::min(pix_w < pix_h ? pix_w - 3 : pix_h - 3, window_size);
     int half_window_size = window_size / 2;
@@ -260,60 +491,81 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
       ny = pix_h / (half_window_size + 2);
     }
 
-    double kfactor;
-    api->GetDoubleVariable("thresholding_kfactor", &kfactor);
+    double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
-    if (thresholding_debug) {
-      tprintf("window size: %d  kfactor: %.3f  nx:%d  ny: %d\n", window_size, kfactor, nx, ny);
+    if (tesseract_->thresholding_debug) {
+      tprintDebug("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
                                (PIX**)pix_thresholds,
                                 (PIX**)pix_binary);
-  } else { // if (method == ThresholdMethod::LeptonicaOtsu)
+  } else if (method == ThresholdMethod::OtsuOnNormalizedBackground) {
+    pix_binary = pixOtsuThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15, 100,
+                                               50, 255, 2, 2, 0.1f,
+                                               &threshold_val);
+  } else if (method == ThresholdMethod::MaskingAndOtsuOnNormalizedBackground) {
+    pix_binary = pixMaskedThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15,
+                                                 100, 50, 2, 2, 0.1f,
+                                                 &threshold_val);
+  } else if (method == ThresholdMethod::LeptonicaOtsu) {
     int tile_size;
-    double tile_size_factor;
-    api->GetDoubleVariable("thresholding_tile_size", &tile_size_factor);
+    double tile_size_factor = tesseract_->thresholding_tile_size;
     tile_size = tile_size_factor * yres_;
     tile_size = std::max(16, tile_size);
 
     int smooth_size;
-    double smooth_size_factor;
-    api->GetDoubleVariable("thresholding_smooth_kernel_size",
-                         &smooth_size_factor);
+    double smooth_size_factor = tesseract_->thresholding_smooth_kernel_size;
     smooth_size_factor = std::max(0.0, smooth_size_factor);
     smooth_size = smooth_size_factor * yres_;
     int half_smooth_size = smooth_size / 2;
 
-    double score_fraction;
-    api->GetDoubleVariable("thresholding_score_fraction", &score_fraction);
+    double score_fraction = tesseract_->thresholding_score_fraction;
 
-    if (thresholding_debug) {
-      tprintf("tile size: %d  smooth_size: %d  score_fraction: %.2f\n", tile_size, smooth_size, score_fraction);
+    if (tesseract_->thresholding_debug) {
+      tprintDebug("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
-                                 (PIX**)pix_thresholds,
-                                 (PIX**)pix_binary);
+                                 (PIX **)pix_thresholds,
+                                 (PIX **)pix_binary);
+  } else if (method == ThresholdMethod::Nlbin) {
+    auto pix = GetPixRect();
+    pix_binary = pixNLBin(pix, false);
+    r = 0;
+  } else {
+    // Unsupported threshold method.
+    r = 1;
   }
 
-  bool ok = (r == 0);
+  bool ok = (r == 0) && pix_binary;
   return std::make_tuple(ok, pix_grey, pix_binary, pix_thresholds);
 }
 
 // Threshold the source image as efficiently as possible to the output Pix.
 // Creates a Pix and sets pix to point to the resulting pointer.
 // Caller must use pixDestroy to free the created Pix.
+//
 /// Returns false on error.
 bool ImageThresholder::ThresholdToPix(Image *pix) {
-  if (image_width_ > INT16_MAX || image_height_ > INT16_MAX) {
-    tprintf("Image too large: (%d, %d)\n", image_width_, image_height_);
-    return false;
+  // tolerate overlarge images when they're about to be cropped by GetPixRect():
+  if (IsFullImage()) {
+    if (tesseract_->CheckAndReportIfImageTooLarge(pix_)) {
+      return false;
+    }
   }
+  else {
+    // validate against the future cropped image size:
+    if (tesseract_->CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
+      return false;
+    }
+  }
+
   Image original = GetPixRect();
+
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
@@ -321,8 +573,7 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
   } else {
     if (pixGetColormap(original)) {
       Image tmp;
-      Image without_cmap =
-          pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
       int depth = pixGetDepth(without_cmap);
       if (depth > 1 && depth < 8) {
         tmp = pixConvertTo8(without_cmap, false);
@@ -405,6 +656,17 @@ Image ImageThresholder::GetPixRectGrey() {
     return result;
   }
   return pix;
+}
+
+// Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+// and at the same resolution as the output binary.
+// The returned Pix must be pixDestroyed.
+// Provided to the classifier to extract features from the greyscale image.
+Image ImageThresholder::GetPixNormRectGrey() {
+  auto pix = GetPixRect();
+  auto result = ImageThresholder::pixNLNorm2(pix, nullptr);
+  pix.destroy();
+  return result;
 }
 
 // Otsu thresholds the rectangle, taking the rectangle from *this.

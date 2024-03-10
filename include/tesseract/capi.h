@@ -33,10 +33,23 @@
 extern "C" {
 #endif
 
+#if defined(_WIN32)
+// :-(( Can't include just minwindef.h or windef.h here as then we'll be treated to this error:
+// winnt.h(169,1): fatal error C1189: #error:  "No Target Architecture"
+//
+// The next thing you know will happen then is us getting loads of collisions due to windows.h
+// loading antiquated winsock.h (WinSock1) instead of winsock2.h, so we'll have to reckon with
+// that one as well!
+//
+// Bummer!
+#include <winsock2.h>
+#include <windows.h>
+#else
 #ifndef BOOL
 #  define BOOL int
 #  define TRUE 1
 #  define FALSE 0
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -223,7 +236,7 @@ TESS_API BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle,
 
 TESS_API int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode oem,
-                              char **configs, int configs_size);
+                              const char **configs, size_t configs_size);
 TESS_API int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode oem);
 TESS_API int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath,
@@ -231,14 +244,14 @@ TESS_API int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath,
 
 TESS_API int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode mode,
-                              char **configs, int configs_size, char **vars_vec,
-                              char **vars_values, size_t vars_vec_size,
+                              const char **configs, size_t configs_size, const char **vars_vec,
+                              const char **vars_values, size_t vars_vec_size,
                               BOOL set_only_non_debug_params);
 
 TESS_API int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size,
                               const char *language, TessOcrEngineMode mode,
-                              char **configs, int configs_size, char **vars_vec,
-                              char **vars_values, size_t vars_vec_size,
+                              const char **configs, size_t configs_size, const char **vars_vec,
+                              const char **vars_values, size_t vars_vec_size,
                               BOOL set_only_non_debug_params);
 
 TESS_API const char *TessBaseAPIGetInitLanguagesAsString(
@@ -333,19 +346,18 @@ TESS_API char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetBoxText(TessBaseAPI *handle, int page_number);
 TESS_API char *TessBaseAPIGetLSTMBoxText(TessBaseAPI *handle, int page_number);
-TESS_API char *TessBaseAPIGetWordStrBoxText(TessBaseAPI *handle,
-                                            int page_number);
+TESS_API char *TessBaseAPIGetWordStrBoxText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetUNLVText(TessBaseAPI *handle);
 TESS_API int TessBaseAPIMeanTextConf(TessBaseAPI *handle);
 
 TESS_API int *TessBaseAPIAllWordConfidences(TessBaseAPI *handle);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 TESS_API BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI *handle,
                                         TessPageSegMode mode,
                                         const char *wordstr);
-#endif // #ifndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 TESS_API void TessBaseAPIClear(TessBaseAPI *handle);
 TESS_API void TessBaseAPIEnd(TessBaseAPI *handle);
@@ -358,7 +370,7 @@ TESS_API const char *TessBaseAPIGetUnichar(TessBaseAPI *handle, int unichar_id);
 
 TESS_API void TessBaseAPIClearPersistentCache(TessBaseAPI *handle);
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 // Call TessDeleteText(*best_script_name) to free memory allocated by this
 // function
@@ -367,7 +379,7 @@ TESS_API BOOL TessBaseAPIDetectOrientationScript(TessBaseAPI *handle,
                                                  float *orient_conf,
                                                  const char **script_name,
                                                  float *script_conf);
-#endif // #ifndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 TESS_API void TessBaseAPISetMinOrientationMargin(TessBaseAPI *handle,
                                                  double margin);
