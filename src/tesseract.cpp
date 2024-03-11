@@ -1409,3 +1409,4 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   return ret_val;
 }
+
