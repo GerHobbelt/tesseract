@@ -74,7 +74,7 @@ void SVSync::StartProcess(const char *executable, const char *args) {
   STARTUPINFO start_info;
   PROCESS_INFORMATION proc_info;
   GetStartupInfo(&start_info);
-  if (!CreateProcess(nullptr, const_cast<char *>(proc.c_str()), nullptr,
+  if (!CreateProcessA(nullptr, const_cast<char *>(proc.c_str()), nullptr,
                      nullptr, FALSE, CREATE_NO_WINDOW | DETACHED_PROCESS,
                      nullptr, nullptr, &start_info, &proc_info))
     return;
