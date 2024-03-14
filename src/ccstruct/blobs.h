@@ -24,7 +24,7 @@
 #include "normalis.h"   // for DENORM
 #include "points.h"     // for FCOORD, ICOORD
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, DebugView::Color
 
 #include <tesseract/publictypes.h> // for OcrEngineMode
 
@@ -269,7 +269,7 @@ struct TESSLINE {
   }
 
 #if !GRAPHICS_DISABLED
-  void plot(ScrollViewReference &window, ScrollView::Color color, ScrollView::Color child_color);
+  void plot(ScrollViewReference &window, DebugView::Color color, DebugView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
   // Returns the first outline point that has a different src_outline to its
@@ -370,7 +370,7 @@ struct TBLOB {
   }
 
 #if !GRAPHICS_DISABLED
-  void plot(ScrollViewReference &window, ScrollView::Color color, ScrollView::Color child_color);
+  void plot(ScrollViewReference &window, DebugView::Color color, DebugView::Color child_color);
 #endif // !GRAPHICS_DISABLED
 
   int BBArea() const {

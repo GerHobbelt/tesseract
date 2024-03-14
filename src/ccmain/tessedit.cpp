@@ -378,6 +378,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     return -1; // Couldn't load any language!
   }
 
+#if !DISABLED_LEGACY_ENGINE
   if (!sub_langs_.empty()) {
     // In multilingual mode word ratings have to be directly comparable,
     // so use the same language model weights for all languages:
@@ -386,18 +387,21 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     // otherwise use default language model weights.
     if (tessedit_use_primary_params_model) {
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->getParamsModel().Copy(this->language_model_->getParamsModel());
+        sub_lang->language_model_->copyParamsModel(this->language_model_->getParamsModel());
       }
       tprintDebug("Using params model of the primary language.\n");
     } else {
-      this->language_model_->getParamsModel().Clear();
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->getParamsModel().Clear();
+        sub_lang->language_model_->clearParamsModel();
       }
+      this->language_model_->clearParamsModel();
     }
   }
+#endif
 
+#if !DISABLED_LEGACY_ENGINE
   SetupUniversalFontIds();
+#endif
 
   return 0;
 }

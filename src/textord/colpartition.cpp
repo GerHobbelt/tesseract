@@ -1890,7 +1890,7 @@ ColPartition *ColPartition::CopyButDontOwnBlobs() {
 #if !GRAPHICS_DISABLED
 // Provides a color for BBGrid to draw the rectangle.
 // Must be kept in sync with PolyBlockType.
-ScrollView::Color ColPartition::BoxColor() const {
+DebugView::Color ColPartition::BoxColor() const {
   if (type_ == PT_UNKNOWN) {
     return BLOBNBOX::TextlineColor(blob_type_, flow_);
   }

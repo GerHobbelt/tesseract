@@ -271,7 +271,7 @@ void POLY_BLOCK::plot(ScrollViewReference &window, int32_t num) {
 #endif
 
 #if !GRAPHICS_DISABLED
-void POLY_BLOCK::fill(ScrollViewReference &window, ScrollView::Color colour) {
+void POLY_BLOCK::fill(ScrollViewReference &window, DebugView::Color colour) {
   ICOORDELT_IT s_it;
 
   std::unique_ptr<PB_LINE_IT> lines(new PB_LINE_IT(this));
@@ -391,9 +391,9 @@ int lessthan(const void *first, const void *second) {
 
 #if !GRAPHICS_DISABLED
 /// Returns a color to draw the given type.
-ScrollView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
+DebugView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
   // Keep kPBColors in sync with PolyBlockType.
-  const ScrollView::Color kPBColors[PT_COUNT] = {
+  const DebugView::Color kPBColors[PT_COUNT] = {
       ScrollView::WHITE,       // Type is not yet known. Keep as the 1st element.
       ScrollView::BLUE,        // Text that lives inside a column.
       ScrollView::CYAN,        // Text that spans more than one column.

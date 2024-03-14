@@ -104,8 +104,8 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // height == 1. If height == 0 then no scaling.
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
 /* static */
-void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *randomizer,
-                            NetworkIO *input) {
+void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* randomizer,
+                            NetworkIO* input) {
   bool color = shape.depth() == 3;
   Image var_pix = pix;
   int depth = pixGetDepth(var_pix);
@@ -116,14 +116,17 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
     // Force RGB.
     if (depth == 32) {
       normed_pix = var_pix.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo32(var_pix);
     }
-  } else {
+  }
+  else {
     // Convert non-8-bit images to 8 bit.
     if (depth == 8) {
       normed_pix = var_pix.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo8(var_pix, false);
     }
   }
@@ -139,10 +142,11 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
     normed_pix.destroy();
     normed_pix = scaled_pix;
   }
-  {
-    Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
+#if 01
+  if (true /* debug */) {
     tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
   }
+#endif
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();
 }

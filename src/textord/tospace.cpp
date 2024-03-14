@@ -1510,7 +1510,7 @@ void Textord::mark_gap(TBOX blob,    // blob following gap
                        int16_t rule, // heuristic id
                        TDimension prev_gap, TDimension prev_blob_width, TDimension current_gap,
                        TDimension next_blob_width, TDimension next_gap) {
-  ScrollView::Color col; // of ellipse marking flipped gap
+  DebugView::Color col; // of ellipse marking flipped gap
 
   switch (rule) {
     case 1:

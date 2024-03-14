@@ -173,8 +173,8 @@ TBOX TBOX::bounding_union( // box enclosing both
 #if !GRAPHICS_DISABLED
 void TBOX::plot(                    // paint box
     ScrollViewReference &fd,                 // where to paint
-    ScrollView::Color fill_colour,  // colour for inside
-    ScrollView::Color border_colour // colour for border
+    DebugView::Color fill_colour,  // colour for inside
+    DebugView::Color border_colour // colour for border
     ) const {
   fd->Brush(fill_colour);
   fd->Pen(border_colour);

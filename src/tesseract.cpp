@@ -856,7 +856,9 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
     api.SetVariable("verbose_process", "Y");
+#if !GRAPHICS_DISABLED
     api.SetVariable("scrollview_support", "Y");
+#endif
 
     api.SetVariable("textord_tabfind_show_images", "Y");
     //api.SetVariable("textord_tabfind_show_vlines", "Y");

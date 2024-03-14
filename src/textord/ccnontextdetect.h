@@ -71,7 +71,7 @@ private:
   // Clear()ed immediately after MarkAndDeleteNonTextBlobs is called.
   // If the win is not nullptr, deleted blobs are drawn on it in red, and kept
   void MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_blob_overlaps, ScrollViewReference &win,
-                                 ScrollView::Color ok_color, Image nontext_mask);
+                                 DebugView::Color ok_color, Image nontext_mask);
   // Returns true if the given blob overlaps more than max_overlaps blobs
   // in the current grid.
   bool BlobOverlapsTooMuch(BLOBNBOX *blob, int max_overlaps);

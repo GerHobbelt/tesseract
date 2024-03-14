@@ -420,8 +420,8 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour: outer bits are done in body_colour,
 // while holes will be done in child_colour.
-void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                         ScrollView::Color child_colour, ScrollViewReference &win) {
+void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, DebugView::Color body_colour,
+                         DebugView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);
@@ -431,8 +431,8 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
 // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
 // given list in the given body_colour, with child outlines in the
 // child_colour.
-void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                              ScrollView::Color child_colour, ScrollViewReference &win) {
+void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, DebugView::Color body_colour,
+                              DebugView::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
@@ -454,7 +454,7 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> 
 }
 
 #if !GRAPHICS_DISABLED
-ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
+DebugView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
       return ScrollView::BROWN;
@@ -497,13 +497,13 @@ ScrollView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFl
 }
 
 // Keep in sync with BlobRegionType.
-ScrollView::Color BLOBNBOX::BoxColor() const {
+DebugView::Color BLOBNBOX::BoxColor() const {
   return TextlineColor(region_type_, flow_);
 }
 
 void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
-                    ScrollView::Color blob_colour,             // for outer bits
-                    ScrollView::Color child_colour) {          // for holes
+                    DebugView::Color blob_colour,             // for outer bits
+                    DebugView::Color child_colour) {          // for holes
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
@@ -1110,8 +1110,8 @@ void TO_BLOCK::plot_graded_blobs(Image &pix) {
 
 void plot_blob_list(ScrollViewReference &win,                  // window to draw in
                     BLOBNBOX_LIST *list,              // blob list
-                    ScrollView::Color body_colour,    // colour to draw
-                    ScrollView::Color child_colour) { // colour of child
+                    DebugView::Color body_colour,    // colour to draw
+                    DebugView::Color child_colour) { // colour of child
   BLOBNBOX_IT it = list;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);

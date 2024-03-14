@@ -604,7 +604,7 @@ void STATS::plot(ScrollViewReference &window, // to draw in
                  float yorigin,
                  float xscale,                     // one x unit
                  float yscale,                     // one y unit
-                 ScrollView::Color colour) const { // colour to draw in
+                 DebugView::Color colour) const { // colour to draw in
   if (buckets_ == nullptr) {
     return;
   }
@@ -629,7 +629,7 @@ void STATS::plotline(ScrollViewReference &window, // to draw in
                      float yorigin,
                      float xscale,                     // one x unit
                      float yscale,                     // one y unit
-                     ScrollView::Color colour) const { // colour to draw in
+                     DebugView::Color colour) const { // colour to draw in
   if (buckets_ == nullptr) {
     return;
   }

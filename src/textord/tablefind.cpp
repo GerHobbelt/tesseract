@@ -1959,7 +1959,7 @@ void TableFinder::RecognizeTables() {
 
 // Displays the column segments in some window.
 void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *segments,
-                                     ScrollView::Color color) {
+                                     DebugView::Color color) {
   win->Pen(color);
   win->Brush(ScrollView::NONE);
   ColSegment_IT it(segments);
@@ -1979,9 +1979,9 @@ void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *
 // Note: This method is only for debug purpose during development and
 // would not be part of checked in code
 void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
-                                       ScrollView::Color default_color,
-                                       ScrollView::Color table_color) {
-  ScrollView::Color color = default_color;
+                                       DebugView::Color default_color,
+                                       DebugView::Color table_color) {
+  DebugView::Color color = default_color;
   // Iterate the ColPartitions in the grid.
   GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(grid);
   gsearch.StartFullSearch();
@@ -2005,13 +2005,13 @@ void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGri
 }
 
 void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
-                                       ScrollView::Color default_color) {
+                                       DebugView::Color default_color) {
   DisplayColPartitions(win, grid, default_color, ScrollView::YELLOW);
 }
 
 void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
                                                  ColPartitionGrid *grid,
-                                                 ScrollView::Color color) {
+                                                 DebugView::Color color) {
   // Iterate the ColPartitions in the grid.
   GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(grid);
   gsearch.StartFullSearch();
@@ -2169,12 +2169,12 @@ ColSegment::ColSegment()
       type_(COL_UNKNOWN) {}
 
 // Provides a color for BBGrid to draw the rectangle.
-ScrollView::Color ColSegment::BoxColor() const {
-  const ScrollView::Color kBoxColors[PT_COUNT] = {
-      ScrollView::YELLOW,
-      ScrollView::BLUE,
-      ScrollView::YELLOW,
-      ScrollView::MAGENTA,
+DebugView::Color ColSegment::BoxColor() const {
+  const DebugView::Color kBoxColors[PT_COUNT] = {
+      DebugView::YELLOW,
+      DebugView::BLUE,
+      DebugView::YELLOW,
+      DebugView::MAGENTA,
   };
   return kBoxColors[type_];
 }

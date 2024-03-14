@@ -34,9 +34,9 @@ namespace tesseract {
 
 BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
-ScrollViewReference to_win;
-
 #if !GRAPHICS_DISABLED
+
+ScrollViewReference to_win;
 
 /**********************************************************************
  * create_to_win
@@ -72,7 +72,7 @@ void close_to_win() {
 void plot_box_list(               // make gradients win
     ScrollViewReference &win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
-    ScrollView::Color body_colour // colour to draw
+    DebugView::Color body_colour // colour to draw
 ) {
   BLOBNBOX_IT it = list; // iterator
 
@@ -111,7 +111,7 @@ void plot_box_list(               // make gradients win
 
 void plot_to_row(             // draw a row
     TO_ROW *row,              // row to draw
-    ScrollView::Color colour, // colour to draw in
+    DebugView::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 ) {
   FCOORD plot_pt; // point to plot
@@ -149,7 +149,7 @@ void plot_parallel_row(       // draw a row
     TO_ROW *row,              // row to draw
     float gradient,           // gradients of lines
     int32_t left,             // edge of block
-    ScrollView::Color colour, // colour to draw in
+    DebugView::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 ) {
   FCOORD plot_pt; // point to plot
@@ -195,7 +195,7 @@ void draw_occupation(                    // draw projection
     int32_t thresholds[]                 // for drop out
 ) {
   int32_t line_index;                     // pixel coord
-  ScrollView::Color colour;               // of histogram
+  DebugView::Color colour;               // of histogram
   auto fleft = static_cast<float>(xleft); // float version
 
   if (!to_win)
@@ -236,7 +236,7 @@ void draw_meanlines(          // draw a block
     TO_BLOCK *block,          // block to draw
     float gradient,           // gradients of lines
     int32_t left,             // edge of block
-    ScrollView::Color colour, // colour to draw in
+    DebugView::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 ) {
   FCOORD plot_pt; // point to plot
@@ -276,7 +276,7 @@ void plot_word_decisions(          // draw words
     TDimension pitch,              // of block
     TO_ROW *row                    // row to draw
 ) {
-  ScrollView::Color colour = ScrollView::MAGENTA; // current colour
+  DebugView::Color colour = ScrollView::MAGENTA; // current colour
   TDimension prev_x;                              // end of prev blob
   int16_t blob_count;                             // blobs in word
   BLOBNBOX *blob;                                 // current blob
@@ -305,10 +305,10 @@ void plot_word_decisions(          // draw words
       if (colour == ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       } else {
-        colour = static_cast<ScrollView::Color>(colour + 1);
+        colour = static_cast<DebugView::Color>(colour + 1);
       }
       if (blob_box.left() - prev_x < row->min_space) {
-        ScrollView::Color rect_colour; // fuzzy colour
+        DebugView::Color rect_colour; // fuzzy colour
         if (blob_box.left() - prev_x > row->space_threshold) {
           rect_colour = ScrollView::GOLDENROD;
         } else {
@@ -343,7 +343,7 @@ void plot_word_decisions(          // draw words
 
 void plot_fp_cells(           // draw words
     ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
+    DebugView::Color colour, // colour of lines
     BLOBNBOX_IT *blob_it,     // blobs
     int16_t pitch,            // of block
     int16_t blob_count,       // no of real blobs
@@ -387,7 +387,7 @@ void plot_fp_cells(           // draw words
 
 void plot_fp_cells2(          // draw words
     ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
+    DebugView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
 ) {
@@ -421,7 +421,7 @@ void plot_fp_cells2(          // draw words
 
 void plot_row_cells(          // draw words
     ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
+    DebugView::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift
     ICOORDELT_LIST *cells     // cells to draw

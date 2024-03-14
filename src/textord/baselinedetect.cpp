@@ -630,11 +630,11 @@ void BaselineBlock::DrawFinalRows(const ICOORD &page_tr) {
   int left_edge = block_->block->pdblk.bounding_box().left();
   ScrollViewReference &win = create_to_win(page_tr);
   if (win) {
-    ScrollView::Color colour = ScrollView::RED;
+    DebugView::Color colour = ScrollView::RED;
     TO_ROW_IT row_it = block_->get_rows();
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, left_edge, colour, rotation);
-      colour = static_cast<ScrollView::Color>(colour + 1);
+      colour = static_cast<DebugView::Color>(colour + 1);
       if (colour > ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       }

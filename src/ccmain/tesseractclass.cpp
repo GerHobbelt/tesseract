@@ -399,10 +399,12 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+#if DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
                   params())
+#endif
     , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
     // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
@@ -494,11 +496,15 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
     , train_line_page_num_(0) {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::AddActiveTesseractInstance(this);
+#endif
 }
 
 Tesseract::~Tesseract() {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::RemoveActiveTesseractInstance(this);
+#endif
 
   if (lstm_recognizer_ != nullptr) {
     lstm_recognizer_->Clean();
@@ -812,6 +818,7 @@ void Tesseract::ResyncVariablesInternally() {
         lstm_recognizer_->SetDebug(tess_debug_lstm);
     }
 
+#if !DISABLED_LEGACY_ENGINE
     if (language_model_ != nullptr) {
         int lvl = language_model_->language_model_debug_level;
 
@@ -844,6 +851,7 @@ void Tesseract::ResyncVariablesInternally() {
         BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
     }
+#endif
 
     // init sub-languages:
      for (auto &sub_tess : sub_langs_) {

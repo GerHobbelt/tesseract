@@ -919,7 +919,9 @@ extern STRING_VAR_H(curl_cookiefile);
 extern INT_VAR_H(debug_all);
 extern BOOL_VAR_H(debug_misc);
 extern BOOL_VAR_H(verbose_process);
+#if !GRAPHICS_DISABLED
 extern BOOL_VAR_H(scrollview_support);
+#endif
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);

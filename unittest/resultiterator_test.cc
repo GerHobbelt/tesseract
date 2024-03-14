@@ -232,7 +232,7 @@ protected:
 //        new ScrollView(kIms[i], 100, 100, width / 2, height / 2, width, height);
 //    win->Image(src_pix_, 0, 0);
 //    it->Begin();
-//    ScrollView::Color color = ScrollView::RED;
+//    DebugView::Color color = ScrollView::RED;
 //    win->Brush(ScrollView::NONE);
 //    do {
 //      Pta* pts = it->BlockPolygon();

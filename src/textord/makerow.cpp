@@ -265,7 +265,7 @@ void make_initial_textrows( // find lines
   TO_ROW_IT row_it = block->get_rows();
 
 #if !GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
+  DebugView::Color colour; // of row
 
   if (textord_show_initial_rows) {
     create_to_win(page_tr);
@@ -282,7 +282,7 @@ void make_initial_textrows( // find lines
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_to_row(row_it.data(), colour, rotation);
-      colour = static_cast<ScrollView::Color>(colour + 1);
+      colour = static_cast<DebugView::Color>(colour + 1);
       if (colour > ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       }
@@ -1842,7 +1842,7 @@ void pre_associate_blobs( // make rough chars
     FCOORD rotation       // inverse landscape
 ) {
 #if !GRAPHICS_DISABLED
-  ScrollView::Color colour; // of boxes
+  DebugView::Color colour; // of boxes
 #endif
   BLOBNBOX *blob;     // current blob
   BLOBNBOX *nextblob; // next in list
@@ -1903,7 +1903,7 @@ void pre_associate_blobs( // make rough chars
           to_win->Rectangle(blob_box.left(), blob_box.bottom(), blob_box.right(), blob_box.top());
         }
       }
-      colour = static_cast<ScrollView::Color>(colour + 1);
+      colour = static_cast<DebugView::Color>(colour + 1);
       if (colour > ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       }
@@ -1924,7 +1924,7 @@ void fit_parallel_rows( // find lines
     int32_t block_edge  // edge of block
 ) {
 #if !GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
+  DebugView::Color colour; // of row
 #endif
   TO_ROW_IT row_it = block->get_rows();
 
@@ -1941,7 +1941,7 @@ void fit_parallel_rows( // find lines
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, block_edge, colour, rotation);
-      colour = static_cast<ScrollView::Color>(colour + 1);
+      colour = static_cast<DebugView::Color>(colour + 1);
       if (colour > ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       }
@@ -1990,7 +1990,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
                                float gradient   // gradient to fit
 ) {
 #if !GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
+  DebugView::Color colour; // of row
   if (!to_win) {
     create_to_win(page_tr_);
   }
@@ -2011,7 +2011,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
       colour = ScrollView::RED;
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
         row_it.data()->baseline.plot(to_win, colour);
-        colour = static_cast<ScrollView::Color>(colour + 1);
+        colour = static_cast<DebugView::Color>(colour + 1);
         if (colour > ScrollView::MAGENTA) {
           colour = ScrollView::RED;
         }
@@ -2025,7 +2025,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
     colour = ScrollView::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row_it.data()->baseline.plot(to_win, colour);
-      colour = static_cast<ScrollView::Color>(colour + 1);
+      colour = static_cast<DebugView::Color>(colour + 1);
       if (colour > ScrollView::MAGENTA) {
         colour = ScrollView::RED;
       }

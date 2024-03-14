@@ -254,7 +254,7 @@ public:
   BLOB_CHOICE_LIST *call_matcher(TBLOB *blob);
   int dict_word(const WERD_CHOICE &word);
   // wordclass.cpp
-  BLOB_CHOICE_LIST *classify_blob(TBLOB *blob, const char *string, ScrollView::Color color,
+  BLOB_CHOICE_LIST *classify_blob(TBLOB *blob, const char *string, DebugView::Color color,
                                   BlamerBundle *blamer_bundle);
 
   // segsearch.cpp

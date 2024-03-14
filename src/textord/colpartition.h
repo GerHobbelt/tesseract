@@ -695,7 +695,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   // Provides a color for BBGrid to draw the rectangle.
-  ScrollView::Color BoxColor() const;
+  DebugView::Color BoxColor() const;
 #endif // !GRAPHICS_DISABLED
 
   // Prints debug information on this.

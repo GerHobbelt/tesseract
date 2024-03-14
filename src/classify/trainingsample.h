@@ -107,7 +107,7 @@ public:
   // Returns a pix representing the sample. (Int features only.)
   Image RenderToPix(const UNICHARSET *unicharset) const;
   // Displays the features in the given window with the given color.
-  void DisplayFeatures(ScrollView::Color color, ScrollViewReference &window) const;
+  void DisplayFeatures(DebugView::Color color, ScrollViewReference &window) const;
 
   // Returns a pix of the original sample image. The pix is padded all round
   // by padding wherever possible.

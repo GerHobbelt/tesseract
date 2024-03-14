@@ -121,19 +121,19 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   // Large and medium blobs are not text if they overlap with "a lot" of small
   // blobs.
   MarkAndDeleteNonTextBlobs(&blob_block->large_blobs, kMaxLargeOverlapsWithSmall, win,
-                            ScrollView::DARK_GREEN, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, ScrollView::AQUAMARINE,
+                            DebugView::DARK_GREEN, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, DebugView::AQUAMARINE,
                             pix);
   // Clear the grid of small blobs and insert the medium blobs.
   Clear();
   InsertBlobList(&blob_block->blobs);
   MarkAndDeleteNonTextBlobs(&blob_block->large_blobs, kMaxLargeOverlapsWithMedium, win,
-                            ScrollView::DARK_GREEN, pix);
+                            DebugView::DARK_GREEN, pix);
   // Clear again before we start deleting the blobs in the grid.
   Clear();
-  MarkAndDeleteNonTextBlobs(&blob_block->noise_blobs, -1, win, ScrollView::CORAL, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, ScrollView::GOLDENROD, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, ScrollView::AQUAMARINE, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->noise_blobs, -1, win, DebugView::CORAL, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, DebugView::GOLDENROD, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, DebugView::AQUAMARINE, pix);
   if (debug) {
 #if !GRAPHICS_DISABLED
     if (win) {
@@ -257,7 +257,7 @@ static TBOX AttemptBoxExpansion(const TBOX &box, const IntGrid &noise_density, i
 // If the win is not nullptr, deleted blobs are drawn on it in red, and kept
 // blobs are drawn on it in ok_color.
 void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_blob_overlaps,
-                                                ScrollViewReference &win, ScrollView::Color ok_color,
+                                                ScrollViewReference &win, DebugView::Color ok_color,
                                                 Image nontext_mask) {
   int imageheight = tright().y() - bleft().x();
   BLOBNBOX_IT blob_it(blobs);

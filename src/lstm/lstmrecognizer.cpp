@@ -64,7 +64,10 @@ LSTMRecognizer::LSTMRecognizer()
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
-    , debug_win_(nullptr) {}
+#if !GRAPHICS_DISABLED
+    , debug_win_(nullptr)
+#endif
+{}
 
 LSTMRecognizer::~LSTMRecognizer() {
   if (network_ != nullptr) {

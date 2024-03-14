@@ -387,7 +387,7 @@ static void build_image_window(Tesseract *tess, int width, int height) {
  *
  *  Display normalized baseline, x-height, ascender limit and descender limit
  */
-static void display_bln_lines(ScrollViewReference &window, ScrollView::Color colour, float scale_factor,
+static void display_bln_lines(ScrollViewReference &window, DebugView::Color colour, float scale_factor,
                               float y_offset, float minx, float maxx) {
   window->Pen(colour);
   window->Line(minx, y_offset + scale_factor * DESC_HEIGHT, maxx,
@@ -861,7 +861,7 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   win->Clear();
   display_bln_lines(win, ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
   C_BLOB_IT it(word_res->word->cblob_list());
-  ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
+  DebugView::Color color = WERD::NextColor(ScrollView::BLACK);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, win);
     color = WERD::NextColor(color);
@@ -893,7 +893,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     }
     const FontInfo &font_info = *word_res->fontinfo;
     for (int i = 0; i < length; ++i) {
-      ScrollView::Color color = ScrollView::GREEN;
+      DebugView::Color color = ScrollView::GREEN;
       switch (color_mode) {
         case CM_SUBSCRIPT:
           if (best_choice->BlobPosition(i) == SP_SUBSCRIPT) {
@@ -956,10 +956,10 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   // display bounding box
   if (word->display_flag(DF_BOX)) {
     word->bounding_box().plot(image_win,
-                              static_cast<ScrollView::Color>((int32_t)editor_image_word_bb_color),
-                              static_cast<ScrollView::Color>((int32_t)editor_image_word_bb_color));
+                              static_cast<DebugView::Color>((int32_t)editor_image_word_bb_color),
+                              static_cast<DebugView::Color>((int32_t)editor_image_word_bb_color));
 
-    auto c = static_cast<ScrollView::Color>((int32_t)editor_image_blob_bb_color);
+    auto c = static_cast<DebugView::Color>((int32_t)editor_image_blob_bb_color);
     image_win->Pen(c);
     // cblob iterator
     C_BLOB_IT c_it(word->cblob_list());
@@ -1042,8 +1042,8 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
 
   if (!displayed_something) { // display BBox anyway
     word->bounding_box().plot(image_win,
-                              static_cast<ScrollView::Color>((int32_t)editor_image_word_bb_color),
-                              static_cast<ScrollView::Color>((int32_t)editor_image_word_bb_color));
+                              static_cast<DebugView::Color>((int32_t)editor_image_word_bb_color),
+                              static_cast<DebugView::Color>((int32_t)editor_image_word_bb_color));
   }
   return true;
 }

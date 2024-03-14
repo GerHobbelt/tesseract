@@ -386,8 +386,10 @@ public:
   }
 
 protected:
+#if !GRAPHICS_DISABLED
   // Recognition debug display window.
   ScrollViewReference debug_win_;
+#endif
 };
 
 } // namespace tesseract.

@@ -286,9 +286,15 @@ public:
 
   void ReportDebugInfo();
 
-  bool SupportsInteractiveScrollView() {
+#if !GRAPHICS_DISABLED
+  bool SupportsInteractiveScrollView() const {
     return (interactive_display_mode && !debug_do_not_use_scrollview_app);
   }
+#else
+  constexpr bool SupportsInteractiveScrollView() const {
+    return false;
+  }
+#endif
 
   // Return a memory capacity cost estimate for the given image / current original image.
   //
@@ -641,9 +647,11 @@ public:
 						      const std::vector<std::string> &vars_values,
                               bool set_only_non_debug_params, TessdataManager *mgr);
 
+#if !DISABLED_LEGACY_ENGINE
   // Set the universal_id member of each font to be unique among all
   // instances of the same font loaded.
   void SetupUniversalFontIds();
+#endif
 
   void recognize_page(std::string &image_name);
   void end_tesseract();
@@ -1069,7 +1077,9 @@ public:
   STRING_VAR_H(file_type);
   BOOL_VAR_H(tessedit_override_permuter);
   STRING_VAR_H(tessedit_load_sublangs);
+#if DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(tessedit_use_primary_params_model);
+#endif
   // Min acceptable orientation margin (difference in scores between top and 2nd
   // choice in OSResults::orientations) to believe the page orientation.
   DOUBLE_VAR_H(min_orientation_margin);

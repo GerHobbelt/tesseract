@@ -286,7 +286,7 @@ void WERD::print() const {
  */
 
 #if !GRAPHICS_DISABLED
-void WERD::plot(ScrollViewReference &window, ScrollView::Color colour) {
+void WERD::plot(ScrollViewReference &window, DebugView::Color colour) {
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, colour);
@@ -295,8 +295,8 @@ void WERD::plot(ScrollViewReference &window, ScrollView::Color colour) {
 }
 
 // Get the next color in the (looping) rainbow.
-ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
-  auto next = static_cast<ScrollView::Color>(colour + 1);
+DebugView::Color WERD::NextColor(DebugView::Color colour) {
+  auto next = static_cast<DebugView::Color>(colour + 1);
   if (next >= LAST_COLOUR || next < FIRST_COLOUR) {
     next = FIRST_COLOUR;
   }
@@ -310,7 +310,7 @@ ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
  */
 
 void WERD::plot(ScrollViewReference &window) {
-  ScrollView::Color colour = FIRST_COLOUR;
+  DebugView::Color colour = FIRST_COLOUR;
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, CHILD_COLOUR);

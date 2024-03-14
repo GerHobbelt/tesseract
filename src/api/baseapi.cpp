@@ -118,7 +118,9 @@ STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
+#if !GRAPHICS_DISABLED
 BOOL_VAR(scrollview_support, false, "Turn ScrollView support on/off. When turned OFF, the OCR process executes a little faster but almost all graphical feedback/diagnostics features will have been disabled.");
+#endif
 BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which steps are taken during the OCR process. This may help non-expert users to better grasp what is happening under the hood and which stages of the OCR process take up time.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
 BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
@@ -1293,15 +1295,18 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   int result = 0;
   if (tesseract_->SupportsInteractiveScrollView()) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
-#endif // !GRAPHICS_DISABLED
+
     // The page_res is invalid after an interactive session, so cleanup
     // in a way that lets us continue to the next page without crashing.
     delete page_res_;
     page_res_ = nullptr;
     return -1;
+#else
+    ASSERT0(!"Should never get here!");
+#endif
 #if !DISABLED_LEGACY_ENGINE
   } else if (tesseract_->tessedit_train_from_boxes) {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train From Boxes"));
@@ -1319,31 +1324,39 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   } else {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
+#if !GRAPHICS_DISABLED
     if (scrollview_support) {
       tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
+#endif
 
     // Now run the main recognition.
     if (!tesseract_->paragraph_text_based) {
       AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
+#if !GRAPHICS_DISABLED
       if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
+#endif
     }
 
     AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
+#if !GRAPHICS_DISABLED
       if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
+#endif
       subsection_handle2.pop();
       if (tesseract_->paragraph_text_based) {
         AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
+#if !GRAPHICS_DISABLED
         if (scrollview_support) {
           tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
+#endif
       }
     } else {
       result = -1;
@@ -2958,7 +2971,12 @@ int TessBaseAPI::FindLines() {
 
   if (verbose_process) {
     tprintInfo("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
-      (tesseract_->textord_equation_detect ? " + equations" : ""));
+#if !DISABLED_LEGACY_ENGINE
+      (tesseract_->textord_equation_detect ? " + equations" : "")
+#else
+      ""
+#endif
+    );
   }
 
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation"));

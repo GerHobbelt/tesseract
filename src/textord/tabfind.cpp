@@ -550,7 +550,7 @@ static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollViewRef
     int right_x = box.right();
     int top_y = box.top();
     int bottom_y = box.bottom();
-    ScrollView::Color box_color = boxe->BoxColor();
+    DebugView::Color box_color = boxe->BoxColor();
     win->Pen(box_color);
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
@@ -583,8 +583,8 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   // on a ragged tab.
   std::sort(left_tab_boxes_.begin(), left_tab_boxes_.end(), StdSortByBoxLeft<BLOBNBOX>);
   std::sort(right_tab_boxes_.begin(), right_tab_boxes_.end(), StdSortRightToLeft<BLOBNBOX>);
-  ScrollViewReference tab_win;
 #if !GRAPHICS_DISABLED
+  ScrollViewReference tab_win;
   if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(tesseract_, 0, 100, "InitialTabs");
     tab_win->Pen(ScrollView::BLUE);
@@ -594,8 +594,10 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
     DisplayBoxVector(right_tab_boxes_, tab_win);
     DisplayTabs(tab_win);
   }
-#endif // !GRAPHICS_DISABLED
   return tab_win;
+#else
+  return nullptr;
+#endif // !GRAPHICS_DISABLED
 }
 
 bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,
