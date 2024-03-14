@@ -142,7 +142,7 @@ void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* ra
     normed_pix.destroy();
     normed_pix = scaled_pix;
   }
-#if 01
+#if 0
   if (true /* debug */) {
     tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
   }
