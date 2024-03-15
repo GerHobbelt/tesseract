@@ -25,12 +25,12 @@
 #  include "config_auto.h"
 #endif
 
+#  include <cstdlib>
+#  include <iostream>
+
 #if !GRAPHICS_DISABLED
 #  include "scrollview.h"
 #  include "svmnode.h"
-
-#  include <cstdlib>
-#  include <iostream>
 
 namespace tesseract {
 
@@ -257,6 +257,18 @@ extern "C" int tesseract_svpaint_main(int argc, const char **argv)
   }
   tesseract::SVPaint svp(nullptr, server_name);
   return EXIT_SUCCESS;
+}
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_svpaint_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "%s: this tool is not supported in this build.\n", argv[0]);
+  return EXIT_FAILURE;
 }
 
 #endif // !GRAPHICS_DISABLED
