@@ -71,9 +71,9 @@ void SVSync::StartProcess(const char *executable, const char *args) {
   proc.append(args);
   std::cout << "Starting " << proc << std::endl;
 #  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  STARTUPINFO start_info;
+  STARTUPINFOA start_info;
   PROCESS_INFORMATION proc_info;
-  GetStartupInfo(&start_info);
+  GetStartupInfoA(&start_info);
   if (!CreateProcessA(nullptr, const_cast<char *>(proc.c_str()), nullptr,
                      nullptr, FALSE, CREATE_NO_WINDOW | DETACHED_PROCESS,
                      nullptr, nullptr, &start_info, &proc_info))
