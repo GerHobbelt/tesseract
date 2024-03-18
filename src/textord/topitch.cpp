@@ -448,7 +448,7 @@ bool try_doc_fixed(             // determine pitch
   row = row_it.data();
 #if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win) {
-    projection.plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, DebugView::CORAL);
+    projection.plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, Diagnostics::CORAL);
   }
 #endif
   final_pitch = pitches.ile(0.5);
@@ -476,7 +476,7 @@ bool try_doc_fixed(             // determine pitch
         row = row_it.data();
         row_y = row->baseline.y(master_x);
         row_shift = shift_factor * (master_y - row_y);
-        plot_row_cells(to_win, DebugView::GOLDENROD, row, row_shift, master_cells);
+        plot_row_cells(to_win, Diagnostics::GOLDENROD, row, row_shift, master_cells);
       }
     }
   }
@@ -1325,7 +1325,7 @@ float compute_pitch_sd(        // find fp cells
 #if !GRAPHICS_DISABLED
   if (to_win) {
     blob_box = blob_it.data()->bounding_box();
-    projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, DebugView::CORAL);
+    projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, Diagnostics::CORAL);
   }
 #endif
   start_it = blob_it;
@@ -1369,7 +1369,7 @@ float compute_pitch_sd(        // find fp cells
     }
 #if !GRAPHICS_DISABLED
     if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
-      plot_fp_cells2(to_win, DebugView::GOLDENROD, row, &seg_list);
+      plot_fp_cells2(to_win, Diagnostics::GOLDENROD, row, &seg_list);
     }
 #endif
     seg_it.set_to_list(&seg_list);
@@ -1457,7 +1457,7 @@ float compute_pitch_sd2(       // find fp cells
   }
 #if !GRAPHICS_DISABLED
   if (to_win) {
-    projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, DebugView::CORAL);
+    projection->plot(to_win, projection_left, row->intercept(), 1.0f, -1.0f, Diagnostics::CORAL);
   }
 #endif
   blob_count = 0;
@@ -1489,7 +1489,7 @@ float compute_pitch_sd2(       // find fp cells
   }
 #if !GRAPHICS_DISABLED
   if (textord_show_fixed_cuts && blob_count > 0 && to_win) {
-    plot_fp_cells2(to_win, DebugView::GOLDENROD, row, &seg_list);
+    plot_fp_cells2(to_win, Diagnostics::GOLDENROD, row, &seg_list);
   }
 #endif
   seg_it.set_to_list(&seg_list);
@@ -1612,7 +1612,7 @@ void print_pitch_sd(         // find fp cells
 
 #if !GRAPHICS_DISABLED
   if (textord_show_row_cuts && to_win) {
-    plot_fp_cells2(to_win, DebugView::CORAL, row, &seg_list);
+    plot_fp_cells2(to_win, Diagnostics::CORAL, row, &seg_list);
   }
 #endif
   seg_list.clear();

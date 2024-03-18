@@ -195,7 +195,7 @@ void InteractiveScrollView::MessageReceiver() {
 }
 
 // Table to implement the color index values in the old system.
-static const uint8_t table_colors[DebugView::GREEN_YELLOW + 1][4] = {
+static const uint8_t table_colors[Diagnostics::GREEN_YELLOW + 1][4] = {
     {0, 0, 0, 0},         // NONE (transparent)
     {0, 0, 0, 255},       // BLACK.
     {255, 255, 255, 255}, // WHITE.
@@ -800,13 +800,13 @@ void ScrollView::Exit() {
   exit(667);
 }
 
-// Set the pen color, using an enum value (e.g. DebugView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void InteractiveScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
       table_colors[color][3]);
 }
 
-// Set the brush color, using an enum value (e.g. DebugView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void InteractiveScrollView::Brush(Color color) {
   Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
         table_colors[color][3]);
@@ -1458,13 +1458,13 @@ void BackgroundScrollView::UpdateWindow() {
   }
 }
 
-// Set the pen color, using an enum value (e.g. DebugView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void BackgroundScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
       table_colors[color][3]);
 }
 
-// Set the brush color, using an enum value (e.g. DebugView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void BackgroundScrollView::Brush(Color color) {
   Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
         table_colors[color][3]);
@@ -1720,11 +1720,11 @@ void DummyScrollView::PopupItem(const char *parent, const char *name,
 void DummyScrollView::UpdateWindow() {
 }
 
-// Set the pen color, using an enum value (e.g. DebugView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void DummyScrollView::Pen(Color color) {
 }
 
-// Set the brush color, using an enum value (e.g. DebugView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void DummyScrollView::Brush(Color color) {
 }
 

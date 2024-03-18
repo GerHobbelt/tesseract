@@ -185,7 +185,7 @@ static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB 
 #if !GRAPHICS_DISABLED
       if (debug_level > 0) {
         if (debug_level > 2) {
-          display_blob(blob, DebugView::RED);
+          display_blob(blob, Diagnostics::RED);
         }
         tprintDebug("\n** seam being removed ** \n");
       }

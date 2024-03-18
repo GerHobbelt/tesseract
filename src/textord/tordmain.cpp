@@ -38,7 +38,7 @@
 #include "quadratc.h"    // for QUAD_COEFFS
 #include "quspline.h"    // for QSPLINE, tweak_row_baseline
 #include "rect.h"        // for TBOX
-#include "scrollview.h"  // for ScrollView, DebugView::WHITE
+#include "scrollview.h"  // for ScrollView, Diagnostics::WHITE
 #include "statistc.h"    // for STATS
 #include "stepblob.h"    // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
@@ -269,10 +269,10 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
           create_to_win(page_tr);
         }
         to_win->Comment("filter_blobs: Rejected blobs");
-        plot_box_list(to_win, &block->noise_blobs, DebugView::WHITE);
-        plot_box_list(to_win, &block->small_blobs, DebugView::WHITE);
-        plot_box_list(to_win, &block->large_blobs, DebugView::WHITE);
-        plot_box_list(to_win, &block->blobs, DebugView::WHITE);
+        plot_box_list(to_win, &block->noise_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->small_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->large_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->blobs, Diagnostics::WHITE);
     }
 #endif // !GRAPHICS_DISABLED
   }
