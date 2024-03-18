@@ -96,7 +96,7 @@ public:
   void set_type();
 
   // Provides a color for BBGrid to draw the rectangle.
-  DebugView::Color BoxColor() const;
+  Diagnostics::Color BoxColor() const;
 
   // Insert a rectangle into bounding_box_
   void InsertBox(const TBOX &other);
@@ -362,18 +362,18 @@ protected:
   // Displays Colpartitions marked as table row. Overlays them on top of
   // part_grid_.
   void DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *cols,
-                          DebugView::Color color);
+                          Diagnostics::Color color);
 
   // Displays the colpartitions using a new coloring on an existing window.
   // Note: This method is only for debug purpose during development and
   // would not be part of checked in code
   void DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
-                            DebugView::Color text_color,
-                            DebugView::Color table_color);
+                            Diagnostics::Color text_color,
+                            Diagnostics::Color table_color);
   void DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
-                            DebugView::Color default_color);
+                            Diagnostics::Color default_color);
   void DisplayColPartitionConnections(ScrollViewReference &win, ColPartitionGrid *grid,
-                                      DebugView::Color default_color);
+                                      Diagnostics::Color default_color);
 
   // Merge all colpartitions in table regions to make them a single
   // colpartition and revert types of isolated table cells not

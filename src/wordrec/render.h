@@ -32,7 +32,7 @@ struct TESSLINE;
               V a r i a b l e s
 ----------------------------------------------------------------------*/
 extern ScrollViewReference blob_window;        // Window for blobs
-extern DebugView::Color color_list[]; // Colors for outlines
+extern Diagnostics::Color color_list[]; // Colors for outlines
 
 extern BOOL_VAR_H(wordrec_display_all_blobs);
 
@@ -43,13 +43,13 @@ extern BOOL_VAR_H(wordrec_blob_pause);
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-void display_blob(TBLOB *blob, DebugView::Color color);
+void display_blob(TBLOB *blob, Diagnostics::Color color);
 
-void render_blob(ScrollViewReference &window, TBLOB *blob, DebugView::Color color);
+void render_blob(ScrollViewReference &window, TBLOB *blob, Diagnostics::Color color);
 
-void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, DebugView::Color color);
+void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, Diagnostics::Color color);
 
-void render_outline(ScrollViewReference &window, TESSLINE *outline, DebugView::Color color);
+void render_outline(ScrollViewReference &window, TESSLINE *outline, Diagnostics::Color color);
 
 } // namespace tesseract
 

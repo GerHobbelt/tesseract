@@ -271,7 +271,7 @@ void POLY_BLOCK::plot(ScrollViewReference &window, int32_t num) {
 #endif
 
 #if !GRAPHICS_DISABLED
-void POLY_BLOCK::fill(ScrollViewReference &window, DebugView::Color colour) {
+void POLY_BLOCK::fill(ScrollViewReference &window, Diagnostics::Color colour) {
   ICOORDELT_IT s_it;
 
   std::unique_ptr<PB_LINE_IT> lines(new PB_LINE_IT(this));
@@ -391,31 +391,31 @@ int lessthan(const void *first, const void *second) {
 
 #if !GRAPHICS_DISABLED
 /// Returns a color to draw the given type.
-DebugView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
+Diagnostics::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
   // Keep kPBColors in sync with PolyBlockType.
-  const DebugView::Color kPBColors[PT_COUNT] = {
-      DebugView::WHITE,       // Type is not yet known. Keep as the 1st element.
-      DebugView::BLUE,        // Text that lives inside a column.
-      DebugView::CYAN,        // Text that spans more than one column.
-      DebugView::MEDIUM_BLUE, // Text that is in a cross-column pull-out
+  const Diagnostics::Color kPBColors[PT_COUNT] = {
+      Diagnostics::WHITE,       // Type is not yet known. Keep as the 1st element.
+      Diagnostics::BLUE,        // Text that lives inside a column.
+      Diagnostics::CYAN,        // Text that spans more than one column.
+      Diagnostics::MEDIUM_BLUE, // Text that is in a cross-column pull-out
                                // region.
-      DebugView::AQUAMARINE,  // Partition belonging to an equation region.
-      DebugView::SKY_BLUE,    // Partition belonging to an inline equation
+      Diagnostics::AQUAMARINE,  // Partition belonging to an equation region.
+      Diagnostics::SKY_BLUE,    // Partition belonging to an inline equation
                                // region.
-      DebugView::MAGENTA,     // Partition belonging to a table region.
-      DebugView::GREEN,       // Text-line runs vertically.
-      DebugView::LIGHT_BLUE,  // Text that belongs to an image.
-      DebugView::RED,         // Image that lives inside a column.
-      DebugView::YELLOW,      // Image that spans more than one column.
-      DebugView::ORANGE,      // Image in a cross-column pull-out region.
-      DebugView::BROWN,       // Horizontal Line.
-      DebugView::DARK_GREEN,  // Vertical Line.
-      DebugView::GREY         // Lies outside of any column.
+      Diagnostics::MAGENTA,     // Partition belonging to a table region.
+      Diagnostics::GREEN,       // Text-line runs vertically.
+      Diagnostics::LIGHT_BLUE,  // Text that belongs to an image.
+      Diagnostics::RED,         // Image that lives inside a column.
+      Diagnostics::YELLOW,      // Image that spans more than one column.
+      Diagnostics::ORANGE,      // Image in a cross-column pull-out region.
+      Diagnostics::BROWN,       // Horizontal Line.
+      Diagnostics::DARK_GREEN,  // Vertical Line.
+      Diagnostics::GREY         // Lies outside of any column.
   };
   if (type < PT_COUNT) {
     return kPBColors[type];
   }
-  return DebugView::WHITE;
+  return Diagnostics::WHITE;
 }
 #endif // !GRAPHICS_DISABLED
 

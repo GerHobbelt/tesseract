@@ -1510,49 +1510,49 @@ void Textord::mark_gap(TBOX blob,    // blob following gap
                        int16_t rule, // heuristic id
                        TDimension prev_gap, TDimension prev_blob_width, TDimension current_gap,
                        TDimension next_blob_width, TDimension next_gap) {
-  DebugView::Color col; // of ellipse marking flipped gap
+  Diagnostics::Color col; // of ellipse marking flipped gap
 
   switch (rule) {
     case 1:
-      col = DebugView::RED;
+      col = Diagnostics::RED;
       break;
     case 2:
-      col = DebugView::CYAN;
+      col = Diagnostics::CYAN;
       break;
     case 3:
-      col = DebugView::GREEN;
+      col = Diagnostics::GREEN;
       break;
     case 4:
-      col = DebugView::BLACK;
+      col = Diagnostics::BLACK;
       break;
     case 5:
-      col = DebugView::MAGENTA;
+      col = Diagnostics::MAGENTA;
       break;
     case 6:
-      col = DebugView::BLUE;
+      col = Diagnostics::BLUE;
       break;
 
     case 7:
-      col = DebugView::WHITE;
+      col = Diagnostics::WHITE;
       break;
     case 8:
-      col = DebugView::YELLOW;
+      col = Diagnostics::YELLOW;
       break;
     case 9:
-      col = DebugView::BLACK;
+      col = Diagnostics::BLACK;
       break;
 
     case 20:
-      col = DebugView::CYAN;
+      col = Diagnostics::CYAN;
       break;
     case 21:
-      col = DebugView::GREEN;
+      col = Diagnostics::GREEN;
       break;
     case 22:
-      col = DebugView::MAGENTA;
+      col = Diagnostics::MAGENTA;
       break;
     default:
-      col = DebugView::BLACK;
+      col = Diagnostics::BLACK;
   }
   if (textord_show_initial_words) {
     to_win->Pen(col);
@@ -1682,7 +1682,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
       (reduced_box.height() > 0.7 * row->xheight)) {
 #if !GRAPHICS_DISABLED
     if (textord_show_initial_words) {
-      reduced_box.plot(to_win, DebugView::YELLOW, DebugView::YELLOW);
+      reduced_box.plot(to_win, Diagnostics::YELLOW, Diagnostics::YELLOW);
     }
 #endif
   } else {

@@ -789,7 +789,7 @@ void TrainingSampleSet::AddAllFontsForClass(int class_id, Shape *shape) const {
 // the given shape.
 void TrainingSampleSet::DisplaySamplesWithFeature(int f_index, const Shape &shape,
                                                   const IntFeatureSpace &space,
-                                                  DebugView::Color color,
+                                                  Diagnostics::Color color,
                                                   ScrollViewReference &window) const {
   for (int s = 0; s < num_raw_samples(); ++s) {
     const TrainingSample *sample = GetSample(s);

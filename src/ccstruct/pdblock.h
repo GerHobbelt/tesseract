@@ -99,7 +99,7 @@ public:
   ///@param window window to draw in
   ///@param serial serial number
   ///@param colour colour to draw in
-  void plot(ScrollViewReference &window, int32_t serial, DebugView::Color colour);
+  void plot(ScrollViewReference &window, int32_t serial, Diagnostics::Color colour);
 #endif
 
   /// assignment

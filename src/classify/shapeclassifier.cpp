@@ -122,7 +122,7 @@ void ShapeClassifier::DebugDisplay(const TrainingSample &sample,
   const INT_FEATURE_STRUCT *features = sample.features();
   uint32_t num_features = sample.num_features();
   for (uint32_t f = 0; f < num_features; ++f) {
-    RenderIntFeature(debug_win, &features[f], DebugView::GREEN);
+    RenderIntFeature(debug_win, &features[f], Diagnostics::GREEN);
   }
   debug_win->UpdateWindow();
   std::vector<UnicharRating> results;

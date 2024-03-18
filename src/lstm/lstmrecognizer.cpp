@@ -461,9 +461,9 @@ void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
     int xpos = xcoords[start] * x_scale;
     if (labels[start] == null_char_) {
       end = start + 1;
-      window->Pen(DebugView::RED);
+      window->Pen(Diagnostics::RED);
     } else {
-      window->Pen(DebugView::GREEN);
+      window->Pen(Diagnostics::GREEN);
       const char *str = DecodeLabel(labels, start, &end, nullptr);
       if (*str == '\\') {
         str = "\\\\";

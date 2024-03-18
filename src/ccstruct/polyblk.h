@@ -66,7 +66,7 @@ public:
 #endif
 
 #if !GRAPHICS_DISABLED
-  void fill(ScrollViewReference &window, DebugView::Color colour);
+  void fill(ScrollViewReference &window, Diagnostics::Color colour);
 #endif // !GRAPHICS_DISABLED
 
   // Returns true if other is inside this.
@@ -83,7 +83,7 @@ public:
 #if !GRAPHICS_DISABLED
   // Static utility functions to handle the PolyBlockType.
   // Returns a color to draw the given type.
-  static DebugView::Color ColorForPolyBlockType(PolyBlockType type);
+  static Diagnostics::Color ColorForPolyBlockType(PolyBlockType type);
 #endif // !GRAPHICS_DISABLED
 
 private:

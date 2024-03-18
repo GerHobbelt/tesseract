@@ -216,7 +216,7 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &windo
 #if !GRAPHICS_DISABLED
 TESS_API
 void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
-                      DebugView::Color color);
+                      Diagnostics::Color color);
 
 void InitIntMatchWindowIfReqd();
 

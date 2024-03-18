@@ -35,8 +35,8 @@ namespace tesseract {
 ----------------------------------------------------------------------*/
 ScrollViewReference blob_window;
 
-DebugView::Color color_list[] = {DebugView::RED,  DebugView::CYAN,  DebugView::YELLOW,
-                                  DebugView::BLUE, DebugView::GREEN, DebugView::WHITE};
+Diagnostics::Color color_list[] = {Diagnostics::RED,  Diagnostics::CYAN,  Diagnostics::YELLOW,
+                                  Diagnostics::BLUE, Diagnostics::GREEN, Diagnostics::WHITE};
 
 BOOL_VAR(wordrec_display_all_blobs, 0, "Display Blobs");
 
@@ -51,7 +51,7 @@ BOOL_VAR(wordrec_blob_pause, 0, "Blob pause");
  *
  * Macro to display blob in a window.
  **********************************************************************/
-void display_blob(TBLOB *blob, DebugView::Color color) {
+void display_blob(TBLOB *blob, Diagnostics::Color color) {
   /* Size of drawable */
   if (!blob_window) {
     blob_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Blobs", 520, 10, 500, 256, 2000, 256, true);
@@ -69,7 +69,7 @@ void display_blob(TBLOB *blob, DebugView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_blob(ScrollViewReference &window, TBLOB *blob, DebugView::Color color) {
+void render_blob(ScrollViewReference &window, TBLOB *blob, Diagnostics::Color color) {
   /* No outline */
   if (!blob) {
     return;
@@ -84,7 +84,7 @@ void render_blob(ScrollViewReference &window, TBLOB *blob, DebugView::Color colo
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, DebugView::Color color) {
+void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, Diagnostics::Color color) {
   if (!edgept) {
     return;
   }
@@ -109,7 +109,7 @@ void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, DebugView::Colo
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_outline(ScrollViewReference &window, TESSLINE *outline, DebugView::Color color) {
+void render_outline(ScrollViewReference &window, TESSLINE *outline, Diagnostics::Color color) {
   /* No outline */
   if (!outline) {
     return;

@@ -695,7 +695,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   // Provides a color for BBGrid to draw the rectangle.
-  DebugView::Color BoxColor() const;
+  Diagnostics::Color BoxColor() const;
 #endif // !GRAPHICS_DISABLED
 
   // Prints debug information on this.

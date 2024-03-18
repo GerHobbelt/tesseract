@@ -420,8 +420,8 @@ void BLOBNBOX::ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *b
 // Helper to draw all the blobs on the list in the given body_colour,
 // with child outlines in the child_colour: outer bits are done in body_colour,
 // while holes will be done in child_colour.
-void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, DebugView::Color body_colour,
-                         DebugView::Color child_colour, ScrollViewReference &win) {
+void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                         Diagnostics::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);
@@ -431,8 +431,8 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST *list, DebugView::Color body_colour,
 // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
 // given list in the given body_colour, with child outlines in the
 // child_colour.
-void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, DebugView::Color body_colour,
-                              DebugView::Color child_colour, ScrollViewReference &win) {
+void BLOBNBOX::PlotNoiseBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                              Diagnostics::Color child_colour, ScrollViewReference &win) {
   BLOBNBOX_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
@@ -454,56 +454,56 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> 
 }
 
 #if !GRAPHICS_DISABLED
-DebugView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
+Diagnostics::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
-      return DebugView::BROWN;
+      return Diagnostics::BROWN;
     case BRT_VLINE:
-      return DebugView::DARK_GREEN;
+      return Diagnostics::DARK_GREEN;
     case BRT_RECTIMAGE:
-      return DebugView::RED;
+      return Diagnostics::RED;
     case BRT_POLYIMAGE:
-      return DebugView::ORANGE;
+      return Diagnostics::ORANGE;
     case BRT_UNKNOWN:
-      return flow_type == BTFT_NONTEXT ? DebugView::CYAN : DebugView::WHITE;
+      return flow_type == BTFT_NONTEXT ? Diagnostics::CYAN : Diagnostics::WHITE;
     case BRT_VERT_TEXT:
       if (flow_type == BTFT_STRONG_CHAIN || flow_type == BTFT_TEXT_ON_IMAGE) {
-        return DebugView::GREEN;
+        return Diagnostics::GREEN;
       }
       if (flow_type == BTFT_CHAIN) {
-        return DebugView::LIME_GREEN;
+        return Diagnostics::LIME_GREEN;
       }
-      return DebugView::YELLOW;
+      return Diagnostics::YELLOW;
     case BRT_TEXT:
       if (flow_type == BTFT_STRONG_CHAIN) {
-        return DebugView::BLUE;
+        return Diagnostics::BLUE;
       }
       if (flow_type == BTFT_TEXT_ON_IMAGE) {
-        return DebugView::LIGHT_BLUE;
+        return Diagnostics::LIGHT_BLUE;
       }
       if (flow_type == BTFT_CHAIN) {
-        return DebugView::AQUAMARINE;
+        return Diagnostics::AQUAMARINE;
       }
       if (flow_type == BTFT_LEADER) {
-        return DebugView::WHEAT;
+        return Diagnostics::WHEAT;
       }
       if (flow_type == BTFT_NONTEXT) {
-        return DebugView::PINK;
+        return Diagnostics::PINK;
       }
-      return DebugView::MAGENTA;
+      return Diagnostics::MAGENTA;
     default:
-      return DebugView::GREY;
+      return Diagnostics::GREY;
   }
 }
 
 // Keep in sync with BlobRegionType.
-DebugView::Color BLOBNBOX::BoxColor() const {
+Diagnostics::Color BLOBNBOX::BoxColor() const {
   return TextlineColor(region_type_, flow_);
 }
 
 void BLOBNBOX::plot(ScrollViewReference &window,               // window to draw in
-                    DebugView::Color blob_colour,             // for outer bits
-                    DebugView::Color child_colour) {          // for holes
+                    Diagnostics::Color blob_colour,             // for outer bits
+                    Diagnostics::Color child_colour) {          // for holes
   if (cblob_ptr != nullptr) {
     cblob_ptr->plot(window, blob_colour, child_colour);
   }
@@ -1073,18 +1073,18 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
 #if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
 void TO_BLOCK::plot_noise_blobs(ScrollViewReference &win) {
-  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, DebugView::RED, DebugView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&small_blobs, DebugView::RED, DebugView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&large_blobs, DebugView::RED, DebugView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&blobs, DebugView::RED, DebugView::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, Diagnostics::RED, Diagnostics::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&small_blobs, Diagnostics::RED, Diagnostics::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&large_blobs, Diagnostics::RED, Diagnostics::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&blobs, Diagnostics::RED, Diagnostics::RED, win);
 }
 
 // Draw the blobs on the various lists in the block in different colors.
 void TO_BLOCK::plot_graded_blobs(ScrollViewReference &win) {
-  BLOBNBOX::PlotBlobs(&noise_blobs, DebugView::CORAL, DebugView::BLUE, win);
-  BLOBNBOX::PlotBlobs(&small_blobs, DebugView::GOLDENROD, DebugView::YELLOW, win);
-  BLOBNBOX::PlotBlobs(&large_blobs, DebugView::DARK_GREEN, DebugView::YELLOW, win);
-  BLOBNBOX::PlotBlobs(&blobs, DebugView::WHITE, DebugView::BROWN, win);
+  BLOBNBOX::PlotBlobs(&noise_blobs, Diagnostics::CORAL, Diagnostics::BLUE, win);
+  BLOBNBOX::PlotBlobs(&small_blobs, Diagnostics::GOLDENROD, Diagnostics::YELLOW, win);
+  BLOBNBOX::PlotBlobs(&large_blobs, Diagnostics::DARK_GREEN, Diagnostics::YELLOW, win);
+  BLOBNBOX::PlotBlobs(&blobs, Diagnostics::WHITE, Diagnostics::BROWN, win);
 }
 
 // Draw the blobs on the various lists in the block in different colors.
@@ -1110,8 +1110,8 @@ void TO_BLOCK::plot_graded_blobs(Image &pix) {
 
 void plot_blob_list(ScrollViewReference &win,                  // window to draw in
                     BLOBNBOX_LIST *list,              // blob list
-                    DebugView::Color body_colour,    // colour to draw
-                    DebugView::Color child_colour) { // colour of child
+                    Diagnostics::Color body_colour,    // colour to draw
+                    Diagnostics::Color child_colour) { // colour of child
   BLOBNBOX_IT it = list;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(win, body_colour, child_colour);

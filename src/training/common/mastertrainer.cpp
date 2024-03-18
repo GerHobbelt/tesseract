@@ -777,7 +777,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     const TrainingSample *sample =
         samples_.GetCanonicalSample(canonical_font, class_id2);
     for (uint32_t f = 0; f < sample->num_features(); ++f) {
-      RenderIntFeature(f_window, &sample->features()[f], DebugView::RED);
+      RenderIntFeature(f_window, &sample->features()[f], Diagnostics::RED);
     }
   }
   int class_id1 = samples_.unicharset().unichar_to_id(unichar_str1);
@@ -786,7 +786,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     for (int f = 0; f < cloud.size(); ++f) {
       if (cloud[f]) {
         INT_FEATURE_STRUCT feature = feature_map.InverseIndexFeature(f);
-        RenderIntFeature(f_window, &feature, DebugView::GREEN);
+        RenderIntFeature(f_window, &feature, Diagnostics::GREEN);
       }
     }
   }
@@ -805,7 +805,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
           Shape shape;
           shape.AddToShape(class_id1, cloud_font);
           s_window->Clear();
-          samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, DebugView::GREEN, s_window);
+          samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, Diagnostics::GREEN, s_window);
           s_window->UpdateWindow();
         }
       }

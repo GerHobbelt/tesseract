@@ -24,7 +24,7 @@
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #include "points.h"     // for FCOORD, ICOORD (ptr only)
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, DebugView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 
 #include <cstdint> // for int32_t, int16_t
 
@@ -98,8 +98,8 @@ public:
 #if !GRAPHICS_DISABLED
   void plot(                           // draw one
       ScrollViewReference &window,              // window to draw in
-      DebugView::Color blob_colour,   // for outer bits
-      DebugView::Color child_colour); // for holes
+      Diagnostics::Color blob_colour,   // for outer bits
+      Diagnostics::Color child_colour); // for holes
 #endif // !GRAPHICS_DISABLED
 
   void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise);
@@ -108,8 +108,8 @@ public:
   // Draws the blob in the given colour, and child_colour, normalized
   // using the given denorm, making use of sub-pixel accurate information
   // if available.
-  void plot_normed(const DENORM &denorm, DebugView::Color blob_colour,
-                   DebugView::Color child_colour, ScrollViewReference &window);
+  void plot_normed(const DENORM &denorm, Diagnostics::Color blob_colour,
+                   Diagnostics::Color child_colour, ScrollViewReference &window);
 #endif // !GRAPHICS_DISABLED
 
   C_BLOB &operator=(const C_BLOB &source) {

@@ -265,7 +265,7 @@ void make_initial_textrows( // find lines
   TO_ROW_IT row_it = block->get_rows();
 
 #if !GRAPHICS_DISABLED
-  DebugView::Color colour; // of row
+  Diagnostics::Color colour; // of row
 
   if (textord_show_initial_rows) {
     create_to_win(page_tr);
@@ -279,12 +279,12 @@ void make_initial_textrows( // find lines
   }
 #if !GRAPHICS_DISABLED
   if (to_win && textord_show_initial_rows) {
-    colour = DebugView::RED;
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_to_row(row_it.data(), colour, rotation);
-      colour = static_cast<DebugView::Color>(colour + 1);
-      if (colour > DebugView::MAGENTA) {
-        colour = DebugView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }
@@ -672,7 +672,7 @@ void delete_non_dropout_rows( // find lines
                               )) {
 #if !GRAPHICS_DISABLED
       if (to_win) {
-        plot_parallel_row(row, gradient, block_edge, DebugView::WHITE, rotation);
+        plot_parallel_row(row, gradient, block_edge, Diagnostics::WHITE, rotation);
       }
 #endif
       blob_it.add_list_after(row_it.data()->blob_list());
@@ -1038,7 +1038,7 @@ void expand_rows(       // find lines
             row_it.forward();
 #if !GRAPHICS_DISABLED
             if (to_win && textord_show_expanded_rows) {
-              plot_parallel_row(test_row, gradient, block_edge, DebugView::WHITE, rotation);
+              plot_parallel_row(test_row, gradient, block_edge, Diagnostics::WHITE, rotation);
             }
 #endif
             blob_it.set_to_list(row->blob_list());
@@ -1083,7 +1083,7 @@ void expand_rows(       // find lines
             blob_it.set_to_list(row->blob_list());
 #if !GRAPHICS_DISABLED
             if (to_win && textord_show_expanded_rows) {
-              plot_parallel_row(test_row, gradient, block_edge, DebugView::WHITE, rotation);
+              plot_parallel_row(test_row, gradient, block_edge, Diagnostics::WHITE, rotation);
             }
 #endif
             blob_it.add_list_after(test_row->blob_list());
@@ -1842,7 +1842,7 @@ void pre_associate_blobs( // make rough chars
     FCOORD rotation       // inverse landscape
 ) {
 #if !GRAPHICS_DISABLED
-  DebugView::Color colour; // of boxes
+  Diagnostics::Color colour; // of boxes
 #endif
   BLOBNBOX *blob;     // current blob
   BLOBNBOX *nextblob; // next in list
@@ -1853,7 +1853,7 @@ void pre_associate_blobs( // make rough chars
   TO_ROW_IT row_it = block->get_rows();
 
 #if !GRAPHICS_DISABLED
-  colour = DebugView::RED;
+  colour = Diagnostics::RED;
 #endif
 
   blob_rotation = FCOORD(rotation.x(), -rotation.y());
@@ -1903,9 +1903,9 @@ void pre_associate_blobs( // make rough chars
           to_win->Rectangle(blob_box.left(), blob_box.bottom(), blob_box.right(), blob_box.top());
         }
       }
-      colour = static_cast<DebugView::Color>(colour + 1);
-      if (colour > DebugView::MAGENTA) {
-        colour = DebugView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
 #endif
@@ -1924,7 +1924,7 @@ void fit_parallel_rows( // find lines
     int32_t block_edge  // edge of block
 ) {
 #if !GRAPHICS_DISABLED
-  DebugView::Color colour; // of row
+  Diagnostics::Color colour; // of row
 #endif
   TO_ROW_IT row_it = block->get_rows();
 
@@ -1938,12 +1938,12 @@ void fit_parallel_rows( // find lines
   }
 #if !GRAPHICS_DISABLED
   if (to_win) {
-    colour = DebugView::RED;
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, block_edge, colour, rotation);
-      colour = static_cast<DebugView::Color>(colour + 1);
-      if (colour > DebugView::MAGENTA) {
-        colour = DebugView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }
@@ -1990,7 +1990,7 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
                                float gradient   // gradient to fit
 ) {
 #if !GRAPHICS_DISABLED
-  DebugView::Color colour; // of row
+  Diagnostics::Color colour; // of row
   if (!to_win) {
     create_to_win(page_tr_);
   }
@@ -2008,12 +2008,12 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
   if (textord_old_baselines) {
 #if !GRAPHICS_DISABLED
     if (to_win) {
-      colour = DebugView::RED;
+      colour = Diagnostics::RED;
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
         row_it.data()->baseline.plot(to_win, colour);
-        colour = static_cast<DebugView::Color>(colour + 1);
-        if (colour > DebugView::MAGENTA) {
-          colour = DebugView::RED;
+        colour = static_cast<Diagnostics::Color>(colour + 1);
+        if (colour > Diagnostics::MAGENTA) {
+          colour = Diagnostics::RED;
         }
       }
     }
@@ -2022,12 +2022,12 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
   }
 #if !GRAPHICS_DISABLED
   if (to_win) {
-    colour = DebugView::RED;
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row_it.data()->baseline.plot(to_win, colour);
-      colour = static_cast<DebugView::Color>(colour + 1);
-      if (colour > DebugView::MAGENTA) {
-        colour = DebugView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }

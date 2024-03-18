@@ -100,8 +100,8 @@ static void position_outline( // put in place
 static void plot_outline_list(     // draw outlines
     C_OUTLINE_LIST *list,          // outline to draw
     ScrollViewReference &window,   // window to draw in
-    DebugView::Color colour,      // colour to use for the oulines (contours)
-    DebugView::Color child_colour // colour of children (holes)
+    Diagnostics::Color colour,      // colour to use for the oulines (contours)
+    Diagnostics::Color child_colour // colour of children (holes)
 ) {
   C_OUTLINE *outline;     // current outline
   C_OUTLINE_IT it = list; // iterator
@@ -144,7 +144,7 @@ static void plot_outline_list(     // draw outlines
 // using the given denorm, making use of sub-pixel accurate information
 // if available.
 static void plot_normed_outline_list(const DENORM &denorm, C_OUTLINE_LIST *list,
-                                     DebugView::Color colour, DebugView::Color child_colour,
+                                     Diagnostics::Color colour, Diagnostics::Color child_colour,
                                      ScrollViewReference &window) {
   C_OUTLINE_IT it(list);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
@@ -547,8 +547,8 @@ Image C_BLOB::render_outline() {
 
 #if !GRAPHICS_DISABLED
 void C_BLOB::plot(ScrollViewReference &window,               // window to draw in
-                  DebugView::Color blob_colour,             // main colour
-                  DebugView::Color child_colour) {          // for holes
+                  Diagnostics::Color blob_colour,             // main colour
+                  Diagnostics::Color child_colour) {          // for holes
   plot_outline_list(&outlines, window, blob_colour, child_colour);
 }
 #endif
@@ -561,8 +561,8 @@ void C_BLOB::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, boo
 // Draws the blob in the given colour, and child_colour, normalized
 // using the given denorm, making use of sub-pixel accurate information
 // if available.
-void C_BLOB::plot_normed(const DENORM &denorm, DebugView::Color blob_colour,
-                         DebugView::Color child_colour, ScrollViewReference &window) {
+void C_BLOB::plot_normed(const DENORM &denorm, Diagnostics::Color blob_colour,
+                         Diagnostics::Color child_colour, ScrollViewReference &window) {
   plot_normed_outline_list(denorm, &outlines, blob_colour, child_colour, window);
 }
 #endif

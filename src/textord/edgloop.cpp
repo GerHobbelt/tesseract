@@ -37,7 +37,7 @@ namespace tesseract {
 
 void complete_edge(CRACKEDGE *start, // start of loop
                    C_OUTLINE_IT *outline_it) {
-  DebugView::Color colour; // colour to draw in
+  Diagnostics::Color colour; // colour to draw in
   int16_t looplength;       // steps in loop
   ICOORD botleft;           // bounding box
   ICOORD topright;
@@ -46,7 +46,7 @@ void complete_edge(CRACKEDGE *start, // start of loop
   // check length etc.
   colour = check_path_legal(start);
 
-  if (colour == DebugView::RED || colour == DebugView::BLUE) {
+  if (colour == Diagnostics::RED || colour == Diagnostics::BLUE) {
     looplength = loop_bounding_box(start, botleft, topright);
     outline = new C_OUTLINE(start, botleft, topright, looplength);
     // add to list
@@ -64,7 +64,7 @@ void complete_edge(CRACKEDGE *start, // start of loop
  * These colours are used to draw the raw outline.
  **********************************************************************/
 
-DebugView::Color check_path_legal( // certify outline
+Diagnostics::Color check_path_legal( // certify outline
     CRACKEDGE *start                // start of loop
 ) {
   int lastchain;     // last chain code
@@ -96,16 +96,16 @@ DebugView::Color check_path_legal( // certify outline
 
   if ((chainsum != 4 && chainsum != -4) || edgept != start || length < MINEDGELENGTH) {
     if (edgept != start) {
-      return DebugView::YELLOW;
+      return Diagnostics::YELLOW;
     } else if (length < MINEDGELENGTH) {
-      return DebugView::MAGENTA;
+      return Diagnostics::MAGENTA;
     } else {
       ED_ILLEGAL_SUM.error("check_path_legal", TESSLOG, "chainsum=%d", chainsum);
-      return DebugView::GREEN;
+      return Diagnostics::GREEN;
     }
   }
   // colour on inside
-  return chainsum < 0 ? DebugView::BLUE : DebugView::RED;
+  return chainsum < 0 ? Diagnostics::BLUE : Diagnostics::RED;
 }
 
 /**********************************************************************

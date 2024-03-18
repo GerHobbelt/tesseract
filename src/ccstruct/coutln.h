@@ -23,7 +23,7 @@
 #include "mod128.h"     // for DIR128, DIRBITS
 #include "points.h"     // for ICOORD, FCOORD
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, DebugView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 
 #include <tesseract/export.h> // for TESS_API, DLLSYM
 
@@ -253,7 +253,7 @@ public:
 #if !GRAPHICS_DISABLED
   void plot(                           // draw one
       ScrollViewReference &window,              // window to draw in
-      DebugView::Color colour) const; // colour to draw it
+      Diagnostics::Color colour) const; // colour to draw it
 #endif
 
   void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const; // colour to draw it
@@ -261,7 +261,7 @@ public:
 #if !GRAPHICS_DISABLED
   // Draws the outline in the given colour, normalized using the given denorm,
   // making use of sub-pixel accurate information if available.
-  void plot_normed(const DENORM &denorm, DebugView::Color colour, ScrollViewReference &window) const;
+  void plot_normed(const DENORM &denorm, Diagnostics::Color colour, ScrollViewReference &window) const;
 #endif // !GRAPHICS_DISABLED
 
   C_OUTLINE &operator=(const C_OUTLINE &source);

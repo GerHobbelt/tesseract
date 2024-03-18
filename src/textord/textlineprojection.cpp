@@ -94,9 +94,9 @@ void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReferen
     const TBOX &box = blob->bounding_box();
     bool bad_box = BoxOutOfHTextline(box, nullptr, false);
     if (blob->UniquelyVertical()) {
-      win->Pen(DebugView::YELLOW);
+      win->Pen(Diagnostics::YELLOW);
     } else {
-      win->Pen(bad_box ? DebugView::RED : DebugView::BLUE);
+      win->Pen(bad_box ? Diagnostics::RED : Diagnostics::BLUE);
     }
     win->Rectangle(box.left(), box.bottom(), box.right(), box.top());
   }

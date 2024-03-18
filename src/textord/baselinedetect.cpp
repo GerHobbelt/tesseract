@@ -630,23 +630,23 @@ void BaselineBlock::DrawFinalRows(const ICOORD &page_tr) {
   int left_edge = block_->block->pdblk.bounding_box().left();
   ScrollViewReference &win = create_to_win(page_tr);
   if (win) {
-    DebugView::Color colour = DebugView::RED;
+    Diagnostics::Color colour = Diagnostics::RED;
     TO_ROW_IT row_it = block_->get_rows();
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, left_edge, colour, rotation);
-      colour = static_cast<DebugView::Color>(colour + 1);
-      if (colour > DebugView::MAGENTA) {
-        colour = DebugView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
-    plot_blob_list(win, &block_->blobs, DebugView::MAGENTA, DebugView::WHITE);
+    plot_blob_list(win, &block_->blobs, Diagnostics::MAGENTA, Diagnostics::WHITE);
     // Show discarded blobs.
-    plot_blob_list(win, &block_->underlines, DebugView::YELLOW,
-                   DebugView::CORAL);
+    plot_blob_list(win, &block_->underlines, Diagnostics::YELLOW,
+                   Diagnostics::CORAL);
     if (block_->blobs.length() > 0 && verbose_process) {
       tprintDebug("{} blobs discarded as noise.\n", block_->blobs.length());
     }
-    draw_meanlines(block_, gradient, left_edge, DebugView::WHITE, rotation);
+    draw_meanlines(block_, gradient, left_edge, Diagnostics::WHITE, rotation);
   }
 }
 

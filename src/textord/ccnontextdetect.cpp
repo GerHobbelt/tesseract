@@ -121,19 +121,19 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   // Large and medium blobs are not text if they overlap with "a lot" of small
   // blobs.
   MarkAndDeleteNonTextBlobs(&blob_block->large_blobs, kMaxLargeOverlapsWithSmall, win,
-                            DebugView::DARK_GREEN, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, DebugView::AQUAMARINE,
+                            Diagnostics::DARK_GREEN, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, kMaxMediumOverlapsWithSmall, win, Diagnostics::AQUAMARINE,
                             pix);
   // Clear the grid of small blobs and insert the medium blobs.
   Clear();
   InsertBlobList(&blob_block->blobs);
   MarkAndDeleteNonTextBlobs(&blob_block->large_blobs, kMaxLargeOverlapsWithMedium, win,
-                            DebugView::DARK_GREEN, pix);
+                            Diagnostics::DARK_GREEN, pix);
   // Clear again before we start deleting the blobs in the grid.
   Clear();
-  MarkAndDeleteNonTextBlobs(&blob_block->noise_blobs, -1, win, DebugView::CORAL, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, DebugView::GOLDENROD, pix);
-  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, DebugView::AQUAMARINE, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->noise_blobs, -1, win, Diagnostics::CORAL, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, Diagnostics::GOLDENROD, pix);
+  MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, Diagnostics::AQUAMARINE, pix);
   if (debug) {
 #if !GRAPHICS_DISABLED
     if (win) {
@@ -257,7 +257,7 @@ static TBOX AttemptBoxExpansion(const TBOX &box, const IntGrid &noise_density, i
 // If the win is not nullptr, deleted blobs are drawn on it in red, and kept
 // blobs are drawn on it in ok_color.
 void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_blob_overlaps,
-                                                ScrollViewReference &win, DebugView::Color ok_color,
+                                                ScrollViewReference &win, Diagnostics::Color ok_color,
                                                 Image nontext_mask) {
   int imageheight = tright().y() - bleft().x();
   BLOBNBOX_IT blob_it(blobs);
@@ -295,7 +295,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
       }
 #if !GRAPHICS_DISABLED
       if (win) {
-        blob->plot(win, DebugView::RED, DebugView::RED);
+        blob->plot(win, Diagnostics::RED, Diagnostics::RED);
       }
 #endif // !GRAPHICS_DISABLED
       // It is safe to delete the cblob now, as it isn't used by the grid

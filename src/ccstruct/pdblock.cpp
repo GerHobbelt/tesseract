@@ -185,7 +185,7 @@ Image PDBLK::render_mask(const FCOORD &rerotation, TBOX *mask_box) {
 void PDBLK::plot(            // draw outline
     ScrollViewReference &window,      // window to draw in
     int32_t serial,          // serial number
-    DebugView::Color colour // colour to draw in
+    Diagnostics::Color colour // colour to draw in
 ) {
   ICOORD startpt;              // start of outline
   ICOORD endpt;                // end of outline

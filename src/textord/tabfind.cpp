@@ -550,7 +550,7 @@ static void DisplayBoxVector(const std::vector<BLOBNBOX *> &boxes, ScrollViewRef
     int right_x = box.right();
     int top_y = box.top();
     int bottom_y = box.bottom();
-    DebugView::Color box_color = boxe->BoxColor();
+    Diagnostics::Color box_color = boxe->BoxColor();
     win->Pen(box_color);
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
@@ -587,8 +587,8 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   ScrollViewReference tab_win;
   if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(tesseract_, 0, 100, "InitialTabs");
-    tab_win->Pen(DebugView::BLUE);
-    tab_win->Brush(DebugView::NONE);
+    tab_win->Pen(Diagnostics::BLUE);
+    tab_win->Brush(Diagnostics::NONE);
     // Display the left and right tab boxes.
     DisplayBoxVector(left_tab_boxes_, tab_win);
     DisplayBoxVector(right_tab_boxes_, tab_win);
@@ -971,7 +971,7 @@ void TabFind::EvaluateTabs() {
 void TabFind::ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid *part_grid) {
 #if !GRAPHICS_DISABLED
   if (tab_win) {
-    tab_win->Pen(DebugView::WHITE);
+    tab_win->Pen(Diagnostics::WHITE);
   }
 #endif // !GRAPHICS_DISABLED
   // Accumulate column sections into a STATS

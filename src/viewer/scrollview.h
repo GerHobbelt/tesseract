@@ -151,7 +151,7 @@ public:
 
 #endif
 
-namespace DebugView {
+namespace Diagnostics {
 
   // Color enum for pens and brushes.
   //
@@ -219,7 +219,7 @@ namespace DebugView {
 // the window through method calls on the class. The constructor is used to
 // create the class instance (and the window).
 class TESS_API ScrollView {
-  using Color = DebugView::Color;
+  using Color = Diagnostics::Color;
 
 public:
   virtual ~ScrollView();
@@ -496,7 +496,7 @@ protected:
 // create the class instance (and the window).
 class TESS_API InteractiveScrollView : public ScrollView {
 public:
-  using Color = DebugView::Color;
+  using Color = Diagnostics::Color;
 
   virtual ~InteractiveScrollView();
 
@@ -737,7 +737,7 @@ protected:
 // The BackgroundScrollView class provides the external API to the scrollview-to-DebugPIXA logging path.
 class TESS_API BackgroundScrollView : public ScrollView {
 public:
-  using Color = DebugView::Color;
+  using Color = Diagnostics::Color;
 
   virtual ~BackgroundScrollView();
 
@@ -952,7 +952,7 @@ protected:
 // The DummyScrollView class is a 'null' sink for all things ScrollView.
 class TESS_API DummyScrollView : public ScrollView {
 public:
-	using Color = DebugView::Color;
+	using Color = Diagnostics::Color;
 
 	virtual ~DummyScrollView();
 

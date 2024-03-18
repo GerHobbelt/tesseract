@@ -29,9 +29,9 @@
 
 namespace tesseract {
 
-#define FIRST_COLOUR DebugView::RED       ///< first rainbow colour
-#define LAST_COLOUR DebugView::AQUAMARINE ///< last rainbow colour
-#define CHILD_COLOUR DebugView::BROWN     ///< colour of children
+#define FIRST_COLOUR Diagnostics::RED       ///< first rainbow colour
+#define LAST_COLOUR Diagnostics::AQUAMARINE ///< last rainbow colour
+#define CHILD_COLOUR Diagnostics::BROWN     ///< colour of children
 
 /**
  * WERD::WERD
@@ -286,7 +286,7 @@ void WERD::print() const {
  */
 
 #if !GRAPHICS_DISABLED
-void WERD::plot(ScrollViewReference &window, DebugView::Color colour) {
+void WERD::plot(ScrollViewReference &window, Diagnostics::Color colour) {
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, colour);
@@ -295,8 +295,8 @@ void WERD::plot(ScrollViewReference &window, DebugView::Color colour) {
 }
 
 // Get the next color in the (looping) rainbow.
-DebugView::Color WERD::NextColor(DebugView::Color colour) {
-  auto next = static_cast<DebugView::Color>(colour + 1);
+Diagnostics::Color WERD::NextColor(Diagnostics::Color colour) {
+  auto next = static_cast<Diagnostics::Color>(colour + 1);
   if (next >= LAST_COLOUR || next < FIRST_COLOUR) {
     next = FIRST_COLOUR;
   }
@@ -310,7 +310,7 @@ DebugView::Color WERD::NextColor(DebugView::Color colour) {
  */
 
 void WERD::plot(ScrollViewReference &window) {
-  DebugView::Color colour = FIRST_COLOUR;
+  Diagnostics::Color colour = FIRST_COLOUR;
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, CHILD_COLOUR);
@@ -328,7 +328,7 @@ void WERD::plot(ScrollViewReference &window) {
 void WERD::plot_rej_blobs(ScrollViewReference &window) {
   C_BLOB_IT it = &rej_cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot(window, DebugView::GREY, DebugView::GREY);
+    it.data()->plot(window, Diagnostics::GREY, Diagnostics::GREY);
   }
 }
 #endif // !GRAPHICS_DISABLED

@@ -23,7 +23,7 @@
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #include "quspline.h"   // for QSPLINE
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, DebugView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 #include "werd.h"       // for WERD_LIST
 
 #include <cstdint> // for int16_t, int32_t
@@ -132,13 +132,13 @@ public:
 #if !GRAPHICS_DISABLED
   void plot(                     // draw one
       ScrollViewReference &window,        // window to draw in
-      DebugView::Color colour); // uniform colour
+      Diagnostics::Color colour); // uniform colour
   void plot(                     // draw one
       ScrollViewReference &window);       // in rainbow colours
 
   void plot_baseline(             // draw the baseline
       ScrollViewReference &window,         // window to draw in
-      DebugView::Color colour) { // colour to draw
+      Diagnostics::Color colour) { // colour to draw
     // draw it
     baseline.plot(window, colour);
   }
