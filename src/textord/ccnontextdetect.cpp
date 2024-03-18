@@ -280,7 +280,7 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
       }
 #if !GRAPHICS_DISABLED
       if (win) {
-        blob->plot(win, ScrollView::RED, ScrollView::RED);
+        blob->plot(win, DebugView::RED, DebugView::RED);
       }
 #endif // !GRAPHICS_DISABLED
       // It is safe to delete the cblob now, as it isn't used by the grid

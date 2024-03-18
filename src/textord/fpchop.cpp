@@ -89,7 +89,7 @@ ROW *fixed_pitch_words( // find lines
 
 #if !GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win) {
-    plot_row_cells(to_win, ScrollView::RED, row, 0, &row->char_cells);
+    plot_row_cells(to_win, DebugView::RED, row, 0, &row->char_cells);
   }
 #endif
 

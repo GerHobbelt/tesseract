@@ -542,20 +542,20 @@ void TabVector::Debug(const char *prefix) {
 // Draw this tabvector in place in the given window.
 void TabVector::Display(ScrollViewReference tab_win) {
   if (textord_debug_printable) {
-    tab_win->Pen(ScrollView::BLUE);
+    tab_win->Pen(DebugView::BLUE);
   } else if (alignment_ == TA_LEFT_ALIGNED) {
-    tab_win->Pen(ScrollView::LIME_GREEN);
+    tab_win->Pen(DebugView::LIME_GREEN);
   } else if (alignment_ == TA_LEFT_RAGGED) {
-    tab_win->Pen(ScrollView::DARK_GREEN);
+    tab_win->Pen(DebugView::DARK_GREEN);
   } else if (alignment_ == TA_RIGHT_ALIGNED) {
-    tab_win->Pen(ScrollView::PINK);
+    tab_win->Pen(DebugView::PINK);
   } else if (alignment_ == TA_RIGHT_RAGGED) {
-    tab_win->Pen(ScrollView::CORAL);
+    tab_win->Pen(DebugView::CORAL);
   } else {
-    tab_win->Pen(ScrollView::WHITE);
+    tab_win->Pen(DebugView::WHITE);
   }
   tab_win->Line(startpt_.x(), startpt_.y(), endpt_.x(), endpt_.y());
-  tab_win->Pen(ScrollView::GREY);
+  tab_win->Pen(DebugView::GREY);
   tab_win->Line(startpt_.x(), startpt_.y(), startpt_.x(), extended_ymin_);
   tab_win->Line(endpt_.x(), extended_ymax_, endpt_.x(), endpt_.y());
   auto score_string = std::to_string(percent_score_);

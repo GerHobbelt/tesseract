@@ -317,7 +317,7 @@ void StrokeWidth::RemoveLineResidue(ColPartition_LIST *big_part_list) {
       if (leaders_win_) {
         // We are debugging, so display deleted in pink blobs in the same
         // window that we use to display leader detection.
-        leaders_win_->Pen(ScrollView::PINK);
+        leaders_win_->Pen(DebugView::PINK);
         leaders_win_->Rectangle(box.left(), box.bottom(), box.right(), box.top());
       }
 #endif // !GRAPHICS_DISABLED
@@ -557,7 +557,7 @@ void StrokeWidth::MarkLeaderNeighbours(const ColPartition *part, LeftOrRight sid
     }
 #if !GRAPHICS_DISABLED
     if (leaders_win_) {
-      leaders_win_->Pen(side == LR_LEFT ? ScrollView::RED : ScrollView::GREEN);
+      leaders_win_->Pen(side == LR_LEFT ? DebugView::RED : DebugView::GREEN);
       const TBOX &blob_box = best_blob->bounding_box();
       leaders_win_->Rectangle(blob_box.left(), blob_box.bottom(), blob_box.right(), blob_box.top());
     }
@@ -1953,7 +1953,7 @@ bool StrokeWidth::NoNoiseInBetween(const TBOX &box1, const TBOX &box2) const {
 ScrollViewReference StrokeWidth::DisplayGoodBlobs(const char *window_name, int x, int y) {
   ScrollViewReference window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
-  window->Brush(ScrollView::NONE);
+  window->Brush(DebugView::NONE);
 
   // For every bbox in the grid, display it.
   BlobGridSearch gsearch(this);
@@ -2002,13 +2002,13 @@ static void DrawDiacriticJoiner(const BLOBNBOX *blob, ScrollViewReference &windo
 ScrollViewReference StrokeWidth::DisplayDiacritics(const char *window_name, int x, int y, TO_BLOCK *block) {
   ScrollViewReference window(MakeWindow(tesseract_, x, y, window_name));
   // For every blob in the grid, display it.
-  window->Brush(ScrollView::NONE);
+  window->Brush(DebugView::NONE);
 
   BLOBNBOX_IT it(&block->blobs);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
     if (blob->IsDiacritic()) {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(DebugView::GREEN);
       DrawDiacriticJoiner(blob, window);
     } else {
       window->Pen(blob->BoxColor());
@@ -2020,10 +2020,10 @@ ScrollViewReference StrokeWidth::DisplayDiacritics(const char *window_name, int 
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
     if (blob->IsDiacritic()) {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(DebugView::GREEN);
       DrawDiacriticJoiner(blob, window);
     } else {
-      window->Pen(ScrollView::WHITE);
+      window->Pen(DebugView::WHITE);
     }
     const TBOX &box = blob->bounding_box();
     window->Rectangle(box.left(), box.bottom(), box.right(), box.top());

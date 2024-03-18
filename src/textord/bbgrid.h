@@ -648,7 +648,7 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
     auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
     tab_win->AddEventHandler(handler);
   }
-  tab_win->Pen(ScrollView::GREY);
+  tab_win->Pen(DebugView::GREY);
   tab_win->Rectangle(0, 0, tright_.x() - bleft_.x(), tright_.y() - bleft_.y());
   return tab_win;
 }
@@ -659,8 +659,8 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
 // ScrollView::Color BBC::BoxColor() const.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
 void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win) {
-  tab_win->Pen(ScrollView::BLUE);
-  tab_win->Brush(ScrollView::NONE);
+  tab_win->Pen(DebugView::BLUE);
+  tab_win->Brush(DebugView::NONE);
 
   // For every bbox in the grid, display it.
   GridSearch<BBC, BBC_CLIST, BBC_C_IT> gsearch(this);

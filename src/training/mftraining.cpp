@@ -62,13 +62,13 @@ static void DisplayProtoList(const char *ch, LIST protolist) {
   iterate(proto) {
     auto *prototype = reinterpret_cast<PROTOTYPE *>(proto->first_node());
     if (prototype->Significant) {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(DebugView::GREEN);
     } else if (prototype->NumSamples == 0) {
-      window->Pen(ScrollView::BLUE);
+      window->Pen(DebugView::BLUE);
     } else if (prototype->Merged) {
-      window->Pen(ScrollView::MAGENTA);
+      window->Pen(DebugView::MAGENTA);
     } else {
-      window->Pen(ScrollView::RED);
+      window->Pen(DebugView::RED);
     }
     float x = CenterX(prototype->Mean);
     float y = CenterY(prototype->Mean);

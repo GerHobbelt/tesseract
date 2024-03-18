@@ -916,7 +916,7 @@ void Classify::ShowMatchDisplay() {
 void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &window) {
   window->Clear();
 
-  window->Pen(ScrollView::GREY);
+  window->Pen(DebugView::GREY);
   // Draw the feature space limit rectangle.
   window->Rectangle(0, 0, INT_MAX_X, INT_MAX_Y);
   if (norm_method == baseline) {

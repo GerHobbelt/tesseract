@@ -182,26 +182,26 @@ void AlignedBlob::DisplayTabs(ScrollViewReference &tab_win) {
     TabType tabtype = bbox->left_tab_type();
     if (tabtype != TT_NONE) {
       if (tabtype == TT_MAYBE_ALIGNED) {
-        tab_win->Pen(ScrollView::BLUE);
+        tab_win->Pen(DebugView::BLUE);
       } else if (tabtype == TT_MAYBE_RAGGED) {
-        tab_win->Pen(ScrollView::YELLOW);
+        tab_win->Pen(DebugView::YELLOW);
       } else if (tabtype == TT_CONFIRMED) {
-        tab_win->Pen(ScrollView::GREEN);
+        tab_win->Pen(DebugView::GREEN);
       } else {
-        tab_win->Pen(ScrollView::GREY);
+        tab_win->Pen(DebugView::GREY);
       }
       tab_win->Line(left_x, top_y, left_x, bottom_y);
     }
     tabtype = bbox->right_tab_type();
     if (tabtype != TT_NONE) {
       if (tabtype == TT_MAYBE_ALIGNED) {
-        tab_win->Pen(ScrollView::MAGENTA);
+        tab_win->Pen(DebugView::MAGENTA);
       } else if (tabtype == TT_MAYBE_RAGGED) {
-        tab_win->Pen(ScrollView::ORANGE);
+        tab_win->Pen(DebugView::ORANGE);
       } else if (tabtype == TT_CONFIRMED) {
-        tab_win->Pen(ScrollView::RED);
+        tab_win->Pen(DebugView::RED);
       } else {
-        tab_win->Pen(ScrollView::GREY);
+        tab_win->Pen(DebugView::GREY);
       }
       tab_win->Line(right_x, top_y, right_x, bottom_y);
     }
