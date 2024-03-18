@@ -34,7 +34,7 @@
 
 namespace tesseract {
 
-// The current color values we use, initially white (== ScrollView::WHITE).
+// The current color values we use, initially white (== DebugView::WHITE).
 static int rgb[3] = {255, 255, 255};
 
 class SVPaint : public SVEventHandler {
@@ -215,8 +215,8 @@ SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
 
   // Set the initial color values to White (could also be done by
   // passing (rgb[0], rgb[1], rgb[2]).
-  window_->Pen(ScrollView::WHITE);
-  window_->Brush(ScrollView::WHITE);
+  window_->Pen(DebugView::WHITE);
+  window_->Brush(DebugView::WHITE);
 
   // Adds the event handler to the window. This actually ensures that Notify
   // gets called when events occur.

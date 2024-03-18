@@ -77,7 +77,7 @@ void plot_box_list(               // make gradients win
   BLOBNBOX_IT it = list; // iterator
 
   win->Pen(body_colour);
-  win->Brush(ScrollView::NONE);
+  win->Brush(DebugView::NONE);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->bounding_box().plot(win);
   }
@@ -97,7 +97,7 @@ void plot_box_list(               // make gradients win
   BLOBNBOX_IT it = list; // iterator
 
   //pix->Pen(body_colour);
-  //pix->Brush(ScrollView::NONE);
+  //pix->Brush(DebugView::NONE);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->bounding_box().plot(pix, cmap, cmap_offset, noise);
   }
@@ -129,7 +129,7 @@ void plot_to_row(             // draw a row
   left = it.data()->bounding_box().left();
   it.move_to_last();
   right = it.data()->bounding_box().right();
-  plot_blob_list(to_win, row->blob_list(), colour, ScrollView::BROWN);
+  plot_blob_list(to_win, row->blob_list(), colour, DebugView::BROWN);
   to_win->Pen(colour);
   plot_pt = FCOORD(left, row->line_m() * left + row->line_c());
   plot_pt.rotate(rotation);
@@ -164,7 +164,7 @@ void plot_parallel_row(       // draw a row
   //      left=it.data()->bounding_box().left();
   it.move_to_last();
   right = it.data()->bounding_box().right();
-  plot_blob_list(to_win, row->blob_list(), colour, ScrollView::BROWN);
+  plot_blob_list(to_win, row->blob_list(), colour, DebugView::BROWN);
   to_win->Pen(colour);
   plot_pt = FCOORD(fleft, gradient * left + row->max_y());
   plot_pt.rotate(rotation);
@@ -201,24 +201,24 @@ void draw_occupation(                    // draw projection
   if (!to_win)
     return;
 
-  colour = ScrollView::WHITE;
+  colour = DebugView::WHITE;
   to_win->Pen(colour);
   to_win->SetCursor(fleft, static_cast<float>(ybottom));
   for (line_index = min_y; line_index <= max_y; line_index++) {
     if (occupation[line_index - min_y] < thresholds[line_index - min_y]) {
-      if (colour != ScrollView::BLUE) {
-        colour = ScrollView::BLUE;
+      if (colour != DebugView::BLUE) {
+        colour = DebugView::BLUE;
         to_win->Pen(colour);
       }
     } else {
-      if (colour != ScrollView::WHITE) {
-        colour = ScrollView::WHITE;
+      if (colour != DebugView::WHITE) {
+        colour = DebugView::WHITE;
         to_win->Pen(colour);
       }
     }
     to_win->DrawTo(fleft + occupation[line_index - min_y] / 10.0, static_cast<float>(line_index));
   }
-  colour = ScrollView::STEEL_BLUE;
+  colour = DebugView::STEEL_BLUE;
   to_win->Pen(colour);
   to_win->SetCursor(fleft, static_cast<float>(ybottom));
   for (line_index = min_y; line_index <= max_y; line_index++) {
@@ -276,7 +276,7 @@ void plot_word_decisions(          // draw words
     TDimension pitch,              // of block
     TO_ROW *row                    // row to draw
 ) {
-  DebugView::Color colour = ScrollView::MAGENTA; // current colour
+  DebugView::Color colour = DebugView::MAGENTA; // current colour
   TDimension prev_x;                              // end of prev blob
   int16_t blob_count;                             // blobs in word
   BLOBNBOX *blob;                                 // current blob
@@ -302,17 +302,17 @@ void plot_word_decisions(          // draw words
         blob_count = 0;
         start_it = blob_it;
       }
-      if (colour == ScrollView::MAGENTA) {
-        colour = ScrollView::RED;
+      if (colour == DebugView::MAGENTA) {
+        colour = DebugView::RED;
       } else {
         colour = static_cast<DebugView::Color>(colour + 1);
       }
       if (blob_box.left() - prev_x < row->min_space) {
         DebugView::Color rect_colour; // fuzzy colour
         if (blob_box.left() - prev_x > row->space_threshold) {
-          rect_colour = ScrollView::GOLDENROD;
+          rect_colour = DebugView::GOLDENROD;
         } else {
-          rect_colour = ScrollView::CORAL;
+          rect_colour = DebugView::CORAL;
         }
         // fill_color_index(win, rect_colour);
         win->Brush(rect_colour);
@@ -370,7 +370,7 @@ void plot_fp_cells(           // draw words
   for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
     segpt = seg_it.data();
     if (segpt->faked) {
-      colour = ScrollView::WHITE;
+      colour = DebugView::WHITE;
       win->Pen(colour);
     } else {
       win->Pen(colour);
@@ -404,7 +404,7 @@ void plot_fp_cells2(          // draw words
   for (seg_it.mark_cycle_pt(); !seg_it.cycled_list(); seg_it.forward()) {
     segpt = seg_it.data();
     if (segpt->faked) {
-      colour = ScrollView::WHITE;
+      colour = DebugView::WHITE;
       win->Pen(colour);
     } else {
       win->Pen(colour);

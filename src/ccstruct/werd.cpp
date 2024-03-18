@@ -29,9 +29,9 @@
 
 namespace tesseract {
 
-#define FIRST_COLOUR ScrollView::RED       ///< first rainbow colour
-#define LAST_COLOUR ScrollView::AQUAMARINE ///< last rainbow colour
-#define CHILD_COLOUR ScrollView::BROWN     ///< colour of children
+#define FIRST_COLOUR DebugView::RED       ///< first rainbow colour
+#define LAST_COLOUR DebugView::AQUAMARINE ///< last rainbow colour
+#define CHILD_COLOUR DebugView::BROWN     ///< colour of children
 
 /**
  * WERD::WERD
@@ -328,7 +328,7 @@ void WERD::plot(ScrollViewReference &window) {
 void WERD::plot_rej_blobs(ScrollViewReference &window) {
   C_BLOB_IT it = &rej_cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot(window, ScrollView::GREY, ScrollView::GREY);
+    it.data()->plot(window, DebugView::GREY, DebugView::GREY);
   }
 }
 #endif // !GRAPHICS_DISABLED

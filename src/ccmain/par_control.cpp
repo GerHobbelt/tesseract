@@ -63,12 +63,12 @@ void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
 	// Error C3016: index variable in OpenMP 'for' statement must have signed integral type
     for (size_t b = 0; b < blobs.size(); ++b) {
       *blobs[b].choices =
-          blobs[b].tesseract->classify_blob(blobs[b].blob, "par", ScrollView::WHITE, nullptr);
+          blobs[b].tesseract->classify_blob(blobs[b].blob, "par", DebugView::WHITE, nullptr);
     }
   } else {
     // TODO(AMD) parallelize this.
     for (auto &blob : blobs) {
-      *blob.choices = blob.tesseract->classify_blob(blob.blob, "par", ScrollView::WHITE, nullptr);
+      *blob.choices = blob.tesseract->classify_blob(blob.blob, "par", DebugView::WHITE, nullptr);
     }
   }
 }

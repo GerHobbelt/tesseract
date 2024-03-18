@@ -54,7 +54,7 @@
 #include "protos.h"          // for PROTO_STRUCT, FillABC
 #include "ratngs.h"          // for BLOB_CHOICE_IT, BLOB_CHOICE_LIST, BLO...
 #include "rect.h"            // for TBOX
-#include "scrollview.h"      // for ScrollView, ScrollView::BROWN, Scroll...
+#include "scrollview.h"      // for ScrollView, DebugView::BROWN, Scroll...
 #include "seam.h"            // for SEAM
 #include "shapeclassifier.h" // for ShapeClassifier
 #include "shapetable.h"      // for UnicharRating, ShapeTable, Shape, Uni...
@@ -410,7 +410,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
   // Draw debug windows showing the blob that is being learned if needed.
   if (strcmp(classify_learn_debug_str.c_str(), correct_text) == 0) {
     RefreshDebugWindow(learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
-    rotated_blob->plot(learn_debug_win_, ScrollView::GREEN, ScrollView::BROWN);
+    rotated_blob->plot(learn_debug_win_, DebugView::GREEN, DebugView::BROWN);
     learn_debug_win_->UpdateWindow();
     if (learn_debug_win_->HasInteractiveFeature()) {
       learn_debug_win_->Wait();
@@ -418,7 +418,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
   }
   if (classify_debug_character_fragments && segmentation == CST_FRAGMENT) {
     ASSERT_HOST(!learn_fragments_debug_win_); // set up in LearnWord
-    blob->plot(learn_fragments_debug_win_, ScrollView::BLUE, ScrollView::BROWN);
+    blob->plot(learn_fragments_debug_win_, DebugView::BLUE, DebugView::BROWN);
     learn_fragments_debug_win_->UpdateWindow();
   }
 #endif // !GRAPHICS_DISABLED

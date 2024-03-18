@@ -317,7 +317,7 @@ double StructuredTable::CalculateCellFilledPercentage(unsigned row, unsigned col
 #if !GRAPHICS_DISABLED
 
 void StructuredTable::Display(ScrollViewReference &window, DebugView::Color color) {
-  window->Brush(ScrollView::NONE);
+  window->Brush(DebugView::NONE);
   window->Pen(color);
   window->Rectangle(bounding_box_.left(), bounding_box_.bottom(), bounding_box_.right(),
                     bounding_box_.top());

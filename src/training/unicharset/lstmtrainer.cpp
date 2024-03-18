@@ -1198,7 +1198,7 @@ void LSTMTrainer::DisplayTargets(const NetworkIO &targets,
   int num_features = targets.NumFeatures();
   Network::ClearWindow(true, window_name, width * kTargetXScale, kTargetYScale, window);
   for (int c = 0; c < num_features; ++c) {
-    int color = c % (ScrollView::GREEN_YELLOW - 1) + 2;
+    int color = c % (DebugView::GREEN_YELLOW - 1) + 2;
     window->Pen(static_cast<DebugView::Color>(color));
     int start_t = -1;
     for (int t = 0; t < width; ++t) {

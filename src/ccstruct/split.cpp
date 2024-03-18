@@ -222,7 +222,7 @@ void SPLIT::Print() const {
 #if !GRAPHICS_DISABLED
 // Draws the split in the given window.
 void SPLIT::Mark(ScrollViewReference &window) const {
-  window->Pen(ScrollView::GREEN);
+  window->Pen(DebugView::GREEN);
   window->Line(point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
   window->UpdateWindow();
 }

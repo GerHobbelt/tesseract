@@ -278,14 +278,14 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #if !GRAPHICS_DISABLED
   if (textord_show_tables) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 0, 300, "Step 1: Column Partitions & Neighbors"));
-    DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
-                         ScrollView::AQUAMARINE);
+                         DebugView::AQUAMARINE);
     DisplayColPartitionConnections(table_win, &clean_part_grid_,
-                                   ScrollView::ORANGE);
+                                   DebugView::ORANGE);
 
     table_win = MakeWindow(tesseract_, 100, 300, "Step 2: Fragmented Text");
-    DisplayColPartitions(table_win, &fragmented_text_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &fragmented_text_grid_, DebugView::BLUE);
   }
 #endif // !GRAPHICS_DISABLED
 
@@ -320,8 +320,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #if !GRAPHICS_DISABLED
   if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 7: Table Columns and Regions"));
-    DisplayColSegments(table_win, &table_columns, ScrollView::DARK_TURQUOISE);
-    DisplayColSegments(table_win, &table_regions, ScrollView::YELLOW);
+    DisplayColSegments(table_win, &table_columns, DebugView::DARK_TURQUOISE);
+    DisplayColSegments(table_win, &table_regions, DebugView::YELLOW);
   }
 #endif // !GRAPHICS_DISABLED
 
@@ -342,8 +342,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #if !GRAPHICS_DISABLED
     if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1200, 300, "Step 8: Detected Table Locations"));
-      DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
-      DisplayColSegments(table_win, &table_columns, ScrollView::KHAKI);
+      DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
+      DisplayColSegments(table_win, &table_columns, DebugView::KHAKI);
       table_grid_.DisplayBoxes(table_win);
     }
 #endif // !GRAPHICS_DISABLED
@@ -356,8 +356,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #if !GRAPHICS_DISABLED
     if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1400, 600, "Step 10: Recognized Tables"));
-      DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
-                           ScrollView::BLUE);
+      DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE,
+                           DebugView::BLUE);
       table_grid_.DisplayBoxes(table_win);
     }
 #endif // !GRAPHICS_DISABLED
@@ -371,8 +371,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #if !GRAPHICS_DISABLED
     if (textord_show_tables) {
       ScrollViewReference table_win(MakeWindow(tesseract_, 1500, 300, "Step 11: Detected Tables"));
-      DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE,
-                           ScrollView::BLUE);
+      DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE,
+                           DebugView::BLUE);
       table_grid_.DisplayBoxes(table_win);
     }
 #endif // !GRAPHICS_DISABLED
@@ -764,9 +764,9 @@ void TableFinder::SetGlobalSpacings(ColPartitionGrid *grid) {
   if (textord_tablefind_show_stats) {
     const char *kWindowName = "X-height (R), X-width (G), and ledding (B)";
     ScrollViewReference stats_win(MakeWindow(tesseract_, 500, 10, kWindowName));
-    xheight_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::RED);
-    width_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::GREEN);
-    ledding_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::BLUE);
+    xheight_stats.plot(stats_win, 10, 200, 2, 15, DebugView::RED);
+    width_stats.plot(stats_win, 10, 200, 2, 15, DebugView::GREEN);
+    ledding_stats.plot(stats_win, 10, 200, 2, 15, DebugView::BLUE);
   }
 #endif // !GRAPHICS_DISABLED
 }
@@ -811,36 +811,36 @@ void TableFinder::MarkTablePartitions() {
 #if !GRAPHICS_DISABLED
   if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 300, 300, "Step 3: Initial Table Partitions"));
-    DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
-                         ScrollView::AQUAMARINE);
+                         DebugView::AQUAMARINE);
   }
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
   if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 600, 300, "Step 4: Filtered Table Partitions"));
-    DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
-                         ScrollView::AQUAMARINE);
+                         DebugView::AQUAMARINE);
   }
 #endif
   SmoothTablePartitionRuns();
 #if !GRAPHICS_DISABLED
   if (textord_tablefind_show_mark) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 5: Smoothed Table Partitions"));
-    DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
-                         ScrollView::AQUAMARINE);
+                         DebugView::AQUAMARINE);
   }
 #endif
   FilterFalseAlarms();
 #if !GRAPHICS_DISABLED
   if (textord_tablefind_show_mark || textord_show_tables) {
     ScrollViewReference table_win(MakeWindow(tesseract_, 900, 300, "Step 6: Final Table Partitions"));
-    DisplayColPartitions(table_win, &clean_part_grid_, ScrollView::BLUE);
+    DisplayColPartitions(table_win, &clean_part_grid_, DebugView::BLUE);
     DisplayColPartitions(table_win, &leader_and_ruling_grid_,
-                         ScrollView::AQUAMARINE);
+                         DebugView::AQUAMARINE);
   }
 #endif
 }
@@ -1903,8 +1903,8 @@ void TableFinder::RecognizeTables() {
   ScrollViewReference table_win = nullptr;
   if (textord_show_tables) {
     table_win = MakeWindow(tesseract_, 0, 0, "Step 9: Table Structure");
-    DisplayColPartitions(table_win, &fragmented_text_grid_, ScrollView::BLUE,
-                         ScrollView::LIGHT_BLUE);
+    DisplayColPartitions(table_win, &fragmented_text_grid_, DebugView::BLUE,
+                         DebugView::LIGHT_BLUE);
     // table_grid_.DisplayBoxes(table_win);
   }
 #endif
@@ -1936,7 +1936,7 @@ void TableFinder::RecognizeTables() {
     if (table_structure != nullptr) {
 #if !GRAPHICS_DISABLED
       if (textord_show_tables) {
-        table_structure->Display(table_win, ScrollView::LIME_GREEN);
+        table_structure->Display(table_win, DebugView::LIME_GREEN);
       }
 #endif
       found_table->set_bounding_box(table_structure->bounding_box());
@@ -1961,7 +1961,7 @@ void TableFinder::RecognizeTables() {
 void TableFinder::DisplayColSegments(ScrollViewReference &win, ColSegment_LIST *segments,
                                      DebugView::Color color) {
   win->Pen(color);
-  win->Brush(ScrollView::NONE);
+  win->Brush(DebugView::NONE);
   ColSegment_IT it(segments);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     ColSegment *col = it.data();
@@ -1997,7 +1997,7 @@ void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGri
     int right_x = box.right();
     int top_y = box.top();
     int bottom_y = box.bottom();
-    win->Brush(ScrollView::NONE);
+    win->Brush(DebugView::NONE);
     win->Pen(color);
     win->Rectangle(left_x, bottom_y, right_x, top_y);
   }
@@ -2006,7 +2006,7 @@ void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGri
 
 void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGrid *grid,
                                        DebugView::Color default_color) {
-  DisplayColPartitions(win, grid, default_color, ScrollView::YELLOW);
+  DisplayColPartitions(win, grid, default_color, DebugView::YELLOW);
 }
 
 void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
@@ -2030,7 +2030,7 @@ void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
       int mid_y = (top_y + bottom_y) / 2;
       int other_x = (upper_box.left() + upper_box.right()) / 2;
       int other_y = (upper_box.top() + upper_box.bottom()) / 2;
-      win->Brush(ScrollView::NONE);
+      win->Brush(DebugView::NONE);
       win->Pen(color);
       win->Line(mid_x, mid_y, other_x, other_y);
     }
@@ -2041,7 +2041,7 @@ void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
       int mid_y = (top_y + bottom_y) / 2;
       int other_x = (lower_box.left() + lower_box.right()) / 2;
       int other_y = (lower_box.top() + lower_box.bottom()) / 2;
-      win->Brush(ScrollView::NONE);
+      win->Brush(DebugView::NONE);
       win->Pen(color);
       win->Line(mid_x, mid_y, other_x, other_y);
     }
@@ -2062,7 +2062,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
   if (textord_show_tables) {
     table_win = MakeWindow(tesseract_, 0, 0, "Step 12: Final tables");
     DisplayColPartitions(table_win, &fragmented_text_grid_,
-                         ScrollView::BLUE, ScrollView::LIGHT_BLUE);
+                         DebugView::BLUE, DebugView::LIGHT_BLUE);
   }
 #endif  // GRAPHICS_DISABLED
 
@@ -2139,7 +2139,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
       if (table_structure != nullptr) {
 #if !GRAPHICS_DISABLED
       if (textord_show_tables) {
-        table_structure->Display(table_win, ScrollView::LIME_GREEN);
+        table_structure->Display(table_win, DebugView::LIME_GREEN);
       }
 #endif  // GRAPHICS_DISABLED
 

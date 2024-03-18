@@ -1514,45 +1514,45 @@ void Textord::mark_gap(TBOX blob,    // blob following gap
 
   switch (rule) {
     case 1:
-      col = ScrollView::RED;
+      col = DebugView::RED;
       break;
     case 2:
-      col = ScrollView::CYAN;
+      col = DebugView::CYAN;
       break;
     case 3:
-      col = ScrollView::GREEN;
+      col = DebugView::GREEN;
       break;
     case 4:
-      col = ScrollView::BLACK;
+      col = DebugView::BLACK;
       break;
     case 5:
-      col = ScrollView::MAGENTA;
+      col = DebugView::MAGENTA;
       break;
     case 6:
-      col = ScrollView::BLUE;
+      col = DebugView::BLUE;
       break;
 
     case 7:
-      col = ScrollView::WHITE;
+      col = DebugView::WHITE;
       break;
     case 8:
-      col = ScrollView::YELLOW;
+      col = DebugView::YELLOW;
       break;
     case 9:
-      col = ScrollView::BLACK;
+      col = DebugView::BLACK;
       break;
 
     case 20:
-      col = ScrollView::CYAN;
+      col = DebugView::CYAN;
       break;
     case 21:
-      col = ScrollView::GREEN;
+      col = DebugView::GREEN;
       break;
     case 22:
-      col = ScrollView::MAGENTA;
+      col = DebugView::MAGENTA;
       break;
     default:
-      col = ScrollView::BLACK;
+      col = DebugView::BLACK;
   }
   if (textord_show_initial_words) {
     to_win->Pen(col);
@@ -1682,7 +1682,7 @@ TBOX Textord::reduced_box_next(TO_ROW *row,    // current row
       (reduced_box.height() > 0.7 * row->xheight)) {
 #if !GRAPHICS_DISABLED
     if (textord_show_initial_words) {
-      reduced_box.plot(to_win, ScrollView::YELLOW, ScrollView::YELLOW);
+      reduced_box.plot(to_win, DebugView::YELLOW, DebugView::YELLOW);
     }
 #endif
   } else {

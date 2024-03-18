@@ -457,42 +457,42 @@ void BLOBNBOX::PlotBlobs(BLOBNBOX_LIST* list, Image& pix, std::vector<uint32_t> 
 DebugView::Color BLOBNBOX::TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type) {
   switch (region_type) {
     case BRT_HLINE:
-      return ScrollView::BROWN;
+      return DebugView::BROWN;
     case BRT_VLINE:
-      return ScrollView::DARK_GREEN;
+      return DebugView::DARK_GREEN;
     case BRT_RECTIMAGE:
-      return ScrollView::RED;
+      return DebugView::RED;
     case BRT_POLYIMAGE:
-      return ScrollView::ORANGE;
+      return DebugView::ORANGE;
     case BRT_UNKNOWN:
-      return flow_type == BTFT_NONTEXT ? ScrollView::CYAN : ScrollView::WHITE;
+      return flow_type == BTFT_NONTEXT ? DebugView::CYAN : DebugView::WHITE;
     case BRT_VERT_TEXT:
       if (flow_type == BTFT_STRONG_CHAIN || flow_type == BTFT_TEXT_ON_IMAGE) {
-        return ScrollView::GREEN;
+        return DebugView::GREEN;
       }
       if (flow_type == BTFT_CHAIN) {
-        return ScrollView::LIME_GREEN;
+        return DebugView::LIME_GREEN;
       }
-      return ScrollView::YELLOW;
+      return DebugView::YELLOW;
     case BRT_TEXT:
       if (flow_type == BTFT_STRONG_CHAIN) {
-        return ScrollView::BLUE;
+        return DebugView::BLUE;
       }
       if (flow_type == BTFT_TEXT_ON_IMAGE) {
-        return ScrollView::LIGHT_BLUE;
+        return DebugView::LIGHT_BLUE;
       }
       if (flow_type == BTFT_CHAIN) {
-        return ScrollView::AQUAMARINE;
+        return DebugView::AQUAMARINE;
       }
       if (flow_type == BTFT_LEADER) {
-        return ScrollView::WHEAT;
+        return DebugView::WHEAT;
       }
       if (flow_type == BTFT_NONTEXT) {
-        return ScrollView::PINK;
+        return DebugView::PINK;
       }
-      return ScrollView::MAGENTA;
+      return DebugView::MAGENTA;
     default:
-      return ScrollView::GREY;
+      return DebugView::GREY;
   }
 }
 
@@ -1073,18 +1073,18 @@ void TO_BLOCK::ComputeEdgeOffsets(Image thresholds, Image grey) {
 #if !GRAPHICS_DISABLED
 // Draw the noise blobs from all lists in red.
 void TO_BLOCK::plot_noise_blobs(ScrollViewReference &win) {
-  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, ScrollView::RED, ScrollView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&small_blobs, ScrollView::RED, ScrollView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&large_blobs, ScrollView::RED, ScrollView::RED, win);
-  BLOBNBOX::PlotNoiseBlobs(&blobs, ScrollView::RED, ScrollView::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&noise_blobs, DebugView::RED, DebugView::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&small_blobs, DebugView::RED, DebugView::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&large_blobs, DebugView::RED, DebugView::RED, win);
+  BLOBNBOX::PlotNoiseBlobs(&blobs, DebugView::RED, DebugView::RED, win);
 }
 
 // Draw the blobs on the various lists in the block in different colors.
 void TO_BLOCK::plot_graded_blobs(ScrollViewReference &win) {
-  BLOBNBOX::PlotBlobs(&noise_blobs, ScrollView::CORAL, ScrollView::BLUE, win);
-  BLOBNBOX::PlotBlobs(&small_blobs, ScrollView::GOLDENROD, ScrollView::YELLOW, win);
-  BLOBNBOX::PlotBlobs(&large_blobs, ScrollView::DARK_GREEN, ScrollView::YELLOW, win);
-  BLOBNBOX::PlotBlobs(&blobs, ScrollView::WHITE, ScrollView::BROWN, win);
+  BLOBNBOX::PlotBlobs(&noise_blobs, DebugView::CORAL, DebugView::BLUE, win);
+  BLOBNBOX::PlotBlobs(&small_blobs, DebugView::GOLDENROD, DebugView::YELLOW, win);
+  BLOBNBOX::PlotBlobs(&large_blobs, DebugView::DARK_GREEN, DebugView::YELLOW, win);
+  BLOBNBOX::PlotBlobs(&blobs, DebugView::WHITE, DebugView::BROWN, win);
 }
 
 // Draw the blobs on the various lists in the block in different colors.

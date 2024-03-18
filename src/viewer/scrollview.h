@@ -219,6 +219,8 @@ namespace DebugView {
 // the window through method calls on the class. The constructor is used to
 // create the class instance (and the window).
 class TESS_API ScrollView {
+  using Color = DebugView::Color;
+
 public:
   virtual ~ScrollView();
 

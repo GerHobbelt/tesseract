@@ -907,9 +907,9 @@ void TWERD::MergeBlobs(unsigned start, unsigned end) {
 
 #if !GRAPHICS_DISABLED
 void TWERD::plot(ScrollViewReference &window) {
-  DebugView::Color color = WERD::NextColor(ScrollView::BLACK);
+  DebugView::Color color = WERD::NextColor(DebugView::BLACK);
   for (auto &blob : blobs) {
-    blob->plot(window, color, ScrollView::BROWN);
+    blob->plot(window, color, DebugView::BROWN);
     color = WERD::NextColor(color);
   }
 }

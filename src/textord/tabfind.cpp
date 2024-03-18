@@ -587,8 +587,8 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   ScrollViewReference tab_win;
   if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(tesseract_, 0, 100, "InitialTabs");
-    tab_win->Pen(ScrollView::BLUE);
-    tab_win->Brush(ScrollView::NONE);
+    tab_win->Pen(DebugView::BLUE);
+    tab_win->Brush(DebugView::NONE);
     // Display the left and right tab boxes.
     DisplayBoxVector(left_tab_boxes_, tab_win);
     DisplayBoxVector(right_tab_boxes_, tab_win);
@@ -971,7 +971,7 @@ void TabFind::EvaluateTabs() {
 void TabFind::ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid *part_grid) {
 #if !GRAPHICS_DISABLED
   if (tab_win) {
-    tab_win->Pen(ScrollView::WHITE);
+    tab_win->Pen(DebugView::WHITE);
   }
 #endif // !GRAPHICS_DISABLED
   // Accumulate column sections into a STATS

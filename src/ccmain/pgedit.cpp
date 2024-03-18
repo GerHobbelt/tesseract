@@ -277,8 +277,8 @@ STRING_VAR(editor_image_win_name, "EditorImage", "Editor image window name");
 INT_VAR(editor_image_xpos, 590, "Editor image X Pos");
 INT_VAR(editor_image_ypos, 10, "Editor image Y Pos");
 static INT_VAR(editor_image_menuheight, 50, "Add to image height for menu bar");
-INT_VAR(editor_image_word_bb_color, ScrollView::BLUE, "Word bounding box colour");
-INT_VAR(editor_image_blob_bb_color, ScrollView::YELLOW, "Blob bounding box colour");
+INT_VAR(editor_image_word_bb_color, DebugView::BLUE, "Word bounding box colour");
+INT_VAR(editor_image_blob_bb_color, DebugView::YELLOW, "Blob bounding box colour");
 
 STRING_VAR(editor_word_name, "BlnWords", "BL normalized word window");
 INT_VAR(editor_word_xpos, 60, "Word window X Pos");
@@ -495,15 +495,15 @@ void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*w
   }
 
 
-  image_win->Brush(ScrollView::NONE);
+  image_win->Brush(DebugView::NONE);
   PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     (this->*word_painter)(&pr_it);
     if (debug_display_page_baselines && pr_it.row() != pr_it.prev_row()) {
-      pr_it.row()->row->plot_baseline(image_win, ScrollView::GREEN);
+      pr_it.row()->row->plot_baseline(image_win, DebugView::GREEN);
     }
     if (debug_display_page_blocks && pr_it.block() != pr_it.prev_block()) {
-      pr_it.block()->block->pdblk.plot(image_win, block_count++, ScrollView::RED);
+      pr_it.block()->block->pdblk.plot(image_win, block_count++, DebugView::RED);
     }
   }
   image_win->UpdateWindow();
@@ -840,7 +840,7 @@ void Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
  */
 
 bool Tesseract::word_blank_and_set_display(PAGE_RES_IT *pr_it) {
-  pr_it->word()->word->bounding_box().plot(image_win, ScrollView::BLACK, ScrollView::BLACK);
+  pr_it->word()->word->bounding_box().plot(image_win, DebugView::BLACK, DebugView::BLACK);
   return word_set_display(pr_it);
 }
 
@@ -859,11 +859,11 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   }
   ScrollViewReference win = bln_word_window_handle(this);
   win->Clear();
-  display_bln_lines(win, ScrollView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
+  display_bln_lines(win, DebugView::CYAN, 1.0, 0.0f, -1000.0f, 1000.0f);
   C_BLOB_IT it(word_res->word->cblob_list());
-  DebugView::Color color = WERD::NextColor(ScrollView::BLACK);
+  DebugView::Color color = WERD::NextColor(DebugView::BLACK);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot_normed(word_res->denorm, color, ScrollView::BROWN, win);
+    it.data()->plot_normed(word_res->denorm, color, DebugView::BROWN, win);
     color = WERD::NextColor(color);
   }
   win->UpdateWindow();
@@ -893,46 +893,46 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
     }
     const FontInfo &font_info = *word_res->fontinfo;
     for (int i = 0; i < length; ++i) {
-      DebugView::Color color = ScrollView::GREEN;
+      DebugView::Color color = DebugView::GREEN;
       switch (color_mode) {
         case CM_SUBSCRIPT:
           if (best_choice->BlobPosition(i) == SP_SUBSCRIPT) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_SUPERSCRIPT:
           if (best_choice->BlobPosition(i) == SP_SUPERSCRIPT) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_ITALIC:
           if (font_info.is_italic()) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_BOLD:
           if (font_info.is_bold()) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_FIXEDPITCH:
           if (font_info.is_fixed_pitch()) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_SERIF:
           if (font_info.is_serif()) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_SMALLCAPS:
           if (word_res->small_caps) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
         case CM_DROPCAPS:
           if (best_choice->BlobPosition(i) == SP_DROPCAP) {
-            color = ScrollView::RED;
+            color = DebugView::RED;
           }
           break;
           // TODO(rays) underline is currently completely unsupported.
@@ -1024,7 +1024,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
 
   if (text.length() > 0) {
     word_bb = word->bounding_box();
-    image_win->Pen(ScrollView::RED);
+    image_win->Pen(DebugView::RED);
     word_height = word_bb.height();
     int text_height = 0.50 * word_height;
     if (text_height > 20) {
@@ -1122,14 +1122,14 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
     ScrollViewReference bl_win = CreateFeatureSpaceWindow(this, "BL Features", 512, 0);
     ClearFeatureSpaceWindow(baseline, bl_win);
     for (auto &bl_feature : bl_features) {
-      RenderIntFeature(bl_win, &bl_feature, ScrollView::GREEN);
+      RenderIntFeature(bl_win, &bl_feature, DebugView::GREEN);
     }
     bl_win->UpdateWindow();
     // Display cn features.
     ScrollViewReference cn_win = CreateFeatureSpaceWindow(this, "CN Features", 512, 0);
     ClearFeatureSpaceWindow(character, cn_win);
     for (auto &cn_feature : cn_features) {
-      RenderIntFeature(cn_win, &cn_feature, ScrollView::GREEN);
+      RenderIntFeature(cn_win, &cn_feature, DebugView::GREEN);
     }
     cn_win->UpdateWindow();
 
