@@ -27,6 +27,7 @@
 
 #  include <cstdlib>
 #  include <iostream>
+#include "mupdf/fitz/string-util.h"
 
 #if !GRAPHICS_DISABLED
 #  include "scrollview.h"
@@ -267,7 +268,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_svpaint_main(int argc, const char** argv)
 #endif
 {
-  fprintf(stderr, "%s: this tool is not supported in this build.\n", argv[0]);
+  fprintf(stderr, "%s: this tool is not supported in this build.\n", fz_basename(argv[0]));
   return EXIT_FAILURE;
 }
 
