@@ -706,7 +706,7 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, bool debug_sv, I
                &pix_intersections, pix_music_mask, pixa_display);
 
 #ifndef GRAPHICS_DISABLED
-  if (debug_sv && pix_vline != nullptr || pix_hline != nullptr)  {
+  if (debug_sv && (pix_vline != nullptr || pix_hline != nullptr))  {
     int width = pixGetWidth(pix);
     int height = pixGetHeight(pix);
     auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
@@ -744,7 +744,7 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, bool debug_sv, I
                       pix_non_hline, pix, h_lines);
 
 #ifndef GRAPHICS_DISABLED
-  if (debug_sv && pix_vline != nullptr || pix_hline != nullptr)  {
+  if (debug_sv && (pix_vline != nullptr || pix_hline != nullptr))  {
     int width = pixGetWidth(pix);
     int height = pixGetHeight(pix);
     auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
