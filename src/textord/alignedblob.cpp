@@ -55,7 +55,7 @@ const int kVLineAlignment = 3;
 // Constant number of pixels used as gutter gap tolerance for line finding.
 const int kVLineGutter = 1;
 // Constant number of pixels used as the search size for line finding.
-const int kVLineSearchSize = 150;
+const int kVLineSearchSize = 50;
 // Min number of points to accept for a ragged tab stop.
 const int kMinRaggedTabs = 5;
 // Min number of points to accept for an aligned tab stop.

@@ -283,7 +283,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     pixa_debug_.AddPix(pix_binary_, "PageSegInput");
   }
   // Leptonica is used to find the rule/separator lines in the input.
-  LineFinder::FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, pix_binary_,
+  LineFinder::FindAndRemoveLines(source_resolution_, textord_tabfind_show_vlines, textord_tabfind_show_vlines_scrollview, pix_binary_,
                                  &vertical_x, &vertical_y, music_mask_pix, &v_lines, &h_lines);
   if (tessedit_dump_pageseg_images) {
     pixa_debug_.AddPix(pix_binary_, "NoLines");

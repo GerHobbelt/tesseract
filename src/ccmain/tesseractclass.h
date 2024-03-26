@@ -953,6 +953,7 @@ public:
   // choice in OSResults::orientations) to believe the page orientation.
   double_VAR_H(min_orientation_margin);
   BOOL_VAR_H(textord_tabfind_show_vlines);
+  BOOL_VAR_H(textord_tabfind_show_vlines_scrollview);
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);

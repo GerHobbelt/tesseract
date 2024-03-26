@@ -398,6 +398,7 @@ Tesseract::Tesseract()
     , double_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin",
                     this->params())
     , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding", this->params())
+    , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline", this->params())

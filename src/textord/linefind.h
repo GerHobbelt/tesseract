@@ -50,7 +50,7 @@ public:
    *
    * The detected lines are removed from the pix.
    */
-  static void FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+  static void FindAndRemoveLines(int resolution, bool debug, bool debug_sv, Image pix, int *vertical_x,
                                  int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
                                  TabVector_LIST *h_lines);
 };

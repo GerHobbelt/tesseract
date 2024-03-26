@@ -326,7 +326,7 @@ static void GetLineBoxes(bool horizontal_lines, Image pix_lines, Image pix_inter
 // The output list of TabVector makes no reference to the input BLOBNBOXes.
 static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
                             BLOBNBOX_LIST *line_bblobs, int *vertical_x, int *vertical_y,
-                            TabVector_LIST *vectors) {
+                            TabVector_LIST *vectors, bool vertical_search) {
   BLOBNBOX_IT bbox_it(line_bblobs);
   int b_count = 0;
   // Put all the blobs into the grid to find the lines, and move the blobs
@@ -360,6 +360,7 @@ static void FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
         tprintf("Finding line vector starting at bbox (%d,%d)\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
+      if (!vertical_search) align_params.max_v_gap *= 3;
       TabVector *vector =
           blob_grid.FindVerticalAlignment(align_params, bbox, vertical_x, vertical_y);
       if (vector != nullptr) {
@@ -622,7 +623,7 @@ static void FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
   int height = pixGetHeight(src_pix);
   ICOORD bleft(0, 0);
   ICOORD tright(width, height);
-  FindLineVectors(bleft, tright, &line_bblobs, vertical_x, vertical_y, vectors);
+  FindLineVectors(bleft, tright, &line_bblobs, vertical_x, vertical_y, vectors, true);
   if (!vectors->empty()) {
     RemoveUnusedLineSegments(false, &line_bblobs, *pix_vline);
     SubtractLinesAndResidue(*pix_vline, pix_non_vline, src_pix);
@@ -657,7 +658,7 @@ static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
   int height = pixGetHeight(src_pix);
   ICOORD bleft(0, 0);
   ICOORD tright(height, width);
-  FindLineVectors(bleft, tright, &line_bblobs, &vertical_x, &vertical_y, vectors);
+  FindLineVectors(bleft, tright, &line_bblobs, &vertical_x, &vertical_y, vectors, false);
   if (!vectors->empty()) {
     RemoveUnusedLineSegments(true, &line_bblobs, *pix_hline);
     SubtractLinesAndResidue(*pix_hline, pix_non_hline, src_pix);
@@ -688,7 +689,7 @@ static void FindAndRemoveHLines(Image pix_intersections, int vertical_x,
 // The output vectors are owned by the list and Frozen (cannot refit) by
 // having no boxes, as there is no need to refit or merge separator lines.
 // The detected lines are removed from the pix.
-void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *vertical_x,
+void LineFinder::FindAndRemoveLines(int resolution, bool debug, bool debug_sv, Image pix, int *vertical_x,
                                     int *vertical_y, Image *pix_music_mask, TabVector_LIST *v_lines,
                                     TabVector_LIST *h_lines) {
   if (pix == nullptr || vertical_x == nullptr || vertical_y == nullptr) {
@@ -703,6 +704,28 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
   Pixa *pixa_display = debug ? pixaCreate(0) : nullptr;
   GetLineMasks(resolution, pix, &pix_vline, &pix_non_vline, &pix_hline, &pix_non_hline,
                &pix_intersections, pix_music_mask, pixa_display);
+
+#ifndef GRAPHICS_DISABLED
+  if (debug_sv && pix_vline != nullptr || pix_hline != nullptr)  {
+    int width = pixGetWidth(pix);
+    int height = pixGetHeight(pix);
+    auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
+
+    if (pix_vline != nullptr) {
+      win->Draw(pix_vline, 0, 0);
+    }
+
+    if (pix_hline != nullptr) {
+      win->Draw(pix_hline, 0, 0);
+    }
+
+    win->Update();
+    #ifdef SCROLLVIEW_NONINTERACTIVE
+    delete win;
+    #endif
+  }
+#endif
+
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(pix_intersections, vertical_x, vertical_y, &pix_vline,
                       pix_non_vline, pix, v_lines);
@@ -716,8 +739,31 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Image pix, int *
       pix_hline.destroy();
     }
   }
+
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
+
+#ifndef GRAPHICS_DISABLED
+  if (debug_sv && pix_vline != nullptr || pix_hline != nullptr)  {
+    int width = pixGetWidth(pix);
+    int height = pixGetHeight(pix);
+    auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
+
+    if (pix_vline != nullptr) {
+      win->Draw(pix_vline, 0, 0);
+    }
+
+    if (pix_hline != nullptr) {
+      win->Draw(pix_hline, 0, 0);
+    }
+
+    win->Update();
+    #ifdef SCROLLVIEW_NONINTERACTIVE
+    delete win;
+    #endif
+  }
+#endif
+
   if (pixa_display != nullptr && pix_vline != nullptr) {
     pixaAddPix(pixa_display, pix_vline, L_CLONE);
   }

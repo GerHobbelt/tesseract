@@ -172,7 +172,7 @@ static void remove_nontext_regions(tesseract::Tesseract *tess, BLOCK_LIST *block
     resolution = pixGetXRes(pix);
   }
 
-  tesseract::LineFinder::FindAndRemoveLines(resolution, false, pix, &vertical_x, &vertical_y,
+  tesseract::LineFinder::FindAndRemoveLines(resolution, false, false, pix, &vertical_x, &vertical_y,
                                             nullptr, &v_lines, &h_lines);
   Image im_pix = tesseract::ImageFind::FindImages(pix, nullptr);
   if (im_pix != nullptr) {
