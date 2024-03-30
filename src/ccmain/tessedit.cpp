@@ -213,7 +213,6 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   right_to_left_ = unicharset.major_right_to_left();
 
 #if !DISABLED_LEGACY_ENGINE
-
   // Setup initial unichar ambigs table and read universal ambigs.
   UNICHARSET encoder_unicharset;
   encoder_unicharset.CopyFrom(unicharset);
@@ -229,9 +228,9 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Load pass1 and pass2 weights (for now these two sets are the same, but in
   // the future separate sets of weights can be generated).
   for (int p = ParamsModel::PTRAIN_PASS1; p < ParamsModel::PTRAIN_NUM_PASSES; ++p) {
-    language_model_->getParamsModel().SetPass(static_cast<ParamsModel::PassEnum>(p));
+    language_model_->setParamsModelPass(static_cast<ParamsModel::PassEnum>(p));
     if (mgr->GetComponent(TESSDATA_PARAMS_MODEL, &fp)) {
-      if (!language_model_->getParamsModel().LoadFromFp(lang.c_str(), &fp)) {
+      if (!language_model_->LoadParamsModelFromFp(lang.c_str(), &fp)) {
         return false;
       }
     }

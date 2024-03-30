@@ -104,6 +104,14 @@ public:
     return params_model_;
   }
 
+  inline void setParamsModelPass(ParamsModel::PassEnum p) {
+    params_model_.SetPass(p);
+  }
+
+  inline bool LoadParamsModelFromFp(const char *lang, TFile *fp) {
+    return params_model_.LoadFromFp(lang, fp);
+  }
+
   inline void copyParamsModel(const ParamsModel& src) {
     return params_model_.Copy(src);
   }

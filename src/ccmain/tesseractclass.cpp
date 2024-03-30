@@ -399,7 +399,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
-#if DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
@@ -407,8 +407,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
 #endif
     , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
-    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
-    , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())
+    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())                      --> debug_line_finding
+    // , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())      --> debug_line_finding + !debug_do_not_use_scrollview_app
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,

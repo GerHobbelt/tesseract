@@ -375,7 +375,8 @@ void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
         tprintDebug("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
-      if (!vertical_search) align_params.max_v_gap *= 3;
+      if (!vertical_search)
+        align_params.max_v_gap *= 3;
       TabVector *vector =
           blob_grid.FindVerticalAlignment(align_params, bbox, vertical_x, vertical_y);
       if (vector != nullptr) {
@@ -739,26 +740,32 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
   GetLineMasks(resolution, pix, &pix_vline, &pix_non_vline, &pix_hline, &pix_non_hline,
                &pix_intersections, pix_music_mask);
 
-#ifndef GRAPHICS_DISABLED
-  if (debug_sv && (pix_vline != nullptr || pix_hline != nullptr))  {
-    int width = pixGetWidth(pix);
-    int height = pixGetHeight(pix);
-    auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
+  if (tesseract_->debug_line_finding) {
+#if !GRAPHICS_DISABLED
+    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+      int width = pixGetWidth(pix);
+      int height = pixGetHeight(pix);
+      ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);
+
+      if (pix_vline != nullptr) {
+        win->Draw(pix_vline, 0, 0, "find & remove H/V lines : vline mask");
+      }
+
+      if (pix_hline != nullptr) {
+        win->Draw(pix_hline, 0, 0, "find & remove H/V lines : hline mask");
+      }
+
+      win->Update();
+    }
+#endif
 
     if (pix_vline != nullptr) {
-      win->Draw(pix_vline, 0, 0);
+      tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline mask");
     }
-
     if (pix_hline != nullptr) {
-      win->Draw(pix_hline, 0, 0);
+      tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline mask");
     }
-
-    win->Update();
-    #ifdef SCROLLVIEW_NONINTERACTIVE
-    delete win;
-    #endif
   }
-#endif
 
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(pix_intersections, vertical_x, vertical_y, &pix_vline,
@@ -777,25 +784,22 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
   if (tesseract_->debug_line_finding) {
-#ifndef GRAPHICS_DISABLED
-  if (debug_sv && (pix_vline != nullptr || pix_hline != nullptr))  {
-    int width = pixGetWidth(pix);
-    int height = pixGetHeight(pix);
-    auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
+#if !GRAPHICS_DISABLED
+    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+      int width = pixGetWidth(pix);
+      int height = pixGetHeight(pix);
+      ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);
 
-    if (pix_vline != nullptr) {
-      win->Draw(pix_vline, 0, 0);
+      if (pix_vline != nullptr) {
+        win->Draw(pix_vline, 0, 0, "find & remove H/V lines : vline");
+      }
+
+      if (pix_hline != nullptr) {
+        win->Draw(pix_hline, 0, 0, "find & remove H/V lines : hline");
+      }
+
+      win->Update();
     }
-
-    if (pix_hline != nullptr) {
-      win->Draw(pix_hline, 0, 0);
-    }
-
-    win->Update();
-    #ifdef SCROLLVIEW_NONINTERACTIVE
-    delete win;
-    #endif
-  }
 #endif
 
     if (pix_vline != nullptr) {
