@@ -411,13 +411,6 @@ static void FixPageSegMode(tesseract::TessBaseAPI &api, tesseract::PageSegMode p
   }
 }
 
-static bool checkArgValues(int arg, const char *mode, int count) {
-  if (arg >= count || arg < 0) {
-    tprintError("Invalid {} value, please enter a number between 0-{}\n", mode, count - 1);
-    return false;
-  }
-  return true;
-}
 
 //#include <filesystem>
 #include <sstream>      // std::ostringstream
