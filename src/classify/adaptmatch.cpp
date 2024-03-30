@@ -651,12 +651,12 @@ void Classify::StartBackupAdaptiveClassifier() {
  * - #EnableLearning
  * set to true by this routine
  */
-void Classify::SettupPass1() {
+void Classify::SetupPass1() {
   EnableLearning = classify_enable_learning;
   UseLearning = false;
   getDict().SettupStopperPass1();
 
-} /* SettupPass1 */
+} /* SetupPass1 */
 
 /*---------------------------------------------------------------------------*/
 /**
@@ -667,12 +667,12 @@ void Classify::SettupPass1() {
  * Globals:
  * - #EnableLearning set to false by this routine
  */
-void Classify::SettupPass2() {
+void Classify::SetupPass2() {
   EnableLearning = false;
   UseLearning = true;
   getDict().SettupStopperPass2();
 
-} /* SettupPass2 */
+} /* SetupPass2 */
 
 /*---------------------------------------------------------------------------*/
 /**
