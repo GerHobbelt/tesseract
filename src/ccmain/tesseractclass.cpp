@@ -546,6 +546,8 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   for (auto &sub_lang : sub_langs_) {
     sub_lang->Clear(invoked_by_destructor);
   }
+
+  // almost identical code to Tesseract::ReportDebugInfo():
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
@@ -557,6 +559,7 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
   }
+
   pix_original_.destroy();
   pix_binary_.destroy();
   pix_grey_.destroy();
