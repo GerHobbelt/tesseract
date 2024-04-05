@@ -56,7 +56,7 @@ BLOB_CHOICE_LIST *Wordrec::classify_piece(const std::vector<SEAM *> &seams, int1
     SEAM::JoinPieces(seams, word->blobs, start, end);
   }
   BLOB_CHOICE_LIST *choices =
-      classify_blob(word->blobs[start], description, ScrollView::WHITE, blamer_bundle);
+      classify_blob(word->blobs[start], description, Diagnostics::WHITE, blamer_bundle);
   // Set the matrix_cell_ entries in all the BLOB_CHOICES.
   BLOB_CHOICE_IT bc_it(choices);
   for (bc_it.mark_cycle_pt(); !bc_it.cycled_list(); bc_it.forward()) {

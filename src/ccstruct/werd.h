@@ -159,10 +159,10 @@ public:
 
 #if !GRAPHICS_DISABLED
   // plot word on window in a uniform colour
-  void plot(ScrollViewReference &window, ScrollView::Color colour);
+  void plot(ScrollViewReference &window, Diagnostics::Color colour);
 
   // Get the next color in the (looping) rainbow.
-  static ScrollView::Color NextColor(ScrollView::Color colour);
+  static Diagnostics::Color NextColor(Diagnostics::Color colour);
 
   // plot word on window in a rainbow of colours
   void plot(ScrollViewReference &window);

@@ -20,7 +20,7 @@
 #ifndef QUSPLINE_H
 #define QUSPLINE_H
 
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 
 #include <cstdint> // for int32_t
 
@@ -77,7 +77,7 @@ public:
 #if !GRAPHICS_DISABLED
   void plot(                           // draw it
       ScrollViewReference &window,     // in window
-      ScrollView::Color colour) const; // in colour
+      Diagnostics::Color colour) const; // in colour
 #endif
 
   QSPLINE &operator=(const QSPLINE &source); // from this

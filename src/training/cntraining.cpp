@@ -29,6 +29,7 @@
 #include "featdefs.h"
 #include "ocrfeatures.h"
 #include "oldlist.h"
+#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 
@@ -274,8 +275,8 @@ extern "C" int main(int argc, const char** argv)
 extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
 #endif
 {
-	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
-	return 1;
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+	return EXIT_FAILURE;
 }
 
 #endif

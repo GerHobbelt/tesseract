@@ -247,7 +247,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
           break;
         default:
           hocr_str << "ocr_line";
-		  break;
+      break;
       }
       hocr_str << "' id='"
                << "line_" << page_id << "_" << lcnt << "'";
@@ -354,7 +354,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
             hocr_str << "\n        </span>";
             ++scnt;
           } 
-		  if (lstm_choice_mode & 2) {
+      if (lstm_choice_mode & 2) {
             hocr_str << "\n        <span class='ocrx_cinfo'"
                      << " id='"
                      << "lstm_choices_" << page_id << "_" << wcnt << "_" << tcnt
@@ -412,7 +412,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         ++scnt;
       }
     } 
-	if ((lstm_choice_mode & 2) && (!tesseract_->hocr_char_boxes || (lstm_choice_mode & 1)) && CTCMap != nullptr) {
+  if ((lstm_choice_mode & 2) && (!tesseract_->hocr_char_boxes || (lstm_choice_mode & 1)) && CTCMap != nullptr) {
       for (const auto &timestep : *CTCMap) {
         if (timestep.size() > 0) {
           hocr_str << "\n       <span class='ocrx_cinfo'"

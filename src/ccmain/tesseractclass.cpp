@@ -353,9 +353,9 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", params())
-    , BOOL_MEMBER(tessedit_create_page, false, "Write .page.xml PAGE file.", params())
-    , BOOL_MEMBER(tessedit_create_page_polygon, true, "Create the PAGE file with polygons instead of bbox values.", params())
-    , BOOL_MEMBER(tessedit_create_page_wordlevel, false, "Create the PAGE file on wordlevel.", params())
+    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", this->params())
+    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", this->params())
+    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", this->params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.", params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
@@ -399,13 +399,16 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+#if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
                   params())
+#endif
     , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
-    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
+    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())                      --> debug_line_finding
+    // , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())      --> debug_line_finding + !debug_do_not_use_scrollview_app
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
@@ -494,11 +497,15 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
     , train_line_page_num_(0) {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::AddActiveTesseractInstance(this);
+#endif
 }
 
 Tesseract::~Tesseract() {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::RemoveActiveTesseractInstance(this);
+#endif
 
   if (lstm_recognizer_ != nullptr) {
     lstm_recognizer_->Clean();
@@ -539,6 +546,8 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   for (auto &sub_lang : sub_langs_) {
     sub_lang->Clear(invoked_by_destructor);
   }
+
+  // almost identical code to Tesseract::ReportDebugInfo():
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
@@ -550,6 +559,7 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
   }
+
   pix_original_.destroy();
   pix_binary_.destroy();
   pix_grey_.destroy();
@@ -812,6 +822,7 @@ void Tesseract::ResyncVariablesInternally() {
         lstm_recognizer_->SetDebug(tess_debug_lstm);
     }
 
+#if !DISABLED_LEGACY_ENGINE
     if (language_model_ != nullptr) {
         int lvl = language_model_->language_model_debug_level;
 
@@ -844,6 +855,7 @@ void Tesseract::ResyncVariablesInternally() {
         BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
     }
+#endif
 
     // init sub-languages:
      for (auto &sub_tess : sub_langs_) {

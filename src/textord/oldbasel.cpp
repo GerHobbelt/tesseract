@@ -376,7 +376,7 @@ void Textord::find_textlines(TO_BLOCK *block,   // block row is in
   }
 #if !GRAPHICS_DISABLED
   if (textord_show_final_rows) {
-    row->baseline.plot(to_win, ScrollView::GOLDENROD);
+    row->baseline.plot(to_win, Diagnostics::GOLDENROD);
   }
 #endif
   if (blobcount > 1) {

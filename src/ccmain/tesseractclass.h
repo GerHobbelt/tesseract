@@ -286,9 +286,15 @@ public:
 
   void ReportDebugInfo();
 
-  bool SupportsInteractiveScrollView() {
+#if !GRAPHICS_DISABLED
+  bool SupportsInteractiveScrollView() const {
     return (interactive_display_mode && !debug_do_not_use_scrollview_app);
   }
+#else
+  constexpr bool SupportsInteractiveScrollView() const {
+    return false;
+  }
+#endif
 
   // Return a memory capacity cost estimate for the given image / current original image.
   //
@@ -641,9 +647,11 @@ public:
 						      const std::vector<std::string> &vars_values,
                               bool set_only_non_debug_params, TessdataManager *mgr);
 
+#if !DISABLED_LEGACY_ENGINE
   // Set the universal_id member of each font to be unique among all
   // instances of the same font loaded.
   void SetupUniversalFontIds();
+#endif
 
   void recognize_page(std::string &image_name);
   void end_tesseract();
@@ -1022,9 +1030,9 @@ public:
   BOOL_VAR_H(tessedit_create_txt);
   BOOL_VAR_H(tessedit_create_hocr);
   BOOL_VAR_H(tessedit_create_alto);
-  BOOL_VAR_H(tessedit_create_page);
-  BOOL_VAR_H(tessedit_create_page_polygon);
-  BOOL_VAR_H(tessedit_create_page_wordlevel);
+  BOOL_VAR_H(tessedit_create_page_xml);
+  BOOL_VAR_H(page_xml_polygon);
+  INT_VAR_H(page_xml_level);
   BOOL_VAR_H(tessedit_create_lstmbox);
   BOOL_VAR_H(tessedit_create_tsv);
   BOOL_VAR_H(tessedit_create_wordstrbox);
@@ -1069,11 +1077,14 @@ public:
   STRING_VAR_H(file_type);
   BOOL_VAR_H(tessedit_override_permuter);
   STRING_VAR_H(tessedit_load_sublangs);
+#if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(tessedit_use_primary_params_model);
+#endif
   // Min acceptable orientation margin (difference in scores between top and 2nd
   // choice in OSResults::orientations) to believe the page orientation.
   DOUBLE_VAR_H(min_orientation_margin);
   //BOOL_VAR_H(textord_tabfind_show_vlines);
+  //BOOL_VAR_H(textord_tabfind_show_vlines_scrollview);
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);

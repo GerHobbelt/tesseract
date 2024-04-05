@@ -49,7 +49,7 @@ namespace tesseract {
  * @param string The string to display in ScrollView
  * @param color The colour to use when displayed with ScrollView
  */
-BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, ScrollView::Color color,
+BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, Diagnostics::Color color,
                                          BlamerBundle *blamer_bundle) {
 #if !GRAPHICS_DISABLED
   if (wordrec_display_all_blobs) {
