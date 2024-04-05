@@ -102,7 +102,11 @@ struct RecodeNode {
       , score(0.0f)
       , prev(nullptr)
       , dawgs(nullptr)
-      , code_hash(0) {}
+      // JDWORIG START
+      //, code_hash(0) {}
+      , code_hash(0)
+      , timestep(-1) {}
+      // JDWORIG END
   RecodeNode(int c, int uni_id, PermuterType perm, bool dawg_start, bool word_start, bool end,
              bool dup, float cert, float s, const RecodeNode *p, DawgPositionVector *d,
              uint64_t hash)
@@ -117,7 +121,11 @@ struct RecodeNode {
       , score(s)
       , prev(p)
       , dawgs(d)
-      , code_hash(hash) {}
+      // JDWORIGI START
+      //, code_hash(hash) {}
+      , code_hash(hash)
+      , timestep(-1) {}
+      // JDWORIG END
   // NOTE: If we could use C++11, then this would be a move constructor.
   // Instead we have copy constructor that does a move!! This is because we
   // don't want to copy the whole DawgPositionVector each time, and true
@@ -172,6 +180,10 @@ struct RecodeNode {
   // A hash of all codes in the prefix and this->code as well. Used for
   // duplicate path removal.
   uint64_t code_hash;
+  // JDWORIG START
+  // keep track of the timestep that this node belongs to
+  int timestep;
+  // JDWORIG END
 };
 
 using RecodePair = KDPairInc<double, RecodeNode>;
@@ -304,7 +316,8 @@ private:
   static void ExtractPathAsUnicharIds(const std::vector<const RecodeNode *> &best_nodes,
                                       std::vector<int> *unichar_ids, std::vector<float> *certs,
                                       std::vector<float> *ratings, std::vector<int> *xcoords,
-                                      std::vector<int> *character_boundaries = nullptr);
+                                      std::vector<int> *character_boundaries = nullptr,
+                                      std::vector<int> *codes = nullptr);   // JDWORIG
 
   // Sets up a word with the ratings matrix and fake blobs with boxes in the
   // right places.
@@ -315,6 +328,25 @@ private:
   // Fills top_n_flags_ with bools that are true iff the corresponding output
   // is one of the top_n.
   void ComputeTopN(const float *outputs, int num_outputs, int top_n);
+
+  // JDWORIG START
+  // determines top_n choices for given step and saves for later
+  void ComputeAndSaveTopN(const float *outputs, int num_outputs, int top_n);
+  // searches for potential diplopia cases and eliminates lower scored ones
+  void FindAndRemoveDiplopia(int width);
+  // locates timestep at which apparent diplopia is occurring
+  int LocateDiplopia(int width, int latest);
+  // determines which character to remove for diplopia
+  void DetermineDiplopiaCharToRemove(int width, int timestep);
+  // removes selected diplopia character
+  void RemoveChosenDiplopiaChar(int width);
+  // determines dimensions for a specific character
+  void DetermineDiplopiaDimensions(int width, int timestep, int diplopia_char);
+  // returns key value for given character and timestep
+  float GetKeyForTimestep(int width, int timestep, int diplopia_char);
+  // Fills top_n_flags_ with enum values for status of each character
+  void FinalizeTopNFlags(int t, int num_outputs, int top_n);
+  // JDWORIG END
 
   void ComputeSecTopN(std::unordered_set<int> *exList, const float *outputs, int num_outputs,
                       int top_n);
@@ -422,6 +454,25 @@ private:
   bool is_simple_text_;
   // The encoded (class label) of the null/reject character.
   int null_char_;
+
+  // JDWORIG START
+  // save topn characters and ratings for all timesteps
+  // for later use in diplopia detection
+  std::vector<std::vector<TopPair>> save_topn_;
+  // used to save timestep# in heap nodes
+  int current_timestep_;
+  // used to identify potential diplopia cases
+  int first_diplopia_char_;
+  int second_diplopia_char_;
+  int chosen_diplopia_char_;
+  int start_diplopia_;
+  int end_diplopia_;
+  int diplopia_gap_;
+  float diplopia_max_;
+  int diplopia_max_timestep_;
+
+  // JDWORIG END
+
 };
 
 } // namespace tesseract.

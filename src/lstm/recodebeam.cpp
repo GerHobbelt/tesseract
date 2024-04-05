@@ -34,6 +34,17 @@ const int RecodeBeamSearch::kBeamWidths[RecodedCharID::kMaxCodeLen + 1] = {
 
 static const char *kNodeContNames[] = {"Anything", "OnlyDup", "NoDup"};
 
+// JDWORIG START
+// setting to enable diplopia removal functionality
+// needs to be config setting in future
+static const bool kRemoveDiplopia = true;
+// The maximum diplopia gap is the maximum number of timesteps
+// which the peak value of possible diplopia candidates can be apart
+// in order to be considered as genuine diplopia
+// needs to be config setting in future
+static const int kMaxDiplopiaGap = 2;
+// JDWORIG END
+
 // Prints debug details of the node.
 void RecodeNode::Print(int null_char, const UNICHARSET &unicharset,
                        int depth) const {
@@ -88,8 +99,22 @@ void RecodeBeamSearch::Decode(const NetworkIO &output, double dict_ratio,
   if (lstm_choice_mode) {
     timesteps.clear();
   }
+
+  // JDWORIG START
+  save_topn_.clear();
   for (int t = 0; t < width; ++t) {
-    ComputeTopN(output.f(t), output.NumFeatures(), kBeamWidths[0]);
+    ComputeAndSaveTopN(output.f(t), output.NumFeatures(), kBeamWidths[0]);
+  }
+
+  // eliminate potential diplopia cases if enabled
+  if (kRemoveDiplopia) {
+    FindAndRemoveDiplopia(width);
+  }
+  // JDWORIG END
+
+  for (int t = 0; t < width; ++t) {
+    // ComputeTopN(output.f(t), output.NumFeatures(), kBeamWidths[0]); JDWORIG
+    FinalizeTopNFlags(t, output.NumFeatures(), kBeamWidths[0]);  // JDWORIG
     DecodeStep(output.f(t), t, dict_ratio, cert_offset, worst_dict_cert,
                charset);
     if (lstm_choice_mode) {
@@ -97,6 +122,384 @@ void RecodeBeamSearch::Decode(const NetworkIO &output, double dict_ratio,
     }
   }
 }
+
+// JDWORIG START
+
+// determines top_n choices for given step and saves for later
+void RecodeBeamSearch::ComputeAndSaveTopN(const float *outputs, int num_outputs, int top_n) {
+
+  top_heap_.clear();
+  for (int i = 0; i < num_outputs; ++i) {
+    if (top_heap_.size() < top_n || outputs[i] > top_heap_.PeekTop().key()) {
+      TopPair entry(outputs[i], i);
+      top_heap_.Push(&entry);
+      if (top_heap_.size() > top_n) {
+        top_heap_.Pop(&entry);
+      }
+    }
+  }
+
+  std::vector<TopPair> topn_for_step;
+  topn_for_step.resize(top_heap_.size());
+  
+  int i = top_heap_.size();
+  while (!top_heap_.empty()) {
+    TopPair entry;
+    top_heap_.Pop(&entry);
+    TopPair save_entry(entry.key(), entry.data());
+    --i;
+    topn_for_step[i] = save_entry;  
+  }
+
+  save_topn_.push_back(topn_for_step);
+
+  // JDWDEBUG start
+  fprintf(stderr, "recodebeam ComputeAndSaveTopN topn timestep= %i \n", (int)save_topn_.size() - 1);
+  float key_total = 0.0F;
+  bool found_null = false;
+  int nbr_entries = topn_for_step.size();
+  for (int i = 0; i < nbr_entries; ++i) {
+    TopPair entry = topn_for_step[i];
+    key_total = key_total + entry.key();
+    if (entry.data() == null_char_){
+      found_null = true;
+    }
+    fprintf(stderr, "recodebeam ComputeAndSaveTopN topn code,key= %i %1.10f \n", entry.data(), entry.key());
+  }
+  fprintf(stderr, "recodebeam ComputeAndSaveTopN key_total= %1.10f \n", key_total);
+  if (!found_null) {
+    fprintf(stderr, "recodebeam ComputeAndSaveTopN NO NULL FOUND \n");
+  }
+  // JDWDEBUG end
+}
+
+// searches for potential diplopia cases and zeros scores
+// for all choices other than the highest one
+void RecodeBeamSearch::FindAndRemoveDiplopia(int width) {
+
+  int latest = -1;
+  int timestep = LocateDiplopia(width, latest);
+  while (timestep >= 0) {
+    latest = timestep;
+    RemoveChosenDiplopiaChar(width);
+    timestep = LocateDiplopia(width, latest);
+  }
+
+}
+
+// locates timestep (if any) at which apparent diplopia is occurring
+int RecodeBeamSearch::LocateDiplopia(int width, int latest) {
+
+  int retval = -1;
+
+  for (int t = latest + 1; t < width; ++t) {
+    std::vector<TopPair> topn_for_step = save_topn_[t];
+    int nbr_entries_topn = topn_for_step.size();
+    first_diplopia_char_ = -1;
+    second_diplopia_char_ = -1;
+    if (nbr_entries_topn >= 2) {
+      if (topn_for_step[0].data() != null_char_ && topn_for_step[1].data() != null_char_) {
+        first_diplopia_char_ = topn_for_step[0].data();
+        second_diplopia_char_ = topn_for_step[1].data();
+        DetermineDiplopiaCharToRemove(width, t);
+        if (diplopia_gap_ <= kMaxDiplopiaGap) {
+          retval = t;
+        }
+      }
+    }
+    if (retval >= 0) {
+      break;
+    }
+  }
+
+  return retval;
+}
+
+void RecodeBeamSearch::DetermineDiplopiaCharToRemove(int width, int timestep) {
+
+  DetermineDiplopiaDimensions(width, timestep, first_diplopia_char_);
+  int start_first_diplopia = start_diplopia_; 
+  int end_first_diplopia = end_diplopia_;
+  float first_diplopia_max = diplopia_max_;
+  int first_diplopia_max_timestep = diplopia_max_timestep_;
+  
+  DetermineDiplopiaDimensions(width, timestep, second_diplopia_char_);
+  int start_second_diplopia = start_diplopia_;
+  int end_second_diplopia = end_diplopia_;
+  float second_diplopia_max = diplopia_max_;
+  int second_diplopia_max_timestep = diplopia_max_timestep_;
+
+  if (first_diplopia_max >= second_diplopia_max) {
+    chosen_diplopia_char_ = second_diplopia_char_;
+    start_diplopia_ = start_second_diplopia;
+    end_diplopia_ = end_second_diplopia;
+    diplopia_max_ = second_diplopia_max;
+    fprintf(stderr, "recodebeam DetermineDiplopiaCharToRemove - Keep - code,start,end,max= %i %i %i %f \n", first_diplopia_char_, start_first_diplopia, end_first_diplopia, first_diplopia_max);  // JDWDEBUG
+  }
+  else {
+    chosen_diplopia_char_ = first_diplopia_char_;
+    start_diplopia_ = start_first_diplopia;
+    end_diplopia_ = end_first_diplopia;
+    diplopia_max_ = first_diplopia_max;
+    fprintf(stderr, "recodebeam DetermineDiplopiaCharToRemove - Keep - code,start,end,max= %i %i %i %f \n", second_diplopia_char_, start_second_diplopia, end_second_diplopia, second_diplopia_max);  // JDWDEBUG
+  }
+
+  if (first_diplopia_max_timestep <= second_diplopia_max_timestep) {
+    diplopia_gap_ = second_diplopia_max_timestep - first_diplopia_max_timestep;
+  }
+  else {
+    diplopia_gap_ = first_diplopia_max_timestep - second_diplopia_max_timestep;
+  }
+  fprintf(stderr, "recodebeam DetermineDiplopiaCharToRemove - Remove - code,start,end,max,gap= %i %i %i %f %i \n", chosen_diplopia_char_, start_diplopia_, end_diplopia_, diplopia_max_, diplopia_gap_);  // JDWDEBUG
+}
+
+void RecodeBeamSearch::RemoveChosenDiplopiaChar(int width) {
+
+  for (int t = start_diplopia_; t <= end_diplopia_; ++t) {
+    int nbr_entries_topn = save_topn_[t].size();
+    for (int i = 0; i < nbr_entries_topn; ++i) {
+      if (save_topn_[t][i].data() != null_char_) {
+        if (save_topn_[t][i].data() == chosen_diplopia_char_){
+          fprintf(stderr, "recodebeam RemoveDiplopiaChar timestep,code= %i %i \n", t, save_topn_[t][i].data());  // JDWDEBUG
+          for (int j = i; j < nbr_entries_topn - 1; j++) {
+            save_topn_[t][j].data() = save_topn_[t][j + 1].data();
+            save_topn_[t][j].key() = save_topn_[t][j + 1].key();
+          }
+          save_topn_[t][nbr_entries_topn - 1].data() = chosen_diplopia_char_;
+          save_topn_[t][nbr_entries_topn - 1].key() = 0.0F;
+          break;
+        }
+      }
+    }
+  }
+
+}
+
+void RecodeBeamSearch::DetermineDiplopiaDimensions(int width, int timestep, int diplopia_char) {
+
+  enum CharShape {
+    CS_AT_PEAK,       // at peak at current timestep
+    CS_PEAK_LATER,    // peak is at a later timestep
+    CS_PEAK_EARLIER,  // peak is at an earlier timestep
+    CS_IN_VALLEY,     // in valley at current timestep
+    CS_COUNT
+  };
+
+  CharShape shape;
+
+  float key_current = GetKeyForTimestep(width, timestep, diplopia_char);
+  float key_prev = key_current;
+
+  int later_ctr = timestep + 1;
+  float key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+  while (key_later == key_current) {
+    ++later_ctr;
+    key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+  }
+  int earlier_ctr = timestep - 1;
+  float key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+  while (key_earlier == key_current) {
+    --earlier_ctr;
+    key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+  }
+
+  if (key_later < key_current && key_earlier < key_current) {
+    shape = CS_AT_PEAK;
+    fprintf(stderr, "recodebeam DetermineDiplopiaDimensions at peak timestep,code= %i %i \n", timestep, diplopia_char);  // JDWDEBUG
+  }
+  else if (key_later > key_current && key_earlier < key_current) {
+    shape = CS_PEAK_LATER;
+    fprintf(stderr, "recodebeam DetermineDiplopiaDimensions peak later timestep,code= %i %i \n", timestep, diplopia_char);  // JDWDEBUG
+  }
+  else if (key_later < key_current && key_earlier > key_current) {
+    shape = CS_PEAK_EARLIER;
+    fprintf(stderr, "recodebeam DetermineDiplopiaDimensions peak earlier timestep,code= %i %i \n", timestep, diplopia_char);  // JDWDEBUG
+  }
+  else {
+    shape = CS_IN_VALLEY;
+    fprintf(stderr, "recodebeam DetermineDiplopiaDimensions in valley timestep,code= %i %i \n", timestep, diplopia_char);  // JDWDEBUG
+  }
+
+  switch (shape) {
+
+    case CS_AT_PEAK:
+
+      diplopia_max_ = key_current;
+      diplopia_max_timestep_ = timestep;
+
+      start_diplopia_ = timestep;
+      key_prev = key_current;
+      earlier_ctr = timestep - 1;
+      key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      while (key_earlier > 0.0F && key_earlier <= key_prev) {
+        start_diplopia_ = earlier_ctr;
+        key_prev = key_earlier;
+        --earlier_ctr;
+        key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      }
+
+      end_diplopia_ = timestep;
+      key_prev = key_current;
+      later_ctr = timestep + 1;
+      key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      while (key_later > 0.0F && key_later <= key_prev) {
+        end_diplopia_ = later_ctr;
+        key_prev = key_later;
+        ++later_ctr;
+        key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      }
+      break;
+
+    case CS_PEAK_LATER:
+
+      start_diplopia_ = timestep;
+      key_prev = key_current;
+      earlier_ctr = timestep - 1;
+      key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      while (key_earlier > 0.0F && key_earlier <= key_prev) {
+        start_diplopia_ = earlier_ctr;
+        key_prev = key_earlier;
+        --earlier_ctr;
+        key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      }
+
+      key_prev = key_current;
+      later_ctr = timestep + 1;
+      key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      while (key_later > 0.0F && key_later >= key_prev) {
+        key_prev = key_later;
+        ++later_ctr;
+        key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      }
+
+      diplopia_max_ = key_prev;
+      diplopia_max_timestep_ = later_ctr - 1;
+
+      end_diplopia_ = later_ctr;
+      while (key_later > 0.0F && key_later <= key_prev) {
+        end_diplopia_ = later_ctr;
+        key_prev = key_later;
+        ++later_ctr;
+        key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      }
+      break;
+
+    case CS_PEAK_EARLIER:
+
+      end_diplopia_ = timestep;
+      key_prev = key_current;
+      later_ctr = timestep + 1;
+      key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      while (key_later > 0.0F && key_later <= key_prev) {
+        end_diplopia_ = later_ctr;
+        key_prev = key_later;
+        ++later_ctr;
+        key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      }
+
+      key_prev = key_current;
+      earlier_ctr = timestep - 1;
+      key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      while (key_earlier > 0.0F && key_earlier >= key_prev) {
+        key_prev = key_earlier;
+        --earlier_ctr;
+        key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      }
+
+      diplopia_max_ = key_prev;
+      diplopia_max_timestep_ = earlier_ctr + 1;
+
+      start_diplopia_ = earlier_ctr;
+      while (key_earlier > 0.0F && key_earlier <= key_prev) {
+        start_diplopia_ = earlier_ctr;
+        key_prev = key_earlier;
+        --earlier_ctr;
+        key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      }
+      break;
+
+    case CS_IN_VALLEY:
+
+      diplopia_max_ = key_current;
+      diplopia_max_timestep_ = timestep;
+
+      start_diplopia_ = timestep;
+      key_prev = key_current;
+      earlier_ctr = timestep - 1;
+      key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      while (key_earlier > 0.0F && key_earlier == key_prev) {
+        start_diplopia_ = earlier_ctr;
+        key_prev = key_earlier;
+        --earlier_ctr;
+        key_earlier = GetKeyForTimestep(width, earlier_ctr, diplopia_char);
+      }
+
+      end_diplopia_ = timestep;
+      key_prev = key_current;
+      later_ctr = timestep + 1;
+      key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      while (key_later > 0.0F && key_later == key_prev) {
+        end_diplopia_ = later_ctr;
+        key_prev = key_later;
+        ++later_ctr;
+        key_later = GetKeyForTimestep(width, later_ctr, diplopia_char);
+      }
+      break;
+  }
+
+}
+
+float RecodeBeamSearch::GetKeyForTimestep(int width, int timestep, int diplopia_char) {
+
+  float retval = 0.0F;
+  if (timestep >= width || timestep < 0 ) {
+    return retval;
+  }
+  std::vector<TopPair> topn_for_step = save_topn_[timestep];
+  int nbr_entries_topn = topn_for_step.size();
+  for (int i = 0; i < nbr_entries_topn; ++i) {
+    if (topn_for_step[i].data() != null_char_) {
+      if (topn_for_step[i].data() == diplopia_char){
+        retval = topn_for_step[i].key();
+        break;
+      }
+    }
+  }
+  return retval;
+
+}
+
+// Fills top_n_flags_ with enum values for the status of each character
+void RecodeBeamSearch::FinalizeTopNFlags(int t, int num_outputs, int top_n) {
+
+  top_n_flags_.clear();
+  top_n_flags_.resize(num_outputs, TN_ALSO_RAN);
+
+  std::vector<TopPair> topn_for_step = save_topn_[t];
+  int nbr_entries = topn_for_step.size();
+  for (int i = 0; i < nbr_entries; ++i) {
+    TopPair entry = topn_for_step[i];
+    if (i > 1) {
+      top_n_flags_[entry.data()] = TN_TOPN;
+      fprintf(stderr, "recodebeam finalizetopnflags topn code,key= %i %f \n", entry.data(), entry.key());  // JDWDEBUG
+    } else {
+      top_n_flags_[entry.data()] = TN_TOP2;
+      fprintf(stderr, "recodebeam finalizetopnflags top2 code,key= %i %f \n", entry.data(), entry.key());  // JDWDEBUG
+      if (i == 0) {
+        top_code_ = entry.data();
+      } else {
+        second_code_ = entry.data();
+      }
+    }
+  }
+
+  fprintf(stderr, "recodebeam finalizetopnflags top_code_,second_code_,null_char_ %i %i %i \n", top_code_, second_code_, null_char_);  // JDWDEBUG
+
+  top_n_flags_[null_char_] = TN_TOP2;
+}
+
+// JDWORIG END
+
 void RecodeBeamSearch::Decode(const GENERIC_2D_ARRAY<float> &output,
                               double dict_ratio, double cert_offset,
                               double worst_dict_cert,
@@ -188,7 +591,8 @@ void RecodeBeamSearch::calculateCharBoundaries(std::vector<int> *starts,
                                                std::vector<int> *ends,
                                                std::vector<int> *char_bounds_,
                                                int maxWidth) {
-  char_bounds_->push_back(0);
+  // char_bounds_->push_back(0);   // JDWORIG
+  char_bounds_->push_back((*starts)[0]);   // JDWORIG
   for (unsigned i = 0; i < ends->size(); ++i) {
     int middle = ((*starts)[i + 1] - (*ends)[i]) / 2;
     char_bounds_->push_back((*ends)[i] + middle);
@@ -243,17 +647,18 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
                                               int lstm_choice_mode) {
   words->truncate(0);
   std::vector<int> unichar_ids;
+  std::vector<int> unichar_codes;   // JDWORIG
   std::vector<float> certs;
   std::vector<float> ratings;
   std::vector<int> xcoords;
   std::vector<const RecodeNode *> best_nodes;
   std::vector<const RecodeNode *> second_nodes;
   character_boundaries_.clear();
+
   ExtractBestPaths(&best_nodes, &second_nodes);
   if (debug) {
     DebugPath(unicharset, best_nodes);
-    ExtractPathAsUnicharIds(second_nodes, &unichar_ids, &certs, &ratings,
-                            &xcoords);
+    ExtractPathAsUnicharIds(second_nodes, &unichar_ids, &certs, &ratings, &xcoords, &unichar_codes);  // JDWORIG
     tprintf("\nSecond choice path:\n");
     DebugUnicharPath(unicharset, second_nodes, unichar_ids, certs, ratings,
                      xcoords);
@@ -262,8 +667,16 @@ void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
   // Coordinates of every chosen character, to match the alternative choices to
   // it.
   ExtractPathAsUnicharIds(best_nodes, &unichar_ids, &certs, &ratings, &xcoords,
-                          &character_boundaries_);
+                          &character_boundaries_, &unichar_codes);    // JDWORIG
   int num_ids = unichar_ids.size();
+
+  // JDWDEBUG START
+  for (int i = 0; i < num_ids; i++){
+    const char *c = unicharset->id_to_unichar_ext(unichar_ids[i]);
+    fprintf(stderr, "recodebeam extractbestpathaswords unichar,unicharid,code= %s %i %i\n", c, unichar_ids[i], unichar_codes[i]);
+  }
+  // JDWDEBUG END
+
   if (debug) {
     DebugUnicharPath(unicharset, best_nodes, unichar_ids, certs, ratings,
                      xcoords);
@@ -568,8 +981,10 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
     const std::vector<const RecodeNode *> &best_nodes,
     std::vector<int> *unichar_ids, std::vector<float> *certs,
     std::vector<float> *ratings, std::vector<int> *xcoords,
-    std::vector<int> *character_boundaries) {
+                                               std::vector<int> *character_boundaries,
+                                               std::vector<int> *codes) {     // JDWORIG
   unichar_ids->clear();
+  codes->clear();   // JDWORIG
   certs->clear();
   ratings->clear();
   xcoords->clear();
@@ -588,8 +1003,9 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
       }
       rating -= cert;
     }
-    starts.push_back(t);
+    // starts.push_back(t);    // JDWORIG
     if (t < width) {
+      starts.push_back(t);    // JDWORIG
       int unichar_id = best_nodes[t]->unichar_id;
       if (unichar_id == UNICHAR_SPACE && !certs->empty() &&
           best_nodes[t]->permuter != NO_PERM) {
@@ -603,9 +1019,13 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
         rating = 0.0;
       }
       unichar_ids->push_back(unichar_id);
+      codes->push_back(best_nodes[t]->code);    // JDWORIG
       xcoords->push_back(t);
-      do {
-        double cert = best_nodes[t++]->certainty;
+      t++;  // JDWORIG
+      // do {   // JDWORIG
+      while (t < width && best_nodes[t]->duplicate) {   // JDWORIG
+        // double cert = best_nodes[t++]->certainty;    // JDWORIG
+        double cert = best_nodes[t]->certainty;    // JDWORIG
         // Special-case NO-PERM space to forget the certainty of the previous
         // nulls. See long comment in ContinueContext.
         if (cert < certainty || (unichar_id == UNICHAR_SPACE &&
@@ -613,7 +1033,9 @@ void RecodeBeamSearch::ExtractPathAsUnicharIds(
           certainty = cert;
         }
         rating -= cert;
-      } while (t < width && best_nodes[t]->duplicate);
+        t++;    // JDWORIG
+      }   // JDWORIG
+      // } while (t < width && best_nodes[t]->duplicate);   // JDWORIG
       ends.push_back(t);
       certs->push_back(certainty);
       ratings->push_back(rating);
@@ -744,6 +1166,7 @@ void RecodeBeamSearch::DecodeStep(const float *outputs, int t,
                                   double dict_ratio, double cert_offset,
                                   double worst_dict_cert,
                                   const UNICHARSET *charset, bool debug) {
+  current_timestep_ = t;  // JDWORIG
   if (t == static_cast<int>(beam_.size())) {
     beam_.push_back(new RecodeBeam);
   }
@@ -1157,6 +1580,7 @@ void RecodeBeamSearch::PushInitialDawgIfBetter(int code, int unichar_id,
     RecodeNode node(code, unichar_id, permuter, true, start, end, false, cert,
                     score, prev, initial_dawgs,
                     ComputeCodeHash(code, false, prev));
+    node.timestep = current_timestep_;  // JDWORIG
     *best_initial_dawg = node;
   }
 }
@@ -1203,6 +1627,7 @@ void RecodeBeamSearch::PushHeapIfBetter(int max_size, int code, int unichar_id,
     uint64_t hash = ComputeCodeHash(code, dup, prev);
     RecodeNode node(code, unichar_id, permuter, dawg_start, word_start, end,
                     dup, cert, score, prev, d, hash);
+    node.timestep = current_timestep_;  // JDWORIG
     if (UpdateHeapIfMatched(&node, heap)) {
       return;
     }
