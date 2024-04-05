@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -29,9 +29,9 @@
 
 namespace tesseract {
 
-#define FIRST_COLOUR ScrollView::RED       ///< first rainbow colour
-#define LAST_COLOUR ScrollView::AQUAMARINE ///< last rainbow colour
-#define CHILD_COLOUR ScrollView::BROWN     ///< colour of children
+#define FIRST_COLOUR Diagnostics::RED       ///< first rainbow colour
+#define LAST_COLOUR Diagnostics::AQUAMARINE ///< last rainbow colour
+#define CHILD_COLOUR Diagnostics::BROWN     ///< colour of children
 
 /**
  * WERD::WERD
@@ -260,23 +260,23 @@ void WERD::copy_on(WERD *other) {
  */
 
 void WERD::print() const {
-  tprintf("Blanks= %d\n", blanks);
+  tprintDebug("Blanks= {}\n", blanks);
   bounding_box().print();
-  tprintf("Flags = %lu = 0%lo\n", flags.to_ulong(), flags.to_ulong());
-  tprintf("   W_SEGMENTED = %s\n", flags[W_SEGMENTED] ? "TRUE" : "FALSE");
-  tprintf("   W_ITALIC = %s\n", flags[W_ITALIC] ? "TRUE" : "FALSE");
-  tprintf("   W_BOL = %s\n", flags[W_BOL] ? "TRUE" : "FALSE");
-  tprintf("   W_EOL = %s\n", flags[W_EOL] ? "TRUE" : "FALSE");
-  tprintf("   W_NORMALIZED = %s\n", flags[W_NORMALIZED] ? "TRUE" : "FALSE");
-  tprintf("   W_SCRIPT_HAS_XHEIGHT = %s\n", flags[W_SCRIPT_HAS_XHEIGHT] ? "TRUE" : "FALSE");
-  tprintf("   W_SCRIPT_IS_LATIN = %s\n", flags[W_SCRIPT_IS_LATIN] ? "TRUE" : "FALSE");
-  tprintf("   W_DONT_CHOP = %s\n", flags[W_DONT_CHOP] ? "TRUE" : "FALSE");
-  tprintf("   W_REP_CHAR = %s\n", flags[W_REP_CHAR] ? "TRUE" : "FALSE");
-  tprintf("   W_FUZZY_SP = %s\n", flags[W_FUZZY_SP] ? "TRUE" : "FALSE");
-  tprintf("   W_FUZZY_NON = %s\n", flags[W_FUZZY_NON] ? "TRUE" : "FALSE");
-  tprintf("Correct= %s\n", correct.c_str());
-  tprintf("Rejected cblob count = %d\n", rej_cblobs.length());
-  tprintf("Script = %d\n", script_id_);
+  tprintDebug("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());
+  tprintDebug("   W_SEGMENTED = {}\n", flags[W_SEGMENTED] ? "TRUE" : "FALSE");
+  tprintDebug("   W_ITALIC = {}\n", flags[W_ITALIC] ? "TRUE" : "FALSE");
+  tprintDebug("   W_BOL = {}\n", flags[W_BOL] ? "TRUE" : "FALSE");
+  tprintDebug("   W_EOL = {}\n", flags[W_EOL] ? "TRUE" : "FALSE");
+  tprintDebug("   W_NORMALIZED = {}\n", flags[W_NORMALIZED] ? "TRUE" : "FALSE");
+  tprintDebug("   W_SCRIPT_HAS_XHEIGHT = {}\n", flags[W_SCRIPT_HAS_XHEIGHT] ? "TRUE" : "FALSE");
+  tprintDebug("   W_SCRIPT_IS_LATIN = {}\n", flags[W_SCRIPT_IS_LATIN] ? "TRUE" : "FALSE");
+  tprintDebug("   W_DONT_CHOP = {}\n", flags[W_DONT_CHOP] ? "TRUE" : "FALSE");
+  tprintDebug("   W_REP_CHAR = {}\n", flags[W_REP_CHAR] ? "TRUE" : "FALSE");
+  tprintDebug("   W_FUZZY_SP = {}\n", flags[W_FUZZY_SP] ? "TRUE" : "FALSE");
+  tprintDebug("   W_FUZZY_NON = {}\n", flags[W_FUZZY_NON] ? "TRUE" : "FALSE");
+  tprintDebug("Correct= {}\n", correct.c_str());
+  tprintDebug("Rejected cblob count = {}\n", rej_cblobs.length());
+  tprintDebug("Script = {}\n", script_id_);
 }
 
 /**
@@ -285,8 +285,8 @@ void WERD::print() const {
  * Draw the WERD in the given colour.
  */
 
-#ifndef GRAPHICS_DISABLED
-void WERD::plot(ScrollView *window, ScrollView::Color colour) {
+#if !GRAPHICS_DISABLED
+void WERD::plot(ScrollViewReference &window, Diagnostics::Color colour) {
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, colour);
@@ -295,8 +295,8 @@ void WERD::plot(ScrollView *window, ScrollView::Color colour) {
 }
 
 // Get the next color in the (looping) rainbow.
-ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
-  auto next = static_cast<ScrollView::Color>(colour + 1);
+Diagnostics::Color WERD::NextColor(Diagnostics::Color colour) {
+  auto next = static_cast<Diagnostics::Color>(colour + 1);
   if (next >= LAST_COLOUR || next < FIRST_COLOUR) {
     next = FIRST_COLOUR;
   }
@@ -309,8 +309,8 @@ ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
  * Draw the WERD in rainbow colours in window.
  */
 
-void WERD::plot(ScrollView *window) {
-  ScrollView::Color colour = FIRST_COLOUR;
+void WERD::plot(ScrollViewReference &window) {
+  Diagnostics::Color colour = FIRST_COLOUR;
   C_BLOB_IT it = &cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, colour, CHILD_COLOUR);
@@ -325,10 +325,10 @@ void WERD::plot(ScrollView *window) {
  * Draw the WERD rejected blobs in window - ALWAYS GREY
  */
 
-void WERD::plot_rej_blobs(ScrollView *window) {
+void WERD::plot_rej_blobs(ScrollViewReference &window) {
   C_BLOB_IT it = &rej_cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
-    it.data()->plot(window, ScrollView::GREY, ScrollView::GREY);
+    it.data()->plot(window, Diagnostics::GREY, Diagnostics::GREY);
   }
 }
 #endif // !GRAPHICS_DISABLED
@@ -423,7 +423,7 @@ WERD *WERD::ConstructWerdWithNewBlobs(C_BLOB_LIST *all_blobs, C_BLOB_LIST *orpha
       // be added to the new blobs list.
       TBOX a_blob_box = a_blob->bounding_box();
       if (a_blob_box.null_box()) {
-        tprintf("Bounding box couldn't be ascertained\n");
+        tprintWarn("Bounding box couldn't be ascertained\n");
       }
       if (werd_blob_box.contains(a_blob_box) || werd_blob_box.major_overlap(a_blob_box)) {
         // Old blobs are from minimal splits, therefore are expected to be

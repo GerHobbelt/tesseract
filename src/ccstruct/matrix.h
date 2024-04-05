@@ -24,6 +24,8 @@
 #ifndef TESSERACT_CCSTRUCT_MATRIX_H_
 #define TESSERACT_CCSTRUCT_MATRIX_H_
 
+#include <tesseract/debugheap.h>
+
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for ReverseN, ClipToRange
 #include "kdpair.h"  // for KDPairInc
@@ -62,7 +64,7 @@ public:
   // and initialize it to empty.
   GENERIC_2D_ARRAY(int dim1, int dim2, const T &empty) : empty_(empty), dim1_(dim1), dim2_(dim2) {
     int new_size = dim1 * dim2;
-    array_ = new T[new_size];
+	array_ = new T[new_size];
     size_allocated_ = new_size;
     for (int i = 0; i < size_allocated_; ++i) {
       array_[i] = empty_;
@@ -95,7 +97,7 @@ public:
     int new_size = size1 * size2 + pad;
     if (new_size > size_allocated_) {
       delete[] array_;
-      array_ = new T[new_size];
+  	  array_ = new T[new_size];
       size_allocated_ = new_size;
     }
     dim1_ = size1;
@@ -117,7 +119,7 @@ public:
   void ResizeWithCopy(int size1, int size2) {
     if (size1 != dim1_ || size2 != dim2_) {
       int new_size = size1 * size2;
-      T *new_array = new T[new_size];
+	  T* new_array = new T[new_size];
       for (int col = 0; col < size1; ++col) {
         for (int row = 0; row < size2; ++row) {
           int old_index = col * dim2() + row;
@@ -145,45 +147,53 @@ public:
     }
   }
 
+  // -----------------------------------------------------------
+  // Serialization & Deserialization to disk uses specific Storage Types (ST)
+  // which MAY not be identical to the run-time Type (T).
+  // -----------------------------------------------------------
+  
   // Writes to the given file. Returns false in case of error.
   // Only works with bitwise-serializeable types!
+  template <class ST>
   bool Serialize(FILE *fp) const {
     if (!SerializeSize(fp)) {
       return false;
     }
-    if (!tesseract::Serialize(fp, &empty_)) {
+    if (!tesseract::Serialize<ST>(fp, &empty_)) {
       return false;
     }
     int size = num_elements();
-    return tesseract::Serialize(fp, &array_[0], size);
+	return tesseract::Serialize<ST>(fp, &array_[0], size);
   }
 
+  template <class ST>
   bool Serialize(TFile *fp) const {
     if (!SerializeSize(fp)) {
       return false;
     }
-    if (!fp->Serialize(&empty_)) {
+    if (!fp->Serialize<T, ST>(&empty_)) {
       return false;
     }
     int size = num_elements();
-    return fp->Serialize(&array_[0], size);
+    return fp->Serialize<T, ST>(&array_[0], size);
   }
 
   // Reads from the given file. Returns false in case of error.
   // Only works with bitwise-serializeable types!
   // If swap is true, assumes a big/little-endian swap is needed.
+  template <class ST>
   bool DeSerialize(bool swap, FILE *fp) {
     if (!DeSerializeSize(swap, fp)) {
       return false;
     }
-    if (!tesseract::DeSerialize(fp, &empty_)) {
+    if (!tesseract::DeSerialize<ST>(fp, &empty_)) {
       return false;
     }
     if (swap) {
       ReverseN(&empty_, sizeof(empty_));
     }
     int size = num_elements();
-    if (!tesseract::DeSerialize(fp, &array_[0], size)) {
+    if (!tesseract::DeSerialize<ST>(fp, &array_[0], size)) {
       return false;
     }
     if (swap) {
@@ -194,9 +204,10 @@ public:
     return true;
   }
 
+  template <class ST>
   bool DeSerialize(TFile *fp) {
-    return DeSerializeSize(fp) && fp->DeSerialize(&empty_) &&
-           fp->DeSerialize(&array_[0], num_elements());
+    return DeSerializeSize(fp) && fp->DeSerialize<T, ST>(&empty_) &&
+           fp->DeSerialize<T, ST>(&array_[0], num_elements());
   }
 
   // Writes to the given file. Returns false in case of error.
@@ -291,7 +302,7 @@ public:
   void operator+=(const GENERIC_2D_ARRAY<T> &addend) {
     if (dim2_ == addend.dim2_) {
       // Faster if equal size in the major dimension.
-      int size = std::min(num_elements(), addend.num_elements());
+      int size = std::min<int>(num_elements(), addend.num_elements());
       for (int i = 0; i < size; ++i) {
         array_[i] += addend.array_[i];
       }
@@ -307,7 +318,7 @@ public:
   void operator-=(const GENERIC_2D_ARRAY<T> &minuend) {
     if (dim2_ == minuend.dim2_) {
       // Faster if equal size in the major dimension.
-      int size = std::min(num_elements(), minuend.num_elements());
+      int size = std::min<int>(num_elements(), minuend.num_elements());
       for (int i = 0; i < size; ++i) {
         array_[i] -= minuend.array_[i];
       }
@@ -467,8 +478,8 @@ public:
   // Higher dimensions above 2 are strictly the responsibility of the caller.
   void RotatingTranspose(const int *dims, int num_dims, int src_dim, int dest_dim,
                          GENERIC_2D_ARRAY<T> *result) const {
-    int max_d = std::max(src_dim, dest_dim);
-    int min_d = std::min(src_dim, dest_dim);
+    int max_d = std::max<int>(src_dim, dest_dim);
+    int min_d = std::min<int>(src_dim, dest_dim);
     // In a tensor of shape [d0, d1... min_d, ... max_d, ... dn-2, dn-1], the
     // ends outside of min_d and max_d are unaffected, with [max_d +1, dn-1]
     // being contiguous blocks of data that will move together, and
@@ -632,8 +643,9 @@ public:
   // to *this.
   void AttachOnCorner(BandTriMatrix<T> *array2) {
     int new_dim1 = this->dim1_ + array2->dim1_;
-    int new_dim2 = std::max(this->dim2_, array2->dim2_);
-    T *new_array = new T[new_dim1 * new_dim2];
+    int new_dim2 = std::max<int>(this->dim2_, array2->dim2_);
+	int new_size = new_dim1 * new_dim2;
+	T* new_array = new T[new_size];
     for (int col = 0; col < new_dim1; ++col) {
       for (int j = 0; j < new_dim2; ++j) {
         int new_index = col * new_dim2 + j;

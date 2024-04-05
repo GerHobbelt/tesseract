@@ -165,8 +165,7 @@ void FPCUTPT::assign(       // constructor
                                (projection->pile_count(x - balance_index) <= zero_count);
             }
           }
-          balance_count =
-              static_cast<int16_t>(balance_count * textord_balance_factor / projection_scale);
+          balance_count = static_cast<int16_t>(balance_count * textord_balance_factor / projection_scale);
         }
         r_index = segpt->region_index + 1;
         total = segpt->mean_sum + dist;
@@ -259,8 +258,7 @@ void FPCUTPT::assign_cheap( // constructor
           balance_count++;
           lead_flag &= lead_flag - 1;
         }
-        balance_count =
-            static_cast<int16_t>(balance_count * textord_balance_factor / projection_scale);
+        balance_count = static_cast<int16_t>(balance_count * textord_balance_factor / projection_scale);
       }
       r_index = segpt->region_index + 1;
       total = segpt->mean_sum + dist;
@@ -295,8 +293,9 @@ double check_pitch_sync2(    // find segmentation
     int16_t pitch,           // pitch estimate
     int16_t pitch_error,     // tolerance
     STATS *projection,       // vertical
-    int16_t projection_left, // edges //scale factor
-    int16_t projection_right, float projection_scale,
+    TDimension projection_left, // edges 
+    TDimension projection_right, 
+    float projection_scale,    // scale factor
     int16_t &occupation_count, // no of occupied cells
     FPSEGPT_LIST *seg_list,    // output list
     int16_t start,             // start of good range
@@ -304,15 +303,15 @@ double check_pitch_sync2(    // find segmentation
 ) {
   bool faking;                  // illegal cut pt
   bool mid_cut;                 // cheap cut pt.
-  int16_t x;                    // current coord
+  TDimension x;                 // current coord
   int16_t blob_index;           // blob number
-  int16_t left_edge;            // of word
-  int16_t right_edge;           // of word
-  int16_t array_origin;         // x coord of array
-  int16_t offset;               // dist to legal area
+  TDimension left_edge;         // of word
+  TDimension right_edge;        // of word
+  TDimension array_origin;      // x coord of array
+  TDimension offset;            // dist to legal area
   int16_t zero_count;           // projection zero
-  int16_t best_left_x = 0;      // for equals
-  int16_t best_right_x = 0;     // right edge
+  TDimension best_left_x = 0;   // for equals
+  TDimension best_right_x = 0;  // right edge
   TBOX this_box;                // bounding box
   TBOX next_box;                // box of next blob
   FPSEGPT *segpt;               // segment point
@@ -322,7 +321,7 @@ double check_pitch_sync2(    // find segmentation
   BLOBNBOX_IT this_it;          // copy iterator
   FPSEGPT_IT seg_it = seg_list; // output iterator
 
-  //      tprintf("Computing sync on word of %d blobs with pitch %d\n",
+  //      tprintDebug("Computing sync on word of {} blobs with pitch {}\n",
   //              blob_count, pitch);
   //      if (blob_count==8 && pitch==27)
   //              projection->print(stdout,true);
@@ -439,7 +438,7 @@ double check_pitch_sync2(    // find segmentation
   FPCUTPT *best_end = &cutpts[(best_left_x + best_right_x) / 2 - array_origin];
   if (this_box.right() == textord_test_x && this_box.top() == textord_test_y) {
     for (x = left_edge - pitch; x < right_edge + pitch; x++) {
-      tprintf("x=%d, C=%g, s=%g, sq=%g, prev=%d\n", x, cutpts[x - array_origin].cost_function(),
+      tprintDebug("x={}, C={}, s={}, sq={}, prev={}\n", x, cutpts[x - array_origin].cost_function(),
               cutpts[x - array_origin].sum(), cutpts[x - array_origin].squares(),
               cutpts[x - array_origin].previous()->position());
     }
@@ -462,10 +461,10 @@ double check_pitch_sync2(    // find segmentation
   mean_sum = seg_it.data()->sum();
   mean_sum = mean_sum * mean_sum / best_count;
   if (seg_it.data()->squares() - mean_sum < 0) {
-    tprintf("Impossible sqsum=%g, mean=%g, total=%d\n", seg_it.data()->squares(),
+    tprintDebug("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
             seg_it.data()->sum(), best_count);
   }
-  //      tprintf("blob_count=%d, pitch=%d, sync=%g, occ=%d\n",
+  //      tprintDebug("blob_count={}, pitch={}, sync={}, occ={}\n",
   //              blob_count,pitch,seg_it.data()->squares()-mean_sum,
   //              occupation_count);
   return seg_it.data()->squares() - mean_sum;
@@ -480,30 +479,31 @@ double check_pitch_sync2(    // find segmentation
  **********************************************************************/
 
 double check_pitch_sync3(    // find segmentation
-    int16_t projection_left, // edges //to be considered 0
-    int16_t projection_right, int16_t zero_count,
-    int16_t pitch,             // pitch estimate
-    int16_t pitch_error,       // tolerance
+    TDimension projection_left, // edges 
+    TDimension projection_right, 
+    TDimension zero_count,     // to be considered 0
+    TDimension pitch,          // pitch estimate
+    TDimension pitch_error,    // tolerance
     STATS *projection,         // vertical
     float projection_scale,    // scale factor
     int16_t &occupation_count, // no of occupied cells
     FPSEGPT_LIST *seg_list,    // output list
-    int16_t start,             // start of good range
-    int16_t end                // end of good range
+    TDimension start,          // start of good range
+    TDimension end             // end of good range
 ) {
   bool faking;                  // illegal cut pt
   bool mid_cut;                 // cheap cut pt.
-  int16_t left_edge;            // of word
-  int16_t right_edge;           // of word
-  int16_t x;                    // current coord
-  int16_t array_origin;         // x coord of array
-  int16_t offset;               // dist to legal area
-  int16_t projection_offset;    // from scaled projection
-  int16_t prev_zero;            // previous zero dist
-  int16_t next_zero;            // next zero dist
-  int16_t zero_offset;          // scan window
-  int16_t best_left_x = 0;      // for equals
-  int16_t best_right_x = 0;     // right edge
+  TDimension left_edge;         // of word
+  TDimension right_edge;        // of word
+  TDimension x;                 // current coord
+  TDimension array_origin;      // x coord of array
+  TDimension offset;            // dist to legal area
+  TDimension projection_offset; // from scaled projection
+  TDimension prev_zero;         // previous zero dist
+  TDimension next_zero;         // next zero dist
+  TDimension zero_offset;       // scan window
+  TDimension best_left_x = 0;   // for equals
+  TDimension best_right_x = 0;  // right edge
   FPSEGPT *segpt;               // segment point
   int minindex;                 // next input position
   int test_index;               // index to mins
@@ -655,7 +655,7 @@ double check_pitch_sync3(    // find segmentation
   FPCUTPT *best_end = &cutpts[(best_left_x + best_right_x) / 2 - array_origin];
   //      for (x=left_edge-pitch;x<right_edge+pitch;x++)
   //      {
-  //              tprintf("x=%d, C=%g, s=%g, sq=%g, prev=%d\n",
+  //              tprintDebug("x={}, C={}, s={}, sq={}, prev={}\n",
   //                      x,cutpts[x-array_origin].cost_function(),
   //                      cutpts[x-array_origin].sum(),
   //                      cutpts[x-array_origin].squares(),
@@ -678,7 +678,7 @@ double check_pitch_sync3(    // find segmentation
   mean_sum = seg_it.data()->sum();
   mean_sum = mean_sum * mean_sum / best_count;
   if (seg_it.data()->squares() - mean_sum < 0) {
-    tprintf("Impossible sqsum=%g, mean=%g, total=%d\n", seg_it.data()->squares(),
+    tprintDebug("Impossible sqsum={}, mean={}, total={}\n", seg_it.data()->squares(),
             seg_it.data()->sum(), best_count);
   }
   return seg_it.data()->squares() - mean_sum;

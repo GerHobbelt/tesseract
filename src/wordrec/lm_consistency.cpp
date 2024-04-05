@@ -32,7 +32,7 @@ void LMConsistencyInfo::ComputeXheightConsistency(const BLOB_CHOICE *b, bool is_
   }
 
   // Compute xheight consistency.
-  bool parent_null = xht_sp < 0;
+  bool parent_null = (xht_sp < 0);
   int parent_sp = xht_sp;
   // Debug strings.
   if (b->yshift() > LMConsistencyInfo::kShiftThresh) {
@@ -50,6 +50,7 @@ void LMConsistencyInfo::ComputeXheightConsistency(const BLOB_CHOICE *b, bool is_
     xpos_entropy += abs(parent_sp - xht_sp);
   }
   // TODO(eger): Figure out a better way to account for small caps.
+  // 
   // For the first character not y-shifted, we only care if it is too small.
   // Too large is common in drop caps and small caps.
   // int16_t small_xht = b->min_xheight();
@@ -71,6 +72,7 @@ void LMConsistencyInfo::ComputeXheightConsistency(const BLOB_CHOICE *b, bool is_
   // When we intersect the ranges of xheights in pixels for all characters in
   // each position (subscript, normal, superscript),
   // How much range must be left?  0? [exactly one pixel height for xheight] 1?
+  // 
   // TODO(eger): Extend this code to take a prior for the rest of the line.
   const int kMinIntersectedXHeightRange = 0;
   for (int i = 0; i < kNumPos; i++) {

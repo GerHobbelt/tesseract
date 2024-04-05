@@ -199,11 +199,28 @@ private:
 };
 
 /**
+ * Renders Tesseract output into a PAGE XML text string
+ */
+class TESS_API TessPAGERenderer : public TessResultRenderer {
+public:
+  explicit TessPAGERenderer(const char *outputbase);
+
+protected:
+  bool BeginDocumentHandler() override;
+  bool AddImageHandler(TessBaseAPI *api) override;
+  bool EndDocumentHandler() override;
+
+private:
+  bool begin_document;
+};
+
+
+/**
  * Renders Tesseract output into a TSV string
  */
 class TESS_API TessTsvRenderer : public TessResultRenderer {
 public:
-  explicit TessTsvRenderer(const char *outputbase, bool font_info);
+  explicit TessTsvRenderer(const char *outputbase, bool lang_info);
   explicit TessTsvRenderer(const char *outputbase);
 
 protected:
@@ -212,7 +229,7 @@ protected:
   bool EndDocumentHandler() override;
 
 private:
-  bool font_info_; // whether to print font information
+  bool lang_info_; // whether to print language information
 };
 
 /**
@@ -297,7 +314,7 @@ protected:
   bool AddImageHandler(TessBaseAPI *api) override;
 };
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * Renders tesseract output into an osd text string
@@ -310,7 +327,7 @@ protected:
   bool AddImageHandler(TessBaseAPI *api) override;
 };
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 } // namespace tesseract.
 

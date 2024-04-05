@@ -22,10 +22,15 @@
 #include "detlinefit.h"
 #include "points.h"
 #include "rect.h"
+#include "params.h"
 
 struct Pix;
 
 namespace tesseract {
+
+extern INT_VAR_H(debug_baseline_detector_level);
+extern INT_VAR_H(debug_baseline_y_coord_start);
+extern INT_VAR_H(debug_baseline_y_coord_end);
 
 class Textord;
 class BLOBNBOX_LIST;
@@ -66,11 +71,10 @@ public:
   bool FitBaseline(bool use_box_bottoms);
   // Modifies an existing result of FitBaseline to be parallel to the given
   // vector if that produces a better result.
-  void AdjustBaselineToParallel(int debug, const FCOORD &direction);
+  void AdjustBaselineToParallel(const FCOORD &direction);
   // Modifies the baseline to snap to the textline grid if the existing
   // result is not good enough.
-  double AdjustBaselineToGrid(int debug, const FCOORD &direction, double line_spacing,
-                              double line_offset);
+  double AdjustBaselineToGrid(const FCOORD &direction, double line_spacing, double line_offset);
 
 private:
   // Sets up displacement_modes_ with the top few modes of the perpendicular
@@ -87,8 +91,7 @@ private:
   // Otherwise the new fit will only replace the old if it is really better,
   // or the old fit is marked bad and the new fit has sufficient points, as
   // well as being within the max_baseline_error_.
-  void FitConstrainedIfBetter(int debug, const FCOORD &direction, double cheat_allowance,
-                              double target_offset);
+  void FitConstrainedIfBetter(const FCOORD &direction, double cheat_allowance, double target_offset);
   // Returns the perpendicular distance of the point from the straight
   // baseline.
   float PerpDistanceFromBaseline(const FCOORD &pt) const;
@@ -124,7 +127,7 @@ private:
 // Class to compute and hold baseline data for a TO_BLOCK.
 class BaselineBlock {
 public:
-  BaselineBlock(int debug_level, bool non_text, TO_BLOCK *block);
+  BaselineBlock(bool non_text, TO_BLOCK *block);
 
   ~BaselineBlock() {
     for (auto row : rows_) {
@@ -171,14 +174,11 @@ public:
   // As a side-effect, computes the xheights of the rows and the block.
   // Although x-height estimation is conceptually separate, it is part of
   // detecting perspective distortion and therefore baseline fitting.
-  void FitBaselineSplines(bool enable_splines, bool show_final_rows, Textord *textord);
+  void FitBaselineSplines(bool enable_splines, Textord *textord);
 
   // Draws the (straight) baselines and final blobs colored according to
   // what was discarded as noise and what is associated with each row.
   void DrawFinalRows(const ICOORD &page_tr);
-
-  // Render the generated spline baselines for this block on pix_in.
-  void DrawPixSpline(Image pix_in);
 
 private:
   // Top-level line-spacing calculation. Computes an estimate of the line-
@@ -215,8 +215,6 @@ private:
   TO_BLOCK *block_;
   // The rows in the block that we will be working with.
   std::vector<BaselineRow *> rows_;
-  // Amount of debugging output to provide.
-  int debug_level_;
   // True if the block is non-text (graphic).
   bool non_text_block_;
   // True if the block has at least one good enough baseline to compute the
@@ -238,7 +236,7 @@ private:
 
 class BaselineDetect {
 public:
-  BaselineDetect(int debug_level, const FCOORD &page_skew, TO_BLOCK_LIST *blocks);
+  BaselineDetect(const FCOORD &page_skew, TO_BLOCK_LIST *blocks);
 
   ~BaselineDetect() {
     for (auto block : blocks_) {
@@ -263,8 +261,6 @@ private:
   // Average (median) skew of the blocks on the page among those that have
   // a good angle of their own.
   FCOORD page_skew_;
-  // Amount of debug output to produce.
-  int debug_level_;
   // The blocks that we are working with.
   std::vector<BaselineBlock *> blocks_;
 };

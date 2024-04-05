@@ -22,7 +22,7 @@
 ----------------------------------------------------------------------------*/
 
 #define _USE_MATH_DEFINES // for M_PI
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -33,12 +33,12 @@
 #include "classify.h"
 #include "cluster.h"
 #include "clusttool.h"
-#include "commontraining.h"
+#include "common/commontraining.h"
 #include "featdefs.h"
 #include "fontinfo.h"
 #include "indexmapbidi.h"
 #include "intproto.h"
-#include "mastertrainer.h"
+#include "common/mastertrainer.h"
 #include "mergenf.h"
 #include "mf.h"
 #include "ocrfeatures.h"
@@ -47,26 +47,32 @@
 #include "shapetable.h"
 #include "tprintf.h"
 #include "unicity_table.h"
+#include "mupdf/fitz/string-util.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 using namespace tesseract;
 
 /*----------------------------------------------------------------------------
             Public Code
 -----------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 static void DisplayProtoList(const char *ch, LIST protolist) {
-  auto window = std::make_unique<ScrollView>("Char samples", 50, 200, 520, 520, 260, 260, true);
+  ScrollViewReference window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Char samples", 50, 200, 520, 520, 260, 260, true);
   LIST proto = protolist;
   iterate(proto) {
     auto *prototype = reinterpret_cast<PROTOTYPE *>(proto->first_node());
     if (prototype->Significant) {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(Diagnostics::GREEN);
     } else if (prototype->NumSamples == 0) {
-      window->Pen(ScrollView::BLUE);
+      window->Pen(Diagnostics::BLUE);
     } else if (prototype->Merged) {
-      window->Pen(ScrollView::MAGENTA);
+      window->Pen(Diagnostics::MAGENTA);
     } else {
-      window->Pen(ScrollView::RED);
+      window->Pen(Diagnostics::RED);
     }
     float x = CenterX(prototype->Mean);
     float y = CenterY(prototype->Mean);
@@ -77,12 +83,12 @@ static void DisplayProtoList(const char *ch, LIST protolist) {
     window->DrawTo((x + dx) * 256, (y + dy) * 256);
     auto prototypeNumSamples = prototype->NumSamples;
     if (prototype->Significant) {
-      tprintf("Green proto at (%g,%g)+(%g,%g) %d samples\n", x, y, dx, dy, prototypeNumSamples);
+      tprintDebug("Green proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
     } else if (prototype->NumSamples > 0 && !prototype->Merged) {
-      tprintf("Red proto at (%g,%g)+(%g,%g) %d samples\n", x, y, dx, dy, prototypeNumSamples);
+      tprintDebug("Red proto at ({},{})+({},{}) {} samples\n", x, y, dx, dy, prototypeNumSamples);
     }
   }
-  window->Update();
+  window->UpdateWindow();
 }
 #endif // !GRAPHICS_DISABLED
 
@@ -100,7 +106,7 @@ static LIST ClusterOneConfig(int shape_id, const char *class_label, LIST mf_clas
   // Merge protos where reasonable to make more of them significant by
   // representing almost all samples of the class/font.
   MergeInsignificantProtos(proto_list, class_label, clusterer, &Config);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (strcmp(FLAGS_test_ch.c_str(), class_label) == 0) {
     DisplayProtoList(FLAGS_test_ch.c_str(), proto_list);
   }
@@ -191,10 +197,19 @@ static void SetupConfigMap(ShapeTable *shape_table, IndexMapBiDi *config_map) {
  * @param  argv  array of command line arguments
  * @return 0 if no error occurred
  */
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
 
   ShapeTable *shape_table = nullptr;
   std::string file_prefix;
@@ -261,13 +276,27 @@ int main(int argc, char **argv) {
   delete[] float_classes;
   FreeLabeledClassList(mf_classes);
   delete shape_table;
-  printf("Done!\n");
+  tprintDebug("Done!\n");
   if (!FLAGS_test_ch.empty()) {
     // If we are displaying debug window(s), wait for the user to look at them.
-    printf("Hit return to exit...\n");
+    tprintDebug("Hit return to exit...\n");
     while (getchar() != '\n') {
       ;
     }
   }
   return EXIT_SUCCESS;
 } /* main */
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
+#endif
+{
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+	return EXIT_FAILURE;
+}
+
+#endif

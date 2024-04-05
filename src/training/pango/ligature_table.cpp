@@ -18,12 +18,19 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "ligature_table.h"
 
 #include <tesseract/unichar.h>
 #include "pango_font_info.h"
 #include "tlog.h"
 #include "unicharset.h"
+
+#if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)
+
 #include "unicode/errorcode.h" // from libicu
 #include "unicode/normlzr.h"   // from libicu
 #include "unicode/unistr.h"    // from libicu
@@ -162,7 +169,7 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
         std::string lig_cand = str.substr(i, liglen);
         auto it = norm_to_lig_table_.find(lig_cand);
         if (it != norm_to_lig_table_.end()) {
-          tlog(3, "Considering %s -> %s\n", lig_cand.c_str(), it->second.c_str());
+          tlog(3, "Considering {} -> {}\n", lig_cand, it->second);
           if (font) {
             // Test for renderability.
             if (!font->CanRenderString(it->second.data(), it->second.length())) {
@@ -172,7 +179,7 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
           // Found a match so convert it.
           step = liglen;
           result += it->second;
-          tlog(2, "Substituted %s -> %s\n", lig_cand.c_str(), it->second.c_str());
+          tlog(2, "Substituted {} -> {}\n", lig_cand, it->second);
           break;
         }
       }
@@ -187,3 +194,5 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
 }
 
 } // namespace tesseract
+
+#endif

@@ -18,13 +18,13 @@
 
 #define _USE_MATH_DEFINES // for M_PI
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "tordmain.h"
 
-#include "arrayaccess.h" // for GET_DATA_BYTE
+#include <leptonica/arrayaccess.h> // for GET_DATA_BYTE
 #include "blobbox.h"     // for BLOBNBOX_IT, BLOBNBOX, TO_BLOCK, TO_B...
 #include "ccstruct.h"    // for CCStruct, CCStruct::kXHeightFraction
 #include "clst.h"        // for CLISTIZE
@@ -42,14 +42,16 @@
 #include "quadratc.h"    // for QUAD_COEFFS
 #include "quspline.h"    // for QSPLINE, tweak_row_baseline
 #include "rect.h"        // for TBOX
-#include "scrollview.h"  // for ScrollView, ScrollView::WHITE
+#include "scrollview.h"  // for ScrollView, Diagnostics::WHITE
 #include "statistc.h"    // for STATS
 #include "stepblob.h"    // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
 #include "tprintf.h"     // for tprintf
 #include "werd.h"        // for WERD_IT, WERD, WERD_LIST, W_DONT_CHOP
+#include "diagnostics_io.h"
+#include "tesseractclass.h"
 
-#include <allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, boxCreate
 
 #include <cfloat>  // for FLT_MAX
 #include <cmath>   // for ceil, floor, M_PI
@@ -209,12 +211,8 @@ void assign_blobs_to_blocks2(Image pix,
  **********************************************************************/
 
 void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks) {
-  int width = pixGetWidth(pix);
-  int height = pixGetHeight(pix);
-  if (width > INT16_MAX || height > INT16_MAX) {
-    tprintf("Input image too large! (%d, %d)\n", width, height);
-    return; // Can't handle it.
-  }
+  auto width = pixGetWidth(pix);
+  auto height = pixGetHeight(pix);
 
   BLOCK_IT block_it(blocks); // iterator
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
@@ -226,7 +224,7 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
 
   assign_blobs_to_blocks2(pix, blocks, to_blocks);
   ICOORD page_tr(width, height);
-  filter_blobs(page_tr, to_blocks, !textord_test_landscape);
+  filter_blobs(page_tr, to_blocks);
 }
 
 /**********************************************************************
@@ -236,13 +234,13 @@ void Textord::find_components(Image pix, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_b
  **********************************************************************/
 
 void Textord::filter_blobs(ICOORD page_tr,        // top right
-                           TO_BLOCK_LIST *blocks, // output list
-                           bool testing_on) {     // for plotting
+                           TO_BLOCK_LIST *blocks  // output list
+) {     
   TO_BLOCK_IT block_it = blocks;                  // destination iterator
   TO_BLOCK *block;                                // created block
 
-#ifndef GRAPHICS_DISABLED
-  if (to_win != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (to_win) {
     to_win->Clear();
   }
 #endif // !GRAPHICS_DISABLED
@@ -262,21 +260,23 @@ void Textord::filter_blobs(ICOORD page_tr,        // top right
     block->line_size *= textord_min_linesize;
     block->max_blob_size = block->line_size * textord_excess_blobsize;
 
-#ifndef GRAPHICS_DISABLED
-    if (textord_show_blobs && testing_on) {
-      if (to_win == nullptr) {
-        create_to_win(page_tr);
-      }
-      block->plot_graded_blobs(to_win);
+#if !GRAPHICS_DISABLED
+    if (textord_show_blobs) {
+        if (!to_win) {
+          create_to_win(page_tr);
+        }
+        to_win->Comment("filter_blobs: Rejected blobs");
+        block->plot_graded_blobs(to_win);
     }
-    if (textord_show_boxes && testing_on) {
-      if (to_win == nullptr) {
-        create_to_win(page_tr);
-      }
-      plot_box_list(to_win, &block->noise_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->small_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->large_blobs, ScrollView::WHITE);
-      plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
+    if (textord_show_boxes) {
+        if (!to_win) {
+          create_to_win(page_tr);
+        }
+        to_win->Comment("filter_blobs: Rejected blobs");
+        plot_box_list(to_win, &block->noise_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->small_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->large_blobs, Diagnostics::WHITE);
+        plot_box_list(to_win, &block->blobs, Diagnostics::WHITE);
     }
 #endif // !GRAPHICS_DISABLED
   }
@@ -349,13 +349,13 @@ float Textord::filter_noise_blobs(BLOBNBOX_LIST *src_list,     // original list
     }
   }
   max_height = size_stats.ile(textord_initialasc_ile);
-  //      tprintf("max_y=%g, min_y=%g, initial_x=%g, max_height=%g,",
+  //      tprintDebug("max_y={}, min_y={}, initial_x={}, max_height={},",
   //              max_y,min_y,initial_x,max_height);
   max_height *= tesseract::CCStruct::kXHeightCapRatio;
   if (max_height > initial_x) {
     initial_x = max_height;
   }
-  //      tprintf(" ret=%g\n",initial_x);
+  //      tprintDebug(" ret={}\n",initial_x);
   return initial_x;
 }
 
@@ -448,11 +448,11 @@ void Textord::cleanup_blocks(bool clean_noise, BLOCK_LIST *blocks) {
     }
     ++num_blocks_all;
     if (textord_noise_debug) {
-      tprintf("cleanup_blocks: # rows = %d / %d\n", num_rows, num_rows_all);
+      tprintDebug("cleanup_blocks: # rows = {} / {}\n", num_rows, num_rows_all);
     }
   }
   if (textord_noise_debug) {
-    tprintf("cleanup_blocks: # blocks = %d / %d\n", num_blocks, num_blocks_all);
+    tprintDebug("cleanup_blocks: # blocks = {} / {}\n", num_blocks, num_blocks_all);
   }
 }
 
@@ -527,15 +527,15 @@ bool Textord::clean_noise_from_row( // remove empties
         dot_count += 2;
       }
       if (testing_on) {
-        tprintf("Blob at (%d,%d) -> (%d,%d), ols=%d, tc=%d, bldiff=%g\n", blob_box.left(),
+        tprintDebug("Blob at ({},{}) -> ({},{}), ols={}, tc={}, bldiff={}\n", blob_box.left(),
                 blob_box.bottom(), blob_box.right(), blob_box.top(), blob->out_list()->length(),
                 trans_count, blob_box.bottom() - row->base_line(blob_box.left()));
       }
     }
   }
   if (textord_noise_debug) {
-    tprintf("Row ending at (%d,%g):", blob_box.right(), row->base_line(blob_box.right()));
-    tprintf(" R=%g, dc=%d, nc=%d, %s\n",
+    tprintDebug("Row ending at ({},{}):", blob_box.right(), row->base_line(blob_box.right()));
+    tprintDebug(" R={}, dc={}, nc={}, {}\n",
             norm_count > 0 ? static_cast<float>(dot_count) / norm_count : 9999, dot_count,
             norm_count,
             dot_count > norm_count * textord_noise_normratio && dot_count > 2 ? "REJECTED"
@@ -755,7 +755,7 @@ void Textord::TransferDiacriticsToBlockGroups(BLOBNBOX_LIST *diacritic_blobs, BL
     if (group->bounding_box.null_box()) {
       continue;
     }
-    WordGrid word_grid(group->min_xheight, group->bounding_box.botleft(),
+    WordGrid word_grid(tesseract_, group->min_xheight, group->bounding_box.botleft(),
                        group->bounding_box.topright());
     for (auto b : group->blocks) {
       ROW_IT row_it(b->row_list());

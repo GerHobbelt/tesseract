@@ -24,6 +24,7 @@
 #include "pageres.h"
 
 #include "blamer.h"   // for BlamerBundle
+#include "blob_bounds_calculator.h" // for BoxBoundariesCalculator
 #include "blobs.h"    // for TWERD, TBLOB
 #include "boxword.h"  // for BoxWord
 #include "errcode.h"  // for ASSERT_HOST
@@ -40,6 +41,9 @@
 #include <cassert> // for assert
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
+
+#undef min
+#undef max
 
 struct Pix;
 
@@ -63,6 +67,7 @@ const double kMaxWordGapRatio = 2.0;
 
 // Computes and returns a threshold of certainty difference used to determine
 // which words to keep, based on the adjustment factors of the two words.
+// 
 // TODO(rays) This is horrible. Replace with an enhance params training model.
 static double StopperAmbigThreshold(double f1, double f2) {
   return (f2 - f1) * kStopperAmbiguityThresholdGain -
@@ -302,7 +307,7 @@ void WERD_RES::InitForRetryRecognition(const WERD_RES &source) {
 // normalization scale and offset.
 // Returns false if the word is empty and sets up fake results.
 bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
-                                   tesseract::Tesseract *tess, Image pix,
+                                   tesseract::Tesseract *tess,
                                    int norm_mode, const TBOX *norm_box,
                                    bool numeric_mode, bool use_body_size,
                                    bool allow_detailed_fx, ROW *row,
@@ -326,7 +331,7 @@ bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
       use_body_size && row != nullptr && row->body_size() > 0.0f
           ? row->body_size()
           : x_height;
-  chopped_word->BLNormalize(block, row, pix, word->flag(W_INVERSE),
+  chopped_word->BLNormalize(block, row, word->flag(W_INVERSE),
                             word_xheight, baseline_shift, numeric_mode,
                             norm_mode_hint, norm_box, &denorm);
   blob_row = row;
@@ -461,7 +466,7 @@ bool WERD_RES::IsAmbiguous() {
 bool WERD_RES::StatesAllValid() {
   unsigned ratings_dim = ratings->dimension();
   if (raw_choice->TotalOfStates() != ratings_dim) {
-    tprintf("raw_choice has total of states = %u vs ratings dim of %u\n",
+    tprintDebug("raw_choice has total of states = {} vs ratings dim of {}\n",
             raw_choice->TotalOfStates(), ratings_dim);
     return false;
   }
@@ -470,7 +475,7 @@ bool WERD_RES::StatesAllValid() {
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward(), ++index) {
     WERD_CHOICE *choice = it.data();
     if (choice->TotalOfStates() != ratings_dim) {
-      tprintf("Cooked #%u has total of states = %u vs ratings dim of %u\n",
+      tprintDebug("Cooked #{} has total of states = {} vs ratings dim of {}\n",
               index, choice->TotalOfStates(), ratings_dim);
       return false;
     }
@@ -501,10 +506,10 @@ void WERD_RES::DebugWordChoices(bool debug, const char *word_to_debug) {
 
 // Prints the top choice along with the accepted/done flags.
 void WERD_RES::DebugTopChoice(const char *msg) const {
-  tprintf("Best choice: accepted=%d, adaptable=%d, done=%d : ", tess_accepted,
+  tprintDebug("Best choice: accepted={}, adaptable={}, done={} : ", tess_accepted,
           tess_would_adapt, done);
   if (best_choice == nullptr) {
-    tprintf("<Null choice>\n");
+    tprintDebug("<Null choice>\n");
   } else {
     best_choice->print(msg);
   }
@@ -545,11 +550,11 @@ void WERD_RES::FilterWordChoices(int debug_level) {
           choice->certainty(i) - best_choice->certainty(j) < threshold) {
         if (debug_level >= 2) {
           choice->print("WorstCertaintyDiffWorseThan");
-          tprintf(
-              "i %u j %u Choice->Blob[i].Certainty %.4g"
-              " WorstOtherChoiceCertainty %g Threshold %g\n",
+          tprintDebug(
+              "i {} j {} Choice->Blob[i].Certainty {}"
+              " WorstOtherChoiceCertainty {} Threshold {}\n",
               i, j, choice->certainty(i), best_choice->certainty(j), threshold);
-          tprintf("Discarding bad choice #%d\n", index);
+          tprintDebug("Discarding bad choice #{}\n", index);
         }
         delete it.extract();
         break;
@@ -644,9 +649,9 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
       if (debug) {
         std::string bad_string;
         word_choice->string_and_lengths(&bad_string, nullptr);
-        tprintf(
-            "Discarding choice \"%s\" with an overly low certainty"
-            " %.3f vs best choice certainty %.3f (Threshold: %.3f)\n",
+        tprintDebug(
+            "Discarding choice \"{}\" with an overly low certainty"
+            " {} vs best choice certainty {} (Threshold: {})\n",
             bad_string.c_str(), word_choice->certainty(),
             best_choice->certainty(),
             max_certainty_delta + best_choice->certainty());
@@ -681,8 +686,8 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
         } else {
           // Old is better.
           if (debug) {
-            tprintf("Discarding duplicate choice \"%s\", rating %g vs %g\n",
-                    new_str.c_str(), word_choice->rating(), choice->rating());
+            tprintDebug("Discarding duplicate choice \"{}\", rating {} vs {}\n",
+                    new_str, word_choice->rating(), choice->rating());
           }
           delete word_choice;
           return false;
@@ -705,9 +710,9 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
   }
   if (debug) {
     if (inserted) {
-      tprintf("New %s", best_choice == word_choice ? "Best" : "Secondary");
+      tprintDebug("New {} Word Choice", best_choice == word_choice ? "Best" : "Secondary");
     } else {
-      tprintf("Poor");
+      tprintDebug("Poor Word Choice");
     }
     word_choice->print(" Word Choice");
   }
@@ -737,8 +742,8 @@ void WERD_RES::PrintBestChoices() const {
     }
     alternates_str += it.data()->unichar_string();
   }
-  tprintf("Alternates for \"%s\": {\"%s\"}\n",
-          best_choice->unichar_string().c_str(), alternates_str.c_str());
+  tprintDebug("Alternates for \"{}\": {\"{}\"}\n",
+          best_choice->unichar_string(), alternates_str);
 }
 
 // Returns the sum of the widths of the blob between start_blob and last_blob
@@ -1137,10 +1142,10 @@ void WERD_RES::Clear() {
 
 void WERD_RES::ClearResults() {
   done = false;
-  fontinfo = nullptr;
-  fontinfo2 = nullptr;
-  fontinfo_id_count = 0;
-  fontinfo_id2_count = 0;
+  //fontinfo = nullptr;
+  //fontinfo2 = nullptr;
+  //fontinfo_id_count = 0;
+  //fontinfo_id2_count = 0;
   delete bln_boxes;
   bln_boxes = nullptr;
   blob_row = nullptr;
@@ -1214,7 +1219,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
           return 1;
         }
       }
-      ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+      ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
     }
 
     // we both point to the same block, but different rows.
@@ -1227,7 +1232,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
         return 1;
       }
     }
-    ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+    ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
   }
 
   // We point to different blocks.
@@ -1241,7 +1246,7 @@ int PAGE_RES_IT::cmp(const PAGE_RES_IT &other) const {
     }
   }
   // Shouldn't happen...
-  ASSERT_HOST("Error: Incomparable PAGE_RES_ITs" == nullptr);
+  ASSERT_HOST(!"Error: Incomparable PAGE_RES_ITs");
   return 0;
 }
 
@@ -1271,36 +1276,6 @@ WERD_RES *PAGE_RES_IT::InsertSimpleCloneWord(const WERD_RES &clone_res,
     ResetWordIterator();
   }
   return new_res;
-}
-
-// Helper computes the boundaries between blobs in the word. The blob bounds
-// are likely very poor, if they come from LSTM, where it only outputs the
-// character at one pixel within it, so we find the midpoints between them.
-static void ComputeBlobEnds(const WERD_RES &word, const TBOX &clip_box,
-                            C_BLOB_LIST *next_word_blobs,
-                            std::vector<int> *blob_ends) {
-  C_BLOB_IT blob_it(word.word->cblob_list());
-  for (int length : word.best_state) {
-    // Get the bounding box of the fake blobs
-    TBOX blob_box = blob_it.data()->bounding_box();
-    blob_it.forward();
-    for (int b = 1; b < length; ++b) {
-      blob_box += blob_it.data()->bounding_box();
-      blob_it.forward();
-    }
-    // This blob_box is crap, so for now we are only looking for the
-    // boundaries between them.
-    int blob_end = INT32_MAX;
-    if (!blob_it.at_first() || next_word_blobs != nullptr) {
-      if (blob_it.at_first()) {
-        blob_it.set_to_list(next_word_blobs);
-      }
-      blob_end = (blob_box.right() + blob_it.data()->bounding_box().left()) / 2;
-    }
-    blob_end = ClipToRange<int>(blob_end, clip_box.left(), clip_box.right());
-    blob_ends->push_back(blob_end);
-  }
-  blob_ends->back() = clip_box.right();
 }
 
 // Helper computes the bounds of a word by restricting it to existing words
@@ -1349,11 +1324,45 @@ static TBOX ComputeWordBounds(const tesseract::PointerVector<WERD_RES> &words,
   return clipped_box;
 }
 
-// Helper moves the blob from src to dest. If it isn't contained by clip_box,
-// the blob is replaced by a fake that is contained.
-static TBOX MoveAndClipBlob(C_BLOB_IT *src_it, C_BLOB_IT *dest_it,
-                            const TBOX &clip_box) {
-  C_BLOB *src_blob = src_it->extract();
+// Helper to compute input for BoxBoundariesCalculator
+static std::vector<BoxBoundaries> ComputeFakeWordBlobXBounds(
+    const PointerVector<WERD_RES> &words) {
+
+  std::vector<BoxBoundaries> result;
+
+  for (size_t w = 0; w < words.size(); ++w) {
+    WERD_RES *word_w = words[w];
+
+    C_BLOB_IT blob_it(word_w->word->cblob_list());
+    for (int length : word_w->best_state) {
+      TBOX blob_box = blob_it.data()->bounding_box();
+      blob_it.forward();
+      for (int b = 1; b < length; ++b) {
+        blob_box += blob_it.data()->bounding_box();
+        blob_it.forward();
+      }
+      result.push_back({blob_box.left(), blob_box.right()});
+    }
+  }
+  return result;
+}
+
+// Helper to compute input for BoxBoundariesCalculator
+static std::vector<BoxBoundaries> ComputeBlobXBoundsFromTBOX(
+    const std::vector<TBOX> &boxes) {
+  std::vector<BoxBoundaries> result;
+  result.reserve(boxes.size());
+  for (const auto& box : boxes) {
+    result.push_back({box.left(), box.right()});
+  }
+  return result;
+}
+
+// Helper moves the src_blob to dest. If it isn't contained by clip_box,
+// the blob is replaced by a fake that is contained. The helper takes ownership
+// of the blob.
+static TBOX ClipAndAddBlob(C_BLOB *src_blob, C_BLOB_IT *dest_it,
+                           const TBOX &clip_box) {
   TBOX box = src_blob->bounding_box();
   if (!clip_box.contains(box)) {
     int left =
@@ -1370,6 +1379,13 @@ static TBOX MoveAndClipBlob(C_BLOB_IT *src_it, C_BLOB_IT *dest_it,
   }
   dest_it->add_after_then_move(src_blob);
   return box;
+}
+
+// Helper to clip a box only in X direction
+static TBOX ClipBoxX(const TBOX &box, int left, int right) {
+  int clip_left = ClipToRange<int>(box.left(), left, right - 1);
+  int clip_right = ClipToRange<int>(box.right(), left + 1, right);
+  return TBOX(clip_left, box.bottom(), clip_right, box.top());
 }
 
 // Replaces the current WERD/WERD_RES with the given words. The given words
@@ -1416,21 +1432,31 @@ void PAGE_RES_IT::ReplaceCurrentWord(
     }
   }
   ASSERT_HOST(!wr_it.cycled_list());
-  // Since we only have an estimate of the bounds between blobs, use the blob
-  // x-middle as the determiner of where to put the blobs
+
+  std::vector<TBOX> blob_boxes;
+
   C_BLOB_IT src_b_it(input_word->word->cblob_list());
   src_b_it.sort(&C_BLOB::SortByXMiddle);
+  for (src_b_it.mark_cycle_pt(); !src_b_it.cycled_list(); src_b_it.forward()) {
+    blob_boxes.push_back(src_b_it.data()->bounding_box());
+  }
+  src_b_it.move_to_first();
+
   C_BLOB_IT rej_b_it(input_word->word->rej_cblob_list());
   rej_b_it.sort(&C_BLOB::SortByXMiddle);
+
+  auto fake_blob_bounds = ComputeFakeWordBlobXBounds(*words);
+  BoxBoundariesCalculator calculator{ComputeBlobXBoundsFromTBOX(blob_boxes), {}};
+  auto char_bounds = calculator.calculate_bounds(fake_blob_bounds);
+  size_t char_bounds_i = 0;
+  size_t box_bounds_i = 0;
+  TBOX last_blob_box;
+
   TBOX clip_box;
   for (size_t w = 0; w < words->size(); ++w) {
     WERD_RES *word_w = (*words)[w];
     clip_box = ComputeWordBounds(*words, w, clip_box, wr_it_of_current_word);
-    // Compute blob boundaries.
-    std::vector<int> blob_ends;
-    C_BLOB_LIST *next_word_blobs =
-        w + 1 < words->size() ? (*words)[w + 1]->word->cblob_list() : nullptr;
-    ComputeBlobEnds(*word_w, clip_box, next_word_blobs, &blob_ends);
+
     // Remove the fake blobs on the current word, but keep safe for back-up if
     // no blob can be found.
     C_BLOB_LIST fake_blobs;
@@ -1441,26 +1467,64 @@ void PAGE_RES_IT::ReplaceCurrentWord(
     C_BLOB_IT dest_it(word_w->word->cblob_list());
     // Build the box word as we move the blobs.
     auto *box_word = new tesseract::BoxWord;
-    for (size_t i = 0; i < blob_ends.size(); ++i, fake_b_it.forward()) {
-      int end_x = blob_ends[i];
+
+    for (size_t i = 0; i < word_w->best_state.size(); ++i) {
+      const auto& char_bound = char_bounds[char_bounds_i++];
+
       TBOX blob_box;
-      // Add the blobs up to end_x.
-      while (!src_b_it.empty() &&
-             src_b_it.data()->bounding_box().x_middle() < end_x) {
-        blob_box += MoveAndClipBlob(&src_b_it, &dest_it, clip_box);
-        src_b_it.forward();
+      if (char_bound.begin_box_index != char_bound.end_box_index) {
+        // The box indices in curr_char_bound will always be increasing, thus
+        // we can iterate src_b_it in the same order.
+        while (box_bounds_i < char_bound.begin_box_index) {
+          box_bounds_i++;
+          src_b_it.forward();
+        }
+
+        if (box_bounds_i > char_bound.begin_box_index) {
+          // The blob was split across multiple characters and has already
+          // been extracted for a previous character. We have the bounds
+          // of the blob and can create a fake blob out of it.
+          TBOX fake_box = ClipBoxX(last_blob_box,
+                                   char_bound.begin_x, char_bound.end_x);
+          blob_box += ClipAndAddBlob(C_BLOB::FakeBlob(fake_box),
+                                     &dest_it, clip_box);
+        }
+
+        // Add all blobs that have not yet been assigned to any of the
+        // characters.
+        while (box_bounds_i < char_bound.end_box_index) {
+          auto* src_blob = src_b_it.extract();
+          last_blob_box = src_blob->bounding_box();
+          TBOX inserted_box = ClipAndAddBlob(src_blob, &dest_it, clip_box);
+
+          box_bounds_i++;
+          src_b_it.forward();
+
+          // Note that the blob may be split across multiple characters in
+          // which case we want to clip the box to the part that was "assigned"
+          // to the character.
+          blob_box += ClipBoxX(inserted_box,
+                               char_bound.begin_x, char_bound.end_x);
+        }
       }
+
+      // It's not clear where rejected blobs should be added because by
+      // definition we don't have enough information about them. So we just
+      // add them to whatever character follows.
       while (!rej_b_it.empty() &&
-             rej_b_it.data()->bounding_box().x_middle() < end_x) {
-        blob_box += MoveAndClipBlob(&rej_b_it, &dest_it, clip_box);
+             rej_b_it.data()->bounding_box().x_middle() < char_bound.end_x) {
+        blob_box += ClipAndAddBlob(rej_b_it.extract(), &dest_it, clip_box);
         rej_b_it.forward();
       }
+
       if (blob_box.null_box()) {
         // Use the original box as a back-up.
-        blob_box = MoveAndClipBlob(&fake_b_it, &dest_it, clip_box);
+        blob_box = ClipAndAddBlob(fake_b_it.extract(), &dest_it, clip_box);
       }
       box_word->InsertBox(i, blob_box);
+      fake_b_it.forward();
     }
+
     delete word_w->box_word;
     word_w->box_word = box_word;
     if (!input_word->combination) {
@@ -1499,7 +1563,7 @@ void PAGE_RES_IT::DeleteCurrentWord() {
         break;
       }
     }
-    ASSERT_HOST(!w_it.cycled_list());
+    // ASSERT_HOST(!w_it.cycled_list()); -- #4148 fix
     delete w_it.extract();
   }
   // Remove the WERD_RES for the new_word.

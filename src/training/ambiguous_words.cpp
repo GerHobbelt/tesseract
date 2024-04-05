@@ -20,63 +20,104 @@
 ///////////////////////////////////////////////////////////////////////
 //
 
-#include "commontraining.h" // CheckSharedLibraryVersion
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "dict.h"
 #include "tesseractclass.h"
 
 #include <tesseract/baseapi.h>
 #include "helpers.h"
+#include "tprintf.h"
 
-int main(int argc, char **argv) {
+#include "tesseract/capi_training_tools.h"
+
+
+#if !DISABLED_LEGACY_ENGINE
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   // Parse input arguments.
-  if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
+  for (int err_round = 0;; err_round++) {
+    int rv = tesseract::ParseCommandLineFlags("[-l lang] tessdata_dir wordlist_file output_ambiguous_wordlist_file", &argc, &argv);
+    if (rv > 0)
+      return rv;
+    if (rv == 0)
+      return err_round;
+
+    if (argc < 3) {
+      tesseract::tprintError("Not enough parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+    int argv_offset = 0;
+    std::string lang;
+    if (0 == strcmp(argv[1], "-l")) {
+      lang = argv[2];
+      argv_offset = 2;
+    }
+    else {
+      lang = "eng";
+    }
+    if (argv_offset + 3 >= argc) {
+      tesseract::tprintError("Not enough parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+    const char* tessdata_dir = argv[++argv_offset];
+    const char* input_file_str = argv[++argv_offset];
+    const char* output_file_str = argv[++argv_offset];
+    if (argv_offset + 1 != argc) {
+      tesseract::tprintError("Incorrect number of parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+
+    // Initialize Tesseract.
+    tesseract::TessBaseAPI api;
+    std::vector<std::string> vars_vec;
+    std::vector<std::string> vars_values;
+    std::vector<std::string> configs;		// = nil
+    vars_vec.emplace_back("output_ambig_words_file");
+    vars_values.emplace_back(output_file_str);
+    api.InitFull(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY, configs, vars_vec,
+             vars_values, false);
+    tesseract::Dict& dict = api.tesseract()->getDict();
+    FILE* input_file = fopen(input_file_str, "rb");
+    if (input_file == nullptr) {
+      tesseract::tprintError("Failed to open input wordlist file {}\n", input_file_str);
+      return EXIT_FAILURE;
+    }
+    char str[CHARS_PER_LINE];
+
+    // Read word list and call Dict::NoDangerousAmbig() for each word
+    // to record ambiguities in the output file.
+    while (fgets(str, CHARS_PER_LINE, input_file) != nullptr) {
+      tesseract::chomp_string(str); // remove newline
+      tesseract::WERD_CHOICE word(str, dict.getUnicharset());
+      dict.NoDangerousAmbig(&word, nullptr, false, nullptr);
+    }
+    // Clean up.
+    fclose(input_file);
     return EXIT_SUCCESS;
-  } else if (argc != 4 && (argc != 6 || strcmp(argv[1], "-l") != 0)) {
-    printf(
-        "Usage: %s -v | --version | %s [-l lang] tessdata_dir wordlist_file"
-        " output_ambiguous_wordlist_file\n",
-        argv[0], argv[0]);
-    return EXIT_FAILURE;
   }
-  int argv_offset = 0;
-  std::string lang;
-  if (argc == 6) {
-    lang = argv[2];
-    argv_offset = 2;
-  } else {
-    lang = "eng";
-  }
-  const char *tessdata_dir = argv[++argv_offset];
-  const char *input_file_str = argv[++argv_offset];
-  const char *output_file_str = argv[++argv_offset];
-
-  // Initialize Tesseract.
-  tesseract::TessBaseAPI api;
-  std::vector<std::string> vars_vec;
-  std::vector<std::string> vars_values;
-  vars_vec.emplace_back("output_ambig_words_file");
-  vars_values.emplace_back(output_file_str);
-  api.Init(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY, nullptr, 0, &vars_vec,
-           &vars_values, false);
-  tesseract::Dict &dict = api.tesseract()->getDict();
-  FILE *input_file = fopen(input_file_str, "rb");
-  if (input_file == nullptr) {
-    tesseract::tprintf("Failed to open input wordlist file %s\n", input_file_str);
-    return EXIT_FAILURE;
-  }
-  char str[CHARS_PER_LINE];
-
-  // Read word list and call Dict::NoDangerousAmbig() for each word
-  // to record ambiguities in the output file.
-  while (fgets(str, CHARS_PER_LINE, input_file) != nullptr) {
-    tesseract::chomp_string(str); // remove newline
-    tesseract::WERD_CHOICE word(str, dict.getUnicharset());
-    dict.NoDangerousAmbig(&word, nullptr, false, nullptr);
-  }
-  // Clean up.
-  fclose(input_file);
-  return EXIT_SUCCESS;
 }
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+#endif
+{
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+  return EXIT_FAILURE;
+}
+
+#endif

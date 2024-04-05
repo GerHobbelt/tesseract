@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -25,15 +25,21 @@
 
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::CYAN, ScrollView::NONE
+#include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
 #include "tprintf.h"    // for tprintf
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
 
-#include <allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
+#include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
-#include <cinttypes> // for PRId64
+#include <algorithm>    // for max, min
+#include <fstream>      // for std::ifstream
+#include <cinttypes>    // for PRId64
+#include <fstream>      // for std::ifstream
+
+#undef min
+#undef max
 
 namespace tesseract {
 
@@ -68,7 +74,7 @@ ImageData *ImageData::Build(const char *name, int page_number, const char *lang,
   memcpy(&image_data->image_data_[0], imagedata, imagedatasize);
   if (!image_data->AddBoxes(box_text)) {
     if (truth_text == nullptr || truth_text[0] == '\0') {
-      tprintf("Error: No text corresponding to page %d from image %s!\n",
+      tprintError("No text corresponding to page {} from image {}!\n",
               page_number, name);
       delete image_data;
       return nullptr;
@@ -192,15 +198,9 @@ void ImageData::SetPix(Image pix) {
 // Returns the Pix image for *this. Must be pixDestroyed after use.
 Image ImageData::GetPix() const {
 #ifdef TESSERACT_IMAGEDATA_AS_PIX
-#  ifdef GRAPHICS_DISABLED
-  /* The only caller of this is the scaling functions to prescale the
-   * source. Thus we can just return a new pointer to the same data. */
-  return internal_pix_.clone();
-#  else
   /* pixCopy always does an actual copy, so the caller can modify the
    * changed data. */
   return internal_pix_.copy();
-#  endif
 #else
   return GetPixInternal(image_data_);
 #endif
@@ -215,8 +215,8 @@ Image ImageData::GetPix() const {
 Image ImageData::PreScale(int target_height, int max_height,
                           float *scale_factor, int *scaled_width,
                           int *scaled_height, std::vector<TBOX> *boxes) const {
-  int input_width = 0;
-  int input_height = 0;
+  int input_width;
+  int input_height;
   Image src_pix = GetPix();
   ASSERT_HOST(src_pix != nullptr);
   input_width = pixGetWidth(src_pix);
@@ -234,7 +234,7 @@ Image ImageData::PreScale(int target_height, int max_height,
   // Get the scaled image.
   Image pix = pixScale(src_pix, im_factor, im_factor);
   if (pix == nullptr) {
-    tprintf("Scaling pix of size %d, %d by factor %g made null pix!!\n",
+    tprintError("Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
     src_pix.destroy();
     return nullptr;
@@ -269,10 +269,10 @@ int ImageData::MemoryUsed() const {
   return image_data_.size();
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Draws the data in a new window.
-void ImageData::Display() const {
+void ImageData::Display(Tesseract *tesseract_) const {
   const int kTextSize = 64;
   // Draw the image.
   Image pix = GetPix();
@@ -281,14 +281,14 @@ void ImageData::Display() const {
   }
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
-  auto *win = new ScrollView("Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
+  ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "Imagedata", 100, 100, 2 * (width + 2 * kTextSize),
                              2 * (height + 4 * kTextSize), width + 10,
                              height + 3 * kTextSize, true);
-  win->Draw(pix, 0, height - 1);
+  win->Draw(pix, 0, win->TranslateYCoordinate(0), "ImageData::Display");
   pix.destroy();
   // Draw the boxes.
-  win->Pen(ScrollView::RED);
-  win->Brush(ScrollView::NONE);
+  win->Pen(Diagnostics::RED);
+  win->Brush(Diagnostics::NONE);
   int text_size = kTextSize;
   if (!boxes_.empty() && boxes_[0].height() * 2 < text_size) {
     text_size = boxes_[0].height() * 2;
@@ -301,11 +301,13 @@ void ImageData::Display() const {
     }
   } else {
     // The full transcription.
-    win->Pen(ScrollView::CYAN);
+    win->Pen(Diagnostics::CYAN);
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
-  win->Update();
-  win->Wait();
+  win->UpdateWindow();
+  if (win->HasInteractiveFeature()) {
+    win->Wait();
+  }
 }
 
 #endif
@@ -327,7 +329,7 @@ void ImageData::AddBoxes(const std::vector<TBOX> &boxes,
 }
 
 #ifndef TESSERACT_IMAGEDATA_AS_PIX
-// Saves the given Pix as a PNG-encoded string and destroys it.
+// Saves the given Pix as a PNG-encoded string and destroy it.
 // In case of missing PNG support in Leptonica use PNM format,
 // which requires more memory.
 void ImageData::SetPixInternal(Image pix, std::vector<char> *image_data) {
@@ -371,8 +373,8 @@ bool ImageData::AddBoxes(const char *box_text) {
       AddBoxes(boxes, texts, box_pages);
       return true;
     } else {
-      tprintf("Error: No boxes for page %d from image %s!\n", page_number_,
-              imagefilename_.c_str());
+      tprintError("No boxes for page {} from image {}!\n", page_number_,
+              imagefilename_);
     }
   }
   return false;
@@ -423,7 +425,7 @@ bool DocumentData::SaveDocument(const char *filename, FileWriter writer) {
   TFile fp;
   fp.OpenWrite(nullptr);
   if (!fp.Serialize(pages_) || !fp.CloseWrite(filename, writer)) {
-    tprintf("Serialize failed: %s\n", filename);
+    tprintError("Serialize failed: {}\n", filename);
     return false;
   }
   return true;
@@ -444,7 +446,9 @@ void DocumentData::LoadPageInBackground(int index) {
     return;
   }
   {
+#if 0
     std::lock_guard<std::mutex> lock(pages_mutex_);
+#endif
     if (pages_offset_ == index) {
       return;
     }
@@ -457,9 +461,14 @@ void DocumentData::LoadPageInBackground(int index) {
   if (thread.joinable()) {
     thread.join();
   }
+
   // Don't run next statement asynchronously because that would
   // create too many threads on Linux (see issue #3111).
+#if 0
+  thread = std::thread(&tesseract::DocumentData::ReCachePages, this);
+#else
   ReCachePages();
+#endif
 }
 
 // Returns a pointer to the page with the given index, modulo the total
@@ -514,8 +523,8 @@ int64_t DocumentData::UnCache() {
   pages_offset_ = -1;
   set_total_pages(-1);
   set_memory_used(0);
-  tprintf("Unloaded document %s, saving %" PRId64 " memory\n",
-          document_name_.c_str(), memory_saved);
+  tprintDebug("Unloaded document {}, saving {} memory\n",
+          document_name_, memory_saved);
   return memory_saved;
 }
 
@@ -524,7 +533,7 @@ void DocumentData::Shuffle() {
   TRand random;
   // Different documents get shuffled differently, but the same for the same
   // name.
-  random.set_seed(document_name_.c_str());
+  random.set_seed(document_name_);
   int num_pages = pages_.size();
   // Execute one random swap for each page in the document.
   for (int i = 0; i < num_pages; ++i) {
@@ -546,10 +555,34 @@ bool DocumentData::ReCachePages() {
     delete page;
   }
   pages_.clear();
+#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
+  if (document_name_.ends_with(".png")) {
+    // PNG image given instead of LSTMF file.
+    std::string gt_name = document_name_.substr(0, document_name_.length() - 3) + "gt.txt";
+    std::ifstream t(gt_name);
+    std::string line;
+    std::getline(t, line);
+    t.close();
+    ImageData *image_data = ImageData::Build(document_name_.c_str(), 0, "", nullptr, 0, line.c_str(), nullptr);
+    Image image = pixRead(document_name_.c_str());
+    image_data->SetPix(image);
+    pages_.push_back(image_data);
+    loaded_pages = 1;
+    pages_offset_ %= loaded_pages;
+    set_total_pages(loaded_pages);
+    set_memory_used(memory_used() + image_data->MemoryUsed());
+    if (true) {
+      tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+              loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
+              document_name_.c_str());
+    }
+    return !pages_.empty();
+  }
+#endif
   TFile fp;
   if (!fp.Open(document_name_.c_str(), reader_) ||
       !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintf("Deserialize header failed: %s\n", document_name_.c_str());
+    tprintError("Deserialize header failed: {}\n", document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -584,7 +617,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintf("Deserialize failed: %s read %d/%d lines\n", document_name_.c_str(),
+    tprintError("Deserialize failed: {} read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;
@@ -592,9 +625,9 @@ bool DocumentData::ReCachePages() {
     pages_.clear();
   } else if (loaded_pages > 1) {
     // Avoid lots of messages for training with single line images.
-    tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
             loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-            document_name_.c_str());
+            document_name_);
   }
   set_total_pages(loaded_pages);
   return !pages_.empty();
@@ -632,7 +665,7 @@ bool DocumentCache::LoadDocuments(const std::vector<std::string> &filenames,
     if (GetPageBySerial(0) != nullptr) {
       return true;
     }
-    tprintf("Load of page 0 failed!\n");
+    tprintError("Load of page 0 failed!\n");
   }
   return false;
 }
@@ -700,7 +733,7 @@ const ImageData *DocumentCache::GetPageSequential(int serial) {
     documents_[0]->GetPage(0);
     num_pages_per_doc_ = documents_[0]->NumPages();
     if (num_pages_per_doc_ == 0) {
-      tprintf("First document cannot be empty!!\n");
+      tprintError("First document cannot be empty!!\n");
       ASSERT_HOST(num_pages_per_doc_ > 0);
     }
     // Get rid of zero now if we don't need it.

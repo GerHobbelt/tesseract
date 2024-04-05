@@ -30,7 +30,7 @@ public:
   Input(const std::string &name, int ni, int no);
   TESS_API
   Input(const std::string &name, const StaticShape &shape);
-  ~Input() override = default;
+  virtual ~Input() override = default;
 
   std::string spec() const override {
     return std::to_string(shape_.batch()) + "," +
@@ -95,7 +95,7 @@ public:
 
 private:
   void DebugWeights() override {
-    tprintf("Must override Network::DebugWeights for type %d\n", type_);
+    tprintError("Must override Network::DebugWeights for type {}\n", type_);
   }
 
   // Input shape determines how images are dealt with.

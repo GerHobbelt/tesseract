@@ -20,6 +20,7 @@
 #define TESSERACT_CCMAIN_THRESHOLDER_H_
 
 #include <tesseract/export.h>
+#include <tesseract/fmt-support.h>
 
 #include <vector> // for std::vector
 
@@ -27,12 +28,46 @@ struct Pix;
 
 namespace tesseract {
 
+class TESS_API Tesseract;
+
+/**
+ * Except when Otsu is chosen
+ * Leptonica is used for thresholding
+ */
 enum class ThresholdMethod {
   Otsu,          // Tesseract's legacy Otsu
   LeptonicaOtsu, // Leptonica's Otsu
   Sauvola,       // Leptonica's Sauvola
+  OtsuOnNormalizedBackground,
+  MaskingAndOtsuOnNormalizedBackground,
+  Nlbin,         // NLbin
   Max,           // Number of Thresholding methods
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(ThresholdMethod);
+
+
+static inline const char* ThresholdMethodName(ThresholdMethod method)
+{
+  switch (method)
+  {
+  case ThresholdMethod::Otsu:
+    return "Otsu (tesseract)";
+  case ThresholdMethod::LeptonicaOtsu:
+    return "Otsu (Leptonica)";
+  case ThresholdMethod::Sauvola:
+    return "Sauvola (Leptonica)";
+  case ThresholdMethod::OtsuOnNormalizedBackground:
+    return "Otsu (on Normalized Background)";
+  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
+    return "Masking.And.Otsu (on Normalized Background)";
+  case ThresholdMethod::Nlbin:
+    return "NLbin";
+  case ThresholdMethod::Max:
+    return "Threshold::MaxOfList";
+  default:
+    return "Threshold::Unknown";
+  }
+}
 
 class TessBaseAPI;
 
@@ -44,7 +79,7 @@ class TessBaseAPI;
 /// desired.
 class TESS_API ImageThresholder {
 public:
-  ImageThresholder();
+  ImageThresholder(Tesseract *tess);
   virtual ~ImageThresholder();
 
   /// Destroy the Pix if there is one, freeing memory.
@@ -62,7 +97,7 @@ public:
   /// byte packed with the MSB of the first byte being the first pixel, and a
   /// one pixel is WHITE. For binary images set bytes_per_pixel=0.
   void SetImage(const unsigned char *imagedata, int width, int height, int bytes_per_pixel,
-                int bytes_per_line);
+                int bytes_per_line, int exif = 1, const float angle = 0);
 
   /// Store the coordinates of the rectangle to process for later use.
   /// Doesn't actually do any thresholding.
@@ -121,7 +156,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix);
+  void SetImage(const Image pix, int exif = 1, const float angle = 0);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.
@@ -129,8 +164,7 @@ public:
   /// Returns false on error.
   virtual bool ThresholdToPix(Image *pix);
 
-  virtual std::tuple<bool, Image, Image, Image> Threshold(TessBaseAPI *api,
-                                                          ThresholdMethod method);
+  virtual std::tuple<bool, Image, Image, Image> Threshold(ThresholdMethod method);
 
   // Gets a pix that contains an 8 bit threshold value at each pixel. The
   // returned pix may be an integer reduction of the binary image such that
@@ -154,6 +188,12 @@ public:
   // Provided to the classifier to extract features from the greyscale image.
   virtual Image GetPixRectGrey();
 
+  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+  // and at the same resolution as the output binary.
+  // The returned Pix must be pixDestroyed.
+  // Provided to the classifier to extract features from the greyscale image.
+  virtual Image GetPixNormRectGrey();
+
 protected:
   // ----------------------------------------------------------------------
   // Utility functions that may be useful components for other thresholders.
@@ -170,12 +210,24 @@ protected:
   // Otsu thresholds the rectangle, taking the rectangle from *this.
   void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
 
+  // Return non-linear normalized grayscale
+  Pix *pixNLNorm2(Pix *pixs, int *pthresh);
+
+  // Return non-linear normalized grayscale
+  Pix* pixNLNorm1(Pix* pixs, int* pthresh, int* pfgval, int* pbgval);
+
+  // Return non-linear normalized thresholded image
+  Pix* pixNLBin(Pix* pixs, bool adaptive);
+
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.
   /// NOTE that num_channels is the size of the thresholds and hi_values
   // arrays and also the bytes per pixel in src_pix.
   void ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
                           const std::vector <int> &hi_values, Image *pix) const;
+
+private:
+  Tesseract* tesseract_;    // reference to the active instance
 
 protected:
   /// Clone or other copy of the source Pix.

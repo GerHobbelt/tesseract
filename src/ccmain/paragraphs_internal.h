@@ -20,6 +20,8 @@
 #define TESSERACT_CCMAIN_PARAGRAPHS_INTERNAL_H_
 
 #include <tesseract/publictypes.h> // for ParagraphJustification
+#include <tesseract/fmt-support.h>
+
 #include "paragraphs.h"
 
 // NO CODE OUTSIDE OF paragraphs.cpp AND TESTS SHOULD NEED TO ACCESS
@@ -51,6 +53,11 @@ enum LineType {
   LT_UNKNOWN = 'U',  // No clues.
   LT_MULTIPLE = 'M', // Matches for both LT_START and LT_BODY.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(LineType);
+
+static inline auto format_as(LineType t) {
+  return fmt::underlying(t);
+}
 
 // The first paragraph in a page of body text is often un-indented.
 // This is a typographic convention which is common to indicate either that:

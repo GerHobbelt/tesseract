@@ -16,7 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -24,6 +24,11 @@
 
 #include <cstdio>
 #include <string>
+
+// quick & dirty fix to prevent a metric ton of MSVC errors due to libarchive somehow including winsock1, which clashes in its system header files with winsock2. Sigh.
+#if defined(_WIN32)
+#include <winsock2.h>
+#endif
 
 #if defined(HAVE_LIBARCHIVE)
 #  include <archive.h>
@@ -82,6 +87,32 @@ bool TessdataManager::LoadArchiveFile(const char *filename) {
       result = is_loaded_;
     }
     archive_read_free(a);
+  }
+  return result;
+}
+
+bool TessdataManager::SaveArchiveFile(const char *filename) const{
+  bool result = false;
+  archive *a = archive_write_new();
+  archive_entry *ae = archive_entry_new();
+  if (a != nullptr) {
+    archive_write_set_format_zip(a);
+    archive_write_open_filename(a, filename);
+    std::string filename_str = filename;
+    filename_str += ".";
+    archive_entry_set_filetype(ae, AE_IFREG);
+    archive_entry_set_perm(ae, 333);
+    for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
+      if (!entries_[i].empty()) {
+        archive_entry_set_pathname(ae, (filename_str + kTessdataFileSuffixes[i]).c_str());
+        archive_entry_set_size(ae, entries_[i].size());
+        archive_write_header(a, ae);
+        archive_write_data(a, &entries_[i][0], entries_[i].size());
+      }
+    }
+    result = archive_write_close(a) == ARCHIVE_OK;
+    archive_write_free(a);
+    return result;
   }
   return result;
 }
@@ -162,12 +193,16 @@ void TessdataManager::OverwriteEntry(TessdataType type, const char *data, int si
 
 // Saves to the given filename.
 bool TessdataManager::SaveFile(const char *filename, FileWriter writer) const {
-  // TODO: This method supports only the proprietary file format.
+// TODO: This method supports only the proprietary file format.
   ASSERT_HOST(is_loaded_);
   std::vector<char> data;
   Serialize(&data);
   if (writer == nullptr) {
+#if defined(HAVE_LIBARCHIVE)
+    return SaveArchiveFile(filename);
+#else
     return SaveDataToFile(data, filename);
+#endif
   } else {
     return (*writer)(data, filename);
   }
@@ -211,11 +246,11 @@ void TessdataManager::Clear() {
 
 // Prints a directory of contents.
 void TessdataManager::Directory() const {
-  printf("Version:%s\n", VersionString().c_str());
+  tprintInfo("Version:{}\n", VersionString().c_str());
   auto offset = TESSDATA_NUM_ENTRIES * sizeof(int64_t);
   for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
     if (!entries_[i].empty()) {
-      printf("%u:%s:size=%zu, offset=%zu\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
+      tprintInfo("{}:{}:size={}, offset={}\n", i, kTessdataFileSuffixes[i], entries_[i].size(),
               offset);
       offset += entries_[i].size();
     }
@@ -267,7 +302,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
     if (fp != nullptr) {
       fclose(fp);
       if (!LoadDataFromFile(filename.c_str(), &entries_[type])) {
-        tprintf("Load of file %s failed!\n", filename.c_str());
+        tprintError("Load of file {} failed!\n", filename.c_str());
         return false;
       }
     }
@@ -276,8 +311,7 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
 
   // Make sure that the required components are present.
   if (!IsBaseAvailable() && !IsLSTMAvailable()) {
-    tprintf(
-        "Error: traineddata file must contain at least (a unicharset file"
+	  tprintError("traineddata file must contain at least (a unicharset file"
         " and inttemp) OR an lstm file.\n");
     return false;
   }
@@ -286,14 +320,14 @@ bool TessdataManager::CombineDataFiles(const char *language_data_path_prefix,
 }
 
 bool TessdataManager::OverwriteComponents(const char *new_traineddata_filename,
-                                          char **component_filenames, int num_new_components) {
+                                          const char **component_filenames, int num_new_components) {
   // Open the files with the new components.
   // TODO: This method supports only the proprietary file format.
   for (int i = 0; i < num_new_components; ++i) {
     TessdataType type;
     if (TessdataTypeFromFileName(component_filenames[i], &type)) {
       if (!LoadDataFromFile(component_filenames[i], &entries_[type])) {
-        tprintf("Failed to read component file:%s\n", component_filenames[i]);
+        tprintError("Failed to read component file:{}\n", component_filenames[i]);
         return false;
       }
     }
@@ -320,9 +354,8 @@ bool TessdataManager::TessdataTypeFromFileSuffix(const char *suffix, TessdataTyp
     }
   }
 #if !defined(NDEBUG)
-  tprintf(
-      "TessdataManager can't determine which tessdata"
-      " component is represented by %s\n",
+  tprintError("TessdataManager can't determine which tessdata"
+      " component is represented by {}\n",
       suffix);
 #endif
   return false;

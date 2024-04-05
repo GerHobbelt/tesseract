@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#define U8(utf8_string_constant)   reinterpret_cast<const char *>(u8##utf8_string_constant)
+
 namespace tesseract {
 
 // Maximum number of characters that can be stored in a UNICHAR. Must be
@@ -140,6 +142,9 @@ public:
     }
     friend bool operator!=(const CI &lhs, const CI &rhs) {
       return !(lhs == rhs);
+    }
+    friend bool operator<(const CI &lhs, const CI &rhs) {
+      return lhs.it_ < rhs.it_;
     }
 
   private:

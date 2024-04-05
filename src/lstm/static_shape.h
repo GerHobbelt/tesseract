@@ -2,7 +2,6 @@
 // File:        static_shape.h
 // Description: Defines the size of the 4-d tensor input/output from a network.
 // Author:      Ray Smith
-// Created:     Fri Oct 14 09:07:31 PST 2016
 //
 // (C) Copyright 2016, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +18,8 @@
 #ifndef TESSERACT_LSTM_STATIC_SHAPE_H_
 #define TESSERACT_LSTM_STATIC_SHAPE_H_
 
+#include <tesseract/fmt-support.h>
+
 #include "serialis.h" // for TFile
 #include "tprintf.h"  // for tprintf
 
@@ -32,6 +33,11 @@ enum LossType {
   LT_SOFTMAX,  // Outputs sum to 1 in fixed positions.
   LT_LOGISTIC, // Logistic outputs with independent values.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(LossType);
+
+static inline auto format_as(LossType t) {
+  return fmt::underlying(t);
+}
 
 // Simple class to hold the tensor shape that is known at network build time
 // and the LossType of the loss function.
@@ -76,7 +82,7 @@ public:
   }
 
   void Print() const {
-    tprintf("Batch=%d, Height=%d, Width=%d, Depth=%d, loss=%d\n", batch_, height_, width_, depth_,
+    tprintDebug("Batch={}, Height={}, Width={}, Depth={}, loss={}\n", batch_, height_, width_, depth_,
             loss_type_);
   }
 

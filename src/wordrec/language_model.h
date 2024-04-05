@@ -26,7 +26,7 @@
 #include "dict.h"           // for DawgArgs, Dict
 #include "lm_consistency.h" // for LMConsistencyInfo
 #include "lm_state.h"       // for ViterbiStateEntry, LanguageModelFlagsType
-#include "params.h"         // for DoubleParam, double_VAR_H, IntParam, Boo...
+#include "params.h"         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
 #include "params_model.h"   // for ParamsModel
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST...
 #include "stopper.h"        // for DANGERR
@@ -100,8 +100,24 @@ public:
     acceptable_choice_found_ = val;
   }
   // Returns the reference to ParamsModel.
-  inline ParamsModel &getParamsModel() {
+  inline const ParamsModel &getParamsModel() {
     return params_model_;
+  }
+
+  inline void setParamsModelPass(ParamsModel::PassEnum p) {
+    params_model_.SetPass(p);
+  }
+
+  inline bool LoadParamsModelFromFp(const char *lang, TFile *fp) {
+    return params_model_.LoadFromFp(lang, fp);
+  }
+
+  inline void copyParamsModel(const ParamsModel& src) {
+    return params_model_.Copy(src);
+  }
+
+  inline void clearParamsModel(void) {
+    return params_model_.Clear();
   }
 
 protected:
@@ -243,6 +259,8 @@ protected:
   void UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_points, WERD_RES *word_res,
                         BestChoiceBundle *best_choice_bundle, BlamerBundle *blamer_bundle);
 
+#if !DISABLED_LEGACY_ENGINE
+
   // Constructs a WERD_CHOICE by tracing parent pointers starting with
   // the given LanguageModelStateEntry. Returns the constructed word.
   // Updates best_char_choices, certainties and state if they are not
@@ -253,6 +271,8 @@ protected:
   WERD_CHOICE *ConstructWord(ViterbiStateEntry *vse, WERD_RES *word_res, DANGERR *fixpt,
                              BlamerBundle *blamer_bundle, bool *truth_path);
 
+#endif
+
   // Wrapper around AssociateUtils::ComputeStats().
   inline void ComputeAssociateStats(int col, int row, float max_char_wh_ratio,
                                     ViterbiStateEntry *parent_vse, WERD_RES *word_res,
@@ -260,7 +280,7 @@ protected:
     AssociateUtils::ComputeStats(
         col, row, (parent_vse != nullptr) ? &(parent_vse->associate_stats) : nullptr,
         (parent_vse != nullptr) ? parent_vse->length : 0, fixed_pitch_, max_char_wh_ratio, word_res,
-        language_model_debug_level > 2, associate_stats);
+        (language_model_debug_level > 2), associate_stats);
   }
 
   // Returns true if the path with such top_choice_flags and dawg_info
@@ -294,23 +314,23 @@ public:
   INT_VAR_H(language_model_ngram_order);
   INT_VAR_H(language_model_viterbi_list_max_num_prunable);
   INT_VAR_H(language_model_viterbi_list_max_size);
-  double_VAR_H(language_model_ngram_small_prob);
-  double_VAR_H(language_model_ngram_nonmatch_score);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
   BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-  double_VAR_H(language_model_ngram_scale_factor);
-  double_VAR_H(language_model_ngram_rating_factor);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
   BOOL_VAR_H(language_model_ngram_space_delimited_language);
   INT_VAR_H(language_model_min_compound_length);
   // Penalties used for adjusting path costs and final word rating.
-  double_VAR_H(language_model_penalty_non_freq_dict_word);
-  double_VAR_H(language_model_penalty_non_dict_word);
-  double_VAR_H(language_model_penalty_punc);
-  double_VAR_H(language_model_penalty_case);
-  double_VAR_H(language_model_penalty_script);
-  double_VAR_H(language_model_penalty_chartype);
-  double_VAR_H(language_model_penalty_font);
-  double_VAR_H(language_model_penalty_spacing);
-  double_VAR_H(language_model_penalty_increment);
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
   INT_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 
@@ -354,7 +374,7 @@ protected:
   DawgPositionVector beginning_active_dawgs_;
   // Set to true if acceptable choice was discovered.
   // Note: it would be nice to use this to terminate the search once an
-  // acceptable choices is found. However we do not do that and once an
+  // acceptable choice is found. However we do not do that and once an
   // acceptable choice is found we finish looking for alternative choices
   // in the current segmentation graph and then exit the search (no more
   // classifications are done after an acceptable choice is found).

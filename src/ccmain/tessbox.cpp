@@ -17,6 +17,12 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "mfoutline.h"
 #include "tesseractclass.h"
 
@@ -29,6 +35,7 @@
  */
 
 namespace tesseract {
+
 void Tesseract::tess_segment_pass_n(int pass_n, WERD_RES *word) {
   int saved_enable_assoc = 0;
   int saved_chop_enable = 0;
@@ -61,7 +68,7 @@ void Tesseract::tess_segment_pass_n(int pass_n, WERD_RES *word) {
  * @param word_choice after context
  * @param raw_choice before context
  */
-bool Tesseract::tess_acceptable_word(WERD_RES *word) {
+bool Tesseract::tess_acceptable_word(const WERD_RES &word) {
   return getDict().AcceptableResult(word);
 }
 
@@ -73,4 +80,7 @@ bool Tesseract::tess_acceptable_word(WERD_RES *word) {
 void Tesseract::tess_add_doc_word(WERD_CHOICE *word_choice) {
   getDict().add_document_word(*word_choice);
 }
+
 } // namespace tesseract
+
+#endif

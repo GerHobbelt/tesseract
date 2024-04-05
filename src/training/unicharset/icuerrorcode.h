@@ -36,8 +36,13 @@
 #ifndef TESSERACT_CCUTIL_ICUERRORCODE_H_
 #define TESSERACT_CCUTIL_ICUERRORCODE_H_
 
+#include <tesseract/export.h>
+
 #include <cstdlib> // for exit
 #include "tprintf.h"
+
+#if defined(HAS_LIBICU)
+
 #include "unicode/errorcode.h" // From libicu
 
 namespace tesseract {
@@ -49,7 +54,7 @@ public:
 
 protected:
   void handleFailure() const override {
-    tprintf("ICU ERROR: %s\n", errorName());
+    tprintError("ICU: {}\n", errorName());
     exit(errorCode);
   }
 
@@ -60,4 +65,7 @@ private:
 };
 
 } // namespace tesseract
+
+#endif
+
 #endif // TESSERACT_CCUTIL_ICUERRORCODE_H_

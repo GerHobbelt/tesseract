@@ -27,6 +27,7 @@
 #include "recodebeam.h"
 #include "series.h"
 #include "unicharcompress.h"
+#include "genericvector.h"     // for PointerVector (ptr only)
 
 class BLOB_CHOICE_IT;
 struct Pix;
@@ -51,8 +52,10 @@ enum TrainingFlags {
 class TESS_API LSTMRecognizer {
 public:
   LSTMRecognizer();
-  LSTMRecognizer(const std::string &language_data_path_prefix);
+  //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
+
+  void Clean();
 
   int NumOutputs() const {
     return network_->NumOutputs();
@@ -219,8 +222,8 @@ public:
     return null_char_;
   }
 
-  // Loads a model from mgr, including the dictionary only if lang is not null.
-  bool Load(const ParamsVectors *params, const std::string &lang, TessdataManager *mgr);
+  // Loads a model from mgr, including the dictionary only if lang is not empty.
+  bool Load(const ParamsVectorSet &params, const std::string &lang, TessdataManager *mgr);
 
   // Writes to the given file. Returns false in case of error.
   // If mgr contains a unicharset and recoder, then they are not encoded to fp.
@@ -229,10 +232,12 @@ public:
   // If mgr contains a unicharset and recoder, then they are taken from there,
   // otherwise, they are part of the serialization in fp.
   bool DeSerialize(const TessdataManager *mgr, TFile *fp);
+  
   // Loads the charsets from mgr.
   bool LoadCharsets(const TessdataManager *mgr);
   // Loads the Recoder.
   bool LoadRecoder(TFile *fp);
+
   // Loads the dictionary if possible from the traineddata file.
   // Prints a warning message, and returns false but otherwise fails silently
   // and continues to work without it if loading fails.
@@ -240,7 +245,10 @@ public:
   // on the unicharset matching. This enables training to deserialize a model
   // from checkpoint or restore without having to go back and reload the
   // dictionary.
-  bool LoadDictionary(const ParamsVectors *params, const std::string &lang, TessdataManager *mgr);
+  //
+  // The dictionary will be reconfigured (reset) from the source_params
+  // config set.
+  bool LoadDictionary(const ParamsVectorSet &source_params, const std::string &lang, TessdataManager *mgr);
 
   // Recognizes the line image, contained within image_data, returning the
   // recognized tesseract WERD_RES for the words.
@@ -249,12 +257,13 @@ public:
   // that threshold. The line_box is used for computing the
   // box_word in the output words. worst_dict_cert is the worst certainty that
   // will be used in a dictionary word.
-  void RecognizeLine(const ImageData &image_data, float invert_threshold, bool debug, double worst_dict_cert,
+  void RecognizeLine(const ImageData &image_data, float invert_threshold, double worst_dict_cert,
                      const TBOX &line_box, PointerVector<WERD_RES> *words, int lstm_choice_mode = 0,
                      int lstm_choice_amount = 5);
 
   // Helper computes min and mean best results in the output.
   void OutputStats(const NetworkIO &outputs, float *min_output, float *mean_output, float *sd);
+
   // Recognizes the image_data, returning the labels,
   // scores, and corresponding pairs of start, end x-coords in coords.
   // Returned in scale_factor is the reduction factor
@@ -264,8 +273,8 @@ public:
   // improve the results. This ensures that outputs contains the correct
   // forward outputs for the best photometric interpretation.
   // inputs is filled with the used inputs to the network.
-  bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool debug, bool re_invert,
-                     bool upside_down, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
+  bool RecognizeLine(const ImageData &image_data, float invert_threshold, bool re_invert,
+                     bool upside_down, const TBOX &line_box, float *scale_factor, NetworkIO *inputs, NetworkIO *outputs);
 
   // Converts an array of labels to utf-8, whether or not the labels are
   // augmented with character boundaries.
@@ -274,14 +283,18 @@ public:
   // Displays the forward results in a window with the characters and
   // boundaries as determined by the labels and label_coords.
   void DisplayForward(const NetworkIO &inputs, const std::vector<int> &labels,
-                      const std::vector<int> &label_coords, const char *window_name,
-                      ScrollView **window);
+                      const std::vector<int> &label_coords,
+                      const TBOX &line_box, const char *window_name,
+                      ScrollViewReference &window);
   // Converts the network output to a sequence of labels. Outputs labels, scores
   // and start xcoords of each char, and each null_char_, with an additional
   // final xcoord for the end of the output.
   // The conversion method is determined by internal state.
   void LabelsFromOutputs(const NetworkIO &outputs, std::vector<int> *labels,
                          std::vector<int> *xcoords);
+
+  void SetDataPathPrefix(const std::string &language_data_path_prefix);
+  void CopyDebugParameters(CCUtil *src, Dict *dict_src);
 
 protected:
   // Sets the random seed from the sample_iteration_;
@@ -294,7 +307,7 @@ protected:
   // Displays the labels and cuts at the corresponding xcoords.
   // Size of labels should match xcoords.
   void DisplayLSTMOutput(const std::vector<int> &labels, const std::vector<int> &xcoords,
-                         int height, ScrollView *window);
+                         int height, const TBOX &line_box, ScrollViewReference &window);
 
   // Prints debug output detailing the activation path that is implied by the
   // xcoords.
@@ -362,8 +375,21 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
+  int debug_ = 0;
+
+public:
+  void SetDebug(int v) {
+	debug_ = std::max(0, v);
+  }
+  int HasDebug() const {
+	  return debug_;
+  }
+
+protected:
+#if !GRAPHICS_DISABLED
   // Recognition debug display window.
-  ScrollView *debug_win_;
+  ScrollViewReference debug_win_;
+#endif
 };
 
 } // namespace tesseract.

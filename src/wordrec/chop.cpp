@@ -20,17 +20,19 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #define _USE_MATH_DEFINES // for M_PI
 #include "chop.h"
 #include <cmath> // for M_PI
 #include "outlines.h"
 #include "plotedges.h"
 #include "wordrec.h"
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 namespace tesseract {
 
@@ -76,7 +78,7 @@ void Wordrec::add_point_to_list(PointHeap *point_heap, EDGEPT *point) {
     point_heap->Push(&pair);
   }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (chop_debug > 2) {
     mark_outline(point);
   }
@@ -311,3 +313,5 @@ void Wordrec::vertical_projection_point(EDGEPT *split_point, EDGEPT *target_poin
 }
 
 } // namespace tesseract
+
+#endif

@@ -22,6 +22,7 @@
 #ifndef TESSERACT_CLASSIFY_SHAPETABLE_H_
 #define TESSERACT_CLASSIFY_SHAPETABLE_H_
 
+#include "tprintf.h"         // for tprintf
 #include "bitvector.h"
 #include "fontinfo.h"
 #include "genericheap.h"
@@ -41,9 +42,9 @@ struct UnicharRating {
 
   // Print debug info.
   void Print() const {
-    tprintf(
-        "Unichar-id=%d, rating=%g, adapted=%d, config=%d, misses=%u,"
-        " %zu fonts\n",
+    tprintDebug(
+        "Unichar-id={}, rating={}, adapted={}, config={}, misses={},"
+        " {} fonts\n",
         unichar_id, static_cast<double>(rating), adapted, config, feature_misses, fonts.size());
   }
 

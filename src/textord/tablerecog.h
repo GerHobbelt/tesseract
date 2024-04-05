@@ -20,6 +20,7 @@
 #define TABLERECOG_H_
 
 #include "colpartitiongrid.h"
+#include <vector>
 
 namespace tesseract {
 
@@ -132,7 +133,12 @@ public:
 
   // Debug display, draws the table in the given color. If the table is not
   // valid, the table and "best" grid lines are still drawn in the given color.
-  void Display(ScrollView *window, ScrollView::Color color);
+  void Display(ScrollViewReference &window, Diagnostics::Color color);
+
+  /// Calculate bounding boxes of the rows and return them.
+  std::vector<TBOX> getRows();
+  /// Calculate bounding boxes of the columns and return them.
+  std::vector<TBOX> getCols();
 
 protected:
   // Clear the structure information.

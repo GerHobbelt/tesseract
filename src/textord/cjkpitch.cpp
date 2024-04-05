@@ -685,15 +685,15 @@ void FPRow::EstimatePitch(bool pass1) {
 
 void FPRow::DebugOutputResult(int row_index) {
   if (num_chars() > 0) {
-    tprintf(
-        "Row %d: pitch_decision=%d, fixed_pitch=%f, max_nonspace=%d, "
-        "space_size=%f, space_threshold=%d, xheight=%f\n",
+    tprintDebug(
+        "Row {}: pitch_decision={}, fixed_pitch={}, max_nonspace={}, "
+        "space_size={}, space_threshold={}, xheight={}\n",
         row_index, static_cast<int>(real_row_->pitch_decision), real_row_->fixed_pitch,
         real_row_->max_nonspace, real_row_->space_size, real_row_->space_threshold,
         real_row_->xheight);
 
     for (unsigned i = 0; i < num_chars(); i++) {
-      tprintf("Char %u: is_final=%d is_good=%d num_blobs=%d: ", i, is_final(i), is_good(i),
+      tprintDebug("Char {}: is_final={} is_good={} num_blobs={}: ", i, is_final(i), is_good(i),
               character(i)->num_blobs());
       box(i).print();
     }
@@ -1001,7 +1001,7 @@ public:
   }
 
   void DebugOutputResult() {
-    tprintf("FPAnalyzer: final result\n");
+    tprintDebug("FPAnalyzer: final result\n");
     for (size_t i = 0; i < rows_.size(); i++) {
       rows_[i].DebugOutputResult(i);
     }
@@ -1040,7 +1040,7 @@ FPAnalyzer::FPAnalyzer(ICOORD page_tr, TO_BLOCK_LIST *port_blocks)
     TO_BLOCK *block = block_it.data();
     if (!block->get_rows()->empty()) {
       ASSERT_HOST(block->xheight > 0);
-      find_repeated_chars(block, false);
+      find_repeated_chars(block);
     }
   }
 
@@ -1116,8 +1116,8 @@ void compute_fixed_pitch_cjk(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
 
   // Early exit if the page doesn't seem to contain fixed pitch rows.
   if (!analyzer.maybe_fixed_pitch()) {
-    if (textord_debug_pitch_test) {
-      tprintf("Page doesn't seem to contain fixed pitch rows\n");
+    if (textord_debug_fixed_pitch_test) {
+      tprintDebug("INFO: Page doesn't seem to contain fixed pitch rows.\n");
     }
     return;
   }
@@ -1130,13 +1130,13 @@ void compute_fixed_pitch_cjk(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
     iteration++;
   } while (analyzer.Pass2Analyze() && iteration < analyzer.max_iteration());
 
-  if (textord_debug_pitch_test) {
-    tprintf("compute_fixed_pitch_cjk finished after %u iteration (limit=%u)\n", iteration,
+  if (textord_debug_fixed_pitch_test) {
+    tprintDebug("compute_fixed_pitch_cjk finished after {} iteration (limit={})\n", iteration,
             analyzer.max_iteration());
   }
 
   analyzer.OutputEstimations();
-  if (textord_debug_pitch_test) {
+  if (textord_debug_fixed_pitch_test) {
     analyzer.DebugOutputResult();
   }
 }

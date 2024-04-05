@@ -1,5 +1,5 @@
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/resultiterator.h>
 #include <string>
@@ -7,6 +7,8 @@
 
 #include "include_gunit.h"
 #include "log.h" // for LOG
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -34,7 +36,7 @@ protected:
 
   void SetImage(const char *filename) {
     src_pix_ = pixRead(TestDataNameToPath(filename).c_str());
-    api_.Init(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TessdataPath().c_str(), "eng", tesseract::OEM_TESSERACT_ONLY);
     //    if (!FLAGS_tess_config.empty())
     //      api_.ReadConfigFile(FLAGS_tess_config.c_str());
     api_.SetPageSegMode(tesseract::PSM_AUTO);
@@ -230,8 +232,8 @@ protected:
 //        new ScrollView(kIms[i], 100, 100, width / 2, height / 2, width, height);
 //    win->Image(src_pix_, 0, 0);
 //    it->Begin();
-//    ScrollView::Color color = ScrollView::RED;
-//    win->Brush(ScrollView::NONE);
+//    DebugView::Color color = DebugView::RED;
+//    win->Brush(DebugView::NONE);
 //    do {
 //      Pta* pts = it->BlockPolygon();
 //      if (pts != nullptr) {
@@ -247,7 +249,7 @@ protected:
 //      }
 //      ptaDestroy(&pts);
 //    } while (it->Next(tesseract::RIL_BLOCK));
-//    win->Update();
+//    win->UpdateWindow();
 //    delete win->AwaitEvent(SVET_DESTROY);
 //    delete win;
 //    delete it;
@@ -311,7 +313,7 @@ TEST_F(ResultIteratorTest, EasyTest) {
   // Test font attributes for each word.
   do {
     float confidence = r_it->Confidence(tesseract::RIL_WORD);
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     int pointsize, font_id;
     bool bold, italic, underlined, monospace, serif, smallcaps;
     const char *font = r_it->WordFontAttributes(&bold, &italic, &underlined, &monospace, &serif,
@@ -320,15 +322,15 @@ TEST_F(ResultIteratorTest, EasyTest) {
 #endif
     char *word_str = r_it->GetUTF8Text(tesseract::RIL_WORD);
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
     LOG(INFO) << "Word " << word_str << ", conf " << confidence << "\n";
 #else
     LOG(INFO) << "Word " << word_str << " in font " << font
       << ", id " << font_id << ", size " << pointsize
       << ", conf " << confidence << "\n";
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // DISABLED_LEGACY_ENGINE
     delete[] word_str;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     EXPECT_FALSE(bold);
     EXPECT_FALSE(italic);
     EXPECT_FALSE(underlined);
@@ -339,7 +341,7 @@ TEST_F(ResultIteratorTest, EasyTest) {
     // 31 pixels / textline * (72 pts / inch) / (200 pixels / inch) = 11.16 pts
     EXPECT_GE(pointsize, 11.16 - 1.50);
     EXPECT_LE(pointsize, 11.16 + 1.50);
-#endif // def DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   } while (r_it->Next(tesseract::RIL_WORD));
   delete r_it;
 }
@@ -368,7 +370,7 @@ TEST_F(ResultIteratorTest, GreyTest) {
 
 // Tests that Tesseract gets smallcaps and dropcaps.
 TEST_F(ResultIteratorTest, SmallCapDropCapTest) {
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   // Skip test as LSTM mode does not recognize smallcaps & dropcaps attributes.
   GTEST_SKIP();
 #else

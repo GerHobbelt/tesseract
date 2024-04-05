@@ -17,7 +17,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -80,7 +80,7 @@ void Convolve::Forward(bool debug, const NetworkIO &input, const TransposedArray
       }
     }
   } while (dest_index.Increment());
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (debug) {
     DisplayForward(*output);
   }

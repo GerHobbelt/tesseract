@@ -20,7 +20,7 @@
 #ifndef QUSPLINE_H
 #define QUSPLINE_H
 
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 
 #include <cstdint> // for int32_t
 
@@ -74,15 +74,11 @@ public:
       int left,         // new left edge
       int right);       // new right edge
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw it
-      ScrollView *window,              // in window
-      ScrollView::Color colour) const; // in colour
+      ScrollViewReference &window,     // in window
+      Diagnostics::Color colour) const; // in colour
 #endif
-
-  // Paint the baseline over pix. If pix has depth of 32, then the line will
-  // be painted in red. Otherwise it will be painted in black.
-  void plot(Image pix) const;
 
   QSPLINE &operator=(const QSPLINE &source); // from this
 

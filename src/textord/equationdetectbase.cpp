@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -25,7 +25,7 @@
 
 #include "blobbox.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 namespace tesseract {
 

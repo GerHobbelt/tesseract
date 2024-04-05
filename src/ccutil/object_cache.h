@@ -40,11 +40,10 @@ public:
     std::lock_guard<std::mutex> guard(mu_);
     for (auto &it : cache_) {
       if (it.count > 0) {
-        tprintf(
-            "ObjectCache(%p)::~ObjectCache(): WARNING! LEAK! object %p "
-            "still has count %d (id %s)\n",
-            static_cast<void *>(this), static_cast<void *>(it.object),
-            it.count, it.id.c_str());
+        tprintDebug(
+            "ObjectCache({})::~ObjectCache(): WARNING! LEAK! object {} "
+            "still has count {} (id {})\n",
+            static_cast<void *>(this), static_cast<void *>(it.object), it.count, it.id.c_str());
       } else {
         delete it.object;
         it.object = nullptr;

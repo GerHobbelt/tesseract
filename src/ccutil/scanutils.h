@@ -30,6 +30,7 @@
  *
  */
 TESS_API
-int tfscanf(FILE *stream, const char *format, ...);
+int tfscanf(FILE *stream, TS_SCANFORMAT_STRING(const char *format), ...)
+	TS_SCANFLIKE(2, 3);  // Message
 
 #endif // TESSERACT_CCUTIL_SCANUTILS_H_

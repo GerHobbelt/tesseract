@@ -17,13 +17,15 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
+
 #include <cmath>
 #include <ctime>
+
 #include "boxread.h"
 #include "classify.h"
 #include "errorcounter.h"
@@ -32,7 +34,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #  include "svmnode.h"
 #endif
 
@@ -47,7 +49,7 @@ const int kMinClusteredShapes = 1;
 // Max number of unichars in any individual cluster.
 const int kMaxUnicharsPerCluster = 2000;
 // Mean font distance below which to merge fonts and unichars.
-const float kFontMergeDistance = 0.025;
+const float kFontMergeDistance = 0.025f;
 
 MasterTrainer::MasterTrainer(NormalizationMode norm_mode, bool shape_analysis,
                              bool replicate_samples, int debug_level)
@@ -110,8 +112,7 @@ bool MasterTrainer::Serialize(FILE *fp) const {
 // Load an initial unicharset, or set one up if the file cannot be read.
 void MasterTrainer::LoadUnicharset(const char *filename) {
   if (!unicharset_.load_from_file(filename)) {
-    tprintf(
-        "Failed to load unicharset from file %s\n"
+    tprintError("Failed to load unicharset from file {}\n"
         "Building unicharset for training from scratch...\n",
         filename);
     unicharset_.clear();
@@ -148,7 +149,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
 
   FILE *fp = fopen(page_name, "rb");
   if (fp == nullptr) {
-    tprintf("Failed to open tr file: %s\n", page_name);
+    tprintError("Failed to open tr file: {}\n", page_name);
     return;
   }
   tr_filenames_.emplace_back(page_name);
@@ -159,7 +160,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
 
     char *space = strchr(buffer, ' ');
     if (space == nullptr) {
-      tprintf("Bad format in tr file, reading fontname, unichar\n");
+      tprintError("Bad format in tr file, reading fontname, unichar\n");
       continue;
     }
     *space++ = '\0';
@@ -171,7 +172,7 @@ void MasterTrainer::ReadTrainingSamples(const char *page_name,
     std::string unichar;
     TBOX bounding_box;
     if (!ParseBoxFileStr(space, &page_number, unichar, &bounding_box)) {
-      tprintf("Bad format in tr file, reading box coords\n");
+      tprintError("Bad format in tr file, reading box coords\n");
       continue;
     }
     auto char_desc = ReadCharDescription(feature_defs, fp);
@@ -237,7 +238,7 @@ void MasterTrainer::LoadPageImages(const char *filename) {
       break;
     }
   }
-  tprintf("Loaded %d page images from %s\n", page, filename);
+  tprintDebug("Loaded {} page images from {}\n", page, filename);
 }
 
 // Cleans up the samples after initial load from the tr files, and prior to
@@ -247,7 +248,7 @@ void MasterTrainer::LoadPageImages(const char *filename) {
 // Deletes outlier samples.
 void MasterTrainer::PostLoadCleanup() {
   if (debug_level_ > 0) {
-    tprintf("PostLoadCleanup...\n");
+    tprintDebug("PostLoadCleanup...\n");
   }
   if (enable_shape_analysis_) {
     ReplaceFragmentedSamples();
@@ -263,7 +264,7 @@ void MasterTrainer::PostLoadCleanup() {
   //  samples_.DeleteOutliers(feature_space_, debug_level_ > 0);
   samples_.OrganizeByFontAndClass();
   if (debug_level_ > 0) {
-    tprintf("ComputeCanonicalSamples...\n");
+    tprintDebug("ComputeCanonicalSamples...\n");
   }
   samples_.ComputeCanonicalSamples(feature_map_, debug_level_ > 0);
 }
@@ -273,12 +274,12 @@ void MasterTrainer::PostLoadCleanup() {
 // Re-indexes the features and computes canonical and cloud features.
 void MasterTrainer::PreTrainingSetup() {
   if (debug_level_ > 0) {
-    tprintf("PreTrainingSetup...\n");
+    tprintDebug("PreTrainingSetup...\n");
   }
   samples_.IndexFeatures(feature_space_);
   samples_.ComputeCanonicalFeatures();
   if (debug_level_ > 0) {
-    tprintf("ComputeCloudFeatures...\n");
+    tprintDebug("ComputeCloudFeatures...\n");
   }
   samples_.ComputeCloudFeatures(feature_space_.Size());
 }
@@ -286,7 +287,7 @@ void MasterTrainer::PreTrainingSetup() {
 // Sets up the master_shapes_ table, which tells which fonts should stay
 // together until they get to a leaf node classifier.
 void MasterTrainer::SetupMasterShapes() {
-  tprintf("Building master shape table\n");
+  tprintDebug("Building master shape table\n");
   const int num_fonts = samples_.NumFonts();
 
   ShapeTable char_shapes_begin_fragment(samples_.unicharset());
@@ -322,7 +323,7 @@ void MasterTrainer::SetupMasterShapes() {
   ClusterShapes(kMinClusteredShapes, kMaxUnicharsPerCluster, kFontMergeDistance,
                 &char_shapes);
   master_shapes_.AppendMasterShapes(char_shapes, nullptr);
-  tprintf("Master shape_table:%s\n", master_shapes_.SummaryStr().c_str());
+  tprintDebug("Master shape_table:{}\n", master_shapes_.SummaryStr().c_str());
 }
 
 // Adds the junk_samples_ to the main samples_ set. Junk samples are initially
@@ -341,7 +342,7 @@ void MasterTrainer::IncludeJunk() {
   const UNICHARSET &junk_set = junk_samples_.unicharset();
   const UNICHARSET &sample_set = samples_.unicharset();
   int num_junks = junk_samples_.num_samples();
-  tprintf("Moving %d junk samples to master sample set.\n", num_junks);
+  tprintDebug("Moving {} junk samples to master sample set.\n", num_junks);
   for (int s = 0; s < num_junks; ++s) {
     TrainingSample *sample = junk_samples_.mutable_sample(s);
     int junk_id = sample->class_id();
@@ -366,7 +367,7 @@ void MasterTrainer::IncludeJunk() {
 void MasterTrainer::ReplicateAndRandomizeSamplesIfRequired() {
   if (enable_replication_) {
     if (debug_level_ > 0) {
-      tprintf("ReplicateAndRandomize...\n");
+      tprintDebug("ReplicateAndRandomize...\n");
     }
     verify_samples_.ReplicateAndRandomizeSamples();
     samples_.ReplicateAndRandomizeSamples();
@@ -379,7 +380,7 @@ void MasterTrainer::ReplicateAndRandomizeSamplesIfRequired() {
 bool MasterTrainer::LoadFontInfo(const char *filename) {
   FILE *fp = fopen(filename, "rb");
   if (fp == nullptr) {
-    fprintf(stderr, "Failed to load font_properties from %s\n", filename);
+    tprintError("Failed to load font_properties from {}\n", filename);
     return false;
   }
   int italic, bold, fixed, serif, fraktur;
@@ -410,7 +411,7 @@ bool MasterTrainer::LoadFontInfo(const char *filename) {
 // Loads the xheight font properties file into xheights_.
 // Returns false on failure.
 bool MasterTrainer::LoadXHeights(const char *filename) {
-  tprintf("fontinfo table is of size %d\n", fontinfo_table_.size());
+  tprintDebug("fontinfo table is of size {}\n", fontinfo_table_.size());
   xheights_.clear();
   xheights_.resize(fontinfo_table_.size(), -1);
   if (filename == nullptr) {
@@ -418,10 +419,10 @@ bool MasterTrainer::LoadXHeights(const char *filename) {
   }
   FILE *f = fopen(filename, "rb");
   if (f == nullptr) {
-    fprintf(stderr, "Failed to load font xheights from %s\n", filename);
+    tprintError("Failed to load font xheights from {}\n", filename);
     return false;
   }
-  tprintf("Reading x-heights from %s ...\n", filename);
+  tprintDebug("Reading x-heights from {} ...\n", filename);
   FontInfo fontinfo;
   fontinfo.properties = 0; // Not used to lookup in the table.
   fontinfo.universal_id = 0;
@@ -445,7 +446,7 @@ bool MasterTrainer::LoadXHeights(const char *filename) {
     ++xheight_count;
   }
   if (xheight_count == 0) {
-    fprintf(stderr, "No valid xheights in %s!\n", filename);
+    tprintError("No valid xheights in {}!\n", filename);
     fclose(f);
     return false;
   }
@@ -468,11 +469,11 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
   // Find the fontinfo_id.
   int fontinfo_id = GetBestMatchingFontInfoId(filename);
   if (fontinfo_id < 0) {
-    tprintf("No font found matching fontinfo filename %s\n", filename);
+    tprintError("No font found matching fontinfo filename {}\n", filename);
     fclose(fontinfo_file);
     return false;
   }
-  tprintf("Reading spacing from %s for font %d...\n", filename, fontinfo_id);
+  tprintDebug("Reading spacing from {} for font {}\n", filename, fontinfo_id);
   // TODO(rays) scale should probably be a double, but keep as an int for now
   // to duplicate current behavior.
   int scale = kBlnXHeight / xheights_[fontinfo_id];
@@ -480,26 +481,26 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
   char uch[UNICHAR_LEN];
   char kerned_uch[UNICHAR_LEN];
   int x_gap, x_gap_before, x_gap_after, num_kerned;
-  ASSERT_HOST(tfscanf(fontinfo_file, "%d\n", &num_unichars) == 1);
+  ASSERT_HOST(tfscanf(fontinfo_file, "{}\n", &num_unichars) == 1);
   FontInfo *fi = &fontinfo_table_.at(fontinfo_id);
   fi->init_spacing(unicharset_.size());
   FontSpacingInfo *spacing = nullptr;
   for (int l = 0; l < num_unichars; ++l) {
     if (tfscanf(fontinfo_file, "%s %d %d %d", uch, &x_gap_before, &x_gap_after,
                 &num_kerned) != 4) {
-      tprintf("Bad format of font spacing file %s\n", filename);
+      tprintError("Bad format of font spacing file {}\n", filename);
       fclose(fontinfo_file);
       return false;
     }
     bool valid = unicharset_.contains_unichar(uch);
     if (valid) {
       spacing = new FontSpacingInfo();
-      spacing->x_gap_before = static_cast<int16_t>(x_gap_before * scale);
-      spacing->x_gap_after = static_cast<int16_t>(x_gap_after * scale);
+      spacing->x_gap_before = static_cast<TDimension>(x_gap_before * scale);
+      spacing->x_gap_after = static_cast<TDimension>(x_gap_after * scale);
     }
     for (int k = 0; k < num_kerned; ++k) {
       if (tfscanf(fontinfo_file, "%s %d", kerned_uch, &x_gap) != 2) {
-        tprintf("Bad format of font spacing file %s\n", filename);
+        tprintError("Bad format of font spacing file {}\n", filename);
         fclose(fontinfo_file);
         delete spacing;
         return false;
@@ -509,7 +510,7 @@ bool MasterTrainer::AddSpacingInfo(const char *filename) {
       }
       spacing->kerned_unichar_ids.push_back(
           unicharset_.unichar_to_id(kerned_uch));
-      spacing->kerned_x_gaps.push_back(static_cast<int16_t>(x_gap * scale));
+      spacing->kerned_x_gaps.push_back(static_cast<TDimension>(x_gap * scale));
     }
     if (valid) {
       fi->add_spacing(unicharset_.unichar_to_id(uch), spacing);
@@ -616,6 +617,8 @@ CLUSTERER *MasterTrainer::SetupForClustering(
   return clusterer;
 }
 
+#if !DISABLED_LEGACY_ENGINE
+
 // Writes the given float_classes (produced by SetupForFloat2Int) as inttemp
 // to the given inttemp_file, and the corresponding pffmtable.
 // The unicharset is the original encoding of graphemes, and shape_set should
@@ -633,7 +636,7 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
       classify->CreateIntTemplates(float_classes, shape_set);
   FILE *fp = fopen(inttemp_file, "wb");
   if (fp == nullptr) {
-    tprintf("Error, failed to open file \"%s\"\n", inttemp_file);
+    tprintError("Failed to open file \"{}\"\n", inttemp_file);
   } else {
     classify->WriteIntTemplates(fp, int_templates, shape_set);
     fclose(fp);
@@ -671,7 +674,7 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
   }
   fp = fopen(pffmtable_file, "wb");
   if (fp == nullptr) {
-    tprintf("Error, failed to open file \"%s\"\n", pffmtable_file);
+    tprintError("Failed to open file \"{}\"\n", pffmtable_file);
   } else {
     tesseract::Serialize(fp, shapetable_cutoffs);
     for (size_t c = 0; c < unicharset.size(); ++c) {
@@ -687,6 +690,8 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
   delete classify;
 }
 
+#endif
+
 // Generate debug output relating to the canonical distance between the
 // two given UTF8 grapheme strings.
 void MasterTrainer::DebugCanonical(const char *unichar_str1,
@@ -697,39 +702,39 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
     class_id2 = class_id1;
   }
   if (class_id1 == INVALID_UNICHAR_ID) {
-    tprintf("No unicharset entry found for %s\n", unichar_str1);
+    tprintError("No unicharset entry found for {}\n", unichar_str1);
     return;
   } else {
-    tprintf("Font ambiguities for unichar %d = %s and %d = %s\n", class_id1,
+    tprintDebug("Font ambiguities for unichar {} = {} and {} = {}\n", class_id1,
             unichar_str1, class_id2, unichar_str2);
   }
   int num_fonts = samples_.NumFonts();
   const IntFeatureMap &feature_map = feature_map_;
   // Iterate the fonts to get the similarity with other fonst of the same
   // class.
-  tprintf("      ");
+  tprintDebug("      ");
   for (int f = 0; f < num_fonts; ++f) {
     if (samples_.NumClassSamples(f, class_id2, false) == 0) {
       continue;
     }
-    tprintf("%6d", f);
+    tprintDebug("{}", f);
   }
-  tprintf("\n");
+  tprintDebug("\n");
   for (int f1 = 0; f1 < num_fonts; ++f1) {
     // Map the features of the canonical_sample.
     if (samples_.NumClassSamples(f1, class_id1, false) == 0) {
       continue;
     }
-    tprintf("%4d  ", f1);
+    tprintDebug("{}  ", f1);
     for (int f2 = 0; f2 < num_fonts; ++f2) {
       if (samples_.NumClassSamples(f2, class_id2, false) == 0) {
         continue;
       }
       float dist =
           samples_.ClusterDistance(f1, class_id1, f2, class_id2, feature_map);
-      tprintf(" %5.3f", dist);
+      tprintDebug(" {}", dist);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
   // Build a fake ShapeTable containing all the sample types.
   ShapeTable shapes(unicharset_);
@@ -744,7 +749,11 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+
+#if !DISABLED_LEGACY_ENGINE
+
+#if !GRAPHICS_DISABLED
+
 // Debugging for cloud/canonical features.
 // Displays a Features window containing:
 // If unichar_str2 is in the unicharset, and canonical_font is non-negative,
@@ -760,7 +769,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
                                    int canonical_font) {
   const IntFeatureMap &feature_map = feature_map_;
   const IntFeatureSpace &feature_space = feature_map.feature_space();
-  ScrollView *f_window = CreateFeatureSpaceWindow("Features", 100, 500);
+  ScrollViewReference f_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Features", 100, 500);
   ClearFeatureSpaceWindow(norm_mode_ == NM_BASELINE ? baseline : character,
                           f_window);
   int class_id2 = samples_.unicharset().unichar_to_id(unichar_str2);
@@ -768,7 +777,7 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     const TrainingSample *sample =
         samples_.GetCanonicalSample(canonical_font, class_id2);
     for (uint32_t f = 0; f < sample->num_features(); ++f) {
-      RenderIntFeature(f_window, &sample->features()[f], ScrollView::RED);
+      RenderIntFeature(f_window, &sample->features()[f], Diagnostics::RED);
     }
   }
   int class_id1 = samples_.unicharset().unichar_to_id(unichar_str1);
@@ -777,32 +786,37 @@ void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
     for (int f = 0; f < cloud.size(); ++f) {
       if (cloud[f]) {
         INT_FEATURE_STRUCT feature = feature_map.InverseIndexFeature(f);
-        RenderIntFeature(f_window, &feature, ScrollView::GREEN);
+        RenderIntFeature(f_window, &feature, Diagnostics::GREEN);
       }
     }
   }
-  f_window->Update();
-  ScrollView *s_window = CreateFeatureSpaceWindow("Samples", 100, 500);
-  SVEventType ev_type;
-  do {
-    // Wait until a click or popup event.
-    auto ev = f_window->AwaitEvent(SVET_ANY);
-    ev_type = ev->type;
-    if (ev_type == SVET_CLICK) {
-      int feature_index = feature_space.XYToFeatureIndex(ev->x, ev->y);
-      if (feature_index >= 0) {
-        // Iterate samples and display those with the feature.
-        Shape shape;
-        shape.AddToShape(class_id1, cloud_font);
-        s_window->Clear();
-        samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space,
-                                           ScrollView::GREEN, s_window);
-        s_window->Update();
+  f_window->UpdateWindow();
+  if (f_window->HasInteractiveFeature()) {
+    ScrollViewReference s_window = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "Samples", 100, 500);
+    SVEventType ev_type;
+    do {
+      // Wait until a click or popup event.
+      auto ev = f_window->AwaitEvent(SVET_ANY);
+      ev_type = ev->type;
+      if (ev_type == SVET_CLICK) {
+        int feature_index = feature_space.XYToFeatureIndex(ev->x, ev->y);
+        if (feature_index >= 0) {
+          // Iterate samples and display those with the feature.
+          Shape shape;
+          shape.AddToShape(class_id1, cloud_font);
+          s_window->Clear();
+          samples_.DisplaySamplesWithFeature(feature_index, shape, feature_space, Diagnostics::GREEN, s_window);
+          s_window->UpdateWindow();
+        }
       }
-    }
-  } while (ev_type != SVET_DESTROY);
+    } while (ev_type != SVET_DESTROY);
+  }
 }
+
 #endif // !GRAPHICS_DISABLED
+
+#endif
+
 
 void MasterTrainer::TestClassifierVOld(bool replicate_samples,
                                        ShapeClassifier *test_classifier,
@@ -850,10 +864,10 @@ double MasterTrainer::TestClassifier(CountTypes error_mode, int report_level,
     for (sample_it.Begin(); !sample_it.AtEnd(); sample_it.Next()) {
       ++num_samples;
     }
-    tprintf("Iterator has charset size of %d/%d, %d shapes, %d samples\n",
+    tprintDebug("Iterator has charset size of {}/{}, {} shapes, {} samples\n",
             sample_it.SparseCharsetSize(), sample_it.CompactCharsetSize(),
             test_classifier->GetShapeTable()->NumShapes(), num_samples);
-    tprintf("Testing %sREPLICATED:\n", replicate_samples ? "" : "NON-");
+    tprintDebug("Testing {}REPLICATED:\n", replicate_samples ? "" : "NON-");
   }
   double unichar_error = 0.0;
   ErrorCounter::ComputeErrorRate(test_classifier, report_level, error_mode,
@@ -973,7 +987,7 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
   float min_dist = kInfiniteDist;
   int min_s1 = 0;
   int min_s2 = 0;
-  tprintf("Computing shape distances...");
+  tprintDebug("Computing shape distances...");
   for (int s1 = 0; s1 < num_shapes; ++s1) {
     for (int s2 = s1 + 1; s2 < num_shapes; ++s2) {
       ShapeDist dist(s1, s2, ShapeDistance(*shapes, s1, s2));
@@ -984,16 +998,16 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
         min_s2 = s2;
       }
     }
-    tprintf(" %d", s1);
+    tprintDebug(" {}", s1);
   }
-  tprintf("\n");
+  tprintDebug("\n");
   int num_merged = 0;
   while (num_merged < max_merges && min_dist < max_dist) {
-    tprintf("Distance = %f: ", min_dist);
+    tprintDebug("Distance = {}: ", min_dist);
     int num_unichars = shapes->MergedUnicharCount(min_s1, min_s2);
     shape_dists[min_s1][min_s2 - min_s1 - 1].distance = kInfiniteDist;
     if (num_unichars > max_shape_unichars) {
-      tprintf("Merge of %d and %d with %d would exceed max of %d unichars\n",
+      tprintDebug("Merge of {} and {} with {} would exceed max of {} unichars\n",
               min_s1, min_s2, num_unichars, max_shape_unichars);
     } else {
       shapes->MergeShapes(min_s1, min_s2);
@@ -1030,12 +1044,12 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
       }
     }
   }
-  tprintf("Stopped with %d merged, min dist %f\n", num_merged, min_dist);
+  tprintDebug("Stopped with {} merged, min dist {}\n", num_merged, min_dist);
   delete[] shape_dists;
   if (debug_level_ > 1) {
     for (int s1 = 0; s1 < num_shapes; ++s1) {
       if (shapes->MasterDestinationIndex(s1) == s1) {
-        tprintf("Master shape:%s\n", shapes->DebugStr(s1).c_str());
+        tprintDebug("Master shape:{}\n", shapes->DebugStr(s1).c_str());
       }
     }
   }

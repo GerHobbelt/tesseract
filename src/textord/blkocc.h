@@ -20,7 +20,7 @@
 #ifndef BLKOCC_H
 #define BLKOCC_H
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "params.h"
 
 namespace tesseract {
@@ -60,7 +60,8 @@ public:
   }
 };
 
-ELISTIZEH(REGION_OCC)
+ELISTIZEH(REGION_OCC);
+
 #define RANGE_IN_BAND(band_max, band_min, range_max, range_min) \
   (((range_min) >= (band_min)) && ((range_max) < (band_max)))
 /************************************************************************
@@ -234,10 +235,9 @@ public:
 
 #define END_OF_WERD_CODE 255
 
-extern double_VAR_H(textord_underline_threshold);
+extern DOUBLE_VAR_H(textord_underline_threshold);
 
 bool test_underline(  // look for underlines
-    bool testing_on,  // drawing blob
     C_BLOB *blob,     // blob to test
     int16_t baseline, // coords of baseline
     int16_t xheight   // height of line

@@ -17,7 +17,7 @@ namespace tesseract {
 BOOL_VAR(gapmap_debug, false, "Say which blocks have tables");
 BOOL_VAR(gapmap_use_ends, false, "Use large space at start and end of rows");
 BOOL_VAR(gapmap_no_isolated_quanta, false, "Ensure gaps not less than 2quanta wide");
-double_VAR(gapmap_big_gaps, 1.75, "xht multiplier");
+DOUBLE_VAR(gapmap_big_gaps, 1.75, "xht multiplier");
 
 /*************************************************************************
  * A block gap map is a quantised histogram of whitespace regions in the
@@ -52,8 +52,8 @@ GAPMAP::GAPMAP(     // Constructor
   Find left and right extremes and bucket size
 */
   map = nullptr;
-  min_left = INT16_MAX;
-  max_right = -INT16_MAX;
+  min_left = TDIMENSION_MAX;
+  max_right = TDIMENSION_MIN;
   total_rows = 0;
   any_tabs = false;
 
@@ -63,7 +63,7 @@ GAPMAP::GAPMAP(     // Constructor
     row = row_it.data();
     if (!row->blob_list()->empty()) {
       total_rows++;
-      xht_stats.add(static_cast<int16_t>(floor(row->xheight + 0.5)), 1);
+      xht_stats.add(static_cast<int32_t>(floor(row->xheight + 0.5)), 1);
       blob_it.set_to_list(row->blob_list());
       start_of_row = blob_it.data()->bounding_box().left();
       end_of_row = blob_it.data_relative(-1)->bounding_box().right();
@@ -153,7 +153,7 @@ GAPMAP::GAPMAP(     // Constructor
     }
   }
   if (gapmap_debug && any_tabs) {
-    tprintf("Table found\n");
+    tprintDebug("Table found\n");
   }
 }
 

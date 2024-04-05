@@ -21,25 +21,46 @@
 #define TESSERACT_TRAINING_TLOG_H_
 
 #include "export.h"
+#include <tesseract/export.h>
+#include <fmt/format.h>       // for fmt
 
-#include "commandlineflags.h"
+#include "../common/commandlineflags.h"
 #include "errcode.h"
 #include "tprintf.h"
 
 TESS_PANGO_TRAINING_API
 DECLARE_INT_PARAM_FLAG(tlog_level);
 
-// Variant guarded by the numeric logging level parameter FLAGS_tlog_level
-// (default 0).  Code using ParseCommandLineFlags() can control its value using
-// the --tlog_level commandline argument. Otherwise it must be specified in a
-// config file like other params.
-#define tlog(level, ...)             \
-  {                                  \
-    if (FLAGS_tlog_level >= level) { \
-      tprintf(__VA_ARGS__);          \
-    }                                \
+namespace tesseract {
+
+  // Variant guarded by the numeric logging level parameter FLAGS_tlog_level
+  // (default 0).  Code using ParseCommandLineFlags() can control its value using
+  // the --tlog_level commandline argument. Otherwise it must be specified in a
+  // config file like other params.
+  template <typename S, typename... Args>
+  static inline void TLOG(int level, const S* format, Args &&...args) {
+    if (FLAGS_tlog_level >= level) {
+      //tprintf(format, ...);
+      vTessPrint(4 - level, format, fmt::make_format_args(args...));
+    }
   }
 
-#define TLOG_IS_ON(level) (FLAGS_tlog_level >= level)
+  template <typename S, typename... Args>
+  static inline void VTLOG(int level, const S* format, fmt::format_args args) {
+	  if (FLAGS_tlog_level >= level) {
+		  vTessPrint(4 - level, format, args);
+	  }
+  }
+
+  static inline bool TLOG_IS_ON(int level) {
+    return (FLAGS_tlog_level >= level);
+  }
+
+
+  template<typename... Args>
+  static inline void tlog(int level, const char* format, Args &&...args) {
+	  TLOG<char>(level, format, args...);
+  }
+}
 
 #endif // TESSERACT_TRAINING_TLOG_H_

@@ -21,8 +21,8 @@
 #define PITSYNC1_H
 
 #include "blobbox.h"
-#include "clst.h"
-#include "elst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "params.h"
 #include "pithsync.h"
 #include "statistc.h"
@@ -74,15 +74,17 @@ private:
   int32_t xpos;     // location
   FPSEGPT *pred;    // optimal previous
   double mean_sum;  // mean so far
-  double sq_sum;    // summed distsances
+  double sq_sum;    // summed distances
   double cost;      // cost function
 };
 
-ELISTIZEH(FPSEGPT)
-CLISTIZEH(FPSEGPT_LIST)
+ELISTIZEH(FPSEGPT);
+CLISTIZEH(FPSEGPT_LIST);
+
 extern INT_VAR_H(pitsync_linear_version);
-extern double_VAR_H(pitsync_joined_edge);
-extern double_VAR_H(pitsync_offset_freecut_fraction);
+extern DOUBLE_VAR_H(pitsync_joined_edge);
+extern DOUBLE_VAR_H(pitsync_offset_freecut_fraction);
+
 double check_pitch_sync(   // find segmentation
     BLOBNBOX_IT *blob_it,  // blobs to do
     int16_t blob_count,    // no of blobs

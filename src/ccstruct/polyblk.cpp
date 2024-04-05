@@ -16,7 +16,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -242,8 +242,8 @@ void POLY_BLOCK::move(ICOORD shift) {
   compute_bb();
 }
 
-#ifndef GRAPHICS_DISABLED
-void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
+#if !GRAPHICS_DISABLED
+void POLY_BLOCK::plot(ScrollViewReference &window, int32_t num) {
   ICOORDELT_IT v = &vertices;
 
   window->Pen(ColorForPolyBlockType(type));
@@ -253,7 +253,7 @@ void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   if (num > 0) {
     window->TextAttributes("Times", 80, false, false, false);
     char temp_buff[34];
-#  if !defined(_WIN32) || defined(__MINGW32__)
+#  if defined(PRId32)
     snprintf(temp_buff, sizeof(temp_buff), "%" PRId32, num);
 #  else
     _ltoa(num, temp_buff, 10);
@@ -268,8 +268,10 @@ void POLY_BLOCK::plot(ScrollView *window, int32_t num) {
   v.move_to_first();
   window->DrawTo(v.data()->x(), v.data()->y());
 }
+#endif
 
-void POLY_BLOCK::fill(ScrollView *window, ScrollView::Color colour) {
+#if !GRAPHICS_DISABLED
+void POLY_BLOCK::fill(ScrollViewReference &window, Diagnostics::Color colour) {
   ICOORDELT_IT s_it;
 
   std::unique_ptr<PB_LINE_IT> lines(new PB_LINE_IT(this));
@@ -358,9 +360,12 @@ ICOORDELT_LIST *PB_LINE_IT::get_line(TDimension y) {
 
   if (!r.empty()) {
     r.sort(lessthan);
+    // TODO: remove loop after checking its history.
+#if 0
     for (r.mark_cycle_pt(); !r.cycled_list(); r.forward()) {
       x = r.data();
     }
+#endif
     for (r.mark_cycle_pt(); !r.cycled_list(); r.forward()) {
       r.data()->set_y(r.data_relative(1)->x() - r.data()->x());
       r.forward();
@@ -384,33 +389,33 @@ int lessthan(const void *first, const void *second) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /// Returns a color to draw the given type.
-ScrollView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
+Diagnostics::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
   // Keep kPBColors in sync with PolyBlockType.
-  const ScrollView::Color kPBColors[PT_COUNT] = {
-      ScrollView::WHITE,       // Type is not yet known. Keep as the 1st element.
-      ScrollView::BLUE,        // Text that lives inside a column.
-      ScrollView::CYAN,        // Text that spans more than one column.
-      ScrollView::MEDIUM_BLUE, // Text that is in a cross-column pull-out
+  const Diagnostics::Color kPBColors[PT_COUNT] = {
+      Diagnostics::WHITE,       // Type is not yet known. Keep as the 1st element.
+      Diagnostics::BLUE,        // Text that lives inside a column.
+      Diagnostics::CYAN,        // Text that spans more than one column.
+      Diagnostics::MEDIUM_BLUE, // Text that is in a cross-column pull-out
                                // region.
-      ScrollView::AQUAMARINE,  // Partition belonging to an equation region.
-      ScrollView::SKY_BLUE,    // Partition belonging to an inline equation
+      Diagnostics::AQUAMARINE,  // Partition belonging to an equation region.
+      Diagnostics::SKY_BLUE,    // Partition belonging to an inline equation
                                // region.
-      ScrollView::MAGENTA,     // Partition belonging to a table region.
-      ScrollView::GREEN,       // Text-line runs vertically.
-      ScrollView::LIGHT_BLUE,  // Text that belongs to an image.
-      ScrollView::RED,         // Image that lives inside a column.
-      ScrollView::YELLOW,      // Image that spans more than one column.
-      ScrollView::ORANGE,      // Image in a cross-column pull-out region.
-      ScrollView::BROWN,       // Horizontal Line.
-      ScrollView::DARK_GREEN,  // Vertical Line.
-      ScrollView::GREY         // Lies outside of any column.
+      Diagnostics::MAGENTA,     // Partition belonging to a table region.
+      Diagnostics::GREEN,       // Text-line runs vertically.
+      Diagnostics::LIGHT_BLUE,  // Text that belongs to an image.
+      Diagnostics::RED,         // Image that lives inside a column.
+      Diagnostics::YELLOW,      // Image that spans more than one column.
+      Diagnostics::ORANGE,      // Image in a cross-column pull-out region.
+      Diagnostics::BROWN,       // Horizontal Line.
+      Diagnostics::DARK_GREEN,  // Vertical Line.
+      Diagnostics::GREY         // Lies outside of any column.
   };
   if (type < PT_COUNT) {
     return kPBColors[type];
   }
-  return ScrollView::WHITE;
+  return Diagnostics::WHITE;
 }
 #endif // !GRAPHICS_DISABLED
 

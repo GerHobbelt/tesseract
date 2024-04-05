@@ -16,7 +16,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -27,7 +27,7 @@
 
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 #  define FXDEMOWIN "FXDemo"
 #  define FXDEMOXPOS 250
@@ -39,7 +39,7 @@ namespace tesseract {
 // title of window
 #  define DEBUG_WIN_NAME "FXDebug"
 
-ScrollView *fx_win = nullptr;
+ScrollViewReference fx_win;
 
 /**********************************************************************
  * create_fx_win
@@ -48,8 +48,9 @@ ScrollView *fx_win = nullptr;
  **********************************************************************/
 
 void create_fx_win() { // make features win
-  fx_win = new ScrollView(FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
+  fx_win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, FXDEMOWIN, FXDEMOXPOS, FXDEMOYPOS, FXDEMOXSIZE, FXDEMOYSIZE,
                           WERDWIDTH * 2, BLN_MAX * 2, true);
+  fx_win->RegisterGlobalRefToMe(&fx_win);
 }
 
 /**********************************************************************

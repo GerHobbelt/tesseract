@@ -23,12 +23,12 @@
 #include "elst2.h"      // for ELIST2_ITERATOR, ELIST2IZEH, ELIST2_LINK
 #include "errcode.h"    // for ASSERT_HOST
 #include "ocrblock.h"   // for BLOCK
-#include "params.h"     // for DoubleParam, double_VAR_H
+#include "params.h"     // for DoubleParam, DOUBLE_VAR_H
 #include "pdblock.h"    // for PDBLK
 #include "points.h"     // for FCOORD, ICOORD, ICOORDELT_LIST
 #include "quspline.h"   // for QSPLINE
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 #include "statistc.h"   // for STATS
 #include "stepblob.h"   // for C_BLOB
 #include "tprintf.h"    // for tprintf
@@ -37,6 +37,8 @@
 #include <cinttypes> // for PRId32
 #include <cmath>     // for std::sqrt
 #include <cstdint>   // for int16_t, int32_t
+
+#include <tesseract/fmt-support.h>
 
 struct Pix;
 
@@ -53,6 +55,11 @@ enum PITCH_TYPE {
   PITCH_CORR_FIXED,
   PITCH_CORR_PROP
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(PITCH_TYPE);
+
+static inline auto format_as(PITCH_TYPE t) {
+  return fmt::underlying(t);
+}
 
 // The possible tab-stop types of each side of a BLOBNBOX.
 // The ordering is important, as it is used for deleting dead-ends in the
@@ -66,6 +73,11 @@ enum TabType {
   TT_CONFIRMED,     // Aligned with neighbours.
   TT_VLINE          // Detected as a vertical line.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(TabType);
+
+static inline auto format_as(TabType t) {
+  return fmt::underlying(t);
+}
 
 // The possible region types of a BLOBNBOX.
 // Note: keep all the text types > BRT_UNKNOWN and all the image types less.
@@ -83,10 +95,26 @@ enum BlobRegionType {
 
   BRT_COUNT // Number of possibilities.
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobRegionType);
+
+static inline auto format_as(BlobRegionType t) {
+  return fmt::underlying(t);
+}
 
 // enum for elements of arrays that refer to neighbours.
 // NOTE: keep in this order, so ^2 can be used to flip direction.
-enum BlobNeighbourDir { BND_LEFT, BND_BELOW, BND_RIGHT, BND_ABOVE, BND_COUNT };
+enum BlobNeighbourDir {
+  BND_LEFT,
+  BND_BELOW,
+  BND_RIGHT,
+  BND_ABOVE,
+  BND_COUNT
+};
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobNeighbourDir);
+
+static inline auto format_as(BlobNeighbourDir bd) {
+  return fmt::underlying(bd);
+}
 
 // enum for special type of text characters, such as math symbol or italic.
 enum BlobSpecialTextType {
@@ -98,6 +126,7 @@ enum BlobSpecialTextType {
   BSTT_SKIP,    // Characters that we skip labeling (usually too small).
   BSTT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobSpecialTextType);
 
 inline BlobNeighbourDir DirOtherWay(BlobNeighbourDir dir) {
   return static_cast<BlobNeighbourDir>(dir ^ 2);
@@ -117,6 +146,11 @@ enum BlobTextFlowType {
   BTFT_LEADER,        // Leader dots/dashes etc.
   BTFT_COUNT
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(BlobTextFlowType);
+
+static inline auto format_as(BlobTextFlowType t) {
+  return fmt::underlying(t);
+}
 
 // Returns true if type1 dominates type2 in a merge. Mostly determined by the
 // ordering of the enum, LEADER is weak and dominates nothing.
@@ -135,9 +169,10 @@ inline bool DominatesInMerge(BlobTextFlowType type1, BlobTextFlowType type2) {
 }
 
 class ColPartition;
-
 class BLOBNBOX;
-ELISTIZEH(BLOBNBOX)
+
+ELISTIZEH(BLOBNBOX);
+
 class BLOBNBOX : public ELIST_LINK {
 public:
   BLOBNBOX() {
@@ -262,6 +297,13 @@ public:
   int32_t enclosed_area() const {
     return area;
   }
+  bool medium() const {
+    return medium_;
+  }
+  void set_medium(bool val) {
+    medium_ = val;
+  }
+
   bool joined_to_prev() const {
     return joined;
   }
@@ -455,26 +497,34 @@ public:
   // See coutln.h for an explanation of edge offsets.
   static void ComputeEdgeOffsets(Image thresholds, Image grey, BLOBNBOX_LIST *blobs);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Helper to draw all the blobs on the list in the given body_colour,
   // with child outlines in the child_colour.
-  static void PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                        ScrollView::Color child_colour, ScrollView *win);
+  static void PlotBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                        Diagnostics::Color child_colour, ScrollViewReference &win);
   // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
   // given list in the given body_colour, with child outlines in the
   // child_colour.
-  static void PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                             ScrollView::Color child_colour, ScrollView *win);
+  static void PlotNoiseBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                             Diagnostics::Color child_colour, ScrollViewReference &win);
+#endif
 
-  static ScrollView::Color TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type);
+  // Helper to draw all the blobs on the list in the given body_colour,
+  // with child outlines in the child_colour.
+  static void PlotBlobs(BLOBNBOX_LIST* list, Image &pix, std::vector<uint32_t>& cmap, int cmap_offset);
+
+#if !GRAPHICS_DISABLED
+  static Diagnostics::Color TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type);
 
   // Keep in sync with BlobRegionType.
-  ScrollView::Color BoxColor() const;
+  Diagnostics::Color BoxColor() const;
 
-  void plot(ScrollView *window,              // window to draw in
-            ScrollView::Color blob_colour,   // for outer bits
-            ScrollView::Color child_colour); // for holes
+  void plot(ScrollViewReference &window,              // window to draw in
+            Diagnostics::Color blob_colour,   // for outer bits
+            Diagnostics::Color child_colour); // for holes
 #endif
+
+  void plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise);
 
   // Initializes members set by StrokeWidth and beyond, without discarding
   // stored area and strokewidth values, which are expensive to calculate.
@@ -527,6 +577,7 @@ private:
   BlobSpecialTextType spt_type_;             // Special text type.
   bool joined = false;                       // joined to prev
   bool reduced = false;                      // reduced box set
+  bool medium_ = false;
   int16_t left_rule_ = 0;                    // x-coord of nearest but not crossing rule line
   int16_t right_rule_ = 0;                   // x-coord of nearest but not crossing rule line
   int16_t left_crossing_rule_;               // x-coord of nearest or crossing rule line
@@ -740,10 +791,10 @@ public:
     TO_ROW_IT row_it = &row_list;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       auto row = row_it.data();
-      tprintf("Row range (%g,%g), para_c=%g, blobcount=%" PRId32 "\n",
-              static_cast<double>(row->min_y()),
-              static_cast<double>(row->max_y()),
-              static_cast<double>(row->parallel_c()),
+      tprintDebug("Row range ({},{}), para_c={}, blobcount={}\n",
+              row->min_y(),
+              row->max_y(),
+              row->parallel_c(),
               row->blob_list()->length());
     }
   }
@@ -766,11 +817,14 @@ public:
   // See coutln.h for an explanation of edge offsets.
   void ComputeEdgeOffsets(Image thresholds, Image grey);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draw the noise blobs from all lists in red.
-  void plot_noise_blobs(ScrollView *to_win);
+  void plot_noise_blobs(ScrollViewReference &to_win);
   // Draw the blobs on the various lists in the block in different colors.
-  void plot_graded_blobs(ScrollView *to_win);
+  void plot_graded_blobs(ScrollViewReference &to_win);
+
+  // Draw the blobs on the various lists in the block in different colors.
+  void plot_graded_blobs(Image& pix);
 #endif
 
   BLOBNBOX_LIST blobs;       // medium size
@@ -805,7 +859,8 @@ private:
   TO_ROW_LIST row_list; // temporary rows
 };
 
-ELISTIZEH(TO_BLOCK)
+ELISTIZEH(TO_BLOCK);
+
 void find_cblob_limits( // get y limits
     C_BLOB *blob,       // blob to search
     float leftx,        // x limits
@@ -843,11 +898,11 @@ void vertical_coutline_projection( // project outlines
     C_OUTLINE *outline,            // outline to project
     STATS *stats                   // output
 );
-#ifndef GRAPHICS_DISABLED
-void plot_blob_list(ScrollView *win,                 // window to draw in
+#if !GRAPHICS_DISABLED
+void plot_blob_list(ScrollViewReference &win,                 // window to draw in
                     BLOBNBOX_LIST *list,             // blob list
-                    ScrollView::Color body_colour,   // colour to draw
-                    ScrollView::Color child_colour); // colour of child
+                    Diagnostics::Color body_colour,   // colour to draw
+                    Diagnostics::Color child_colour); // colour of child
 #endif                                               // !GRAPHICS_DISABLED
 
 } // namespace tesseract

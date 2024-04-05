@@ -22,7 +22,7 @@
 #include <tesseract/ocrclass.h>
 #include "image.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "gmock/gmock.h"
 
 #include <fstream>
@@ -32,6 +32,8 @@
 #include <string>
 
 #include <time.h>
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -93,7 +95,7 @@ void ClassicProgressTester(const char *imgname, const char *tessdatadir, const c
   using ::testing::SaveArg;
 
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
   Image image = pixRead(imgname);
   ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
   api->SetImage(image);
@@ -124,7 +126,7 @@ void NewProgressTester(const char *imgname, const char *tessdatadir, const char 
   using ::testing::SaveArg;
 
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
   Image image = pixRead(imgname);
   ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
   api->SetImage(image);

@@ -37,12 +37,14 @@ public:
   operator Pix *() const { return pix_; }
   explicit operator Pix **() { return &pix_; }
   Pix *operator->() const { return pix_; }
+  Image& operator =(Pix* pix);
 
   // api
   Image clone() const; // increases refcount
   Image copy() const;  // does full copy
   void destroy();
   bool isZero() const;
+  void replace(Pix* pix);
 
   // ops
   Image operator|(Image) const;

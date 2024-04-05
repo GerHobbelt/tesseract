@@ -25,7 +25,7 @@
 #include "tabvector.h"
 
 class BLOBNBOX;
-class BLOBNBOX_LIST;
+struct BLOBNBOX_LIST;
 class TO_BLOCK;
 class ScrollView;
 struct Pix;
@@ -36,6 +36,8 @@ using WidthCallback = std::function<bool(int)>;
 
 struct AlignedBlobParams;
 class ColPartitionGrid;
+
+class TESS_API Tesseract;
 
 /** Pixel resolution of column width estimates. */
 const int kColumnWidthFactor = 20;
@@ -51,7 +53,7 @@ const int kColumnWidthFactor = 20;
  */
 class TESS_API TabFind : public AlignedBlob {
 public:
-  TabFind(int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
+  TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright, TabVector_LIST *vlines,
           int vertical_x, int vertical_y, int resolution);
   ~TabFind() override;
 
@@ -198,7 +200,7 @@ protected:
   /**
    * Display the tab vectors found in this grid.
    */
-  ScrollView *DisplayTabVectors(ScrollView *tab_win);
+  void DisplayTabVectors(ScrollViewReference &tab_win);
 
   // First part of FindTabVectors, which may be used twice if the text
   // is mostly of vertical alignment.  If find_vertical_text flag is
@@ -207,7 +209,7 @@ protected:
   // setting this to true will find horizontal lines on the page.
   // tabfind_aligned_gap_fraction should be the value of parameter
   // textord_tabfind_aligned_gap_fraction
-  ScrollView *FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
+  ScrollViewReference FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, int min_gutter_width,
                                     double tabfind_aligned_gap_fraction, TO_BLOCK *block);
 
   // Apply the given rotation to the given list of blobs.
@@ -233,7 +235,7 @@ private:
   // and if so add it to the left and right tab boxes.
   // tabfind_aligned_gap_fraction should be the value of parameter
   // textord_tabfind_aligned_gap_fraction
-  ScrollView *FindTabBoxes(int min_gutter_width, double tabfind_aligned_gap_fraction);
+  ScrollViewReference FindTabBoxes(int min_gutter_width, double tabfind_aligned_gap_fraction);
 
   // Return true if this box looks like a candidate tab stop, and set
   // the appropriate tab type(s) to TT_UNCONFIRMED.
@@ -280,7 +282,7 @@ private:
   // Trace textlines from one side to the other of each tab vector, saving
   // the most frequent column widths found in a list so that a given width
   // can be tested for being a common width with a simple callback function.
-  void ComputeColumnWidths(ScrollView *tab_win, ColPartitionGrid *part_grid);
+  void ComputeColumnWidths(ScrollViewReference &tab_win, ColPartitionGrid *part_grid);
 
   // Finds column width and:
   //   if col_widths is not null (pass1):

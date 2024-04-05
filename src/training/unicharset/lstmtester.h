@@ -62,6 +62,9 @@ public:
   std::string RunEvalSync(int iteration, const double *training_errors, const TessdataManager &model_mgr,
                           int training_stage, int verbosity);
 
+  // Returns the confidence for all best labels over a set of outputs.
+  float ConfidenceFromOutputs(NetworkIO *outputs, int null_char);
+
 private:
   // Helper thread function for RunEvalAsync.
   // LockIfNotRunning must have returned true before calling ThreadFunc, and
@@ -86,6 +89,17 @@ private:
   TessdataManager test_model_mgr_;
   int test_training_stage_ = 0;
   std::string test_result_;
+
+  // == Debugging parameters.==
+  int debug_ = 0;
+
+public:
+	void SetDebug(int v) {
+		debug_ = std::max(0, v);
+	}
+	int HasDebug() const {
+		return debug_;
+	}
 };
 
 } // namespace tesseract

@@ -17,6 +17,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include "normstrngs.h"
 
 #include <string>
@@ -26,6 +30,9 @@
 #include <tesseract/unichar.h>
 #include "errcode.h"
 #include "icuerrorcode.h"
+
+#if defined(HAS_LIBICU)
+
 #include "unicode/normalizer2.h" // From libicu
 #include "unicode/translit.h"    // From libicu
 #include "unicode/uchar.h"       // From libicu
@@ -51,7 +58,7 @@ static bool is_hyphen_punc(const char32 ch) {
       0xfe58, // small em dash
       0xfe63, // small hyphen-minus
       0xff0d, // fullwidth hyphen-minus
-      0x2e17  // double oblique hyphen (Fraktur)
+      0x2e17, // double oblique hyphen (Fraktur)
   };
   for (int kHyphenPuncUnicode : kHyphenPuncUnicodes) {
     if (kHyphenPuncUnicode == ch) {
@@ -71,7 +78,7 @@ static bool is_single_quote(const char32 ch) {
       0x201B, // single high-reversed-9 quotation mark (PropList.txt)
       0x2032, // prime
       0x300C, // left corner bracket (East Asian languages)
-      0xFF07  // fullwidth apostrophe
+      0xFF07, // fullwidth apostrophe
   };
   for (int kSingleQuoteUnicode : kSingleQuoteUnicodes) {
     if (kSingleQuoteUnicode == ch) {
@@ -92,7 +99,7 @@ static bool is_double_quote(const char32 ch) {
       0x301D, // reversed double prime quotation mark (East Asian langs,
               // horiz.)
       0x301E, // close double prime (East Asian languages written horizontally)
-      0xFF02  // fullwidth quotation mark
+      0xFF02, // fullwidth quotation mark
   };
   for (int kDoubleQuoteUnicode : kDoubleQuoteUnicodes) {
     if (kDoubleQuoteUnicode == ch) {
@@ -233,7 +240,7 @@ bool IsValidCodepoint(const char32 ch) {
 }
 
 bool IsWhitespace(const char32 ch) {
-  ASSERT_HOST_MSG(IsValidCodepoint(ch), "Invalid Unicode codepoint: 0x%x\n", ch);
+  ASSERT_HOST_MSG(IsValidCodepoint(ch), "Invalid Unicode codepoint: {}\n", ch);
   return u_isUWhiteSpace(static_cast<UChar32>(ch));
 }
 
@@ -315,3 +322,5 @@ char32 FullwidthToHalfwidth(const char32 ch) {
 }
 
 } // namespace tesseract
+
+#endif

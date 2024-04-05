@@ -20,7 +20,7 @@
 // thread/process creation & synchronization and network connection.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -35,8 +35,8 @@
 #include <thread> // for std::this_thread
 #include <vector>
 
-#ifdef _WIN32
-#  pragma comment(lib, "Ws2_32.lib")
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+#  pragma comment(lib, "ws2_32.lib")
 #  include <winsock2.h> // for fd_set, send, ..
 #  include <ws2tcpip.h> // for addrinfo
 #else
@@ -53,11 +53,11 @@
 #  include <unistd.h>
 #endif
 
-#if defined(_WIN32) && !defined(__GNUC__)
+#if (defined(WIN32) || defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
 #  define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
 #endif /* _WIN32 && !__GNUC__ */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 namespace tesseract {
 
@@ -70,11 +70,11 @@ void SVSync::StartProcess(const char *executable, const char *args) {
   proc.append(" ");
   proc.append(args);
   std::cout << "Starting " << proc << std::endl;
-#  ifdef _WIN32
-  STARTUPINFO start_info;
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+  STARTUPINFOA start_info;
   PROCESS_INFORMATION proc_info;
-  GetStartupInfo(&start_info);
-  if (!CreateProcess(nullptr, const_cast<char *>(proc.c_str()), nullptr,
+  GetStartupInfoA(&start_info);
+  if (!CreateProcessA(nullptr, const_cast<char *>(proc.c_str()), nullptr,
                      nullptr, FALSE, CREATE_NO_WINDOW | DETACHED_PROCESS,
                      nullptr, nullptr, &start_info, &proc_info))
     return;
@@ -116,7 +116,7 @@ void SVSync::StartProcess(const char *executable, const char *args) {
 }
 
 SVSemaphore::SVSemaphore() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   semaphore_ = CreateSemaphore(0, 0, 10, 0);
 #  elif defined(__APPLE__)
   auto name = std::to_string(random());
@@ -131,7 +131,7 @@ SVSemaphore::SVSemaphore() {
 }
 
 SVSemaphore::~SVSemaphore() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   CloseHandle(semaphore_);
 #  elif defined(__APPLE__)
   sem_close(semaphore_);
@@ -141,7 +141,7 @@ SVSemaphore::~SVSemaphore() {
 }
 
 void SVSemaphore::Signal() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   ReleaseSemaphore(semaphore_, 1, nullptr);
 #  elif defined(__APPLE__)
   sem_post(semaphore_);
@@ -151,7 +151,7 @@ void SVSemaphore::Signal() {
 }
 
 void SVSemaphore::Wait() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   WaitForSingleObject(semaphore_, INFINITE);
 #  elif defined(__APPLE__)
   sem_wait(semaphore_);
@@ -223,7 +223,7 @@ char *SVNetwork::Receive() {
 
 // Close the connection to the server.
 void SVNetwork::Close() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   closesocket(stream_);
 #  else
   close(stream_);
@@ -234,7 +234,7 @@ void SVNetwork::Close() {
 
 // The program to invoke to start ScrollView
 static const char *ScrollViewProg() {
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   const char *prog = "java -Xms512m -Xmx1024m";
 #  else
   const char *prog = "sh";
@@ -245,7 +245,7 @@ static const char *ScrollViewProg() {
 // The arguments to the program to invoke to start ScrollView
 static std::string ScrollViewCommand(const std::string &scrollview_path) {
   // Quote our paths on Windows to deal with spaces
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   const char cmd_template[] =
       "-Djava.library.path=\"%s\" -jar \"%s/ScrollView.jar\"";
 #  else
@@ -257,7 +257,7 @@ static std::string ScrollViewCommand(const std::string &scrollview_path) {
   size_t cmdlen = sizeof(cmd_template) + 2 * scrollview_path.size() + 1;
   std::vector<char> cmd(cmdlen);
   const char *sv_path = scrollview_path.c_str();
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   snprintf(&cmd[0], cmdlen, cmd_template, sv_path, sv_path);
 #  else
   snprintf(&cmd[0], cmdlen, cmd_template, sv_path);
@@ -276,7 +276,7 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
   struct addrinfo *addr_info = nullptr;
   struct addrinfo hints = {0, PF_INET, SOCK_STREAM};
   auto port_string = std::to_string(port);
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // Initialize Winsock
   WSADATA wsaData;
   int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -288,7 +288,7 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
   if (getaddrinfo(hostname, port_string.c_str(), &hints, &addr_info) != 0) {
     std::cerr << "Error resolving name for ScrollView host "
               << std::string(hostname) << ":" << port << std::endl;
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
     WSACleanup();
 #  endif // _WIN32
   }
@@ -341,7 +341,7 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
       }
     }
   }
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // WSACleanup();  // This cause ScrollView windows is not displayed
 #  endif // _WIN32
   freeaddrinfo(addr_info);

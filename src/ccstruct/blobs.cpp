@@ -21,7 +21,7 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -44,7 +44,7 @@
 namespace tesseract {
 
 // A Vector representing the "vertical" direction when measuring the
-// divisiblity of blobs into multiple blobs just by separating outlines.
+// divisibility of blobs into multiple blobs just by separating outlines.
 // See divisible_blob below for the use.
 const TPOINT kDivisibleVerticalUpright(0, 1);
 // A vector representing the "vertical" direction for italic text for use
@@ -264,8 +264,8 @@ TBOX TESSLINE::bounding_box() const {
   return TBOX(topleft.x, botright.y, botright.x, topleft.y);
 }
 
-#ifndef GRAPHICS_DISABLED
-void TESSLINE::plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color) {
+#if !GRAPHICS_DISABLED
+void TESSLINE::plot(ScrollViewReference &window, Diagnostics::Color color, Diagnostics::Color child_color) {
   if (is_hole) {
     window->Pen(child_color);
   } else {
@@ -365,7 +365,7 @@ TBLOB *TBLOB::ClassifyNormalizeIfNeeded() const {
     float target_y =
         kBlnBaselineOffset + (rotation.y() > 0 ? x_middle - box.left() : box.right() - x_middle);
     rotated_blob->Normalize(nullptr, &rotation, &denorm_, x_middle, y_middle, 1.0f, 1.0f, 0.0f,
-                            target_y, denorm_.inverse(), denorm_.pix());
+                            target_y, denorm_.inverse());
   }
   return rotated_blob;
 }
@@ -399,11 +399,10 @@ void TBLOB::Clear() {
 // this blob and the Pix for the full image.
 void TBLOB::Normalize(const BLOCK *block, const FCOORD *rotation, const DENORM *predecessor,
                       float x_origin, float y_origin, float x_scale, float y_scale,
-                      float final_xshift, float final_yshift, bool inverse, Image pix) {
+                      float final_xshift, float final_yshift, bool inverse) {
   denorm_.SetupNormalization(block, rotation, predecessor, x_origin, y_origin, x_scale, y_scale,
                              final_xshift, final_yshift);
   denorm_.set_inverse(inverse);
-  denorm_.set_pix(pix);
   // TODO(rays) outline->Normalize is more accurate, but breaks tests due
   // the changes it makes. Reinstate this code with a retraining.
   // The reason this change is troublesome is that it normalizes for the
@@ -505,8 +504,8 @@ void TBLOB::CorrectBlobOrder(TBLOB *next) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
-void TBLOB::plot(ScrollView *window, ScrollView::Color color, ScrollView::Color child_color) {
+#if !GRAPHICS_DISABLED
+void TBLOB::plot(ScrollViewReference &window, Diagnostics::Color color, Diagnostics::Color child_color) {
   for (TESSLINE *outline = outlines; outline != nullptr; outline = outline->next) {
     outline->plot(window, color, child_color);
   }
@@ -627,6 +626,7 @@ static void SegmentCoords(const FCOORD &pt1, const FCOORD &pt2, int x_limit, int
 static void SegmentBBox(const FCOORD &pt1, const FCOORD &pt2, TBOX *bbox) {
   FCOORD step(pt2);
   step -= pt1;
+  {
   int x1 = IntCastRounded(std::min(pt1.x(), pt2.x()));
   int x2 = IntCastRounded(std::max(pt1.x(), pt2.x()));
   if (x2 > x1) {
@@ -635,6 +635,8 @@ static void SegmentBBox(const FCOORD &pt1, const FCOORD &pt2, TBOX *bbox) {
     TBOX point(x1, std::min(y1, y2), x2, std::max(y1, y2));
     *bbox += point;
   }
+  }
+  {
   int y1 = IntCastRounded(std::min(pt1.y(), pt2.y()));
   int y2 = IntCastRounded(std::max(pt1.y(), pt2.y()));
   if (y2 > y1) {
@@ -642,6 +644,7 @@ static void SegmentBBox(const FCOORD &pt1, const FCOORD &pt2, TBOX *bbox) {
     int x2 = IntCastRounded(pt1.x() + step.x() * (y2 - 0.5 - pt1.y()) / step.y());
     TBOX point(std::min(x1, x2), y1, std::max(x1, x2), y2);
     *bbox += point;
+  }
   }
 }
 
@@ -789,7 +792,7 @@ TWERD *TWERD::PolygonalCopy(bool allow_detailed_fx, WERD *src) {
 
 // Baseline normalizes the blobs in-place, recording the normalization in the
 // DENORMs in the blobs.
-void TWERD::BLNormalize(const BLOCK *block, const ROW *row, Image pix, bool inverse, float x_height,
+void TWERD::BLNormalize(const BLOCK *block, const ROW *row, bool inverse, float x_height,
                         float baseline_shift, bool numeric_mode, tesseract::OcrEngineMode hint,
                         const TBOX *norm_box, DENORM *word_denorm) {
   TBOX word_box = bounding_box();
@@ -825,13 +828,12 @@ void TWERD::BLNormalize(const BLOCK *block, const ROW *row, Image pix, bool inve
     // The inverse flag will be true iff the word has been determined to be
     // white on black, and is independent of whether the pix is 8 bit or 1 bit.
     blob->Normalize(block, nullptr, nullptr, word_middle, baseline, blob_scale, blob_scale, 0.0f,
-                    final_y_offset, inverse, pix);
+                    final_y_offset, inverse);
   }
   if (word_denorm != nullptr) {
     word_denorm->SetupNormalization(block, nullptr, nullptr, word_middle, input_y_offset, scale,
                                     scale, 0.0f, final_y_offset);
     word_denorm->set_inverse(inverse);
-    word_denorm->set_pix(pix);
   }
 }
 
@@ -903,11 +905,11 @@ void TWERD::MergeBlobs(unsigned start, unsigned end) {
   }
 }
 
-#ifndef GRAPHICS_DISABLED
-void TWERD::plot(ScrollView *window) {
-  ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
+#if !GRAPHICS_DISABLED
+void TWERD::plot(ScrollViewReference &window) {
+  Diagnostics::Color color = WERD::NextColor(Diagnostics::BLACK);
   for (auto &blob : blobs) {
-    blob->plot(window, color, ScrollView::BROWN);
+    blob->plot(window, color, Diagnostics::BROWN);
     color = WERD::NextColor(color);
   }
 }

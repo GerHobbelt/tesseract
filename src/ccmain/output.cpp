@@ -21,7 +21,7 @@
 #include "control.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h"
 #  include "reject.h"
 #endif
@@ -174,7 +174,7 @@ void Tesseract::write_results(PAGE_RES_IT &page_res_it,
   set_unlv_suspects(word);
   check_debug_pt(word, 120);
   if (tessedit_rejection_debug) {
-    tprintf("Dict word: \"%s\": %d\n", word->best_choice->debug_string().c_str(),
+    tprintDebug("Dict word: \"{}\": {}\n", word->best_choice->debug_string(),
             dict_word(*(word->best_choice)));
   }
   if (!word->word->flag(W_REP_CHAR) || !tessedit_write_rep_codes) {
@@ -232,10 +232,12 @@ char determine_newline_type( // test line ends
   end_gap = block_box.right() - word_box.right();
   end_gap -= static_cast<int32_t>(block->space());
   width = next_box.right() - next_box.left();
-  //      tprintf("end_gap=%d-%d=%d, width=%d-%d=%d, nl=%d\n",
-  //              block_box.right(),word_box.right(),end_gap,
-  //              next_box.right(),next_box.left(),width,
-  //              end_gap>width ? CTRL_HARDLINE : CTRL_NEWLINE);
+#if 0
+  tprintDebug("end_gap={}-{}={}, width={}-{}={}, nl={}\n",
+               block_box.right(),word_box.right(),end_gap,
+                next_box.right(),next_box.left(),width,
+                end_gap>width ? CTRL_HARDLINE : CTRL_NEWLINE);
+#endif
   return end_gap > width ? CTRL_HARDLINE : CTRL_NEWLINE;
 }
 

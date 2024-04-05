@@ -27,11 +27,15 @@
 #ifndef TESSERACT_VIEWER_SVMNODE_H_
 #define TESSERACT_VIEWER_SVMNODE_H_
 
-#ifndef GRAPHICS_DISABLED
+#include "../../include/tesseract/export.h"
+
+#if !GRAPHICS_DISABLED
 
 #include <tesseract/export.h>
 
 #include <string>
+
+#include "scrollview.h"
 
 namespace tesseract {
 
@@ -66,7 +70,7 @@ public:
   // Should be called on the root node. If menu_bar is true, a menu_bar menu
   // is built (e.g. on top of the window), if it is false a popup menu is
   // built which gets shown by right clicking on the window.
-  void BuildMenu(ScrollView *sv, bool menu_bar = true);
+  void BuildMenu(ScrollViewReference &sv, bool menu_bar = true);
 
 private:
   // Constructor holding the actual node data.

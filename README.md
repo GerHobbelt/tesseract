@@ -1,3 +1,24 @@
+# tesseract-ocr with --visible-pdf-image
+
+This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
+
+Dependencies:
+* leptonica: (tested with leptonica 1.82.0)
+
+The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that is used in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with this fork is to give us the best of both worlds. This is very useful for digitizing documents.
+
+To clean an image for OCR, try using textcleaner from Fred's ImageMagick Scripts: http://www.fmwconcepts.com/imagemagick/textcleaner/
+
+For the visible image, you can use a compressed version to save space. The only requirement is that the dimensions of the "cleaned" and "visible" images are the same.
+
+Once you've built the visible_pdf_image branch along with the other Tesseract dependencies, just add `--visible-pdf-image <image>` to the arguments. For example:
+
+	tesseract -l eng --visible-pdf-image compressed.webp cleaned.pnm out pdf
+
+Here's the original feature request upstream: https://github.com/tesseract-ocr/tesseract/issues/210
+
+-------------------------------------------------------------------------------
+
 # Tesseract OCR
 
 [![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819/branch/master?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
@@ -9,10 +30,33 @@
 [![GitHub license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/tesseract-ocr/tesseract/main/LICENSE)
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
 
+
+# tesseract-ocr with visible_pdf_image
+
+This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
+
+Dependencies:
+* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+
+The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
+
+To clean an image for OCR, I suggest using textcleaner from Fred's ImageMagick Scripts: http://www.fmwconcepts.com/imagemagick/textcleaner/
+
+For the visible image you can use the original copy, but I suggest using a compressed version instead to save space. The only requirement is that the dimensions of the "cleaned" and "visible" images are the same.
+
+Once you've built the visible_pdf_image branch along with the other Tesseract dependencies, just add `--visible-pdf-image <image>` to the arguments. For example:
+
+	tesseract -l eng --visible-pdf-image compressed.webp cleaned.pnm out pdf
+
+I've found this to be very helpful when creating searchable PDFs from scanned documents, receipts, etc. YMMV. Here's the original feature request upstream: https://github.com/tesseract-ocr/tesseract/issues/210
+
+
+
 ## Table of Contents
 
 * [Tesseract OCR](#tesseract-ocr)
   * [About](#about)
+  * [Important Notes](#important-notes)
   * [Brief history](#brief-history)
   * [Installing Tesseract](#installing-tesseract)
   * [Running Tesseract](#running-tesseract)
@@ -29,21 +73,24 @@ This package contains an **OCR engine** - `libtesseract` and a **command line pr
 Tesseract 4 adds a new neural net (LSTM) based [OCR engine](https://en.wikipedia.org/wiki/Optical_character_recognition) which is focused on line recognition, but also still supports the legacy Tesseract OCR engine of Tesseract 3 which works by recognizing character patterns. Compatibility with Tesseract 3 is enabled by using the Legacy OCR Engine mode (--oem 0).
 It also needs [traineddata](https://tesseract-ocr.github.io/tessdoc/Data-Files.html) files which support the legacy engine, for example those from the [tessdata](https://github.com/tesseract-ocr/tessdata) repository.
 
-Stefan Weil is the current lead developer. Ray Smith was the lead developer until 2018. The maintainer is Zdenko Podobny. For a list of contributors see [AUTHORS](https://github.com/tesseract-ocr/tesseract/blob/main/AUTHORS)
-and GitHub's log of [contributors](https://github.com/tesseract-ocr/tesseract/graphs/contributors).
+## Important Notes
 
-Tesseract has **unicode (UTF-8) support**, and can **recognize [more than 100 languages](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)** "out of the box".
+* Stefan Weil is the current lead developer. Ray Smith was the lead developer until 2018. The maintainer is Zdenko Podobny. For a list of contributors see [AUTHORS](https://github.com/tesseract-ocr/tesseract/blob/main/AUTHORS)
+  and GitHub's log of [contributors](https://github.com/tesseract-ocr/tesseract/graphs/contributors).
 
-Tesseract supports **[various image formats](https://tesseract-ocr.github.io/tessdoc/InputFormats)** including PNG, JPEG and TIFF.
+* Tesseract has **unicode (UTF-8) support**, and can **recognize [more than 100 languages](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)** "out of the box".
 
-Tesseract supports **various output formats**: plain text, hOCR (HTML), PDF, invisible-text-only PDF, TSV and ALTO.
+* Tesseract supports **[various image formats](https://tesseract-ocr.github.io/tessdoc/InputFormats)** including PNG, JPEG and TIFF.
 
-You should note that in many cases, in order to get better OCR results, you'll need to **[improve the quality](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html) of the image** you are giving Tesseract.
+* Tesseract supports **various output formats**: plain text, hOCR (HTML), PDF, invisible-text-only PDF, TSV, ALTO and PAGE.
 
-This project **does not include a GUI application**. If you need one, please see the [3rdParty](https://tesseract-ocr.github.io/tessdoc/User-Projects-%E2%80%93-3rdParty.html) documentation.
+* You should note that in many cases, in order to get better OCR results, you'll need to **[improve the quality](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html) of the image** you are giving Tesseract.
 
-Tesseract **can be trained to recognize other languages**.
-See [Tesseract Training](https://tesseract-ocr.github.io/tessdoc/Training-Tesseract.html) for more information.
+* This project **does not include a GUI application**. If you need one, please see the [3rdParty](https://tesseract-ocr.github.io/tessdoc/User-Projects-%E2%80%93-3rdParty.html) documentation.
+
+* Tesseract **can be trained to recognize other languages**.
+  See [Tesseract Training](https://tesseract-ocr.github.io/tessdoc/Training-Tesseract.html) for more information.
+
 
 ## Brief history
 
@@ -67,6 +114,23 @@ or [build it from source](https://tesseract-ocr.github.io/tessdoc/Compiling.html
 
 Before building Tesseract from source, please check that your system has a compiler which is one of the [supported compilers](https://tesseract-ocr.github.io/tessdoc/supported-compilers.html).
 
+## Windows Installation clarification
+
+For Windows user, once you download the Tesseract OCR 4, follow the pop-up instructions, 
+choose which components of the software you would like to install (if storage is limited).
+Make sure to remember where you saved the file, you will need it to add your environment variables.
+You will notice that if you try to use tesseract right after the installation it will not be 
+available on the command line (at least not yet). To remedy this, we need to add it the path where 
+the application was saved by taking the following steps:
+*	Open system environment properties from your settings menu and select environment variable.
+*	Open file explorer and go the Tesseract folder (should be in C drive by default)
+*	Once you find the executable (tesserac.exe) fill, copy the path to it.
+*	Get back to the environment variable window, click path then edit then new path variable and past 
+the path, and save.
+*	After this, you are good to open a new command line, to make sure it is there, type tesseract,
+ this should open the help page with all the command you can use.
+
+
 ## Running Tesseract
 
 Basic **[command line usage](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html)**:
@@ -76,6 +140,15 @@ Basic **[command line usage](https://tesseract-ocr.github.io/tessdoc/Command-Lin
 For more information about the various command line options use `tesseract --help` or `man tesseract`.
 
 Examples can be found in the [documentation](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html#simplest-invocation-to-ocr-an-image).
+
+## Tips and Tricks
+
+1-	For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
+image with the word oriented in way that make the words horizontal. This help prevent out errors
+sometime. 
+2-	If running an image with just one line and it is not recognized, try running again, it should
+output the right words.
+3- Do not run an image with no words on it as it will sometime stall the system.
 
 ## For developers
 
@@ -93,7 +166,8 @@ For support, first read the [documentation](https://tesseract-ocr.github.io/tess
 particularly the [FAQ](https://tesseract-ocr.github.io/tessdoc/FAQ.html) to see if your problem is addressed there.
 If not, search the [Tesseract user forum](https://groups.google.com/g/tesseract-ocr), the [Tesseract developer forum](https://groups.google.com/g/tesseract-dev) and [past issues](https://github.com/tesseract-ocr/tesseract/issues), and if you still can't find what you need, ask for support in the mailing-lists.
 
-Mailing-lists:
+
+### Mailing-lists:
 
 * [tesseract-ocr](https://groups.google.com/g/tesseract-ocr) - For tesseract users.
 * [tesseract-dev](https://groups.google.com/g/tesseract-dev) - For tesseract developers.

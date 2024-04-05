@@ -62,14 +62,16 @@ struct FontInfo;
 
 class BLOCK_RES;
 
-ELISTIZEH(BLOCK_RES)
-CLISTIZEH(BLOCK_RES)
+ELISTIZEH(BLOCK_RES);
+CLISTIZEH(BLOCK_RES);
+
 class ROW_RES;
 
-ELISTIZEH(ROW_RES)
+ELISTIZEH(ROW_RES);
+
 class WERD_RES;
 
-ELISTIZEH(WERD_RES)
+ELISTIZEH(WERD_RES);
 
 /*************************************************************************
  * PAGE_RES - Page results
@@ -469,7 +471,7 @@ public:
   // but is declared as int for ease of use with tessedit_ocr_engine_mode.
   // Returns false if the word is empty and sets up fake results.
   bool SetupForRecognition(const UNICHARSET &unicharset_in,
-                           tesseract::Tesseract *tesseract, Image pix,
+                           tesseract::Tesseract *tesseract,
                            int norm_mode, const TBOX *norm_box,
                            bool numeric_mode, bool use_body_size,
                            bool allow_detailed_fx, ROW *row,

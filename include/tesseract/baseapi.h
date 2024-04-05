@@ -17,7 +17,7 @@
 #ifndef TESSERACT_API_BASEAPI_H_
 #define TESSERACT_API_BASEAPI_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
@@ -28,8 +28,11 @@
 #include "unichar.h"
 
 #include <tesseract/version.h>
+#include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
+#include <tesseract/autosupressor.h>     // for AutoSupressDatum
 
 #include <cstdio>
+#include <tuple>  // for std::tuple
 #include <vector> // for std::vector
 
 struct Pix;
@@ -55,6 +58,7 @@ class ResultIterator;
 class MutableIterator;
 class TessResultRenderer;
 class Tesseract;
+class AutoSupressDatum;
 
 // Function to read a std::vector<char> from a whole file.
 // Returns false on failure.
@@ -87,15 +91,6 @@ public:
   static const char *Version();
 
   /**
-   * If compiled with OpenCL AND an available OpenCL
-   * device is deemed faster than serial code, then
-   * "device" is populated with the cl_device_id
-   * and returns sizeof(cl_device_id)
-   * otherwise *device=nullptr and returns 0.
-   */
-  static size_t getOpenCLDevice(void **device);
-
-  /**
    * Set the name of the input file. Needed for training and
    * reading a UNLV zone file, and for searchable PDF output.
    */
@@ -113,29 +108,84 @@ public:
   Pix *GetInputImage();
   int GetSourceYResolution();
   const char *GetDatapath();
+  void SetVisibleImageFilename(const char *name);
+  const char *GetVisibleImageFilename();
+  void SetVisibleImage(Pix *pix);
+  Pix* GetVisibleImage();
 
+  /**
+  * Return a memory capacity cost estimate for the given image dimensions and
+  * some heuristics re tesseract behaviour, e.g. input images will be normalized/greyscaled,
+  * then thresholded, all of which will be kept in memory while the session runs.
+  *
+  * Also uses the Tesseract Variable `allowed_image_memory_capacity` to indicate
+  * whether the estimated cost is oversized --> `cost.is_too_large()`
+  *
+  * For user convenience, static functions are provided:
+  * the static functions MAY be used by userland code *before* the high cost of
+  * instantiating a Tesseract instance is incurred.
+  */
+  static ImageCostEstimate EstimateImageMemoryCost(int image_width, int image_height, float allowance = 1.0e30f /* a.k.a.dont_care, use system limit and be done */ );
+  static ImageCostEstimate EstimateImageMemoryCost(const Pix* pix, float allowance = 1.0e30f /* a.k.a. dont_care, use system limit and be done */ );
+
+  /**
+  * Ditto, but this API may be invoked after SetInputImage() or equivalent has been called
+  * and reports the cost estimate for the current instance/image.
+  */
+  ImageCostEstimate EstimateImageMemoryCost() const;
+
+  /**
+  * Helper, which may be invoked after SetInputImage() or equivalent has been called:
+  * reports the cost estimate for the current instance/image via `tprintf()` and returns
+  * `true` when the cost is expected to be too high.
+  *
+  * You can use this as a fast pre-flight check. Many major tesseract APIs perform
+  * this same check as part of their startup routine.
+  */
+  bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
+
+  AutoSupressDatum& GetLogReportingHoldoffMarkerRef() {
+      return reporting_holdoff_;
+  };
+
+protected:
+  AutoSupressDatum reporting_holdoff_;
+
+public:
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
+  const std::string &GetOutputName();
 
   /**
    * Set the value of an internal "parameter."
+   *
    * Supply the name of the parameter and the value as a string, just as
    * you would in a config file.
+   * E.g. `SetVariable("tessedit_char_blacklist", "xyz");` to ignore 'x', 'y' and 'z'.
+   * Or `SetVariable("classify_bln_numeric_mode", "1");` to set numeric-only mode.
+   *
    * Returns false if the name lookup failed.
-   * Eg SetVariable("tessedit_char_blacklist", "xyz"); to ignore x, y and z.
-   * Or SetVariable("classify_bln_numeric_mode", "1"); to set numeric-only mode.
-   * SetVariable may be used before Init, but settings will revert to
+   *
+   * SetVariable() may be used before Init(), but settings will revert to
    * defaults on End().
    *
    * Note: Must be called after Init(). Only works for non-init variables
    * (init variables should be passed to Init()).
    */
   bool SetVariable(const char *name, const char *value);
+  bool SetVariable(const char *name, int value);
+  bool SetVariable(const char *name, bool value);
+  bool SetVariable(const char *name, double value);
+  bool SetVariable(const char *name, const std::string &value);
   bool SetDebugVariable(const char *name, const char *value);
+  bool SetDebugVariable(const char *name, int value);
+  bool SetDebugVariable(const char *name, bool value);
+  bool SetDebugVariable(const char *name, double value);
+  bool SetDebugVariable(const char *name, const std::string &value);
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
-   * Fills in value with the value of the parameter.
+   * Fills in `value` with the value of the parameter.
    */
   bool GetIntVariable(const char *name, int *value) const;
   bool GetBoolVariable(const char *name, bool *value) const;
@@ -147,19 +197,42 @@ public:
    */
   const char *GetStringVariable(const char *name) const;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
   /**
-   * Print Tesseract fonts table to the given file.
+   * Print Tesseract fonts table to the given file (stdout by default).
    */
-  void PrintFontsTable(FILE *fp) const;
+  void PrintFontsTable(FILE *fp = nullptr) const;
 
 #endif
 
-  /**
-   * Print Tesseract parameters to the given file.
+  /** 
+   * Print Tesseract parameters to the given file (stdout by default).
+   * Cannot be used as Tesseract configuration file due to descriptions 
+   * (use DumpVariables instead to create config files).
    */
-  void PrintVariables(FILE *fp) const;
+  void PrintVariables(FILE *fp = nullptr) const;
+
+  /*
+  * Report parameters' usage statistics, i.e. report which params have been
+  * set, modified and read/checked until now during this run-time's lifetime.
+  *
+  * Use this method for run-time 'discovery' about which tesseract parameters
+  * are actually *used* during your particular usage of the library, ergo
+  * answering the question:
+  * "Which of all those parameters are actually *relevant* to my use case today?"
+  */
+  void ReportParamsUsageStatistics() const;
+
+  /** 
+   * Print Tesseract parameters to the given file without descriptions. 
+   * Can be used as Tesseract configuration file.
+  */
+  void DumpVariables(FILE *fp) const;
+
+  // Functions added by Tesseract.js-core to save and restore parameters
+  void SaveParameters();
+  void RestoreParameters();
 
   /**
    * Get value of named variable as a string, if it exists.
@@ -179,15 +252,15 @@ public:
    *
    * The datapath must be the name of the tessdata directory.
    * The language is (usually) an ISO 639-3 string or nullptr will default to
-   * eng. It is entirely safe (and eventually will be efficient too) to call
+   * "eng". It is entirely safe (and eventually will be efficient too) to call
    * Init multiple times on the same instance to change language, or just
    * to reset the classifier.
    * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
-   * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
+   * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
    * with one or more other languages, so the ~ sign is available to override
-   * that. Eg if hin were set to load eng by default, then hin+~eng would force
-   * loading only hin. The number of loaded languages is limited only by
+   * that. E.g. if "hin" were set to load "eng" by default, then "hin+~eng" would force
+   * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
    * applicable language, and there is more chance of hallucinating incorrect
@@ -203,30 +276,46 @@ public:
    * If set_only_non_debug_params is true, only params that do not contain
    * "debug" in the name will be set.
    */
-  int Init(const char *datapath, const char *language, OcrEngineMode mode,
-           char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
+  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
            bool set_only_non_debug_params);
-  int Init(const char *datapath, const char *language, OcrEngineMode oem) {
-    return Init(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
-  }
-  int Init(const char *datapath, const char *language) {
-    return Init(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
-                false);
-  }
-  // In-memory version reads the traineddata file directly from the given
-  // data[data_size] array, and/or reads data via a FileReader.
-  int Init(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
+
+  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
+
+  int InitSimple(const char *datapath, const char *language);
+
+  // Reads the traineddata via a FileReader from path `datapath`.
+  int InitFullWithReader(const char *datapath, const char *language,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
            bool set_only_non_debug_params, FileReader reader);
 
+  // In-memory version reads the traineddata directly from the given
+  // data[data_size] array.
+  int InitFromMemory(const char *data, int data_size, const char *language,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           bool set_only_non_debug_params);
+
+protected:
+  int InitFullRemainder(const char *datapath, const char *data, int data_size, const char *language,
+           OcrEngineMode mode, 
+           const std::vector<std::string> &configs,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           bool set_only_non_debug_params, FileReader reader);
+
+public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
-   * returned. If hin loaded eng automatically as well, then that will
+   * returned. If "hin" loaded "eng" automatically as well, then that will
    * not be included in this list. To find the languages actually
    * loaded use GetLoadedLanguagesAsVector.
    * The returned string should NOT be deleted.
@@ -264,7 +353,7 @@ public:
   /**
    * Set the current page segmentation mode. Defaults to PSM_SINGLE_BLOCK.
    * The mode is stored as an IntParam so it can also be modified by
-   * ReadConfigFile or SetVariable("tessedit_pageseg_mode", mode as string).
+   * ReadConfigFile or SetVariable("tessedit_pageseg_mode").
    */
   void SetPageSegMode(PageSegMode mode);
 
@@ -275,7 +364,7 @@ public:
    * Recognize a rectangle from an image and return the result as a string.
    * May be called many times for a single Init.
    * Currently has no error checking.
-   * Greyscale of 8 and color of 24 or 32 bits per pixel may be given.
+   * Greyscale of 8 and color of 24 or 32 bits per pixel may be given (in RGB/RGBA byte layout).
    * Palette color images will not work properly and must be converted to
    * 24 bit.
    * Binary images of 1 bit per pixel may also be given but they must be
@@ -293,7 +382,7 @@ public:
                       int height);
 
   /**
-   * Call between pages or documents etc to free up memory and forget
+   * Call between pages or documents, etc., to free up memory and forget
    * adaptive data.
    */
   void ClearAdaptiveClassifier();
@@ -314,7 +403,7 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line);
+                int bytes_per_pixel, int bytes_per_line, int exif = 1, const float angle = 0);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -324,7 +413,20 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix);
+  void SetImage(Pix *pix, int exif = 1, const float angle = 0);
+
+  int SetImageFile(int exif = 1, const float angle = 0);
+
+  /**
+   * Preprocessing the InputImage 
+   * Grayscale normalization based on nlbin (Thomas Breuel)
+   * Current modes: 
+   *  - 0 = No normalization
+   *  - 1 = Thresholding+Recognition
+   *  - 2 = Thresholding
+   *  - 3 = Recognition
+   */
+  bool NormalizeImage(int mode);
 
   /**
    * Set the resolution of the source image in pixels per inch so font size
@@ -334,10 +436,15 @@ public:
 
   /**
    * Restrict recognition to a sub-rectangle of the image. Call after SetImage.
-   * Each SetRectangle clears the recogntion results so multiple rectangles
+   * Each SetRectangle clears the recognition results so multiple rectangles
    * can be recognized with the same image.
    */
   void SetRectangle(int left, int top, int width, int height);
+
+  /**
+   * Stores lstmf based on in-memory data for one line with pix and text
+  */
+  bool WriteLSTMFLineData(const char *name, const char *path, Pix *pix, const char *truth_text, bool vertical);
 
   /**
    * Get a copy of the internal thresholded image from Tesseract.
@@ -345,6 +452,16 @@ public:
    * May be called any time after SetImage, or after TesseractRect.
    */
   Pix *GetThresholdedImage();
+
+  /**
+   * Saves a .png image of the type specified by `type` to the file `filename`
+   */
+  void WriteImage(const int type);
+
+  /**
+   * Return average gradient of lines on page.
+   */
+  float GetGradient();
 
   /**
    * Get the result of page layout analysis as a leptonica-style
@@ -485,20 +602,23 @@ public:
    */
   bool ProcessPages(const char *filename, const char *retry_config,
                     int timeout_millisec, TessResultRenderer *renderer);
+
+protected:
   // Does the real work of ProcessPages.
   bool ProcessPagesInternal(const char *filename, const char *retry_config,
                             int timeout_millisec, TessResultRenderer *renderer);
 
+public:
   /**
    * Turn a single image into symbolic text.
    *
-   * The pix is the image processed. filename and page_index are
+   * The pix is the image processed. filename and page_number are
    * metadata used by side-effect processes, such as reading a box
    * file or formatting as hOCR.
    *
    * See ProcessPages for descriptions of other parameters.
    */
-  bool ProcessPage(Pix *pix, int page_index, const char *filename,
+  bool ProcessPage(Pix *pix, const char *filename,
                    const char *retry_config, int timeout_millisec,
                    TessResultRenderer *renderer);
 
@@ -528,6 +648,31 @@ public:
    */
   char *GetUTF8Text();
 
+  size_t GetNumberOfTables() const;
+
+  /// Return the i-th table bounding box coordinates
+  ///
+  /// Gives the (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  /// coordinates of the i-th table.
+  std::tuple<int, int, int, int> GetTableBoundingBox(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the rows of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableRows(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
+  /// Get bounding boxes of the cols of a table
+  /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+  std::vector<std::tuple<int, int, int, int> > GetTableCols(
+      unsigned
+          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+  );
+
   /**
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
@@ -535,6 +680,7 @@ public:
    * monitor can be used to
    *  cancel the recognition
    *  receive progress callbacks
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetHOCRText(ETEXT_DESC *monitor, int page_number);
@@ -543,6 +689,7 @@ public:
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetHOCRText(int page_number);
@@ -550,26 +697,47 @@ public:
   /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetAltoText(ETEXT_DESC *monitor, int page_number);
 
   /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetAltoText(int page_number);
 
   /**
-   * Make a TSV-formatted string from the internal data structures.
-   * page_number is 0-based but will appear in the output as 1-based.
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   *
    * Returned string must be freed with the delete [] operator.
    */
-  char *GetTSVText(int page_number);
+  char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
+
+  /**
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   */
+  char *GetPAGEText(int page_number);
+
+  /**
+   * Make a TSV-formatted string from the internal data structures.
+   * Allows additional column with detected language.
+   * page_number is 0-based but will appear in the output as 1-based.
+   *
+   * Returned string must be freed with the delete [] operator.
+   */
+  char *GetTSVText(int page_number, bool lang_info = false);
 
   /**
    * Make a box file for LSTM training from the internal data structures.
    * Constructs coordinates in the original image - not just the rectangle.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetLSTMBoxText(int page_number);
@@ -579,6 +747,7 @@ public:
    * format as a box file used in training.
    * Constructs coordinates in the original image - not just the rectangle.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetBoxText(int page_number);
@@ -587,6 +756,7 @@ public:
    * The recognized text is returned as a char* which is coded in the same
    * format as a WordStr box file used in training.
    * page_number is a 0-based page index that will appear in the box file.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetWordStrBoxText(int page_number);
@@ -594,6 +764,7 @@ public:
   /**
    * The recognized text is returned as a char* which is coded
    * as UNLV format Latin-1 with specific reject and suspect codes.
+   *
    * Returned string must be freed with the delete [] operator.
    */
   char *GetUNLVText();
@@ -614,20 +785,26 @@ public:
    * The recognized text is returned as a char* which is coded
    * as UTF8 and must be freed with the delete [] operator.
    * page_number is a 0-based page index that will appear in the osd file.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
   char *GetOsdText(int page_number);
 
   /** Returns the (average) confidence value between 0 and 100. */
   int MeanTextConf();
+
   /**
    * Returns all word confidences (between 0 and 100) in an array, terminated
-   * by -1.  The calling function must delete [] after use.
+   * by -1.
+   *
+   * The calling function must `delete []` after use.
+   *
    * The number of confidences should correspond to the number of space-
    * delimited words in GetUTF8Text.
    */
   int *AllWordConfidences();
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   /**
    * Applies the given word to the adaptive classifier if possible.
    * The word must be SPACE-DELIMITED UTF-8 - l i k e t h i s , so it can
@@ -639,7 +816,7 @@ public:
    * Returns false if adaption was not possible for some reason.
    */
   bool AdaptToWordStr(PageSegMode mode, const char *wordstr);
-#endif //  ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
   /**
    * Free up recognition results and any stored image data, without actually
@@ -650,9 +827,9 @@ public:
   void Clear();
 
   /**
-   * Close down tesseract and free up all memory. End() is equivalent to
+   * Close down tesseract and free up all memory. `End()` is equivalent to
    * destructing and reconstructing your TessBaseAPI.
-   * Once End() has been used, none of the other API functions may be used
+   * Once `End()` has been used, none of the other API functions may be used
    * other than Init and anything declared above it in the class definition.
    */
   void End();
@@ -660,15 +837,17 @@ public:
   /**
    * Clear any library-level memory caches.
    * There are a variety of expensive-to-load constant data structures (mostly
-   * language dictionaries) that are cached globally -- surviving the Init()
-   * and End() of individual TessBaseAPI's.  This function allows the clearing
+   * language dictionaries) that are cached globally -- surviving the `Init()`
+   * and `End()` of individual TessBaseAPI's.  This function allows the clearing
    * of these caches.
    **/
   static void ClearPersistentCache();
 
   /**
    * Check whether a word is valid according to Tesseract's language model
+   *
    * @return 0 if the word is invalid, non-zero if valid.
+   *
    * @warning temporary! This function will be removed from here and placed
    * in a separate API at some future time.
    */
@@ -690,7 +869,7 @@ public:
    * Estimates the Orientation And Script of the image.
    * @return true if the image was processed successfully.
    */
-  bool DetectOS(OSResults *);
+  bool DetectOS(OSResults *results);
 
   /**
    * Return text orientation of each block as determined by an earlier run
@@ -722,7 +901,7 @@ public:
 protected:
   /** Common code for setting the image. Returns true if Init has been called.
    */
-  bool InternalSetImage();
+  bool InternalResetImage();
 
   /**
    * Run the thresholder to make the thresholded image. If pix is not nullptr,
@@ -736,12 +915,13 @@ protected:
    */
   int FindLines();
 
-  /** Delete the pageres and block list ready for a new page. */
+  /** Delete the PageRes and block list, readying tesseract for OCRing a new page. */
   void ClearResults();
 
   /**
    * Return an LTR Result Iterator -- used only for training, as we really want
    * to ignore all BiDi smarts at that point.
+   *
    * delete once you're done with it.
    */
   LTRResultIterator *GetLTRIterator();
@@ -763,14 +943,17 @@ protected:
 
 protected:
   Tesseract *tesseract_;          ///< The underlying data object.
+#if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tesseract_;      ///< For orientation & script detection.
   EquationDetect *equ_detect_;    ///< The equation detector.
+#endif
   FileReader reader_;             ///< Reads files from any filesystem.
   ImageThresholder *thresholder_; ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
-  std::string input_file_;           ///< Name used by training code.
+  std::string visible_image_file_;
+  Pix* pix_visible_image_;           ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.
@@ -792,20 +975,56 @@ protected:
 
 private:
   // A list of image filenames gets special consideration
+  //
+  // If global parameter `tessedit_page_number` is non-negative, will only process that
+  // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesFileList(FILE *fp, std::string *buf,
                             const char *retry_config, int timeout_millisec,
-                            TessResultRenderer *renderer,
-                            int tessedit_page_number);
+                            TessResultRenderer *renderer);
   // TIFF supports multipage so gets special consideration.
+  //
+  // If global parameter `tessedit_page_number` is non-negative, will only process that
+  // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesMultipageTiff(const unsigned char *data, size_t size,
                                  const char *filename, const char *retry_config,
                                  int timeout_millisec,
-                                 TessResultRenderer *renderer,
-                                 int tessedit_page_number);
+                                 TessResultRenderer *renderer);
 }; // class TessBaseAPI.
 
 /** Escape a char string - replace &<>"' with HTML codes. */
 std::string HOcrEscape(const char *text);
+
+/**
+ * Construct a filename(+path) that's unique, i.e. is guaranteed to not yet exist in the filesystem.
+ */
+std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
+
+/**
+ * Helper function around leptonica's `pixWrite()` which writes the given `pic` image to file, in the `file_type` format.
+ *
+ * The `file_type` format is defined in leptonica's `imageio.h`. Here's an (possibly incomplete) extract:
+ *
+ * - IFF_BMP            = 1 (Windows BMP)
+ * - IFF_JFIF_JPEG      = 2 (regular JPEG, default quality 75%)
+ * - IFF_PNG            = 3 (PNG, lossless)
+ * - IFF_TIFF           = 4 (TIFF)
+ * - IFF_TIFF_PACKBITS  = 5 (TIFF, lossless)
+ * - IFF_TIFF_RLE       = 6 (TIFF, lossless)
+ * - IFF_TIFF_G3        = 7 (TIFF, lossless)
+ * - IFF_TIFF_G4        = 8 (TIFF, lossless)
+ * - IFF_TIFF_LZW       = 9 (TIFF, lossless)
+ * - IFF_TIFF_ZIP       = 10 (TIFF, lossless)
+ * - IFF_PNM            = 11 (PNM)
+ * - IFF_PS             = 12 (PS: PostScript)
+ * - IFF_GIF            = 13 (GIF)
+ * - IFF_JP2            = 14 (JP2
+ * - IFF_WEBP           = 15 (WebP)
+ * - IFF_LPDF           = 16 (LDPF)
+ * - IFF_TIFF_JPEG      = 17 (JPEG embedded in TIFF)
+ * - IFF_DEFAULT        = 18 (The IFF_DEFAULT flag is used to write the file out in the same (input) file format that the pix was read from.  If the pix was not read from file, the input format field will be IFF_UNKNOWN and the output file format will be chosen to be compressed and lossless; namely: IFF_TIFF_G4 for depth = 1 bit and IFF_PNG for everything else.)
+ * - IFF_SPIX           = 19 (SPIX: serialized PIX, a leptonica-specific file format)
+ */
+void WritePix(const std::string &filepath, Pix *pic, int file_type);
 
 } // namespace tesseract
 

@@ -15,21 +15,32 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#if !defined(__FMA__)
-#  if defined(__i686__) || defined(__x86_64__)
-#    error Implementation only for FMA capable architectures
-#  endif
-#else
+#include "dotproduct.h"
+
+// General Notice:
+// 
+// This is not about whether the compiler is optimizing **the rest of your code using FMA instructions**.
+// This code should be compiled *anyway*, because tesseract will pick the best variant (this one or another one)
+// **at run-time** on the actual hardware it will be running on.
+// Hence to safely compile tesseract for multiple architectures, one should set the compiler code generation
+// options as low as possible. Meanwhile these important functions are made available, independent of that compiler
+// "optimization setting", by using the appropriate intrinsics. Then, at run-time, a CPU check is performed
+// which will help tesseract decide which actual code chunk to execute. **Irrespective of the original compiler
+// flags setting -- that one only determines the lowest capability hardware this compiled product can actually
+// run on.
+// See also the SIMDDetect::SIMDDetect() code.
+//
+#if defined(__FMA__) || defined(_M_IX86) || defined(_M_X64)
 
 #  include <immintrin.h>
 #  include <cstdint>
-#  include "dotproduct.h"
 
 namespace tesseract {
 
+// ---------------------------- FAST FLOAT section ------------------------
+
 // Computes and returns the dot product of the n-vectors u and v.
 // Uses Intel FMA intrinsics to access the SIMD instruction set.
-#if defined(FAST_FLOAT)
 float DotProductFMA(const float *u, const float *v, int n) {
   const unsigned quot = n / 16;
   const unsigned rem = n % 16;
@@ -56,7 +67,9 @@ float DotProductFMA(const float *u, const float *v, int n) {
   }
   return result;
 }
-#else
+
+// ---------------------------- HIGH-PRECISION DOUBLE section ------------------------
+
 double DotProductFMA(const double *u, const double *v, int n) {
   const unsigned quot = n / 8;
   const unsigned rem = n % 8;
@@ -83,8 +96,24 @@ double DotProductFMA(const double *u, const double *v, int n) {
   }
   return result;
 }
-#endif
+
+// ---------------------------- END section ------------------------
 
 } // namespace tesseract.
+
+#else
+
+namespace tesseract {
+
+// Computes and returns the dot product of the n-vectors u and v.
+// Uses Intel FMA intrinsics to access the SIMD instruction set.
+float DotProductFMA(const float *u, const float *v, int n) {
+	return DotProductSSE(u, v, n);
+}
+double DotProductFMA(const double *u, const double *v, int n) {
+  return DotProductSSE(u, v, n);
+}
+
+}
 
 #endif

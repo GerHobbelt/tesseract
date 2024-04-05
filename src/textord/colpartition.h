@@ -27,8 +27,12 @@
 #include "scrollview.h"
 #include "tabfind.h"   // For WidthCallback.
 #include "tabvector.h" // For BLOBNBOX_CLIST.
+#include "clst.h"      // for CLIST_ITERATOR, CLISTIZEH
 
 #include <algorithm>
+
+#undef min
+#undef max
 
 namespace tesseract {
 
@@ -41,6 +45,8 @@ class ColPartitionGrid;
 class WorkingPartSet;
 class WorkingPartSet_LIST;
 
+class TESS_API Tesseract;
+
 // An enum to indicate how a partition sits on the columns.
 // The order of flowing/heading/pullout must be kept consistent with
 // PolyBlockType.
@@ -52,8 +58,8 @@ enum ColumnSpanningType {
   CST_COUNT    // Number of entries.
 };
 
-ELIST2IZEH(ColPartition)
-CLISTIZEH(ColPartition)
+ELIST2IZEH(ColPartition);
+CLISTIZEH(ColPartition);
 
 /**
  * ColPartition is a partition of a horizontal slice of the page.
@@ -76,12 +82,12 @@ public:
    * @param vertical is the direction of logical vertical on the possibly skewed
    * image.
    */
-  ColPartition(BlobRegionType blob_type, const ICOORD &vertical);
+  ColPartition(Tesseract* tess, BlobRegionType blob_type, const ICOORD &vertical);
   /**
    * Constructs a fake ColPartition with no BLOBNBOXes to represent a
    * horizontal or vertical line, given a type and a bounding box.
    */
-  static ColPartition *MakeLinePartition(BlobRegionType blob_type,
+  static ColPartition *MakeLinePartition(Tesseract* tess, BlobRegionType blob_type,
                                          const ICOORD &vertical, int left,
                                          int bottom, int right, int top);
 
@@ -90,7 +96,7 @@ public:
   // WARNING: Despite being on C_LISTs, the BLOBNBOX owns the C_BLOB and
   // the ColPartition owns the BLOBNBOX!!!
   // Call DeleteBoxes before deleting the ColPartition.
-  static ColPartition *FakePartition(const TBOX &box, PolyBlockType block_type,
+  static ColPartition *FakePartition(Tesseract* tess, const TBOX &box, PolyBlockType block_type,
                                      BlobRegionType blob_type,
                                      BlobTextFlowType flow);
 
@@ -99,7 +105,7 @@ public:
   // than the surrounding text that may be a dropcap, two or more vertically
   // touching characters, or some graphic element.
   // If the given list is not nullptr, the partition is also added to the list.
-  static ColPartition *MakeBigPartition(BLOBNBOX *box,
+  static ColPartition *MakeBigPartition(Tesseract* tess, BLOBNBOX *box,
                                         ColPartition_LIST *big_part_list);
 
   ~ColPartition();
@@ -523,6 +529,11 @@ public:
   // Returns true if there is no tabstop violation in merging this and other.
   bool ConfirmNoTabViolation(const ColPartition &other) const;
 
+  // Added for Scribe build.
+  // Returns false if this partition includes 1+ medium blob but the partition being compared to does not.
+  // This avoids cases where partitions that include likely text are smoothed to match the type of partitions including only noise.
+  bool ConfirmNoSizeViolation(const ColPartition &other) const;
+
   // Returns true if other has a similar stroke width to this.
   bool MatchingStrokeWidth(const ColPartition &other,
                            double fractional_tolerance,
@@ -682,9 +693,9 @@ public:
   // treated as read-only.
   ColPartition *CopyButDontOwnBlobs();
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Provides a color for BBGrid to draw the rectangle.
-  ScrollView::Color BoxColor() const;
+  Diagnostics::Color BoxColor() const;
 #endif // !GRAPHICS_DISABLED
 
   // Prints debug information on this.
@@ -816,6 +827,9 @@ private:
   static void RightEdgeRun(ColPartition_IT *part_it, ICOORD *start,
                            ICOORD *end);
 
+private:
+  Tesseract* tesseract_;    // reference to the active instance
+
   // The margins are determined by the position of the nearest vertically
   // overlapping neighbour to the side. They indicate the maximum extent
   // that the block/column may be extended without touching something else.
@@ -915,8 +929,10 @@ private:
 };
 
 // Typedef it now in case it becomes a class later.
-using ColPartitionGridSearch =
-    GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT>;
+class ColPartitionGridSearch : public GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> {
+public:
+  ColPartitionGridSearch(ColPartitionGrid* part_grid);
+};
 
 } // namespace tesseract.
 

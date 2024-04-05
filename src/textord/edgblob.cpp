@@ -17,9 +17,11 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "edgblob.h"
 
@@ -28,7 +30,10 @@
 
 #define BUCKETSIZE 16
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 // Control parameters used in outline_complexity(), which rejects an outline
 // if any one of the 3 conditions is satisfied:
@@ -51,9 +56,11 @@ static BOOL_VAR(edges_children_fix, false,
 static INT_VAR(edges_min_nonhole, 12, "Min pixels for potential char in box");
 static INT_VAR(edges_patharea_ratio, 40,
                "Max lensq/area for acceptable child outline");
-static double_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
-static double_VAR(edges_boxarea, 0.875,
+static DOUBLE_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
+static DOUBLE_VAR(edges_boxarea, 0.875,
                   "Min area fraction of grandchild for box");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * @name OL_BUCKETS::OL_BUCKETS
@@ -156,9 +163,9 @@ int32_t OL_BUCKETS::outline_complexity(C_OUTLINE *outline, // parent outline
 
         if (child_count > edges_max_children_per_outline) { // too fragmented
           if (edges_debug) {
-            tprintf(
-                "Discard outline on child_count=%d > "
-                "max_children_per_outline=%d\n",
+            tprintDebug(
+                "Discard outline on child_count={} > "
+                "max_children_per_outline={}\n",
                 child_count,
                 static_cast<int32_t>(edges_max_children_per_outline));
           }
@@ -173,9 +180,9 @@ int32_t OL_BUCKETS::outline_complexity(C_OUTLINE *outline, // parent outline
         }
         if (child_count + grandchild_count > max_count) { // too complex
           if (edges_debug) {
-            tprintf(
-                "Discard outline on child_count=%d + grandchild_count=%d "
-                "> max_count=%d\n",
+            tprintDebug(
+                "Discard outline on child_count={} + grandchild_count={} "
+                "> max_count={}\n",
                 child_count, grandchild_count, max_count);
           }
           return child_count + grandchild_count;
@@ -242,7 +249,7 @@ int32_t OL_BUCKETS::count_children( // recursive count
           }
           if (child_count + grandchild_count > max_count) {
             if (edges_debug) {
-              tprintf("Discarding parent with child count=%d, gc=%d\n",
+              tprintDebug("Discarding parent with child count={}, gc={}\n",
                       child_count, grandchild_count);
             }
             return child_count + grandchild_count;
@@ -271,9 +278,9 @@ int32_t OL_BUCKETS::count_children( // recursive count
               }
               if (grandchild_count > 0) {
                 if (edges_debug) {
-                  tprintf(
-                      "Discarding parent of area %d, child area=%d, max%g "
-                      "with gc=%d\n",
+                  tprintDebug(
+                      "Discarding parent of area {}, child area={}, max{} "
+                      "with gc={}\n",
                       parent_area, child_area, max_parent_area,
                       grandchild_count);
                 }
@@ -283,9 +290,9 @@ int32_t OL_BUCKETS::count_children( // recursive count
               if (child_length * child_length >
                   child_area * edges_patharea_ratio) {
                 if (edges_debug) {
-                  tprintf(
-                      "Discarding parent of area %d, child area=%d, max%g "
-                      "with child length=%d\n",
+                  tprintDebug(
+                      "Discarding parent of area {}, child area={}, max{} "
+                      "with child length={}\n",
                       parent_area, child_area, max_parent_area, child_length);
                 }
                 return max_count + 1;
@@ -293,9 +300,9 @@ int32_t OL_BUCKETS::count_children( // recursive count
             }
             if (child_area < child->bounding_box().area() * edges_childarea) {
               if (edges_debug) {
-                tprintf(
-                    "Discarding parent of area %d, child area=%d, max%g "
-                    "with child rect=%d\n",
+                tprintDebug(
+                    "Discarding parent of area {}, child area={}, max{} "
+                    "with child rect={}\n",
                     parent_area, child_area, max_parent_area,
                     child->bounding_box().area());
               }

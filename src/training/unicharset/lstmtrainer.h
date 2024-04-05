@@ -18,6 +18,11 @@
 #ifndef TESSERACT_LSTM_LSTMTRAINER_H_
 #define TESSERACT_LSTM_LSTMTRAINER_H_
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "export.h"
 
 #include "imagedata.h" // for DocumentCache
@@ -353,7 +358,7 @@ protected:
                          const NetworkIO &outputs);
   // Displays the network targets as line a line graph.
   void DisplayTargets(const NetworkIO &targets, const char *window_name,
-                      ScrollView **window);
+                      ScrollViewReference &window);
 
   // Builds a no-compromises target where the first positions should be the
   // truth labels and the rest is padded with the null_char_.
@@ -404,15 +409,15 @@ protected:
                                const TestCallback &tester);
 
 protected:
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Alignment display window.
-  ScrollView *align_win_;
+  ScrollViewReference align_win_;
   // CTC target display window.
-  ScrollView *target_win_;
+  ScrollViewReference target_win_;
   // CTC output display window.
-  ScrollView *ctc_win_;
+  ScrollViewReference ctc_win_;
   // Reconstructed image window.
-  ScrollView *recon_win_;
+  ScrollViewReference recon_win_;
 #endif
   // How often to display a debug image.
   int debug_interval_;

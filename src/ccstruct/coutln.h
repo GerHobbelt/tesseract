@@ -23,9 +23,9 @@
 #include "mod128.h"     // for DIR128, DIRBITS
 #include "points.h"     // for ICOORD, FCOORD
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 
-#include <tesseract/export.h> // for DLLSYM
+#include <tesseract/export.h> // for TESS_API, DLLSYM
 
 #include <cstdint> // for int16_t, int32_t
 #include <bitset>  // for std::bitset<16>
@@ -43,7 +43,9 @@ class DENORM;
 #define STEP_MASK 3
 
 enum C_OUTLINE_FLAGS {
-  COUT_INVERSE // White on black blob
+  COUT_INVERSE, // White on black blob
+
+  COUT_COUNT
 };
 
 // Simple struct to hold the 3 values needed to compute a more precise edge
@@ -71,7 +73,8 @@ struct EdgeOffset {
 
 class C_OUTLINE; // forward declaration
 
-ELISTIZEH(C_OUTLINE)
+ELISTIZEH(C_OUTLINE);
+
 class C_OUTLINE : public ELIST_LINK {
 public:
   C_OUTLINE() {
@@ -136,8 +139,8 @@ public:
   }
   // Return step at a given index as a DIR128.
   DIR128 step_dir(int index) const {
-    return DIR128(
-        static_cast<int16_t>(((steps[index / 4] >> (index % 4 * 2)) & STEP_MASK) << (DIRBITS - 2)));
+    ASSERT_HOST(index >= 0);
+    return DIR128(static_cast<int16_t>(((steps[index / 4] >> (index % 4 * 2)) & STEP_MASK) << (DIRBITS - 2)));
   }
   // Return the step vector for the given outline position.
   ICOORD step(int index) const { // index of step
@@ -247,13 +250,18 @@ public:
   // being the coords of the upper-left corner of the pix.
   void render_outline(int left, int top, Image pix) const;
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   void plot(                           // draw one
-      ScrollView *window,              // window to draw in
-      ScrollView::Color colour) const; // colour to draw it
+      ScrollViewReference &window,              // window to draw in
+      Diagnostics::Color colour) const; // colour to draw it
+#endif
+
+  void plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const; // colour to draw it
+  
+#if !GRAPHICS_DISABLED
   // Draws the outline in the given colour, normalized using the given denorm,
   // making use of sub-pixel accurate information if available.
-  void plot_normed(const DENORM &denorm, ScrollView::Color colour, ScrollView *window) const;
+  void plot_normed(const DENORM &denorm, Diagnostics::Color colour, ScrollViewReference &window) const;
 #endif // !GRAPHICS_DISABLED
 
   C_OUTLINE &operator=(const C_OUTLINE &source);
@@ -285,7 +293,7 @@ private:
   TBOX box;                // bounding box
   ICOORD start;            // start coord
   int16_t stepcount;       // no of steps
-  std::bitset<16> flags;   // flags about outline
+  std::bitset<COUT_COUNT> flags;   // flags about outline
   std::vector<uint8_t> steps; // step array
   EdgeOffset *offsets;     // Higher precision edge.
   C_OUTLINE_LIST children; // child elements

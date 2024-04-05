@@ -19,11 +19,11 @@
 #ifndef POINTS_H
 #define POINTS_H
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "errcode.h" // for ASSERT_HOST
 #include "tesstypes.h" // for TDimension
 
-#include <tesseract/export.h> // for DLLSYM
+#include <tesseract/export.h> // for TESS_API, DLLSYM
 
 #include <cmath> // for sqrt, atan2
 #include <cstdio>
@@ -184,7 +184,7 @@ public:
   }
 };
 
-ELISTIZEH(ICOORDELT)
+ELISTIZEH(ICOORDELT);
 
 class TESS_API FCOORD {
 public:

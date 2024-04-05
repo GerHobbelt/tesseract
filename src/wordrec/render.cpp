@@ -18,7 +18,7 @@
  *****************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -33,10 +33,10 @@ namespace tesseract {
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
-ScrollView *blob_window = nullptr;
+ScrollViewReference blob_window;
 
-ScrollView::Color color_list[] = {ScrollView::RED,  ScrollView::CYAN,  ScrollView::YELLOW,
-                                  ScrollView::BLUE, ScrollView::GREEN, ScrollView::WHITE};
+Diagnostics::Color color_list[] = {Diagnostics::RED,  Diagnostics::CYAN,  Diagnostics::YELLOW,
+                                  Diagnostics::BLUE, Diagnostics::GREEN, Diagnostics::WHITE};
 
 BOOL_VAR(wordrec_display_all_blobs, 0, "Display Blobs");
 
@@ -45,16 +45,17 @@ BOOL_VAR(wordrec_blob_pause, 0, "Blob pause");
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**********************************************************************
  * display_blob
  *
  * Macro to display blob in a window.
  **********************************************************************/
-void display_blob(TBLOB *blob, ScrollView::Color color) {
+void display_blob(TBLOB *blob, Diagnostics::Color color) {
   /* Size of drawable */
-  if (blob_window == nullptr) {
-    blob_window = new ScrollView("Blobs", 520, 10, 500, 256, 2000, 256, true);
+  if (!blob_window) {
+    blob_window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Blobs", 520, 10, 500, 256, 2000, 256, true);
+    blob_window->RegisterGlobalRefToMe(&blob_window);
   } else {
     blob_window->Clear();
   }
@@ -68,7 +69,7 @@ void display_blob(TBLOB *blob, ScrollView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_blob(ScrollView *window, TBLOB *blob, ScrollView::Color color) {
+void render_blob(ScrollViewReference &window, TBLOB *blob, Diagnostics::Color color) {
   /* No outline */
   if (!blob) {
     return;
@@ -83,7 +84,7 @@ void render_blob(ScrollView *window, TBLOB *blob, ScrollView::Color color) {
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_edgepts(ScrollView *window, EDGEPT *edgept, ScrollView::Color color) {
+void render_edgepts(ScrollViewReference &window, EDGEPT *edgept, Diagnostics::Color color) {
   if (!edgept) {
     return;
   }
@@ -108,7 +109,7 @@ void render_edgepts(ScrollView *window, EDGEPT *edgept, ScrollView::Color color)
  * Create a list of line segments that represent the expanded outline
  * that was supplied as input.
  **********************************************************************/
-void render_outline(ScrollView *window, TESSLINE *outline, ScrollView::Color color) {
+void render_outline(ScrollViewReference &window, TESSLINE *outline, Diagnostics::Color color) {
   /* No outline */
   if (!outline) {
     return;

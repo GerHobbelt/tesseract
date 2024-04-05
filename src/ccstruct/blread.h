@@ -33,6 +33,13 @@ bool read_unlv_file(   // print list of sides
     BLOCK_LIST *blocks // output list
 );
 
+bool write_unlv_file(   // print list of sides
+    std::string name,   // basename of file
+    int32_t xsize,      // image size
+    int32_t ysize,      // image size
+    const BLOCK_LIST* blocks // block list
+);
+
 void FullPageBlock(int width, int height, BLOCK_LIST *blocks);
 
 } // namespace tesseract

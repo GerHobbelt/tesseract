@@ -13,7 +13,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -62,7 +62,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     // No debug, no keep this.
-    classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID, &results);
+    classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID, &results);
     bool debug_it = false;
     int correct_id = mutable_sample->class_id();
     if (counter.unicharset_.has_special_codes() &&
@@ -76,10 +76,10 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     }
     if (debug_it && error_samples > 0) {
       // Running debug, keep the correct answer, and debug the classifier.
-      tprintf("Error on sample %d: %s Classifier debug output:\n", it->GlobalSampleIndex(),
+      tprintDebug("Error on sample {}: {} Classifier debug output:\n", it->GlobalSampleIndex(),
               it->sample_set()->SampleToString(*mutable_sample).c_str());
-#ifndef GRAPHICS_DISABLED
-      classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
+#if !GRAPHICS_DISABLED
+      classifier->DebugDisplay(*mutable_sample, correct_id);
 #endif
       --error_samples;
     }
@@ -94,7 +94,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   }
   if (report_level > 1 && total_samples > 0) {
     // It is useful to know the time in microseconds/char.
-    tprintf("Errors computed in %.2fs at %.1f μs/char\n", total_time,
+    tprintDebug("Errors computed in {} at {} μs/char\n", total_time,
             1000000.0 * total_time / total_samples);
   }
   return unscaled_error;
@@ -108,13 +108,12 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
 // and a keep_this argument to find out what is going on.
 void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifier *old_classifier,
                                   CountTypes boosting_mode, const FontInfoTable &fontinfo_table,
-                                  const std::vector<Image > &page_images, SampleIterator *it) {
+                                  const std::vector<Image> &page_images, SampleIterator *it) {
   int fontsize = it->sample_set()->NumFonts();
   ErrorCounter old_counter(old_classifier->GetUnicharset(), fontsize);
   ErrorCounter new_counter(new_classifier->GetUnicharset(), fontsize);
   std::vector<UnicharRating> results;
 
-  int total_samples = 0;
   int error_samples = 25;
   int total_new_errors = 0;
   // Iterate over all the samples, accumulating errors.
@@ -123,31 +122,31 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
     int page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
+    new_classifier->SetPageImageForDebugReport(page_pix);
     // No debug, no keep this.
-    old_classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID,
+    old_classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID,
                                           &results);
     int correct_id = mutable_sample->class_id();
     if (correct_id != 0 && !old_counter.AccumulateErrors(true, boosting_mode, fontinfo_table,
                                                          results, mutable_sample)) {
       // old classifier was correct, check the new one.
-      new_classifier->UnicharClassifySample(*mutable_sample, page_pix, 0, INVALID_UNICHAR_ID,
+      new_classifier->UnicharClassifySample(*mutable_sample, 0, INVALID_UNICHAR_ID,
                                             &results);
       if (correct_id != 0 && new_counter.AccumulateErrors(true, boosting_mode, fontinfo_table,
                                                           results, mutable_sample)) {
-        tprintf("New Error on sample %d: Classifier debug output:\n", it->GlobalSampleIndex());
+        tprintDebug("New Error on sample {}: Classifier debug output:\n", it->GlobalSampleIndex());
         ++total_new_errors;
-        new_classifier->UnicharClassifySample(*mutable_sample, page_pix, 1, correct_id, &results);
+        new_classifier->UnicharClassifySample(*mutable_sample, 1, correct_id, &results);
         if (results.size() > 0 && error_samples > 0) {
-#ifndef GRAPHICS_DISABLED
-          new_classifier->DebugDisplay(*mutable_sample, page_pix, correct_id);
+#if !GRAPHICS_DISABLED
+          new_classifier->DebugDisplay(*mutable_sample, correct_id);
 #endif
           --error_samples;
         }
       }
     }
-    ++total_samples;
   }
-  tprintf("Total new errors = %d\n", total_new_errors);
+  tprintDebug("Total new errors = {}\n", total_new_errors);
 }
 
 // Constructor is private. Only anticipated use of ErrorCounter is via
@@ -282,10 +281,10 @@ bool ErrorCounter::AccumulateErrors(bool debug, CountTypes boosting_mode,
   if (sample->is_error()) {
     scaled_error_ += sample->weight();
     if (debug) {
-      tprintf("%d results for char %s font %d :", num_results,
+      tprintDebug("{} results for char {} font {} :", num_results,
               unicharset_.id_to_unichar(unichar_id), font_id);
       for (int i = 0; i < num_results; ++i) {
-        tprintf(" %.3f : %s\n", results[i].rating,
+        tprintDebug(" {} : {}\n", results[i].rating,
                 unicharset_.id_to_unichar(results[i].unichar_id));
       }
       return true;
@@ -336,7 +335,7 @@ bool ErrorCounter::AccumulateJunk(bool debug, const std::vector<UnicharRating> &
 }
 
 // Creates a report of the error rate. The report_level controls the detail
-// that is reported to stderr via tprintf:
+// that is reported to stderr via tprintDebug:
 // 0   -> no output.
 // >=1 -> bottom-line error rate.
 // >=3 -> font-level error rate.
@@ -367,7 +366,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
       }
       if (report_level > 2) {
         // Report individual font error rates.
-        tprintf("%s: %s\n", fontinfo_table.at(f).name, font_report.c_str());
+        tprintDebug("{}: {}\n", fontinfo_table.at(f).name, font_report.c_str());
       }
     }
   }
@@ -384,7 +383,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
     // Report the totals.
     std::string total_report;
     if (any_results) {
-      tprintf("TOTAL Scaled Err=%.4g%%, %s\n", scaled_error_ * 100.0, total_report.c_str());
+      tprintDebug("TOTAL Scaled Err={}%, {}\n", scaled_error_ * 100.0, total_report.c_str());
     }
     // Report the worst substitution error only for now.
     if (totals.n[CT_UNICHAR_TOP1_ERR] > 0) {
@@ -402,22 +401,22 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
         }
       }
       if (worst_err > 0) {
-        tprintf("Worst error = %d:%s -> %s with %d/%d=%.2f%% errors\n", worst_uni_id,
+        tprintDebug("Worst error = {}:{} -> {} with {}/{}={}% errors\n", worst_uni_id,
                 unicharset_.id_to_unichar(worst_uni_id), unicharset_.id_to_unichar(worst_result_id),
                 worst_err, totals.n[CT_UNICHAR_TOP1_ERR],
                 100.0 * worst_err / totals.n[CT_UNICHAR_TOP1_ERR]);
       }
     }
-    tprintf("Multi-unichar shape use:\n");
+    tprintDebug("Multi-unichar shape use:\n");
     for (int u = 0; u < multi_unichar_counts_.size(); ++u) {
       if (multi_unichar_counts_[u] > 0) {
-        tprintf("%d multiple answers for unichar: %s\n", multi_unichar_counts_[u],
+        tprintDebug("{} multiple answers for unichar: {}\n", multi_unichar_counts_[u],
                 unicharset_.id_to_unichar(u));
       }
     }
-    tprintf("OK Score histogram:\n");
+    tprintDebug("OK Score histogram:\n");
     ok_score_hist_.print();
-    tprintf("ERROR Score histogram:\n");
+    tprintDebug("ERROR Score histogram:\n");
     bad_score_hist_.print();
   }
 
