@@ -123,7 +123,7 @@ BOOL_VAR(scrollview_support, false, "Turn ScrollView support on/off. When turned
 #endif
 BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which steps are taken during the OCR process. This may help non-expert users to better grasp what is happening under the hood and which stages of the OCR process take up time.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
-BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
+BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all* available variables.");
 DOUBLE_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 BOOL_VAR(two_pass, false, "Enable double analysis: this will analyse every image twice. Once with the given page segmentation mode (typically 3), and then once with a single block page segmentation mode. The second run runs on a modified image where any earlier blocks are turned black, causing Tesseract to skip them for the second analysis. Currently two pages are output for a single image, so this is clearly a hack, but it's not as computationally intensive as running two full runs. (In fact, it might add as little as ~10% overhead, depending on the input image)   WARNING: This will probably break weird non-filepath file input patterns like \"-\" for stdin, or things that resolve using libcurl.");
 
@@ -470,14 +470,14 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
 #ifdef HAVE_MUPDF
   if (print_info)
   {
-    tprintDebug("ID=%3d: {} is_italic={} is_bold={}"
+    tprintDebug("ID={}: {} is_italic={} is_bold={}"
         " is_fixed_pitch={} is_serif={} is_fraktur={}\n",
           font_index, font.name,
-          font.is_italic() ? "true" : "false",
-          font.is_bold() ? "true" : "false",
-          font.is_fixed_pitch() ? "true" : "false",
-          font.is_serif() ? "true" : "false",
-          font.is_fraktur() ? "true" : "false");
+          font.is_italic(),
+          font.is_bold(),
+          font.is_fixed_pitch(),
+          font.is_serif(),
+          font.is_fraktur());
     continue;
   }
 #endif
