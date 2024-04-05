@@ -29,9 +29,6 @@
 #include "tabvector.h"
 #include "tesseractclass.h"
 
-#if defined(USE_OPENCL)
-#  include "openclwrapper.h" // for OpenclDevice
-#endif
 
 #include <algorithm>
 
@@ -341,7 +338,7 @@ static void GetLineBoxes(bool horizontal_lines, Image pix_lines, Image pix_inter
 // The output list of TabVector makes no reference to the input BLOBNBOXes.
 void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
                             BLOBNBOX_LIST *line_bblobs, int *vertical_x, int *vertical_y,
-                            TabVector_LIST *vectors) {
+                            TabVector_LIST *vectors, bool vertical_search) {
   BLOBNBOX_IT bbox_it(line_bblobs);
   int b_count = 0;
   // Put all the blobs into the grid to find the lines, and move the blobs
@@ -375,6 +372,8 @@ void LineFinder::FindLineVectors(const ICOORD &bleft, const ICOORD &tright,
         tprintDebug("Finding line vector starting at bbox ({},{})\n", box.left(), box.bottom());
       }
       AlignedBlobParams align_params(*vertical_x, *vertical_y, box.width());
+      if (!vertical_search)
+        align_params.max_v_gap *= 3;
       TabVector *vector =
           blob_grid.FindVerticalAlignment(align_params, bbox, vertical_x, vertical_y);
       if (vector != nullptr) {
@@ -491,43 +490,31 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
         closing_brick, open_brick, h_v_line_brick_size);
   }
 
-// only use opencl if compiled w/ OpenCL and selected device is opencl
-#ifdef USE_OPENCL
-  if (OpenclDevice::selectedDeviceIsOpenCL()) {
-    // OpenCL pixGetLines Operation
-    int clStatus =
-        OpenclDevice::initMorphCLAllocations(pixGetWpl(src_pix), pixGetHeight(src_pix), src_pix);
-    bool getpixclosed = pix_music_mask != nullptr;
-    OpenclDevice::pixGetLinesCL(nullptr, src_pix, pix_vline, pix_hline, &pix_closed, getpixclosed,
-                                closing_brick, closing_brick, max_line_width, max_line_width,
-                                min_line_length, min_line_length);
-  } else {
-#endif
-    if (tesseract_->debug_line_finding || verbose_process) {
-      tprintDebug("PROCESS:"
-      " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
-      " in thickened text (as it will become more solid) and also smoothing over"
-      " some line breaks and nicks in the edges of the lines.\n",
-      closing_brick);
-    }
-    pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
-    if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
-    }
-    if (tesseract_->debug_line_finding || verbose_process) {
-      tprintDebug("PROCESS:"
-        " Open up the image with a big box to detect solid areas, which can then be"
-        " subtracted. This is very generous and will leave in even quite wide"
-        " lines. (max_line_width = {})\n",
-        max_line_width);
-    }
-    Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
-    if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
-    }
-    pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
+  if (tesseract_->debug_line_finding || verbose_process) {
+    tprintDebug("PROCESS:"
+    " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
+    " in thickened text (as it will become more solid) and also smoothing over"
+    " some line breaks and nicks in the edges of the lines.\n",
+    closing_brick);
+  }
+  pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
+  if (tesseract_->debug_line_finding) {
+    tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
+  }
+  if (tesseract_->debug_line_finding || verbose_process) {
+    tprintDebug("PROCESS:"
+      " Open up the image with a big box to detect solid areas, which can then be"
+      " subtracted. This is very generous and will leave in even quite wide"
+      " lines. (max_line_width = {})\n",
+      max_line_width);
+  }
+  Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
+  if (tesseract_->debug_line_finding) {
+    tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
+  }
+  pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
-    pix_solid.destroy();
+  pix_solid.destroy();
 
 	if (verbose_process) {
 	  tprintDebug("PROCESS:"
@@ -542,9 +529,6 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     *pix_hline = pixOpenBrick(nullptr, pix_hollow, h_v_line_brick_size, 1);
 
     pix_hollow.destroy();
-#ifdef USE_OPENCL
-  }
-#endif
 
   // Lines are sufficiently rare, that it is worth checking for a zero image.
   bool v_empty = pix_vline->isZero();
@@ -655,7 +639,7 @@ void LineFinder::FindAndRemoveVLines(Image pix_intersections, int *vertical_x,
   int height = pixGetHeight(src_pix);
   ICOORD bleft(0, 0);
   ICOORD tright(width, height);
-  FindLineVectors(bleft, tright, &line_bblobs, vertical_x, vertical_y, vectors);
+  FindLineVectors(bleft, tright, &line_bblobs, vertical_x, vertical_y, vectors, true);
   if (!vectors->empty()) {
     RemoveUnusedLineSegments(false, &line_bblobs, *pix_vline);
     SubtractLinesAndResidue(*pix_vline, pix_non_vline, src_pix);
@@ -690,7 +674,7 @@ void LineFinder::FindAndRemoveHLines(Image pix_intersections, int vertical_x,
   int height = pixGetHeight(src_pix);
   ICOORD bleft(0, 0);
   ICOORD tright(height, width);
-  FindLineVectors(bleft, tright, &line_bblobs, &vertical_x, &vertical_y, vectors);
+  FindLineVectors(bleft, tright, &line_bblobs, &vertical_x, &vertical_y, vectors, false);
   if (!vectors->empty()) {
     RemoveUnusedLineSegments(true, &line_bblobs, *pix_hline);
     SubtractLinesAndResidue(*pix_hline, pix_non_hline, src_pix);
@@ -737,6 +721,34 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
 
   GetLineMasks(resolution, pix, &pix_vline, &pix_non_vline, &pix_hline, &pix_non_hline,
                &pix_intersections, pix_music_mask);
+
+  if (tesseract_->debug_line_finding) {
+#if !GRAPHICS_DISABLED
+    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+      int width = pixGetWidth(pix);
+      int height = pixGetHeight(pix);
+      ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);
+
+      if (pix_vline != nullptr) {
+        win->Draw(pix_vline, 0, 0, "find & remove H/V lines : vline mask");
+      }
+
+      if (pix_hline != nullptr) {
+        win->Draw(pix_hline, 0, 0, "find & remove H/V lines : hline mask");
+      }
+
+      win->Update();
+    }
+#endif
+
+    if (pix_vline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline mask");
+    }
+    if (pix_hline != nullptr) {
+      tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline mask");
+    }
+  }
+
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(pix_intersections, vertical_x, vertical_y, &pix_vline,
                       pix_non_vline, pix, v_lines);
@@ -750,9 +762,28 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
       pix_hline.destroy();
     }
   }
+
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
   if (tesseract_->debug_line_finding) {
+#if !GRAPHICS_DISABLED
+    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+      int width = pixGetWidth(pix);
+      int height = pixGetHeight(pix);
+      ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);
+
+      if (pix_vline != nullptr) {
+        win->Draw(pix_vline, 0, 0, "find & remove H/V lines : vline");
+      }
+
+      if (pix_hline != nullptr) {
+        win->Draw(pix_hline, 0, 0, "find & remove H/V lines : hline");
+      }
+
+      win->Update();
+    }
+#endif
+
     if (pix_vline != nullptr) {
       tesseract_->AddPixDebugPage(pix_vline, "find & remove H/V lines : vline");
     }

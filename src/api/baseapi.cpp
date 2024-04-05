@@ -41,9 +41,6 @@
 #endif
 #include "mutableiterator.h" // for MutableIterator
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
-#if defined(USE_OPENCL)
-#  include "openclwrapper.h" // for OpenclDevice
-#endif
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
 #include "params.h"          // for BoolParam, IntParam, DoubleParam, Stri...
@@ -118,10 +115,12 @@ STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
+#if !GRAPHICS_DISABLED
 BOOL_VAR(scrollview_support, false, "Turn ScrollView support on/off. When turned OFF, the OCR process executes a little faster but almost all graphical feedback/diagnostics features will have been disabled.");
+#endif
 BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which steps are taken during the OCR process. This may help non-expert users to better grasp what is happening under the hood and which stages of the OCR process take up time.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
-BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
+BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all* available variables.");
 DOUBLE_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 BOOL_VAR(two_pass, false, "Enable double analysis: this will analyse every image twice. Once with the given page segmentation mode (typically 3), and then once with a single block page segmentation mode. The second run runs on a modified image where any earlier blocks are turned black, causing Tesseract to skip them for the second analysis. Currently two pages are output for a single image, so this is clearly a hack, but it's not as computationally intensive as running two full runs. (In fact, it might add as little as ~10% overhead, depending on the input image)   WARNING: This will probably break weird non-filepath file input patterns like \"-\" for stdin, or things that resolve using libcurl.");
 
@@ -289,27 +288,6 @@ const char *TessBaseAPI::Version() {
 }
 
 /**
- * If compiled with OpenCL AND an available OpenCL
- * device is deemed faster than serial code, then
- * "device" is populated with the cl_device_id
- * and returns sizeof(cl_device_id)
- * otherwise *device=nullptr and returns 0.
- */
-size_t TessBaseAPI::getOpenCLDevice(void **data) {
-#ifdef USE_OPENCL
-  ds_device device = OpenclDevice::getDeviceSelection();
-  if (device.type == DS_DEVICE_OPENCL_DEVICE) {
-    *data = new cl_device_id;
-    memcpy(*data, &device.oclDeviceID, sizeof(cl_device_id));
-    return sizeof(cl_device_id);
-  }
-#endif
-
-  *data = nullptr;
-  return 0;
-}
-
-/**
  * Set the name of the input file. Needed only for training and
  * loading a UNLV zone file.
  */
@@ -468,14 +446,14 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
 #ifdef HAVE_MUPDF
   if (print_info)
   {
-    tprintDebug("ID=%3d: {} is_italic={} is_bold={}"
+    tprintDebug("ID={}: {} is_italic={} is_bold={}"
         " is_fixed_pitch={} is_serif={} is_fraktur={}\n",
           font_index, font.name,
-          font.is_italic() ? "true" : "false",
-          font.is_bold() ? "true" : "false",
-          font.is_fixed_pitch() ? "true" : "false",
-          font.is_serif() ? "true" : "false",
-          font.is_fraktur() ? "true" : "false");
+          font.is_italic(),
+          font.is_bold(),
+          font.is_fixed_pitch(),
+          font.is_serif(),
+          font.is_fraktur());
     continue;
   }
 #endif
@@ -622,10 +600,6 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     delete tesseract_;
     tesseract_ = nullptr;
   }
-#ifdef USE_OPENCL
-  OpenclDevice od;
-  od.InitEnv();
-#endif
   bool reset_classifier = true;
   if (tesseract_ == nullptr) {
     reset_classifier = false;
@@ -1293,15 +1267,18 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   int result = 0;
   if (tesseract_->SupportsInteractiveScrollView()) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
+    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
-#endif // !GRAPHICS_DISABLED
+
     // The page_res is invalid after an interactive session, so cleanup
     // in a way that lets us continue to the next page without crashing.
     delete page_res_;
     page_res_ = nullptr;
     return -1;
+#else
+    ASSERT0(!"Should never get here!");
+#endif
 #if !DISABLED_LEGACY_ENGINE
   } else if (tesseract_->tessedit_train_from_boxes) {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train From Boxes"));
@@ -1319,31 +1296,39 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   } else {
     AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
+#if !GRAPHICS_DISABLED
     if (scrollview_support) {
       tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
+#endif
 
     // Now run the main recognition.
     if (!tesseract_->paragraph_text_based) {
       AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
+#if !GRAPHICS_DISABLED
       if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
+#endif
     }
 
     AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
+#if !GRAPHICS_DISABLED
       if (scrollview_support) {
         tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
+#endif
       subsection_handle2.pop();
       if (tesseract_->paragraph_text_based) {
         AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
+#if !GRAPHICS_DISABLED
         if (scrollview_support) {
           tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
+#endif
       }
     } else {
       result = -1;
@@ -2109,7 +2094,9 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
 
 /**
  * Make a TSV-formatted string from the internal data structures.
+ * Allows additional column with detected language.
  * page_number is 0-based but will appear in the output as 1-based.
+ *
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
@@ -2853,9 +2840,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     if (m != (int)ThresholdMethod::Max)
     {
       if (!tesseract_->showcase_threshold_methods) {
-	    m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
+      m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
         continue;
-	  }
+    }
 
       thresholding_method = (ThresholdMethod)m;
     }
@@ -2958,7 +2945,12 @@ int TessBaseAPI::FindLines() {
 
   if (verbose_process) {
     tprintInfo("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
-      (tesseract_->textord_equation_detect ? " + equations" : ""));
+#if !DISABLED_LEGACY_ENGINE
+      (tesseract_->textord_equation_detect ? " + equations" : "")
+#else
+      ""
+#endif
+    );
   }
 
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation"));

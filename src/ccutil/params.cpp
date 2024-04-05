@@ -444,7 +444,7 @@ std::vector<ParamPtr> ParamsVectorSet::as_list(
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool Param::set_value2(const ParamValueContainer &v, ParamSetBySourceType source_type, ParamPtr source) {
+bool Param::set_value(const ParamValueContainer &v, ParamSetBySourceType source_type, ParamPtr source) {
 	if (const int32_t* val = std::get_if<int32_t>(&v)) 
 		return set_value(*val, source_type, source);
 	else if (const bool* val = std::get_if<bool>(&v)) 
@@ -452,11 +452,19 @@ bool Param::set_value2(const ParamValueContainer &v, ParamSetBySourceType source
 	else if (const double* val = std::get_if<double>(&v)) 
 		return set_value(*val, source_type, source);
 	else if (const std::string* val = std::get_if<std::string>(&v)) 
-		return set_value2(*val, source_type, source);
+		return set_value(*val, source_type, source);
 	else
 		throw new std::logic_error(fmt::format("tesseract param '{}' error: failed to get value from variant input arg", name_));
 }
 
+ParamOnModifyFunction Param::set_on_modify_handler(ParamOnModifyFunction on_modify_f) {
+  ParamOnModifyFunction rv = on_modify_f_;
+  on_modify_f_ = on_modify_f;
+  return rv;
+}
+ParamOnModifyFunction Param::clear_on_modify_handler() {
+  return set_on_modify_handler(0);
+}
 
 const char* Param::name_str() const {
   return name_;
@@ -496,7 +504,7 @@ void Param::reset_access_counts() {
   access_counts_.changing = 0;
 }
 
-bool Param::set_value2(const std::string& v, ParamSetBySourceType source_type, ParamPtr source) {
+bool Param::set_value(const std::string& v, ParamSetBySourceType source_type, ParamPtr source) {
   return set_value(v.c_str(), source_type, source);
 }
 
@@ -997,7 +1005,7 @@ const std::string& StringParam::value() const {
 
 void StringParam::ResetToDefault(ParamSetBySourceType source_type) {
   const std::string& v = default_;
-  (void) Param::set_value2(v, source_type, nullptr);
+  (void) Param::set_value(v, source_type, nullptr);
 }
 
 void StringParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
@@ -1260,13 +1268,13 @@ bool ParamUtils::SetParam(
   {
     StringParam* param = FindParam<StringParam>(name, set);
     if (param != nullptr) {
-      return param->set_value2(value, source_type, source);
+      return param->set_value(value, source_type, source);
     }
   }
   {
     Param* param = FindParam<Param>(name, set);
     if (param != nullptr) {
-      return param->set_value2(value, source_type, source);
+      return param->set_value(value, source_type, source);
     }
   }
   return false;

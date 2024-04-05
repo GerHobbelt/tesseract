@@ -952,7 +952,7 @@ void C_OUTLINE::render_outline(int left, int top, Image pix) const {
  */
 
 #if !GRAPHICS_DISABLED
-void C_OUTLINE::plot(ScrollViewReference &window, ScrollView::Color colour) const {
+void C_OUTLINE::plot(ScrollViewReference &window, Diagnostics::Color colour) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step
@@ -1083,7 +1083,7 @@ void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, 
  * Draws the outline in the given colour, normalized using the given denorm,
  * making use of sub-pixel accurate information if available.
  */
-void C_OUTLINE::plot_normed(const DENORM &denorm, ScrollView::Color colour,
+void C_OUTLINE::plot_normed(const DENORM &denorm, Diagnostics::Color colour,
                             ScrollViewReference &window) const {
   window->Pen(colour);
   if (stepcount == 0) {

@@ -61,6 +61,8 @@ struct SVPolyLineBuffer {
   std::vector<int> ycoords;
 };
 
+#if !GRAPHICS_DISABLED
+
 // A map between the window IDs and their corresponding pointers.
 static std::vector<ScrollViewReference> svmap;
 static std::mutex *svmap_mu = nullptr;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
@@ -71,7 +73,11 @@ static std::map<std::pair<ScrollViewReference, SVEventType>,
     waiting_for_events;
 static std::mutex *waiting_for_events_mu;
 
+#endif
+
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
+#if !GRAPHICS_DISABLED
 
 std::unique_ptr<SVEvent> SVEvent::copy() const {
   auto any = std::unique_ptr<SVEvent>(new SVEvent);
@@ -92,6 +98,12 @@ std::unique_ptr<SVEvent> SVEvent::copy() const {
 // It is defined here, so the compiler can create a single vtable
 // instead of weak vtables in every compilation unit.
 SVEventHandler::~SVEventHandler() = default;
+
+#endif
+
+/*******************************************************************************
+ * InteractiveScrollView implementation.
+ *******************************************************************************/
 
 #if !GRAPHICS_DISABLED
 
@@ -199,7 +211,7 @@ void InteractiveScrollView::MessageReceiver() {
 }
 
 // Table to implement the color index values in the old system.
-static const uint8_t table_colors[ScrollView::GREEN_YELLOW + 1][4] = {
+static const uint8_t table_colors[Diagnostics::GREEN_YELLOW + 1][4] = {
     {0, 0, 0, 0},         // NONE (transparent)
     {0, 0, 0, 255},       // BLACK.
     {255, 255, 255, 255}, // WHITE.
@@ -404,10 +416,12 @@ void InteractiveScrollView::StartEventHandler() {
     // The thread should run as long as its associated window is alive.
   }
 }
+
 #endif // !GRAPHICS_DISABLED
 
-ScrollView::~ScrollView() {
 #if !GRAPHICS_DISABLED
+
+ScrollView::~ScrollView() {
 #if 0    // Cannot invoke virtual method any more as the derived instane has already finished delete-ing by now: we're delete-ing the base class right now! This is taken care of instead by calling Update() from the ScrollViewReference BEFORE invoking the destructor of the derived class!
   Update();
 #endif
@@ -418,11 +432,13 @@ ScrollView::~ScrollView() {
 #endif
 
   delete points_;
-#endif // !GRAPHICS_DISABLED
 }
 
-InteractiveScrollView::~InteractiveScrollView() {
+#endif // !GRAPHICS_DISABLED
+
 #if !GRAPHICS_DISABLED
+
+InteractiveScrollView::~InteractiveScrollView() {
   //svmap_mu->lock();
   if (semaphore_ /* !exit_handler_has_been_invoked */) {
     //svmap_mu->unlock();
@@ -442,10 +458,8 @@ InteractiveScrollView::~InteractiveScrollView() {
 
   delete semaphore_;
   semaphore_ = nullptr;
-#endif // !GRAPHICS_DISABLED
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
@@ -800,13 +814,13 @@ void ScrollView::Exit() {
   exit(667);
 }
 
-// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void InteractiveScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
       table_colors[color][3]);
 }
 
-// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void InteractiveScrollView::Brush(Color color) {
   Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
         table_colors[color][3]);
@@ -969,14 +983,12 @@ void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
 void BackgroundScrollView::StartEventHandler() {
   ASSERT0(!"Should never get here!");
 }
-#endif // !GRAPHICS_DISABLED
 
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
   ASSERT0(!dirty);
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
@@ -1456,13 +1468,13 @@ void BackgroundScrollView::UpdateWindow() {
   }
 }
 
-// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void BackgroundScrollView::Pen(Color color) {
   Pen(table_colors[color][0], table_colors[color][1], table_colors[color][2],
       table_colors[color][3]);
 }
 
-// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void BackgroundScrollView::Brush(Color color) {
   Brush(table_colors[color][0], table_colors[color][1], table_colors[color][2],
         table_colors[color][3]);
@@ -1556,12 +1568,10 @@ void DummyScrollView::Initialize(Tesseract *tess, const char *name,
 void DummyScrollView::StartEventHandler() {
 	ASSERT0(!"Should never get here!");
 }
-#endif // !GRAPHICS_DISABLED
 
 DummyScrollView::~DummyScrollView() {
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void DummyScrollView::vSendMsg(fmt::string_view format,	fmt::format_args args) {
 }
@@ -1718,11 +1728,11 @@ void DummyScrollView::PopupItem(const char *parent, const char *name,
 void DummyScrollView::UpdateWindow() {
 }
 
-// Set the pen color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the pen color, using an enum value (e.g. Diagnostics::ORANGE)
 void DummyScrollView::Pen(Color color) {
 }
 
-// Set the brush color, using an enum value (e.g. ScrollView::ORANGE)
+// Set the brush color, using an enum value (e.g. Diagnostics::ORANGE)
 void DummyScrollView::Brush(Color color) {
 }
 
@@ -1757,12 +1767,24 @@ char DummyScrollView::Wait() {
 	return '\0';
 }
 
+#endif // !GRAPHICS_DISABLED
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr), id(-1) {
+#if !GRAPHICS_DISABLED
+
+ScrollViewReference::ScrollViewReference()
+  : view_(nullptr)
+  , counter_(nullptr)
+  , id(-1)
+{
 }
 
-ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr), id(-1) {
+ScrollViewReference::ScrollViewReference(ScrollView *view)
+  : view_(view)
+  , counter_(nullptr)
+  , id(-1)
+{
   if (view_ != nullptr) {
     counter_ = new int();
     *counter_ = 1;
@@ -1893,7 +1915,11 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
   return *this;
 }
 
+#endif // !GRAPHICS_DISABLED
+
 ////////////////////////////////////////////////////////////////////////
+
+#if !GRAPHICS_DISABLED
 
 // if (tesseract_->SupportsInteractiveScrollView()) ...
 
@@ -1901,7 +1927,7 @@ ScrollViewManager::ScrollViewManager() {
   active = nullptr;
 
   if (!svmap_mu) {
-	svmap_mu = new std::mutex();
+    svmap_mu = new std::mutex();
   }
 }
 
@@ -1989,33 +2015,34 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
   if (it != mgr.active_set.end()) {
     mgr.active_set.erase(it);
     mgr.active = nullptr;
+
     if (mgr.active_set.empty()) {
       // flush all debug windows first
       ScrollView::Update();
 
       // and nuke 'em all, next:
       for (;;) {
-      // limit scope of lock
-      std::vector<ScrollViewReference> delset;
-      {
-        std::lock_guard<std::mutex> guard(*svmap_mu);
-        for (auto &iter : svmap) {
+        // limit scope of lock
+        std::vector<ScrollViewReference> delset;
+        {
+          std::lock_guard<std::mutex> guard(*svmap_mu);
+          for (auto& iter : svmap) {
             if (iter) {
               delset.push_back(iter);
             }
+          }
         }
-      }
 
-      if (delset.size() == 0)
-        break;
+        if (delset.size() == 0)
+          break;
 
-      for (int index = delset.size() - 1; index >= 0; index--) {
-        ScrollViewReference win_ref = delset[index];
-        if (win_ref) {
+        for (int index = delset.size() - 1; index >= 0; index--) {
+          ScrollViewReference win_ref = delset[index];
+          if (win_ref) {
             win_ref->ExitHelper();
+          }
         }
-      }
-      break;
+        break;
       }
     }
   }

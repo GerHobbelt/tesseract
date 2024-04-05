@@ -205,7 +205,7 @@ public:
   // Display the samples with the given indexed feature that also match
   // the given shape.
   void DisplaySamplesWithFeature(int f_index, const Shape &shape,
-                                 const IntFeatureSpace &feature_space, ScrollView::Color color,
+                                 const IntFeatureSpace &feature_space, Diagnostics::Color color,
                                  ScrollViewReference &window) const;
 
 private:

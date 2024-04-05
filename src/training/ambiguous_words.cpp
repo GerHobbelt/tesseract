@@ -116,7 +116,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
 #endif
 {
-	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]);
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
   return EXIT_FAILURE;
 }
 

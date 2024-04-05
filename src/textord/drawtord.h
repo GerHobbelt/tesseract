@@ -29,16 +29,20 @@ namespace tesseract {
 #define NO_SMD "none"
 
 extern BOOL_VAR_H(textord_show_fixed_cuts);
+#if !GRAPHICS_DISABLED
 extern ScrollViewReference to_win;
+#endif
 extern FILE *to_debug;
+#if !GRAPHICS_DISABLED
 // Creates a static display window for textord, and returns a pointer to it.
 ScrollViewReference &create_to_win(ICOORD page_tr);
 void close_to_win();              // Destroy the textord window.
 void create_todebug_win();        // make gradients win
+#endif
 void plot_box_list(               // make gradients win
     ScrollViewReference &win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
-    ScrollView::Color body_colour // colour to draw
+    Diagnostics::Color body_colour // colour to draw
 );
 void plot_box_list(               // make gradients win
     Image& pix,                   // image to draw in
@@ -47,14 +51,14 @@ void plot_box_list(               // make gradients win
 );
 void plot_to_row(             // draw a row
     TO_ROW *row,              // row to draw
-    ScrollView::Color colour, // colour to draw in
+    Diagnostics::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 );
 void plot_parallel_row(       // draw a row
     TO_ROW *row,              // row to draw
     float gradient,           // gradients of lines
     int32_t left,             // edge of block
-    ScrollView::Color colour, // colour to draw in
+    Diagnostics::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 );
 void draw_occupation(                    // draw projection
@@ -68,7 +72,7 @@ void draw_meanlines(          // draw a block
     TO_BLOCK *block,          // block to draw
     float gradient,           // gradients of lines
     int32_t left,             // edge of block
-    ScrollView::Color colour, // colour to draw in
+    Diagnostics::Color colour, // colour to draw in
     FCOORD rotation           // rotation for line
 );
 void plot_word_decisions(          // draw words
@@ -78,7 +82,7 @@ void plot_word_decisions(          // draw words
 );
 void plot_fp_cells(              // draw words
     ScrollViewReference &win,    // window to draw in
-    ScrollView::Color colour,    // colour of lines
+    Diagnostics::Color colour,    // colour of lines
     BLOBNBOX_IT *blob_it,        // blobs
     TDimension pitch,            // of block
     int16_t blob_count,          // no of real blobs
@@ -89,13 +93,13 @@ void plot_fp_cells(              // draw words
 );
 void plot_fp_cells2(          // draw words
     ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
+    Diagnostics::Color colour, // colour of lines
     TO_ROW *row,              // for location
     FPSEGPT_LIST *seg_list    // segments to plot
 );
 void plot_row_cells(          // draw words
     ScrollViewReference &win,          // window to draw in
-    ScrollView::Color colour, // colour of lines
+    Diagnostics::Color colour, // colour of lines
     TO_ROW *row,              // for location
     float xshift,             // amount of shift
     ICOORDELT_LIST *cells     // cells to draw

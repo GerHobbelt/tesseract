@@ -47,6 +47,7 @@
 #include "shapetable.h"
 #include "tprintf.h"
 #include "unicity_table.h"
+#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 
@@ -65,13 +66,13 @@ static void DisplayProtoList(const char *ch, LIST protolist) {
   iterate(proto) {
     auto *prototype = reinterpret_cast<PROTOTYPE *>(proto->first_node());
     if (prototype->Significant) {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(Diagnostics::GREEN);
     } else if (prototype->NumSamples == 0) {
-      window->Pen(ScrollView::BLUE);
+      window->Pen(Diagnostics::BLUE);
     } else if (prototype->Merged) {
-      window->Pen(ScrollView::MAGENTA);
+      window->Pen(Diagnostics::MAGENTA);
     } else {
-      window->Pen(ScrollView::RED);
+      window->Pen(Diagnostics::RED);
     }
     float x = CenterX(prototype->Mean);
     float y = CenterY(prototype->Mean);
@@ -294,8 +295,8 @@ extern "C" int main(int argc, const char** argv)
 extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
 #endif
 {
-	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
-	return 1;
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+	return EXIT_FAILURE;
 }
 
 #endif

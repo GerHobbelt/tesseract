@@ -25,16 +25,17 @@
 #  include "config_auto.h"
 #endif
 
+#  include <cstdlib>
+#  include <iostream>
+#include "mupdf/fitz/string-util.h"
+
 #if !GRAPHICS_DISABLED
 #  include "scrollview.h"
 #  include "svmnode.h"
 
-#  include <cstdlib>
-#  include <iostream>
-
 namespace tesseract {
 
-// The current color values we use, initially white (== ScrollView::WHITE).
+// The current color values we use, initially white (== Diagnostics::WHITE).
 static int rgb[3] = {255, 255, 255};
 
 class SVPaint : public SVEventHandler {
@@ -215,8 +216,8 @@ SVPaint::SVPaint(Tesseract *tess, const char *server_name) {
 
   // Set the initial color values to White (could also be done by
   // passing (rgb[0], rgb[1], rgb[2]).
-  window_->Pen(ScrollView::WHITE);
-  window_->Brush(ScrollView::WHITE);
+  window_->Pen(Diagnostics::WHITE);
+  window_->Brush(Diagnostics::WHITE);
 
   // Adds the event handler to the window. This actually ensures that Notify
   // gets called when events occur.
@@ -257,6 +258,18 @@ extern "C" int tesseract_svpaint_main(int argc, const char **argv)
   }
   tesseract::SVPaint svp(nullptr, server_name);
   return EXIT_SUCCESS;
+}
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_svpaint_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "%s: this tool is not supported in this build.\n", fz_basename(argv[0]));
+  return EXIT_FAILURE;
 }
 
 #endif // !GRAPHICS_DISABLED
