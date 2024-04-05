@@ -52,16 +52,16 @@ GetSlopeAndOffset(float x0, float y0, float x1, float y1, float *m, float *b){
 static void 
 AddPointsToPAGE(Pta *pts, std::stringstream &str) {
   int num_pts;
-  float x, y;
-  
+
   str <<"<Coords points=\"";
-    num_pts = ptaGetCount(pts);
-    for (int p = 0; p < num_pts; ++p) {
-      ptaGetPt(pts, p, &x, &y);
-      if (p!=0) str << " ";
-      str << std::to_string(x) << "," << std::to_string(y);
-    }
-    str << "\"/>\n";
+  num_pts = ptaGetCount(pts);
+  for (int p = 0; p < num_pts; ++p) {
+    int x, y;
+    ptaGetIPt(pts, p, &x, &y);
+    if (p != 0) str << " ";
+    str << std::to_string(x) << "," << std::to_string(y);
+  }
+  str << "\"/>\n";
 }
 
 ///
@@ -133,7 +133,7 @@ DestroyAndCreatePta(Pta *pts) {
 Pta*
 RecalcPolygonline(Pta *pts, bool upper) {
   int num_pts, num_bin, index = 0;
-  float y, x0, y0, x1, y1;
+  int m, b, x, y, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   NUMA *bin_line;
   Pta *pts_recalc;
@@ -155,18 +155,18 @@ RecalcPolygonline(Pta *pts, bool upper) {
   } 
     
   do {
-    ptaGetPt(pts, index, &x0, &y0);
-    ptaGetPt(pts, index+1, &x1, &y1);
+    ptaGetIPt(pts, index, &x0, &y0);
+    ptaGetIPt(pts, index+1, &x1, &y1);
     // TODO add +1?
     for (int p = x0 - x_min; p <= x1 - x_min; ++p) {
       l_float32 val;
       numaGetFValue(bin_line, p, &val);
       if (!upper) {
         if ( val == -1. || y0 > val)
-        numaReplaceNumber(bin_line, p, y0);
+          numaReplaceNumber(bin_line, p, y0);
       } else {
         if ( val == -1. || y0 < val)
-        numaReplaceNumber(bin_line, p, y0);
+          numaReplaceNumber(bin_line, p, y0);
       }
     }
     index += 2;
@@ -226,7 +226,7 @@ static void
 UpdateBlockPoints(Pta *block_top_pts, Pta *block_bottom_pts, 
   Pta *line_top_pts, Pta *line_bottom_pts, int lcnt, int last_word_in_cblock) {
   int num_pts;
-  float x, y;
+  int x, y;
 
   // Create a hull around all lines
   if (lcnt==0 && last_word_in_cblock) {
@@ -235,27 +235,27 @@ UpdateBlockPoints(Pta *block_top_pts, Pta *block_bottom_pts,
   } else if (lcnt==0){ 
     ptaJoin(block_top_pts, line_top_pts, 0, -1);
     num_pts = ptaGetCount(line_bottom_pts);
-    ptaGetPt(line_bottom_pts, num_pts-1, &x, &y);
+    ptaGetIPt(line_bottom_pts, num_pts-1, &x, &y);
     ptaAddPt(block_top_pts, x, y);
-    ptaGetPt(line_bottom_pts, 0, &x, &y);
+    ptaGetIPt(line_bottom_pts, 0, &x, &y);
     ptaAddPt(block_bottom_pts, x, y);
   } else if (last_word_in_cblock) {
-    ptaGetPt(line_top_pts, 0, &x, &y);
+    ptaGetIPt(line_top_pts, 0, &x, &y);
     ptaAddPt(block_bottom_pts, x, y);
     ptaJoin(block_bottom_pts, line_bottom_pts, 0, -1);
     num_pts = ptaGetCount(line_top_pts);
-    ptaGetPt(line_top_pts, num_pts-1, &x, &y);
+    ptaGetIPt(line_top_pts, num_pts-1, &x, &y);
     ptaAddPt(block_top_pts, x, y);
   } else {
-    ptaGetPt(line_top_pts, 0, &x, &y);
+    ptaGetIPt(line_top_pts, 0, &x, &y);
     ptaAddPt(block_bottom_pts, x, y);
-    ptaGetPt(line_bottom_pts, 0, &x, &y);
+    ptaGetIPt(line_bottom_pts, 0, &x, &y);
     ptaAddPt(block_bottom_pts, x, y);
     num_pts = ptaGetCount(line_top_pts);
-    ptaGetPt(line_top_pts, num_pts-1, &x, &y);
+    ptaGetIPt(line_top_pts, num_pts-1, &x, &y);
     ptaAddPt(block_top_pts, x, y);
     num_pts = ptaGetCount(line_bottom_pts);
-    ptaGetPt(line_bottom_pts, num_pts-1, &x, &y);
+    ptaGetIPt(line_bottom_pts, num_pts-1, &x, &y);
     ptaAddPt(block_top_pts, x, y);
   };
 }
@@ -265,16 +265,16 @@ UpdateBlockPoints(Pta *block_top_pts, Pta *block_bottom_pts,
 ///
 static void 
 SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
-  int index = 1;
-  float m, b, x0, y0, x1, y1, x2, y2, x3, y3, y_min, y_max;
+  int num_pts, x0, y0, x1, y1, x2, y2, x3, y3, index = 1;
+  float m, b, y_min, y_max;
 
   while (index <= ptaGetCount(polyline)-2) {
-    ptaGetPt(polyline, index-1, &x0, &y0);
-    ptaGetPt(polyline, index, &x1, &y1);
-    ptaGetPt(polyline, index+1, &x2, &y2);
+    ptaGetIPt(polyline, index-1, &x0, &y0);
+    ptaGetIPt(polyline, index, &x1, &y1);
+    ptaGetIPt(polyline, index+1, &x2, &y2);
     if (index+2 < ptaGetCount(polyline)) {
       // Delete two point indentations 
-      ptaGetPt(polyline, index+2, &x3, &y3);
+      ptaGetIPt(polyline, index+2, &x3, &y3);
       if (abs(x3-x0) <= tolerance*2){
         GetSlopeAndOffset(x0, y0, x3, y3, &m, &b);
         
@@ -307,7 +307,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_min = std::min(y0, y1);
         GetSlopeAndOffset(x0, y_min, x2, y2, &m, &b);
         if ((m*x1+b) <= y1) {
-      ptaUpdatePtYCoord(polyline, index-1, std::min(y0, y1));
+          ptaUpdatePtYCoord(polyline, index-1, std::min(y0, y1));
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -316,7 +316,7 @@ SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper){
         y_max = std::max(y0, y1);
         GetSlopeAndOffset(x0, y_max, x2, y2, &m, &b);
         if ((m*x1+b) >= y1) {
-      ptaUpdatePtYCoord(polyline, index-1, y_max);
+          ptaUpdatePtYCoord(polyline, index-1, y_max);
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -381,17 +381,15 @@ AddBaselineToPTA(const ResultIterator *it, PageIteratorLevel level, Pta *baselin
 ///
 static void 
 AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
-  int num_pts;
-  float x, y;
+  int x, y, num_pts = baseline_pts->n;
   
-  str <<"<Baseline points=\"";
-    num_pts = ptaGetCount(baseline_pts);
-    for (int p = 0; p < num_pts; ++p) {
-      ptaGetPt(baseline_pts, p, &x, &y);
-      if (p!=0) str << " ";
-      str << std::to_string(x) << "," << std::to_string(y);
-    }
-    str << "\"/>\n";
+  str << "<Baseline points=\"";
+  for (int p = 0; p < num_pts; ++p) {
+    ptaGetIPt(baseline_pts, p, &x, &y);
+    if (p != 0) str << " ";
+    str << std::to_string(x) << "," << std::to_string(y);
+  }
+  str << "\"/>\n";
 }
 
 ///
@@ -475,8 +473,8 @@ ClipAndSimplifyBaseline(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDir
 ///
 Pta*
 FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::WritingDirection writing_direction) {
-  int num_pts, num_bin, index = 0;
-  float m, b, x0, y0, x1, y1;
+  int num_pts, num_bin, index = 0, p_index, offset, x, y, x0, y0, x1, y1;
+  float m, b; 
   float x_min, y_min, x_max, y_max;
   float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
   NUMA *bin_line, *poly_bl_delta;
@@ -494,21 +492,23 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   num_pts = ptaGetCount(bottom_pts);
   // Create a interpolated polygon with stepsize 1
   for (int index = 0; index < num_pts-1; ++index) {
-    ptaGetPt(bottom_pts, index, &x0, &y0);
-    ptaGetPt(bottom_pts, index+1, &x1, &y1);
+    ptaGetIPt(bottom_pts, index, &x0, &y0);
+    ptaGetIPt(bottom_pts, index+1, &x1, &y1);
     if (x0 >= x1) continue;
     if (y0==y1) {
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-      l_float32 val;
-      numaGetFValue(bin_line, p, &val);
-      if (val == -1. || y0 > val) numaSetValue(bin_line, p, y0);
-        }
+        l_float32 val;
+        numaGetFValue(bin_line, p, &val);
+        if (val == -1. || y0 > val) 
+	      numaSetValue(bin_line, p, y0);
+      }
     } else {
       GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
       for (int p = x0-x_min; p < x1-x_min+1; ++p) {
-      l_float32 val;
-      numaGetFValue(bin_line, p, &val);
-      if (val == -1. || ((p+x_min)*m+b) > val) numaSetValue(bin_line, p, (p+x_min)*m+b);
+        l_float32 val;
+        numaGetFValue(bin_line, p, &val);
+        if (val == -1. || ((p+x_min)*m+b) > val) 
+	      numaSetValue(bin_line, p, (p+x_min)*m+b);
       }
     }
   }
@@ -520,10 +520,10 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   
   // Clip Baseline and create a set of deltas between baseline and polygon
   for (int p = 0; p < num_pts; ++p) {
-    ptaGetPt(baseline_pts, p, &x0, &y0);
+    ptaGetIPt(baseline_pts, p, &x0, &y0);
 
     if (x0 < x_min){
-      ptaGetPt(baseline_pts, p+1, &x1, &y1);
+      ptaGetIPt(baseline_pts, p+1, &x1, &y1);
       if (x1 < x_min) {
         continue; 
       } else {
@@ -533,7 +533,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
       }
     } else if (x0 > x_max) {
       if (ptaGetCount(baseline_recalc_pts) > 0) {
-        ptaGetPt(baseline_pts, p-1, &x1, &y1);
+        ptaGetIPt(baseline_pts, p-1, &x1, &y1);
         GetSlopeAndOffset(x1, y1, x0, y0, &m, &b);
         y0 = int (x_max*m+b);
         x0 = x_max;
@@ -565,7 +565,7 @@ FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta*baseline_pts, tesseract::Writing
   baseline_recalc_pts = ptaCreate(0);
   num_pts = ptaGetCount(baseline_clipped_pts);
   for (int p = 0; p < num_pts; ++p) {
-    ptaGetPt(baseline_clipped_pts, p, &x0, &y0);
+    ptaGetIPt(baseline_clipped_pts, p, &x0, &y0);
     int x_val = x0-x_min;
     l_float32 x_coord;
     numaGetFValue(bin_line, p, &x_coord);
@@ -708,7 +708,7 @@ char
     return nullptr;
   }
 
-  int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
+  int rcnt = 0, lcnt = 0, wcnt = 0;
 
   if (tesseract_->input_file_path.empty()) {
     SetInputName(nullptr);
@@ -761,7 +761,7 @@ char
   // TODO: Do we need to create a random number here?
   std::size_t ro_id = std::hash<std::string>{}(GetInputName());
   reading_order_str << "\t\t<ReadingOrder>\n"
-  << "\t\t\t<OrderedGroup id=\"ro_"<< ro_id
+  << "\t\t\t<OrderedGroup id=\"ro"<< ro_id
   << "\" caption=\"Regions reading order\">\n";
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
@@ -778,20 +778,20 @@ char
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
         // Handle all kinds of images.
-        page_str << "\t\t<Graphic id=\"r" << bcnt++ << "\">\n";
+        page_str << "\t\t<GraphicRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
         AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
-        page_str << "\t\t</Graphic>\n";
+        page_str << "\t\t</GraphicRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
       }
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
         // Handle horizontal and vertical lines.
-        page_str << "\t\t<Separator id=\"r_" << bcnt++ << "\">\n";
+        page_str << "\t\t<SeparatorRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
         AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
-        page_str << "\t\t</Separator>\n";
+        page_str << "\t\t</SeparatorRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
@@ -805,15 +805,15 @@ char
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       // Add Block to reading order
       reading_order_str << "\t\t\t\t<RegionRefIndexed "
-      << "index=\"" << tcnt << "\" "
-      << "regionRef=\"r_" << tcnt << "\"/>\n";
+      << "index=\"" << rcnt << "\" "
+      << "regionRef=\"r" << rcnt << "\"/>\n";
       
       float deskew_angle;
       res_it->Orientation(&orientation_block, &writing_direction_block, &textline_order_block,
                   &deskew_angle);
       block_conf = ((res_it-> Confidence(RIL_BLOCK))/100.);
-      page_str << "\t\t<TextRegion id=\"r_" << tcnt << "\" "
-      << "custom=\""<< "readingOrder {index:"<< tcnt <<";} "
+      page_str << "\t\t<TextRegion id=\"r" << rcnt << "\" "
+      << "custom=\""<< "readingOrder {index:"<< rcnt <<";} "
       << "readingDirection {"<< WritingDirectionToStr(writing_direction_block)<<";} "
       << "orientation {"<< orientation_block <<";}\">\n";
       page_str << "\t\t\t";
@@ -840,7 +840,7 @@ char
 
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       line_conf = ((res_it-> Confidence(RIL_TEXTLINE))/100.);
-      line_str << "\t\t\t<TextLine id=\"r_" << tcnt << "_tl_" << lcnt <<"\" readingDirection=\"" 
+      line_str << "\t\t\t<TextLine id=\"r" << rcnt << "l" << lcnt <<"\" readingDirection=\"" 
       << WritingDirectionToStr(writing_direction) << "\" "
       << "custom=\""<< "readingOrder {index:"<< lcnt <<";}\">\n";
       // If wordlevel is not set, get the line polygon and baseline
@@ -859,7 +859,7 @@ char
 
     // Create word stream if word level output is active
     if (WORDLEVELFLAG) {
-      word_str << "\t\t\t\t<Word id=\"r_" << tcnt << "_tl_" << lcnt << "_w_" << wcnt << "\" readingDirection=\""
+      word_str << "\t\t\t\t<Word id=\"r" << rcnt << "l" << lcnt << "w" << wcnt << "\" readingDirection=\""
       << WritingDirectionToStr(writing_direction)  << "\" "
       << "custom=\""<< "readingOrder {index:"<< wcnt <<";}\">\n";
       if (!POLYGONFLAG || ttb_flag){
@@ -1031,7 +1031,7 @@ char
       << "\t\t\t</TextEquiv>\n";
       page_str << "\t\t</TextRegion>\n";
       region_content.str("");
-      tcnt++;
+      rcnt++;
       lcnt = 0;
     }
   }
