@@ -22,8 +22,8 @@
 #include <ctime>
 #include <iomanip>
 #include <memory>
-#include <sstream> // for std::stringstream
 #include <regex>
+#include <sstream> // for std::stringstream
 #include <unordered_set>
 
 #include <leptonica/allheaders.h>
@@ -38,8 +38,8 @@ namespace tesseract {
 ///
 /// Slope and offset between two points
 ///
-static void 
-GetSlopeAndOffset(float x0, float y0, float x1, float y1, float *m, float *b){
+static void GetSlopeAndOffset(float x0, float y0, float x1, float y1, float *m,
+                              float *b) {
   float slope;
 
   slope = ((y1 - y0) / (x1 - x0));
@@ -965,26 +965,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     word_top_pts = DestroyAndCreatePta(word_top_pts);
     word_bottom_pts = DestroyAndCreatePta(word_bottom_pts);
 
-    // TODO: Check why this combination of words is not working as expected!
-	//
     // Write the word contents to the line
-#if 0
-    if (!last_word_in_line && writing_direction_before != writing_direction && writing_direction < 2 && writing_direction_before < 2 && res_it->WordDirection()) {
-      if (writing_direction_before == WRITING_DIRECTION_LEFT_TO_RIGHT) {
-        //line_content << "‏" << word_content.str();
-      }
-      else {
-        //line_content << "‎" << word_content.str();
-      }
-    } else {
-      //line_content << word_content.str();
-    }
-    // Check if WordIsNeutral
-    if (res_it->WordDirection()) {
-      writing_direction_before = writing_direction;
-    }
-#endif
+    line_content << word_content.str();
     word_content.str("");
+
     wcnt++;
 
 
@@ -1051,6 +1035,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       // Add word information if word level output is active
       line_str << word_str.str();
       word_str.str("");
+
       // Write Line TextEquiv
       line_str << "\t\t\t\t<TextEquiv index=\"1\" conf=\""
                << std::setprecision(4) << line_conf << "\">\n"
