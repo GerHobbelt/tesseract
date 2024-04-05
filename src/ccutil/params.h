@@ -665,11 +665,16 @@ public:
 
   Param(const Param &o) = delete;
   Param(Param &&o) = delete;
+  Param(const Param &&o) = delete;
 
   Param &operator=(const Param &other) = delete;
   Param &operator=(Param &&other) = delete;
+  Param &operator=(const Param &&other) = delete;
 
   ParamType type() const;
+
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  ParamOnModifyFunction clear_on_modify_handler();
 
 protected:
   Param(const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
@@ -723,9 +728,11 @@ public:
 
   IntParam(const IntParam &o) = delete;
   IntParam(IntParam &&o) = delete;
+  IntParam(const IntParam &&o) = delete;
 
   IntParam &operator=(const IntParam &other) = delete;
   IntParam &operator=(IntParam &&other) = delete;
+  IntParam &operator=(const IntParam &&other) = delete;
 
 private:
 	int32_t value_;
@@ -758,9 +765,11 @@ public:
 
   BoolParam(const BoolParam &o) = delete;
   BoolParam(BoolParam &&o) = delete;
+  BoolParam(const BoolParam &&o) = delete;
 
   BoolParam &operator=(const BoolParam &other) = delete;
   BoolParam &operator=(BoolParam &&other) = delete;
+  BoolParam &operator=(const BoolParam &&other) = delete;
 
 private:
   bool value_;
@@ -823,9 +832,11 @@ public:
 
   StringParam(const StringParam &o) = delete;
   StringParam(StringParam &&o) = delete;
+  StringParam(const StringParam &&o) = delete;
 
   StringParam &operator=(const StringParam &other) = delete;
   StringParam &operator=(StringParam &&other) = delete;
+  StringParam &operator=(const StringParam &&other) = delete;
 
 private:
   std::string value_;
@@ -858,9 +869,11 @@ public:
 
   DoubleParam(const DoubleParam &o) = delete;
   DoubleParam(DoubleParam &&o) = delete;
+  DoubleParam(const DoubleParam &&o) = delete;
 
   DoubleParam &operator=(const DoubleParam &other) = delete;
   DoubleParam &operator=(DoubleParam &&other) = delete;
+  DoubleParam &operator=(const DoubleParam &&other) = delete;
 
 private:
   double value_;

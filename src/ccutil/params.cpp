@@ -457,6 +457,14 @@ bool Param::set_value(const ParamValueContainer &v, ParamSetBySourceType source_
 		throw new std::logic_error(fmt::format("tesseract param '{}' error: failed to get value from variant input arg", name_));
 }
 
+ParamOnModifyFunction Param::set_on_modify_handler(ParamOnModifyFunction on_modify_f) {
+  ParamOnModifyFunction rv = on_modify_f_;
+  on_modify_f_ = on_modify_f;
+  return rv;
+}
+ParamOnModifyFunction Param::clear_on_modify_handler() {
+  return set_on_modify_handler(0);
+}
 
 const char* Param::name_str() const {
   return name_;
