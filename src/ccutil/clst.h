@@ -161,6 +161,13 @@ class TESS_API CLIST_ITERATOR {
 public:
   CLIST_ITERATOR() { // constructor
     list = nullptr;
+	prev = nullptr;
+	current = nullptr;
+	next = nullptr;
+	cycle_pt = nullptr;
+	ex_current_was_last = false;
+	ex_current_was_cycle_pt = false;
+	started_cycling = false;
   } // unassigned list
 
   CLIST_ITERATOR( // constructor
@@ -190,7 +197,7 @@ public:
   void *data() { // get current data
 #ifndef NDEBUG
     if (!list) {
-      NO_LIST.error("CLIST_ITERATOR::data", ABORT);
+      NO_LIST.abort("CLIST_ITERATOR::data");
     }
 #endif
     return current->data;
@@ -276,7 +283,7 @@ inline void CLIST_ITERATOR::add_after_then_move( // element to add
     void *new_data) {
 #ifndef NDEBUG
   if (!new_data) {
-    BAD_PARAMETER.error("CLIST_ITERATOR::add_after_then_move", ABORT, "new_data is nullptr");
+    BAD_PARAMETER.abort("CLIST_ITERATOR::add_after_then_move", "new_data is nullptr");
   }
 #endif
 
@@ -320,7 +327,7 @@ inline void CLIST_ITERATOR::add_after_stay_put( // element to add
     void *new_data) {
 #ifndef NDEBUG
   if (!new_data) {
-    BAD_PARAMETER.error("CLIST_ITERATOR::add_after_stay_put", ABORT, "new_data is nullptr");
+    BAD_PARAMETER.abort("CLIST_ITERATOR::add_after_stay_put", "new_data is nullptr");
   }
 #endif
 
@@ -366,7 +373,7 @@ inline void CLIST_ITERATOR::add_before_then_move( // element to add
     void *new_data) {
 #ifndef NDEBUG
   if (!new_data) {
-    BAD_PARAMETER.error("CLIST_ITERATOR::add_before_then_move", ABORT, "new_data is nullptr");
+    BAD_PARAMETER.abort("CLIST_ITERATOR::add_before_then_move", "new_data is nullptr");
   }
 #endif
 
@@ -406,7 +413,7 @@ inline void CLIST_ITERATOR::add_before_stay_put( // element to add
     void *new_data) {
 #ifndef NDEBUG
   if (!new_data) {
-    BAD_PARAMETER.error("CLIST_ITERATOR::add_before_stay_put", ABORT, "new_data is nullptr");
+    BAD_PARAMETER.abort("CLIST_ITERATOR::add_before_stay_put", "new_data is nullptr");
   }
 #endif
 
@@ -523,7 +530,7 @@ inline void *CLIST_ITERATOR::extract() {
 #ifndef NDEBUG
   if (!current) { // list empty or
                   // element extracted
-    NULL_CURRENT.error("CLIST_ITERATOR::extract", ABORT);
+    NULL_CURRENT.abort("CLIST_ITERATOR::extract");
   }
 #endif
 
@@ -576,7 +583,7 @@ inline void *CLIST_ITERATOR::move_to_first() {
 inline void CLIST_ITERATOR::mark_cycle_pt() {
 #ifndef NDEBUG
   if (!list) {
-    NO_LIST.error("CLIST_ITERATOR::mark_cycle_pt", ABORT);
+    NO_LIST.abort("CLIST_ITERATOR::mark_cycle_pt");
   }
 #endif
 
@@ -666,10 +673,10 @@ inline void CLIST_ITERATOR::add_to_end( // element to add
     void *new_data) {
 #ifndef NDEBUG
   if (!list) {
-    NO_LIST.error("CLIST_ITERATOR::add_to_end", ABORT);
+    NO_LIST.abort("CLIST_ITERATOR::add_to_end");
   }
   if (!new_data) {
-    BAD_PARAMETER.error("CLIST_ITERATOR::add_to_end", ABORT, "new_data is nullptr");
+    BAD_PARAMETER.abort("CLIST_ITERATOR::add_to_end", "new_data is nullptr");
   }
 #endif
 
@@ -703,12 +710,15 @@ public:
 };
 
 #define CLISTIZEH(CLASSNAME)                                    \
+  class CLASSNAME##_CLIST;                                      \
+  struct CLASSNAME##_C_IT;                                      \
+                                                                \
   class CLASSNAME##_CLIST : public X_CLIST<CLASSNAME> {         \
     using X_CLIST<CLASSNAME>::X_CLIST;                          \
   };                                                            \
   struct CLASSNAME##_C_IT : X_ITER<CLIST_ITERATOR, CLASSNAME> { \
     using X_ITER<CLIST_ITERATOR, CLASSNAME>::X_ITER;            \
-  };
+  }
 
 } // namespace tesseract
 

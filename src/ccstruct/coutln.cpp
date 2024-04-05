@@ -17,28 +17,31 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
 #include "coutln.h"
 
-#include "arrayaccess.h" // for GET_DATA_BYTE
+#include <leptonica/arrayaccess.h> // for GET_DATA_BYTE
 #include "blobs.h"       // for TPOINT
 #include "crakedge.h"    // for CRACKEDGE
-#include "environ.h"     // for l_uint32
+#include <leptonica/environ.h>     // for l_uint32
 #include "errcode.h"     // for ASSERT_HOST
 #include "normalis.h"    // for DENORM
 
 #include "helpers.h" // for ClipToRange, IntCastRounded, Modulo
 
-#include <allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
-#include "pix.h"        // for Pix (ptr only), PIX_DST, PIX_NOT
+#include <leptonica/allheaders.h> // for pixSetPixel, pixGetData, pixRasterop, pixGe...
+#include <leptonica/pix.h>        // for Pix (ptr only), PIX_DST, PIX_NOT
 
 #include <algorithm> // for max, min
 #include <cmath>     // for abs
 #include <cstdlib>   // for abs
 #include <cstring>   // for memset, memcpy, memmove
+
+#undef min
+#undef max
 
 namespace tesseract {
 
@@ -174,12 +177,12 @@ C_OUTLINE::C_OUTLINE(C_OUTLINE *srcline, FCOORD rotation) : offsets(nullptr) {
       pos += srcline->step(stepindex);
       destpos = pos;
       destpos.rotate(rotation);
-      //  tprintf("%i %i %i %i ", destpos.x(), destpos.y(), pos.x(), pos.y());
+      //  tprintf("{} {} {} {} ", destpos.x(), destpos.y(), pos.x(), pos.y());
       while (destpos.x() != prevpos.x() || destpos.y() != prevpos.y()) {
         dir = DIR128(FCOORD(destpos - prevpos));
         dir += 64; // turn to step style
         new_step = dir.get_dir();
-        //  tprintf(" %i\n", new_step);
+        //  tprintf(" {}\n", new_step);
         if (new_step & 31) {
           set_step(destindex++, dir + round1);
           prevpos += step(destindex - 1);
@@ -948,8 +951,8 @@ void C_OUTLINE::render_outline(int left, int top, Image pix) const {
  * @param colour colour to draw in
  */
 
-#ifndef GRAPHICS_DISABLED
-void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
+#if !GRAPHICS_DISABLED
+void C_OUTLINE::plot(ScrollViewReference &window, Diagnostics::Color colour) const {
   int16_t stepindex; // index to cstep
   ICOORD pos;        // current position
   DIR128 stepdir;    // direction of step
@@ -975,13 +978,113 @@ void C_OUTLINE::plot(ScrollView *window, ScrollView::Color colour) const {
     window->DrawTo(pos.x(), pos.y());
   }
 }
+#endif
 
+void C_OUTLINE::plot(Image& pix, std::vector<uint32_t>& cmap, int& cmap_offset, bool noise) const {
+  int16_t stepindex; // index to cstep
+  ICOORD pos;        // current position
+  DIR128 stepdir;    // direction of step
+
+  // WARNING: leptonica PTA coordinates are vertically flipped vs. tesseract coordinates (?huh?)
+  int img_height = pixGetHeight(pix);
+  
+  int color_index = cmap_offset;
+  cmap_offset++;
+  if ((cmap_offset & (64 - 1)) == 0) {
+    cmap_offset--;                  // end of 'local' cmap color range reached: do not overflow the index
+  }
+
+  const int width = 2;
+  PTA* pta = nullptr;
+
+  pos = start; // current position
+  //window->Pen(colour);
+  if (stepcount == 0) {
+    //window->Rectangle(box.left(), box.top(), box.right(), box.bottom());
+    BOX* b = boxCreate(box.left(), img_height - box.top(), box.right() - box.left(), box.bottom() - box.top());
+    pta = generatePtaBox(b, width);
+    boxDestroy(&b);
+  }
+  else {
+    auto x = pos.x();
+    auto y = pos.y();
+    auto x0 = x;
+    auto y0 = y;
+    auto x2 = x;
+    auto y2 = y;
+    //ptaAddPt(pta, x, y);
+    pta = ptaCreate(0);
+
+    stepindex = 0;
+    while (stepindex < stepcount) {
+      pos += step(stepindex); // step to next
+      x2 = pos.x();
+      y2 = pos.y();
+      //ptaAddPt(pta, x2, y2);
+      {
+        PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+      x = x2;
+      y = y2;
+
+      stepdir = step_dir(stepindex);
+      stepindex++; // count steps
+      // merge straight lines
+      while (stepindex < stepcount && stepdir.get_dir() == step_dir(stepindex).get_dir()) {
+        pos += step(stepindex);
+        x2 = pos.x();
+        y2 = pos.y();
+        //ptaAddPt(pta, x2, y2);
+        {
+          PTA* pta2 = generatePtaWideLine(x, img_height - y, x2, img_height - y2, width);
+          ptaJoin(pta, pta2, 0, -1);
+          ptaDestroy(&pta2);
+        }
+        x = x2;
+        y = y2;
+
+        stepindex++;
+      }
+      //window->DrawTo(pos.x(), pos.y());
+    }
+
+    // close the poly?
+    if (x2 != x || y2 != y) {
+      {
+        PTA* pta2 = generatePtaWideLine(x2, img_height - y2, x0, img_height - y0, width);
+        ptaJoin(pta, pta2, 0, -1);
+        ptaDestroy(&pta2);
+      }
+    }
+  }
+
+  {
+    PTA* pta2;
+    //ptaRemoveDupsByAset(pta, &pta2);
+    ptaRemoveDupsByHmap(pta, &pta2, nullptr);
+    ptaDestroy(&pta);
+    pta = pta2;
+  }
+
+  int npts = ptaGetCount(pta);
+
+  int r, g, b;
+  uint32_t color = cmap[color_index];
+  extractRGBValues(color, &r, &g, &b);
+  pixRenderPtaBlend(pix, pta, r, g, b, noise ? 0.5 : 0.9);
+
+  ptaDestroy(&pta);
+}
+
+#if !GRAPHICS_DISABLED
 /**
  * Draws the outline in the given colour, normalized using the given denorm,
  * making use of sub-pixel accurate information if available.
  */
-void C_OUTLINE::plot_normed(const DENORM &denorm, ScrollView::Color colour,
-                            ScrollView *window) const {
+void C_OUTLINE::plot_normed(const DENORM &denorm, Diagnostics::Color colour,
+                            ScrollViewReference &window) const {
   window->Pen(colour);
   if (stepcount == 0) {
     window->Rectangle(box.left(), box.top(), box.right(), box.bottom());

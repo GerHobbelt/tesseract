@@ -11,13 +11,18 @@
 
 #include <string>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include "include_gunit.h"
 #include "log.h" // for LOG
 #include "serialis.h"
 #include "tprintf.h"
 #include "unicharcompress.h"
+
+#include "testdata.h"
+
+
+#if defined(HAS_LIBICU)
 
 namespace tesseract {
 
@@ -246,3 +251,5 @@ TEST_F(UnicharcompressTest, GetEncodingAsString) {
 }
 
 } // namespace tesseract
+
+#endif

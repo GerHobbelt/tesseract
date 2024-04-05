@@ -16,7 +16,13 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
 #include "unicharset.h"
+#include "tprintf.h" // for tprintf
 
 #include "params.h"
 
@@ -31,7 +37,13 @@
 #include <locale>  // for std::locale::classic
 #include <sstream> // for std::istringstream, std::ostringstream
 
+#undef min
+#undef max
+
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(unicharset)
 
 // Special character used in representing character fragments.
 static const char kSeparator = '|';
@@ -58,26 +70,30 @@ const double kMinXHeightFraction = 0.25;
 const double kMinCapHeightFraction = 0.05;
 
 /*static */
-const char *UNICHARSET::kCustomLigatures[][2] = {
-    {"ct", "\uE003"}, // c + t -> U+E003
-    {"ſh", "\uE006"}, // long-s + h -> U+E006
-    {"ſi", "\uE007"}, // long-s + i -> U+E007
-    {"ſl", "\uE008"}, // long-s + l -> U+E008
-    {"ſſ", "\uE009"}, // long-s + long-s -> U+E009
-    {nullptr, nullptr}};
+const char* UNICHARSET::kCustomLigatures[][2] = {
+  {"ct", U8("\uE003")},  // c + t -> U+E003
+  {"ſh", U8("\uE006")},  // long-s + h -> U+E006
+  {"ſi", U8("\uE007")},  // long-s + i -> U+E007
+  {"ſl", U8("\uE008")},  // long-s + l -> U+E008
+  {"ſſ", U8("\uE009")},  // long-s + long-s -> U+E009
+  {nullptr, nullptr}
+};
 
 // List of mappings to make when ingesting strings from the outside.
 // The substitutions clean up text that should exist for rendering of
 // synthetic data, but not in the recognition set.
-const char *UNICHARSET::kCleanupMaps[][2] = {
-    {"\u0640", ""},   // TATWEEL is deleted.
-    {"\ufb01", "fi"}, // fi ligature->fi pair.
-    {"\ufb02", "fl"}, // fl ligature->fl pair.
+const char* UNICHARSET::kCleanupMaps[][2] = {
+    {U8("\u0640"), ""},    // TATWEEL is deleted.
+    {U8("\ufb01"), "fi"},  // fi ligature->fi pair.
+    {U8("\ufb02"), "fl"},  // fl ligature->fl pair.
     {nullptr, nullptr}};
 
 // List of strings for the SpecialUnicharCodes. Keep in sync with the enum.
-const char *UNICHARSET::kSpecialUnicharCodes[SPECIAL_UNICHAR_CODES_COUNT] = {
-    " ", "Joined", "|Broken|0|1"};
+const char* UNICHARSET::kSpecialUnicharCodes[SPECIAL_UNICHAR_CODES_COUNT] = {
+    " ",
+    "Joined",
+    "|Broken|0|1"
+};
 
 const char *UNICHARSET::null_script = "NULL";
 
@@ -170,6 +186,10 @@ void UNICHARSET::UNICHAR_PROPERTIES::CopyFrom(const UNICHAR_PROPERTIES &src) {
 UNICHARSET::UNICHARSET()
     : ids(), script_table(nullptr), script_table_size_used(0) {
   clear();
+  minimal_init();
+}
+
+void UNICHARSET::minimal_init() {
   for (int i = 0; i < SPECIAL_UNICHAR_CODES_COUNT; ++i) {
     unichar_insert(kSpecialUnicharCodes[i]);
     if (i == UNICHAR_JOINED) {
@@ -319,6 +339,7 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
       UNICHAR ch(str + i, step);
       snprintf(hex, sizeof(hex), "%x", ch.first_uni());
     }
+	hex[sizeof(hex) - 1] = 0;
     result += hex;
     result += " ";
   }
@@ -362,6 +383,7 @@ std::string UNICHARSET::debug_str(UNICHAR_ID id) const {
 // Sets the normed_ids vector from the normed string. normed_ids is not
 // stored in the file, and needs to be set when the UNICHARSET is loaded.
 void UNICHARSET::set_normed_ids(UNICHAR_ID unichar_id) {
+  ASSERT_HOST(contains_unichar_id(unichar_id));
   unichars[unichar_id].properties.normed_ids.clear();
   if (unichar_id == UNICHAR_SPACE && id_to_unichar(unichar_id)[0] == ' ') {
     unichars[unichar_id].properties.normed_ids.push_back(UNICHAR_SPACE);
@@ -437,6 +459,7 @@ void UNICHARSET::ExpandRangesFromOther(const UNICHARSET &src) {
 // ids will not be present in this if not in src. Does NOT reorder the set!
 void UNICHARSET::CopyFrom(const UNICHARSET &src) {
   clear();
+  minimal_init();
   for (unsigned ch = 0; ch < src.unichars.size(); ++ch) {
     const UNICHAR_PROPERTIES &src_props = src.unichars[ch].properties;
     const char *utf8 = src.id_to_unichar(ch);
@@ -656,8 +679,7 @@ void UNICHARSET::unichar_insert(const char *const unichar_repr,
   if (old_style == OldUncleanUnichars::kTrue) {
     old_style_included_ = true;
   }
-  std::string cleaned =
-      old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
+  std::string cleaned = old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
   if (!cleaned.empty() && !ids.contains(cleaned.data(), cleaned.size())) {
     const char *str = cleaned.c_str();
     std::vector<int> encoding;
@@ -670,7 +692,7 @@ void UNICHARSET::unichar_insert(const char *const unichar_repr,
     int index = 0;
     do {
       if (index >= UNICHAR_LEN) {
-        fprintf(stderr, "Utf8 buffer too big, size>%d for %s\n", UNICHAR_LEN,
+        tesseract::tprintError("Utf8 buffer too big, size>{} for {}\n", UNICHAR_LEN,
                 unichar_repr);
         return;
       }
@@ -716,10 +738,7 @@ bool UNICHARSET::eq(UNICHAR_ID unichar_id,
 }
 
 bool UNICHARSET::save_to_string(std::string &str) const {
-  const int kFileBufSize = 1024;
-  char buffer[kFileBufSize + 1];
-  snprintf(buffer, kFileBufSize, "%zu\n", this->size());
-  str = buffer;
+  str = fmt::format("{}\n", this->size());
   for (unsigned id = 0; id < this->size(); ++id) {
     int min_bottom, max_bottom, min_top, max_top;
     get_top_bottom(id, &min_bottom, &max_bottom, &min_top, &max_top);
@@ -731,23 +750,23 @@ bool UNICHARSET::save_to_string(std::string &str) const {
     get_advance_stats(id, &advance, &advance_sd);
     unsigned int properties = this->get_properties(id);
     if (strcmp(this->id_to_unichar(id), " ") == 0) {
-      snprintf(buffer, kFileBufSize, "%s %x %s %d\n", "NULL", properties,
+	  str += fmt::format("NULL {} {} {}\n", "NULL", properties,
                this->get_script_from_script_id(this->get_script(id)),
                this->get_other_case(id));
-      str += buffer;
     } else {
-      std::ostringstream stream;
-      stream.imbue(std::locale::classic());
-      stream << this->id_to_unichar(id) << ' ' << properties << ' '
-             << min_bottom << ',' << max_bottom << ',' << min_top << ','
-             << max_top << ',' << width << ',' << width_sd << ',' << bearing
-             << ',' << bearing_sd << ',' << advance << ',' << advance_sd << ' '
-             << this->get_script_from_script_id(this->get_script(id)) << ' '
-             << this->get_other_case(id) << ' ' << this->get_direction(id)
-             << ' ' << this->get_mirror(id) << ' '
-             << this->get_normed_unichar(id) << "\t# "
-             << this->debug_str(id).c_str() << '\n';
-      str += stream.str().c_str();
+      str += fmt::format("{} {} "
+	                     "{},{},{},{},{},{},{},{},{},{} "
+						 "{} {} {} {} \"{}\"\t# {}\n",
+		   this->id_to_unichar(id), properties,
+           min_bottom, max_bottom, min_top,
+		   max_top, width, width_sd, bearing,
+		   bearing_sd, advance, advance_sd,
+		   this->get_script_from_script_id(this->get_script(id)),
+		   this->get_other_case(id), this->get_direction(id),
+		   this->get_mirror(id),
+		   this->get_normed_unichar(id),
+		   this->debug_str(id)
+      );
     }
   }
   return true;
@@ -787,6 +806,7 @@ bool UNICHARSET::load_via_fgets(
   char buffer[256];
 
   this->clear();
+  this->minimal_init();
   if (fgets_cb(buffer, sizeof(buffer)) == nullptr ||
       sscanf(buffer, "%d", &unicharset_size) != 1) {
     return false;
@@ -824,7 +844,7 @@ bool UNICHARSET::load_via_fgets(
     stream >> std::setw(255) >> unichar >> std::hex >> properties >> std::dec;
     // stream.flags(std::ios::dec);
     if (stream.fail()) {
-      fprintf(stderr, "%s:%u failed\n", __FILE__, __LINE__);
+	  tesseract::tprintError("stream failure. ({}:{})\n", __FILE__, __LINE__);
       return false;
     }
     auto position = stream.tellg();
@@ -1041,6 +1061,15 @@ void UNICHARSET::set_black_and_whitelist(const char *blacklist,
   }
 }
 
+// Enables or disables all punctuation unichars
+void UNICHARSET::set_enable_punctuation(bool enable) {
+  for (auto &uc : unichars) {
+    if (uc.properties.ispunctuation) {
+      uc.properties.enabled = enable;
+    }
+  }
+}
+
 // Returns true if there are any repeated unicodes in the normalized
 // text of any unichar-id in the unicharset.
 bool UNICHARSET::AnyRepeatedUnicodes() const {
@@ -1090,14 +1119,11 @@ std::string CHAR_FRAGMENT::to_string(const char *unichar, int pos, int total,
   if (total == 1) {
     return std::string(unichar);
   }
-  std::string result;
-  result += kSeparator;
-  result += unichar;
-  char buffer[kMaxLen];
-  snprintf(buffer, kMaxLen, "%c%d%c%d", kSeparator, pos,
+  char buffer[kMaxLen + 8];
+  snprintf(buffer, kMaxLen, "%c%s%c%d%c%d", kSeparator, unichar, kSeparator, pos,
            natural ? kNaturalFlag : kSeparator, total);
-  result += buffer;
-  return result;
+  assert(strlen(buffer) < sizeof(buffer));
+  return buffer;
 }
 
 CHAR_FRAGMENT *CHAR_FRAGMENT::parse_from_string(const char *string) {
@@ -1182,5 +1208,7 @@ std::string UNICHARSET::CleanupString(const char *utf8_str, size_t length) {
   }
   return result;
 }
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(unicharset)
 
 } // namespace tesseract

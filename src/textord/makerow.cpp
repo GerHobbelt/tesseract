@@ -17,9 +17,11 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "makerow.h"
 
@@ -41,7 +43,10 @@
 #include <cmath>
 #include <vector> // for std::vector
 
+
 namespace tesseract {
+
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 BOOL_VAR(textord_heavy_nr, false, "Vigorously remove noise");
 BOOL_VAR(textord_show_initial_rows, false, "Display row accumulation");
@@ -49,7 +54,7 @@ BOOL_VAR(textord_show_parallel_rows, false, "Display page correlated rows");
 BOOL_VAR(textord_show_expanded_rows, false, "Display rows after expanding");
 BOOL_VAR(textord_show_final_rows, false, "Display rows after final fitting");
 BOOL_VAR(textord_show_final_blobs, false, "Display blob bounds after pre-ass");
-BOOL_VAR(textord_test_landscape, false, "Tests refer to land/port");
+//BOOL_VAR(textord_test_landscape, false, "Tests refer to land/port");
 BOOL_VAR(textord_parallel_baselines, true, "Force parallel baselines");
 BOOL_VAR(textord_straight_baselines, false, "Force straight baselines");
 BOOL_VAR(textord_old_baselines, true, "Use old baseline algorithm");
@@ -68,29 +73,29 @@ INT_VAR(textord_spline_minblobs, 8, "Min blobs in each spline segment");
 INT_VAR(textord_spline_medianwin, 6, "Size of window for spline segmentation");
 static INT_VAR(textord_max_blob_overlaps, 4, "Max number of blobs a big blob can overlap");
 INT_VAR(textord_min_xheight, 10, "Min credible pixel xheight");
-double_VAR(textord_spline_shift_fraction, 0.02, "Fraction of line spacing for quad");
-double_VAR(textord_skew_ile, 0.5, "Ile of gradients for page skew");
-double_VAR(textord_skew_lag, 0.02, "Lag for skew on row accumulation");
-double_VAR(textord_linespace_iqrlimit, 0.2, "Max iqr/median for linespace");
-double_VAR(textord_width_limit, 8, "Max width of blobs to make rows");
-double_VAR(textord_chop_width, 1.5, "Max width before chopping");
-static double_VAR(textord_expansion_factor, 1.0, "Factor to expand rows by in expand_rows");
-static double_VAR(textord_overlap_x, 0.375, "Fraction of linespace for good overlap");
-double_VAR(textord_minxh, 0.25, "fraction of linesize for min xheight");
-double_VAR(textord_min_linesize, 1.25, "* blob height for initial linesize");
-double_VAR(textord_excess_blobsize, 1.3, "New row made if blob makes row this big");
-double_VAR(textord_occupancy_threshold, 0.4, "Fraction of neighbourhood");
-double_VAR(textord_underline_width, 2.0, "Multiple of line_size for underline");
-double_VAR(textord_min_blob_height_fraction, 0.75,
+DOUBLE_VAR(textord_spline_shift_fraction, 0.02, "Fraction of line spacing for quad");
+DOUBLE_VAR(textord_skew_ile, 0.5, "Ile of gradients for page skew");
+DOUBLE_VAR(textord_skew_lag, 0.02, "Lag for skew on row accumulation");
+DOUBLE_VAR(textord_linespace_iqrlimit, 0.2, "Max iqr/median for linespace");
+DOUBLE_VAR(textord_width_limit, 8, "Max width of blobs to make rows");
+DOUBLE_VAR(textord_chop_width, 1.5, "Max width before chopping");
+static DOUBLE_VAR(textord_expansion_factor, 1.0, "Factor to expand rows by in expand_rows");
+static DOUBLE_VAR(textord_overlap_x, 0.375, "Fraction of linespace for good overlap");
+DOUBLE_VAR(textord_minxh, 0.25, "fraction of linesize for min xheight");
+DOUBLE_VAR(textord_min_linesize, 1.25, "* blob height for initial linesize");
+DOUBLE_VAR(textord_excess_blobsize, 1.3, "New row made if blob makes row this big");
+DOUBLE_VAR(textord_occupancy_threshold, 0.4, "Fraction of neighbourhood");
+DOUBLE_VAR(textord_underline_width, 2.0, "Multiple of line_size for underline");
+DOUBLE_VAR(textord_min_blob_height_fraction, 0.75,
            "Min blob height/top to include blob top into xheight stats");
-double_VAR(textord_xheight_mode_fraction, 0.4, "Min pile height to make xheight");
-double_VAR(textord_ascheight_mode_fraction, 0.08, "Min pile height to make ascheight");
-static double_VAR(textord_descheight_mode_fraction, 0.08, "Min pile height to make descheight");
-double_VAR(textord_ascx_ratio_min, 1.25, "Min cap/xheight");
-double_VAR(textord_ascx_ratio_max, 1.8, "Max cap/xheight");
-double_VAR(textord_descx_ratio_min, 0.25, "Min desc/xheight");
-double_VAR(textord_descx_ratio_max, 0.6, "Max desc/xheight");
-double_VAR(textord_xheight_error_margin, 0.1, "Accepted variation");
+DOUBLE_VAR(textord_xheight_mode_fraction, 0.4, "Min pile height to make xheight");
+DOUBLE_VAR(textord_ascheight_mode_fraction, 0.08, "Min pile height to make ascheight");
+static DOUBLE_VAR(textord_descheight_mode_fraction, 0.08, "Min pile height to make descheight");
+DOUBLE_VAR(textord_ascx_ratio_min, 1.25, "Min cap/xheight");
+DOUBLE_VAR(textord_ascx_ratio_max, 1.8, "Max cap/xheight");
+DOUBLE_VAR(textord_descx_ratio_min, 0.25, "Min desc/xheight");
+DOUBLE_VAR(textord_descx_ratio_max, 0.6, "Max desc/xheight");
+DOUBLE_VAR(textord_xheight_error_margin, 0.1, "Accepted variation");
 INT_VAR(textord_lms_line_trials, 12, "Number of linew fits to do");
 BOOL_VAR(textord_new_initial_xheight, true, "Use test xheight mechanism");
 BOOL_VAR(textord_debug_blob, false, "Print test blob information");
@@ -98,6 +103,8 @@ BOOL_VAR(textord_debug_blob, false, "Print test blob information");
 #define MAX_HEIGHT_MODES 12
 
 const int kMinLeaderCount = 5;
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /**
  * @name row_y_order
@@ -233,15 +240,14 @@ float make_rows(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
 
   block_it.set_to_list(port_blocks);
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
-    make_initial_textrows(page_tr, block_it.data(), FCOORD(1.0f, 0.0f), !textord_test_landscape);
+    make_initial_textrows(page_tr, block_it.data(), FCOORD(1.0f, 0.0f));
   }
   // compute globally
   compute_page_skew(port_blocks, port_m, port_err);
   block_it.set_to_list(port_blocks);
   for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
     cleanup_rows_making(page_tr, block_it.data(), port_m, FCOORD(1.0f, 0.0f),
-                        block_it.data()->block->pdblk.bounding_box().left(),
-                        !textord_test_landscape);
+                        block_it.data()->block->pdblk.bounding_box().left());
   }
   return port_m; // global skew
 }
@@ -254,34 +260,31 @@ float make_rows(ICOORD page_tr, TO_BLOCK_LIST *port_blocks) {
 void make_initial_textrows( // find lines
     ICOORD page_tr,
     TO_BLOCK *block, // block to do
-    FCOORD rotation, // for drawing
-    bool testing_on  // correct orientation
+    FCOORD rotation // for drawing
 ) {
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
+#if !GRAPHICS_DISABLED
+  Diagnostics::Color colour; // of row
 
-  if (textord_show_initial_rows && testing_on) {
-    if (to_win == nullptr) {
-      create_to_win(page_tr);
-    }
+  if (textord_show_initial_rows) {
+    create_to_win(page_tr);
   }
 #endif
   // guess skew
-  assign_blobs_to_rows(block, nullptr, 0, true, true, textord_show_initial_rows && testing_on);
+  assign_blobs_to_rows(block, nullptr, 0, true, true, textord_show_initial_rows);
   row_it.move_to_first();
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     fit_lms_line(row_it.data());
   }
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_initial_rows && testing_on) {
-    colour = ScrollView::RED;
+#if !GRAPHICS_DISABLED
+  if (to_win && textord_show_initial_rows) {
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_to_row(row_it.data(), colour, rotation);
-      colour = static_cast<ScrollView::Color>(colour + 1);
-      if (colour > ScrollView::MAGENTA) {
-        colour = ScrollView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }
@@ -565,26 +568,21 @@ void cleanup_rows_making( // find lines
     TO_BLOCK *block,      // block to do
     float gradient,       // gradient to fit
     FCOORD rotation,      // for drawing
-    int32_t block_edge,   // edge of block
-    bool testing_on       // correct orientation
+    int32_t block_edge    // edge of block
 ) {
   // iterators
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_parallel_rows && testing_on) {
-    if (to_win == nullptr) {
-      create_to_win(page_tr);
-    }
+#if !GRAPHICS_DISABLED
+  if (textord_show_parallel_rows) {
+    create_to_win(page_tr);
   }
 #endif
   // get row coords
-  fit_parallel_rows(block, gradient, rotation, block_edge,
-                    textord_show_parallel_rows && testing_on);
-  delete_non_dropout_rows(block, gradient, rotation, block_edge,
-                          textord_show_parallel_rows && testing_on);
-  expand_rows(page_tr, block, gradient, rotation, block_edge, testing_on);
+  fit_parallel_rows(block, gradient, rotation, block_edge);
+  delete_non_dropout_rows(block, gradient, rotation, block_edge);
+  expand_rows(page_tr, block, gradient, rotation, block_edge);
   blob_it.set_to_list(&block->blobs);
   row_it.set_to_list(block->get_rows());
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
@@ -613,8 +611,7 @@ void delete_non_dropout_rows( // find lines
     TO_BLOCK *block,          // block to do
     float gradient,           // global skew
     FCOORD rotation,          // deskew vector
-    int32_t block_edge,       // left edge
-    bool testing_on           // correct orientation
+    int32_t block_edge        // left edge
 ) {
   TBOX block_box; // deskewed block
   int32_t max_y;  // in block
@@ -661,8 +658,8 @@ void delete_non_dropout_rows( // find lines
       static_cast<int32_t>(ceil(block->line_spacing * (tesseract::CCStruct::kXHeightFraction +
                                                        tesseract::CCStruct::kAscenderFraction))),
       max_y - min_y + 1, &occupation[0], &deltas[0]);
-#ifndef GRAPHICS_DISABLED
-  if (testing_on) {
+#if !GRAPHICS_DISABLED
+  if (1) {
     draw_occupation(xleft, ybottom, min_y, max_y, &occupation[0], &deltas[0]);
   }
 #endif
@@ -671,11 +668,11 @@ void delete_non_dropout_rows( // find lines
     row = row_it.data();
     line_index = static_cast<int32_t>(std::floor(row->intercept()));
     distance = deltas[line_index - min_y];
-    if (find_best_dropout_row(row, distance, block->line_spacing / 2, line_index, &row_it,
-                              testing_on)) {
-#ifndef GRAPHICS_DISABLED
-      if (testing_on) {
-        plot_parallel_row(row, gradient, block_edge, ScrollView::WHITE, rotation);
+    if (find_best_dropout_row(row, distance, block->line_spacing / 2, line_index, &row_it
+                              )) {
+#if !GRAPHICS_DISABLED
+      if (to_win) {
+        plot_parallel_row(row, gradient, block_edge, Diagnostics::WHITE, rotation);
       }
 #endif
       blob_it.add_list_after(row_it.data()->blob_list());
@@ -698,8 +695,7 @@ bool find_best_dropout_row( // find neighbours
     int32_t distance,       // dropout dist
     float dist_limit,       // threshold distance
     int32_t line_index,     // index of row
-    TO_ROW_IT *row_it,      // current position
-    bool testing_on         // correct orientation
+    TO_ROW_IT *row_it       // current position
 ) {
   int32_t next_index; // of neighbouring row
   int32_t row_offset; // from current row
@@ -707,8 +703,8 @@ bool find_best_dropout_row( // find neighbours
   int8_t row_inc;     // increment to row_index
   TO_ROW *next_row;   // nextious row
 
-  if (testing_on) {
-    tprintf("Row at %g(%g), dropout dist=%d,", row->intercept(), row->parallel_c(), distance);
+  if (debug_misc) {
+    tprintDebug("Row at {}({}), dropout dist={},", row->intercept(), row->parallel_c(), distance);
   }
   if (distance < 0) {
     row_inc = 1;
@@ -718,8 +714,8 @@ bool find_best_dropout_row( // find neighbours
     abs_dist = distance;
   }
   if (abs_dist > dist_limit) {
-    if (testing_on) {
-      tprintf(" too far - deleting\n");
+    if (debug_misc) {
+      tprintDebug(" too far - deleting\n");
     }
     return true;
   }
@@ -732,15 +728,15 @@ bool find_best_dropout_row( // find neighbours
            next_index > line_index + distance + distance) ||
           (distance >= 0 && next_index > line_index &&
            next_index < line_index + distance + distance)) {
-        if (testing_on) {
-          tprintf(" nearer neighbour (%d) at %g\n", line_index + distance - next_index,
+        if (debug_misc) {
+          tprintDebug(" nearer neighbour ({}) at {}\n", line_index + distance - next_index,
                   next_row->intercept());
         }
         return true; // other is nearer
       } else if (next_index == line_index || next_index == line_index + distance + distance) {
         if (row->believability() <= next_row->believability()) {
-          if (testing_on) {
-            tprintf(" equal but more believable at %g (%g/%g)\n", next_row->intercept(),
+          if (debug_misc) {
+            tprintDebug(" equal but more believable at {} ({}/{})\n", next_row->intercept(),
                     row->believability(), next_row->believability());
           }
           return true; // other is more believable
@@ -749,8 +745,8 @@ bool find_best_dropout_row( // find neighbours
       row_offset += row_inc;
     } while ((next_index == line_index || next_index == line_index + distance + distance) &&
              row_offset < row_it->length());
-    if (testing_on) {
-      tprintf(" keeping\n");
+    if (debug_misc) {
+      tprintDebug(" keeping\n");
     }
   }
   return false;
@@ -978,8 +974,7 @@ void expand_rows(       // find lines
     TO_BLOCK *block,    // block to do
     float gradient,     // gradient to fit
     FCOORD rotation,    // for drawing
-    int32_t block_edge, // edge of block
-    bool testing_on     // correct orientation
+    int32_t block_edge  // edge of block
 ) {
   bool swallowed_row;    // eaten a neighbour
   float y_max, y_min;    // new row limits
@@ -990,9 +985,9 @@ void expand_rows(       // find lines
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
-  if (textord_show_expanded_rows && testing_on) {
-    if (to_win == nullptr) {
+#if !GRAPHICS_DISABLED
+  if (textord_show_expanded_rows) {
+    if (!to_win) {
       create_to_win(page_tr);
     }
   }
@@ -1003,17 +998,16 @@ void expand_rows(       // find lines
     if (block->get_rows()->empty()) {
       return;
     }
-    compute_row_stats(block, textord_show_expanded_rows && testing_on);
+    compute_row_stats(block);
   }
   assign_blobs_to_rows(block, &gradient, 4, true, false, false);
   // get real membership
   if (block->get_rows()->empty()) {
     return;
   }
-  fit_parallel_rows(block, gradient, rotation, block_edge,
-                    textord_show_expanded_rows && testing_on);
+  fit_parallel_rows(block, gradient, rotation, block_edge);
   if (!textord_new_initial_xheight) {
-    compute_row_stats(block, textord_show_expanded_rows && testing_on);
+    compute_row_stats(block);
   }
   row_it.move_to_last();
   do {
@@ -1026,8 +1020,8 @@ void expand_rows(       // find lines
             block->line_size * textord_expansion_factor *
                 (tesseract::CCStruct::kXHeightFraction + tesseract::CCStruct::kAscenderFraction);
     if (y_min > y_bottom) { // expansion allowed
-      if (textord_show_expanded_rows && testing_on) {
-        tprintf("Expanding bottom of row at %f from %f to %f\n", row->intercept(), y_min, y_bottom);
+      if (textord_show_expanded_rows) {
+        tprintDebug("Expanding bottom of row at {} from {} to {}\n", row->intercept(), y_min, y_bottom);
       }
       // expandable
       swallowed_row = true;
@@ -1038,13 +1032,13 @@ void expand_rows(       // find lines
         // overlaps space
         if (test_row->max_y() > y_bottom) {
           if (test_row->min_y() > y_bottom) {
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Eating row below at %f\n", test_row->intercept());
+            if (textord_show_expanded_rows) {
+              tprintDebug("Eating row below at {}\n", test_row->intercept());
             }
             row_it.forward();
-#ifndef GRAPHICS_DISABLED
-            if (textord_show_expanded_rows && testing_on) {
-              plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
+#if !GRAPHICS_DISABLED
+            if (to_win && textord_show_expanded_rows) {
+              plot_parallel_row(test_row, gradient, block_edge, Diagnostics::WHITE, rotation);
             }
 #endif
             blob_it.set_to_list(row->blob_list());
@@ -1056,14 +1050,14 @@ void expand_rows(       // find lines
           } else if (test_row->max_y() < y_min) {
             // shorter limit
             y_bottom = test_row->max_y();
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Truncating limit to %f due to touching row at %f\n", y_bottom,
+            if (textord_show_expanded_rows) {
+              tprintDebug("Truncating limit to {} due to touching row at {}\n", y_bottom,
                       test_row->intercept());
             }
           } else {
             y_bottom = y_min; // can't expand it
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Not expanding limit beyond %f due to touching row at %f\n", y_bottom,
+            if (textord_show_expanded_rows) {
+              tprintDebug("Not expanding limit beyond {} due to touching row at {}\n", y_bottom,
                       test_row->intercept());
             }
           }
@@ -1072,8 +1066,8 @@ void expand_rows(       // find lines
       y_min = y_bottom; // expand it
     }
     if (y_max < y_top) { // expansion allowed
-      if (textord_show_expanded_rows && testing_on) {
-        tprintf("Expanding top of row at %f from %f to %f\n", row->intercept(), y_max, y_top);
+      if (textord_show_expanded_rows) {
+        tprintDebug("Expanding top of row at {} from {} to {}\n", row->intercept(), y_max, y_top);
       }
       swallowed_row = true;
       while (swallowed_row && !row_it.at_first()) {
@@ -1082,14 +1076,14 @@ void expand_rows(       // find lines
         test_row = row_it.data_relative(-1);
         if (test_row->min_y() < y_top) {
           if (test_row->max_y() < y_top) {
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Eating row above at %f\n", test_row->intercept());
+            if (textord_show_expanded_rows) {
+              tprintDebug("Eating row above at {}\n", test_row->intercept());
             }
             row_it.backward();
             blob_it.set_to_list(row->blob_list());
-#ifndef GRAPHICS_DISABLED
-            if (textord_show_expanded_rows && testing_on) {
-              plot_parallel_row(test_row, gradient, block_edge, ScrollView::WHITE, rotation);
+#if !GRAPHICS_DISABLED
+            if (to_win && textord_show_expanded_rows) {
+              plot_parallel_row(test_row, gradient, block_edge, Diagnostics::WHITE, rotation);
             }
 #endif
             blob_it.add_list_after(test_row->blob_list());
@@ -1100,14 +1094,14 @@ void expand_rows(       // find lines
           } else if (test_row->min_y() < y_max) {
             // shorter limit
             y_top = test_row->min_y();
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Truncating limit to %f due to touching row at %f\n", y_top,
+            if (textord_show_expanded_rows) {
+              tprintDebug("Truncating limit to {} due to touching row at {}\n", y_top,
                       test_row->intercept());
             }
           } else {
             y_top = y_max; // can't expand it
-            if (textord_show_expanded_rows && testing_on) {
-              tprintf("Not expanding limit beyond %f due to touching row at %f\n", y_top,
+            if (textord_show_expanded_rows) {
+              tprintDebug("Not expanding limit beyond {} due to touching row at {}\n", y_top,
                       test_row->intercept());
             }
           }
@@ -1136,14 +1130,14 @@ void adjust_row_limits( // tidy limits
   TO_ROW_IT row_it = block->get_rows();
 
   if (textord_show_expanded_rows) {
-    tprintf("Adjusting row limits for block(%d,%d)\n", block->block->pdblk.bounding_box().left(),
+    tprintDebug("Adjusting row limits for block({},{})\n", block->block->pdblk.bounding_box().left(),
             block->block->pdblk.bounding_box().top());
   }
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
     row = row_it.data();
     size = row->max_y() - row->min_y();
     if (textord_show_expanded_rows) {
-      tprintf("Row at %f has min %f, max %f, size %f\n", row->intercept(), row->min_y(),
+      tprintDebug("Row at {} has min {}, max {}, size {}\n", row->intercept(), row->min_y(),
               row->max_y(), size);
     }
     size /= tesseract::CCStruct::kXHeightFraction + tesseract::CCStruct::kAscenderFraction +
@@ -1161,8 +1155,7 @@ void adjust_row_limits( // tidy limits
  * Compute the linespacing and offset.
  */
 void compute_row_stats( // find lines
-    TO_BLOCK *block,    // block to do
-    bool testing_on     // correct orientation
+    TO_BLOCK *block     // block to do
 ) {
   int32_t row_index; // of median
   TO_ROW *row;       // current row
@@ -1186,8 +1179,8 @@ void compute_row_stats( // find lines
         // That can cause large memory allocations with out-of-memory.
         prev_row->spacing = 0;
       }
-      if (testing_on) {
-        tprintf("Row at %g yields spacing of %g\n", row->intercept(), prev_row->spacing);
+      if (debug_misc) {
+        tprintDebug("Row at {} yields spacing of {}\n", row->intercept(), prev_row->spacing);
       }
     }
     prev_row = row;
@@ -1195,8 +1188,8 @@ void compute_row_stats( // find lines
   } while (!row_it.at_last());
   block->key_row = prev_row;
   block->baseline_offset = std::fmod(prev_row->parallel_c(), block->line_spacing);
-  if (testing_on) {
-    tprintf("Blob based spacing=(%g,%g), offset=%g", block->line_size, block->line_spacing,
+  if (debug_misc) {
+    tprintDebug("Blob based spacing=({},{}), offset={}", block->line_size, block->line_spacing,
             block->baseline_offset);
   }
   if (rowcount > 0) {
@@ -1210,8 +1203,8 @@ void compute_row_stats( // find lines
     row_index = rowcount / 2;
     std::nth_element(rows.begin(), rows.begin() + row_index, rows.end(), row_spacing_order);
     block->key_row = rows[row_index];
-    if (testing_on) {
-      tprintf(" row based=%g(%g)", rows[row_index]->spacing, iqr);
+    if (debug_misc) {
+      tprintDebug(" row based={}({})", rows[row_index]->spacing, iqr);
     }
     if (rowcount > 2 && iqr < rows[row_index]->spacing * textord_linespace_iqrlimit) {
       if (!textord_new_initial_xheight) {
@@ -1240,8 +1233,8 @@ void compute_row_stats( // find lines
     }
     block->baseline_offset = std::fmod(rows[row_index]->intercept(), block->line_spacing);
   }
-  if (testing_on) {
-    tprintf("\nEstimate line size=%g, spacing=%g, offset=%g\n", block->line_size,
+  if (debug_misc) {
+    tprintDebug("\nEstimate line size={}, spacing={}, offset={}\n", block->line_size,
             block->line_spacing, block->baseline_offset);
   }
 }
@@ -1364,7 +1357,7 @@ void Textord::compute_block_xheight(TO_BLOCK *block, float gradient) {
   block->xheight = xheight;
 
   if (textord_debug_xheights) {
-    tprintf("Block average xheight=%.4f, ascrise=%.4f, descdrop=%.4f\n", xheight, ascrise,
+    tprintDebug("Block average xheight={}, ascrise={}, descdrop={}\n", xheight, ascrise,
             descdrop);
   }
   // Correct xheight, ascrise, descdrop of rows based on block averages.
@@ -1452,7 +1445,7 @@ void fill_heights(TO_ROW *row, float gradient, int min_height, int max_height, S
       while (!blob_it.at_first() && blob_it.data()->repeated_set() == repeated_set) {
         blob_it.forward();
         if (textord_debug_xheights) {
-          tprintf("Skipping repeated char when computing xheight\n");
+          tprintDebug("Skipping repeated char when computing xheight\n");
         }
       }
     } else {
@@ -1482,7 +1475,7 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
   int blob_index = heights->mode();                 // find mode
   int blob_count = heights->pile_count(blob_index); // get count of mode
   if (textord_debug_xheights) {
-    tprintf("min_height=%d, max_height=%d, mode=%d, count=%d, total=%d\n", min_height, max_height,
+    tprintDebug("min_height={}, max_height={}, mode={}, count={}, total={}\n", min_height, max_height,
             blob_index, blob_count, heights->get_total());
     heights->print();
     floating_heights->print();
@@ -1500,11 +1493,11 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
   }
   int x;
   if (textord_debug_xheights) {
-    tprintf("found %d modes: ", mode_count);
+    tprintDebug("found {} modes: ", mode_count);
     for (x = 0; x < mode_count; x++) {
-      tprintf("%d ", modes[x]);
+      tprintDebug("{} ", modes[x]);
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 
   for (x = 0; x < mode_count - 1; x++) {
@@ -1523,7 +1516,7 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
             best_count = modes_x_count;
           }
           if (textord_debug_xheights) {
-            tprintf("X=%d, asc=%d, count=%d, ratio=%g\n", modes[x], modes[asc] - modes[x],
+            tprintDebug("X={}, asc={}, count={}, ratio={}\n", modes[x], modes[asc] - modes[x],
                     modes_x_count, ratio);
           }
           prev_size = modes[x];
@@ -1553,10 +1546,10 @@ int compute_xheight_from_modes(STATS *heights, STATS *floating_heights, bool cap
     *ascrise = 0.0f;
     best_count = heights->pile_count(blob_index);
     if (textord_debug_xheights) {
-      tprintf("Single mode xheight set to %g\n", *xheight);
+      tprintDebug("Single mode xheight set to {}\n", *xheight);
     }
   } else if (textord_debug_xheights) {
-    tprintf("Multi-mode xheight set to %g, asc=%g\n", *xheight, *ascrise);
+    tprintDebug("Multi-mode xheight set to {}, asc={}\n", *xheight, *ascrise);
   }
   return best_count;
 }
@@ -1613,7 +1606,7 @@ int32_t compute_row_descdrop(TO_ROW *row, float gradient, int xheight_blob_count
   }
   int descdrop = blob_count > 0 ? -blob_index : 0;
   if (textord_debug_xheights) {
-    tprintf("Descdrop: %d (potential ascenders %d, descenders %d)\n", descdrop, num_potential_asc,
+    tprintDebug("Descdrop: {} (potential ascenders {}, descenders {})\n", descdrop, num_potential_asc,
             blob_count);
     heights.print();
   }
@@ -1690,9 +1683,9 @@ int32_t compute_height_modes(STATS *heights,     // stats to search
 void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdrop) {
   ROW_CATEGORY row_category = get_row_category(row);
   if (textord_debug_xheights) {
-    tprintf(
-        "correcting row xheight: row->xheight %.4f"
-        ", row->acrise %.4f row->descdrop %.4f\n",
+    tprintDebug(
+        "Correcting row xheight: row->xheight {}"
+        ", row->acrise {} row->descdrop {}\n",
         row->xheight, row->ascrise, row->descdrop);
   }
   bool normal_xheight = within_error_margin(row->xheight, xheight, textord_xheight_error_margin);
@@ -1712,7 +1705,7 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
              (row_category == ROW_DESCENDERS_FOUND && (normal_xheight || cap_xheight)) ||
              (row_category == ROW_UNKNOWN && normal_xheight)) {
     if (textord_debug_xheights) {
-      tprintf("using average xheight\n");
+      tprintDebug("Using average xheight\n");
     }
     row->xheight = xheight;
     row->ascrise = ascrise;
@@ -1723,7 +1716,7 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
     // this from the case when descenders are found, but the most common
     // height is capheight).
     if (textord_debug_xheights) {
-      tprintf("lowercase, corrected ascrise\n");
+      tprintDebug("lowercase, corrected ascrise\n");
     }
     row->ascrise = row->xheight * (ascrise / xheight);
   } else if (row_category == ROW_UNKNOWN) {
@@ -1733,7 +1726,7 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
     row->all_caps = true;
     if (cap_xheight) { // regular all caps
       if (textord_debug_xheights) {
-        tprintf("all caps\n");
+        tprintDebug("all caps\n");
       }
       row->xheight = xheight;
       row->ascrise = ascrise;
@@ -1741,9 +1734,9 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
     } else { // small caps or caps with an odd xheight
       if (textord_debug_xheights) {
         if (row->xheight < xheight + ascrise && row->xheight > xheight) {
-          tprintf("small caps\n");
+          tprintDebug("small caps\n");
         } else {
-          tprintf("all caps with irregular xheight\n");
+          tprintDebug("all caps with irregular xheight\n");
         }
       }
       row->ascrise = row->xheight * (ascrise / (xheight + ascrise));
@@ -1752,9 +1745,9 @@ void correct_row_xheight(TO_ROW *row, float xheight, float ascrise, float descdr
     }
   }
   if (textord_debug_xheights) {
-    tprintf(
-        "corrected row->xheight = %.4f, row->acrise = %.4f, row->descdrop"
-        " = %.4f\n",
+    tprintDebug(
+        "Corrected row->xheight = {}, row->acrise = {}, row->descdrop"
+        " = {}\n",
         row->xheight, row->ascrise, row->descdrop);
   }
 }
@@ -1780,8 +1773,8 @@ static int CountOverlaps(const TBOX &box, int min_height, BLOBNBOX_LIST *blobs) 
  */
 void separate_underlines(TO_BLOCK *block,   // block to do
                          float gradient,    // skew angle
-                         FCOORD rotation,   // inverse landscape
-                         bool testing_on) { // correct orientation
+                         FCOORD rotation   // inverse landscape
+) {
   BLOBNBOX *blob;                           // current blob
   C_BLOB *rotated_blob;                     // rotated blob
   TO_ROW *row;                              // current row
@@ -1811,23 +1804,23 @@ void separate_underlines(TO_BLOCK *block,   // block to do
       if (blob_box.width() > block->line_size * textord_underline_width) {
         ASSERT_HOST(blob->cblob() != nullptr);
         rotated_blob = crotate_cblob(blob->cblob(), blob_rotation);
-        if (test_underline(testing_on && textord_show_final_rows, rotated_blob,
+        if (test_underline(rotated_blob,
                            static_cast<int16_t>(row->intercept()),
                            static_cast<int16_t>(block->line_size *
                                                 (tesseract::CCStruct::kXHeightFraction +
                                                  tesseract::CCStruct::kAscenderFraction / 2.0f)))) {
           under_it.add_after_then_move(blob_it.extract());
-          if (testing_on && textord_show_final_rows) {
-            tprintf("Underlined blob at:");
+          if (textord_show_final_rows) {
+            tprintDebug("Underlined blob at:");
             rotated_blob->bounding_box().print();
-            tprintf("Was:");
+            tprintDebug("Was:");
             blob_box.print();
           }
         } else if (CountOverlaps(blob->bounding_box(), min_blob_height, row->blob_list()) >
                    textord_max_blob_overlaps) {
           large_it.add_after_then_move(blob_it.extract());
-          if (testing_on && textord_show_final_rows) {
-            tprintf("Large blob overlaps %d blobs at:",
+          if (textord_show_final_rows) {
+            tprintDebug("Large blob overlaps {} blobs at:",
                     CountOverlaps(blob_box, min_blob_height, row->blob_list()));
             blob_box.print();
           }
@@ -1846,11 +1839,10 @@ void separate_underlines(TO_BLOCK *block,   // block to do
 void pre_associate_blobs( // make rough chars
     ICOORD page_tr,       // top right
     TO_BLOCK *block,      // block to do
-    FCOORD rotation,      // inverse landscape
-    bool testing_on       // correct orientation
+    FCOORD rotation       // inverse landscape
 ) {
-#ifndef GRAPHICS_DISABLED
-  ScrollView::Color colour; // of boxes
+#if !GRAPHICS_DISABLED
+  Diagnostics::Color colour; // of boxes
 #endif
   BLOBNBOX *blob;     // current blob
   BLOBNBOX *nextblob; // next in list
@@ -1860,8 +1852,8 @@ void pre_associate_blobs( // make rough chars
   BLOBNBOX_IT start_it; // iterator
   TO_ROW_IT row_it = block->get_rows();
 
-#ifndef GRAPHICS_DISABLED
-  colour = ScrollView::RED;
+#if !GRAPHICS_DISABLED
+  colour = Diagnostics::RED;
 #endif
 
   blob_rotation = FCOORD(rotation.x(), -rotation.y());
@@ -1874,8 +1866,8 @@ void pre_associate_blobs( // make rough chars
       start_it = blob_it; // save start point
       //                      if (testing_on && textord_show_final_blobs)
       //                      {
-      //                              tprintf("Blob at (%d,%d)->(%d,%d),
-      //                              addr=%x, count=%d\n",
+      //                              tprintDebug("Blob at ({},{})->({},{}),
+      //                              addr={}, count={}\n",
       //                                      blob_box.left(),blob_box.bottom(),
       //                                      blob_box.right(),blob_box.top(),
       //                                      (void*)blob,blob_it.length());
@@ -1897,9 +1889,9 @@ void pre_associate_blobs( // make rough chars
                  block->line_size * tesseract::CCStruct::kXHeightFraction * textord_chop_width);
       // attempt chop
     }
-#ifndef GRAPHICS_DISABLED
-    if (testing_on && textord_show_final_blobs) {
-      if (to_win == nullptr) {
+#if !GRAPHICS_DISABLED
+    if (textord_show_final_blobs) {
+      if (!to_win) {
         create_to_win(page_tr);
       }
       to_win->Pen(colour);
@@ -1911,9 +1903,9 @@ void pre_associate_blobs( // make rough chars
           to_win->Rectangle(blob_box.left(), blob_box.bottom(), blob_box.right(), blob_box.top());
         }
       }
-      colour = static_cast<ScrollView::Color>(colour + 1);
-      if (colour > ScrollView::MAGENTA) {
-        colour = ScrollView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
 #endif
@@ -1929,11 +1921,10 @@ void fit_parallel_rows( // find lines
     TO_BLOCK *block,    // block to do
     float gradient,     // gradient to fit
     FCOORD rotation,    // for drawing
-    int32_t block_edge, // edge of block
-    bool testing_on     // correct orientation
+    int32_t block_edge  // edge of block
 ) {
-#ifndef GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
+#if !GRAPHICS_DISABLED
+  Diagnostics::Color colour; // of row
 #endif
   TO_ROW_IT row_it = block->get_rows();
 
@@ -1945,14 +1936,14 @@ void fit_parallel_rows( // find lines
       fit_parallel_lms(gradient, row_it.data());
     }
   }
-#ifndef GRAPHICS_DISABLED
-  if (testing_on) {
-    colour = ScrollView::RED;
+#if !GRAPHICS_DISABLED
+  if (to_win) {
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       plot_parallel_row(row_it.data(), gradient, block_edge, colour, rotation);
-      colour = static_cast<ScrollView::Color>(colour + 1);
-      if (colour > ScrollView::MAGENTA) {
-        colour = ScrollView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }
@@ -1996,11 +1987,11 @@ void fit_parallel_lms(float gradient, TO_ROW *row) {
  * Re-fit the rows in the block to the given gradient.
  */
 void Textord::make_spline_rows(TO_BLOCK *block, // block to do
-                               float gradient,  // gradient to fit
-                               bool testing_on) {
-#ifndef GRAPHICS_DISABLED
-  ScrollView::Color colour; // of row
-  if (testing_on && to_win == nullptr) {
+                               float gradient   // gradient to fit
+) {
+#if !GRAPHICS_DISABLED
+  Diagnostics::Color colour; // of row
+  if (!to_win) {
     create_to_win(page_tr_);
   }
 #endif
@@ -2015,28 +2006,28 @@ void Textord::make_spline_rows(TO_BLOCK *block, // block to do
     }
   }
   if (textord_old_baselines) {
-#ifndef GRAPHICS_DISABLED
-    if (testing_on) {
-      colour = ScrollView::RED;
+#if !GRAPHICS_DISABLED
+    if (to_win) {
+      colour = Diagnostics::RED;
       for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
         row_it.data()->baseline.plot(to_win, colour);
-        colour = static_cast<ScrollView::Color>(colour + 1);
-        if (colour > ScrollView::MAGENTA) {
-          colour = ScrollView::RED;
+        colour = static_cast<Diagnostics::Color>(colour + 1);
+        if (colour > Diagnostics::MAGENTA) {
+          colour = Diagnostics::RED;
         }
       }
     }
 #endif
-    make_old_baselines(block, testing_on, gradient);
+    make_old_baselines(block, gradient);
   }
-#ifndef GRAPHICS_DISABLED
-  if (testing_on) {
-    colour = ScrollView::RED;
+#if !GRAPHICS_DISABLED
+  if (to_win) {
+    colour = Diagnostics::RED;
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
       row_it.data()->baseline.plot(to_win, colour);
-      colour = static_cast<ScrollView::Color>(colour + 1);
-      if (colour > ScrollView::MAGENTA) {
-        colour = ScrollView::RED;
+      colour = static_cast<Diagnostics::Color>(colour + 1);
+      if (colour > Diagnostics::MAGENTA) {
+        colour = Diagnostics::RED;
       }
     }
   }
@@ -2106,7 +2097,7 @@ bool segment_baseline( // split baseline
   segments = 1;
   blobcount = row->blob_list()->length();
   if (textord_oldbl_debug) {
-    tprintf("Segmenting baseline of %d blobs at (%d,%d)\n", blobcount, box.left(), box.bottom());
+    tprintDebug("Segmenting baseline of {} blobs at ({},{})\n", blobcount, box.left(), box.bottom());
   }
   if (blobcount <= textord_spline_medianwin || blobcount < textord_spline_minblobs) {
     blob_it.move_to_last();
@@ -2144,7 +2135,7 @@ bool segment_baseline( // split baseline
     if (state != 0) {
       needs_curve = true;
     }
-    //              tprintf("State=%d, prev=%d, shift=%g\n",
+    //              tprintDebug("State={}, prev={}, shift={}\n",
     //                      state,last_state,yshift);
     if (state != last_state && blobcount > textord_spline_minblobs) {
       xstarts[segments++] = box.left();
@@ -2165,7 +2156,7 @@ bool segment_baseline( // split baseline
     xstarts[--segments] = new_box.right();
   }
   if (textord_oldbl_debug) {
-    tprintf("Made %d segments on row at (%d,%d)\n", segments, box.right(), box.bottom());
+    tprintDebug("Made {} segments on row at ({},{})\n", segments, box.right(), box.bottom());
   }
   return needs_curve;
 }
@@ -2211,9 +2202,9 @@ double *linear_spline_baseline( // split baseline
   // quadratic coeffs
   auto *coeffs = new double[segments * 3];
   if (textord_oldbl_debug) {
-    tprintf(
-        "Linear splining baseline of %d blobs at (%d,%d), into %d segments of "
-        "%d blobs\n",
+    tprintDebug(
+        "Linear splining baseline of {} blobs at ({},{}), into {} segments of "
+        "{} blobs\n",
         blobcount, box.left(), box.bottom(), segments, blobs_per_segment);
   }
   segment = 1;
@@ -2301,8 +2292,8 @@ void assign_blobs_to_rows( // find lines
   if (gradient != nullptr) {
     g_length = std::sqrt(1 + *gradient * *gradient);
   }
-#ifndef GRAPHICS_DISABLED
-  if (drawing_skew) {
+#if !GRAPHICS_DISABLED
+  if (drawing_skew && to_win) {
     to_win->SetCursor(block->block->pdblk.bounding_box().left(), ycoord);
   }
 #endif
@@ -2324,15 +2315,15 @@ void assign_blobs_to_rows( // find lines
                    *gradient / g_length * blob->bounding_box().left();
     } else if (blob->bounding_box().left() - last_x > block->line_size / 2 &&
                last_x - left_x > block->line_size * 2 && textord_interpolating_skew) {
-      //                      tprintf("Interpolating skew from %g",block_skew);
+      //                      tprintDebug("Interpolating skew from {}",block_skew);
       block_skew *= static_cast<float>(blob->bounding_box().left() - left_x) / (last_x - left_x);
-      //                      tprintf("to %g\n",block_skew);
+      //                      tprintDebug("to {}\n",block_skew);
     }
     last_x = blob->bounding_box().left();
     top = blob->bounding_box().top() - block_skew;
     bottom = blob->bounding_box().bottom() - block_skew;
-#ifndef GRAPHICS_DISABLED
-    if (drawing_skew) {
+#if !GRAPHICS_DISABLED
+    if (drawing_skew && to_win) {
       to_win->DrawTo(blob->bounding_box().left(), ycoord + block_skew);
     }
 #endif
@@ -2409,10 +2400,10 @@ void assign_blobs_to_rows( // find lines
     }
     if (blob->bounding_box().contains(testpt) && textord_debug_blob) {
       if (overlap_result != REJECT) {
-        tprintf("Test blob assigned to row at (%g,%g) on pass %d\n", dest_row->min_y(),
+        tprintDebug("Test blob assigned to row at ({},{}) on pass {}\n", dest_row->min_y(),
                 dest_row->max_y(), pass);
       } else {
-        tprintf("Test blob assigned to no row on pass %d\n", pass);
+        tprintDebug("Test blob assigned to no row on pass {}\n", pass);
       }
     }
     if (overlap_result != REJECT) {
@@ -2476,7 +2467,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
     bestover -= row->min_y() - bottom;
   }
   if (testing_blob && textord_debug_blob) {
-    tprintf("Test blob y=(%g,%g), row=(%f,%f), size=%g, overlap=%f\n", bottom, top, row->min_y(),
+    tprintDebug("Test blob y=({},{}), row=({},{}), size={}, overlap={}\n", bottom, top, row->min_y(),
             row->max_y(), rowsize, bestover);
   }
   test_row = row;
@@ -2489,7 +2480,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
         merge_bottom = test_row->min_y() < row->min_y() ? test_row->min_y() : row->min_y();
         if (merge_top - merge_bottom <= rowsize) {
           if (testing_blob && textord_debug_blob) {
-            tprintf("Merging rows at (%g,%g), (%g,%g)\n", row->min_y(), row->max_y(),
+            tprintDebug("Merging rows at ({},{}), ({},{})\n", row->min_y(), row->max_y(),
                     test_row->min_y(), test_row->max_y());
           }
           test_row->set_limits(merge_bottom, merge_top);
@@ -2516,7 +2507,7 @@ OVERLAP_STATE most_overlapping_row( // find best row
           row = test_row;
         }
         if (testing_blob && textord_debug_blob) {
-          tprintf("Test blob y=(%g,%g), row=(%f,%f), size=%g, overlap=%f->%f\n", bottom, top,
+          tprintDebug("Test blob y=({},{}), row=({},{}), size={}, overlap={}->{}\n", bottom, top,
                   test_row->min_y(), test_row->max_y(), rowsize, overlap, bestover);
         }
       }

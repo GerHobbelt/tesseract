@@ -28,12 +28,15 @@
 #include <cinttypes>  // for PRId64
 #include <functional> // for std::function
 #include <memory>
+
+#include <tesseract/fmt-support.h>
+
 #include "elst.h"
 #include "params.h"
 #include "ratngs.h"
 
 #ifndef __GNUC__
-#  ifdef _WIN32
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #    define NO_EDGE (int64_t)0xffffffffffffffffi64
 #  endif /*_WIN32*/
 #else
@@ -69,6 +72,11 @@ enum DawgType {
 
   DAWG_TYPE_COUNT // number of enum entries
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
+
+static inline auto format_as(DawgType dt) {
+  return fmt::underlying(dt);
+}
 
 /*----------------------------------------------------------------------
               C o n s t a n t s
@@ -82,7 +90,6 @@ enum DawgType {
 #define WERD_END_FLAG (int64_t)4
 #define LETTER_START_BIT 0
 #define NUM_FLAG_BITS 3
-#define REFFORMAT "%" PRId64
 
 static const bool kDawgSuccessors[DAWG_TYPE_COUNT][DAWG_TYPE_COUNT] = {
     {false, true, true, false},   // for DAWG_TYPE_PUNCTUATION
@@ -110,7 +117,7 @@ static const char kWildcard[] = "*";
 class TESS_API Dawg {
 public:
   /// Magic number to determine endianness when reading the Dawg from file.
-  static const int16_t kDawgMagicNumber = 42;
+  const int16_t kDawgMagicNumber = 42;
   /// A special unichar id that indicates that any appropriate pattern
   /// (e.g.dictionary word, 0-9 digit, etc) can be inserted instead
   /// Used for expressing patterns in punctuation and number Dawgs.
@@ -389,7 +396,7 @@ public:
     }
     push_back(new_pos);
     if (debug) {
-      tprintf("%s[%d, " REFFORMAT "] [punc: " REFFORMAT "%s]\n", debug_msg,
+      tprintDebug("{}[{}, {}] [punc: {}{}]\n", debug_msg,
               new_pos.dawg_index, new_pos.dawg_ref, new_pos.punc_ref,
               new_pos.back_to_punc ? " returned" : "");
     }
@@ -457,7 +464,7 @@ public:
     if (!edge_occupied(edge) || edge == NO_EDGE) {
       return;
     }
-    assert(forward_edge(edge)); // we don't expect any backward edges to
+    ASSERT0(forward_edge(edge)); // we don't expect any backward edges to
     do {                        // be present when this function is called
       if (!word_end || end_of_word_from_edge_rec(edges_[edge])) {
         vec->push_back(NodeChild(unichar_id_from_edge_rec(edges_[edge]), edge));
@@ -495,11 +502,11 @@ public:
     TFile file;
     file.OpenWrite(nullptr);
     if (!this->write_squished_dawg(&file)) {
-      tprintf("Error serializing %s\n", filename);
+      tprintError("Error serializing {}\n", filename);
       return false;
     }
     if (!file.CloseWrite(filename, nullptr)) {
-      tprintf("Error writing file %s\n", filename);
+      tprintError("Error writing file {}\n", filename);
       return false;
     }
     return true;
@@ -554,11 +561,11 @@ private:
 
   /// Prints the contents of the SquishedDawg.
   void print_all(const char *msg) {
-    tprintf("\n__________________________\n%s\n", msg);
+    tprintDebug("\n__________________________\n{}\n", msg);
     for (int i = 0; i < num_edges_; ++i) {
       print_edge(i);
     }
-    tprintf("__________________________\n");
+	tprintDebug("__________________________\n");
   }
   /// Constructs a mapping from the memory node indices to disk node indices.
   std::unique_ptr<EDGE_REF[]> build_node_map(int32_t *num_nodes) const;

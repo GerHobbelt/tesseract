@@ -20,20 +20,29 @@
 // normalizes the text according to command-line options and generates
 // a unicharset.
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
 #include <cstdlib>
 #include <filesystem>
 #include "boxread.h"
-#include "commandlineflags.h"
-#include "commontraining.h" // CheckSharedLibraryVersion
-#include "lang_model_helpers.h"
-#include "normstrngs.h"
+#include "common/commandlineflags.h"
+#include "common/commontraining.h"     // CheckSharedLibraryVersion
+#include "unicharset/lang_model_helpers.h"
+#include "unicharset/normstrngs.h"
 #include "unicharset.h"
-#include "unicharset_training_utils.h"
+#include "unicharset/unicharset_training_utils.h"
+
+#include "tesseract/capi_training_tools.h"
+
+
+#if defined(HAS_LIBICU)
 
 using namespace tesseract;
 
-static STRING_PARAM_FLAG(output_unicharset, "unicharset", "Output file path");
-static INT_PARAM_FLAG(norm_mode, 1,
+STRING_PARAM_FLAG(output_unicharset, "unicharset", "Output file path");
+INT_PARAM_FLAG(norm_mode, 1,
                       "Normalization mode: 1=Combine graphemes, "
                       "2=Split graphemes, 3=Pure unicode");
 
@@ -56,12 +65,12 @@ static void AddStringsToUnicharset(const std::vector<std::string> &strings, int 
         unicharset->unichar_insert(normed.c_str());
       }
     } else {
-      tprintf("Normalization failed for string '%s'\n", string.c_str());
+      tprintError("Normalization failed for string '{}'\n", string);
     }
   }
 }
 
-static int Main(int argc, char **argv) {
+static int Main(int argc, const char** argv) {
   UNICHARSET unicharset;
   // Load input files
   for (int arg = 1; arg < argc; ++arg) {
@@ -72,16 +81,16 @@ static int Main(int argc, char **argv) {
     }
     std::vector<std::string> texts;
     if (filePath.extension() == ".box") {
-      tprintf("Extracting unicharset from box file %s\n", argv[arg]);
+      tprintDebug("Extracting unicharset from box file {}\n", argv[arg]);
       bool res = ReadMemBoxes(-1, /*skip_blanks*/ true, &file_data[0],
                    /*continue_on_failure*/ false, /*boxes*/ nullptr, &texts,
                    /*box_texts*/ nullptr, /*pages*/ nullptr);
       if (!res) {
-        tprintf("Cannot read box data from '%s'\n", argv[arg]);
+        tprintError("Cannot read box data from '{}'\n", argv[arg]);
         return EXIT_FAILURE;
       }
     } else {
-      tprintf("Extracting unicharset from plain text file %s\n", argv[arg]);
+      tprintDebug("Extracting unicharset from plain text file {}\n", argv[arg]);
       texts.clear();
       texts = split(file_data, '\n');
     }
@@ -90,9 +99,9 @@ static int Main(int argc, char **argv) {
   SetupBasicProperties(/*report_errors*/ true, /*decompose*/ false, &unicharset);
   // Write unicharset file.
   if (unicharset.save_to_file(FLAGS_output_unicharset.c_str())) {
-    tprintf("Wrote unicharset file %s\n", FLAGS_output_unicharset.c_str());
+    tprintDebug("Wrote unicharset file {}\n", FLAGS_output_unicharset.value());
   } else {
-    tprintf("Cannot save unicharset file %s\n", FLAGS_output_unicharset.c_str());
+    tprintError("Cannot save unicharset file {}\n", FLAGS_output_unicharset.value());
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
@@ -100,22 +109,39 @@ static int Main(int argc, char **argv) {
 
 } // namespace tesseract
 
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
-  if (argc > 1) {
-    tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
-  }
-  if (argc < 2) {
-    tprintf(
-        "Usage: %s [--output_unicharset filename] [--norm_mode mode]"
-        " box_or_text_file [...]\n",
-        argv[0]);
-    tprintf("Where mode means:\n");
-    tprintf(" 1=combine graphemes (use for Latin and other simple scripts)\n");
-    tprintf(" 2=split graphemes (use for Indic/Khmer/Myanmar)\n");
-    tprintf(" 3=pure unicode (use for Arabic/Hebrew/Thai/Tibetan)\n");
-    tprintf("Reads box or plain text files to extract the unicharset.\n");
-    return EXIT_FAILURE;
-  }
+  (void)tesseract::SetConsoleModeToUTF8();
+
+  int rv = tesseract::ParseCommandLineFlags(
+    "[--output_unicharset filename] [--norm_mode mode] box_or_text_file [...]\n"
+    "\n"
+    "Where mode means:\n"
+    " 1=combine graphemes (use for Latin and other simple scripts)\n"
+    " 2=split graphemes (use for Indic/Khmer/Myanmar)\n"
+    " 3=pure unicode (use for Arabic/Hebrew/Thai/Tibetan)\n"
+    "Reads box or plain text files to extract the unicharset.\n",
+    &argc, &argv);
+	if (rv >= 0)
+		return rv;
   return tesseract::Main(argc, argv);
 }
+
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "unicharset_extractor tool not supported in this non-ICU / Unicode build.\n");
+  return EXIT_FAILURE;
+}
+
+#endif

@@ -19,7 +19,7 @@
 #define SEAM_H
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -156,9 +156,9 @@ public:
   void Print(const char *label) const;
   // Prints a collection of SEAMs.
   static void PrintSeams(const char *label, const std::vector<SEAM *> &seams);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Draws the seam in the given window.
-  void Mark(ScrollView *window) const;
+  void Mark(ScrollViewReference &window) const;
 #endif
 
   // Break up the blobs in this chain so that they are all independent.

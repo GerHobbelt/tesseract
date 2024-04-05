@@ -72,6 +72,8 @@ AC_CONFIG_HEADERS([include/config_auto.h:config/config.h.in])
 
 # default conditional
 AM_CONDITIONAL([T_WIN], false)
+AM_CONDITIONAL([MINGW], false)
+AM_CONDITIONAL([OSX], false)
 AM_CONDITIONAL([GRAPHICS_DISABLED], false)
 AC_SUBST([AM_CPPFLAGS])
 
@@ -79,8 +81,6 @@ AC_SUBST([AM_CPPFLAGS])
 # Can be overridden with `configure --disable-silent-rules` or with `make V=1`.
 AM_SILENT_RULES([yes])
 
-OPENCL_INC="/opt/AMDAPP/include"
-OPENCL_LIBS="-lOpenCL"
 #############################
 #
 # Platform specific setup
@@ -89,7 +89,9 @@ OPENCL_LIBS="-lOpenCL"
 AC_CANONICAL_HOST
 case "${host_os}" in
     mingw*)
+        AC_DEFINE_UNQUOTED([MINGW], 1, [This is a MinGW system])
         AM_CONDITIONAL([T_WIN], true)
+        AM_CONDITIONAL([MINGW], true)
         AM_CONDITIONAL([ADD_RT], false)
         AC_SUBST([AM_LDFLAGS], ['-no-undefined'])
         ;;
@@ -102,15 +104,12 @@ case "${host_os}" in
         AM_CONDITIONAL([ADD_RT], true)
         ;;
     *darwin*)
-        OPENCL_LIBS=""
-        OPENCL_INC=""
         AM_CONDITIONAL([ADD_RT], false)
         ;;
     *android*|openbsd*)
         AM_CONDITIONAL([ADD_RT], false)
         ;;
     powerpc-*-darwin*)
-        OPENCL_LIBS=""
         ;;
     *)
         # default
@@ -130,6 +129,7 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=un
 AM_CONDITIONAL([HAVE_AVX], false)
 AM_CONDITIONAL([HAVE_AVX2], false)
 AM_CONDITIONAL([HAVE_AVX512F], false)
+AM_CONDITIONAL([HAVE_AVX512VNNI], false)
 AM_CONDITIONAL([HAVE_FMA], false)
 AM_CONDITIONAL([HAVE_SSE4_1], false)
 AM_CONDITIONAL([HAVE_NEON], false)
@@ -156,6 +156,12 @@ case "${host_cpu}" in
       AC_DEFINE([HAVE_AVX512F], [1], [Enable AVX512F instructions])
     fi
 
+    AX_CHECK_COMPILE_FLAG([-mavx512vnni], [avx512vnni=true], [avx512vnni=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX512VNNI], $avx512vnni)
+    if $avx512vnni; then
+      AC_DEFINE([HAVE_AVX512VNNI], [1], [Enable AVX512VNNI instructions])
+    fi
+
     AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
     AM_CONDITIONAL([HAVE_FMA], $fma)
     if $fma; then
@@ -178,10 +184,20 @@ case "${host_cpu}" in
     ;;
 
   arm*)
-
-    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [neon=true], [neon=false], [$WERROR])
-    AM_CONDITIONAL([HAVE_NEON], $neon)
-    if $neon; then
+    SAVE_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="-mfpu=neon $CXXFLAGS"
+    AC_MSG_CHECKING([for NEON support])
+    AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([], [[
+    #ifndef __ARM_NEON
+           #error
+    #endif
+    ]])],
+    [neon=yes], [neon=no])
+    AC_MSG_RESULT([$neon])
+    CXXFLAGS="$SAVE_CXXFLAGS"
+    AM_CONDITIONAL([HAVE_NEON], test "xyes" = "x$neon")
+    if test "xyes" = "$neon"; then
       AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
       NEON_CXXFLAGS="-mfpu=neon"
       AC_SUBST([NEON_CXXFLAGS])
@@ -254,6 +270,8 @@ AC_MSG_RESULT([$enable_legacy])
 AM_CONDITIONAL([DISABLED_LEGACY_ENGINE], test "$enable_legacy" = "no")
 if test "$enable_legacy" = "no"; then
   AC_DEFINE([DISABLED_LEGACY_ENGINE], [1], [Disable legacy OCR engine])
+else
+  AC_DEFINE([DISABLED_LEGACY_ENGINE], [0], [Enable legacy OCR engine])
 fi
 
 # check whether to build OpenMP support
@@ -263,17 +281,14 @@ have_tiff=false
 # Note that the first usage of AC_CHECK_HEADERS must be unconditional.
 AC_CHECK_HEADERS([tiffio.h], [have_tiff=true], [have_tiff=false])
 
-# check whether to build opencl version
-AC_MSG_CHECKING([--enable-opencl argument])
-AC_ARG_ENABLE([opencl],
-    AS_HELP_STRING([--enable-opencl], [enable opencl build [default=no]]))
-AC_MSG_RESULT([$enable_opencl])
-# check for opencl header
-have_opencl=false
-if test "$enable_opencl" = "yes"; then
-  AC_CHECK_HEADERS([CL/cl.h], [have_opencl=true], [
-    AC_CHECK_HEADERS(OpenCL/cl.h, [have_opencl=true], [have_opencl=false])
-  ])
+# Check whether we have the runtime neon detection headers:
+AC_MSG_CHECKING([runtime neon detection])
+have_hwcap_based_neon_runtime_detection=true
+AC_CHECK_HEADERS([sys/auxv.h], [], [have_hwcap_based_neon_runtime_detection=false])
+AC_CHECK_HEADERS([asm/hwcap.h], [], [have_hwcap_based_neon_runtime_detection=false])
+AM_CONDITIONAL([HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION], $have_hwcap_based_neon_runtime_detection)
+if $have_hwcap_based_neon_runtime_detection; then
+  AC_DEFINE([HAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION], [1], [Enable runtime NEON detection using asm/hwcap.h])
 fi
 
 # Configure arguments which allow disabling some optional libraries.
@@ -323,9 +338,6 @@ m4_define([MY_CHECK_FRAMEWORK],
    fi]
 )
 
-have_opencl_lib=false
-OPENCL_CPPFLAGS=''
-OPENCL_LDFLAGS=''
 case "${host_os}" in
   *darwin* | *-macos10*)
     MY_CHECK_FRAMEWORK([Accelerate])
@@ -333,36 +345,11 @@ case "${host_os}" in
       AM_CPPFLAGS="-DHAVE_FRAMEWORK_ACCELERATE $AM_CPPFLAGS"
       AM_LDFLAGS="$AM_LDFLAGS -framework Accelerate"
     fi
-    MY_CHECK_FRAMEWORK([OpenCL])
-    if test "$enable_opencl" = "yes"; then
-      if test $my_cv_framework_OpenCL = no; then
-        AC_MSG_ERROR([Required OpenCL library not found!])
-      fi
-      AM_CPPFLAGS="-DUSE_OPENCL $AM_CPPFLAGS"
-      OPENCL_CPPFLAGS=""
-      OPENCL_LDFLAGS="-framework OpenCL"
-    fi
     ;;
   *)
     # default
-    if test "$enable_opencl" = "yes"; then
-        AC_CHECK_LIB([OpenCL], [clGetPlatformIDs],
-                     [have_opencl_lib=true], [have_opencl_lib=false])
-        if !($have_opencl); then
-            AC_MSG_ERROR([Required OpenCL headers not found!])
-        fi
-        if !($have_opencl_lib); then
-            AC_MSG_ERROR([Required OpenCL library not found!])
-        fi
-        AM_CPPFLAGS="-DUSE_OPENCL $AM_CPPFLAGS"
-        OPENCL_CPPFLAGS="-I${OPENCL_INC}"
-        OPENCL_LDFLAGS="${OPENCL_LIBS}"
-    fi
     ;;
 esac
-AM_CONDITIONAL([OPENCL], [test "$enable_opencl" = "yes"])
-AC_SUBST([OPENCL_CPPFLAGS])
-AC_SUBST([OPENCL_LDFLAGS])
 
 # check whether to build tesseract with -fvisibility=hidden -fvisibility-inlines-hidden
 # http://gcc.gnu.org/wiki/Visibility
@@ -564,7 +551,7 @@ PKG_CHECK_MODULES([ICU_UC], [icu-uc >= 52.1], [have_icu_uc=true], [have_icu_uc=f
 PKG_CHECK_MODULES([ICU_I18N], [icu-i18n >= 52.1], [have_icu_i18n=true], [have_icu_i18n=false])
 if !($have_icu_uc && $have_icu_i18n); then
   AC_MSG_WARN([icu 52.1 or higher is required, but was not found.])
-  AC_MSG_WARN([Training tools WILL NOT be built.])
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing icu library.])
   AC_MSG_WARN([Try to install libicu-dev package.])
   AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
@@ -572,18 +559,18 @@ fi
 # Check location of pango headers
 PKG_CHECK_MODULES([pango], [pango >= 1.38.0], [have_pango=true], [have_pango=false])
 if !($have_pango); then
-        AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
-        AC_MSG_WARN([Training tools WILL NOT be built.])
-        AC_MSG_WARN([Try to install libpango1.0-dev package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([pango 1.38.0 or higher is required, but was not found.])
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing pango1.0 library.])
+  AC_MSG_WARN([Try to install libpango1.0-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 # Check location of cairo headers
 PKG_CHECK_MODULES([cairo], [cairo], [have_cairo=true], [have_cairo=false])
 if !($have_cairo); then
-        AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
-        AC_MSG_WARN([Try to install libcairo-dev?? package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
+  AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
+  AC_MSG_WARN([Try to install libcairo-dev package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 fi
 
 PKG_CHECK_MODULES([pangocairo], [pangocairo], [], [false])
@@ -605,6 +592,7 @@ AC_CONFIG_FILES([java/com/google/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/events/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/ui/Makefile])
+AC_CONFIG_FILES([nsis/Makefile])
 AC_OUTPUT
 
 # Final message

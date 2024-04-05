@@ -28,7 +28,7 @@ class Reversed : public Plumbing {
 public:
   TESS_API
   explicit Reversed(const std::string &name, NetworkType type);
-  ~Reversed() override = default;
+  virtual ~Reversed() override = default;
 
   // Returns the shape output from the network given an input shape (which may
   // be partially unknown ie zero).

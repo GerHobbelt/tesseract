@@ -16,6 +16,7 @@
 #ifndef TESSERACT_TRAINING_TRAININGSAMPLESET_H_
 #define TESSERACT_TRAINING_TRAININGSAMPLESET_H_
 
+#include "unicharset.h"          // for UNICHARSET
 #include "bitvector.h"
 #include "indexmapbidi.h"
 #include "matrix.h"
@@ -204,8 +205,8 @@ public:
   // Display the samples with the given indexed feature that also match
   // the given shape.
   void DisplaySamplesWithFeature(int f_index, const Shape &shape,
-                                 const IntFeatureSpace &feature_space, ScrollView::Color color,
-                                 ScrollView *window) const;
+                                 const IntFeatureSpace &feature_space, Diagnostics::Color color,
+                                 ScrollViewReference &window) const;
 
 private:
   // Struct to store a triplet of unichar, font, distance in the distance cache.

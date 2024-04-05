@@ -25,11 +25,10 @@
 #include <string>
 #include <vector>
 
-#include <allheaders.h>   // for Leptonica API
-#if (LIBLEPT_MAJOR_VERSION == 1 && LIBLEPT_MINOR_VERSION >= 83) || LIBLEPT_MAJOR_VERSION > 1
-#include <pix_internal.h> // for fast access to Box geometry
-#endif
+#include <leptonica/allheaders.h>   // for Leptonica API
 #include <tesseract/export.h>
+
+#if defined(PANGO_ENABLE_ENGINE)
 
 namespace tesseract {
 
@@ -46,6 +45,9 @@ public:
   const Box *box() const {
     return box_;
   }
+  Pta *baseline() const {
+    return baseline_;
+  }
   const int &page() const {
     return page_;
   }
@@ -58,6 +60,9 @@ public:
 
   // Set the box_ member.
   void AddBox(int x, int y, int width, int height);
+
+  // Add baseline points
+  void AddBaselinePt(int x, int y);
 
   void set_page(int page) {
     page_ = page;
@@ -79,7 +84,11 @@ public:
     if (other.box_ == nullptr) {
       return false;
     }
-    return box_->x < other.box_->x;
+    int32_t box_x;
+    int32_t other_box_x;
+    boxGetGeometry(box_, &box_x, nullptr, nullptr, nullptr);
+    boxGetGeometry(other.box_, &other_box_x, nullptr, nullptr, nullptr);
+    return box_x < other_box_x;
   }
   // Increments *num_rtl and *num_ltr according to the directionality of
   // characters in the box.
@@ -89,7 +98,7 @@ public:
   void ReverseUnicodesInBox();
 
   static void TranslateBoxes(int xshift, int yshift, std::vector<BoxChar *> *boxes);
-
+  static void TranslateBoxesAndBaseline(int xshift, int yshift, int start_box, int end_box, std::vector<BoxChar *> *boxes);
   // Prepares for writing the boxes to a file by inserting newlines, spaces,
   // and re-ordering so the boxes are strictly left-to-right.
   static void PrepareToWrite(std::vector<BoxChar *> *boxes);
@@ -112,6 +121,10 @@ public:
   // The rotation is in radians clockwise about the given center.
   static void RotateBoxes(float rotation, int xcenter, int ycenter, int start_box, int end_box,
                           std::vector<BoxChar *> *boxes);
+  // Rotate the baseline in [start_box, end_box) by the given rotation.
+  // The rotation is in radians clockwise about the given center.
+  static void RotateBaseline(float rotation, int xcenter, int ycenter, int start_box, int end_box, 
+                          std::vector<BoxChar *> *boxes);
 
   // Create a tesseract box file from the vector of boxes. The image height
   // is needed to convert to tesseract coordinates.
@@ -124,6 +137,7 @@ public:
 private:
   std::string ch_;
   Box *box_;
+  Pta *baseline_;
   int page_;
   // If the box is an RTL character, contains the original position in the
   // array of boxes (before reversal), otherwise -1.
@@ -142,4 +156,6 @@ struct BoxCharPtrSort {
 
 } // namespace tesseract
 
-#endif // TESSERACT_TRAINING_BOXCHAR_H_
+#endif
+
+#endif  // TESSERACT_TRAINING_BOXCHAR_H_

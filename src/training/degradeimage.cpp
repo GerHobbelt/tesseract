@@ -19,10 +19,11 @@
 
 #include "degradeimage.h"
 
-#include <allheaders.h> // from leptonica
+#include <leptonica/allheaders.h> // from leptonica
 #include <cstdlib>
 #include "helpers.h" // For TRand.
 #include "rect.h"
+#include <iostream> 
 
 namespace tesseract {
 
@@ -51,7 +52,7 @@ enum FactorNames {
 };
 
 // Rotation is +/- kRotationRange radians.
-const float kRotationRange = 0.02f;
+const float kRotationRange = 0.05f;
 // Number of grey levels to shift by for each exposure step.
 const int kExposureFactor = 16;
 // Salt and pepper noise is +/- kSaltnPepper.
@@ -87,6 +88,7 @@ const int kMinRampSize = 1000;
 // Finally a greyscale ramp provides a continuum of effects between exposure
 // levels.
 Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation) {
+  printf("degrade image:");
   Image pix = pixConvertTo8(input, false);
   input.destroy();
   input = pix;
@@ -108,12 +110,17 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
   // A small random rotation helps to make the edges jaggy in a realistic way.
   if (rotation != nullptr) {
     float radians_clockwise = 0.0f;
+    //float my_rotation;
+    //printf("define a rotation:");
+    //std::cout << "define a rotation:";
+    //std::cin >> my_rotation;
     if (*rotation) {
       radians_clockwise = *rotation;
     } else if (randomizer != nullptr) {
       radians_clockwise = randomizer->SignedRand(kRotationRange);
     }
-
+    //radians_clockwise = my_rotation;
+    
     input = pixRotate(pix, radians_clockwise, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
     // Rotate the boxes to match.
     *rotation = radians_clockwise;
@@ -178,24 +185,28 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
 // Returns nullptr on error. The returned Pix must be pixDestroyed.
 Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool white_noise,
                          bool smooth_noise, bool blur, int box_reduction, TRand *randomizer,
-                         std::vector<TBOX> *boxes) {
+                         std::vector<TBOX> *boxes, int my_blur, int my_noise, int my_smooth) {
   Image distorted = pix.copy();
   // Things to do to synthetic training data.
-  if ((white_noise || smooth_noise) && randomizer->SignedRand(1.0) > 0.0) {
+  if ((white_noise || smooth_noise) /*&& randomizer->SignedRand(1.0) > 0.0*/) {
     // TODO(rays) Cook noise in a more thread-safe manner than rand().
     // Attempt to make the sequences reproducible.
+    printf("add noise");
     srand(randomizer->IntRand());
-    Image pixn = pixAddGaussianNoise(distorted, 8.0);
+    Image pixn = pixAddGaussianNoise(distorted, my_noise);
     distorted.destroy();
     if (smooth_noise) {
-      distorted = pixBlockconv(pixn, 1, 1);
+      distorted = pixBlockconv(pixn, my_smooth, my_smooth);
       pixn.destroy();
+      printf("smoothen");
     } else {
+      printf("noise added");
       distorted = pixn;
     }
   }
-  if (blur && randomizer->SignedRand(1.0) > 0.0) {
-    Image blurred = pixBlockconv(distorted, 1, 1);
+  if (blur /*&& randomizer->SignedRand(1.0) > 0.0*/) {
+    printf("blur");
+    Image blurred = pixBlockconv(distorted, my_blur, my_blur);
     distorted.destroy();
     distorted = blurred;
   }
@@ -210,7 +221,7 @@ Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool w
       }
     }
   }
-  if (invert && randomizer->SignedRand(1.0) < -0) {
+  if (invert /*&& randomizer->SignedRand(1.0) < -0*/) {
     pixInvert(distorted, distorted);
   }
   return distorted;
@@ -232,7 +243,7 @@ void GeneratePerspectiveDistortion(int width, int height, TRand *randomizer, Ima
     // Transform the image.
     Image transformed = pixProjective(*pix, im_coeffs, incolor);
     if (transformed == nullptr) {
-      tprintf("Projective transformation failed!!\n");
+      tprintError("Projective transformation failed!!\n");
       return;
     }
     pix->destroy();

@@ -31,7 +31,7 @@ public:
 private:
   int16_t total_rows;  // in block
   int16_t min_left;    // Left extreme
-  int16_t max_right;   // Right extreme
+  TDimension max_right;   // Right extreme
   int16_t bucket_size; // half an x ht
   int16_t *map;        // empty counts
   int16_t map_max;     // map[0..max_map] defined
@@ -43,7 +43,7 @@ private:
 extern BOOL_VAR_H(gapmap_debug);
 extern BOOL_VAR_H(gapmap_use_ends);
 extern BOOL_VAR_H(gapmap_no_isolated_quanta);
-extern double_VAR_H(gapmap_big_gaps);
+extern DOUBLE_VAR_H(gapmap_big_gaps);
 
 } // namespace tesseract
 

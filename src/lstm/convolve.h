@@ -22,6 +22,7 @@
 
 #include "matrix.h"
 #include "network.h"
+#include "tprintf.h"
 
 namespace tesseract {
 
@@ -57,7 +58,7 @@ public:
 
 private:
   void DebugWeights() override {
-    tprintf("Must override Network::DebugWeights for type %d\n", type_);
+    tprintWarn("Must override Network::DebugWeights for type {}\n", type_);
   }
 
 protected:

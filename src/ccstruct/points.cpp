@@ -27,6 +27,9 @@
 #include <cmath> // for M_PI
 #include <cstdlib>
 
+#undef min
+#undef max
+
 namespace tesseract {
 
 bool FCOORD::normalise() { // Convert to unit vec
@@ -40,12 +43,32 @@ bool FCOORD::normalise() { // Convert to unit vec
   return true;
 }
 
+// Deserialize an ICOORD.
+// For compatibility reasons it uses unsigned 16 bit coordinates
+// instead of 32 bit coordinates.
 bool ICOORD::DeSerialize(TFile *f) {
-  return f->DeSerialize(&xcoord) && f->DeSerialize(&ycoord);
+  bool success = false;
+  uint16_t coord;
+  if (f->DeSerialize(&coord)) {
+    xcoord = coord;
+    if (f->DeSerialize(&coord)) {
+      ycoord = coord;
+      success = true;
+    }
+  }
+  return success;
 }
 
+// Serialize an ICOORD.
+// For compatibility reasons it uses unsigned 16 bit coordinates
+// instead of 32 bit coordinates.
 bool ICOORD::Serialize(TFile *f) const {
-  return f->Serialize(&xcoord) && f->Serialize(&ycoord);
+  uint16_t coord;
+  coord = xcoord;
+  auto success = f->Serialize(&coord);
+  coord = ycoord;
+  success = success && f->Serialize(&coord);
+  return success;
 }
 
 // Set from the given x,y, shrinking the vector to fit if needed.
@@ -53,8 +76,8 @@ void ICOORD::set_with_shrink(int x, int y) {
   // Fit the vector into an ICOORD, which is 16 bit.
   int factor = 1;
   int max_extent = std::max(abs(x), abs(y));
-  if (max_extent > INT16_MAX) {
-    factor = max_extent / INT16_MAX + 1;
+  if (max_extent > TDIMENSION_MAX) {
+    factor = max_extent / TDIMENSION_MAX + 1;
   }
   xcoord = x / factor;
   ycoord = y / factor;

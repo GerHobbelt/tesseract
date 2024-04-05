@@ -15,11 +15,13 @@
 #include "equationdetect.h"
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <memory>
 #include <string>
 #include <utility>
+
+#include "testdata.h"
 
 #define ENABLE_IdentifySpecialText_TEST 0
 #if ENABLE_IdentifySpecialText_TEST
@@ -27,6 +29,9 @@
 #else
 #  define EQU_TRAINEDDATA_NAME "equINTENTIONALLY_MISSING_FILE"
 #endif
+
+
+#if defined(HAS_LIBICU)
 
 namespace tesseract {
 
@@ -63,7 +68,7 @@ public:
   // Set up pix_binary for lang_tesseract_.
   void SetPixBinary(Image pix) {
     CHECK_EQ(1, pixGetDepth(pix));
-    *(lang_tesseract_->mutable_pix_binary()) = pix;
+    lang_tesseract_->set_pix_binary(pix);
   }
 
   void RunIdentifySpecialText(BLOBNBOX *blob, const int height_th) {
@@ -520,3 +525,5 @@ TEST_F(EquationFinderTest, SplitCPHor) {
 }
 
 } // namespace tesseract
+
+#endif

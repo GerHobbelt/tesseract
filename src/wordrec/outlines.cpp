@@ -19,6 +19,13 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
+
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "outlines.h"
 #include "wordrec.h"
 
@@ -46,7 +53,7 @@ bool Wordrec::near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1, ED
 
   if (x0 == x1) {
     /* Handle vertical line */
-    p.x = static_cast<int16_t>(x0);
+    p.x = static_cast<TDimension>(x0);
     p.y = point->pos.y;
   } else {
     /* Slope and intercept */
@@ -54,9 +61,9 @@ bool Wordrec::near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1, ED
     intercept = y1 - x1 * slope;
 
     /* Find perpendicular */
-    p.x = static_cast<int16_t>((point->pos.x + (point->pos.y - intercept) * slope) /
+    p.x = static_cast<TDimension>((point->pos.x + (point->pos.y - intercept) * slope) /
                                (slope * slope + 1));
-    p.y = static_cast<int16_t>(slope * p.x + intercept);
+    p.y = static_cast<TDimension>(slope * p.x + intercept);
   }
 
   if (is_on_line(p, line_pt_0->pos, line_pt_1->pos) && (!same_point(p, line_pt_0->pos)) &&
@@ -71,3 +78,5 @@ bool Wordrec::near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1, ED
 }
 
 } // namespace tesseract
+
+#endif

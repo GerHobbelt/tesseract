@@ -61,7 +61,7 @@ bool AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) {
 static FEATURE ReadFeature(FILE *File, const FEATURE_DESC_STRUCT *FeatureDesc) {
   auto Feature = new FEATURE_STRUCT(FeatureDesc);
   for (int i = 0; i < Feature->Type->NumParams; i++) {
-    ASSERT_HOST(tfscanf(File, "%f", &(Feature->Params[i])) == 1);
+    ASSERT_HOST(tfscanf(File, "{}", &(Feature->Params[i])) == 1);
 #ifndef _WIN32
     assert(!std::isnan(Feature->Params[i]));
 #endif
@@ -81,7 +81,7 @@ static FEATURE ReadFeature(FILE *File, const FEATURE_DESC_STRUCT *FeatureDesc) {
  */
 FEATURE_SET ReadFeatureSet(FILE *File, const FEATURE_DESC_STRUCT *FeatureDesc) {
   int NumFeatures;
-  ASSERT_HOST(tfscanf(File, "%d", &NumFeatures) == 1);
+  ASSERT_HOST(tfscanf(File, "{}", &NumFeatures) == 1);
   ASSERT_HOST(NumFeatures >= 0);
 
   auto FeatureSet = new FEATURE_SET_STRUCT(NumFeatures);

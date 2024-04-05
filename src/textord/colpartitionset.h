@@ -23,6 +23,7 @@
 #include "colpartition.h" // For ColPartition_LIST.
 #include "rect.h"         // For TBOX.
 #include "tabvector.h"    // For BLOBNBOX_CLIST.
+#include "elst.h"         // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
@@ -96,7 +97,7 @@ public:
   ColPartitionSet *Copy(bool good_only);
 
   // Display the edges of the columns at the given y coords.
-  void DisplayColumnEdges(int y_bottom, int y_top, ScrollView *win);
+  void DisplayColumnEdges(int y_bottom, int y_top, ScrollViewReference &win);
 
   // Return the ColumnSpanningType that best explains the columns overlapped
   // by the given coords(left,right,y), with the given margins.
@@ -165,7 +166,7 @@ private:
   TBOX bounding_box_;
 };
 
-ELISTIZEH(ColPartitionSet)
+ELISTIZEH(ColPartitionSet);
 
 } // namespace tesseract.
 

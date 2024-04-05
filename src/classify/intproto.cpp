@@ -21,9 +21,11 @@
 #define _USE_MATH_DEFINES // for M_PI
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
+
+#include <tesseract/debugheap.h>
 
 #include "intproto.h"
 
@@ -33,7 +35,7 @@
 #include "picofeat.h"
 #include "points.h"
 #include "shapetable.h"
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
 
@@ -124,29 +126,31 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 
 void GetCPPadsForLevel(int Level, float *EndPad, float *SidePad, float *AnglePad);
 
-ScrollView::Color GetMatchColorFor(float Evidence);
+Diagnostics::Color GetMatchColorFor(float Evidence);
 
 void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill);
 
 void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *Proto,
                      TABLE_FILLER *Filler);
 
-#ifndef GRAPHICS_DISABLED
-void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
-                      ScrollView::Color color);
+#if !GRAPHICS_DISABLED
+void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
+                      Diagnostics::Color color);
 
-void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
+void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, Diagnostics::Color color);
 #endif // !GRAPHICS_DISABLED
 
 /*-----------------------------------------------------------------------------
         Global Data Definitions and Declarations
 -----------------------------------------------------------------------------*/
 
-#ifndef GRAPHICS_DISABLED
+FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
+
+#if !GRAPHICS_DISABLED
 /* global display lists used to display proto and feature match information*/
-static ScrollView *IntMatchWindow = nullptr;
-static ScrollView *FeatureDisplayWindow = nullptr;
-static ScrollView *ProtoDisplayWindow = nullptr;
+static ScrollViewReference IntMatchWindow = nullptr;
+static ScrollViewReference FeatureDisplayWindow = nullptr;
+static ScrollViewReference ProtoDisplayWindow = nullptr;
 #endif
 
 /*-----------------------------------------------------------------------------
@@ -155,18 +159,22 @@ static ScrollView *ProtoDisplayWindow = nullptr;
 
 /* control knobs */
 static INT_VAR(classify_num_cp_levels, 3, "Number of Class Pruner Levels");
-static double_VAR(classify_cp_angle_pad_loose, 45.0, "Class Pruner Angle Pad Loose");
-static double_VAR(classify_cp_angle_pad_medium, 20.0, "Class Pruner Angle Pad Medium");
-static double_VAR(classify_cp_angle_pad_tight, 10.0, "CLass Pruner Angle Pad Tight");
-static double_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
-static double_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
-static double_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
-static double_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
-static double_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
-static double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
-static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
-static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
-static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+static DOUBLE_VAR(classify_cp_angle_pad_loose, 45.0, "Class Pruner Angle Pad Loose");
+static DOUBLE_VAR(classify_cp_angle_pad_medium, 20.0, "Class Pruner Angle Pad Medium");
+static DOUBLE_VAR(classify_cp_angle_pad_tight, 10.0, "CLass Pruner Angle Pad Tight");
+static DOUBLE_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
+static DOUBLE_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
+static DOUBLE_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
+static DOUBLE_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
+static DOUBLE_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
+static DOUBLE_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
+static DOUBLE_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
+static DOUBLE_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
+static DOUBLE_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+
+FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine truncates Param to lie within the range
@@ -189,14 +197,16 @@ static int TruncateParam(float Param, int Min, int Max) {
   return result;
 }
 
+#endif
+
 /*-----------------------------------------------------------------------------
               Public Code
 -----------------------------------------------------------------------------*/
 /// Builds a feature from an FCOORD for position with all the necessary
 /// clipping and rounding.
 INT_FEATURE_STRUCT::INT_FEATURE_STRUCT(const FCOORD &pos, uint8_t theta)
-    : X(ClipToRange<int16_t>(static_cast<int16_t>(pos.x() + 0.5), 0, 255))
-    , Y(ClipToRange<int16_t>(static_cast<int16_t>(pos.y() + 0.5), 0, 255))
+    : X(ClipToRange<TDimension>(static_cast<TDimension>(pos.x() + 0.5), 0, 255)),
+      Y(ClipToRange<TDimension>(static_cast<TDimension>(pos.y() + 0.5), 0, 255))
     , Theta(theta)
     , CP_misses(0) {}
 /** Builds a feature from ints with all the necessary clipping and casting. */
@@ -346,7 +356,7 @@ void AddProtoToProtoPruner(PROTO_STRUCT *Proto, int ProtoId, INT_CLASS_STRUCT *C
   float Pad;
 
   if (ProtoId >= Class->NumProtos) {
-    tprintf("AddProtoToProtoPruner:assert failed: %d < %d", ProtoId, Class->NumProtos);
+    tprintError("AddProtoToProtoPruner:assert failed: {} < {}", ProtoId, Class->NumProtos);
   }
   assert(ProtoId < Class->NumProtos);
 
@@ -401,7 +411,7 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
   return static_cast<uint8_t>(Modulo(bucket, num_buckets));
 } /* CircBucketFor */
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 /**
  * This routine clears the global feature and proto
  * display lists.
@@ -411,8 +421,8 @@ uint8_t CircBucketFor(float param, float offset, int num_buckets) {
  * - ProtoShapes display list for protos
  */
 void UpdateMatchDisplay() {
-  if (IntMatchWindow != nullptr) {
-    IntMatchWindow->Update();
+  if (IntMatchWindow) {
+    IntMatchWindow->UpdateWindow();
   }
 } /* ClearMatchDisplay */
 #endif
@@ -441,6 +451,9 @@ void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS_STRUCT *Class) {
   }
   Class->ConfigLengths[ConfigId] = TotalLength;
 } /* ConvertConfig */
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine converts Proto to integer format and
@@ -474,7 +487,7 @@ void Classify::ConvertProto(PROTO_STRUCT *Proto, int ProtoId, INT_CLASS_STRUCT *
   Param = (Proto->Length / GetPicoFeatureLength()) + 0.5;
   Class->ProtoLengths[ProtoId] = TruncateParam(Param, 1, 255);
   if (classify_learning_debug_level >= 2) {
-    tprintf("Converted ffeat to (A=%d,B=%d,C=%d,L=%d)", P->A, P->B, P->C,
+    tprintDebug("Converted ffeat to (A={},B={},C={},L={})", P->A, P->B, P->C,
             Class->ProtoLengths[ProtoId]);
   }
 } /* ConvertProto */
@@ -500,7 +513,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
     FClass = &(FloatProtos[ClassId]);
     if (FClass->NumProtos == 0 && FClass->NumConfigs == 0 &&
         strcmp(target_unicharset.id_to_unichar(ClassId), " ") != 0) {
-      tprintf("Warning: no protos/configs for %s in CreateIntTemplates()\n",
+      tprintWarn("no protos/configs for {} in CreateIntTemplates()\n",
               target_unicharset.id_to_unichar(ClassId));
     }
     assert(UnusedClassIdIn(IntTemplates, ClassId));
@@ -530,7 +543,11 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
   return (IntTemplates);
 } /* CreateIntTemplates */
 
-#ifndef GRAPHICS_DISABLED
+#endif
+
+
+#if !GRAPHICS_DISABLED
+
 /**
  * This routine renders the specified feature into a
  * global display list.
@@ -541,7 +558,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
  * @param Evidence  best evidence for this feature (0-1)
  */
 void DisplayIntFeature(const INT_FEATURE_STRUCT *Feature, float Evidence) {
-  ScrollView::Color color = GetMatchColorFor(Evidence);
+  Diagnostics::Color color = GetMatchColorFor(Evidence);
   RenderIntFeature(IntMatchWindow, Feature, color);
   if (FeatureDisplayWindow) {
     RenderIntFeature(FeatureDisplayWindow, Feature, color);
@@ -559,13 +576,15 @@ void DisplayIntFeature(const INT_FEATURE_STRUCT *Feature, float Evidence) {
  * @param Evidence  total evidence for proto (0-1)
  */
 void DisplayIntProto(INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, float Evidence) {
-  ScrollView::Color color = GetMatchColorFor(Evidence);
+  Diagnostics::Color color = GetMatchColorFor(Evidence);
   RenderIntProto(IntMatchWindow, Class, ProtoId, color);
   if (ProtoDisplayWindow) {
     RenderIntProto(ProtoDisplayWindow, Class, ProtoId, color);
   }
 } /* DisplayIntProto */
+
 #endif
+
 
 /// This constructor creates a new integer class data structure
 /// and returns it.  Sufficient space is allocated
@@ -618,6 +637,9 @@ INT_TEMPLATES_STRUCT::~INT_TEMPLATES_STRUCT() {
   }
 }
 
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine reads a set of integer templates from
  * File.  File must already be open and must be in the
@@ -648,18 +670,18 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   // Read Templates in parts for 64 bit compatibility.
   uint32_t unicharset_size;
   if (fp->FReadEndian(&unicharset_size, sizeof(unicharset_size), 1) != 1) {
-    tprintf("Bad read of inttemp!\n");
+    tprintError("Bad read of inttemp!\n");
   }
   int32_t version_id = 0;
   if (fp->FReadEndian(&version_id, sizeof(version_id), 1) != 1 ||
       fp->FReadEndian(&Templates->NumClassPruners, sizeof(Templates->NumClassPruners), 1) != 1) {
-    tprintf("Bad read of inttemp!\n");
+    tprintError("Bad read of inttemp!\n");
   }
   if (version_id < 0) {
     // This file has a version id!
     version_id = -version_id;
     if (fp->FReadEndian(&Templates->NumClasses, sizeof(Templates->NumClasses), 1) != 1) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
   } else {
     Templates->NumClasses = version_id;
@@ -673,11 +695,11 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   if (version_id < 2) {
     std::vector<int16_t> IndexFor(MAX_NUM_CLASSES);
     if (fp->FReadEndian(&IndexFor[0], sizeof(IndexFor[0]), unicharset_size) != unicharset_size) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
     if (fp->FReadEndian(&ClassIdFor[0], sizeof(ClassIdFor[0]), Templates->NumClasses) !=
         Templates->NumClasses) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
   }
 
@@ -686,7 +708,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   for (unsigned i = 0; i < Templates->NumClassPruners; i++) {
     Pruner = new CLASS_PRUNER_STRUCT;
     if (fp->FReadEndian(Pruner, sizeof(Pruner->p[0][0][0][0]), kNumBuckets) != kNumBuckets) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
     if (version_id < 2) {
       TempClassPruner[i] = Pruner;
@@ -761,21 +783,21 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
     if (fp->FReadEndian(&Class->NumProtos, sizeof(Class->NumProtos), 1) != 1 ||
         fp->FRead(&Class->NumProtoSets, sizeof(Class->NumProtoSets), 1) != 1 ||
         fp->FRead(&Class->NumConfigs, sizeof(Class->NumConfigs), 1) != 1) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
     if (version_id == 0) {
       // Only version 0 writes 5 pointless pointers to the file.
       for (j = 0; j < 5; ++j) {
         int32_t junk;
         if (fp->FRead(&junk, sizeof(junk), 1) != 1) {
-          tprintf("Bad read of inttemp!\n");
+          tprintError("Bad read of inttemp!\n");
         }
       }
     }
     unsigned num_configs = version_id < 4 ? MaxNumConfigs : Class->NumConfigs;
     ASSERT_HOST(num_configs <= MaxNumConfigs);
     if (fp->FReadEndian(Class->ConfigLengths, sizeof(uint16_t), num_configs) != num_configs) {
-      tprintf("Bad read of inttemp!\n");
+      tprintError("Bad read of inttemp!\n");
     }
     if (version_id < 2) {
       ClassForClassId(Templates, ClassIdFor[i]) = Class;
@@ -789,7 +811,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
       Class->ProtoLengths.resize(MaxNumIntProtosIn(Class));
       if (fp->FRead(&Class->ProtoLengths[0], sizeof(uint8_t), MaxNumIntProtosIn(Class)) !=
           MaxNumIntProtosIn(Class)) {
-        tprintf("Bad read of inttemp!\n");
+        tprintError("Bad read of inttemp!\n");
       }
     }
 
@@ -799,18 +821,18 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
       unsigned num_buckets = NUM_PP_PARAMS * NUM_PP_BUCKETS * WERDS_PER_PP_VECTOR;
       if (fp->FReadEndian(&ProtoSet->ProtoPruner, sizeof(ProtoSet->ProtoPruner[0][0][0]),
                           num_buckets) != num_buckets) {
-        tprintf("Bad read of inttemp!\n");
+        tprintError("Bad read of inttemp!\n");
       }
       for (x = 0; x < PROTOS_PER_PROTO_SET; x++) {
         if (fp->FRead(&ProtoSet->Protos[x].A, sizeof(ProtoSet->Protos[x].A), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].B, sizeof(ProtoSet->Protos[x].B), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].C, sizeof(ProtoSet->Protos[x].C), 1) != 1 ||
             fp->FRead(&ProtoSet->Protos[x].Angle, sizeof(ProtoSet->Protos[x].Angle), 1) != 1) {
-          tprintf("Bad read of inttemp!\n");
+          tprintError("Bad read of inttemp!\n");
         }
         if (fp->FReadEndian(&ProtoSet->Protos[x].Configs, sizeof(ProtoSet->Protos[x].Configs[0]),
                             WerdsPerConfigVec) != WerdsPerConfigVec) {
-          tprintf("Bad read of inttemp!\n");
+          tprintError("Bad read of inttemp!\n");
         }
       }
       Class->ProtoSets[j] = ProtoSet;
@@ -837,7 +859,7 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
         }
       } else {
         if (ClassForClassId(Templates, i) != nullptr) {
-          fprintf(stderr, "Class id %u exceeds NumClassesIn (Templates) %u\n", i,
+          tprintError("Class id {} exceeds NumClassesIn (Templates) {}\n", i,
                   Templates->NumClasses);
           exit(1);
         }
@@ -856,7 +878,13 @@ INT_TEMPLATES_STRUCT *Classify::ReadIntTemplates(TFile *fp) {
   return (Templates);
 } /* ReadIntTemplates */
 
-#ifndef GRAPHICS_DISABLED
+#endif
+
+
+#if !GRAPHICS_DISABLED
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine sends the shapes in the global display
  * lists to the match debugger window.
@@ -884,12 +912,15 @@ void Classify::ShowMatchDisplay() {
   }
 } /* ShowMatchDisplay */
 
+#endif
+
+
 /// Clears the given window and draws the featurespace guides for the
 /// appropriate normalization method.
-void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
+void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &window) {
   window->Clear();
 
-  window->Pen(ScrollView::GREY);
+  window->Pen(Diagnostics::GREY);
   // Draw the feature space limit rectangle.
   window->Rectangle(0, 0, INT_MAX_X, INT_MAX_Y);
   if (norm_method == baseline) {
@@ -906,7 +937,11 @@ void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollView *window) {
                       INT_XCENTER + INT_XRADIUS, INT_YCENTER + INT_YRADIUS);
   }
 }
-#endif
+
+#endif    // GRAPHICS_DISABLED
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * This routine writes Templates to File.  The format
@@ -923,9 +958,8 @@ void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES_STRUCT *Templates,
   int version_id = -5; // When negated by the reader -1 becomes +1 etc.
 
   if (Templates->NumClasses != unicharset_size) {
-    tprintf(
-        "Warning: executing WriteIntTemplates() with %d classes in"
-        " Templates, while target_unicharset size is %" PRIu32 "\n",
+    tprintWarn("Executing WriteIntTemplates() with {} classes in"
+        " Templates, while target_unicharset size is {}\n",
         Templates->NumClasses, unicharset_size);
   }
 
@@ -973,6 +1007,9 @@ void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES_STRUCT *Templates,
   this->fontinfo_table_.write(File, std::bind(write_spacing_info, _1, _2));
   this->fontset_table_.write(File, std::bind(write_set, _1, _2));
 } /* WriteIntTemplates */
+
+#endif
+
 
 /*-----------------------------------------------------------------------------
               Private Code
@@ -1100,7 +1137,7 @@ void FillPPCircularBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR]
     LastBucket -= NUM_PP_BUCKETS;
   }
   if (debug) {
-    tprintf("Circular fill from %d to %d", FirstBucket, LastBucket);
+    tprintDebug("Circular fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; true; CircularIncrement(i, NUM_PP_BUCKETS)) {
     SET_BIT(ParamTable[i], Bit);
@@ -1142,7 +1179,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
   }
 
   if (debug) {
-    tprintf("Linear fill from %d to %d", FirstBucket, LastBucket);
+    tprintDebug("Linear fill from {} to {}", FirstBucket, LastBucket);
   }
   for (i = FirstBucket; i <= LastBucket; i++) {
     SET_BIT(ParamTable[i], Bit);
@@ -1151,7 +1188,11 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 } /* FillPPLinearBits */
 
 /*---------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
+
+#if !DISABLED_LEGACY_ENGINE
+
 /**
  * This routine prompts the user with Prompt and waits
  * for the user to enter something in the debug window.
@@ -1164,7 +1205,10 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
  */
 CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *pretrained_on,
                                    int *shape_id) {
-  tprintf("%s\n", Prompt);
+  if (!IntMatchWindow->HasInteractiveFeature())
+    return 0;
+
+  tprintDebug("{}\n", Prompt);
   SVEventType ev_type;
   int unichar_id = INVALID_UNICHAR_ID;
   // Wait until a click or popup event.
@@ -1180,12 +1224,12 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           if (*shape_id >= 0 && static_cast<unsigned>(*shape_id) < shape_table_->NumShapes()) {
             int font_id;
             shape_table_->GetFirstUnicharAndFont(*shape_id, &unichar_id, &font_id);
-            tprintf("Shape %d, first unichar=%d, font=%d\n", *shape_id, unichar_id, font_id);
+            tprintDebug("Shape {}, first unichar={}, font={}\n", *shape_id, unichar_id, font_id);
             return unichar_id;
           }
-          tprintf("Shape index '%s' not found in shape table\n", ev->parameter);
+          tprintDebug("Shape index '{}' not found in shape table\n", ev->parameter);
         } else {
-          tprintf("No shape table loaded!\n");
+          tprintWarn("No shape table loaded!\n");
         }
       } else {
         if (unicharset.contains_unichar(ev->parameter)) {
@@ -1207,11 +1251,11 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           }
           for (unsigned s = 0; s < shape_table_->NumShapes(); ++s) {
             if (shape_table_->GetShape(s).ContainsUnichar(unichar_id)) {
-              tprintf("%s\n", shape_table_->DebugStr(s).c_str());
+              tprintDebug("{}\n", shape_table_->DebugStr(s).c_str());
             }
           }
         } else {
-          tprintf("Char class '%s' not found in unicharset", ev->parameter);
+          tprintError("Char class '{}' not found in unicharset.", ev->parameter);
         }
       }
     }
@@ -1220,6 +1264,9 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
 } /* GetClassToDebug */
 
 #endif
+
+#endif
+
 
 /**
  * This routine copies the appropriate global pad variables
@@ -1269,18 +1316,18 @@ void GetCPPadsForLevel(int Level, float *EndPad, float *SidePad, float *AnglePad
  * @return Color which corresponds to specified Evidence value.
  * @note Globals: none
  */
-ScrollView::Color GetMatchColorFor(float Evidence) {
+Diagnostics::Color GetMatchColorFor(float Evidence) {
   assert(Evidence >= 0.0);
   assert(Evidence <= 1.0);
 
   if (Evidence >= 0.90) {
-    return ScrollView::WHITE;
+    return Diagnostics::WHITE;
   } else if (Evidence >= 0.75) {
-    return ScrollView::GREEN;
+    return Diagnostics::GREEN;
   } else if (Evidence >= 0.50) {
-    return ScrollView::RED;
+    return Diagnostics::RED;
   } else {
-    return ScrollView::BLUE;
+    return Diagnostics::BLUE;
   }
 } /* GetMatchColorFor */
 
@@ -1454,10 +1501,8 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 
       /* translate into bucket positions and deltas */
       Filler->X = Bucket8For(Start.x, XS, NB);
-      Filler->StartDelta = static_cast<int16_t>(
-          ClipToRange<int>(-IntCastRounded((Sin / Cos) * 256), INT16_MIN, INT16_MAX));
-      Filler->EndDelta = static_cast<int16_t>(
-          ClipToRange<int>(IntCastRounded((Cos / Sin) * 256), INT16_MIN, INT16_MAX));
+      Filler->StartDelta = static_cast<int16_t>(ClipToRange<int>(-IntCastRounded((Sin / Cos) * 256), INT16_MIN, INT16_MAX));
+      Filler->EndDelta = static_cast<int16_t>(ClipToRange<int>(IntCastRounded((Cos / Sin) * 256), INT16_MIN, INT16_MAX));
 
       XAdjust = BucketEnd(Filler->X, XS, NB) - Start.x;
       YAdjust = XAdjust * Sin / Cos;
@@ -1488,7 +1533,9 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 } /* InitTableFiller */
 
 /*---------------------------------------------------------------------------*/
-#ifndef GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
+
 /**
  * This routine renders the specified feature into ShapeList.
  * @param window to add feature rendering to
@@ -1497,8 +1544,8 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
  * @return New shape list with rendering of Feature added.
  * @note Globals: none
  */
-void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
-                      ScrollView::Color color) {
+void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
+                      Diagnostics::Color color) {
   float X, Y, Dx, Dy, Length;
 
   window->Pen(color);
@@ -1531,8 +1578,8 @@ void RenderIntFeature(ScrollView *window, const INT_FEATURE_STRUCT *Feature,
  *
  * @return New shape list with a rendering of one proto added.
  */
-void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
-                    ScrollView::Color color) {
+void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
+                    Diagnostics::Color color) {
   INT_PROTO_STRUCT *Proto;
   int ProtoSetIndex;
   int ProtoWordIndex;
@@ -1577,23 +1624,28 @@ void RenderIntProto(ScrollView *window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoI
   window->SetCursor(X - Dx, Y - Dy);
   window->DrawTo(X + Dx, Y + Dy);
 } /* RenderIntProto */
+
 #endif
 
-#ifndef GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
+
 /**
  * Initializes the int matcher window if it is not already
  * initialized.
  */
 void InitIntMatchWindowIfReqd() {
-  if (IntMatchWindow == nullptr) {
-    IntMatchWindow = CreateFeatureSpaceWindow("IntMatchWindow", 50, 200);
-    auto *popup_menu = new SVMenuNode();
+  if (!IntMatchWindow) {
+    IntMatchWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "IntMatchWindow", 50, 200);
+    if (IntMatchWindow->HasInteractiveFeature()) {
+      auto *popup_menu = new SVMenuNode();
 
-    popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
-    popup_menu->AddChild("Debug Static classes", IDA_STATIC, "x", "Class to debug");
-    popup_menu->AddChild("Debug Both", IDA_BOTH, "x", "Class to debug");
-    popup_menu->AddChild("Debug Shape Index", IDA_SHAPE_INDEX, "0", "Index to debug");
-    popup_menu->BuildMenu(IntMatchWindow, false);
+      popup_menu->AddChild("Debug Adapted classes", IDA_ADAPTIVE, "x", "Class to debug");
+      popup_menu->AddChild("Debug Static classes", IDA_STATIC, "x", "Class to debug");
+      popup_menu->AddChild("Debug Both", IDA_BOTH, "x", "Class to debug");
+      popup_menu->AddChild("Debug Shape Index", IDA_SHAPE_INDEX, "0", "Index to debug");
+      popup_menu->BuildMenu(IntMatchWindow, false);
+    }
   }
 }
 
@@ -1602,8 +1654,8 @@ void InitIntMatchWindowIfReqd() {
  * initialized.
  */
 void InitProtoDisplayWindowIfReqd() {
-  if (ProtoDisplayWindow == nullptr) {
-    ProtoDisplayWindow = CreateFeatureSpaceWindow("ProtoDisplayWindow", 550, 200);
+  if (!ProtoDisplayWindow) {
+    ProtoDisplayWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "ProtoDisplayWindow", 550, 200);
   }
 }
 
@@ -1612,16 +1664,17 @@ void InitProtoDisplayWindowIfReqd() {
  * initialized.
  */
 void InitFeatureDisplayWindowIfReqd() {
-  if (FeatureDisplayWindow == nullptr) {
-    FeatureDisplayWindow = CreateFeatureSpaceWindow("FeatureDisplayWindow", 50, 700);
+  if (!FeatureDisplayWindow) {
+    FeatureDisplayWindow = CreateFeatureSpaceWindow(TESSERACT_NULLPTR, "FeatureDisplayWindow", 50, 700);
   }
 }
 
 /// Creates a window of the appropriate size for displaying elements
 /// in feature space.
-ScrollView *CreateFeatureSpaceWindow(const char *name, int xpos, int ypos) {
-  return new ScrollView(name, xpos, ypos, 520, 520, 260, 260, true);
+ScrollViewReference CreateFeatureSpaceWindow(Tesseract* tesseract_, const char *name, int xpos, int ypos) {
+  return ScrollViewManager::MakeScrollView(tesseract_, name, xpos, ypos, 520, 520, 260, 260, true);
 }
+
 #endif // !GRAPHICS_DISABLED
 
 } // namespace tesseract

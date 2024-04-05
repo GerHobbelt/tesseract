@@ -19,11 +19,11 @@
 #ifndef TESSERACT_DICT_DICT_H_
 #define TESSERACT_DICT_DICT_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
 #endif
 #include "dawg.h"
@@ -32,9 +32,9 @@
 #include "stopper.h"
 #include "trie.h"
 #include "unicharset.h"
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "params_training_featdef.h"
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 namespace tesseract {
 
@@ -107,7 +107,7 @@ public:
   UNICHARSET &getUnicharset() {
     return getCCUtil()->unicharset;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   const UnicharAmbigs &getUnicharAmbigs() const {
     return getCCUtil()->unichar_ambigs;
   }
@@ -231,10 +231,11 @@ public:
                            int word_ending, CHAR_FRAGMENT_INFO *char_frag_info);
 
   /* stopper.cpp *************************************************************/
-#if !defined(DISABLED_LEGACY_ENGINE)
+#if !DISABLED_LEGACY_ENGINE
   bool NoDangerousAmbig(WERD_CHOICE *BestChoice, DANGERR *fixpt, bool fix_replaceable,
                         MATRIX *ratings);
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
+
   // Replaces the corresponding wrong ngram in werd_choice with the correct
   // one. The whole correct n-gram is inserted into the ratings matrix and
   // the werd_choice: no more fragments!. Rating and certainty of new entries
@@ -254,16 +255,16 @@ public:
   /// word (i.e. false will be returned in that case). The algorithm computes
   /// the mean and std deviation of the certainties in the word with the worst
   /// certainty thrown out.
-  int UniformCertainties(const WERD_CHOICE &word);
+  bool UniformCertainties(const WERD_CHOICE &word);
   /// Returns true if the given best_choice is good enough to stop.
   bool AcceptableChoice(const WERD_CHOICE &best_choice, XHeightConsistencyEnum xheight_consistency);
   /// Returns false if the best choice for the current word is questionable
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
-  bool AcceptableResult(WERD_RES *word) const;
-#if !defined(DISABLED_LEGACY_ENGINE)
+  bool AcceptableResult(const WERD_RES &word) const;
+#if !DISABLED_LEGACY_ENGINE
   void EndDangerousAmbigs();
-#endif // !defined(DISABLED_LEGACY_ENGINE)
+#endif // !DISABLED_LEGACY_ENGINE
   /// Prints the current choices for this word to stdout.
   void DebugWordChoices();
   /// Sets up stopper variables in preparation for the first pass.
@@ -282,6 +283,8 @@ public:
   /// Initialize Dict class - load dawgs from [lang].traineddata and
   /// user-specified wordlist and parttern list.
   static DawgCache *GlobalDawgCache();
+  /// Destroy the dawgs cache, if any.
+  static void CleanGlobalDawgCache();
   // Sets up ready for a Load or LoadLSTM.
   void SetupForLoad(DawgCache *dawg_cache);
   // Loads the dawgs needed by Tesseract. Call FinishLoad() after.
@@ -454,7 +457,7 @@ public:
   // Do the two WERD_CHOICEs form a meaningful bigram?
   bool valid_bigram(const WERD_CHOICE &word1, const WERD_CHOICE &word2) const;
   /// Returns true if the word contains a valid punctuation pattern.
-  /// Note: Since the domains of punctuation symbols and symblos
+  /// Note: Since the domains of punctuation symbols and symbols
   /// used in numbers are not disjoint, a valid number might contain
   /// an invalid punctuation pattern (e.g. .99).
   bool valid_punctuation(const WERD_CHOICE &word);
@@ -481,7 +484,7 @@ private:
    * Each entry i in the table stores a set of amibiguities whose
    * wrong ngram starts with unichar id i.
    */
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   UnicharAmbigs *dang_ambigs_table_ = nullptr;
   /** Same as above, but for ambiguities with replace flag set. */
   UnicharAmbigs *replace_ambigs_table_ = nullptr;
@@ -530,6 +533,8 @@ private:
   // File for recording ambiguities discovered during dictionary search.
   FILE *output_ambig_words_file_;
 
+  // TODO: also add `FILE *` to save new words added due to `tessedit_enable_doc_dict` / `WERD_RES::IsAmbiguous()` heuristic process.
+
 public:
   /// Variable members.
   /// These have to be declared and initialized after image_ptr_, which contains
@@ -544,31 +549,31 @@ public:
   BOOL_VAR_H(load_punc_dawg);
   BOOL_VAR_H(load_number_dawg);
   BOOL_VAR_H(load_bigram_dawg);
-  double_VAR_H(xheight_penalty_subscripts);
-  double_VAR_H(xheight_penalty_inconsistent);
-  double_VAR_H(segment_penalty_dict_frequent_word);
-  double_VAR_H(segment_penalty_dict_case_ok);
-  double_VAR_H(segment_penalty_dict_case_bad);
-  double_VAR_H(segment_penalty_dict_nonword);
-  double_VAR_H(segment_penalty_garbage);
+  DOUBLE_VAR_H(xheight_penalty_subscripts);
+  DOUBLE_VAR_H(xheight_penalty_inconsistent);
+  DOUBLE_VAR_H(segment_penalty_dict_frequent_word);
+  DOUBLE_VAR_H(segment_penalty_dict_case_ok);
+  DOUBLE_VAR_H(segment_penalty_dict_case_bad);
+  DOUBLE_VAR_H(segment_penalty_dict_nonword);
+  DOUBLE_VAR_H(segment_penalty_garbage);
   STRING_VAR_H(output_ambig_words_file);
   INT_VAR_H(dawg_debug_level);
   INT_VAR_H(hyphen_debug_level);
   BOOL_VAR_H(use_only_first_uft8_step);
-  double_VAR_H(certainty_scale);
-  double_VAR_H(stopper_nondict_certainty_base);
-  double_VAR_H(stopper_phase2_certainty_rejection_offset);
+  DOUBLE_VAR_H(certainty_scale);
+  DOUBLE_VAR_H(stopper_nondict_certainty_base);
+  DOUBLE_VAR_H(stopper_phase2_certainty_rejection_offset);
   INT_VAR_H(stopper_smallword_size);
-  double_VAR_H(stopper_certainty_per_char);
-  double_VAR_H(stopper_allowable_character_badness);
+  DOUBLE_VAR_H(stopper_certainty_per_char);
+  DOUBLE_VAR_H(stopper_allowable_character_badness);
   INT_VAR_H(stopper_debug_level);
   BOOL_VAR_H(stopper_no_acceptable_choices);
   INT_VAR_H(tessedit_truncate_wordchoice_log);
   STRING_VAR_H(word_to_debug);
   BOOL_VAR_H(segment_nonalphabetic_script);
   BOOL_VAR_H(save_doc_words);
-  double_VAR_H(doc_dict_pending_threshold);
-  double_VAR_H(doc_dict_certainty_threshold);
+  DOUBLE_VAR_H(doc_dict_pending_threshold);
+  DOUBLE_VAR_H(doc_dict_certainty_threshold);
   INT_VAR_H(max_permuter_attempts);
 };
 

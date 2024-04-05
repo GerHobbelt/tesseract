@@ -26,7 +26,7 @@
 #include "tessvars.h"
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -34,13 +34,12 @@ namespace tesseract {
 bool Tesseract::word_adaptable( // should we adapt?
     WERD_RES *word, uint16_t mode) {
   if (tessedit_adaption_debug) {
-    tprintf("Running word_adaptable() for %s rating %.4f certainty %.4f\n",
-            word->best_choice->unichar_string().c_str(), word->best_choice->rating(),
-            word->best_choice->certainty());
+    tprintDebug("Running word_adaptable() for {}, rating {}, certainty {}, mode {}\n",
+            word->best_choice->unichar_string(), word->best_choice->rating(),
+            word->best_choice->certainty(), mode);
   }
 
   bool status = false;
-  std::bitset<16> flags(mode);
 
   enum MODES {
     ADAPTABLE_WERD,
@@ -48,15 +47,20 @@ bool Tesseract::word_adaptable( // should we adapt?
     CHECK_DAWGS,
     CHECK_SPACES,
     CHECK_ONE_ELL_CONFLICT,
-    CHECK_AMBIG_WERD
+    CHECK_AMBIG_WERD,
+
+    MODES_COUNT
   };
+
+  mode &= ((1 << MODES_COUNT) - 1);  // mask the bits to only pass the ones that are currently known
+  std::bitset<MODES_COUNT> flags(mode);
 
   /*
 0: NO adaption
 */
   if (mode == 0) {
     if (tessedit_adaption_debug) {
-      tprintf("adaption disabled\n");
+      tprintDebug("adaption disabled\n");
     }
     return false;
   }
@@ -64,14 +68,14 @@ bool Tesseract::word_adaptable( // should we adapt?
   if (flags[ADAPTABLE_WERD]) {
     status |= word->tess_would_adapt; // result of Classify::AdaptableWord()
     if (tessedit_adaption_debug && !status) {
-      tprintf("tess_would_adapt bit is false\n");
+      tprintDebug("tess_would_adapt bit is false\n");
     }
   }
 
   if (flags[ACCEPTABLE_WERD]) {
     status |= word->tess_accepted;
     if (tessedit_adaption_debug && !status) {
-      tprintf("tess_accepted bit is false\n");
+      tprintDebug("tess_accepted bit is false\n");
     }
   }
 
@@ -84,14 +88,14 @@ bool Tesseract::word_adaptable( // should we adapt?
       (word->best_choice->permuter() != USER_DAWG_PERM) &&
       (word->best_choice->permuter() != NUMBER_PERM)) {
     if (tessedit_adaption_debug) {
-      tprintf("word not in dawgs\n");
+      tprintDebug("word not in dawgs\n");
     }
     return false;
   }
 
   if (flags[CHECK_ONE_ELL_CONFLICT] && one_ell_conflict(word, false)) {
     if (tessedit_adaption_debug) {
-      tprintf("word has ell conflict\n");
+      tprintDebug("word has ell conflict\n");
     }
     return false;
   }
@@ -99,20 +103,20 @@ bool Tesseract::word_adaptable( // should we adapt?
   if (flags[CHECK_SPACES] &&
       (strchr(word->best_choice->unichar_string().c_str(), ' ') != nullptr)) {
     if (tessedit_adaption_debug) {
-      tprintf("word contains spaces\n");
+      tprintDebug("word contains spaces\n");
     }
     return false;
   }
 
   if (flags[CHECK_AMBIG_WERD] && word->best_choice->dangerous_ambig_found()) {
     if (tessedit_adaption_debug) {
-      tprintf("word is ambiguous\n");
+      tprintDebug("word is ambiguous\n");
     }
     return false;
   }
 
   if (tessedit_adaption_debug) {
-    tprintf("returning status %d\n", status);
+    tprintDebug("returning status {}\n", status);
   }
   return status;
 }

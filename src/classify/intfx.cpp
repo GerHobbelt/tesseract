@@ -31,7 +31,7 @@
 
 #include "helpers.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <cmath> // for M_PI
 #include <mutex> // for std::mutex
@@ -70,6 +70,9 @@ void InitIntegerFX() {
 FCOORD FeatureDirection(uint8_t theta) {
   return FCOORD(cos_table[theta], sin_table[theta]);
 }
+
+
+#if !DISABLED_LEGACY_ENGINE
 
 // Generates a TrainingSample from a TBLOB. Extracts features and sets
 // the bounding box, so classifiers that operate on the image can work.
@@ -478,5 +481,7 @@ void Classify::ExtractFeatures(const TBLOB &blob, bool nonlinear_norm,
   results->YTop = blob.bounding_box().top();
   results->Width = blob.bounding_box().width();
 }
+
+#endif
 
 } // namespace tesseract

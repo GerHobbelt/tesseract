@@ -22,6 +22,7 @@
 #include "simddetect.h" // for DotProduct
 #include "statistc.h"
 #include "tprintf.h"    // forTFloat
+#include "tesstypes.h"
 
 namespace tesseract {
 
@@ -66,49 +67,13 @@ static void FloatToDouble(const GENERIC_2D_ARRAY<float> &src, GENERIC_2D_ARRAY<d
 }
 
 static bool DeSerialize(TFile *fp, GENERIC_2D_ARRAY<TFloat> &tfloat_array) {
-#ifdef FAST_FLOAT
-  GENERIC_2D_ARRAY<double> double_array;
-  if (!double_array.DeSerialize(fp)) {
-    return false;
-  }
-  DoubleToFloat(double_array, tfloat_array);
-  return true;
-#else
-  return tfloat_array.DeSerialize(fp);
-#endif
+  return tfloat_array.DeSerialize<double>(fp);
 }
 
 static bool Serialize(TFile *fp, const GENERIC_2D_ARRAY<TFloat> &tfloat_array) {
-#ifdef FAST_FLOAT
-  GENERIC_2D_ARRAY<double> double_array;
-  FloatToDouble(tfloat_array, double_array);
-  return double_array.Serialize(fp);
-#else
-  return tfloat_array.Serialize(fp);
-#endif
+  return tfloat_array.Serialize<double>(fp);
 }
 
-// Computes matrix.vector v = Wu.
-// u is of size W.dim2() - add_bias_fwd and the output v is of size
-// W.dim1() - skip_bias_back.
-// If add_bias_fwd, u is imagined to have an extra element at the end with value
-// 1, to implement the bias, weight.
-// If skip_bias_back, we are actually performing the backwards product on a
-// transposed matrix, so we need to drop the v output corresponding to the last
-// element in dim1.
-static inline void MatrixDotVectorInternal(const GENERIC_2D_ARRAY<TFloat> &w, bool add_bias_fwd,
-                                           bool skip_bias_back, const TFloat *u, TFloat *v) {
-  int num_results = w.dim1() - skip_bias_back;
-  int extent = w.dim2() - add_bias_fwd;
-  for (int i = 0; i < num_results; ++i) {
-    const TFloat *wi = w[i];
-    TFloat total = DotProduct(wi, u, extent);
-    if (add_bias_fwd) {
-      total += wi[extent]; // The bias value.
-    }
-    v[i] = total;
-  }
-}
 
 // Copies the whole input transposed, converted to TFloat, into *this.
 void TransposedArray::Transpose(const GENERIC_2D_ARRAY<TFloat> &input) {
@@ -160,7 +125,7 @@ int WeightMatrix::RemapOutputs(const std::vector<int> &code_map) {
       means[i] += weights[i];
     }
   }
-  for (auto &mean : means) {
+  for (TFloat &mean : means) {
     mean /= old_no;
   }
   wf_.Resize(new_no, ni, 0.0);
@@ -187,7 +152,7 @@ void WeightMatrix::ConvertToInt() {
   for (int t = 0; t < wi_.dim1(); ++t) {
     TFloat *f_line = wf_[t];
     int8_t *i_line = wi_[t];
-    TFloat max_abs = 0;
+    TFloat max_abs = 0.0;
     for (int f = 0; f < dim2; ++f) {
       TFloat abs_val = fabs(f_line[f]);
       if (abs_val > max_abs) {
@@ -229,9 +194,9 @@ void WeightMatrix::InitBackward() {
 const int kInt8Flag = 1;
 // Flag on mode to indicate that this weightmatrix uses adam.
 const int kAdamFlag = 4;
-// Flag on mode to indicate that this weightmatrix uses double. Set
+// Flag on mode to indicate that this weightmatrix uses TFloat. Set
 // independently of kInt8Flag as even in int mode the scales can
-// be float or double.
+// be float or TFloat.
 const int kDoubleFlag = 128;
 
 // Writes to the given file. Returns false in case of error.
@@ -243,7 +208,7 @@ bool WeightMatrix::Serialize(bool training, TFile *fp) const {
     return false;
   }
   if (int_mode_) {
-    if (!wi_.Serialize(fp)) {
+    if (!wi_.Serialize<int8_t>(fp)) {
       return false;
     }
     uint32_t size = scales_.size();
@@ -255,7 +220,7 @@ bool WeightMatrix::Serialize(bool training, TFile *fp) const {
       // to allow faster operation. We have to remove that factor here
       // before writing to disc.
       double value = scale * INT8_MAX;
-      if (!fp->Serialize(&value)) {
+      if (!fp->Serialize<double>(&value)) {
         return false;
       }
     }
@@ -288,31 +253,20 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
     return DeSerializeOld(training, fp);
   }
   if (int_mode_) {
-    if (!wi_.DeSerialize(fp)) {
+    if (!wi_.DeSerialize<int8_t>(fp)) {
       return false;
     }
     uint32_t size;
     if (!fp->DeSerialize(&size)) {
       return false;
     }
-#ifdef FAST_FLOAT
-    scales_.reserve(size);
-    for (auto n = size; n > 0; n--) {
-      double val;
-      if (!fp->DeSerialize(&val)) {
-        return false;
-      }
-      scales_.push_back(val / INT8_MAX);
-    }
-#else
     scales_.resize(size);
-    if (!fp->DeSerialize(&scales_[0], size)) {
+    if (!fp->DeSerialize<TFloat, double>(&scales_[0], size)) {
       return false;
     }
     for (auto &scale : scales_) {
       scale /= INT8_MAX;
     }
-#endif
     if (IntSimdMatrix::intSimdMatrix) {
       int32_t rounded_num_out;
       IntSimdMatrix::intSimdMatrix->Init(wi_, shaped_w_, rounded_num_out);
@@ -340,44 +294,30 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
 // As DeSerialize, but reads an old (float) format WeightMatrix for
 // backward compatibility.
 bool WeightMatrix::DeSerializeOld(bool training, TFile *fp) {
-#ifdef FAST_FLOAT
-  // Not implemented.
-  ASSERT_HOST(!"not implemented");
-  return false;
-#else
   if (int_mode_) {
-    if (!wi_.DeSerialize(fp)) {
+    if (!wi_.DeSerialize<int8_t>(fp)) {
       return false;
     }
-    std::vector<float> old_scales;
-    if (!fp->DeSerialize(old_scales)) {
+    if (!fp->DeSerialize<TFloat, float>(scales_)) {
       return false;
-    }
-    scales_.reserve(old_scales.size());
-    for (float old_scale : old_scales) {
-      scales_.push_back(old_scale);
     }
   } else {
-    GENERIC_2D_ARRAY<float> float_array;
-    if (!float_array.DeSerialize(fp)) {
+    if (!wf_.DeSerialize<float>(fp)) {
       return false;
     }
-    FloatToDouble(float_array, wf_);
   }
   if (training) {
     InitBackward();
-    GENERIC_2D_ARRAY<float> float_array;
-    if (!float_array.DeSerialize(fp)) {
+    if (!updates_.DeSerialize<float>(fp)) {
       return false;
     }
-    FloatToDouble(float_array, updates_);
     // Errs was only used in int training, which is now dead.
-    if (!float_array.DeSerialize(fp)) {
+	GENERIC_2D_ARRAY<float> float_array;
+	if (!float_array.DeSerialize<float>(fp)) {
       return false;
     }
   }
   return true;
-#endif
 }
 
 // Computes matrix.vector v = Wu.
@@ -387,7 +327,14 @@ bool WeightMatrix::DeSerializeOld(bool training, TFile *fp) {
 // Asserts that the call matches what we have.
 void WeightMatrix::MatrixDotVector(const TFloat *u, TFloat *v) const {
   assert(!int_mode_);
-  MatrixDotVectorInternal(wf_, true, false, u, v);
+  int num_results = wf_.dim1();
+  int extent = wf_.dim2() - 1;
+  for (int i = 0; i < num_results; ++i) {
+    const TFloat *wi = wf_[i];
+    TFloat total = DotProduct(wi, u, extent);
+    total += wi[extent]; // The bias value.
+    v[i] = total;
+  }
 }
 
 void WeightMatrix::MatrixDotVector(const int8_t *u, TFloat *v) const {
@@ -418,7 +365,16 @@ void WeightMatrix::MultiplyAccumulate(const TFloat *v, TFloat *inout) {
 // last value of 1, as with MatrixDotVector.
 void WeightMatrix::VectorDotMatrix(const TFloat *u, TFloat *v) const {
   assert(!int_mode_);
-  MatrixDotVectorInternal(wf_t_, false, true, u, v);
+  // We are actually performing the backwards product on a
+  // transposed matrix, so we need to drop the v output corresponding to the
+  // bias (last element in dim1).
+  int num_results = wf_t_.dim1() - 1;
+  int extent = wf_t_.dim2();
+  for (int i = 0; i < num_results; ++i) {
+    const TFloat *wi = wf_t_[i];
+    TFloat total = DotProduct(wi, u, extent);
+    v[i] = total;
+  }
 }
 
 // Fills dw_[i][j] with the dot product u[i][] . v[j][], using elements from
@@ -436,6 +392,8 @@ void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const Transposed
   int num_samples = u.dim2();
   // v is missing the last element in dim1.
   assert(v.dim1() == num_inputs);
+// 22508 ms
+//#undef _OPENMP
 #ifdef _OPENMP
 #  pragma omp parallel for num_threads(4) if (in_parallel)
 #endif
@@ -446,7 +404,7 @@ void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const Transposed
       dwi[j] = DotProduct(ui, v[j], num_samples);
     }
     // The last element of v is missing, presumed 1.0f.
-    TFloat total = 0;
+    TFloat total = 0.0;
     for (int k = 0; k < num_samples; ++k) {
       total += ui[k];
     }
@@ -539,7 +497,7 @@ void WeightMatrix::Debug2D(const char *msg) {
       }
     }
   }
-  tprintf("%s\n", msg);
+  tprintDebug("{}\n", msg);
   histogram.print();
 }
 

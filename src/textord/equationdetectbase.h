@@ -22,7 +22,7 @@
 
 #include "image.h"
 
-class BLOBNBOX_LIST;
+struct BLOBNBOX_LIST;
 class TO_BLOCK;
 struct Pix;
 

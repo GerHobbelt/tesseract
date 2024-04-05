@@ -17,7 +17,7 @@
 #ifndef TESSERACT_TESSTYPES_H
 #define TESSERACT_TESSTYPES_H
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // FAST_FLOAT
 #endif
 
@@ -27,9 +27,15 @@ namespace tesseract {
 
 // Image dimensions (width and height, coordinates).
 #if defined(LARGE_IMAGES)
-using TDimension = int32_t;
+typedef int32_t TDimension;
+
+#define TDIMENSION_MAX   (1 << 24)    // cutline() and other code has multiply-by 256 operations, so we keep this safe / conservative by keeping 8 bits headspace.
+#define TDIMENSION_MIN   (-TDIMENSION_MAX)
 #else
-using TDimension = int16_t;
+typedef int16_t TDimension;
+
+#define TDIMENSION_MAX   INT16_MAX
+#define TDIMENSION_MIN   INT16_MIN
 #endif
 
 // Floating point data type used for LSTM calculations.

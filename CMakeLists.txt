@@ -27,6 +27,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_SKIP_BUILD_RPATH ON)
 
 # Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -38,6 +40,8 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.15.0")
     message(STATUS "Setting policy CMP0091 to NEW")
   endif()
 endif()
+
+cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables
 
 # ##############################################################################
 #
@@ -79,31 +83,31 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 message(STATUS "Configuring tesseract version ${PACKAGE_VERSION}...")
 
 if(WIN32)
-  option(SW_BUILD "Build with sw" ON)
+  option(SW_BUILD "Build with sw" OFF)
 else()
   option(SW_BUILD "Build with sw" OFF)
 endif()
 option(OPENMP_BUILD "Build with openmp support" OFF) # see issue #1662
-option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
+option(GRAPHICS_DISABLED "Disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
-option(ENABLE_OPENCL "Enable unsupported experimental OpenCL support" OFF)
 option(ENABLE_NATIVE
        "Enable optimization for host CPU (could break HW compatibility)" OFF)
 # see
 # https://stackoverflow.com/questions/52653025/why-is-march-native-used-so-rarely
 option(BUILD_TRAINING_TOOLS "Build training tools" ON)
-option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_TESTS "Build tests" ON)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
 option(DISABLE_TIFF "Disable build with libtiff (if available)" OFF)
 option(DISABLE_ARCHIVE "Disable build with libarchive (if available)" OFF)
 option(DISABLE_CURL "Disable build with libcurl (if available)" OFF)
 option(INSTALL_CONFIGS "Install tesseract configs" ON)
+option(DISABLE_OPTIMIZATION "Disable platform-specific optimizations" OFF)
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.15.0")
   if(WIN32 AND MSVC)
-    option(WIN32_MT_BUILD "Build with MT flag for MSVC" OFF)
+    option(WIN32_MT_BUILD "Build with MT flag for MSVC" ON)
   endif()
 endif()
 
@@ -154,7 +158,7 @@ endif()
 set(MARCH_NATIVE_OPT OFF)
 if(ENABLE_NATIVE)
   check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-  if(COMPILER_SUPPORTS_MARCH_NATIVE)
+  if(NOT DISABLE_OPTIMIZATION AND COMPILER_SUPPORTS_MARCH_NATIVE)
     set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -march=native")
     if(NOT CLANG AND MSVC)
       # clang-cl does not know this argument
@@ -166,7 +170,7 @@ endif(ENABLE_NATIVE)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=<${CMAKE_SYSTEM_PROCESSOR}>")
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
+if(NOT DISABLE_OPTIMIZATION AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86|x86_64|AMD64|amd64|i386|i686")
 
   set(HAVE_NEON FALSE)
   if(MSVC)
@@ -460,18 +464,6 @@ else()
   endif(DISABLE_CURL)
 endif()
 
-if(ENABLE_OPENCL)
-  find_package(OpenCL)
-  if(OpenCL_FOUND)
-    include_directories(${OpenCL_INCLUDE_DIRS})
-    message(STATUS "OpenCL_INCLUDE_DIRS: ${OpenCL_INCLUDE_DIRS}")
-    message(STATUS "OpenCL_LIBRARY: ${OpenCL_LIBRARY}")
-    set(USE_OPENCL ON)
-  else()
-    set(USE_OPENCL OFF)
-  endif(OpenCL_FOUND)
-endif(ENABLE_OPENCL)
-
 # ##############################################################################
 #
 # configure
@@ -484,26 +476,24 @@ else()
   set(DOTPRODUCT_FLAGS "${DOTPRODUCT_FLAGS} -O3 -ffast-math")
 endif()
 
-if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-  set(CMAKE_INSTALL_LIBDIR lib)
-endif(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+include (GNUInstallDirs)
 
 set(AUTOCONFIG_SRC ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h.in)
 set(AUTOCONFIG ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h)
-add_definitions(-DHAVE_CONFIG_H)
+add_definitions(-DHAVE_TESSERACT_CONFIG_H)
 
 if(GRAPHICS_DISABLED)
   message("ScrollView debugging disabled.")
 endif()
 set(CMAKE_REQUIRED_INCLUDES
     ${CMAKE_REQUIRED_INCLUDES} "${CMAKE_PREFIX_PATH}/include"
-    "${CMAKE_INSTALL_PREFIX}/include")
+    ${CMAKE_INSTALL_INCLUDEDIR})
 include(Configure)
 
 configure_file(${AUTOCONFIG_SRC} ${AUTOCONFIG} @ONLY)
 
-set(INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include")
-set(LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR})
+set(LIBRARY_DIRS ${CMAKE_INSTALL_LIBDIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/tesseract/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/include/tesseract/version.h @ONLY)
@@ -558,18 +548,13 @@ message(STATUS "Build with libcurl support [HAVE_LIBCURL]: ${HAVE_LIBCURL}")
 message(STATUS "Enable float for LSTM [FAST_FLOAT]: ${FAST_FLOAT}")
 message(STATUS "Enable optimization for host CPU (could break HW compatibility)"
                " [ENABLE_NATIVE]: ${ENABLE_NATIVE}")
-message(STATUS "Disable disable graphics (ScrollView) [GRAPHICS_DISABLED]: "
+message(STATUS "Disable graphics (ScrollView) [GRAPHICS_DISABLED]: "
                "${GRAPHICS_DISABLED}")
 message(STATUS "Disable the legacy OCR engine [DISABLED_LEGACY_ENGINE]: "
                "${DISABLED_LEGACY_ENGINE}")
 message(STATUS "Build training tools [BUILD_TRAINING_TOOLS]: "
                "${BUILD_TRAINING_TOOLS}")
 message(STATUS "Build tests [BUILD_TESTS]: ${BUILD_TESTS}")
-if(ENABLE_OPENCL)
-  message(
-    STATUS
-      "Enable unsupported experimental OpenCL [ENABLE_OPENCL]: ${USE_OPENCL}")
-endif(ENABLE_OPENCL)
 message(STATUS "Use system ICU Library [USE_SYSTEM_ICU]: ${USE_SYSTEM_ICU}")
 message(
   STATUS "Install tesseract configs [INSTALL_CONFIGS]: ${INSTALL_CONFIGS}")
@@ -608,7 +593,6 @@ file(
   src/cutil/*.cpp
   src/dict/*.cpp
   src/lstm/*.cpp
-  src/opencl/*.cpp
   src/textord/*.cpp
   src/viewer/*.cpp
   src/wordrec/*.cpp)
@@ -749,7 +733,6 @@ file(
   src/cutil/*.h
   src/dict/*.h
   src/lstm/*.h
-  src/opencl/*.h
   src/textord/*.h
   src/viewer/*.h
   src/wordrec/*.h)
@@ -760,6 +743,7 @@ set(TESSERACT_SRC
     src/api/capi.cpp
     src/api/renderer.cpp
     src/api/altorenderer.cpp
+    src/api/pagerenderer.cpp
     src/api/hocrrenderer.cpp
     src/api/lstmboxrenderer.cpp
     src/api/pdfrenderer.cpp
@@ -784,6 +768,8 @@ set(TESSERACT_CONFIGS
     tessdata/configs/lstmbox
     tessdata/configs/lstmdebug
     tessdata/configs/makebox
+    tessdata/configs/page
+    tessdata/configs/page_poly
     tessdata/configs/pdf
     tessdata/configs/quiet
     tessdata/configs/rebox
@@ -809,6 +795,7 @@ target_include_directories(
   PRIVATE src
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/arch_sse>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccmain>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccstruct>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ccutil>
@@ -816,7 +803,6 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cutil>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/dict>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/lstm>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/opencl>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/textord>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/viewer>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/wordrec>
@@ -831,9 +817,6 @@ endif()
 target_link_libraries(libtesseract PRIVATE ${LIB_Ws2_32} ${LIB_pthread})
 if(OpenMP_CXX_FOUND)
   target_link_libraries(libtesseract PUBLIC OpenMP::OpenMP_CXX)
-endif()
-if(OpenCL_FOUND)
-  target_link_libraries(libtesseract PUBLIC OpenCL::OpenCL)
 endif()
 if(LibArchive_FOUND)
   target_link_libraries(libtesseract PUBLIC ${LibArchive_LIBRARIES})
@@ -871,7 +854,14 @@ if(SW_BUILD)
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
     NAMESPACE Tesseract::)
 else()
-  target_link_libraries(libtesseract PUBLIC ${Leptonica_LIBRARIES})
+  target_link_libraries(libtesseract PUBLIC
+        ${Leptonica_LIBRARIES}
+        ${LibArchive_LIBRARIES}
+        z
+        png
+        tiff
+        jpeg
+    )
   export(
     TARGETS libtesseract
     FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake
@@ -980,9 +970,9 @@ install(
 
 if(INSTALL_CONFIGS)
   install(FILES ${TESSERACT_CONFIGS}
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/configs)
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/tessdata/configs)
   install(FILES ${TESSERACT_TESSCONFIGS}
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/tessdata/tessconfigs)
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/tessdata/tessconfigs)
 endif()
 
 # ##############################################################################

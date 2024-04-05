@@ -14,7 +14,7 @@
 
 #include "include_gunit.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <tesseract/resultiterator.h>
 #include "coutln.h"
@@ -24,6 +24,8 @@
 #include "pageres.h"
 #include "polyblk.h"
 #include "stepblob.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -71,7 +73,7 @@ protected:
   void SetImage(const char *filename, const char *lang) {
     src_pix_.destroy();
     src_pix_ = pixRead(TestDataNameToPath(filename).c_str());
-    api_.Init(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY);
+    api_.InitOem(TessdataPath().c_str(), lang, tesseract::OEM_TESSERACT_ONLY);
     api_.SetPageSegMode(tesseract::PSM_AUTO);
     api_.SetImage(src_pix_);
   }

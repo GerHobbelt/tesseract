@@ -19,17 +19,20 @@
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "functions.h"
 #include "statistc.h"
+#include "recodebeam.h"
 #include "tprintf.h"
 
 namespace tesseract {
 
+#if 0
 // Minimum value to output for certainty.
-const float kMinCertainty = -20.0f;
+static const float kMinCertainty = -25.0f;
 // Probability corresponding to kMinCertainty.
-const float kMinProb = std::exp(kMinCertainty);
+static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
+#endif
 
 // Resizes to a specific size as a 2-d temp buffer. No batches, no y-dim.
 void NetworkIO::Resize2d(bool int_mode, int width, int num_features) {
@@ -198,6 +201,9 @@ void NetworkIO::FromPixes(const StaticShape &shape, const std::vector<Image> &pi
     if (contrast <= 0.0f) {
       contrast = 1.0f;
     }
+	if (debug_misc) {
+      tprintDebug("LSTM NetworkIO::FromPixes: pix[{}]: black:{}, white:{}, contrast:{}, depth:{}, target_width:{}, target_height:{}, width:{}, height:{}\n", b, black, white, contrast, shape.depth(), target_width, target_height, pixGetWidth(pix), pixGetHeight(pix));
+	}
     if (shape.height() == 1) {
       Copy1DGreyImage(b, pix, black, contrast, randomizer);
     } else {
@@ -381,13 +387,13 @@ void NetworkIO::Print(int num) const {
     for (int t = 0; t < Width(); ++t) {
       if (num == 0 || t < num || t + num >= Width()) {
         if (int_mode_) {
-          tprintf(" %g", static_cast<float>(i_[t][y]) / INT8_MAX);
+          tprintDebug(" {}", static_cast<float>(i_[t][y]) / INT8_MAX);
         } else {
-          tprintf(" %g", f_[t][y]);
+          tprintDebug(" {}", f_[t][y]);
         }
       }
     }
-    tprintf("\n");
+    tprintDebug("\n");
   }
 }
 
@@ -536,7 +542,7 @@ int NetworkIO::PositionOfBestMatch(const std::vector<int> &labels, int start, in
 // using one label per time-step.
 TFloat NetworkIO::ScoreOfLabels(const std::vector<int> &labels, int start) const {
   int length = labels.size();
-  TFloat score = 0;
+  TFloat score = 0.0;
   for (int i = 0; i < length; ++i) {
     score += f_(start + i, labels[i]);
   }
@@ -578,7 +584,15 @@ void NetworkIO::EnsureBestLabel(int t, int label) {
 // Helper function converts prob to certainty taking the minimum into account.
 /* static */
 float NetworkIO::ProbToCertainty(float prob) {
-  return prob > kMinProb ? std::log(prob) : kMinCertainty;
+	// Probability corresponding to kMinCertainty.
+#if 0
+	static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
+	return prob > kMinProb ? std::log(prob) : RecodeBeamSearch::kMinCertainty;
+#else
+	const float min_prob = 10 * std::numeric_limits<float>::min();
+	const float min_cert = std::logf(min_prob);
+	return prob > min_prob ? std::log(prob) : min_cert;
+#endif
 }
 
 // Returns true if there is any bad value that is suspiciously like a GT

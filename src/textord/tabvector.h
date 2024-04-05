@@ -21,20 +21,23 @@
 
 #include "bbgrid.h"
 #include "blobgrid.h"
-#include "clst.h"
-#include "elst.h"
+#include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 #include "elst2.h"
 #include "rect.h"
 
 #include <algorithm>
+
+#undef min
+#undef max
 
 class BLOBNBOX;
 class ScrollView;
 
 namespace tesseract {
 
-extern double_VAR_H(textord_tabvector_vertical_gap_fraction);
-extern double_VAR_H(textord_tabvector_vertical_box_ratio);
+extern DOUBLE_VAR_H(textord_tabvector_vertical_gap_fraction);
+extern DOUBLE_VAR_H(textord_tabvector_vertical_box_ratio);
 
 // The alignment type that a tab vector represents.
 // Keep this enum synced with kAlignmentNames in tabvector.cpp.
@@ -54,9 +57,9 @@ class TabFind;
 class TabVector;
 class TabConstraint;
 
-ELIST2IZEH(TabVector)
-CLISTIZEH(TabVector)
-ELISTIZEH(TabConstraint)
+ELIST2IZEH(TabVector);
+CLISTIZEH(TabVector);
+ELISTIZEH(TabConstraint);
 
 // TabConstraint is a totally self-contained class to maintain
 // a list of [min,max] constraints, each referring to a TabVector.
@@ -346,7 +349,7 @@ public:
   void Debug(const char *prefix);
 
   // Draw this tabvector in place in the given window.
-  void Display(ScrollView *tab_win);
+  void Display(ScrollViewReference tab_win);
 
   // Refit the line and/or re-evaluate the vector if the dirty flags are set.
   void FitAndEvaluateIfNeeded(const ICOORD &vertical, TabFind *finder);

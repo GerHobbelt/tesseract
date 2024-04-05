@@ -19,7 +19,7 @@
 #ifndef TESSERACT_TRAINING_DEGRADEIMAGE_H_
 #define TESSERACT_TRAINING_DEGRADEIMAGE_H_
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "helpers.h" // For TRand.
 #include "rect.h"
 
@@ -39,7 +39,7 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
 // Returns nullptr on error. The returned Pix must be pixDestroyed.
 Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool white_noise,
                          bool smooth_noise, bool blur, int box_reduction, TRand *randomizer,
-                         std::vector<TBOX> *boxes);
+                         std::vector<TBOX> *boxes, int my_blur, int my_noise, int my_smooth);
 // Distorts anything that has a non-null pointer with the same pseudo-random
 // perspective distortion. Width and height only need to be set if there
 // is no pix. If there is a pix, then they will be taken from there.

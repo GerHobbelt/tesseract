@@ -21,6 +21,8 @@
 #include <memory> // std::unique_ptr
 #include "include_gunit.h"
 
+#include "testdata.h"
+
 namespace tesseract {
 
 class QuickTest : public testing::Test {
@@ -38,7 +40,7 @@ protected:
 
 void LangLoader(const char *lang, const char *tessdatadir) {
   auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract for $lang.";
+  ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract for $lang.";
   api->End();
 }
 

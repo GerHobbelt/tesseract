@@ -1,0 +1,29 @@
+image: ubuntu:focal
+
+variables:
+  DEBIAN_FRONTEND: 'noninteractive'
+  APT_CACHE: '.apt-cache'
+  APT: 'apt -o dir::cache::archives="$CI_PROJECT_DIR/$APT_CACHE"'
+
+build:
+  stage: build
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  script:
+    - mkdir -p "$APT_CACHE"
+    - $APT update
+    - $APT install -y dpkg-dev
+    - mv debian/debian/* debian/ # Fix this later
+    - rmdir debian/debian # Fix this later
+    - apt-get -y build-dep .
+    - dpkg-buildpackage -b -uc
+    - cp -v ../*.deb .
+
+  artifacts:
+    paths:
+    - ./*.deb
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+    - $APT_CACHE
+

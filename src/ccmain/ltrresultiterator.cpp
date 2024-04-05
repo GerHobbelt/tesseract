@@ -22,7 +22,7 @@
 #include "pageres.h"
 #include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 namespace tesseract {
 
@@ -171,7 +171,7 @@ const char *LTRResultIterator::WordFontAttributes(bool *is_bold, bool *is_italic
     *pointsize =
         scaled_yres_ > 0 ? static_cast<int>(row_height * kPointsPerInch / scaled_yres_ + 0.5) : 0;
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
     const FontInfo *font_info = it_->word()->fontinfo;
     if (font_info) {
       // Font information available.
@@ -183,7 +183,7 @@ const char *LTRResultIterator::WordFontAttributes(bool *is_bold, bool *is_italic
       *is_serif = font_info->is_serif();
       result = font_info->name;
     }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
     *is_smallcaps = it_->word()->small_caps;
   }
@@ -260,7 +260,7 @@ bool LTRResultIterator::HasBlamerInfo() const {
          it_->word()->blamer_bundle->HasDebugInfo();
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 // Returns the pointer to ParamsTrainingBundle stored in the BlamerBundle
 // of the current word.
 const void *LTRResultIterator::GetParamsTrainingBundle() const {
@@ -268,7 +268,7 @@ const void *LTRResultIterator::GetParamsTrainingBundle() const {
              ? &(it_->word()->blamer_bundle->params_training_bundle())
              : nullptr;
 }
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 // Returns the pointer to the string with blamer information for this word.
 // Assumes that the word's blamer_bundle is not nullptr.
@@ -379,6 +379,52 @@ bool LTRResultIterator::SymbolIsDropcap() const {
   return false;
 }
 
+WordChoiceIterator::WordChoiceIterator(const LTRResultIterator& result_it) {
+  ASSERT_HOST(result_it.it_->word() != NULL);
+  word_res_ = result_it.it_->word();
+  WERD_CHOICE_LIST* choices = &word_res_->best_choices;
+  if (choices != NULL && !choices->empty()) {
+    choice_it_ = new WERD_CHOICE_IT(choices);
+    choice_it_->mark_cycle_pt();
+  } else {
+    choice_it_ = NULL;
+  }
+}
+
+WordChoiceIterator::~WordChoiceIterator() {
+  delete choice_it_;
+}
+
+// Moves to the next choice for the symbol and returns false if there
+// are none left.
+bool WordChoiceIterator::Next() {
+  if (choice_it_ == NULL)
+    return false;
+  choice_it_->forward();
+  return !choice_it_->cycled_list();
+}
+
+// Returns the null terminated UTF-8 encoded text string for the current
+// choice. Do NOT use delete [] to free after use.
+const char* WordChoiceIterator::GetUTF8Text() const {
+  if (choice_it_ == NULL)
+    return NULL;
+  return choice_it_->data()->unichar_string().c_str();
+  // UNICHAR_ID id = choice_it_->data()->unichar_id();
+  // return word_res_->uch_set->id_to_unichar_ext(id);
+}
+
+// Returns the confidence of the current choice.
+// The number should be interpreted as a percent probability. (0.0f-100.0f)
+float WordChoiceIterator::Confidence() const {
+  if (choice_it_ == NULL)
+    return 0.0f;
+  float confidence = 100 + 5 * choice_it_->data()->certainty();
+  if (confidence < 0.0f) confidence = 0.0f;
+  if (confidence > 100.0f) confidence = 100.0f;
+  return confidence;
+}
+
 ChoiceIterator::ChoiceIterator(const LTRResultIterator &result_it) {
   ASSERT_HOST(result_it.it_->word() != nullptr);
   word_res_ = result_it.it_->word();
@@ -386,7 +432,7 @@ ChoiceIterator::ChoiceIterator(const LTRResultIterator &result_it) {
   // Is there legacy engine related trained data?
   bool oemLegacy = word_res_->tesseract->AnyTessLang();
   // Is lstm_choice_mode activated?
-  bool lstm_choice_mode = word_res_->tesseract->lstm_choice_mode;
+  int32_t lstm_choice_mode = word_res_->tesseract->lstm_choice_mode;
   rating_coefficient_ = word_res_->tesseract->lstm_rating_coefficient;
   blanks_before_word_ = result_it.BlanksBeforeWord();
   BLOB_CHOICE_LIST *choices = nullptr;
@@ -403,7 +449,7 @@ ChoiceIterator::ChoiceIterator(const LTRResultIterator &result_it) {
       filterSpaces();
     }
   }
-  if ((oemLegacy || !lstm_choice_mode) && word_res_->ratings != nullptr) {
+  if ((oemLegacy || lstm_choice_mode == 0) && word_res_->ratings != nullptr) {
     choices = word_res_->GetBlobChoices(result_it.blob_index_);
   }
   if (choices != nullptr && !choices->empty()) {

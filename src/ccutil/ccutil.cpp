@@ -10,24 +10,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
+#include <tesseract/debugheap.h>
+
+#include "ccutil.h"
+#include "winutils.h"
+
 #if defined(_WIN32)
 #  include <io.h> // for _access
 #endif
 
-#include "ccutil.h"
-
 #include <cstdlib>
 #include <cstring> // for std::strrchr
+
 
 namespace tesseract {
 
 CCUtil::CCUtil()
-    : params_()
-      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", &params_)
+    : params_("tesseract")
+    , params_collective_({&params_, &GlobalParams()})
+      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
       , BOOL_MEMBER(use_ambigs_for_adaption, false,
                   "Use ambigs for deciding"
                   " whether to adapt to a character",
-                  &params_) {}
+				  params()) {}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable
@@ -43,10 +53,15 @@ CCUtil::~CCUtil() = default;
  * previous is not successful - use current directory.
  * @param basename - name of image
  */
-void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
-  imagebasename = basename; /**< name of image */
+void CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
+  if (output_image_basename == "-" /* stdout */)
+    imagebasename = "tesseract-stdio-session";
+  else
+    imagebasename = output_image_basename; /**< name of output/debug image(s) */
+  
+  datadir.clear();
 
-  char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+  const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
 
   if (!argv0.empty()) {
     /* Use tessdata prefix from the command line. */
@@ -55,15 +70,16 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
     /* Use tessdata prefix from the environment. */
     datadir = tessdata_prefix;
 #if defined(_WIN32)
-  } else if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  } 
+  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
-    char path[_MAX_PATH];
-    DWORD length = GetModuleFileName(nullptr, path, sizeof(path));
-    if (length > 0 && length < sizeof(path)) {
-      char *separator = std::strrchr(path, '\\');
+    wchar_t path[_MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, path, _MAX_PATH);
+    if (length > 0 && length < _MAX_PATH) {
+      wchar_t *separator = std::wcsrchr(path, '\\');
       if (separator != nullptr) {
         *separator = '\0';
-        std::string subdir = path;
+        std::string subdir = winutils::Utf16ToUtf8(path);
         subdir += "/tessdata";
         if (_access(subdir.c_str(), 0) == 0) {
           datadir = subdir;
@@ -74,12 +90,17 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   }
 
   // datadir may still be empty:
-  if (datadir.empty()) {
+  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
 #if defined(TESSDATA_PREFIX)
     // Use tessdata prefix which was compiled in.
     datadir = TESSDATA_PREFIX "/tessdata";
 #else
     datadir = "./";
+    std::string subdir = datadir;
+    subdir += "/tessdata";
+    if (_access(subdir.c_str(), 0) == 0) {
+      datadir = subdir;
+    }
 #endif /* TESSDATA_PREFIX */
   }
 

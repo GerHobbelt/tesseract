@@ -26,6 +26,8 @@
 
 namespace tesseract {
 
+class TESS_API Tesseract;
+
 extern INT_VAR_H(textord_debug_bugs);
 extern INT_VAR_H(textord_debug_tabfind);
 extern BOOL_VAR_H(textord_debug_printable);
@@ -75,7 +77,7 @@ struct AlignedBlobParams {
 // vertical line finding (LineFind) and tabstop finding (TabFind).
 class TESS_API AlignedBlob : public BlobGrid {
 public:
-  AlignedBlob(int gridsize, const ICOORD &bleft, const ICOORD &tright);
+  AlignedBlob(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOORD &tright);
   ~AlignedBlob() override;
 
   // Return true if the given coordinates are within the test rectangle
@@ -83,7 +85,7 @@ public:
   static bool WithinTestRegion(int detail_level, int x, int y);
 
   // Display the tab codes of the BLOBNBOXes in this grid.
-  ScrollView *DisplayTabs(const char *window_name, ScrollView *tab_win);
+  void DisplayTabs(ScrollViewReference &tab_win);
 
   // Finds a vector corresponding to a set of vertically aligned blob edges
   // running through the given box. The type of vector returned and the

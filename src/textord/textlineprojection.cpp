@@ -11,11 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "bbgrid.h"  // Base class.
 #include "blobbox.h" // BlobNeighbourDir.
 #include "blobs.h"
@@ -25,6 +25,9 @@
 #include "textlineprojection.h"
 
 #include <algorithm>
+
+#undef min
+#undef max
 
 // Padding factor to use on definitely oriented blobs
 const int kOrientedPadFactor = 8;
@@ -60,7 +63,7 @@ TextlineProjection::~TextlineProjection() {
 // blobs, a rotation to convert to image coords,
 // and a full-resolution nontext_map, marking out areas to avoid.
 // During construction, we have the following assumptions:
-// The rotation is a multiple of 90 degrees, ie no deskew yet.
+// The rotation is a multiple of 90 degrees, i.e. no deskew yet.
 // The blobs have had their left and right rules set to also limit
 // the range of projection.
 void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD &rotation,
@@ -81,23 +84,23 @@ void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD
   pix_ = final_pix;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Display the blobs in the window colored according to textline quality.
-void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollView *win) {
+void TextlineProjection::PlotGradedBlobs(BLOBNBOX_LIST *blobs, ScrollViewReference &win) {
   BLOBNBOX_IT it(blobs);
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
     const TBOX &box = blob->bounding_box();
     bool bad_box = BoxOutOfHTextline(box, nullptr, false);
     if (blob->UniquelyVertical()) {
-      win->Pen(ScrollView::YELLOW);
+      win->Pen(Diagnostics::YELLOW);
     } else {
-      win->Pen(bad_box ? ScrollView::RED : ScrollView::BLUE);
+      win->Pen(bad_box ? Diagnostics::RED : Diagnostics::BLUE);
     }
     win->Rectangle(box.left(), box.bottom(), box.right(), box.top());
   }
-  win->Update();
+  win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -121,7 +124,7 @@ void TextlineProjection::MoveNonTextlineBlobs(BLOBNBOX_LIST *blobs,
   }
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Create a window and display the projection in it.
 void TextlineProjection::DisplayProjection() const {
@@ -146,9 +149,9 @@ void TextlineProjection::DisplayProjection() const {
       col_data[x] = result;
     }
   }
-  auto *win = new ScrollView("Projection", 0, 0, width, height, width, height);
-  win->Draw(pixc, 0, 0);
-  win->Update();
+  ScrollViewReference win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
+  win->Draw(pixc, 0, win->TranslateYCoordinate(0), "TextlineProjection::DisplayProjection");
+  win->UpdateWindow();
   pixc.destroy();
 }
 
@@ -288,7 +291,7 @@ int TextlineProjection::VerticalDistance(bool debug, int x, int y1, int y2) cons
     data += wpl;
     int pixel = GET_DATA_BYTE(data, x);
     if (debug) {
-      tprintf("At (%d,%d), pix = %d, prev=%d\n", x, y + step, pixel, prev_pixel);
+      tprintDebug("At ({},{}), pix = {}, prev={}\n", x, y + step, pixel, prev_pixel);
     }
     if (pixel < prev_pixel) {
       distance += kWrongWayPenalty;
@@ -320,7 +323,7 @@ int TextlineProjection::HorizontalDistance(bool debug, int x1, int x2, int y) co
   for (int x = x1; x != x2; x += step) {
     int pixel = GET_DATA_BYTE(data, x + step);
     if (debug) {
-      tprintf("At (%d,%d), pix = %d, prev=%d\n", x + step, y, pixel, prev_pixel);
+      tprintDebug("At ({},{}), pix = {}, prev={}\n", x + step, y, pixel, prev_pixel);
     }
     if (pixel < prev_pixel) {
       distance += kWrongWayPenalty;
@@ -379,7 +382,7 @@ int TextlineProjection::EvaluateColPartition(const ColPartition &part, const DEN
   box.set_bottom(part.median_bottom());
   int hresult = EvaluateBox(box, denorm, debug);
   if (debug) {
-    tprintf("Partition hresult=%d, vresult=%d from:", hresult, vresult);
+    tprintDebug("Partition hresult={}, vresult={} from:", hresult, vresult);
     part.bounding_box().print();
     part.Print();
   }
@@ -432,7 +435,7 @@ int TextlineProjection::EvaluateBoxInternal(const TBOX &box, const DENORM *denor
   int left_clipped = std::max(left_gradient, 0);
   int right_clipped = std::max(right_gradient, 0);
   if (debug) {
-    tprintf("Gradients: top = %d, bottom = %d, left= %d, right= %d for box:", top_gradient,
+    tprintDebug("Gradients: top = {}, bottom = {}, left= {}, right= {} for box:", top_gradient,
             bottom_gradient, left_gradient, right_gradient);
     box.print();
   }
@@ -621,7 +624,9 @@ static void TruncateBoxToMissNonText(int x_middle, int y_middle, bool split_on_x
       box2.set_bottom(im_box.top());
     }
   }
-  box1 += box2;
+  if (!box2.null_box()) {
+    box1 += box2;
+  }
   *bbox = box1;
 }
 

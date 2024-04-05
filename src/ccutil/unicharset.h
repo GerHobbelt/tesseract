@@ -23,6 +23,7 @@
 #include "unicharmap.h"
 
 #include <tesseract/unichar.h>
+#include <tesseract/fmt-support.h>
 #include "helpers.h"
 #include "serialis.h"
 
@@ -57,11 +58,11 @@ public:
   static const int kMaxChunks = 5;
 
   // Setters and Getters.
-  inline void set_all(const char *unichar, int pos, int total, bool natural) {
-    set_unichar(unichar);
-    set_pos(pos);
-    set_total(total);
-    set_natural(natural);
+  inline void set_all(const char *unichar_c, int pos_i, int total_i, bool natural_b) {
+    set_unichar(unichar_c);
+    set_pos(pos_i);
+    set_total(total_i);
+    set_natural(natural_b);
   }
   inline void set_unichar(const char *uch) {
     strncpy(this->unichar, uch, sizeof(this->unichar));
@@ -200,11 +201,12 @@ public:
     U_CHAR_DIRECTION_COUNT
 #endif // U_HIDE_DEPRECATED_API
   };
-
   // Create an empty UNICHARSET
   UNICHARSET();
 
   ~UNICHARSET();
+
+  void minimal_init();
 
   // Return the UNICHAR_ID of a given unichar representation within the
   // UNICHARSET.
@@ -433,59 +435,73 @@ public:
   void set_black_and_whitelist(const char *blacklist, const char *whitelist,
                                const char *unblacklist);
 
+  // Enables or disables all punctuation unichars
+  void set_enable_punctuation(bool enable);
+
   // Set the isalpha property of the given unichar to the given value.
   void set_isalpha(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.isalpha = value;
   }
 
   // Set the islower property of the given unichar to the given value.
   void set_islower(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.islower = value;
   }
 
   // Set the isupper property of the given unichar to the given value.
   void set_isupper(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.isupper = value;
   }
 
   // Set the isdigit property of the given unichar to the given value.
   void set_isdigit(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.isdigit = value;
   }
 
   // Set the ispunctuation property of the given unichar to the given value.
   void set_ispunctuation(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.ispunctuation = value;
   }
 
   // Set the isngram property of the given unichar to the given value.
   void set_isngram(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.isngram = value;
   }
 
   // Set the script name of the given unichar to the given value.
   // Value is copied and thus can be a temporary;
   void set_script(UNICHAR_ID unichar_id, const char *value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.script_id = add_script(value);
   }
 
   // Set other_case unichar id in the properties for the given unichar id.
   void set_other_case(UNICHAR_ID unichar_id, UNICHAR_ID other_case) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.other_case = other_case;
   }
 
   // Set the direction property of the given unichar to the given value.
   void set_direction(UNICHAR_ID unichar_id, UNICHARSET::Direction value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.direction = value;
   }
 
   // Set mirror unichar id in the properties for the given unichar id.
   void set_mirror(UNICHAR_ID unichar_id, UNICHAR_ID mirror) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.mirror = mirror;
   }
 
   // Record normalized version of unichar with the given unichar_id.
   void set_normed(UNICHAR_ID unichar_id, const char *normed) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.normed = normed;
     unichars[unichar_id].properties.normed_ids.clear();
   }
@@ -598,6 +614,7 @@ public:
   }
   void set_top_bottom(UNICHAR_ID unichar_id, int min_bottom, int max_bottom,
                       int min_top, int max_top) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.min_bottom =
         ClipToRange<int>(min_bottom, 0, UINT8_MAX);
     unichars[unichar_id].properties.max_bottom =
@@ -621,6 +638,7 @@ public:
     *width_sd = unichars[unichar_id].properties.width_sd;
   }
   void set_width_stats(UNICHAR_ID unichar_id, float width, float width_sd) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.width = width;
     unichars[unichar_id].properties.width_sd = width_sd;
   }
@@ -638,6 +656,7 @@ public:
   }
   void set_bearing_stats(UNICHAR_ID unichar_id, float bearing,
                          float bearing_sd) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.bearing = bearing;
     unichars[unichar_id].properties.bearing_sd = bearing_sd;
   }
@@ -655,11 +674,13 @@ public:
   }
   void set_advance_stats(UNICHAR_ID unichar_id, float advance,
                          float advance_sd) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     unichars[unichar_id].properties.advance = advance;
     unichars[unichar_id].properties.advance_sd = advance_sd;
   }
   // Returns true if the font metrics properties are empty.
   bool PropertiesIncomplete(UNICHAR_ID unichar_id) const {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.AnyRangeEmpty();
   }
 
@@ -682,7 +703,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return null_sid_;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return null_sid_;
+    }
     return unichars[unichar_id].properties.script_id;
   }
 
@@ -860,12 +884,17 @@ public:
     if (unichar_id == UNICHAR_SPACE) {
       return " ";
     }
+    // contains?
+    if (!contains_unichar_id(unichar_id)) {
+      return "";
+    }
     return unichars[unichar_id].properties.normed.c_str();
   }
   // Returns a vector of UNICHAR_IDs that represent the ids of the normalized
   // version of the given id. There may be more than one UNICHAR_ID in the
   // vector if unichar_id represents a ligature.
   const std::vector<UNICHAR_ID> &normed_ids(UNICHAR_ID unichar_id) const {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.normed_ids;
   }
 
@@ -909,7 +938,10 @@ public:
 
   // Return the enabled property of the given unichar.
   bool get_enabled(UNICHAR_ID unichar_id) const {
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+        return false;
+    }
     return unichars[unichar_id].properties.enabled;
   }
 
@@ -1094,6 +1126,8 @@ private:
   // The most frequently occurring script in the charset.
   int default_sid_;
 };
+
+DECL_FMT_FORMAT_TESSENUMTYPE(UNICHARSET::Direction);
 
 } // namespace tesseract
 

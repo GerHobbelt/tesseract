@@ -19,11 +19,11 @@
 #ifndef TESSERACT_WORDREC_WORDREC_H_
 #define TESSERACT_WORDREC_WORDREC_H_
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
 
 #  include <cstdint>    // for int16_t, int32_t
 #  include "classify.h" // for Classify
@@ -181,7 +181,8 @@ public:
   EDGEPT *headpt; // start point
   EDGEPT *tailpt; // end point
 };
-ELISTIZEH(FRAGMENT)
+
+ELISTIZEH(FRAGMENT);
 
 class TESS_API Wordrec : public Classify {
 public:
@@ -190,7 +191,7 @@ public:
   BOOL_VAR_H(wordrec_enable_assoc);
   BOOL_VAR_H(force_word_assoc);
   INT_VAR_H(repair_unchopped_blobs);
-  double_VAR_H(tessedit_certainty_threshold);
+  DOUBLE_VAR_H(tessedit_certainty_threshold);
   INT_VAR_H(chop_debug);
   BOOL_VAR_H(chop_enable);
   BOOL_VAR_H(chop_vertical_creep);
@@ -201,14 +202,14 @@ public:
   BOOL_VAR_H(chop_new_seam_pile);
   INT_VAR_H(chop_inside_angle);
   INT_VAR_H(chop_min_outline_area);
-  double_VAR_H(chop_split_dist_knob);
-  double_VAR_H(chop_overlap_knob);
-  double_VAR_H(chop_center_knob);
+  DOUBLE_VAR_H(chop_split_dist_knob);
+  DOUBLE_VAR_H(chop_overlap_knob);
+  DOUBLE_VAR_H(chop_center_knob);
   INT_VAR_H(chop_centered_maxwidth);
-  double_VAR_H(chop_sharpness_knob);
-  double_VAR_H(chop_width_change_knob);
-  double_VAR_H(chop_ok_split);
-  double_VAR_H(chop_good_split);
+  DOUBLE_VAR_H(chop_sharpness_knob);
+  DOUBLE_VAR_H(chop_width_change_knob);
+  DOUBLE_VAR_H(chop_ok_split);
+  DOUBLE_VAR_H(chop_good_split);
   INT_VAR_H(chop_x_y_weight);
   BOOL_VAR_H(assume_fixed_pitch_char_segment);
   INT_VAR_H(wordrec_debug_level);
@@ -219,12 +220,12 @@ public:
   INT_VAR_H(segsearch_debug_level);
   INT_VAR_H(segsearch_max_pain_points);
   INT_VAR_H(segsearch_max_futile_classifications);
-  double_VAR_H(segsearch_max_char_wh_ratio);
+  DOUBLE_VAR_H(segsearch_max_char_wh_ratio);
   BOOL_VAR_H(save_alt_choices);
 
   // methods from wordrec/*.cpp ***********************************************
   Wordrec();
-  ~Wordrec() override = default;
+  virtual ~Wordrec() override = default;
 
   // Fills word->alt_choices with alternative paths found during
   // chopping/segmentation search that are kept in best_choices.
@@ -253,7 +254,7 @@ public:
   BLOB_CHOICE_LIST *call_matcher(TBLOB *blob);
   int dict_word(const WERD_CHOICE &word);
   // wordclass.cpp
-  BLOB_CHOICE_LIST *classify_blob(TBLOB *blob, const char *string, ScrollView::Color color,
+  BLOB_CHOICE_LIST *classify_blob(TBLOB *blob, const char *string, Diagnostics::Color color,
                                   BlamerBundle *blamer_bundle);
 
   // segsearch.cpp

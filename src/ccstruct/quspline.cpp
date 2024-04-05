@@ -17,7 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -27,8 +27,8 @@
 #include "quadlsq.h"  // for QLSQ
 #include "quadratc.h" // for QUAD_COEFFS
 
-#include <allheaders.h> // for pixRenderPolyline, pixGetDepth, pixGetHeight
-#include "pix.h"        // for L_CLEAR_PIXELS, L_SET_PIXELS, Pix (ptr only)
+#include <leptonica/allheaders.h> // for pixRenderPolyline, pixGetDepth, pixGetHeight
+#include <leptonica/pix.h>        // for L_CLEAR_PIXELS, L_SET_PIXELS, Pix (ptr only)
 
 namespace tesseract {
 
@@ -336,10 +336,10 @@ void QSPLINE::extrapolate( // linear extrapolation
  * Draw the QSPLINE in the given colour.
  **********************************************************************/
 
-#ifndef GRAPHICS_DISABLED
-void QSPLINE::plot(          // draw it
-    ScrollView *window,      // window to draw in
-    ScrollView::Color colour // colour to draw in
+#if !GRAPHICS_DISABLED
+void QSPLINE::plot(                   // draw it
+    ScrollViewReference &window,      // window to draw in
+    Diagnostics::Color colour          // colour to draw in
     ) const {
   int32_t segment;  // index of segment
   int16_t step;     // index of poly piece
@@ -361,42 +361,5 @@ void QSPLINE::plot(          // draw it
   }
 }
 #endif
-
-void QSPLINE::plot(Image pix) const {
-  if (pix == nullptr) {
-    return;
-  }
-
-  int32_t segment;  // Index of segment
-  int16_t step;     // Index of poly piece
-  double increment; // x increment
-  double x;         // x coord
-  auto height = static_cast<double>(pixGetHeight(pix));
-  Pta *points = ptaCreate(QSPLINE_PRECISION * segments);
-  const int kLineWidth = 5;
-
-  for (segment = 0; segment < segments; segment++) {
-    increment = static_cast<double>((xcoords[segment + 1] - xcoords[segment])) / QSPLINE_PRECISION;
-    x = xcoords[segment];
-    for (step = 0; step <= QSPLINE_PRECISION; step++) {
-      double y = height - quadratics[segment].y(x);
-      ptaAddPt(points, x, y);
-      x += increment;
-    }
-  }
-
-  switch (pixGetDepth(pix)) {
-    case 1:
-      pixRenderPolyline(pix, points, kLineWidth, L_SET_PIXELS, 1);
-      break;
-    case 32:
-      pixRenderPolylineArb(pix, points, kLineWidth, 255, 0, 0, 1);
-      break;
-    default:
-      pixRenderPolyline(pix, points, kLineWidth, L_CLEAR_PIXELS, 1);
-      break;
-  }
-  ptaDestroy(&points);
-}
 
 } // namespace tesseract

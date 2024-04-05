@@ -9,9 +9,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include "lstm_test.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -86,7 +88,7 @@ TEST_F(LSTMTrainerTest, ConvertModel) {
   // Now run the saved model on phototest. (See BasicTesseractTest in
   // baseapi_test.cc).
   TessBaseAPI api;
-  api.Init(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
+  api.InitOem(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
   Image src_pix = pixRead(TestingNameToPath("phototest.tif").c_str());
   CHECK(src_pix);
   api.SetImage(src_pix);

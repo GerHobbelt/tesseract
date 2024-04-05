@@ -5,870 +5,644 @@
 
 #include <algorithm>
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/extension_set.h>
+#include <google/protobuf/wire_format_lite.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/generated_message_reflection.h>
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/reflection_ops.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/port.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/wire_format_lite_inl.h>
-// This is a temporary google only hack
-#ifdef GOOGLE_PROTOBUF_ENFORCE_UNIQUENESS
-#  include "third_party/protobuf/version.h"
-#endif
 // @@protoc_insertion_point(includes)
+#include <google/protobuf/port_def.inc>
 
-namespace protobuf_tensorflow_2fcore_2fframework_2fgraph_2eproto {
-extern PROTOBUF_INTERNAL_EXPORT_protobuf_tensorflow_2fcore_2fframework_2fgraph_2eproto ::google::
-    protobuf::internal::SCCInfo<3>
-        scc_info_GraphDef;
-} // namespace protobuf_tensorflow_2fcore_2fframework_2fgraph_2eproto
+PROTOBUF_PRAGMA_INIT_SEG
 namespace tesseract {
-class TFNetworkModelDefaultTypeInternal {
-public:
-  ::google::protobuf::internal::ExplicitlyConstructed<TFNetworkModel> _instance;
-} _TFNetworkModel_default_instance_;
-} // namespace tesseract
-namespace protobuf_tfnetwork_2eproto {
-static void InitDefaultsTFNetworkModel() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void *ptr = &::tesseract::_TFNetworkModel_default_instance_;
-    new (ptr)::tesseract::TFNetworkModel();
-    ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::tesseract::TFNetworkModel::InitAsDefaultInstance();
-}
-
-::google::protobuf::internal::SCCInfo<1> scc_info_TFNetworkModel = {
-    {ATOMIC_VAR_INIT(::google::protobuf::internal::SCCInfoBase::kUninitialized), 1,
-     InitDefaultsTFNetworkModel},
-    {
-        &protobuf_tensorflow_2fcore_2fframework_2fgraph_2eproto::scc_info_GraphDef.base,
-    }};
-
-void InitDefaults() {
-  ::google::protobuf::internal::InitSCC(&scc_info_TFNetworkModel.base);
-}
-
-::google::protobuf::Metadata file_level_metadata[1];
-
-const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(
-    protodesc_cold) = {
-    ~0u, // no _has_bits_
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel,
-                                                   _internal_metadata_),
-    ~0u, // no _extensions_
-    ~0u, // no _oneof_case_
-    ~0u, // no _weak_field_map_
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, graph_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, global_step_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, spec_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, depth_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, x_size_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, y_size_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, batch_size_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, num_classes_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, using_ctc_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, image_input_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, image_widths_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, image_heights_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::tesseract::TFNetworkModel, output_layer_),
+constexpr TFNetworkModel::TFNetworkModel(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : spec_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , image_input_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , image_widths_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , image_heights_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , output_layer_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , graph_(nullptr)
+  , global_step_(int64_t{0})
+  , depth_(0)
+  , x_size_(0)
+  , y_size_(0)
+  , batch_size_(0)
+  , num_classes_(0)
+  , using_ctc_(false){}
+struct TFNetworkModelDefaultTypeInternal {
+  constexpr TFNetworkModelDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~TFNetworkModelDefaultTypeInternal() {}
+  union {
+    TFNetworkModel _instance;
+  };
 };
-static const ::google::protobuf::internal::MigrationSchema
-    schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, sizeof(::tesseract::TFNetworkModel)},
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT TFNetworkModelDefaultTypeInternal _TFNetworkModel_default_instance_;
+}  // namespace tesseract
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_tfnetwork_2eproto[1];
+static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_tfnetwork_2eproto = nullptr;
+static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_tfnetwork_2eproto = nullptr;
+
+const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_tfnetwork_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, graph_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, global_step_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, spec_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, depth_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, x_size_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, y_size_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, batch_size_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, num_classes_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, using_ctc_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, image_input_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, image_widths_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, image_heights_),
+  PROTOBUF_FIELD_OFFSET(::tesseract::TFNetworkModel, output_layer_),
+};
+static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
+  { 0, -1, sizeof(::tesseract::TFNetworkModel)},
 };
 
-static ::google::protobuf::Message const *const file_default_instances[] = {
-    reinterpret_cast<const ::google::protobuf::Message *>(
-        &::tesseract::_TFNetworkModel_default_instance_),
+static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::tesseract::_TFNetworkModel_default_instance_),
 };
 
-void protobuf_AssignDescriptors() {
-  AddDescriptors();
-  AssignDescriptors("tfnetwork.proto", schemas, file_default_instances, TableStruct::offsets,
-                    file_level_metadata, NULL, NULL);
+const char descriptor_table_protodef_tfnetwork_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
+  "\n\017tfnetwork.proto\022\ttesseract\032%tensorflow"
+  "/core/framework/graph.proto\"\242\002\n\016TFNetwor"
+  "kModel\022*\n\005graph\030\001 \001(\0132\033.opencv_tensorflo"
+  "w.GraphDef\022\023\n\013global_step\030\002 \001(\003\022\014\n\004spec\030"
+  "\003 \001(\t\022\r\n\005depth\030\004 \001(\005\022\016\n\006x_size\030\005 \001(\005\022\016\n\006"
+  "y_size\030\006 \001(\005\022\022\n\nbatch_size\030\010 \001(\005\022\023\n\013num_"
+  "classes\030\t \001(\005\022\021\n\tusing_ctc\030\n \001(\010\022\023\n\013imag"
+  "e_input\030\013 \001(\t\022\024\n\014image_widths\030\014 \001(\t\022\025\n\ri"
+  "mage_heights\030\r \001(\t\022\024\n\014output_layer\030\016 \001(\t"
+  "b\006proto3"
+  ;
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_tfnetwork_2eproto_deps[1] = {
+  &::descriptor_table_tensorflow_2fcore_2fframework_2fgraph_2eproto,
+};
+static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_tfnetwork_2eproto_once;
+const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_tfnetwork_2eproto = {
+  false, false, 368, descriptor_table_protodef_tfnetwork_2eproto, "tfnetwork.proto", 
+  &descriptor_table_tfnetwork_2eproto_once, descriptor_table_tfnetwork_2eproto_deps, 1, 1,
+  schemas, file_default_instances, TableStruct_tfnetwork_2eproto::offsets,
+  file_level_metadata_tfnetwork_2eproto, file_level_enum_descriptors_tfnetwork_2eproto, file_level_service_descriptors_tfnetwork_2eproto,
+};
+PROTOBUF_ATTRIBUTE_WEAK const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* descriptor_table_tfnetwork_2eproto_getter() {
+  return &descriptor_table_tfnetwork_2eproto;
 }
 
-void protobuf_AssignDescriptorsOnce() {
-  static ::google::protobuf::internal::once_flag once;
-  ::google::protobuf::internal::call_once(once, protobuf_AssignDescriptors);
-}
-
-void protobuf_RegisterTypes(const ::std::string &) GOOGLE_PROTOBUF_ATTRIBUTE_COLD;
-void protobuf_RegisterTypes(const ::std::string &) {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::internal::RegisterAllTypes(file_level_metadata, 1);
-}
-
-void AddDescriptorsImpl() {
-  InitDefaults();
-  static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\017tfnetwork.proto\022\ttesseract\032%tensorflow"
-      "/core/framework/graph.proto\"\233\002\n\016TFNetwor"
-      "kModel\022#\n\005graph\030\001 \001(\0132\024.tensorflow.Graph"
-      "Def\022\023\n\013global_step\030\002 \001(\003\022\014\n\004spec\030\003 \001(\t\022\r"
-      "\n\005depth\030\004 \001(\005\022\016\n\006x_size\030\005 \001(\005\022\016\n\006y_size\030"
-      "\006 \001(\005\022\022\n\nbatch_size\030\010 \001(\005\022\023\n\013num_classes"
-      "\030\t \001(\005\022\021\n\tusing_ctc\030\n \001(\010\022\023\n\013image_input"
-      "\030\013 \001(\t\022\024\n\014image_widths\030\014 \001(\t\022\025\n\rimage_he"
-      "ights\030\r \001(\t\022\024\n\014output_layer\030\016 \001(\tb\006proto"
-      "3"};
-  ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(descriptor, 361);
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile("tfnetwork.proto",
-                                                                    &protobuf_RegisterTypes);
-  ::protobuf_tensorflow_2fcore_2fframework_2fgraph_2eproto::AddDescriptors();
-}
-
-void AddDescriptors() {
-  static ::google::protobuf::internal::once_flag once;
-  ::google::protobuf::internal::call_once(once, AddDescriptorsImpl);
-}
-// Force AddDescriptors() to be called at dynamic initialization time.
-struct StaticDescriptorInitializer {
-  StaticDescriptorInitializer() {
-    AddDescriptors();
-  }
-} static_descriptor_initializer;
-} // namespace protobuf_tfnetwork_2eproto
+// Force running AddDescriptors() at dynamic initialization time.
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY static ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptorsRunner dynamic_init_dummy_tfnetwork_2eproto(&descriptor_table_tfnetwork_2eproto);
 namespace tesseract {
 
 // ===================================================================
 
-void TFNetworkModel::InitAsDefaultInstance() {
-  ::tesseract::_TFNetworkModel_default_instance_._instance.get_mutable()->graph_ =
-      const_cast<::tensorflow::GraphDef *>(::tensorflow::GraphDef::internal_default_instance());
+class TFNetworkModel::_Internal {
+ public:
+  static const ::opencv_tensorflow::GraphDef& graph(const TFNetworkModel* msg);
+};
+
+const ::opencv_tensorflow::GraphDef&
+TFNetworkModel::_Internal::graph(const TFNetworkModel* msg) {
+  return *msg->graph_;
 }
 void TFNetworkModel::clear_graph() {
-  if (GetArenaNoVirtual() == NULL && graph_ != NULL) {
+  if (GetArenaForAllocation() == nullptr && graph_ != nullptr) {
     delete graph_;
   }
-  graph_ = NULL;
+  graph_ = nullptr;
 }
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int TFNetworkModel::kGraphFieldNumber;
-const int TFNetworkModel::kGlobalStepFieldNumber;
-const int TFNetworkModel::kSpecFieldNumber;
-const int TFNetworkModel::kDepthFieldNumber;
-const int TFNetworkModel::kXSizeFieldNumber;
-const int TFNetworkModel::kYSizeFieldNumber;
-const int TFNetworkModel::kBatchSizeFieldNumber;
-const int TFNetworkModel::kNumClassesFieldNumber;
-const int TFNetworkModel::kUsingCtcFieldNumber;
-const int TFNetworkModel::kImageInputFieldNumber;
-const int TFNetworkModel::kImageWidthsFieldNumber;
-const int TFNetworkModel::kImageHeightsFieldNumber;
-const int TFNetworkModel::kOutputLayerFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-TFNetworkModel::TFNetworkModel() : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  ::google::protobuf::internal::InitSCC(&protobuf_tfnetwork_2eproto::scc_info_TFNetworkModel.base);
+TFNetworkModel::TFNetworkModel(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:tesseract.TFNetworkModel)
+  if (!is_message_owned) {
+    RegisterArenaDtor(arena);
+  }
+  // @@protoc_insertion_point(arena_constructor:tesseract.TFNetworkModel)
 }
-TFNetworkModel::TFNetworkModel(const TFNetworkModel &from)
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
-  spec_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.spec().size() > 0) {
-    spec_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                            from.spec_);
+TFNetworkModel::TFNetworkModel(const TFNetworkModel& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  spec_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_spec().empty()) {
+    spec_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_spec(), 
+      GetArenaForAllocation());
   }
-  image_input_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.image_input().size() > 0) {
-    image_input_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                   from.image_input_);
+  image_input_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_image_input().empty()) {
+    image_input_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_image_input(), 
+      GetArenaForAllocation());
   }
-  image_widths_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.image_widths().size() > 0) {
-    image_widths_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                    from.image_widths_);
+  image_widths_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_image_widths().empty()) {
+    image_widths_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_image_widths(), 
+      GetArenaForAllocation());
   }
-  image_heights_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.image_heights().size() > 0) {
-    image_heights_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                     from.image_heights_);
+  image_heights_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_image_heights().empty()) {
+    image_heights_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_image_heights(), 
+      GetArenaForAllocation());
   }
-  output_layer_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.output_layer().size() > 0) {
-    output_layer_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                    from.output_layer_);
+  output_layer_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_output_layer().empty()) {
+    output_layer_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_output_layer(), 
+      GetArenaForAllocation());
   }
-  if (from.has_graph()) {
-    graph_ = new ::tensorflow::GraphDef(*from.graph_);
+  if (from._internal_has_graph()) {
+    graph_ = new ::opencv_tensorflow::GraphDef(*from.graph_);
   } else {
-    graph_ = NULL;
+    graph_ = nullptr;
   }
   ::memcpy(&global_step_, &from.global_step_,
-           static_cast<size_t>(reinterpret_cast<char *>(&using_ctc_) -
-                               reinterpret_cast<char *>(&global_step_)) +
-               sizeof(using_ctc_));
+    static_cast<size_t>(reinterpret_cast<char*>(&using_ctc_) -
+    reinterpret_cast<char*>(&global_step_)) + sizeof(using_ctc_));
   // @@protoc_insertion_point(copy_constructor:tesseract.TFNetworkModel)
 }
 
-void TFNetworkModel::SharedCtor() {
-  spec_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_input_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_widths_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_heights_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  output_layer_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&graph_, 0,
-           static_cast<size_t>(reinterpret_cast<char *>(&using_ctc_) -
-                               reinterpret_cast<char *>(&graph_)) +
-               sizeof(using_ctc_));
+inline void TFNetworkModel::SharedCtor() {
+spec_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+image_input_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+image_widths_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+image_heights_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+output_layer_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&graph_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&using_ctc_) -
+    reinterpret_cast<char*>(&graph_)) + sizeof(using_ctc_));
 }
 
 TFNetworkModel::~TFNetworkModel() {
   // @@protoc_insertion_point(destructor:tesseract.TFNetworkModel)
+  if (GetArenaForAllocation() != nullptr) return;
   SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-void TFNetworkModel::SharedDtor() {
-  spec_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_input_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_widths_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_heights_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  output_layer_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (this != internal_default_instance())
-    delete graph_;
+inline void TFNetworkModel::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  spec_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  image_input_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  image_widths_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  image_heights_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  output_layer_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (this != internal_default_instance()) delete graph_;
 }
 
+void TFNetworkModel::ArenaDtor(void* object) {
+  TFNetworkModel* _this = reinterpret_cast< TFNetworkModel* >(object);
+  (void)_this;
+}
+void TFNetworkModel::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
 void TFNetworkModel::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ::google::protobuf::Descriptor *TFNetworkModel::descriptor() {
-  ::protobuf_tfnetwork_2eproto::protobuf_AssignDescriptorsOnce();
-  return ::protobuf_tfnetwork_2eproto::file_level_metadata[kIndexInFileMessages].descriptor;
-}
-
-const TFNetworkModel &TFNetworkModel::default_instance() {
-  ::google::protobuf::internal::InitSCC(&protobuf_tfnetwork_2eproto::scc_info_TFNetworkModel.base);
-  return *internal_default_instance();
-}
 
 void TFNetworkModel::Clear() {
-  // @@protoc_insertion_point(message_clear_start:tesseract.TFNetworkModel)
-  ::google::protobuf::uint32 cached_has_bits = 0;
+// @@protoc_insertion_point(message_clear_start:tesseract.TFNetworkModel)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
+  (void) cached_has_bits;
 
-  spec_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_input_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_widths_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  image_heights_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  output_layer_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (GetArenaNoVirtual() == NULL && graph_ != NULL) {
+  spec_.ClearToEmpty();
+  image_input_.ClearToEmpty();
+  image_widths_.ClearToEmpty();
+  image_heights_.ClearToEmpty();
+  output_layer_.ClearToEmpty();
+  if (GetArenaForAllocation() == nullptr && graph_ != nullptr) {
     delete graph_;
   }
-  graph_ = NULL;
-  ::memset(&global_step_, 0,
-           static_cast<size_t>(reinterpret_cast<char *>(&using_ctc_) -
-                               reinterpret_cast<char *>(&global_step_)) +
-               sizeof(using_ctc_));
-  _internal_metadata_.Clear();
+  graph_ = nullptr;
+  ::memset(&global_step_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&using_ctc_) -
+      reinterpret_cast<char*>(&global_step_)) + sizeof(using_ctc_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-bool TFNetworkModel::MergePartialFromCodedStream(::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                 \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) \
-  goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:tesseract.TFNetworkModel)
-  for (;;) {
-    ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
-    tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
-    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // .tensorflow.GraphDef graph = 1;
-      case 1: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessage(input, mutable_graph()));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+const char* TFNetworkModel::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .opencv_tensorflow.GraphDef graph = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_graph(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int64 global_step = 2;
-      case 2: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int64, ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
-              input, &global_step_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          global_step_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // string spec = 3;
-      case 3: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(input,
-                                                                       this->mutable_spec()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->spec().data(), static_cast<int>(this->spec().length()),
-              ::google::protobuf::internal::WireFormatLite::PARSE,
-              "tesseract.TFNetworkModel.spec"));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+          auto str = _internal_mutable_spec();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "tesseract.TFNetworkModel.spec"));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int32 depth = 4;
-      case 4: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(32u /* 32 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-              input, &depth_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          depth_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int32 x_size = 5;
-      case 5: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-              input, &x_size_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          x_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int32 y_size = 6;
-      case 6: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(48u /* 48 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-              input, &y_size_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+          y_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int32 batch_size = 8;
-      case 8: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(64u /* 64 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-              input, &batch_size_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
+          batch_size_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // int32 num_classes = 9;
-      case 9: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(72u /* 72 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-              input, &num_classes_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 72)) {
+          num_classes_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // bool using_ctc = 10;
-      case 10: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(80u /* 80 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(input, &using_ctc_)));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
+          using_ctc_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // string image_input = 11;
-      case 11: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(90u /* 90 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-              input, this->mutable_image_input()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->image_input().data(), static_cast<int>(this->image_input().length()),
-              ::google::protobuf::internal::WireFormatLite::PARSE,
-              "tesseract.TFNetworkModel.image_input"));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 11:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 90)) {
+          auto str = _internal_mutable_image_input();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "tesseract.TFNetworkModel.image_input"));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // string image_widths = 12;
-      case 12: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(98u /* 98 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-              input, this->mutable_image_widths()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->image_widths().data(), static_cast<int>(this->image_widths().length()),
-              ::google::protobuf::internal::WireFormatLite::PARSE,
-              "tesseract.TFNetworkModel.image_widths"));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 12:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 98)) {
+          auto str = _internal_mutable_image_widths();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "tesseract.TFNetworkModel.image_widths"));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // string image_heights = 13;
-      case 13: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(106u /* 106 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-              input, this->mutable_image_heights()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->image_heights().data(), static_cast<int>(this->image_heights().length()),
-              ::google::protobuf::internal::WireFormatLite::PARSE,
-              "tesseract.TFNetworkModel.image_heights"));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 13:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 106)) {
+          auto str = _internal_mutable_image_heights();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "tesseract.TFNetworkModel.image_heights"));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       // string output_layer = 14;
-      case 14: {
-        if (static_cast<::google::protobuf::uint8>(tag) ==
-            static_cast<::google::protobuf::uint8>(114u /* 114 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-              input, this->mutable_output_layer()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->output_layer().data(), static_cast<int>(this->output_layer().length()),
-              ::google::protobuf::internal::WireFormatLite::PARSE,
-              "tesseract.TFNetworkModel.output_layer"));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
+      case 14:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 114)) {
+          auto str = _internal_mutable_output_layer();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "tesseract.TFNetworkModel.output_layer"));
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       default: {
       handle_unusual:
-        if (tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
+          ctx->SetLastTag(tag);
           goto success;
         }
-        DO_(::google::protobuf::internal::WireFormat::SkipField(
-            input, tag, _internal_metadata_.mutable_unknown_fields()));
-        break;
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
       }
-    }
-  }
+    }  // switch
+  }  // while
 success:
-  // @@protoc_insertion_point(parse_success:tesseract.TFNetworkModel)
-  return true;
+  return ptr;
 failure:
-  // @@protoc_insertion_point(parse_failure:tesseract.TFNetworkModel)
-  return false;
-#undef DO_
+  ptr = nullptr;
+  goto success;
+#undef CHK_
 }
 
-void TFNetworkModel::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream *output) const {
-  // @@protoc_insertion_point(serialize_start:tesseract.TFNetworkModel)
-  ::google::protobuf::uint32 cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // .tensorflow.GraphDef graph = 1;
-  if (this->has_graph()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, this->_internal_graph(), output);
-  }
-
-  // int64 global_step = 2;
-  if (this->global_step() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt64(2, this->global_step(), output);
-  }
-
-  // string spec = 3;
-  if (this->spec().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->spec().data(), static_cast<int>(this->spec().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE, "tesseract.TFNetworkModel.spec");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(3, this->spec(), output);
-  }
-
-  // int32 depth = 4;
-  if (this->depth() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(4, this->depth(), output);
-  }
-
-  // int32 x_size = 5;
-  if (this->x_size() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(5, this->x_size(), output);
-  }
-
-  // int32 y_size = 6;
-  if (this->y_size() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->y_size(), output);
-  }
-
-  // int32 batch_size = 8;
-  if (this->batch_size() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(8, this->batch_size(), output);
-  }
-
-  // int32 num_classes = 9;
-  if (this->num_classes() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(9, this->num_classes(), output);
-  }
-
-  // bool using_ctc = 10;
-  if (this->using_ctc() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteBool(10, this->using_ctc(), output);
-  }
-
-  // string image_input = 11;
-  if (this->image_input().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_input().data(), static_cast<int>(this->image_input().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_input");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(11, this->image_input(),
-                                                                          output);
-  }
-
-  // string image_widths = 12;
-  if (this->image_widths().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_widths().data(), static_cast<int>(this->image_widths().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_widths");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(12, this->image_widths(),
-                                                                          output);
-  }
-
-  // string image_heights = 13;
-  if (this->image_heights().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_heights().data(), static_cast<int>(this->image_heights().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_heights");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(13, this->image_heights(),
-                                                                          output);
-  }
-
-  // string output_layer = 14;
-  if (this->output_layer().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->output_layer().data(), static_cast<int>(this->output_layer().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.output_layer");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(14, this->output_layer(),
-                                                                          output);
-  }
-
-  if ((_internal_metadata_.have_unknown_fields() &&
-       ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
-    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
-        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()
-             ? _internal_metadata_.unknown_fields()
-             : _internal_metadata_.default_instance()),
-        output);
-  }
-  // @@protoc_insertion_point(serialize_end:tesseract.TFNetworkModel)
-}
-
-::google::protobuf::uint8 *TFNetworkModel::InternalSerializeWithCachedSizesToArray(
-    bool deterministic, ::google::protobuf::uint8 *target) const {
-  (void)deterministic; // Unused
+::PROTOBUF_NAMESPACE_ID::uint8* TFNetworkModel::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:tesseract.TFNetworkModel)
-  ::google::protobuf::uint32 cached_has_bits = 0;
-  (void)cached_has_bits;
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
 
-  // .tensorflow.GraphDef graph = 1;
-  if (this->has_graph()) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessageToArray(
-        1, this->_internal_graph(), deterministic, target);
+  // .opencv_tensorflow.GraphDef graph = 1;
+  if (this->_internal_has_graph()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        1, _Internal::graph(this), target, stream);
   }
 
   // int64 global_step = 2;
-  if (this->global_step() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(2, this->global_step(),
-                                                                             target);
+  if (this->_internal_global_step() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(2, this->_internal_global_step(), target);
   }
 
   // string spec = 3;
-  if (this->spec().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->spec().data(), static_cast<int>(this->spec().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE, "tesseract.TFNetworkModel.spec");
-    target =
-        ::google::protobuf::internal::WireFormatLite::WriteStringToArray(3, this->spec(), target);
+  if (!this->_internal_spec().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_spec().data(), static_cast<int>(this->_internal_spec().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "tesseract.TFNetworkModel.spec");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_spec(), target);
   }
 
   // int32 depth = 4;
-  if (this->depth() != 0) {
-    target =
-        ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(4, this->depth(), target);
+  if (this->_internal_depth() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(4, this->_internal_depth(), target);
   }
 
   // int32 x_size = 5;
-  if (this->x_size() != 0) {
-    target =
-        ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(5, this->x_size(), target);
+  if (this->_internal_x_size() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(5, this->_internal_x_size(), target);
   }
 
   // int32 y_size = 6;
-  if (this->y_size() != 0) {
-    target =
-        ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(6, this->y_size(), target);
+  if (this->_internal_y_size() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(6, this->_internal_y_size(), target);
   }
 
   // int32 batch_size = 8;
-  if (this->batch_size() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(8, this->batch_size(),
-                                                                             target);
+  if (this->_internal_batch_size() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(8, this->_internal_batch_size(), target);
   }
 
   // int32 num_classes = 9;
-  if (this->num_classes() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(9, this->num_classes(),
-                                                                             target);
+  if (this->_internal_num_classes() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(9, this->_internal_num_classes(), target);
   }
 
   // bool using_ctc = 10;
-  if (this->using_ctc() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(10, this->using_ctc(),
-                                                                            target);
+  if (this->_internal_using_ctc() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(10, this->_internal_using_ctc(), target);
   }
 
   // string image_input = 11;
-  if (this->image_input().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_input().data(), static_cast<int>(this->image_input().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_input");
-    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        11, this->image_input(), target);
+  if (!this->_internal_image_input().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_image_input().data(), static_cast<int>(this->_internal_image_input().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "tesseract.TFNetworkModel.image_input");
+    target = stream->WriteStringMaybeAliased(
+        11, this->_internal_image_input(), target);
   }
 
   // string image_widths = 12;
-  if (this->image_widths().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_widths().data(), static_cast<int>(this->image_widths().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_widths");
-    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        12, this->image_widths(), target);
+  if (!this->_internal_image_widths().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_image_widths().data(), static_cast<int>(this->_internal_image_widths().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "tesseract.TFNetworkModel.image_widths");
+    target = stream->WriteStringMaybeAliased(
+        12, this->_internal_image_widths(), target);
   }
 
   // string image_heights = 13;
-  if (this->image_heights().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->image_heights().data(), static_cast<int>(this->image_heights().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.image_heights");
-    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        13, this->image_heights(), target);
+  if (!this->_internal_image_heights().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_image_heights().data(), static_cast<int>(this->_internal_image_heights().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "tesseract.TFNetworkModel.image_heights");
+    target = stream->WriteStringMaybeAliased(
+        13, this->_internal_image_heights(), target);
   }
 
   // string output_layer = 14;
-  if (this->output_layer().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->output_layer().data(), static_cast<int>(this->output_layer().length()),
-        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "tesseract.TFNetworkModel.output_layer");
-    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        14, this->output_layer(), target);
+  if (!this->_internal_output_layer().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_output_layer().data(), static_cast<int>(this->_internal_output_layer().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "tesseract.TFNetworkModel.output_layer");
+    target = stream->WriteStringMaybeAliased(
+        14, this->_internal_output_layer(), target);
   }
 
-  if ((_internal_metadata_.have_unknown_fields() &&
-       ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
-    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
-        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()
-             ? _internal_metadata_.unknown_fields()
-             : _internal_metadata_.default_instance()),
-        target);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:tesseract.TFNetworkModel)
   return target;
 }
 
 size_t TFNetworkModel::ByteSizeLong() const {
-  // @@protoc_insertion_point(message_byte_size_start:tesseract.TFNetworkModel)
+// @@protoc_insertion_point(message_byte_size_start:tesseract.TFNetworkModel)
   size_t total_size = 0;
 
-  if ((_internal_metadata_.have_unknown_fields() &&
-       ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
-    total_size += ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
-        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()
-             ? _internal_metadata_.unknown_fields()
-             : _internal_metadata_.default_instance()));
-  }
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
   // string spec = 3;
-  if (this->spec().size() > 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(this->spec());
+  if (!this->_internal_spec().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_spec());
   }
 
   // string image_input = 11;
-  if (this->image_input().size() > 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(this->image_input());
+  if (!this->_internal_image_input().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_image_input());
   }
 
   // string image_widths = 12;
-  if (this->image_widths().size() > 0) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::StringSize(this->image_widths());
+  if (!this->_internal_image_widths().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_image_widths());
   }
 
   // string image_heights = 13;
-  if (this->image_heights().size() > 0) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::StringSize(this->image_heights());
+  if (!this->_internal_image_heights().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_image_heights());
   }
 
   // string output_layer = 14;
-  if (this->output_layer().size() > 0) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::StringSize(this->output_layer());
+  if (!this->_internal_output_layer().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_output_layer());
   }
 
-  // .tensorflow.GraphDef graph = 1;
-  if (this->has_graph()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*graph_);
+  // .opencv_tensorflow.GraphDef graph = 1;
+  if (this->_internal_has_graph()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *graph_);
   }
 
   // int64 global_step = 2;
-  if (this->global_step() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int64Size(this->global_step());
+  if (this->_internal_global_step() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+        this->_internal_global_step());
   }
 
   // int32 depth = 4;
-  if (this->depth() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(this->depth());
+  if (this->_internal_depth() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_depth());
   }
 
   // int32 x_size = 5;
-  if (this->x_size() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(this->x_size());
+  if (this->_internal_x_size() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_x_size());
   }
 
   // int32 y_size = 6;
-  if (this->y_size() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(this->y_size());
+  if (this->_internal_y_size() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_y_size());
   }
 
   // int32 batch_size = 8;
-  if (this->batch_size() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(this->batch_size());
+  if (this->_internal_batch_size() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_batch_size());
   }
 
   // int32 num_classes = 9;
-  if (this->num_classes() != 0) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(this->num_classes());
+  if (this->_internal_num_classes() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_num_classes());
   }
 
   // bool using_ctc = 10;
-  if (this->using_ctc() != 0) {
+  if (this->_internal_using_ctc() != 0) {
     total_size += 1 + 1;
   }
 
-  int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
   SetCachedSize(cached_size);
   return total_size;
 }
 
-void TFNetworkModel::MergeFrom(const ::google::protobuf::Message &from) {
-  // @@protoc_insertion_point(generalized_merge_from_start:tesseract.TFNetworkModel)
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData TFNetworkModel::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    TFNetworkModel::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*TFNetworkModel::GetClassData() const { return &_class_data_; }
+
+void TFNetworkModel::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message*to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message&from) {
+  static_cast<TFNetworkModel *>(to)->MergeFrom(
+      static_cast<const TFNetworkModel &>(from));
+}
+
+
+void TFNetworkModel::MergeFrom(const TFNetworkModel& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:tesseract.TFNetworkModel)
   GOOGLE_DCHECK_NE(&from, this);
-  const TFNetworkModel *source =
-      ::google::protobuf::internal::DynamicCastToGenerated<const TFNetworkModel>(&from);
-  if (source == NULL) {
-    // @@protoc_insertion_point(generalized_merge_from_cast_fail:tesseract.TFNetworkModel)
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    // @@protoc_insertion_point(generalized_merge_from_cast_success:tesseract.TFNetworkModel)
-    MergeFrom(*source);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_spec().empty()) {
+    _internal_set_spec(from._internal_spec());
   }
+  if (!from._internal_image_input().empty()) {
+    _internal_set_image_input(from._internal_image_input());
+  }
+  if (!from._internal_image_widths().empty()) {
+    _internal_set_image_widths(from._internal_image_widths());
+  }
+  if (!from._internal_image_heights().empty()) {
+    _internal_set_image_heights(from._internal_image_heights());
+  }
+  if (!from._internal_output_layer().empty()) {
+    _internal_set_output_layer(from._internal_output_layer());
+  }
+  if (from._internal_has_graph()) {
+    _internal_mutable_graph()->::opencv_tensorflow::GraphDef::MergeFrom(from._internal_graph());
+  }
+  if (from._internal_global_step() != 0) {
+    _internal_set_global_step(from._internal_global_step());
+  }
+  if (from._internal_depth() != 0) {
+    _internal_set_depth(from._internal_depth());
+  }
+  if (from._internal_x_size() != 0) {
+    _internal_set_x_size(from._internal_x_size());
+  }
+  if (from._internal_y_size() != 0) {
+    _internal_set_y_size(from._internal_y_size());
+  }
+  if (from._internal_batch_size() != 0) {
+    _internal_set_batch_size(from._internal_batch_size());
+  }
+  if (from._internal_num_classes() != 0) {
+    _internal_set_num_classes(from._internal_num_classes());
+  }
+  if (from._internal_using_ctc() != 0) {
+    _internal_set_using_ctc(from._internal_using_ctc());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void TFNetworkModel::MergeFrom(const TFNetworkModel &from) {
-  // @@protoc_insertion_point(class_specific_merge_from_start:tesseract.TFNetworkModel)
-  GOOGLE_DCHECK_NE(&from, this);
-  _internal_metadata_.MergeFrom(from._internal_metadata_);
-  ::google::protobuf::uint32 cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  if (from.spec().size() > 0) {
-    spec_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                            from.spec_);
-  }
-  if (from.image_input().size() > 0) {
-    image_input_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                   from.image_input_);
-  }
-  if (from.image_widths().size() > 0) {
-    image_widths_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                    from.image_widths_);
-  }
-  if (from.image_heights().size() > 0) {
-    image_heights_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                     from.image_heights_);
-  }
-  if (from.output_layer().size() > 0) {
-    output_layer_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                                    from.output_layer_);
-  }
-  if (from.has_graph()) {
-    mutable_graph()->::tensorflow::GraphDef::MergeFrom(from.graph());
-  }
-  if (from.global_step() != 0) {
-    set_global_step(from.global_step());
-  }
-  if (from.depth() != 0) {
-    set_depth(from.depth());
-  }
-  if (from.x_size() != 0) {
-    set_x_size(from.x_size());
-  }
-  if (from.y_size() != 0) {
-    set_y_size(from.y_size());
-  }
-  if (from.batch_size() != 0) {
-    set_batch_size(from.batch_size());
-  }
-  if (from.num_classes() != 0) {
-    set_num_classes(from.num_classes());
-  }
-  if (from.using_ctc() != 0) {
-    set_using_ctc(from.using_ctc());
-  }
-}
-
-void TFNetworkModel::CopyFrom(const ::google::protobuf::Message &from) {
-  // @@protoc_insertion_point(generalized_copy_from_start:tesseract.TFNetworkModel)
-  if (&from == this)
-    return;
-  Clear();
-  MergeFrom(from);
-}
-
-void TFNetworkModel::CopyFrom(const TFNetworkModel &from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:tesseract.TFNetworkModel)
-  if (&from == this)
-    return;
+void TFNetworkModel::CopyFrom(const TFNetworkModel& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:tesseract.TFNetworkModel)
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
@@ -877,53 +651,55 @@ bool TFNetworkModel::IsInitialized() const {
   return true;
 }
 
-void TFNetworkModel::Swap(TFNetworkModel *other) {
-  if (other == this)
-    return;
-  InternalSwap(other);
-}
-void TFNetworkModel::InternalSwap(TFNetworkModel *other) {
+void TFNetworkModel::InternalSwap(TFNetworkModel* other) {
   using std::swap;
-  spec_.Swap(&other->spec_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-             GetArenaNoVirtual());
-  image_input_.Swap(&other->image_input_,
-                    &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                    GetArenaNoVirtual());
-  image_widths_.Swap(&other->image_widths_,
-                     &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                     GetArenaNoVirtual());
-  image_heights_.Swap(&other->image_heights_,
-                      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                      GetArenaNoVirtual());
-  output_layer_.Swap(&other->output_layer_,
-                     &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                     GetArenaNoVirtual());
-  swap(graph_, other->graph_);
-  swap(global_step_, other->global_step_);
-  swap(depth_, other->depth_);
-  swap(x_size_, other->x_size_);
-  swap(y_size_, other->y_size_);
-  swap(batch_size_, other->batch_size_);
-  swap(num_classes_, other->num_classes_);
-  swap(using_ctc_, other->using_ctc_);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &spec_, GetArenaForAllocation(),
+      &other->spec_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &image_input_, GetArenaForAllocation(),
+      &other->image_input_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &image_widths_, GetArenaForAllocation(),
+      &other->image_widths_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &image_heights_, GetArenaForAllocation(),
+      &other->image_heights_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &output_layer_, GetArenaForAllocation(),
+      &other->output_layer_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(TFNetworkModel, using_ctc_)
+      + sizeof(TFNetworkModel::using_ctc_)
+      - PROTOBUF_FIELD_OFFSET(TFNetworkModel, graph_)>(
+          reinterpret_cast<char*>(&graph_),
+          reinterpret_cast<char*>(&other->graph_));
 }
 
-::google::protobuf::Metadata TFNetworkModel::GetMetadata() const {
-  protobuf_tfnetwork_2eproto::protobuf_AssignDescriptorsOnce();
-  return ::protobuf_tfnetwork_2eproto::file_level_metadata[kIndexInFileMessages];
+::PROTOBUF_NAMESPACE_ID::Metadata TFNetworkModel::GetMetadata() const {
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_tfnetwork_2eproto_getter, &descriptor_table_tfnetwork_2eproto_once,
+      file_level_metadata_tfnetwork_2eproto[0]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
-} // namespace tesseract
-namespace google {
-namespace protobuf {
-template <>
-GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::tesseract::TFNetworkModel *
-Arena::CreateMaybeMessage<::tesseract::TFNetworkModel>(Arena *arena) {
-  return Arena::CreateInternal<::tesseract::TFNetworkModel>(arena);
+}  // namespace tesseract
+PROTOBUF_NAMESPACE_OPEN
+template<> PROTOBUF_NOINLINE ::tesseract::TFNetworkModel* Arena::CreateMaybeMessage< ::tesseract::TFNetworkModel >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::tesseract::TFNetworkModel >(arena);
 }
-} // namespace protobuf
-} // namespace google
+PROTOBUF_NAMESPACE_CLOSE
 
 // @@protoc_insertion_point(global_scope)
+#include <google/protobuf/port_undef.inc>

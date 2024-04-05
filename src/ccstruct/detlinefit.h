@@ -84,7 +84,7 @@ public:
   // [min_dist, max_dist]. Returns the resulting error metric using the same
   // reduced set of points.
   // *Makes use of floating point arithmetic*
-  double ConstrainedFit(const FCOORD &direction, double min_dist, double max_dist, bool debug,
+  double ConstrainedFit(const FCOORD &direction, double min_dist, double max_dist,
                         ICOORD *line_pt);
 
   // Returns true if there were enough points at the last call to Fit or
@@ -97,7 +97,10 @@ public:
   double Fit(float *m, float *c);
 
   // Backwards compatible constrained fit with a supplied gradient.
-  // Deprecated. Use ConstrainedFit(const FCOORD& direction) where possible
+  // 
+  // Deprecated. 
+  // 
+  // Use ConstrainedFit(const FCOORD& direction) where possible
   // to avoid potential difficulties with infinite gradients.
   double ConstrainedFit(double m, float *c);
 

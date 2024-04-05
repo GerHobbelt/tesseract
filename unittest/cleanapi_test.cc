@@ -16,7 +16,12 @@
 // If this test fails to compile, clean up the includes in tesseract/baseapi.h!
 // They are not supposed to drag in definitions of any of the tesseract
 // types included in this enum!
+#if defined(_WIN32)
+// See also windows + winsock2 notes in tesseract/capi.h   :-((
+enum NameTester { ABORT, OKAY, LOG, /* BLOB, */ ELIST, TBOX, TPOINT /*, WORD */ };
+#else
 enum NameTester { ABORT, OKAY, LOG, BLOB, ELIST, TBOX, TPOINT, WORD };
+#endif
 
 #include "gtest/gtest.h"
 

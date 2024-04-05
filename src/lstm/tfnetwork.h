@@ -77,12 +77,12 @@ private:
   // See Network for a detailed discussion of the arguments.
   bool Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *scratch,
                 NetworkIO *back_deltas) override {
-    tprintf("Must override Network::Backward for type %d\n", type_);
+    tprintError("Must override Network::Backward for type {}\n", type_);
     return false;
   }
 
   void DebugWeights() override {
-    tprintf("Must override Network::DebugWeights for type %d\n", type_);
+    tprintError("Must override Network::DebugWeights for type {}\n", type_);
   }
 
   int InitFromProto();

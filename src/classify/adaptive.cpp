@@ -15,6 +15,12 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
+#if !DISABLED_LEGACY_ENGINE
+
 #include "adaptive.h"
 
 #include "classify.h"
@@ -397,3 +403,6 @@ void WriteTempConfig(FILE *File, TEMP_CONFIG_STRUCT *Config) {
 } /* WriteTempConfig */
 
 } // namespace tesseract
+
+#endif
+

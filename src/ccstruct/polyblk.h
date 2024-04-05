@@ -61,11 +61,12 @@ public:
   // Move by adding shift to all coordinates.
   void move(ICOORD shift);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
+  void plot(ScrollViewReference &window, int32_t num);
+#endif
 
-  void plot(ScrollView *window, int32_t num);
-
-  void fill(ScrollView *window, ScrollView::Color colour);
+#if !GRAPHICS_DISABLED
+  void fill(ScrollViewReference &window, Diagnostics::Color colour);
 #endif // !GRAPHICS_DISABLED
 
   // Returns true if other is inside this.
@@ -79,10 +80,10 @@ public:
   // test_pt outside this.
   int16_t winding_number(const ICOORD &test_pt);
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   // Static utility functions to handle the PolyBlockType.
   // Returns a color to draw the given type.
-  static ScrollView::Color ColorForPolyBlockType(PolyBlockType type);
+  static Diagnostics::Color ColorForPolyBlockType(PolyBlockType type);
 #endif // !GRAPHICS_DISABLED
 
 private:
@@ -111,6 +112,10 @@ public:
 private:
   POLY_BLOCK *block;
 };
+
+static inline auto format_as(PolyBlockType t) {
+  return fmt::underlying(t);
+}
 
 } // namespace tesseract
 

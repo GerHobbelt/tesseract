@@ -82,11 +82,13 @@ enum REJ_FLAGS {
   R_UNLV_REJ,  // TEMP ~ turned to - or ^ turned to space
 
   /* Accept modes which occur between the above rejection groups */
-  R_NN_ACCEPT,         // NN acceptance
-  R_HYPHEN_ACCEPT,     // Hyphen acceptance
-  R_MM_ACCEPT,         // Matrix match acceptance
-  R_QUALITY_ACCEPT,    // Accept word in good quality doc
-  R_MINIMAL_REJ_ACCEPT // Accept EVERYTHING except tess failures
+  R_NN_ACCEPT,          // NN acceptance
+  R_HYPHEN_ACCEPT,      // Hyphen acceptance
+  R_MM_ACCEPT,          // Matrix match acceptance
+  R_QUALITY_ACCEPT,     // Accept word in good quality doc
+  R_MINIMAL_REJ_ACCEPT, // Accept EVERYTHING except tess failures
+
+  R_COUNT
 };
 
 /* REJECT MAP VALUES */
@@ -97,7 +99,7 @@ enum REJ_FLAGS {
 #define MAP_REJECT_POTENTIAL '3'
 
 class REJ {
-  std::bitset<32> flags;
+  std::bitset<R_COUNT> flags;
 
   void set_flag(REJ_FLAGS rej_flag) {
     flags.set(rej_flag);

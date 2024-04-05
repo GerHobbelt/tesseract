@@ -18,7 +18,7 @@
 #define _USE_MATH_DEFINES // needed to get definition of M_SQRT1_2
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -28,12 +28,12 @@
 #include <string>
 #include "lstmtrainer.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "boxread.h"
-#include "ctc.h"
+#include "../common/ctc.h"
 #include "imagedata.h"
 #include "input.h"
-#include "networkbuilder.h"
+#include "../common/networkbuilder.h"
 #include "ratngs.h"
 #include "recodebeam.h"
 #ifdef INCLUDE_TENSORFLOW
@@ -46,7 +46,7 @@ namespace tesseract {
 // Min actual error rate increase to constitute divergence.
 const double kMinDivergenceRate = 50.0;
 // Min iterations since last best before acting on a stall.
-const int kMinStallIterations = 10000;
+const int kMinStallIterations = 999999;
 // Fraction of current char error rate that sub_trainer_ has to be ahead
 // before we declare the sub_trainer_ a success and switch to it.
 const double kSubTrainerMarginFraction = 3.0 / 128;
@@ -68,7 +68,7 @@ const double kHighConfidence = 0.9375; // 15/16.
 const double kImprovementFraction = 15.0 / 16.0;
 // Fraction of last written best to make it worth writing another.
 const double kBestCheckpointFraction = 31.0 / 32.0;
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Scale factor for display of target activations of CTC.
 const int kTargetXScale = 5;
 const int kTargetYScale = 100;
@@ -92,12 +92,6 @@ LSTMTrainer::LSTMTrainer(const std::string &model_base, const std::string &check
 }
 
 LSTMTrainer::~LSTMTrainer() {
-#ifndef GRAPHICS_DISABLED
-  delete align_win_;
-  delete target_win_;
-  delete ctc_win_;
-  delete recon_win_;
-#endif
 }
 
 // Tries to deserialize a trainer from the given file and silently returns
@@ -108,12 +102,12 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   if (!LoadDataFromFile(filename, &data)) {
     return false;
   }
-  tprintf("Loaded file %s, unpacking...\n", filename);
+  tprintDebug("Loaded file {}, unpacking...\n", filename);
   if (!ReadTrainingDump(data, *this)) {
     return false;
   }
   if (IsIntMode()) {
-    tprintf("Error, %s is an integer (fast) model, cannot continue training\n",
+    tprintError("{} is an integer (fast) model, cannot continue training.\n",
             filename);
     return false;
   }
@@ -122,10 +116,10 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
       filename == old_traineddata) {
     return true; // Normal checkpoint load complete.
   }
-  tprintf("Code range changed from %d to %d!\n", network_->NumOutputs(),
+  tprintDebug("Code range changed from {} to {}!\n", network_->NumOutputs(),
           recoder_.code_range());
   if (old_traineddata == nullptr || *old_traineddata == '\0') {
-    tprintf("Must supply the old traineddata for code conversion!\n");
+    tprintError("Must supply the old traineddata for code conversion!\n");
     return false;
   }
   TessdataManager old_mgr;
@@ -151,7 +145,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
   SetNullChar();
   // Map the softmax(s) in the network.
   network_->RemapOutputs(old_recoder.code_range(), code_map);
-  tprintf("Previous null char=%d mapped to %d\n", old_null_char, null_char_);
+  tprintDebug("Previous null char={} mapped to {}\n", old_null_char, null_char_);
   return true;
 }
 
@@ -176,13 +170,13 @@ bool LSTMTrainer::InitNetwork(const char *network_spec, int append_index,
     return false;
   }
   network_str_ += network_spec;
-  tprintf("Built network:%s from request %s\n", network_->spec().c_str(),
+  tprintDebug("Built network:{} from request {}\n", network_->spec(),
           network_spec);
-  tprintf(
-      "Training parameters:\n  Debug interval = %d,"
-      " weights = %g, learning rate = %g, momentum=%g\n",
+  tprintDebug(
+      "Training parameters:\n  Debug interval = {},"
+      " weights = {}, learning rate = {}, momentum={}\n",
       debug_interval_, weight_range, learning_rate_, momentum_);
-  tprintf("null char=%d\n", null_char_);
+  tprintDebug("null char={}\n", null_char_);
   return true;
 }
 
@@ -194,7 +188,7 @@ int LSTMTrainer::InitTensorFlowNetwork(const std::string &tf_proto) {
   TFNetwork *tf_net = new TFNetwork("TensorFlow");
   training_iteration_ = tf_net->InitFromProtoStr(tf_proto);
   if (training_iteration_ == 0) {
-    tprintf("InitFromProtoStr failed!!\n");
+    tprintError("InitFromProtoStr failed!!\n");
     return 0;
   }
   network_ = tf_net;
@@ -239,8 +233,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
     double cert_offset_step, double max_cert_offset, std::string &results) {
   sample_iteration_ = iteration;
   NetworkIO fwd_outputs, targets;
-  Trainability result =
-      PrepareForBackward(trainingdata, &fwd_outputs, &targets);
+  Trainability result = PrepareForBackward(trainingdata, &fwd_outputs, &targets);
   if (result == UNENCODABLE || result == HI_PRECISION_ERR || dict_ == nullptr) {
     return result;
   }
@@ -251,8 +244,9 @@ Trainability LSTMTrainer::GridSearchDictParams(
   // NO-dict error.
   RecodeBeamSearch base_search(recoder_, null_char_, SimpleTextOutput(),
                                nullptr);
+  base_search.SetDebug(HasDebug() - 1);
   base_search.Decode(fwd_outputs, 1.0, 0.0, RecodeBeamSearch::kMinCertainty,
-                     nullptr);
+                     nullptr, 0);
   base_search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
   std::string truth_text = DecodeLabels(truth_labels);
   std::string ocr_text = DecodeLabels(ocr_labels);
@@ -260,11 +254,12 @@ Trainability LSTMTrainer::GridSearchDictParams(
   results += "0,0=" + std::to_string(baseline_error);
 
   RecodeBeamSearch search(recoder_, null_char_, SimpleTextOutput(), dict_);
+  search.SetDebug(HasDebug() - 1);
   for (double r = min_dict_ratio; r < max_dict_ratio; r += dict_ratio_step) {
     for (double c = min_cert_offset; c < max_cert_offset;
          c += cert_offset_step) {
       search.Decode(fwd_outputs, r, c, RecodeBeamSearch::kMinCertainty,
-                    nullptr);
+                    nullptr, 0);
       search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
       truth_text = DecodeLabels(truth_labels);
       ocr_text = DecodeLabels(ocr_labels);
@@ -274,7 +269,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
           !std::isfinite(word_error)) {
         std::string t = DecodeLabels(truth_labels);
         std::string o = DecodeLabels(ocr_labels);
-        tprintf("r=%g, c=%g, truth=%s, ocr=%s, wderr=%g, truth[0]=%d\n", r, c,
+        tprintDebug("r={}, c={}, truth={}, ocr={}, wderr={}, truth[0]={}\n", r, c,
                 t.c_str(), o.c_str(), word_error, truth_labels[0]);
       }
       results += " " + std::to_string(r);
@@ -516,7 +511,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
     // Special case. If we successfully decoded the recognizer, but fail here
     // then it means we were just given a recognizer, so issue a warning and
     // allow it.
-    tprintf("Warning: LSTMTrainer deserialized an LSTMRecognizer!\n");
+    tprintWarn("LSTMTrainer deserialized an LSTMRecognizer!\n");
     learning_iteration_ = 0;
     network_->SetEnableTraining(TS_ENABLED);
     return true;
@@ -650,7 +645,7 @@ SubTrainerResult LSTMTrainer::UpdateSubtrainer(std::stringstream &log_msg) {
       batch_log.imbue(std::locale::classic());
       sub_trainer_->PrepareLogMsg(batch_log);
       batch_log << "\n";
-      tprintf("UpdateSubtrainer:%s", batch_log.str().c_str());
+      tprintDebug("UpdateSubtrainer:{}", batch_log.str());
       log_msg << batch_log.str();
       sub_error = sub_trainer_->CharError();
       sub_margin = (training_error - sub_error) / sub_error;
@@ -707,7 +702,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     bad_sums[i].resize(num_layers, 0.0);
     ok_sums[i].resize(num_layers, 0.0);
   }
-  auto momentum_factor = 1 / (1 - momentum_);
+  TFloat momentum_factor = 1.0 / (1.0 - momentum_);
   std::vector<char> orig_trainer;
   samples_trainer->SaveTrainingDump(LIGHT, *this, &orig_trainer);
   for (int i = 0; i < num_layers; ++i) {
@@ -725,6 +720,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
       }
       // Make a copy of *this, so we can mess about without damaging anything.
       LSTMTrainer copy_trainer;
+	  copy_trainer.SetDebug(samples_trainer->HasDebug());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
       copy_trainer.network_->Update(0.0, 0.0, 0.0, 0);
@@ -751,7 +747,8 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
           continue;
         }
         LSTMTrainer layer_trainer;
-        samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
+		layer_trainer.SetDebug(samples_trainer->HasDebug());
+		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);
         // Update the weights in just the layer, using Adam if enabled.
         layer->Update(0.0, momentum_, adam_beta_,
@@ -785,14 +782,14 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     TFloat total_same = bad_sums[LR_SAME][i] + ok_sums[LR_SAME][i];
     TFloat frac_down = bad_sums[LR_DOWN][i] / total_down;
     TFloat frac_same = bad_sums[LR_SAME][i] / total_same;
-    tprintf("Layer %d=%s: lr %g->%g%%, lr %g->%g%%", i, layer->name().c_str(),
+    tprintDebug("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
             lr * factor, 100.0 * frac_down, lr, 100.0 * frac_same);
     if (frac_down < frac_same * kImprovementFraction) {
-      tprintf(" REDUCED\n");
+      tprintDebug(" REDUCED\n");
       ScaleLayerLearningRate(layers[i], factor);
       ++num_lowered;
     } else {
-      tprintf(" SAME\n");
+      tprintDebug(" SAME\n");
     }
   }
   if (num_lowered == 0) {
@@ -815,7 +812,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
                                const UnicharCompress *recoder, bool simple_text,
                                int null_char, std::vector<int> *labels) {
   if (str.c_str() == nullptr || str.length() <= 0) {
-    tprintf("Empty truth string!\n");
+    tprintError("Empty truth string!\n");
     return false;
   }
   unsigned err_index;
@@ -828,7 +825,8 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   if (unicharset.encode_string(cleaned.c_str(), true, &internal_labels, nullptr,
                                &err_index)) {
     bool success = true;
-    for (auto internal_label : internal_labels) {
+	for (int i = 0, l = internal_labels.size(); i < l; i++) {
+	  auto internal_label = internal_labels[i];
       if (recoder != nullptr) {
         // Re-encode labels via recoder.
         RecodedCharID code;
@@ -856,11 +854,13 @@ bool LSTMTrainer::EncodeString(const std::string &str,
       return true;
     }
   }
-  tprintf("Encoding of string failed! Failure bytes:");
+  tprintError("Encoding of string failed!\n");
+  tprintError("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintf(" %x", cleaned[err_index++] & 0xff);
+    tprintError(" {}", static_cast<unsigned int>(cleaned[err_index++] & 0xff));
   }
-  tprintf("\n");
+  tprintError("\n");
+  tprintError("  Source string fed to encoder: {}\n", unicharset.debug_utf8_str(str.c_str()));
   return false;
 }
 
@@ -887,8 +887,8 @@ Trainability LSTMTrainer::TrainOnLine(const ImageData *trainingdata,
     network_->Update(learning_rate_, batch ? -1.0f : momentum_, adam_beta_,
                      training_iteration_ + 1);
   }
-#ifndef GRAPHICS_DISABLED
-  if (debug_interval_ == 1 && debug_win_ != nullptr) {
+#if !GRAPHICS_DISABLED
+  if (debug_interval_ == 1 && debug_win_ && debug_win_->HasInteractiveFeature()) {
     debug_win_->AwaitEvent(SVET_CLICK);
   }
 #endif // !GRAPHICS_DISABLED
@@ -903,7 +903,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
                                              NetworkIO *fwd_outputs,
                                              NetworkIO *targets) {
   if (trainingdata == nullptr) {
-    tprintf("Null trainingdata.\n");
+    tprintError("Null trainingdata.\n");
     return UNENCODABLE;
   }
   // Ensure repeatability of random elements even across checkpoints.
@@ -911,9 +911,9 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
       debug_interval_ > 0 && training_iteration() % debug_interval_ == 0;
   std::vector<int> truth_labels;
   if (!EncodeString(trainingdata->transcription(), &truth_labels)) {
-    tprintf("Can't encode transcription: '%s' in language '%s'\n",
-            trainingdata->transcription().c_str(),
-            trainingdata->language().c_str());
+    tprintError("Can't encode transcription: '{}' in language '{}'\n",
+            trainingdata->transcription(),
+            trainingdata->language());
     return UNENCODABLE;
   }
   bool upside_down = false;
@@ -940,33 +940,34 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
     ++w;
   }
   if (w == truth_labels.size()) {
-    tprintf("Blank transcription: %s\n", trainingdata->transcription().c_str());
+    tprintError("Blank transcription: {}\n", trainingdata->transcription());
     return UNENCODABLE;
   }
   float image_scale;
   NetworkIO inputs;
   bool invert = trainingdata->boxes().empty();
-  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, debug, invert, upside_down,
+  TBOX line_box(0, 0, 100, 100);
+  if (!RecognizeLine(*trainingdata, invert ? 0.5f : 0.0f, invert, upside_down, line_box, 
                      &image_scale, &inputs, fwd_outputs)) {
-    tprintf("Image %s not trainable\n", trainingdata->imagefilename().c_str());
+    tprintError("Image {} not trainable\n", trainingdata->imagefilename());
     return UNENCODABLE;
   }
   targets->Resize(*fwd_outputs, network_->NumOutputs());
   LossType loss_type = OutputLossType();
   if (loss_type == LT_SOFTMAX) {
     if (!ComputeTextTargets(*fwd_outputs, truth_labels, targets)) {
-      tprintf("Compute simple targets failed for %s!\n",
-              trainingdata->imagefilename().c_str());
+      tprintError("Compute simple targets failed for {}!\n",
+              trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else if (loss_type == LT_CTC) {
     if (!ComputeCTCTargets(truth_labels, fwd_outputs, targets)) {
-      tprintf("Compute CTC targets failed for %s!\n",
-              trainingdata->imagefilename().c_str());
+      tprintError("Compute CTC targets failed for {}!\n",
+              trainingdata->imagefilename());
       return UNENCODABLE;
     }
   } else {
-    tprintf("Logistic outputs not implemented yet!\n");
+    tprintError("Logistic outputs not implemented yet!\n");
     return UNENCODABLE;
   }
   std::vector<int> ocr_labels;
@@ -978,7 +979,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   }
   if (!DebugLSTMTraining(inputs, *trainingdata, *fwd_outputs, truth_labels,
                          *targets)) {
-    tprintf("Input width was %d\n", inputs.Width());
+    tprintError("Input width was {}\n", inputs.Width());
     return UNENCODABLE;
   }
   std::string ocr_text = DecodeLabels(ocr_labels);
@@ -986,7 +987,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   targets->SubtractAllFromFloat(*fwd_outputs);
   if (debug_interval_ != 0) {
     if (truth_text != ocr_text) {
-      tprintf("Iteration %d: BEST OCR TEXT : %s\n", training_iteration(),
+      tprintDebug("Iteration {}: BEST OCR TEXT : {}\n", training_iteration(),
               ocr_text.c_str());
     }
   }
@@ -994,7 +995,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
   double word_error = ComputeWordError(&truth_text, &ocr_text);
   double delta_error = ComputeErrorRates(*targets, char_error, word_error);
   if (debug_interval_ != 0) {
-    tprintf("File %s line %d %s:\n", trainingdata->imagefilename().c_str(),
+    tprintDebug("File {} line {} {}:\n", trainingdata->imagefilename(),
             trainingdata->page_number(), delta_error == 0.0 ? "(Perfect)" : "");
   }
   if (delta_error == 0.0) {
@@ -1022,7 +1023,7 @@ bool LSTMTrainer::SaveTrainingDump(SerializeAmount serialize_amount,
 bool LSTMTrainer::ReadLocalTrainingDump(const TessdataManager *mgr,
                                         const char *data, int size) {
   if (size == 0) {
-    tprintf("Warning: data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
+    tprintWarn("Data size is 0 in LSTMTrainer::ReadLocalTrainingDump\n");
     return false;
   }
   TFile fp;
@@ -1117,9 +1118,7 @@ void LSTMTrainer::InitCharSet() {
   training_flags_ = TF_COMPRESS_UNICHARSET;
   // Initialize the unicharset and recoder.
   if (!LoadCharsets(&mgr_)) {
-    ASSERT_HOST(
-        "Must provide a traineddata containing lstm_unicharset and"
-        " lstm_recoder!\n" != nullptr);
+    ASSERT_HOST(!"Must provide a traineddata containing lstm_unicharset and lstm_recoder!");
   }
   SetNullChar();
 }
@@ -1135,7 +1134,7 @@ void LSTMTrainer::SetNullChar() {
 
 // Factored sub-constructor sets up reasonable default values.
 void LSTMTrainer::EmptyConstructor() {
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   align_win_ = nullptr;
   target_win_ = nullptr;
   ctc_win_ = nullptr;
@@ -1158,7 +1157,7 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
                                     const NetworkIO &outputs) {
   const std::string &truth_text = DecodeLabels(truth_labels);
   if (truth_text.c_str() == nullptr || truth_text.length() <= 0) {
-    tprintf("Empty truth string at decode time!\n");
+    tprintError("Empty truth string at decode time!\n");
     return false;
   }
   if (debug_interval_ != 0) {
@@ -1167,21 +1166,22 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
     std::vector<int> xcoords;
     LabelsFromOutputs(outputs, &labels, &xcoords);
     std::string text = DecodeLabels(labels);
-    tprintf("Iteration %d: GROUND  TRUTH : %s\n", training_iteration(),
-            truth_text.c_str());
+    tprintDebug("Iteration {}: GROUND  TRUTH : {}\n", training_iteration(),
+            truth_text);
     if (truth_text != text) {
-      tprintf("Iteration %d: ALIGNED TRUTH : %s\n", training_iteration(),
-              text.c_str());
+      tprintDebug("Iteration {}: ALIGNED TRUTH : {}\n", training_iteration(),
+              text);
     }
     if (debug_interval_ > 0 && training_iteration() % debug_interval_ == 0) {
-      tprintf("TRAINING activation path for truth string %s\n",
-              truth_text.c_str());
+      tprintDebug("TRAINING activation path for truth string {}\n",
+              truth_text);
       DebugActivationPath(outputs, labels, xcoords);
-#ifndef GRAPHICS_DISABLED
-      DisplayForward(inputs, labels, xcoords, "LSTMTraining", &align_win_);
+#if !GRAPHICS_DISABLED
+      TBOX line_box(0, 0, 100, 100);
+      DisplayForward(inputs, labels, xcoords, line_box, "LSTMTraining", align_win_);
       if (OutputLossType() == LT_CTC) {
-        DisplayTargets(fwd_outputs, "CTC Outputs", &ctc_win_);
-        DisplayTargets(outputs, "CTC Targets", &target_win_);
+        DisplayTargets(fwd_outputs, "CTC Outputs", ctc_win_);
+        DisplayTargets(outputs, "CTC Targets", target_win_);
       }
 #endif
     }
@@ -1189,40 +1189,39 @@ bool LSTMTrainer::DebugLSTMTraining(const NetworkIO &inputs,
   return true;
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Displays the network targets as line a line graph.
 void LSTMTrainer::DisplayTargets(const NetworkIO &targets,
-                                 const char *window_name, ScrollView **window) {
+                                 const char *window_name, ScrollViewReference &window) {
   int width = targets.Width();
   int num_features = targets.NumFeatures();
-  Network::ClearWindow(true, window_name, width * kTargetXScale, kTargetYScale,
-                       window);
+  Network::ClearWindow(true, window_name, width * kTargetXScale, kTargetYScale, window);
   for (int c = 0; c < num_features; ++c) {
-    int color = c % (ScrollView::GREEN_YELLOW - 1) + 2;
-    (*window)->Pen(static_cast<ScrollView::Color>(color));
+    int color = c % (Diagnostics::GREEN_YELLOW - 1) + 2;
+    window->Pen(static_cast<Diagnostics::Color>(color));
     int start_t = -1;
     for (int t = 0; t < width; ++t) {
       double target = targets.f(t)[c];
       target *= kTargetYScale;
       if (target >= 1) {
         if (start_t < 0) {
-          (*window)->SetCursor(t - 1, 0);
+          window->SetCursor(t - 1, 0);
           start_t = t;
         }
-        (*window)->DrawTo(t, target);
+        window->DrawTo(t, target);
       } else if (start_t >= 0) {
-        (*window)->DrawTo(t, 0);
-        (*window)->DrawTo(start_t - 1, 0);
+        window->DrawTo(t, 0);
+        window->DrawTo(start_t - 1, 0);
         start_t = -1;
       }
     }
     if (start_t >= 0) {
-      (*window)->DrawTo(width, 0);
-      (*window)->DrawTo(start_t - 1, 0);
+      window->DrawTo(width, 0);
+      window->DrawTo(start_t - 1, 0);
     }
   }
-  (*window)->Update();
+  window->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -1233,8 +1232,8 @@ bool LSTMTrainer::ComputeTextTargets(const NetworkIO &outputs,
                                      const std::vector<int> &truth_labels,
                                      NetworkIO *targets) {
   if (truth_labels.size() > targets->Width()) {
-    tprintf("Error: transcription %s too long to fit into target of width %d\n",
-            DecodeLabels(truth_labels).c_str(), targets->Width());
+    tprintError("Transcription {} too long to fit into target of width {}\n",
+            DecodeLabels(truth_labels), targets->Width());
     return false;
   }
   int i = 0;
@@ -1411,7 +1410,7 @@ void LSTMTrainer::RollErrorBuffers() {
   }
   ++training_iteration_;
   if (debug_interval_ != 0) {
-    tprintf("Mean rms=%g%%, delta=%g%%, train=%g%%(%g%%), skip ratio=%g%%\n",
+    tprintDebug("Mean rms={}%, delta={}%, train={}%({}%), skip ratio={}%\n",
             error_rates_[ET_RMS], error_rates_[ET_DELTA],
             error_rates_[ET_CHAR_ERROR], error_rates_[ET_WORD_RECERR],
             error_rates_[ET_SKIP_RATIO]);
@@ -1466,7 +1465,7 @@ std::string LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
     }
     int old_iteration = i >= 0 ? best_error_iterations_[i] : 0;
     improvement_steps_ = iteration - old_iteration;
-    tprintf("2 Percent improvement time=%d, best error was %g @ %d\n",
+    tprintDebug("2 Percent improvement time={}, best error was {} @ {}\n",
             improvement_steps_, i >= 0 ? best_error_history_[i] : 100.0,
             old_iteration);
   } else if (error_rate > best_error_rate_) {

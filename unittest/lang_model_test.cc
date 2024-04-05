@@ -19,6 +19,11 @@
 #include "lstmtrainer.h"
 #include "unicharset_training_utils.h"
 
+#include "testdata.h"
+
+
+#if defined(HAS_LIBICU)
+
 namespace tesseract {
 
 std::string TestDataNameToPath(const std::string &name) {
@@ -199,3 +204,5 @@ TEST(LangModelTest, AddACharacterHindi) {
 }
 
 } // namespace tesseract
+
+#endif

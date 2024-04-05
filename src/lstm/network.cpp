@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -26,7 +26,7 @@
 
 // This base class needs to know about all its sub-classes because of the
 // factory deserializing method: CreateFromFile.
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include "convolve.h"
 #include "fullyconnected.h"
 #include "input.h"
@@ -43,9 +43,12 @@
 #endif
 #include "tprintf.h"
 
+#undef min
+#undef max
+
 namespace tesseract {
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // Min and max window sizes.
 const int kMinWinSize = 500;
@@ -85,9 +88,12 @@ Network::Network()
     , ni_(0)
     , no_(0)
     , num_weights_(0)
+#if !GRAPHICS_DISABLED
     , forward_win_(nullptr)
     , backward_win_(nullptr)
-    , randomizer_(nullptr) {}
+    , randomizer_(nullptr)
+#endif
+{}
 Network::Network(NetworkType type, const std::string &name, int ni, int no)
     : type_(type)
     , training_(TS_ENABLED)
@@ -97,9 +103,12 @@ Network::Network(NetworkType type, const std::string &name, int ni, int no)
     , no_(no)
     , num_weights_(0)
     , name_(name)
+#if !GRAPHICS_DISABLED
     , forward_win_(nullptr)
     , backward_win_(nullptr)
-    , randomizer_(nullptr) {}
+#endif
+    , randomizer_(nullptr)
+{}
 
 // Suspends/Enables/Permanently disables training by setting the training_
 // flag. Serialize and DeSerialize only operate on the run-time data if state
@@ -204,7 +213,7 @@ static NetworkType getNetworkType(TFile *fp) {
     for (data = 0; data < NT_COUNT && type_name != kTypeNames[data]; ++data) {
     }
     if (data == NT_COUNT) {
-      tprintf("Invalid network layer type:%s\n", type_name.c_str());
+      tprintError("Invalid network layer type:{}\n", type_name.c_str());
       return NT_NONE;
     }
   }
@@ -290,7 +299,7 @@ Network *Network::CreateFromFile(TFile *fp) {
 #ifdef INCLUDE_TENSORFLOW
       network = new TFNetwork(name);
 #else
-      tprintf("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
+      tprintWarn("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
 #endif
       break;
     // All variants of FullyConnected.
@@ -326,30 +335,29 @@ TFloat Network::Random(TFloat range) {
   return randomizer_->SignedRand(range);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 
 // === Debug image display methods. ===
 // Displays the image of the matrix to the forward window.
 void Network::DisplayForward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
-  ClearWindow(false, name_.c_str(), pixGetWidth(image), pixGetHeight(image), &forward_win_);
-  DisplayImage(image, forward_win_);
-  forward_win_->Update();
+  ClearWindow(false, name_, pixGetWidth(image), pixGetHeight(image), forward_win_);
+  DisplayImage(image, fmt::format("DisplayForward({})", name_), forward_win_);
+  forward_win_->UpdateWindow();
 }
 
 // Displays the image of the matrix to the backward window.
 void Network::DisplayBackward(const NetworkIO &matrix) {
   Image image = matrix.ToPix();
   std::string window_name = name_ + "-back";
-  ClearWindow(false, window_name.c_str(), pixGetWidth(image), pixGetHeight(image), &backward_win_);
-  DisplayImage(image, backward_win_);
-  backward_win_->Update();
+  ClearWindow(false, window_name, pixGetWidth(image), pixGetHeight(image), backward_win_);
+  DisplayImage(image, fmt::format("DisplayBackward({})", name_), backward_win_);
+  backward_win_->UpdateWindow();
 }
 
 // Creates the window if needed, otherwise clears it.
-void Network::ClearWindow(bool tess_coords, const char *window_name, int width, int height,
-                          ScrollView **window) {
-  if (*window == nullptr) {
+void Network::ClearWindow(bool tess_coords, const char *window_name, int width, int height, ScrollViewReference &window) {
+  if (!window) {
     int min_size = std::min(width, height);
     if (min_size < kMinWinSize) {
       if (min_size < 1) {
@@ -366,18 +374,18 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
     if (height > kMaxWinSize) {
       height = kMaxWinSize;
     }
-    *window = new ScrollView(window_name, 80, 100, width, height, width, height, tess_coords);
-    tprintf("Created window %s of size %d, %d\n", window_name, width, height);
+    window = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, window_name, 80, 100, width, height, width, height, tess_coords);
+    tprintDebug("Created window \"{}\" of size w:{} x h:{}\n", window_name, width, height);
   } else {
-    (*window)->Clear();
+    window->Clear();
   }
 }
 
 // Displays the pix in the given window. and returns the height of the pix.
 // The pix is pixDestroyed.
-int Network::DisplayImage(Image pix, ScrollView *window) {
+int Network::DisplayImage(Image pix, const char *title, ScrollViewReference &window) {
   int height = pixGetHeight(pix);
-  window->Draw(pix, 0, 0);
+  window->Draw(pix, 0, window->TranslateYCoordinate(0), title);
   pix.destroy();
   return height;
 }

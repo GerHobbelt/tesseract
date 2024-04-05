@@ -19,20 +19,20 @@
 #ifndef TESSERACT_CCUTIL_CCUTIL_H_
 #define TESSERACT_CCUTIL_CCUTIL_H_
 
-#ifndef _WIN32
+#if !(defined(WIN32) || defined(_WIN32) || defined(_WIN64))
 #  include <pthread.h>
 #  include <semaphore.h>
 #endif
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
 #endif
 #include "errcode.h"
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for HANDLE, ...
 #endif
 #include "params.h"
@@ -47,26 +47,32 @@ public:
 
 public:
   // Read the arguments and set up the data path.
-  void main_setup(const std::string &argv0,   // program name
-                  const std::string &basename // name of image
+  void main_setup(const std::string &argv0,                 // program name
+                  const std::string & output_image_basename // name of output/debug image(s)
   );
-  ParamsVectors *params() {
-    return &params_;
+  ParamsVector &params() {
+    return params_;
   }
 
+  ParamsVectorSet &params_collective() {
+    return params_collective_;
+  }
+
+  std::string input_file_path; // name of currently processed input file
   std::string datadir;       // dir for data files
   std::string imagebasename; // name of image
   std::string lang;
   std::string language_data_path_prefix;
   UNICHARSET unicharset;
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   UnicharAmbigs unichar_ambigs;
 #endif
   std::string imagefile; // image file name
   std::string directory; // main directory
 
 private:
-  ParamsVectors params_;
+  ParamsVector params_;
+  ParamsVectorSet params_collective_;
 
 public:
   // Member parameters.

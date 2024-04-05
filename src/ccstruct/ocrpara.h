@@ -19,7 +19,7 @@
 #ifndef TESSERACT_CCSTRUCT_OCRPARA_H_
 #define TESSERACT_CCSTRUCT_OCRPARA_H_
 
-#include "elst.h"
+#include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 #include <tesseract/publictypes.h>
 
@@ -50,7 +50,7 @@ public:
   bool has_drop_cap;
 };
 
-ELISTIZEH(PARA)
+ELISTIZEH(PARA);
 
 // A geometric model of paragraph indentation and alignment.
 //

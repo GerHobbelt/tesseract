@@ -71,7 +71,7 @@ You should always make sure your changes build and run successfully.
 
 For that, your clone needs to have all submodules (`googletest`, `test`) included. To do so, either specify `--recurse-submodules` during the initial clone, or run `git submodule update --init --recursive NAME` for each `NAME` later. If `configure` already created those directories (blocking the clone), remove them first (or `make distclean`), then clone and reconfigure.
 
-Have a look at [the README](./README.md) and [testing README](https://github.com/tesseract-ocr/test/blob/main/README.md) and the [documentation](https://tesseract-ocr.github.io/tessdoc/Compiling-%E2%80%93-GitInstallation.html#unit-test-builds) on installation.
+Have a look at [the README](README.md) and [testing README](https://github.com/tesseract-ocr/test/blob/main/README.md) and the [documentation](https://tesseract-ocr.github.io/tessdoc/Compiling-%E2%80%93-GitInstallation.html#unit-test-builds) on installation.
 
 In short, after running `configure` from the build directory of your choice, to build the library and CLI, run `make`. To test it, run `make check`. To build the training tools, run `make training`.
 

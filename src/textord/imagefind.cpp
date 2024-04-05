@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -27,10 +27,15 @@
 #include "linlsq.h"
 #include "params.h"
 #include "statistc.h"
+#include "tesseractclass.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <algorithm>
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"
+#endif
 
 namespace tesseract {
 
@@ -50,6 +55,11 @@ const int kMinImageFindSize = 100;
 // mask to encourage them to join together. Make it too big and images
 // will fatten out too much and have to be clipped to text.
 const int kNoisePadding = 4;
+
+ImageFind::ImageFind(Tesseract* tess) :
+  tesseract_(tess) {
+  ASSERT0(tess != nullptr);
+}
 
 // Scans horizontally on x=[x_start,x_end), starting with y=*y_start,
 // stepping y+=y_step, until y=y_end. *ystart is input/output.
@@ -203,13 +213,13 @@ static bool pixNearlyRectangular(Image pix, double min_fraction, double max_frac
 // If not nullptr, they must be destroyed by the caller.
 // Resolution of pix should match the source image (Tesseract::pix_binary_)
 // so the output coordinate systems match.
-static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **boxa,
+void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
                                       Pixa **pixa) {
   *boxa = nullptr;
   *pixa = nullptr;
 
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pix, "Conncompimage");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pix, "Conn Comp Image");
   }
   // Find the individual image regions in the mask image.
   *boxa = pixConnComp(pix, pixa, 8);
@@ -223,8 +233,8 @@ static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **b
   for (int i = 0; i < npixes; ++i) {
     int x_start, x_end, y_start, y_end;
     Image img_pix = pixaGetPix(*pixa, i, L_CLONE);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(img_pix, "A component");
+    if (textord_tabfind_show_images) {
+      tesseract_->AddPixDebugPage(img_pix, fmt::format("A component @ index {}", i));
     }
     if (pixNearlyRectangular(img_pix, kMinRectangularFraction, kMaxRectangularFraction,
                              kMaxRectangularGradient, &x_start, &y_start, &x_end, &y_end)) {
@@ -249,7 +259,7 @@ static void ConnCompAndRectangularize(Image pix, DebugPixa *pixa_debug, Boxa **b
 // The returned pix may be nullptr, meaning no images found.
 // If not nullptr, it must be PixDestroyed by the caller.
 // If textord_tabfind_show_images, debug images are appended to pixa_debug.
-Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
+Image ImageFind::FindImages(Image pix) {
   auto width = pixGetWidth(pix);
   auto height = pixGetHeight(pix);
   // Not worth looking at small images.
@@ -262,18 +272,18 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
 
   // Reduce by factor 2.
   Image pixr = pixReduceRankBinaryCascade(pix, 1, 0, 0, 0);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixr, "CascadeReduced");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixr, "Find Images : Cascade Reduced");
   }
 
   // Get the halftone mask directly from Leptonica.
   l_int32 ht_found = 0;
-  Pixa *pixadb = (textord_tabfind_show_images && pixa_debug != nullptr) ? pixaCreate(0) : nullptr;
+  Pixa *pixadb = textord_tabfind_show_images ? pixaCreate(0) : nullptr;
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {
     Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(pixdb, "HalftoneMask");
+    if (textord_tabfind_show_images) {
+      tesseract_->AddPixDebugPage(pixdb, "Find Images : Generated Halftone Mask");
     }
     pixdb.destroy();
     pixaDestroy(&pixadb);
@@ -288,8 +298,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
 
   // Expand back up again.
   Image pixht = pixExpandReplicate(pixht2, 2);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixht, "HalftoneReplicated");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixht, "HalftoneReplicated");
   }
   pixht2.destroy();
 
@@ -301,8 +311,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   // Eliminate lines and bars that may be joined to images.
   Image pixfinemask = pixReduceRankBinaryCascade(pixht, 1, 1, 3, 3);
   pixDilateBrick(pixfinemask, pixfinemask, 5, 5);
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixfinemask, "FineMask");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixfinemask, "FineMask");
   }
   Image pixreduced = pixReduceRankBinaryCascade(pixht, 1, 1, 1, 1);
   Image pixreduced2 = pixReduceRankBinaryCascade(pixreduced, 3, 3, 3, 0);
@@ -310,8 +320,8 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   pixDilateBrick(pixreduced2, pixreduced2, 5, 5);
   Image pixcoarsemask = pixExpandReplicate(pixreduced2, 8);
   pixreduced2.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixcoarsemask, "CoarseMask");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixcoarsemask, "CoarseMask");
   }
   // Combine the coarse and fine image masks.
   pixcoarsemask &= pixfinemask;
@@ -320,14 +330,14 @@ Image ImageFind::FindImages(Image pix, DebugPixa *pixa_debug) {
   pixDilateBrick(pixcoarsemask, pixcoarsemask, 3, 3);
   Image pixmask = pixExpandReplicate(pixcoarsemask, 16);
   pixcoarsemask.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixmask, "MaskDilated");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixmask, "MaskDilated");
   }
   // And the image mask with the line and bar remover.
   pixht &= pixmask;
   pixmask.destroy();
-  if (textord_tabfind_show_images && pixa_debug != nullptr) {
-    pixa_debug->AddPix(pixht, "FinalMask");
+  if (textord_tabfind_show_images) {
+    tesseract_->AddPixDebugPage(pixht, "FinalMask");
   }
   // Make the result image the same size as the input.
   Image result = pixCreate(width, height, 1);
@@ -479,7 +489,7 @@ int ImageFind::CountPixelsInRotatedBox(TBOX box, const TBOX &im_box, const FCOOR
 // over the whole box. Shrink the x bounds of slice, but not the y bounds
 // until there is at least one black pixel in the outermost columns.
 // rotation, rerotation, pix and im_box are defined in the large comment above.
-static void AttemptToShrinkBox(const FCOORD &rotation, const FCOORD &rerotation, const TBOX &im_box,
+void ImageFind::AttemptToShrinkBox(const FCOORD &rotation, const FCOORD &rerotation, const TBOX &im_box,
                                Image pix, TBOX *slice) {
   TBOX rotated_box(*slice);
   rotated_box.rotate(rerotation);
@@ -489,7 +499,7 @@ static void AttemptToShrinkBox(const FCOORD &rotation, const FCOORD &rerotation,
   int right = rotated_box.right() - rotated_im_box.left();
   int top = rotated_im_box.top() - rotated_box.top();
   int bottom = rotated_im_box.top() - rotated_box.bottom();
-  ImageFind::BoundsWithinRect(pix, &left, &top, &right, &bottom);
+  BoundsWithinRect(pix, &left, &top, &right, &bottom);
   top = rotated_im_box.top() - top;
   bottom = rotated_im_box.top() - bottom;
   left += rotated_im_box.left();
@@ -524,7 +534,7 @@ static void AttemptToShrinkBox(const FCOORD &rotation, const FCOORD &rerotation,
 // top-to-bottom order, but in extreme cases, hole creation is possible.
 // In such cases, the output order may cause strange block polygons.
 // rotation, rerotation, pix and im_box are defined in the large comment above.
-static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD &rotation,
+void ImageFind::CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD &rotation,
                               const FCOORD &rerotation, Image pix, ColPartition_LIST *part_list) {
   ASSERT_HOST(!part_list->empty());
   ColPartition_IT part_it(part_list);
@@ -540,10 +550,10 @@ static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD 
       if (box.top() < part_box.top()) {
         TBOX slice(part_box);
         slice.set_bottom(box.top());
-        if (ImageFind::CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
+        if (CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
           AttemptToShrinkBox(rotation, rerotation, im_box, pix, &slice);
           part_it.add_before_stay_put(
-              ColPartition::FakePartition(slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
+              ColPartition::FakePartition(tesseract_, slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
         }
       }
       // Left of box.
@@ -556,10 +566,10 @@ static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD 
         if (box.bottom() > part_box.bottom()) {
           slice.set_bottom(box.bottom());
         }
-        if (ImageFind::CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
+        if (CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
           AttemptToShrinkBox(rotation, rerotation, im_box, pix, &slice);
           part_it.add_before_stay_put(
-              ColPartition::FakePartition(slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
+              ColPartition::FakePartition(tesseract_, slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
         }
       }
       // Right of box.
@@ -572,20 +582,20 @@ static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD 
         if (box.bottom() > part_box.bottom()) {
           slice.set_bottom(box.bottom());
         }
-        if (ImageFind::CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
+        if (CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
           AttemptToShrinkBox(rotation, rerotation, im_box, pix, &slice);
           part_it.add_before_stay_put(
-              ColPartition::FakePartition(slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
+              ColPartition::FakePartition(tesseract_, slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
         }
       }
       // Below box.
       if (box.bottom() > part_box.bottom()) {
         TBOX slice(part_box);
         slice.set_top(box.bottom());
-        if (ImageFind::CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
+        if (CountPixelsInRotatedBox(slice, im_box, rerotation, pix) > 0) {
           AttemptToShrinkBox(rotation, rerotation, im_box, pix, &slice);
           part_it.add_before_stay_put(
-              ColPartition::FakePartition(slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
+              ColPartition::FakePartition(tesseract_, slice, PT_UNKNOWN, BRT_POLYIMAGE, BTFT_NONTEXT));
         }
       }
       part->DeleteBoxes();
@@ -602,17 +612,35 @@ static void CutChunkFromParts(const TBOX &box, const TBOX &im_box, const FCOORD 
 // For more detail see the large comment above on cutting polygonal images
 // from a rectangle.
 // rotation, rerotation, pix and im_box are defined in the large comment above.
-static void DivideImageIntoParts(const TBOX &im_box, const FCOORD &rotation,
+void ImageFind::DivideImageIntoParts(const TBOX &im_box, const FCOORD &rotation,
                                  const FCOORD &rerotation, Image pix,
                                  ColPartitionGridSearch *rectsearch, ColPartition_LIST *part_list) {
+
+  int textParts = 0;
+  int totalParts = 0;
+
+  rectsearch->StartRectSearch(im_box);
+  ColPartition *part;
+  while ((part = rectsearch->NextRectSearch()) != nullptr) {
+
+    totalParts++;
+    if (part->flow() >= BTFT_CHAIN) {
+      textParts++;
+    }
+  }
+
+  if (textParts * 2 > totalParts) {
+    return;
+  } 
+
   // Add the full im_box partition to the list to begin with.
   ColPartition *pix_part =
-      ColPartition::FakePartition(im_box, PT_UNKNOWN, BRT_RECTIMAGE, BTFT_NONTEXT);
+      ColPartition::FakePartition(tesseract_, im_box, PT_UNKNOWN, BRT_RECTIMAGE, BTFT_NONTEXT);
   ColPartition_IT part_it(part_list);
   part_it.add_after_then_move(pix_part);
 
   rectsearch->StartRectSearch(im_box);
-  ColPartition *part;
+  
   while ((part = rectsearch->NextRectSearch()) != nullptr) {
     TBOX part_box = part->bounding_box();
     if (part_box.contains(im_box) && part->flow() >= BTFT_CHAIN) {
@@ -626,7 +654,7 @@ static void DivideImageIntoParts(const TBOX &im_box, const FCOORD &rotation,
       // Text intersects the box.
       TBOX overlap_box = part_box.intersection(im_box);
       // Intersect it with the image box.
-      int black_area = ImageFind::CountPixelsInRotatedBox(overlap_box, im_box, rerotation, pix);
+      int black_area = CountPixelsInRotatedBox(overlap_box, im_box, rerotation, pix);
       if (black_area * 2 < part_box.area() || !im_box.contains(part_box)) {
         // Eat a piece out of the image.
         // Pad it so that pieces eaten out look decent.
@@ -879,14 +907,14 @@ static void DeletePartition(ColPartition *part) {
 // time it absorbs the nearest non-contained candidate, and everything that
 // is fully contained within part_ptr's bounding box.
 // TODO(rays) what if it just eats everything inside max_image_box in one go?
-static bool ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGridSearch *rectsearch,
+bool ImageFind::ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGridSearch *rectsearch,
                                  ColPartitionGrid *part_grid, ColPartition **part_ptr) {
   ColPartition *image_part = *part_ptr;
   TBOX im_part_box = image_part->bounding_box();
   if (textord_tabfind_show_images > 1) {
-    tprintf("Searching for merge with image part:");
+    tprintDebug("Searching for merge with image part:");
     im_part_box.print();
-    tprintf("Text box=");
+    tprintDebug("Text box=");
     max_image_box.print();
   }
   rectsearch->StartRectSearch(max_image_box);
@@ -895,16 +923,16 @@ static bool ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGridSear
   int best_dist = 0;
   while ((part = rectsearch->NextRectSearch()) != nullptr) {
     if (textord_tabfind_show_images > 1) {
-      tprintf("Considering merge with part:");
+      tprintDebug("Considering merge with part:");
       part->Print();
       if (im_part_box.contains(part->bounding_box())) {
-        tprintf("Fully contained\n");
+        tprintDebug("Fully contained\n");
       } else if (!max_image_box.contains(part->bounding_box())) {
-        tprintf("Not within text box\n");
+        tprintDebug("Not within text box\n");
       } else if (part->flow() == BTFT_STRONG_CHAIN) {
-        tprintf("Too strong text\n");
+        tprintDebug("Too strong text\n");
       } else {
-        tprintf("Real candidate\n");
+        tprintDebug("Real candidate\n");
       }
     }
     if (part->flow() == BTFT_STRONG_CHAIN || part->flow() == BTFT_TEXT_ON_IMAGE ||
@@ -936,13 +964,13 @@ static bool ExpandImageIntoParts(const TBOX &max_image_box, ColPartitionGridSear
     // It needs expanding. We can do it without touching text.
     TBOX box = best_part->bounding_box();
     if (textord_tabfind_show_images > 1) {
-      tprintf("Merging image part:");
+      tprintDebug("Merging image part:");
       im_part_box.print();
-      tprintf("with part:");
+      tprintDebug("with part:");
       box.print();
     }
     im_part_box += box;
-    *part_ptr = ColPartition::FakePartition(im_part_box, PT_UNKNOWN, BRT_RECTIMAGE, BTFT_NONTEXT);
+    *part_ptr = ColPartition::FakePartition(tesseract_, im_part_box, PT_UNKNOWN, BRT_RECTIMAGE, BTFT_NONTEXT);
     DeletePartition(image_part);
     part_grid->RemoveBBox(best_part);
     DeletePartition(best_part);
@@ -1140,12 +1168,12 @@ static void DeleteSmallImages(ColPartitionGrid *part_grid) {
 // situation and collect the image blobs.
 void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
                                     const FCOORD &rerotation, TO_BLOCK *block, TabFind *tab_grid,
-                                    DebugPixa *pixa_debug, ColPartitionGrid *part_grid,
+                                    ColPartitionGrid *part_grid,
                                     ColPartition_LIST *big_parts) {
   int imageheight = pixGetHeight(image_pix);
   Boxa *boxa;
   Pixa *pixa;
-  ConnCompAndRectangularize(image_pix, pixa_debug, &boxa, &pixa);
+  ConnCompAndRectangularize(image_pix, &boxa, &pixa);
   // Iterate the connected components in the image regions mask.
   int nboxes = 0;
   if (boxa != nullptr && pixa != nullptr) {
@@ -1161,9 +1189,9 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
     rectsearch.SetUniqueMode(true);
     ColPartition_LIST part_list;
     DivideImageIntoParts(im_box, rotation, rerotation, pix, &rectsearch, &part_list);
-    if (textord_tabfind_show_images && pixa_debug != nullptr) {
-      pixa_debug->AddPix(pix, "ImageComponent");
-      tprintf("Component has %d parts\n", part_list.length());
+    if (textord_tabfind_show_images) {
+      tesseract_->AddPixDebugPage(pix, "ImageComponent");
+      tprintDebug("Component has {} parts\n", part_list.length());
     }
     pix.destroy();
     if (!part_list.empty()) {
@@ -1199,9 +1227,9 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
   boxaDestroy(&boxa);
   pixaDestroy(&pixa);
   DeleteSmallImages(part_grid);
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
   if (textord_tabfind_show_images) {
-    ScrollView *images_win_ = part_grid->MakeWindow(1000, 400, "With Images");
+    ScrollViewReference images_win_(part_grid->MakeWindow(tesseract_, 1000, 400, "With Images"));
     part_grid->DisplayBoxes(images_win_);
   }
 #endif

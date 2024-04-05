@@ -17,7 +17,7 @@
  *************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
+#ifdef HAVE_TESSERACT_CONFIG_H
 #  include "config_auto.h"
 #endif
 
@@ -216,13 +216,13 @@ void remove_edgept(EDGEPT *point) {
  * Shows the coordinates of both points in a split.
  **********************************************************************/
 void SPLIT::Print() const {
-  tprintf("(%d,%d)--(%d,%d)", point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
+  tprintDebug("({},{})--({},{})", point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
 }
 
-#ifndef GRAPHICS_DISABLED
+#if !GRAPHICS_DISABLED
 // Draws the split in the given window.
-void SPLIT::Mark(ScrollView *window) const {
-  window->Pen(ScrollView::GREEN);
+void SPLIT::Mark(ScrollViewReference &window) const {
+  window->Pen(Diagnostics::GREEN);
   window->Line(point1->pos.x, point1->pos.y, point2->pos.x, point2->pos.y);
   window->UpdateWindow();
 }

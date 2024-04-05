@@ -21,8 +21,7 @@
 
 // expects clone of tessdata_fast repo in ../../tessdata_fast
 
-//#include "log.h"
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 #include <time.h>
 #include <fstream>
@@ -32,6 +31,9 @@
 #include <string>
 #include "include_gunit.h"
 #include "image.h"
+#include "log.h"
+
+#include "testdata.h"
 
 namespace tesseract {
 
@@ -59,24 +61,26 @@ protected:
 
 void OCRTester(const char *imgname, const char *groundtruth, const char *tessdatadir,
                const char *lang) {
-  // log.info() << tessdatadir << " for language: " << lang << std::endl;
+  LOG(INFO) << tessdatadir << " for language: " << lang << std::endl;
   char *outText;
   std::locale loc("C"); // You can also use "" for the default system locale
   std::ifstream file(groundtruth);
   file.imbue(loc); // Use it for file input
   std::string gtText((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-  auto api = std::make_unique<tesseract::TessBaseAPI>();
-  ASSERT_FALSE(api->Init(tessdatadir, lang)) << "Could not initialize tesseract.";
-  Image image = pixRead(imgname);
-  ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
-  api->SetImage(image);
-  outText = api->GetUTF8Text();
-  EXPECT_EQ(gtText, outText) << "Phototest.tif OCR does not match ground truth for "
-                             << ::testing::PrintToString(lang);
-  api->End();
-  api->ClearPersistentCache();
-  delete[] outText;
-  image.destroy();
+  {
+    auto api = std::make_unique<tesseract::TessBaseAPI>();
+    ASSERT_FALSE(api->InitSimple(tessdatadir, lang)) << "Could not initialize tesseract.";
+    Image image = pixRead(imgname);
+    ASSERT_TRUE(image != nullptr) << "Failed to read test image.";
+    api->SetImage(image);
+    outText = api->GetUTF8Text();
+    EXPECT_EQ(gtText, outText) << "Phototest.tif OCR does not match ground truth for "
+                               << ::testing::PrintToString(lang);
+    api->End();
+    image.destroy();
+    delete[] outText;
+  }	// end of `api` scope
+  TessBaseAPI::ClearPersistentCache();
 }
 
 class MatchGroundTruth : public QuickTest, public ::testing::WithParamInterface<const char *> {};

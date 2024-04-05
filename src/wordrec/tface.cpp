@@ -20,7 +20,7 @@
 
 #include "wordrec.h"
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 #  include "chop.h"
 #  include "featdefs.h"
 #  include "pageres.h"
@@ -39,9 +39,12 @@ namespace tesseract {
 void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_classifier,
                              TessdataManager *init_dict) {
   if (!textbase.empty()) {
-    imagefile = textbase;
+    if (textbase == "-" /* stdout */)
+      imagefile = "tesseract-stdio-session";
+    else
+      imagefile = textbase;
   }
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   InitFeatureDefs(&feature_defs_);
   InitAdaptiveClassifier(init_classifier);
   if (init_dict) {
@@ -50,7 +53,7 @@ void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_
     getDict().FinishLoad();
   }
   pass2_ok_split = chop_ok_split;
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 }
 
 /**
@@ -71,9 +74,9 @@ int Wordrec::end_recog() {
  * program.
  */
 void Wordrec::program_editdown(int32_t elapsed_time) {
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
   EndAdaptiveClassifier();
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
   getDict().End();
 }
 
@@ -87,7 +90,7 @@ int Wordrec::dict_word(const WERD_CHOICE &word) {
   return getDict().valid_word(word);
 }
 
-#ifndef DISABLED_LEGACY_ENGINE
+#if !DISABLED_LEGACY_ENGINE
 
 /**
  * @name set_pass1
@@ -96,8 +99,8 @@ int Wordrec::dict_word(const WERD_CHOICE &word) {
  */
 void Wordrec::set_pass1() {
   chop_ok_split.set_value(70.0);
-  language_model_->getParamsModel().SetPass(ParamsModel::PTRAIN_PASS1);
-  SettupPass1();
+  language_model_->setParamsModelPass(ParamsModel::PTRAIN_PASS1);
+  SetupPass1();
 }
 
 /**
@@ -107,8 +110,8 @@ void Wordrec::set_pass1() {
  */
 void Wordrec::set_pass2() {
   chop_ok_split.set_value(pass2_ok_split);
-  language_model_->getParamsModel().SetPass(ParamsModel::PTRAIN_PASS2);
-  SettupPass2();
+  language_model_->setParamsModelPass(ParamsModel::PTRAIN_PASS2);
+  SetupPass2();
 }
 
 /**
@@ -143,6 +146,6 @@ BLOB_CHOICE_LIST *Wordrec::call_matcher(TBLOB *tessblob) {
   return ratings;
 }
 
-#endif // ndef DISABLED_LEGACY_ENGINE
+#endif // !DISABLED_LEGACY_ENGINE
 
 } // namespace tesseract

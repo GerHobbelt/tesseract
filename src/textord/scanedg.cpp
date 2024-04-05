@@ -22,7 +22,7 @@
 #include "edgloop.h"
 #include "pdblock.h"
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 
 #include <memory> // std::unique_ptr
 
@@ -96,8 +96,7 @@ void block_edges(Image t_pix,   // thresholded image
     } else {
       memset(bwline.get(), margin, block_width * sizeof(bwline[0]));
     }
-    line_edges(bleft.x(), y, block_width, margin, bwline.get(), ptrline.get(), &free_cracks,
-               outline_it);
+    line_edges(bleft.x(), y, block_width, margin, bwline.get(), ptrline.get(), &free_cracks, outline_it);
   }
 
   free_crackedges(free_cracks); // really free them

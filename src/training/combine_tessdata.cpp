@@ -1,3 +1,4 @@
+
 ///////////////////////////////////////////////////////////////////////
 // File:        combine_tessdata.cpp
 // Description: Creates a unified traineddata file from several
@@ -17,35 +18,45 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include "commontraining.h" // CheckSharedLibraryVersion
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h" // HAS_LIBICU
+#endif
+
+#include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "lstmrecognizer.h"
 #include "tessdatamanager.h"
 
 #include <cerrno>
 #include <iostream> // std::cout
 
+#if defined(HAVE_MUPDF)
+#include "mupdf/fitz.h"           // fz_basename
+#include "mupdf/helpers/dir.h"
+#endif
+
 using namespace tesseract;
 
 static int list_components(TessdataManager &tm, const char *filename) {
   // Initialize TessdataManager with the data in the given traineddata file.
   if (filename != nullptr && !tm.Init(filename)) {
-    tprintf("Failed to read %s\n", filename);
+    tprintError("Failed to read {}\n", filename);
     return EXIT_FAILURE;
   }
   tm.Directory();
   return EXIT_SUCCESS;
 }
 
-static int list_network(TessdataManager &tm, const char *filename) {
+static int list_network(TessdataManager &tm, const char *filename, int tess_debug_lstm) {
   if (filename != nullptr && !tm.Init(filename)) {
-    tprintf("Failed to read %s\n", filename);
+    tprintError("Failed to read {}\n", filename);
     return EXIT_FAILURE;
   }
   tesseract::TFile fp;
   if (tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
     tesseract::LSTMRecognizer recognizer;
+    recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
-      tprintf("Failed to deserialize LSTM in %s!\n", filename);
+      tprintError("Failed to deserialize LSTM in {}!\n", filename);
       return EXIT_FAILURE;
     }
     std::cout << "LSTM: network=" << recognizer.GetNetwork()
@@ -109,171 +120,231 @@ static int list_network(TessdataManager &tm, const char *filename) {
 //
 // Specify option -u to unpack all the components to the specified path:
 //
-// combine_tessdata -u tessdata/eng.traineddata /home/$USER/temp/eng.
+//   combine_tessdata -u tessdata/eng.traineddata /home/$USER/temp/eng.
 //
 // This will create  /home/$USER/temp/eng.* files with individual tessdata
 // components from tessdata/eng.traineddata.
 //
-int main(int argc, char **argv) {
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
+#endif
+{
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
-  int i;
-  tesseract::TessdataManager tm;
-  if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
-    printf("%s\n", tesseract::TessBaseAPI::Version());
-    return EXIT_SUCCESS;
-  } else if (argc == 2) {
-    printf("Combining tessdata files\n");
-    std::string lang = argv[1];
-    char *last = &argv[1][strlen(argv[1]) - 1];
-    if (*last != '.') {
-      lang += '.';
-    }
-    std::string output_file = lang;
-    output_file += kTrainedDataSuffix;
-    if (!tm.CombineDataFiles(lang.c_str(), output_file.c_str())) {
-      printf("Error combining tessdata files into %s\n", output_file.c_str());
-    } else {
-      printf("Output %s created successfully.\n", output_file.c_str());
-    }
-  } else if (argc >= 4 &&
-             (strcmp(argv[1], "-e") == 0 || strcmp(argv[1], "-u") == 0)) {
-    // Initialize TessdataManager with the data in the given traineddata file.
-    if (!tm.Init(argv[2])) {
-      tprintf("Failed to read %s\n", argv[2]);
-      return EXIT_FAILURE;
-    }
-    printf("Extracting tessdata components from %s\n", argv[2]);
-    if (strcmp(argv[1], "-e") == 0) {
-      for (i = 3; i < argc; ++i) {
-        errno = 0;
-        if (tm.ExtractToFile(argv[i])) {
-          printf("Wrote %s\n", argv[i]);
-        } else if (errno == 0) {
-          printf(
-              "Not extracting %s, since this component"
-              " is not present\n",
-              argv[i]);
-          return EXIT_FAILURE;
-        } else {
-          printf("Error, could not extract %s: %s\n", argv[i], strerror(errno));
-          return EXIT_FAILURE;
-        }
-      }
-    } else { // extract all the components
-      for (i = 0; i < tesseract::TESSDATA_NUM_ENTRIES; ++i) {
-        std::string filename = argv[3];
-        char *last = &argv[3][strlen(argv[3]) - 1];
-        if (*last != '.') {
-          filename += '.';
-        }
-        filename += tesseract::kTessdataFileSuffixes[i];
-        errno = 0;
-        if (tm.ExtractToFile(filename.c_str())) {
-          printf("Wrote %s\n", filename.c_str());
-        } else if (errno != 0) {
-          printf("Error, could not extract %s: %s\n", filename.c_str(),
-                 strerror(errno));
-          return EXIT_FAILURE;
-        }
-      }
-    }
-  } else if (argc >= 4 && strcmp(argv[1], "-o") == 0) {
-    // Rename the current traineddata file to a temporary name.
-    const char *new_traineddata_filename = argv[2];
-    std::string traineddata_filename = new_traineddata_filename;
-    traineddata_filename += ".__tmp__";
-    if (rename(new_traineddata_filename, traineddata_filename.c_str()) != 0) {
-      tprintf("Failed to create a temporary file %s\n",
-              traineddata_filename.c_str());
-      return EXIT_FAILURE;
-    }
+  int tess_debug_lstm = 0;
 
-    // Initialize TessdataManager with the data in the given traineddata file.
-    tm.Init(traineddata_filename.c_str());
-
-    // Write the updated traineddata file.
-    tm.OverwriteComponents(new_traineddata_filename, argv + 3, argc - 3);
-  } else if (argc == 3 && strcmp(argv[1], "-c") == 0) {
-    if (!tm.Init(argv[2])) {
-      tprintf("Failed to read %s\n", argv[2]);
-      return EXIT_FAILURE;
-    }
-    tesseract::TFile fp;
-    if (!tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
-      tprintf("No LSTM Component found in %s!\n", argv[2]);
-      return EXIT_FAILURE;
-    }
-    tesseract::LSTMRecognizer recognizer;
-    if (!recognizer.DeSerialize(&tm, &fp)) {
-      tprintf("Failed to deserialize LSTM in %s!\n", argv[2]);
-      return EXIT_FAILURE;
-    }
-    recognizer.ConvertToInt();
-    std::vector<char> lstm_data;
-    fp.OpenWrite(&lstm_data);
-    ASSERT_HOST(recognizer.Serialize(&tm, &fp));
-    tm.OverwriteEntry(tesseract::TESSDATA_LSTM, &lstm_data[0],
-                      lstm_data.size());
-    if (!tm.SaveFile(argv[2], nullptr)) {
-      tprintf("Failed to write modified traineddata:%s!\n", argv[2]);
-      return EXIT_FAILURE;
-    }
-  } else if (argc == 3 && strcmp(argv[1], "-d") == 0) {
-    return list_components(tm, argv[2]);
-  } else if (argc == 3 && strcmp(argv[1], "-l") == 0) {
-    return list_network(tm, argv[2]);
-  } else if (argc == 3 && strcmp(argv[1], "-dl") == 0) {
-    int result = list_components(tm, argv[2]);
-    if (result == EXIT_SUCCESS) {
-      result = list_network(tm, nullptr);
-    }
-    return result;
-  } else if (argc == 3 && strcmp(argv[1], "-ld") == 0) {
-    int result = list_network(tm, argv[2]);
-    if (result == EXIT_SUCCESS) {
-      result = list_components(tm, nullptr);
-    }
-    return result;
-  } else {
-    printf(
+  auto usage_f = [](const char* exename) {
+    tprintInfo(
         "Usage for combining tessdata components:\n"
-        "  %s language_data_path_prefix\n"
-        "  (e.g. %s tessdata/eng.)\n\n",
-        argv[0], argv[0]);
-    printf(
+        "  {} language_data_path_prefix\n"
+        "  (e.g. {} tessdata/eng.)\n\n",
+        exename, exename);
+    tprintInfo(
         "Usage for extracting tessdata components:\n"
-        "  %s -e traineddata_file [output_component_file...]\n"
-        "  (e.g. %s -e eng.traineddata eng.unicharset)\n\n",
-        argv[0], argv[0]);
-    printf(
+        "  {} -e traineddata_file [output_component_file...]\n"
+        "  (e.g. {} -e eng.traineddata eng.unicharset)\n\n",
+        exename, exename);
+    tprintInfo(
         "Usage for overwriting tessdata components:\n"
-        "  %s -o traineddata_file [input_component_file...]\n"
-        "  (e.g. %s -o eng.traineddata eng.unicharset)\n\n",
-        argv[0], argv[0]);
-    printf(
+        "  {} -o traineddata_file [input_component_file...]\n"
+        "  (e.g. {} -o eng.traineddata eng.unicharset)\n\n",
+        exename, exename);
+    tprintInfo(
         "Usage for unpacking all tessdata components:\n"
-        "  %s -u traineddata_file output_path_prefix\n"
-        "  (e.g. %s -u eng.traineddata tmp/eng.)\n\n",
-        argv[0], argv[0]);
-    printf(
+        "  {} -u traineddata_file output_path_prefix\n"
+        "  (e.g. {} -u eng.traineddata tmp/eng.)\n\n",
+        exename, exename);
+    tprintInfo(
         "Usage for listing the network information\n"
-        "  %s -l traineddata_file\n"
-        "  (e.g. %s -l eng.traineddata)\n\n",
-        argv[0], argv[0]);
-    printf(
+        "  {} -l traineddata_file\n"
+        "  (e.g. {} -l eng.traineddata)\n\n",
+        exename, exename);
+    tprintInfo(
         "Usage for listing directory of components:\n"
-        "  %s -d traineddata_file\n\n",
-        argv[0]);
-    printf(
-        "NOTE: Above two flags may combined as -dl or -ld to get both outputs"
-        );
-    printf(
+        "  {} -d traineddata_file\n\n",
+        exename);
+    tprintInfo(
+        "NOTE: Above two flags may combined as -dl or -ld to get both outputs.\n\n"
+    );
+    tprintInfo(
         "Usage for compacting LSTM component to int:\n"
-        "  %s -c traineddata_file\n",
-        argv[0]);
-    return EXIT_FAILURE;
+        "  {} -c traineddata_file\n\n",
+        exename);
+    tprintInfo(
+        "Usage for transforming the proprietary .traineddata file to a zip archive:\n"
+        "  {} -t traineddata_file\n\n",
+        exename);
+  };
+
+  for (int err_round = 0;; err_round++) {
+    int rv = tesseract::ParseCommandLineFlags("unicharset dawgfile wordlistfile", usage_f, &argc, &argv);
+    if (rv > 0)
+      return rv;
+    if (rv == 0)
+      return err_round;
+
+    if (argc < 4) {
+      tesseract::tprintError("Not enough parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+    if (argc > 4) {
+      tesseract::tprintError("Too many parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+
+    tesseract::TessdataManager tm;
+
+    if (argc == 2) {
+      tprintDebug("Combining tessdata files\n");
+      std::string lang = argv[1];
+      const char* last = &argv[1][strlen(argv[1]) - 1];
+      if (*last != '.') {
+        lang += '.';
+      }
+      std::string output_file = lang;
+      output_file += kTrainedDataSuffix;
+      if (!tm.CombineDataFiles(lang.c_str(), output_file.c_str())) {
+        tprintError("Error combining tessdata files into {}\n", output_file);
+      }
+      else {
+        tprintDebug("Output {} created successfully.\n", output_file);
+      }
+    }
+    else if (argc >= 4 &&
+            (strcmp(argv[1], "-e") == 0 || strcmp(argv[1], "-u") == 0)) {
+      // Initialize TessdataManager with the data in the given traineddata file.
+      if (!tm.Init(argv[2])) {
+        tprintError("Failed to read {}\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      tprintDebug("Extracting tessdata components from {}\n", argv[2]);
+      if (strcmp(argv[1], "-e") == 0) {
+        for (int i = 3; i < argc; ++i) {
+          errno = 0;
+          if (tm.ExtractToFile(argv[i])) {
+            tprintDebug("Wrote {}\n", argv[i]);
+          }
+          else if (errno == 0) {
+            tprintError("Not extracting {}, since this component"
+                " is not present\n",
+                argv[i]);
+            return EXIT_FAILURE;
+          }
+          else {
+            tprintError("Could not extract {}: {}\n", argv[i], strerror(errno));
+            return EXIT_FAILURE;
+          }
+        }
+      }
+      else { // extract all the components
+        for (int i = 0; i < tesseract::TESSDATA_NUM_ENTRIES; ++i) {
+          std::string filename = argv[3];
+          const char* last = &argv[3][strlen(argv[3]) - 1];
+          if (*last != '.') {
+            filename += '.';
+          }
+          filename += tesseract::kTessdataFileSuffixes[i];
+          errno = 0;
+          if (tm.ExtractToFile(filename.c_str())) {
+            tprintDebug("Wrote {}\n", filename);
+          }
+          else if (errno != 0) {
+            tprintError("Could not extract {}: {}\n", filename,
+                   strerror(errno));
+            return EXIT_FAILURE;
+          }
+        }
+      }
+    }
+    else if (argc >= 4 && strcmp(argv[1], "-o") == 0) {
+      // Rename the current traineddata file to a temporary name.
+      const char* new_traineddata_filename = argv[2];
+      std::string traineddata_filename = new_traineddata_filename;
+      traineddata_filename += ".__tmp__";
+      if (rename(new_traineddata_filename, traineddata_filename.c_str()) != 0) {
+        tprintError("Failed to create a temporary file {}\n",
+                traineddata_filename);
+        return EXIT_FAILURE;
+      }
+
+      // Initialize TessdataManager with the data in the given traineddata file.
+      tm.Init(traineddata_filename.c_str());
+
+      // Write the updated traineddata file.
+      tm.OverwriteComponents(new_traineddata_filename, argv + 3, argc - 3);
+    }
+    else if (argc == 3 && strcmp(argv[1], "-c") == 0) {
+      if (!tm.Init(argv[2])) {
+        tprintError("Failed to read {}\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      tesseract::TFile fp;
+      if (!tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
+        tprintError("No LSTM Component found in {}!\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      tesseract::LSTMRecognizer recognizer;
+      recognizer.SetDebug(tess_debug_lstm);
+      if (!recognizer.DeSerialize(&tm, &fp)) {
+        tprintError("Failed to deserialize LSTM in {}!\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      recognizer.ConvertToInt();
+      std::vector<char> lstm_data;
+      fp.OpenWrite(&lstm_data);
+      ASSERT_HOST(recognizer.Serialize(&tm, &fp));
+      tm.OverwriteEntry(tesseract::TESSDATA_LSTM, &lstm_data[0],
+                        lstm_data.size());
+      if (!tm.SaveFile(argv[2], nullptr)) {
+        tprintError("Failed to write modified traineddata:{}!\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+    }
+    else if (argc == 3 && strcmp(argv[1], "-t") == 0) {
+#if defined(HAVE_LIBARCHIVE)
+      if (!tm.Init(argv[2])) {
+        tprintError("Failed to read %s\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+      if (!tm.SaveFile(argv[2], nullptr)) {
+        tprintError("Failed to tranform traineddata:%s!\n", argv[2]);
+        return EXIT_FAILURE;
+      }
+#else
+      tprintError("Failed to load libarchive. Is tesseract compiled with libarchive support?\n");
+#endif
+    }
+    else if (argc == 3 && strcmp(argv[1], "-d") == 0) {
+      return list_components(tm, argv[2]);
+    }
+    else if (argc == 3 && strcmp(argv[1], "-l") == 0) {
+      return list_network(tm, argv[2], tess_debug_lstm);
+    }
+    else if (argc == 3 && strcmp(argv[1], "-dl") == 0) {
+      int result = list_components(tm, argv[2]);
+      if (result == EXIT_SUCCESS) {
+        result = list_network(tm, nullptr, tess_debug_lstm);
+      }
+      return result;
+    }
+    else if (argc == 3 && strcmp(argv[1], "-ld") == 0) {
+      int result = list_network(tm, argv[2], tess_debug_lstm);
+      if (result == EXIT_SUCCESS) {
+        result = list_components(tm, nullptr);
+      }
+      return result;
+    }
+    else {
+      tprintError("Unsupported command '{}' or bad number of arguments ({}).\n", argv[1], argc - 1);
+      argc = 1;
+      continue;
+    }
+    tm.Directory();
+    return EXIT_SUCCESS;
   }
-  tm.Directory();
-  return EXIT_SUCCESS;
 }
