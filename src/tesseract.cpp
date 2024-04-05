@@ -691,7 +691,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("Error, could not create PAGE output file: %s\n", strerror(errno));
+        tprintError("Could not create PAGE output file: %s\n", strerror(errno));
         error = true;
       }
     }
@@ -702,7 +702,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("Error, could not create PAGE output file: %s\n", strerror(errno));
+        tprintError("Could not create PAGE output file: %s\n", strerror(errno));
         error = true;
       }
     }
