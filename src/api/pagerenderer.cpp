@@ -129,7 +129,7 @@ Pta *DestroyAndCreatePta(Pta *pts) {
 ///
 Pta *RecalcPolygonline(Pta *pts, bool upper) {
   int num_pts, num_bin, index = 0;
-  int y, x0, y0, x1, y1;
+  l_float32 y, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   NUMA *bin_line;
   Pta *pts_recalc;
@@ -151,8 +151,8 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
   }
 
   do {
-    ptaGetIPt(pts, index, &x0, &y0);
-    ptaGetIPt(pts, index + 1, &x1, &y1);
+    ptaGetPt(pts, index, &x0, &y0);
+    ptaGetPt(pts, index + 1, &x1, &y1);
     // TODO add +1?
     for (int p = x0 - x_min; p <= x1 - x_min; ++p) {
       l_float32 val;
@@ -758,7 +758,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   #define LEVELFLAG tesseract_->page_xml_level
   
   if (LEVELFLAG != 0 && LEVELFLAG != 1) {
-    tprintf("For now, only line level and word level are available, and the level is reset to line level.\n");
+    tprintError("For now, only line level and word level are available, and the level is reset to line level.\n");
     LEVELFLAG = 0;
   }
 
@@ -834,7 +834,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       page_str << "orientation {" << orientation_block << ";}\">\n";
       page_str << "\t\t\t";
       if (!POLYGONFLAG && LEVELFLAG == 0) {
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
       }
     }
 

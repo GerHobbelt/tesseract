@@ -703,22 +703,18 @@ public:
   char *GetAltoText(ETEXT_DESC *monitor, int page_number);
 
   /**
-   * Make an XML-formatted string with PAGE markup from the internal
+   * Make an XML-formatted string with Alto markup from the internal
    * data structures.
+   *
+   * Returned string must be freed with the delete [] operator.
    */
-  char *GetPAGEText(int page_number);
+  char *GetAltoText(int page_number);
 
   /**
    * Make an XML-formatted string with PAGE markup from the internal
    * data structures.
    *
    * Returned string must be freed with the delete [] operator.
-   */
-  char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
-
-   /**
-   * Make an XML-formatted string with PAGE markup from the internal
-   * data structures.
    */
   char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
 
@@ -730,6 +726,7 @@ public:
 
   /**
    * Make a TSV-formatted string from the internal data structures.
+   * Allows additional column with detected language.
    * page_number is 0-based but will appear in the output as 1-based.
    *
    * Returned string must be freed with the delete [] operator.
