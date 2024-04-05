@@ -103,6 +103,16 @@ static inline __m128i load64_to_128(const int8_t *wi_) {
   return _mm_set_epi64x(0, wi[0]);
 }
 
+#if defined(TFLOAT)
+
+static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *scales,
+                            const int8_t *u, TFloat *v) {
+  // fprintf(stderr, "missing implementation\n");
+  abort();
+}
+
+#elif defined(FAST_FLOAT)
+
 // ------------- FAST FLOAT specifics section -------------------------
 
 static inline void ExtractResults8(__m256i result, const int8_t *wi,

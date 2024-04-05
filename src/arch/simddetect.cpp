@@ -127,7 +127,7 @@ bool SIMDDetect::sse_available_ = false;
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
-#if defined(HAVE_FRAMEWORK_ACCELERATE)
+#if defined(HAVE_FRAMEWORK_ACCELERATE) && !defined(TFLOAT)
 
 float DotProductAccelerate(const float* u, const float* v, int n) {
   float total = 0.0;
@@ -267,6 +267,7 @@ SIMDDetect::SIMDDetect() {
 #  endif
 #endif
 
+#if !defined(TFLOAT)
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
@@ -303,6 +304,7 @@ SIMDDetect::SIMDDetect() {
     dotproduct_method = "accelerate";
 #endif
   }
+#endif
 
   const char *dotproduct_env = getenv("DOTPRODUCT");
   if (dotproduct_env != nullptr) {
@@ -348,7 +350,7 @@ void SIMDDetect::Update() {
     // SSE selected by config variable.
     SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
     dotproduct_method = "sse";
-#if defined(HAVE_FRAMEWORK_ACCELERATE)
+#if defined(HAVE_FRAMEWORK_ACCELERATE) && !defined(TFLOAT)
   } else if (dotproduct == "accelerate") {
     SetDotProduct(DotProductAccelerate, IntSimdMatrix::intSimdMatrix);
     dotproduct_method = "accelerate";
