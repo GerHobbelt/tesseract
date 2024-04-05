@@ -2094,7 +2094,9 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
 
 /**
  * Make a TSV-formatted string from the internal data structures.
+ * Allows additional column with detected language.
  * page_number is 0-based but will appear in the output as 1-based.
+ *
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
