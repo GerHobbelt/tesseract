@@ -55,6 +55,8 @@ class TESS_API Tesseract;
 
 #define TESSERACT_NULLPTR     nullptr
 
+#if !GRAPHICS_DISABLED
+
 class TESS_API ScrollViewReference {
 public:
   ScrollViewReference();
@@ -92,6 +94,10 @@ protected:
 public:
   int id;
 };
+
+#endif // !GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
 
 enum SVEventType {
   SVET_DESTROY,   // Window has been destroyed by user.
@@ -143,15 +149,13 @@ public:
   }
 };
 
-// The ScrollView class provides the external API to the scrollviewer process.
-// The scrollviewer process manages windows and displays images, graphics and
-// text while allowing the user to zoom and scroll the windows arbitrarily.
-// Each ScrollView class instance represents one window, and stuff is drawn in
-// the window through method calls on the class. The constructor is used to
-// create the class instance (and the window).
-class TESS_API ScrollView {
-public:
+#endif
+
+namespace Diagnostics {
+
   // Color enum for pens and brushes.
+  //
+  // Note: the type formerly known as ScrollView::Color.
   enum Color {
     NONE,
     BLACK,
@@ -204,9 +208,21 @@ public:
     GREEN_YELLOW // Make sure this one is last.
   };
 
-  virtual ~ScrollView();
+}
 
 #if !GRAPHICS_DISABLED
+
+// The ScrollView class provides the external API to the scrollviewer process.
+// The scrollviewer process manages windows and displays images, graphics and
+// text while allowing the user to zoom and scroll the windows arbitrarily.
+// Each ScrollView class instance represents one window, and stuff is drawn in
+// the window through method calls on the class. The constructor is used to
+// create the class instance (and the window).
+class TESS_API ScrollView {
+  using Color = Diagnostics::Color;
+
+public:
+  virtual ~ScrollView();
 
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
@@ -466,9 +482,11 @@ protected:
   // Serial number of sent images to ensure that the viewer knows they
   // are distinct.
   static int image_index_;
-#endif // !GRAPHICS_DISABLED
 };
 
+#endif // !GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
 
 // The InteractiveScrollView class provides the external API to the scrollviewer process.
 // The scrollviewer process manages windows and displays images, graphics and
@@ -478,11 +496,9 @@ protected:
 // create the class instance (and the window).
 class TESS_API InteractiveScrollView : public ScrollView {
 public:
-  using Color = ScrollView::Color;
+  using Color = Diagnostics::Color;
 
   virtual ~InteractiveScrollView();
-
-#if !GRAPHICS_DISABLED
 
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
@@ -710,19 +726,20 @@ protected:
 
   // Semaphore to the thread belonging to this window.
   SVSemaphore *semaphore_;
-#endif // !GRAPHICS_DISABLED
 };
 
+#endif // !GRAPHICS_DISABLED
+
 /////////////////////////////////////////////////////////////////////////
+
+#if !GRAPHICS_DISABLED
 
 // The BackgroundScrollView class provides the external API to the scrollview-to-DebugPIXA logging path.
 class TESS_API BackgroundScrollView : public ScrollView {
 public:
-  using Color = ScrollView::Color;
+  using Color = Diagnostics::Color;
 
   virtual ~BackgroundScrollView();
-
-#if !GRAPHICS_DISABLED
 
   // Create a window. The pixel size of the window may be 0,0, in which case
   // a default size is selected based on the size of your canvas.
@@ -924,19 +941,20 @@ protected:
   int y_offset;
   bool dirty;
 
-#endif // !GRAPHICS_DISABLED
 };
 
+#endif // !GRAPHICS_DISABLED
+
 /////////////////////////////////////////////////////////////////////////
+
+#if !GRAPHICS_DISABLED
 
 // The DummyScrollView class is a 'null' sink for all things ScrollView.
 class TESS_API DummyScrollView : public ScrollView {
 public:
-	using Color = ScrollView::Color;
+	using Color = Diagnostics::Color;
 
 	virtual ~DummyScrollView();
-
-#if !GRAPHICS_DISABLED
 
 	// Create a window. The pixel size of the window may be 0,0, in which case
 	// a default size is selected based on the size of your canvas.
@@ -1130,8 +1148,11 @@ protected:
 
 	void PrepCanvas(void);
 
-#endif // !GRAPHICS_DISABLED
 };
+
+#endif // !GRAPHICS_DISABLED
+
+#if !GRAPHICS_DISABLED
 
 // singleton
 class TESS_API ScrollViewManager {
@@ -1160,6 +1181,12 @@ private:
 protected:
 
 };
+
+#else
+
+typedef void* ScrollViewReference;
+
+#endif // !GRAPHICS_DISABLED
 
 } // namespace tesseract
 

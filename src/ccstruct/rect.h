@@ -20,7 +20,7 @@
 #define RECT_H
 
 #include "points.h"     // for ICOORD, FCOORD
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 #include "tesstypes.h"  // for TDimension
 #include "tprintf.h"    // for tprintf
 
@@ -314,8 +314,8 @@ public:
 #if !GRAPHICS_DISABLED
   void plot(                                  // paint box
       ScrollViewReference &fd,                         // where to paint
-      ScrollView::Color fill_colour,          // colour for inside
-      ScrollView::Color border_colour) const; // colour for border
+      Diagnostics::Color fill_colour,          // colour for inside
+      Diagnostics::Color border_colour) const; // colour for border
 #endif
   // Writes to the given file. Returns false in case of error.
   bool Serialize(FILE *fp) const;

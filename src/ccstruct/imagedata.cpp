@@ -25,7 +25,7 @@
 
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::CYAN, ScrollView::NONE
+#include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
 #include "tprintf.h"    // for tprintf
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
@@ -33,9 +33,10 @@
 
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
-#include <algorithm> // for max, min
-#include <fstream>   // for std::ifstream
-#include <cinttypes> // for PRId64
+#include <algorithm>    // for max, min
+#include <fstream>      // for std::ifstream
+#include <cinttypes>    // for PRId64
+#include <fstream>      // for std::ifstream
 
 #undef min
 #undef max
@@ -286,8 +287,8 @@ void ImageData::Display(Tesseract *tesseract_) const {
   win->Draw(pix, 0, win->TranslateYCoordinate(0), "ImageData::Display");
   pix.destroy();
   // Draw the boxes.
-  win->Pen(ScrollView::RED);
-  win->Brush(ScrollView::NONE);
+  win->Pen(Diagnostics::RED);
+  win->Brush(Diagnostics::NONE);
   int text_size = kTextSize;
   if (!boxes_.empty() && boxes_[0].height() * 2 < text_size) {
     text_size = boxes_[0].height() * 2;
@@ -300,7 +301,7 @@ void ImageData::Display(Tesseract *tesseract_) const {
     }
   } else {
     // The full transcription.
-    win->Pen(ScrollView::CYAN);
+    win->Pen(Diagnostics::CYAN);
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
   win->UpdateWindow();
@@ -542,7 +543,7 @@ void DocumentData::Shuffle() {
   }
 }
 
-// Locks the pages_mutex_ and loads as many pages can fit in max_memory_
+// Locks the pages_mutex_ and loads as many pages as will fit into max_memory_
 // starting at index pages_offset_.
 bool DocumentData::ReCachePages() {
   std::lock_guard<std::mutex> lock(pages_mutex_);
@@ -555,8 +556,8 @@ bool DocumentData::ReCachePages() {
   }
   pages_.clear();
 #if !defined(TESSERACT_IMAGEDATA_AS_PIX)
-  if (document_name_.ends_with("png")) {
-    // PDF image given instead of LSTMF file.
+  if (document_name_.ends_with(".png")) {
+    // PNG image given instead of LSTMF file.
     std::string gt_name = document_name_.substr(0, document_name_.length() - 3) + "gt.txt";
     std::ifstream t(gt_name);
     std::string line;

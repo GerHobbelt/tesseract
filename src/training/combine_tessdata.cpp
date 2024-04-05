@@ -171,11 +171,11 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     );
     tprintInfo(
         "Usage for compacting LSTM component to int:\n"
-        "  {} -c traineddata_file\n",
+        "  {} -c traineddata_file\n\n",
         exename);
     tprintInfo(
         "Usage for transforming the proprietary .traineddata file to a zip archive:\n"
-        "  {} -t traineddata_file\n",
+        "  {} -t traineddata_file\n\n",
         exename);
   };
 

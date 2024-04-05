@@ -307,8 +307,10 @@ public:
   }
 
   virtual void Clean() {
+#if !GRAPHICS_DISABLED
     forward_win_ = nullptr;
     backward_win_ = nullptr;
+#endif
     name_.clear();
   }
 
@@ -327,8 +329,10 @@ protected:
   std::string name_;       // A unique name for this layer.
 
   // NOT-serialized debug data.
+#if !GRAPHICS_DISABLED
   ScrollViewReference forward_win_;  // Recognition debug display window.
   ScrollViewReference backward_win_; // Training debug display window.
+#endif
   TRand *randomizer_;        // Random number generator.
 };
 

@@ -92,7 +92,6 @@ option(GRAPHICS_DISABLED "Disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 option(FAST_FLOAT "Enable float for LSTM" ON)
-option(ENABLE_OPENCL "Enable unsupported experimental OpenCL support" OFF)
 option(ENABLE_NATIVE
        "Enable optimization for host CPU (could break HW compatibility)" OFF)
 # see
@@ -465,18 +464,6 @@ else()
   endif(DISABLE_CURL)
 endif()
 
-if(ENABLE_OPENCL)
-  find_package(OpenCL)
-  if(OpenCL_FOUND)
-    include_directories(${OpenCL_INCLUDE_DIRS})
-    message(STATUS "OpenCL_INCLUDE_DIRS: ${OpenCL_INCLUDE_DIRS}")
-    message(STATUS "OpenCL_LIBRARY: ${OpenCL_LIBRARY}")
-    set(USE_OPENCL ON)
-  else()
-    set(USE_OPENCL OFF)
-  endif(OpenCL_FOUND)
-endif(ENABLE_OPENCL)
-
 # ##############################################################################
 #
 # configure
@@ -568,11 +555,6 @@ message(STATUS "Disable the legacy OCR engine [DISABLED_LEGACY_ENGINE]: "
 message(STATUS "Build training tools [BUILD_TRAINING_TOOLS]: "
                "${BUILD_TRAINING_TOOLS}")
 message(STATUS "Build tests [BUILD_TESTS]: ${BUILD_TESTS}")
-if(ENABLE_OPENCL)
-  message(
-    STATUS
-      "Enable unsupported experimental OpenCL [ENABLE_OPENCL]: ${USE_OPENCL}")
-endif(ENABLE_OPENCL)
 message(STATUS "Use system ICU Library [USE_SYSTEM_ICU]: ${USE_SYSTEM_ICU}")
 message(
   STATUS "Install tesseract configs [INSTALL_CONFIGS]: ${INSTALL_CONFIGS}")
@@ -611,7 +593,6 @@ file(
   src/cutil/*.cpp
   src/dict/*.cpp
   src/lstm/*.cpp
-  src/opencl/*.cpp
   src/textord/*.cpp
   src/viewer/*.cpp
   src/wordrec/*.cpp)
@@ -752,7 +733,6 @@ file(
   src/cutil/*.h
   src/dict/*.h
   src/lstm/*.h
-  src/opencl/*.h
   src/textord/*.h
   src/viewer/*.h
   src/wordrec/*.h)
@@ -763,6 +743,7 @@ set(TESSERACT_SRC
     src/api/capi.cpp
     src/api/renderer.cpp
     src/api/altorenderer.cpp
+    src/api/pagerenderer.cpp
     src/api/hocrrenderer.cpp
     src/api/lstmboxrenderer.cpp
     src/api/pdfrenderer.cpp
@@ -787,6 +768,8 @@ set(TESSERACT_CONFIGS
     tessdata/configs/lstmbox
     tessdata/configs/lstmdebug
     tessdata/configs/makebox
+    tessdata/configs/page
+    tessdata/configs/page_poly
     tessdata/configs/pdf
     tessdata/configs/quiet
     tessdata/configs/rebox
@@ -820,7 +803,6 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cutil>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/dict>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/lstm>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/opencl>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/textord>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/viewer>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/wordrec>
@@ -835,9 +817,6 @@ endif()
 target_link_libraries(libtesseract PRIVATE ${LIB_Ws2_32} ${LIB_pthread})
 if(OpenMP_CXX_FOUND)
   target_link_libraries(libtesseract PUBLIC OpenMP::OpenMP_CXX)
-endif()
-if(OpenCL_FOUND)
-  target_link_libraries(libtesseract PUBLIC OpenCL::OpenCL)
 endif()
 if(LibArchive_FOUND)
   target_link_libraries(libtesseract PUBLIC ${LibArchive_LIBRARIES})

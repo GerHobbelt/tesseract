@@ -56,7 +56,7 @@ void display_edgepts(LIST outlines) {
   ScrollViewReference &window = edge_window;
   /* Reclaim old memory */
   iterate(outlines) {
-    render_edgepts(window, reinterpret_cast<EDGEPT *>(outlines->first_node()), ScrollView::WHITE);
+    render_edgepts(window, reinterpret_cast<EDGEPT *>(outlines->first_node()), Diagnostics::WHITE);
   }
 }
 
@@ -86,7 +86,7 @@ void mark_outline(EDGEPT *edgept) { /* Start of point list */
   float x = edgept->pos.x;
   float y = edgept->pos.y;
 
-  window->Pen(ScrollView::RED);
+  window->Pen(Diagnostics::RED);
   window->SetCursor(x, y);
 
   x -= 4;

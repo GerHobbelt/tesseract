@@ -536,7 +536,7 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
       BLOCK* block = block_it.data();
       block->pdblk.plot(blocks_win_, serial++,
-                        textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+                        textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
     }
     blocks_win_->UpdateWindow();
 }
@@ -546,7 +546,7 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
 void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
     ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
     DisplayBoxes(col_win);
-    col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+    col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
     for (int i = 0; i < gridheight_; ++i) {
       ColPartitionSet* columns = best_columns_[i];
       if (columns != nullptr) {
@@ -558,7 +558,7 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
 void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
   ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
   DisplayBoxes(col_win);
-  col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
   for (int i = 0; i < sets->size(); ++i) {
     ColPartitionSet *columns = sets->at(i);
     if (columns != nullptr) {
@@ -570,7 +570,7 @@ void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
 void ColumnFinder::DisplayColumnBounds3(PartSetVector *sets) {
   ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
   DisplayBoxes(col_win);
-  col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
   for (int i = 0; i < gridheight_; ++i) {
     ColPartitionSet *columns = sets->at(i);
     if (columns != nullptr) {

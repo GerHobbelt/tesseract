@@ -298,7 +298,7 @@ public:
   // Variable names are followed by one of more whitespace characters,
   // followed by the Value, which spans the rest of line.
   //
-  // Any Variables listed in the file, which do not match the given
+  // Any Variables listed in the file which do not match the given
   // constraint are ignored, but are reported via `tprintf()` as ignored,
   // unless you set `quietly_ignore`.
   static bool ReadParamsFile(const std::string &file, // filename to read
@@ -656,20 +656,25 @@ public:
   virtual bool set_value(bool v, SOURCE_REF) = 0;
   virtual bool set_value(double v, SOURCE_REF) = 0;
 
-  // name hack to prevent compiler errors in MSVC2022 :-((
-  bool set_value2(const ParamValueContainer &v, SOURCE_REF);
-  bool set_value2(const std::string& v, SOURCE_REF);
+  // generic:
+  bool set_value(const ParamValueContainer &v, SOURCE_REF);
+  bool set_value(const std::string &v, SOURCE_REF);
 
   virtual void ResetToDefault(SOURCE_TYPE) = 0;
   virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) = 0;
 
   Param(const Param &o) = delete;
   Param(Param &&o) = delete;
+  Param(const Param &&o) = delete;
 
   Param &operator=(const Param &other) = delete;
   Param &operator=(Param &&other) = delete;
+  Param &operator=(const Param &&other) = delete;
 
   ParamType type() const;
+
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  ParamOnModifyFunction clear_on_modify_handler();
 
 protected:
   Param(const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
@@ -723,9 +728,11 @@ public:
 
   IntParam(const IntParam &o) = delete;
   IntParam(IntParam &&o) = delete;
+  IntParam(const IntParam &&o) = delete;
 
   IntParam &operator=(const IntParam &other) = delete;
   IntParam &operator=(IntParam &&other) = delete;
+  IntParam &operator=(const IntParam &&other) = delete;
 
 private:
 	int32_t value_;
@@ -758,9 +765,11 @@ public:
 
   BoolParam(const BoolParam &o) = delete;
   BoolParam(BoolParam &&o) = delete;
+  BoolParam(const BoolParam &&o) = delete;
 
   BoolParam &operator=(const BoolParam &other) = delete;
   BoolParam &operator=(BoolParam &&other) = delete;
+  BoolParam &operator=(const BoolParam &&other) = delete;
 
 private:
   bool value_;
@@ -786,7 +795,31 @@ public:
   virtual bool set_value(bool v, SOURCE_REF) override;
   virtual bool set_value(double v, SOURCE_REF) override;
 
-  const std::string& value() const;
+  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
+  // due to this nasty little blurb:
+  //
+  // > Member lookup rules are defined in Section 10.2/2
+  // >
+  // > The following steps define the result of name lookup in a class scope, C.
+  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
+  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
+  // > so hidden are eliminated from consideration.          <-- !!!
+  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
+  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
+  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
+  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
+  //
+  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
+  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
+  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
+  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
+  // here, but it works! !@#$%^&* C++!
+  //
+  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
+  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
+  using Param::set_value;
+
+  const std::string &value() const;
 
   virtual void ResetToDefault(SOURCE_TYPE) override;
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
@@ -799,9 +832,11 @@ public:
 
   StringParam(const StringParam &o) = delete;
   StringParam(StringParam &&o) = delete;
+  StringParam(const StringParam &&o) = delete;
 
   StringParam &operator=(const StringParam &other) = delete;
   StringParam &operator=(StringParam &&other) = delete;
+  StringParam &operator=(const StringParam &&other) = delete;
 
 private:
   std::string value_;
@@ -834,9 +869,11 @@ public:
 
   DoubleParam(const DoubleParam &o) = delete;
   DoubleParam(DoubleParam &&o) = delete;
+  DoubleParam(const DoubleParam &&o) = delete;
 
   DoubleParam &operator=(const DoubleParam &other) = delete;
   DoubleParam &operator=(DoubleParam &&other) = delete;
+  DoubleParam &operator=(const DoubleParam &&other) = delete;
 
 private:
   double value_;
@@ -919,7 +956,9 @@ extern STRING_VAR_H(curl_cookiefile);
 extern INT_VAR_H(debug_all);
 extern BOOL_VAR_H(debug_misc);
 extern BOOL_VAR_H(verbose_process);
+#if !GRAPHICS_DISABLED
 extern BOOL_VAR_H(scrollview_support);
+#endif
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);

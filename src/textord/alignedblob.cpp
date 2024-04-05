@@ -60,7 +60,7 @@ const int kVLineAlignment = 3;
 // Constant number of pixels used as gutter gap tolerance for line finding.
 const int kVLineGutter = 1;
 // Constant number of pixels used as the search size for line finding.
-const int kVLineSearchSize = 150;
+const int kVLineSearchSize = 50;
 // Min number of points to accept for a ragged tab stop.
 const int kMinRaggedTabs = 5;
 // Min number of points to accept for an aligned tab stop.
@@ -184,26 +184,26 @@ void AlignedBlob::DisplayTabs(ScrollViewReference &tab_win) {
     TabType tabtype = bbox->left_tab_type();
     if (tabtype != TT_NONE) {
       if (tabtype == TT_MAYBE_ALIGNED) {
-        tab_win->Pen(ScrollView::BLUE);
+        tab_win->Pen(Diagnostics::BLUE);
       } else if (tabtype == TT_MAYBE_RAGGED) {
-        tab_win->Pen(ScrollView::YELLOW);
+        tab_win->Pen(Diagnostics::YELLOW);
       } else if (tabtype == TT_CONFIRMED) {
-        tab_win->Pen(ScrollView::GREEN);
+        tab_win->Pen(Diagnostics::GREEN);
       } else {
-        tab_win->Pen(ScrollView::GREY);
+        tab_win->Pen(Diagnostics::GREY);
       }
       tab_win->Line(left_x, top_y, left_x, bottom_y);
     }
     tabtype = bbox->right_tab_type();
     if (tabtype != TT_NONE) {
       if (tabtype == TT_MAYBE_ALIGNED) {
-        tab_win->Pen(ScrollView::MAGENTA);
+        tab_win->Pen(Diagnostics::MAGENTA);
       } else if (tabtype == TT_MAYBE_RAGGED) {
-        tab_win->Pen(ScrollView::ORANGE);
+        tab_win->Pen(Diagnostics::ORANGE);
       } else if (tabtype == TT_CONFIRMED) {
-        tab_win->Pen(ScrollView::RED);
+        tab_win->Pen(Diagnostics::RED);
       } else {
-        tab_win->Pen(ScrollView::GREY);
+        tab_win->Pen(Diagnostics::GREY);
       }
       tab_win->Line(right_x, top_y, right_x, bottom_y);
     }

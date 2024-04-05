@@ -64,7 +64,10 @@ LSTMRecognizer::LSTMRecognizer()
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
-    , debug_win_(nullptr) {}
+#if !GRAPHICS_DISABLED
+    , debug_win_(nullptr)
+#endif
+{}
 
 LSTMRecognizer::~LSTMRecognizer() {
   if (network_ != nullptr) {
@@ -458,9 +461,9 @@ void LSTMRecognizer::DisplayLSTMOutput(const std::vector<int> &labels,
     int xpos = xcoords[start] * x_scale;
     if (labels[start] == null_char_) {
       end = start + 1;
-      window->Pen(ScrollView::RED);
+      window->Pen(Diagnostics::RED);
     } else {
-      window->Pen(ScrollView::GREEN);
+      window->Pen(Diagnostics::GREEN);
       const char *str = DecodeLabel(labels, start, &end, nullptr);
       if (*str == '\\') {
         str = "\\\\";
