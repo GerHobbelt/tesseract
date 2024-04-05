@@ -446,7 +446,7 @@ private:
   bool is_simple_text_;
   // The encoded (class label) of the null/reject character.
   int null_char_;
-<<<<<<< HEAD
+
   // save topn characters and ratings for all timesteps
   // for later use in diplopia detection
   std::vector<std::vector<TopPair>> save_topn_;
@@ -463,8 +463,6 @@ private:
   float diplopia_max_;
   int diplopia_max_timestep_;
   
-=======
-
   // == Debugging parameters.==
   int debug_ = 0;
 
@@ -475,7 +473,6 @@ public:
 	int HasDebug() const {
 		return debug_;
 	}
->>>>>>> master
 };
 
 } // namespace tesseract.
