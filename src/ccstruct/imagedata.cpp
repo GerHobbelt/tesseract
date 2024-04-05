@@ -33,9 +33,10 @@
 
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
-#include <algorithm> // for max, min
-#include <fstream>   // for std::ifstream
-#include <cinttypes> // for PRId64
+#include <algorithm>    // for max, min
+#include <fstream>      // for std::ifstream
+#include <cinttypes>    // for PRId64
+#include <fstream>      // for std::ifstream
 
 #undef min
 #undef max
@@ -555,9 +556,10 @@ bool DocumentData::ReCachePages() {
   }
   pages_.clear();
 #if !defined(TESSERACT_IMAGEDATA_AS_PIX)
-  if (document_name_.ends_with("png")) {
-    // PDF image given instead of LSTMF file.
-    std::string gt_name = document_name_.substr(0, document_name_.length() - 3) + "gt.txt";
+  auto name_size = document_name_.size();
+  if (document_name_.ends_with(".png")) {
+    // PDF image given instead of LSTMF file. 
+    std::string gt_name = document_name_.substr(0, name_size - 3) + "gt.txt";
     std::ifstream t(gt_name);
     std::string line;
     std::getline(t, line);
