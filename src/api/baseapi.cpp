@@ -194,7 +194,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
         } else {
           size_t len = wcslen(name);
           if (len > extlen && name[len - extlen] == '.' &&
-              &name[len - extlen + 1] == kTrainedDataSuffixUtf16) {
+              wcscmp(&name[len - extlen + 1], kTrainedDataSuffixUtf16.c_str()) == 0) {
             name[len - extlen] = '\0';
             langs->push_back(base2 + winutils::Utf16ToUtf8(name));
           }
@@ -231,21 +231,22 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 }
 
 
-static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBaseAPI *api_ref, Tesseract *ocr_ref) {
-    Tesseract *tess = ocr_ref;
-    if (!tess) {
-        if (api_ref) {
-            tess = api_ref->tesseract();
-        }
+static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum) {
+  Tesseract *tess = datum->tesseractInstance();
+  if (!tess) {
+    auto *api_ref = datum->tesseractAPIinstance();
+    if (api_ref) {
+      tess = api_ref->tesseract();
     }
-
-  if (debug_misc) {
-      tprintDebug("tesseract ({}) log holdoff lock released.\n", (void *)tess);
   }
 
-    if (tess) {
-        tess->ReportDebugInfo();
-    }
+  if (debug_misc) {
+    tprintDebug("tesseract ({}) log holdoff lock released.\n", (void *)tess);
+  }
+
+  if (tess) {
+    tess->ReportDebugInfo();
+  }
 }
 
 
@@ -2983,8 +2984,8 @@ int TessBaseAPI::FindLines() {
     } else {
       osd_tesseract_ = new Tesseract(tesseract_);
       TessdataManager mgr(reader_);
-    std::vector<std::string> nil;
-    if (datapath_.empty()) {
+      std::vector<std::string> nil;
+      if (datapath_.empty()) {
         tprintWarn("Auto orientation and script detection requested,"
             " but data path is undefined\n");
         delete osd_tesseract_;
@@ -3025,6 +3026,9 @@ float TessBaseAPI::GetGradient() {
 void TessBaseAPI::ClearResults() {
   if (tesseract_ != nullptr) {
     tesseract_->Clear();
+  }
+  if (osd_tesseract_ != nullptr) {
+    osd_tesseract_->Clear();
   }
   delete page_res_;
   page_res_ = nullptr;
