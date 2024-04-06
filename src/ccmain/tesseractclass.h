@@ -234,55 +234,23 @@ public:
   }
 
   // Destroy any existing pix and return a pointer to the pointer.
-  void set_pix_binary(Image pix) {
-    pix_binary_.destroy();
-    pix_binary_ = pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
-    }
-  }
+  void set_pix_binary(Image pix);
   Image pix_binary() const {
     return pix_binary_;
   }
   Image pix_grey() const {
     return pix_grey_;
   }
-  void set_pix_grey(Image grey_pix) {
-    pix_grey_.destroy();
-    pix_grey_ = grey_pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
-    }
-  }
+  void set_pix_grey(Image grey_pix);
   Image pix_original() const {
     return pix_original_;
   }
   // Takes ownership of the given original_pix.
-  void set_pix_original(Image original_pix) {
-    pix_original_.destroy();
-    pix_original_ = original_pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
-    }
-  }
+  void set_pix_original(Image original_pix);
 
-  Image GetPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr)
-      return pix_for_debug_view_;
+  Image GetPixForDebugView();
 
-    pix_for_debug_view_ = pixConvertTo32(pix_binary_);
-    return pix_for_debug_view_;
-  }
-
-  void ClearPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr) {
-      pix_for_debug_view_.destroy();
-      pix_for_debug_view_ = nullptr;
-    }
-  }
+  void ClearPixForDebugView();
 
   void ReportDebugInfo();
 
@@ -316,45 +284,25 @@ public:
   // To tell the difference pixGetDepth() will return 32, 8 or 1.
   // In any case, the return value is a borrowed Pix, and should not be
   // deleted or pixDestroyed.
-  Image BestPix() const {
-    if (pix_original_ != nullptr && pixGetWidth(pix_original_) == ImageWidth()) {
-      return pix_original_;
-    } else if (pix_grey_ != nullptr) {
-      return pix_grey_;
-    } else {
-      return pix_binary_;
-    }
-  }
+  Image BestPix() const;
 
-  void set_pix_thresholds(Image thresholds) {
-    pix_thresholds_.destroy();
-    pix_thresholds_ = thresholds;
-  }
+  void set_pix_thresholds(Image thresholds);
   Image pix_thresholds() {
 	  return pix_thresholds_;
   }
   int source_resolution() const {
     return source_resolution_;
   }
-  void set_source_resolution(int ppi) {
-    source_resolution_ = ppi;
-  }
-  int ImageWidth() const {
-    return pixGetWidth(pix_binary_);
-  }
-  int ImageHeight() const {
-    return pixGetHeight(pix_binary_);
-  }
+  void set_source_resolution(int ppi);
+  int ImageWidth() const;
+  int ImageHeight() const;
   Image scaled_color() const {
     return scaled_color_;
   }
   int scaled_factor() const {
     return scaled_factor_;
   }
-  void SetScaledColor(int factor, Image color) {
-    scaled_factor_ = factor;
-    scaled_color_ = color;
-  }
+  void SetScaledColor(int factor, Image color);
   const Textord &textord() const {
     return textord_;
   }
@@ -368,33 +316,12 @@ public:
   int num_sub_langs() const {
     return sub_langs_.size();
   }
-  Tesseract *get_sub_lang(int index) const {
-    return sub_langs_[index];
-  }
+  Tesseract *get_sub_lang(int index) const;
+
   // Returns true if any language uses Tesseract (as opposed to LSTM).
-  bool AnyTessLang() const {
-    if (tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
-      return true;
-    }
-    for (auto &lang_ref : sub_langs_) {
-      if (lang_ref->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool AnyTessLang() const;
   // Returns true if any language uses the LSTM.
-  bool AnyLSTMLang() const {
-    if (tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
-      return true;
-    }
-    for (auto &lang_ref : sub_langs_) {
-      if (lang_ref->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool AnyLSTMLang() const;
 
   void SetBlackAndWhitelist();
 
@@ -619,25 +546,29 @@ public:
 				     const std::vector<std::string> &vars_values,
                      bool set_only_non_debug_params,
                      TessdataManager *mgr);
-  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
-    TessdataManager mgr;
-	std::vector<std::string> nil;
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
 
-    return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
-  }
   // Common initialization for a single language.
+  // 
   // arg0 is the datapath for the tessdata directory, which could be the
   // path of the tessdata directory with no trailing /, or (if tessdata
   // lives in the same directory as the executable, the path of the executable,
   // hence the name arg0.
+  // 
   // textbase is an optional output file basename (used only for training)
+  // 
   // language is the language code to load.
-  // oem controls which engine(s) will operate on the image
-  // configs is an optional vector of config filenames to load variables from.
+  // 
+  // oem controls which engine(s) will operate on the image.
+  // 
+  // configs is a vector of optional config filenames to load variables from.
   // May be empty.
+  // 
   // vars_vec is an optional vector of variables to set. May be empty.
+  // 
   // vars_values is an optional corresponding vector of values for the variables
   // in vars_vec.
+  // 
   // If set_only_non_debug_params is true, only params that do not contain
   // "debug" in the name will be set.
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
@@ -1124,12 +1055,7 @@ public:
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:
-  void AddPixDebugPage(const Image &pix, const char *title) {
-	  if (pix == nullptr)
-		  return;
-
-    pixa_debug_.AddPix(pix, title);
-  }
+  void AddPixDebugPage(const Image &pix, const char *title);
   void AddPixDebugPage(const Image &pix, const std::string& title) {
     AddPixDebugPage(pix, title.c_str());
   }
@@ -1143,17 +1069,9 @@ public:
     AddClippedPixDebugPage(pix, title.c_str());
   }
 
-  int PushNextPixDebugSection(const std::string &title) { // sibling
-    return pixa_debug_.PushNextSection(title);
-  }
-  int PushSubordinatePixDebugSection(const std::string &title) { // child
-    return pixa_debug_.PushSubordinateSection(title);
-  }
-  void PopPixDebugSection(int handle = -1) { // pop active; return focus to parent
-    pixa_debug_.WriteSectionParamsUsageReport();
-
-    pixa_debug_.PopSection(handle);
-  }
+  int PushNextPixDebugSection(const std::string &title);
+  int PushSubordinatePixDebugSection(const std::string &title);
+  void PopPixDebugSection(int handle = -1);
 
 public:
   // Find connected components in the page and process a subset until finished or
