@@ -19,6 +19,7 @@
 
 #include "ccutil.h"
 #include "winutils.h"
+#include "pathutils.h"
 
 #if defined(_WIN32)
 #  include <io.h> // for _access
@@ -73,9 +74,9 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   } 
   if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
-    wchar_t path[_MAX_PATH];
-    DWORD length = GetModuleFileNameW(nullptr, path, _MAX_PATH);
-    if (length > 0 && length < _MAX_PATH) {
+    wchar_t path[MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
+    if (length > 0 && length < MAX_PATH) {
       wchar_t *separator = std::wcsrchr(path, '\\');
       if (separator != nullptr) {
         *separator = '\0';
