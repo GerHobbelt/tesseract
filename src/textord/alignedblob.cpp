@@ -429,8 +429,8 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     }
     TBOX nbox = neighbour->bounding_box();
     int n_y = (nbox.top() + nbox.bottom()) / 2;
-    if ((!top_to_bottom && n_y > start_y + p.max_v_gap) ||
-        (top_to_bottom && n_y < start_y - p.max_v_gap)) {
+    if ((!top_to_bottom && nbox.top() > start_y + p.max_v_gap) ||
+        (top_to_bottom && nbox.bottom() < start_y - p.max_v_gap)) {
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintf("Neighbour too far at (%d,%d)->(%d,%d)\n", nbox.left(), nbox.bottom(), nbox.right(),
                 nbox.top());
