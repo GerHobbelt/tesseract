@@ -532,6 +532,12 @@ void WERD_RES::FilterWordChoices(int debug_level) {
   WERD_CHOICE_IT it(&best_choices);
   int index = 0;
   for (it.forward(); !it.at_first(); it.forward(), ++index) {
+
+    // The option that is the best raw choice is never filtered off.
+    if (raw_choice != nullptr && raw_choice->unichar_string() == it.data()->unichar_string()) {
+      continue;
+    }
+
     WERD_CHOICE *choice = it.data();
     float threshold = StopperAmbigThreshold(best_choice->adjust_factor(),
                                             choice->adjust_factor());
