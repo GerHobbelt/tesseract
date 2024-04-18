@@ -397,10 +397,12 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   //  Recognize the pieces in turn.
   int saved_cp_multiplier = classify_class_pruner_multiplier;
   int saved_im_multiplier = classify_integer_matcher_multiplier;
+  bool saved_classify_cp_dq_bad_height = classify_cp_dq_bad_height;
   if (prefix) {
     // Turn off Tesseract's y-position penalties for the leading superscript.
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
+    classify_cp_dq_bad_height.set_value(false);
 
     // Adjust our expectations about the baseline for this prefix.
     if (superscript_debug >= 3) {
@@ -415,6 +417,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     // Restore the normal y-position penalties.
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
+    classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
   }
 
   if (superscript_debug >= 3) {
@@ -426,6 +429,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     // Turn off Tesseract's y-position penalties for the trailing superscript, disable punctuation unichars
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
+    classify_cp_dq_bad_height.set_value(false);
     unicharset.set_enable_punctuation(false);
 
     if (superscript_debug >= 3) {
@@ -440,6 +444,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     // Restore the normal y-position penalties, blacklist/whitelist
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
+    classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
     unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                      tessedit_char_whitelist.c_str(),
                                      tessedit_char_unblacklist.c_str());

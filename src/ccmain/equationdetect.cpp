@@ -255,8 +255,10 @@ void EquationDetect::IdentifySpecialText() {
   // Set the multiplier to zero for lang_tesseract_ to improve the accuracy.
   const int classify_class_pruner = lang_tesseract_->classify_class_pruner_multiplier;
   const int classify_integer_matcher = lang_tesseract_->classify_integer_matcher_multiplier;
+  bool saved_classify_cp_dq_bad_height = lang_tesseract_->classify_cp_dq_bad_height;
   lang_tesseract_->classify_class_pruner_multiplier.set_value(0);
   lang_tesseract_->classify_integer_matcher_multiplier.set_value(0);
+  lang_tesseract_->classify_cp_dq_bad_height.set_value(false);
 
   ColPartitionGridSearch gsearch(part_grid_);
   ColPartition *part = nullptr;
@@ -286,6 +288,7 @@ void EquationDetect::IdentifySpecialText() {
   // Set the multiplier values back.
   lang_tesseract_->classify_class_pruner_multiplier.set_value(classify_class_pruner);
   lang_tesseract_->classify_integer_matcher_multiplier.set_value(classify_integer_matcher);
+  lang_tesseract_->classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
 
   if (equationdetect_save_spt_image) { // For debug.
     std::string outfile;

@@ -267,10 +267,19 @@ for (int bit = 0; bit < BITS_PER_WERD/NUM_BITS_PER_CLASS; bit++) {
   /// norm_count_. Applies a simple subtractive penalty for incorrect vertical
   /// position provided by the normalization_factors array, indexed by
   /// character class, and scaled by the norm_multiplier.
-  void NormalizeForXheight(int norm_multiplier, const uint8_t *normalization_factors) {
+  void NormalizeForXheight(int norm_multiplier, const uint8_t *normalization_factors, bool dq_bad_height) {
     for (int class_id = 0; class_id < max_classes_; class_id++) {
-      norm_count_[class_id] =
-          class_count_[class_id] - ((norm_multiplier * normalization_factors[class_id]) >> 8);
+      // If height is off by >50%, the character is disqualified.
+      if (dq_bad_height && normalization_factors[class_id] > 128) {
+        norm_count_[class_id] = 0;
+      // If height if off by >25%, the character is heavily penalized.
+      } else if (false && dq_bad_height && normalization_factors[class_id] > 64) {
+        norm_count_[class_id] = class_count_[class_id] - 10;
+      // Otherwise, the standard continuous penalty is applied.
+      } else {
+        norm_count_[class_id] =
+            class_count_[class_id] - ((norm_multiplier * normalization_factors[class_id]) >> 8);
+      }
     }
   }
 
@@ -445,7 +454,7 @@ int Classify::PruneClasses(const INT_TEMPLATES_STRUCT *int_templates, int num_fe
 
   // If we have good x-heights, apply the given normalization factors.
   if (normalization_factors != nullptr) {
-    pruner.NormalizeForXheight(classify_class_pruner_multiplier, normalization_factors);
+    pruner.NormalizeForXheight(classify_class_pruner_multiplier, normalization_factors, classify_cp_dq_bad_height);
   } else {
     pruner.NoNormalization();
   }
