@@ -167,6 +167,7 @@ public:
   void SetEquationDetect(EquationDetectBase *detect);
 
 private:
+  void DisplayGrid();
   // Displays the blob and block bounding boxes in a window called Blocks.
   void DisplayBlocks(BLOCK_LIST *blocks);
   // Displays the column edges at each grid y coordinate defined by
