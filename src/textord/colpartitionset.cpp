@@ -422,6 +422,19 @@ void ColPartitionSet::DisplayColumnEdges2(int y_bottom, int y_top, ScrollView::C
   }
 }
 
+void ColPartitionSet::DisplayColumnEdges3(int y_bottom, int y_top,
+                                         ScrollView *win) {
+  ColPartition_IT it(&parts_);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    ColPartition *part = it.data();
+    auto color = part->good_width() ? ScrollView::GREEN : ScrollView::RED;
+    win->Pen(color);          
+    win->Line(part->LeftAtY(y_top), y_top, part->LeftAtY(y_bottom), y_bottom);
+    win->Line(part->RightAtY(y_top), y_top, part->RightAtY(y_bottom), y_bottom);
+  }
+}
+
+
 #endif // !GRAPHICS_DISABLED
 
 // Return the ColumnSpanningType that best explains the columns overlapped

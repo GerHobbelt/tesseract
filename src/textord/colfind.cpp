@@ -595,7 +595,7 @@ void ColumnFinder::DisplayColumnBounds3(PartSetVector *sets) {
   for (int i = 0; i < gridheight_; ++i) {
     ColPartitionSet *columns = sets->at(i);
     if (columns != nullptr) {
-      columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
+      columns->DisplayColumnEdges3(i * gridsize_, (i + 1) * gridsize_, col_win);
     }
   }
   col_win->UpdateWindow();
