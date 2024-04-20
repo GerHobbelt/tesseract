@@ -529,7 +529,7 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     block->pdblk.plot(blocks_win_, serial++,
                       textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
   }
-  blocks_win_->Update();
+  blocks_win_->UpdateWindow();
 }
 
 
