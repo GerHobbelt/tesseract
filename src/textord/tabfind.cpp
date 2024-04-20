@@ -39,11 +39,11 @@ const int kMinVerticalSearch = 3;
 const int kMaxVerticalSearch = 12;
 const int kMaxRaggedSearch = 25;
 // Minimum number of lines in a column width to make it interesting.
-const int kMinLinesInColumn = 10;
+const int kMinLinesInColumn = 5;
 // Minimum width of a column to be interesting.
-const int kMinColumnWidth = 200;
+const int kMinColumnWidth = 100;
 // Minimum fraction of total column lines for a column to be interesting.
-const double kMinFractionalLinesInColumn = 0.125;
+const double kMinFractionalLinesInColumn = 0;
 // Fraction of height used as alignment tolerance for aligned tabs.
 const double kAlignedFraction = 0.03125;
 // Maximum gutter width (in absolute inch) that we care about
@@ -1069,8 +1069,10 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
       col_count += new_count;
       col_widths->add(right, -new_count);
     }
-    if (col_count > kMinLinesInColumn &&
-        col_count > kMinFractionalLinesInColumn * total_col_count) {
+
+    if (width * kColumnWidthFactor > kMinColumnWidth * 2 && col_count > kMinLinesInColumn ||
+        width * kColumnWidthFactor > kMinColumnWidth * 1.5 && col_count > kMinLinesInColumn * 1.5 ||
+        width * kColumnWidthFactor > kMinColumnWidth && col_count > kMinLinesInColumn * 2) {
       auto *w = new ICOORDELT(0, width);
       w_it.add_after_then_move(w);
       if (textord_debug_tabfind > 0) {
