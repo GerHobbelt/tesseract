@@ -1620,11 +1620,12 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
               counts[NPT_WEAK_VTEXT], counts[NPT_IMAGE], image_bias, min_dist);
     }
     // See if we have a decision yet.
-    auto image_count = counts[NPT_IMAGE];
-    int htext_score = counts[NPT_HTEXT] + counts[NPT_WEAK_HTEXT] -
-                      (image_count + counts[NPT_WEAK_VTEXT]);
-    int vtext_score = counts[NPT_VTEXT] + counts[NPT_WEAK_VTEXT] -
-                      (image_count + counts[NPT_WEAK_HTEXT]);
+    int image_count = counts[NPT_IMAGE];
+    int htext_count = counts[NPT_HTEXT] + counts[NPT_WEAK_HTEXT];
+    int vtext_count = counts[NPT_VTEXT] + counts[NPT_WEAK_VTEXT];
+
+    int htext_score = htext_count - (image_count + vtext_count);
+    int vtext_score = vtext_count - (image_count + htext_count);
     if (image_count > 0 && image_bias - htext_score >= kSmoothDecisionMargin &&
         image_bias - vtext_score >= kSmoothDecisionMargin) {
       *best_distance = dists[NPT_IMAGE][0];
@@ -1639,7 +1640,7 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
       return BRT_POLYIMAGE;
     }
     if ((text_dir != BRT_VERT_TEXT || flow_type != BTFT_CHAIN) &&
-        counts[NPT_HTEXT] > 0 && htext_score >= kSmoothDecisionMargin) {
+        htext_count > 0 && htext_score >= kSmoothDecisionMargin) {
       *best_distance = dists[NPT_HTEXT][0];
       return BRT_TEXT;
     } else if ((text_dir != BRT_TEXT || flow_type != BTFT_CHAIN) &&
@@ -1717,7 +1718,7 @@ void ColPartitionGrid::AccumulatePartDistances(
       if (debug) {
         tprintDebug("Weak {}\n", n_boxes);
       }
-    } else {
+    } else if (n_type == BRT_NOISE || n_type == BRT_POLYIMAGE || n_type == BRT_RECTIMAGE) {
       count_vector = &dists[NPT_IMAGE];
       if (debug) {
         tprintDebug("Image {}\n", n_boxes);
