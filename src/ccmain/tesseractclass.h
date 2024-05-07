@@ -195,16 +195,9 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract(Tesseract *parent = nullptr, AutoSupressDatum *LogReportingHoldoffMarkerRef = nullptr);
+  Tesseract() : Tesseract(nullptr) {};
+  Tesseract(Tesseract *parent);
   virtual ~Tesseract() override;
-
-protected:
-  AutoSupressDatum &reporting_holdoff_;
-
-public:
-  AutoSupressDatum &GetLogReportingHoldoffMarkerRef() {
-    return reporting_holdoff_;
-  };
 
   // Return appropriate dictionary
   Dict &getDict() override;
@@ -596,6 +589,8 @@ public:
 
   void ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,
                            std::vector<std::string> *not_to_load);
+
+  static BOXA *ParseRectsString(const char *rects_str);
 
   //// pgedit.h //////////////////////////////////////////////////////////
   SVMenuNode *build_menu_new();

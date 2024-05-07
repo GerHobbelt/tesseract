@@ -576,7 +576,6 @@ namespace tesseract {
   
   void DebugPixa::WriteHTML(const char* filename) {
     ASSERT0(tesseract_ != nullptr);
-    auto &holdoff = tesseract_->GetLogReportingHoldoffMarkerRef();
     bool go = !!holdoff;
     if (HasContent() && go) {
       const char *ext = strrchr(filename, '.');

@@ -34,10 +34,6 @@
 #include <cstring>
 #include <tuple>
 
-#if defined(HAVE_MUPDF)
-#include "mupdf/assertions.h"
-#endif
-
 
 namespace tesseract {
 

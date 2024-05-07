@@ -463,9 +463,11 @@ public:
   // those languages that are using CJK pitch model and thus it has to
   // be true if and only if tesseract->textord_use_cjk_fp_model is
   // true.
+  // 
   // If allow_detailed_fx is true, the feature extractor will receive fine
   // precision outline information, allowing smoother features and better
   // features on low resolution images.
+  // 
   // The norm_mode sets the default mode for normalization in absence
   // of any of the above flags. It should really be a tesseract::OcrEngineMode
   // but is declared as int for ease of use with tessedit_ocr_engine_mode.

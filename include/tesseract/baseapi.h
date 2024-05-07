@@ -144,13 +144,6 @@ public:
   */
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
 
-  AutoSupressDatum& GetLogReportingHoldoffMarkerRef() {
-      return reporting_holdoff_;
-  };
-
-protected:
-  AutoSupressDatum reporting_holdoff_;
-
 public:
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
@@ -669,8 +662,7 @@ public:
   /// Get bounding boxes of the cols of a table
   /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
   std::vector<std::tuple<int, int, int, int> > GetTableCols(
-      unsigned
-          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+    unsigned i ///< Index of the table, for upper limit \see GetNumberOfTables()
   );
 
   /**
@@ -896,6 +888,11 @@ public:
   }
 
   void set_min_orientation_margin(double margin);
+
+  void SetupDebugAllPreset();
+
+  void ReportDebugInfo();
+
   /* @} */
 
 protected:

@@ -21,6 +21,10 @@
  *
  **********************************************************************/
 
+#include <leptonica/environ.h>
+#include <tesseract/assert.h>
+#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
+
 #include "pageres.h"
 
 #include "blamer.h"   // for BlamerBundle
@@ -36,9 +40,6 @@
 #include "stepblob.h" // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "tprintf.h"  // for tprintf
 
-#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
-
-#include <cassert> // for assert
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
 
