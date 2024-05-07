@@ -28,6 +28,8 @@
 #include <climits> // for INT_MAX
 #include <cstdio>
 
+#include <diagnostics/diagnostics.h>
+
 #ifdef HAVE_MUPDF
 
 #include "mupdf/fitz/config.h"
@@ -40,62 +42,81 @@
 
 namespace tesseract {
 
-#ifdef HAVE_MUPDF
+static void assert_that_a_spdlog_sink_and_logger_are_active() {
+  std::shared_ptr<spdlog::logger> logger = spdlog::default_logger();
+  ASSERT0(!!logger);
+  const std::vector<spdlog::sink_ptr> &sinks = logger->sinks();
+  ASSERT0(!sinks.empty());
+}
+
 
 // Warning: tprintf() is invoked in tesseract for PARTIAL lines, so we SHOULD gather these fragments
 // here before dispatching the gathered lines to the appropriate back-end API!
-static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args args) {
-  static int block_level = T_LOG_DEBUG;
+static void gather_and_log_a_single_tprintf_line(int level, fmt::string_view format, fmt::format_args args) {
+  static int block_level = T_LOG_TRACE;
+
+  // elevation means LOWERING the level value as lower is higher severity!
+  level -= tprintGetLevelElevation();
+
   // sanity check/clipping: there's no log level beyond ERROR severity: ERROR is the highest it can possibly get.
   if (level < T_LOG_ERROR) {
-	  level = T_LOG_ERROR;
-  }
-  // make the entire message line have the most severe log level given for any part of the line:
-  if (level < block_level) {
-    block_level = level;
+    level = T_LOG_ERROR;
   }
 
   auto msg = fmt::vformat(format, args);
 
+  // when this is a partial message, store it in the buffer until later, when the message is completed.
   static std::string msg_buffer;
-  msg_buffer += msg;
-  if (!msg_buffer.ends_with('\n'))
+  if (!msg.ends_with('\n')) {
+    // make the entire message line have the most severe log level given for any part of the line:
+    if (level < block_level) {
+      block_level = level;
+    }
+    msg_buffer += msg;
     return;
-
-  const char *s = msg_buffer.c_str();
-  level = block_level;
-
-  if (!strncmp(s, "ERROR: ", 7))
-    fz_error(NULL, "%s", s + 7);
-  else if (!strncmp(s, "WARNING: ", 9))
-    fz_warn(NULL, "%s", s + 9);
-  else {
-	switch (level) {
-	case T_LOG_ERROR:
-      fz_error(NULL, "%s", s);
-	  break;
-	case T_LOG_WARN:
-	  fz_warn(NULL, "%s", s);
-	  break;
-	case T_LOG_INFO:
-      fz_info(NULL, "%s", s);
-	  break;
-	case T_LOG_DEBUG:
-	default:
-      fz_info(NULL, "%s", s);
-	  break;
-	}
   }
 
-  msg_buffer.clear();
+  // `msg` carries a complete message, or at least the end of it:
+  // when there's some old stuff waiting for us: append and pick up the tracked error level.
+  if (!msg_buffer.empty()) {
+    level = block_level;
+    msg = msg_buffer + msg;
+    msg_buffer.clear();
+  }
+
+  // We've gathered a single, entire, message: now output it line-by-line (if it's multi-line internally).
+  const char *s = msg.c_str();
+
+  if (!strncmp(s, "ERROR: ", 7)) {
+    s += 7;
+    if (level > T_LOG_ERROR)
+      level = T_LOG_ERROR;
+  } else if (!strncmp(s, "WARNING: ", 9)) {
+    s += 9;
+    if (level > T_LOG_WARN)
+      level = T_LOG_WARN;
+  }
+
+  switch (level) {
+    case T_LOG_ERROR:
+      spdlog::error(s);
+      break;
+    case T_LOG_WARN:
+      spdlog::warn(s);
+      break;
+    case T_LOG_INFO:
+      spdlog::info(s);
+      break;
+    case T_LOG_DEBUG:
+    default:
+      spdlog::debug(s);
+      break;
+  }
 
   // reset next line log level to lowest possible:
   block_level = T_LOG_DEBUG;
 }
 
-#endif
-
-#define MAX_MSG_LEN 2048
 
 // when we use tesseract as part of MuPDF (or mixed with it), we use the fz_error/fz_warn/fz_info APIs to
 // output any error/info/debug messages and have the callbacks which MAY be registered with those APIs
@@ -126,9 +147,10 @@ const int tprintGetLevelElevation(void)
 
 // Trace printf
 void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
-#ifdef HAVE_MUPDF
-	fz_tess_tprintf(level, format, args);
-#else
+  assert_that_a_spdlog_sink_and_logger_are_active();
+
+  gather_and_log_a_single_tprintf_line(level, format, args);
+
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
@@ -158,7 +180,6 @@ void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
   } else {
     fmt::vprint(stderr, format, args);
   }
-#endif
 }
 
 } // namespace tesseract
