@@ -157,7 +157,6 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
     if (Match < BestMatch) {
       BestMatch = Match;
     }
-
   }
   return 1.0 - NormEvidenceOf(BestMatch);
 } /* ComputeNormMatch */
