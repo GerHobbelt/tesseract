@@ -673,17 +673,6 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_page", &b);
-    if (b) {
-      auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
-      if (renderer->happy()) {
-        renderers.push_back(std::move(renderer));
-      } else {
-        tprintError("Could not create ALTO output file: {}\n", strerror(errno));
-        error = true;
-      }
-    }
-
     api.GetBoolVariable("tessedit_create_page_xml", &b);
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
