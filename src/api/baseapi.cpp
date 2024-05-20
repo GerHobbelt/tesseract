@@ -3354,6 +3354,25 @@ void TessBaseAPI::SetupDebugAllPreset() {
   }
 }
 
+void TessBaseAPI::SetupDefaultPreset() {
+  // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
+  SetVariable("tessedit_create_hocr", "Y");
+  SetVariable("tessedit_create_alto", "Y");
+  SetVariable("tessedit_create_page", "Y");
+  SetVariable("tessedit_create_tsv", "Y");
+  SetVariable("tessedit_create_pdf", "Y");
+  SetVariable("textonly_pdf", "n");
+  SetVariable("tessedit_write_unlv", "Y");
+  SetVariable("tessedit_create_lstmbox", "Y");
+  SetVariable("tessedit_create_boxfile", "Y");
+  SetVariable("tessedit_create_wordstrbox", "Y");
+  SetVariable("tessedit_create_txt", "Y");
+
+  if (tesseract() != nullptr) {
+    tesseract()->ResyncVariablesInternally();
+  }
+}
+
 /** Escape a char string - replace <>&"' with HTML codes. */
 std::string HOcrEscape(const char *text) {
   std::string ret;
