@@ -30,6 +30,7 @@
 #include <iostream>
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
+#include <sstream> // std::ostringstream
 
 #include <leptonica/allheaders.h>
 #if LIBLEPT_MINOR_VERSION > 82
@@ -41,6 +42,8 @@
 #include "tesseractclass.h" // for AnyTessLang
 #include "tprintf.h" // for tprintf
 #include "tlog.h"
+#include "pathutils.h"
+#include "imagedata.h" // DocumentData
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -321,27 +324,19 @@ static void PrintHelpMessage(const char *program) {
       program, program, program, program, program, program);
 }
 
-static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char** argv) {
+static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api,
+                                   const std::vector<std::string> &vars,
+                                   const std::vector<std::string> &values)
+{
   bool success = true;
-  char opt1[256], opt2[255];
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
-      strncpy(opt1, argv[i + 1], 255);
-      opt1[255] = '\0';
-      char *p = strchr(opt1, '=');
-      if (!p) {
-        tprintError("Missing '=' in configvar assignment for '{}'\n", opt1);
-        success = false;
-        break;
-      }
-      *p = 0;
-      strncpy(opt2, strchr(argv[i + 1], '=') + 1, sizeof(opt2) - 1);
-      opt2[254] = 0;
-      ++i;
+  int len = vars.size();
+  for (int i = 0; i < len; i++) {
+    const std::string &var = vars[i];
+    const std::string &value = values[i];
 
-      if (!api.SetVariable(opt1, opt2)) {
-        tprintError("Could not set option: {}={}\n", opt1, opt2);
-      }
+    if (!api.SetVariable(var.c_str(), value.c_str())) {
+      tprintError("Could not set option: {}={}\n", var, value);
+      success = false;
     }
   }
   return success;
@@ -378,16 +373,10 @@ static void FixPageSegMode(tesseract::TessBaseAPI &api, tesseract::PageSegMode p
   }
 }
 
-
-//#include <filesystem>
-#include <sstream>      // std::ostringstream
-#include "imagedata.h"  // DocumentData
-
-static void InfoTraineddata(const char** filenames) {
-  const char* filename;
-  while ((filename = *filenames++) != nullptr) {
+static void InfoTraineddata(const std::vector<std::string> &filenames) {
+  for (const std::string &filename : filenames) {
     tesseract::TessdataManager mgr;
-    if (!mgr.is_loaded() && !mgr.Init(filename)) {
+    if (!mgr.is_loaded() && !mgr.Init(filename.c_str())) {
       tprintError("Error opening data file {}\n", filename);
     } else {
       if (mgr.IsLSTMAvailable()) {
@@ -401,29 +390,26 @@ static void InfoTraineddata(const char** filenames) {
   tprintInfo("\n");
 }
 
-static void UnpackFiles(const char** filenames) {
-  const char* filename;
-  while ((filename = *filenames++) != nullptr) {
+static void UnpackFiles(const std::vector<std::string> &filenames) {
+  for (const std::string &filename : filenames) {
     tprintInfo("Extracting {}\n", filename);
     tesseract::DocumentData images(filename);
-    if (!images.LoadDocument(filename, 0, 0, nullptr)) {
+    if (!images.LoadDocument(filename.c_str(), 0, 0, nullptr)) {
       tprintError("Failed to read training data from {}!\n", filename);
       continue;
     }
-#if 0
+    tprintInfo("Extracted:\n");
     tprintInfo("  {} pages\n", images.NumPages());
     tprintInfo("  {} size\n", images.PagesSize());
-#endif
+
     for (int page = 0; page < images.NumPages(); page++) {
       std::string basename = filename;
       basename = basename.erase(basename.size() - 6);
       std::ostringstream stream;
       stream << basename << '_' << page;
       const tesseract::ImageData* image = images.GetPage(page);
-#if 0
-      const char* imagefilename = image->imagefilename().c_str();
-      tprintInfo("fn: {}\n", imagefilename);
-#endif
+      tprintInfo("document page #{}: image file: {}\n", page, image->imagefilename());
+
       const char* transcription = image->transcription().c_str();
       std::string gt_filename = stream.str() + ".gt.txt";
       FILE* f = fopen(gt_filename.c_str(), "wb");
@@ -433,155 +419,157 @@ static void UnpackFiles(const char** filenames) {
       }
       fprintf(f, "%s\n", transcription);
       fclose(f);
-#if 0
       tprintInfo("Ground truth transcription for document page #{}: {}\n", page, transcription);
-#endif
+
       Pix* pix = image->GetPix();
       std::string image_filename = stream.str() + ".png";
       if (pixWrite(image_filename.c_str(), pix, IFF_PNG) != 0) {
         tprintError("Writing {} failed\n", image_filename);
       }
       pixDestroy(&pix);
-#if 0
-      const GenericVector<TBOX>& boxes = image->boxes();
+
+      const auto& boxes = image->boxes();
       const TBOX& box = boxes[0];
       box.print();
-      const GenericVector<STRING>& box_texts = image->box_texts();
+      const auto &box_texts = image->box_texts();
       tprintInfo("gt: {}\n", box_texts[0]);
-#endif
     }
   }
 }
 
-namespace std {
-namespace filesystem {
-  bool exists(const char* filename);
-}
-}
+typedef enum {
+  NO_CMD = 0,
+  HELP_BASIC = 0x01,
+  HELP_EXTRA = 0x02,
+  HELP_OEM = 0x04,
+  HELP_PSM = 0x08,
+  INFO = 0x10,
+  UNPACK = 0x20,
+  VERSION = 0x40,
+  DO_OCR = 0x80,
+  LIST_LANGUAGES = 0x100,
+  PRINT_PARAMETERS = 0x200,
+  PRINT_FONTS_TABLE = 0x400,
 
-bool std::filesystem::exists(const char* filename) {
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  return _access(filename, 0) == 0;
-#else
-  return access(filename, 0) == 0;
-#endif
-}
+  WE_ARE_BUGGERED = 0x8000
+} CommandVerb;
 
-static bool ParseArgs(int argc, const char** argv,
-                      bool* do_recognize, bool* list_langs,
-                      bool* print_parameters, bool* print_fonts_table,
-                      std::vector<std::string>* vars_vec, std::vector<std::string>* vars_values,
-                      std::vector<std::string>* config_files
-) {
-  *do_recognize = false;
-  *list_langs = false;
-  *print_parameters = false;
-  *print_fonts_table = false;
-
-  int i = 1;
-  if (i < argc) {
-    const char* verb = argv[i];
-    if (verb[0] != '-' && !std::filesystem::exists(verb)) {
-      i++;
-      if (strcmp(verb, "help") == 0) {
-        if (i < argc) {
-          if (strcmp(argv[i], "extra") == 0) {
-            PrintHelpExtra(argv[0]);
-#if !DISABLED_LEGACY_ENGINE
-          } else if ((strcmp(argv[i], "oem") == 0)) {
-            PrintHelpForOEM();
-#endif
-          } else if ((strcmp(argv[i], "psm") == 0)) {
-            PrintHelpForPSM();
-          } else {
-            tprintError("No help available for '{}'.\nDid you mean 'extra', 'oem' or 'psm'?", argv[i]);
-            return false;
-          }
-        } else {
-          PrintHelpMessage(argv[0]);
-        }
-      } else if (strcmp(verb, "info") == 0) {
-        InfoTraineddata(argv + i);
-      } else if (strcmp(verb, "unpack") == 0) {
-        UnpackFiles(argv + i);
-      } else if (strcmp(verb, "version") == 0) {
-        PrintVersionInfo();
-      } else {
-        tprintError("Unknown action: '{}'\n", verb);
-        return false;
-      }
-      return true;
-    }
-  }
-  bool noocr = false;
+// Return a CommandVerb mix + parsed arguments in vectors
+static int ParseArgs(int argc, const char** argv,
+                      std::vector<std::string>* vars_vec,
+                      std::vector<std::string>* vars_values,
+                      std::vector<std::string>* path_args) {
   bool dash_dash = false;
-  int state = 0;
+  int i;
+  int cmd = NO_CMD;
   for (i = 1; i < argc; i++) {
-    if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
-      PrintHelpMessage(argv[0]);
-      noocr = true;
-    } else if (strcmp(argv[i], "--help-extra") == 0) {
-        PrintHelpExtra(argv[0]);
-      noocr = true;
-    } else if ((strcmp(argv[i], "--help-psm") == 0)) {
-      PrintHelpForPSM();
-      noocr = true;
+    const char *verb = argv[i];
+    ASSERT0(verb != nullptr);
+    if (verb[0] != '-' || dash_dash) {
+      if (cmd == NO_CMD) {
+        if (strcmp(verb, "help") == 0) {
+          const char *subverb = argv[i + 1];
+          if (subverb && subverb[0] != '-') {
+            if (strcmp(subverb, "extra") == 0) {
+              cmd = HELP_EXTRA;
 #if !DISABLED_LEGACY_ENGINE
-    } else if ((strcmp(argv[i], "--help-oem") == 0)) {
-      PrintHelpForOEM();
-      noocr = true;
+            } else if ((strcmp(subverb, "oem") == 0)) {
+              cmd = HELP_OEM;
 #endif
-    } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--version") == 0)) {
-      PrintVersionInfo();
-      noocr = true;
-    } else if (strcmp(argv[i], "-l") == 0 && i + 1 < argc) {
+            } else if ((strcmp(subverb, "psm") == 0)) {
+              cmd = HELP_PSM;
+            } else {
+              tprintError(
+                  "No help available for '{}'.\n"
+                  "Did you mean 'extra', 'oem' or 'psm'?\n",
+                  subverb);
+              return WE_ARE_BUGGERED;
+            }
+            i++;
+          } else {
+            cmd = HELP_BASIC;
+          }
+          continue;
+        } else if (strcmp(verb, "info") == 0) {
+          cmd = INFO;
+          continue;
+        } else if (strcmp(verb, "unpack") == 0) {
+          cmd = UNPACK;
+          continue;
+        } else if (strcmp(verb, "version") == 0) {
+          cmd = VERSION;
+          continue;
+        } else if (!fs::exists(verb)) {
+          tprintError("Unknown action: '{}'\n", verb);
+          return WE_ARE_BUGGERED;
+        }
+        // fall through
+      }
+
+      if (cmd == NO_CMD)
+        cmd = DO_OCR;
+      path_args->push_back(verb);
+    } else if (cmd != NO_CMD && strcmp(verb, "-") == 0) {
+      // stdin/stdout path spec: treat as command path parameter
+      path_args->push_back(verb);
+    } else if ((strcmp(verb, "-h") == 0) ||
+               (strcmp(verb, "--help") == 0)) {
+      cmd |= HELP_BASIC;
+    } else if (strcmp(verb, "--help-extra") == 0) {
+      cmd |= HELP_EXTRA;
+    } else if ((strcmp(verb, "--help-psm") == 0)) {
+      cmd |= HELP_PSM;
+#if !DISABLED_LEGACY_ENGINE
+    } else if ((strcmp(verb, "--help-oem") == 0)) {
+      cmd |= HELP_OEM;
+#endif
+    } else if ((strcmp(verb, "-v") == 0) || (strcmp(verb, "--version") == 0)) {
+      cmd |= VERSION;
+    } else if (strcmp(verb, "-l") == 0 && i + 1 < argc) {
       vars_vec->push_back("languages");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--tessdata-dir") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "--tessdata-dir") == 0 && i + 1 < argc) {
       vars_vec->push_back("tessdata_path");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--dpi") == 0 && i + 1 < argc) {
-      vars_vec->push_back("source_image_dpi");
+    } else if (strcmp(verb, "--dpi") == 0 && i + 1 < argc) {
+      vars_vec->push_back("user_defined_dpi");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "--loglevel") == 0 && i + 1 < argc) {
       vars_vec->push_back("loglevel");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "--user-words") == 0 && i + 1 < argc) {
       vars_vec->push_back("user_words_file");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--user-patterns") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "--user-patterns") == 0 && i + 1 < argc) {
       vars_vec->push_back("user_patterns_file");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--list-langs") == 0) {
-      noocr = true;
-      *list_langs = true;
-    } else if (strcmp(argv[i], "--rectangle") == 0 && i + 1 < argc) {
-      vars_vec->push_back("reactangle_to_process");
+    } else if (strcmp(verb, "--list-langs") == 0) {
+      cmd |= LIST_LANGUAGES;
+    } else if (strcmp(verb, "--rectangle") == 0 && i + 1 < argc) {
+      vars_vec->push_back("reactangles_to_process");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
-      vars_vec->push_back("page_segmenting_mode");
+    } else if (strcmp(verb, "--psm") == 0 && i + 1 < argc) {
+      vars_vec->push_back("tessedit_pageseg_mode");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--oem") == 0 && i + 1 < argc) {
-      vars_vec->push_back("engine_mode");
+    } else if (strcmp(verb, "--oem") == 0 && i + 1 < argc) {
+      vars_vec->push_back("tessedit_ocr_engine_mode");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--print-parameters") == 0) {
-      noocr = true;
-      *print_parameters = true;
+    } else if (strcmp(verb, "--print-parameters") == 0) {
+      cmd |= PRINT_PARAMETERS;
 #if !DISABLED_LEGACY_ENGINE
-    } else if (strcmp(argv[i], "--print-fonts-table") == 0) {
-      noocr = true;
-      *print_fonts_table = true;
+    } else if (strcmp(verb, "--print-fonts-table") == 0) {
+      cmd |= PRINT_FONTS_TABLE;
 #endif  // !DISABLED_LEGACY_ENGINE
-    } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "-c") == 0 && i + 1 < argc) {
       // handled properly after api init
       const char *var_stmt = argv[i + 1];
       ++i;
@@ -593,42 +581,20 @@ static bool ParseArgs(int argc, const char** argv,
       std::string name(var_stmt, p - var_stmt);
       vars_vec->push_back(name);
       vars_values->push_back(p + 1);
-    } else if (strcmp(argv[i], "--visible-pdf-image") == 0 && i + 1 < argc) {
+    } else if (strcmp(verb, "--visible-pdf-image") == 0 && i + 1 < argc) {
       vars_vec->push_back("visible_pdf_image");
       vars_values->push_back(argv[i + 1]);
       ++i;
-    } else if (strcmp(argv[i], "--") == 0) {
+    } else if (strcmp(verb, "--") == 0) {
       dash_dash = true;
-    } else if (state == 0 && (dash_dash || argv[i][0] != '-')) {
-      // first + second non-opt argument: the SOURCE IMAGE,
-      vars_vec->push_back("source_image");
-      vars_values->push_back(argv[i]);
-      ++i;
-      if (i == argc) {
-        tprintError("Error, missing outputbase command line argument\n");
-        return false;
-      }
-      // outputbase follows image, don't allow options at that position.
-      vars_vec->push_back("output_base_path");
-      vars_values->push_back(argv[i]);
-      ++state;
-    } else if (state == 1 && (dash_dash || argv[i][0] != '-')) {
-      // third and further non-opt arguments: the (optional) CONFIG FILES
-      config_files->push_back(argv[i]);
     } else {
       // Unexpected argument.
-      tprintError("Unknown command line argument '{}'\n", argv[i]);
-      return false;
+      tprintError("Unknown command line argument '{}'\n", verb);
+      return WE_ARE_BUGGERED;
     }
   }
 
-  if (state < 1 && noocr == false) {
-    PrintHelpMessage(argv[0]);
-    return false;
-  }
-
-  *do_recognize = !noocr;
-  return true;
+  return cmd;
 }
 
 static bool PreloadRenderers(tesseract::TessBaseAPI &api,
@@ -648,11 +614,11 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
     bool b;
+    auto *tess = api.tesseract();
 
-    api.GetBoolVariable("tessedit_create_hocr", &b);
+    b = tess->tessedit_create_hocr;
     if (b) {
-      bool font_info;
-      api.GetBoolVariable("hocr_font_info", &font_info);
+      bool font_info = tess->hocr_font_info;
       auto renderer = std::make_unique<tesseract::TessHOcrRenderer>(outputbase, font_info);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -662,7 +628,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_alto", &b);
+    b = tess->tessedit_create_alto;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessAltoRenderer>(outputbase);
       if (renderer->happy()) {
@@ -673,7 +639,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_page", &b);
+    b = tess->tessedit_create_page_xml;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
       if (renderer->happy()) {
@@ -684,7 +650,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_page_xml", &b);
+    b = tess->tessedit_create_page_xml;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
       if (renderer->happy()) {
@@ -695,7 +661,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_page_xml", &b);
+    b = tess->tessedit_create_page_xml;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
       if (renderer->happy()) {
@@ -706,10 +672,9 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_tsv", &b);
+    b = tess->tessedit_create_tsv;
     if (b) {
-      bool lang_info;
-      api.GetBoolVariable("tsv_lang_info", &lang_info);
+      bool lang_info = tess->tsv_lang_info;
       auto renderer = std::make_unique<tesseract::TessTsvRenderer>(outputbase, lang_info);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -719,14 +684,13 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_pdf", &b);
+    b = tess->tessedit_create_pdf;
     if (b) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
       if (_setmode(_fileno(stdout), _O_BINARY) == -1)
         tprintError("Cannot set STDIN to binary: {}", strerror(errno));
 #endif // WIN32
-      bool textonly;
-      api.GetBoolVariable("textonly_pdf", &textonly);
+      bool textonly = tess->textonly_pdf;
       auto renderer = std::make_unique<tesseract::TessPDFRenderer>(outputbase, api.GetDatapath(), textonly);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -736,9 +700,9 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_write_unlv", &b);
+    b = tess->tessedit_write_unlv;
     if (b) {
-      api.SetVariable("unlv_tilde_crunching", "true");
+      b = tess->unlv_tilde_crunching.set_value(true);
       auto renderer = std::make_unique<tesseract::TessUnlvRenderer>(outputbase);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -748,7 +712,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_lstmbox", &b);
+    b = tess->tessedit_create_lstmbox;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessLSTMBoxRenderer>(outputbase);
       if (renderer->happy()) {
@@ -759,7 +723,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_boxfile", &b);
+    b = tess->tessedit_create_boxfile;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessBoxTextRenderer>(outputbase);
       if (renderer->happy()) {
@@ -770,7 +734,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_wordstrbox", &b);
+    b = tess->tessedit_create_wordstrbox;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessWordStrBoxRenderer>(outputbase);
       if (renderer->happy()) {
@@ -781,7 +745,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_txt", &b);
+    b = tess->tessedit_create_txt;
     if (b) {
       // Create text output if no other output was requested
       // even if text output was not explicitly requested unless
@@ -875,26 +839,16 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   (void)tesseract::SetConsoleModeToUTF8();
 
-  const char *lang = nullptr;
-  const char *image = nullptr;
-  const char *visible_image_file = nullptr;
   const char *outputbase = nullptr;
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
-  bool rectangle_mode = false;
-  bool do_recognize = false;
-  const char* rectangle_str = NULL;
-  bool list_langs = false;
-  bool print_parameters = false;
-  bool print_fonts_table = false;
-  l_int32 dpi = 0;
   int ret_val = EXIT_SUCCESS;
 
   tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
   tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
   std::vector<std::string> vars_vec;
   std::vector<std::string> vars_values;
-  std::vector<std::string> config_files;
+  std::vector<std::string> path_params;
 
   if (std::getenv("LEPT_MSG_SEVERITY")) {
     // Get Leptonica message level from environment variable.
@@ -915,13 +869,90 @@ extern "C" int tesseract_main(int argc, const char** argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
-  if (!ParseArgs(argc, argv, &do_recognize, &list_langs,
-                 &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &config_files 	             
-  )) {
+  int cmd = ParseArgs(argc, argv, &vars_vec, &vars_values, &path_params);
+  if (cmd == WE_ARE_BUGGERED) {
     return EXIT_FAILURE;
   }
 
-  bool nothing_further_to_do = !do_recognize && !list_langs && !print_parameters && !print_fonts_table;
+  if (cmd == NO_CMD) {
+    PrintHelpMessage(argv[0]);
+    return 7;
+  }
+
+  if (cmd & HELP_EXTRA) {
+    PrintHelpExtra(argv[0]);
+    cmd &= ~(HELP_OEM | HELP_PSM | HELP_BASIC);
+  }
+#if !DISABLED_LEGACY_ENGINE
+  if (cmd & HELP_OEM) {
+    PrintHelpForOEM();
+  }
+#endif
+  if (cmd & HELP_PSM) {
+    PrintHelpForPSM();
+  }
+  if (cmd & HELP_BASIC) {
+    PrintHelpMessage(argv[0]);
+  }
+  if (cmd & VERSION) {
+    PrintVersionInfo();
+  }
+
+  if (cmd & INFO) {
+    InfoTraineddata(path_params);
+  }
+
+  int hlpcmds = cmd & (HELP_EXTRA | HELP_OEM | HELP_PSM | HELP_BASIC | INFO | LIST_LANGUAGES | PRINT_PARAMETERS | PRINT_FONTS_TABLE);
+  cmd &= ~(HELP_EXTRA | HELP_OEM | HELP_PSM | HELP_BASIC | INFO | LIST_LANGUAGES | PRINT_PARAMETERS | PRINT_FONTS_TABLE);
+  if (hlpcmds && cmd) {
+    tprintError("Cannot mix non-help commands with help commands or any others. Action is aborted.\n");
+    return EXIT_FAILURE;
+  }
+  if (cmd != UNPACK && cmd != DO_OCR) {
+    tprintError("Cannot mix unpack and ocr commands. Action is aborted.\n");
+    return EXIT_FAILURE;
+  }
+
+  if (cmd == UNPACK) {
+    UnpackFiles(path_params);
+  }
+
+  if (cmd == DO_OCR) {
+    // pull the path_params[] set apart into three different parts:
+    // - source image(s) / imagelist (text) files
+    // - target == output base name
+    // - config files, to be loaded after tesseract instance is initialized
+    if (path_params.size() < 1) {
+      tprintError("Missing source image file as command line argument\n");
+      return EXIT_FAILURE;
+    }
+    if (path_params.size() < 2) {
+      tprintError("Error, missing outputbase command line argument\n");
+      return EXIT_FAILURE;
+    }
+
+    // first argument: the SOURCE IMAGE,
+    vars_vec.push_back("source_image");
+    vars_values.push_back(path_params[0]);
+
+    // outputbase follows image.
+    vars_vec.push_back("output_base_path");
+    vars_values.push_back(path_params[1]);
+
+    // the remaining set are the config files
+    path_params.erase(path_params.begin(), path_params.begin() + 1);
+  
+      TessBaseAPI api;
+
+      if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
+        return EXIT_FAILURE;
+      }
+
+      //source_image
+
+      lang = api.languages;
+      pagesegmode = api.tessedit_pageseg_mode;
+      enginemode = api.tessedit_ocr_engine_mode;
 
   if (pagesegmode == tesseract::PSM_OSD_ONLY) {
     // OSD = orientation and script detection.
@@ -933,15 +964,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
       // That mode requires osd.traineddata to detect orientation and script.
       lang = "osd";
     }
-  }
 
-  if (lang == nullptr && do_recognize) {
-    // Set default language model if none was given and a model file is needed.
-    lang = "eng";
-  }
-
-  if (image == nullptr && do_recognize) {
-    return EXIT_SUCCESS;
+    if (lang == nullptr) {
+      // Set default language model if none was given and a model file is
+      // needed.
+      lang = "eng";
+    }
   }
 
 #if 0
@@ -951,45 +979,52 @@ extern "C" int tesseract_main(int argc, const char** argv)
   tesseract::Dict::GlobalDawgCache();
 #endif
 
-  {
-    TessBaseAPI api;
-
     api.SetOutputName(outputbase);
 
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
-    }
-
-    const int init_failed = api.InitFull(datapath, lang, enginemode, config_files, vars_vec, vars_values, false);
+    const int init_failed = api.InitFull(datapath, lang, enginemode, path_params, vars_vec, vars_values, false);
 
     // make sure the debug_all preset is set up BEFORE any command-line arguments
     // direct tesseract to set some arbitrary parameters just below,
     // for otherwise those `-c xyz=v` commands may be overruled by the
     // debug_all preset!
-    SetupDebugAllPreset(api);
+    if (debug_all) {
+      api.SetupDebugAllPreset();
 
-    // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
+      // repeat the `-c var=val` load as debug_all MAY have overwritten some of
+      // these user-specified settings in the call above.
+      if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
+        return EXIT_FAILURE;
+      }
     }
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();
 
-    if (list_langs) {
+    if (hlpcmds & LIST_LANGUAGES) {
       PrintLangsList(api);
-      api.End();
-      return EXIT_SUCCESS;
     }
+
+    if (hlpcmds & PRINT_PARAMETERS) {
+      tprintDebug("Tesseract parameters:\n");
+      api.PrintVariables();
+    }
+
+#if !DISABLED_LEGACY_ENGINE
+    if (hlpcmds & PRINT_FONTS_TABLE) {
+      tprintDebug("Tesseract fonts table:\n");
+      api.PrintFontsTable();
+    }
+#endif // !DISABLED_LEGACY_ENGINE
 
     if (init_failed) {
       tprintError("Could not initialize tesseract.\n");
       return EXIT_FAILURE;
     }
 
-    if (print_parameters) {
-      tprintDebug("Tesseract parameters:\n");
-      api.PrintVariables();
+    ASSERT_HOST(api.tesseract() != nullptr);
+
+    // if we've done all we had to do, it's time to go bye bye.
+    if (!cmd) {
       api.End();
       return EXIT_SUCCESS;
     }
@@ -1061,6 +1096,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
             height = pixs->h - top;
           }
 
+XXXXX
+BOXA *Tesseract::ParseRectsString(const char *rects_str);
+
           api.SetRectangle(left, top, width, height);
           utf8 = api.GetUTF8Text();
           if (utf8) {
@@ -1084,26 +1122,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
       return EXIT_SUCCESS;
     }
 
-#if !DISABLED_LEGACY_ENGINE
-    if (print_fonts_table) {
-      tprintDebug("Tesseract fonts table:\n");
-      api.PrintFontsTable();
-      api.End();
-      return EXIT_SUCCESS;
-    }
-#endif  // !DISABLED_LEGACY_ENGINE
-
     // record the currently active input image path as soon as possible:
     // this path is also used to construct the destination path for 
     // various debug output files.
     api.SetInputName(image);
 
     FixPageSegMode(api, pagesegmode);
-
-    if (dpi) {
-      auto dpi_string = std::to_string(dpi);
-      api.SetVariable("user_defined_dpi", dpi_string.c_str());
-    }
 
     if (visible_pdf_image_file) {
       api.SetVisibleImageFilename(visible_pdf_image_file);

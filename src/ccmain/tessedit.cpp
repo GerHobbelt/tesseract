@@ -302,6 +302,55 @@ void Tesseract::ParseLanguageString(const std::string &lang_str, std::vector<std
   }
 }
 
+// Parse a string of the form `<box>[+<box>]*` where box is given as
+// `lNtNwNhN` or `lNtNrNbN` with the `N` being numeric values.
+//
+// Returns an BOXA instance (array of BOX coordinates) on success or NULL on failure.
+// Errors are reported via tprintError() as they happen.
+BOXA *Tesseract::ParseRectsString(const char *rects_str) {
+  // Dev Note: use classic C code approach instead of C++ std::string based: much easier & less heap thrashing.
+  char *rects = strdup(rects_str);
+
+  // also match ',' and ';', as well as '+', in case user used one of those separators instead of '+':
+  BOXA *boxa = boxaCreate(100);
+  int idx = 0;
+  char *token = rects;
+  for (;;) {
+    int pos = strspn(token, " :;+");
+    token += pos;
+    pos = strcspn(rects, " :;+");
+    bool eol = (token[pos] == 0);
+    token[pos] = 0;
+
+    // as an extra service, convert to lowercase before parsing:
+    strlwr(token);
+
+    int left, top, width, height, right, bottom;
+    int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
+    if (params == 4) {
+      BOX *box = boxCreateValid(left, top, width, height);
+      boxaAddBox(boxa, box, L_INSERT);
+    } else {
+      params = sscanf(token, "l%dt%dr%db%d", &left, &top, &right, &bottom);
+      if (params == 4) {
+        BOX *box = boxCreateValid(left, top, right - left, bottom - top);
+        boxaAddBox(boxa, box, L_INSERT);
+      } else {
+        tprintError("Rectangle spec line part '{}' does not match either of the supported formats LTDH or LTRB, f.e. something akin to 'l30t60w50h100'. Your line:\n    {}\n", token, rects_str);
+        boxaDestroy(&boxa);
+        return nullptr;
+      }
+    }
+    token += pos;
+    if (eol) {
+      break;
+    }
+    token++;
+  }
+  return boxa;
+}
+
+
 // Initialize for potentially a set of languages defined by the language
 // string and recursively any additional languages required by any language
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.

@@ -457,6 +457,7 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Detect music staff and remove intersecting components.", params())
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
+    , STRING_MEMBER(rectangles_to_process, "", "List of rectangle areas to process in the source image.", params())
     , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
     , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
     , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", params())
