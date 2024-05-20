@@ -105,25 +105,6 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
 static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
 #endif
 
-static int print_level_offset = 0;
-
-int tprintSetLogLevelElevation(int offset)
-{
-	print_level_offset = offset;
-	return print_level_offset;
-}
-
-int tprintAddLogLevelElevation(int offset)
-{
-	print_level_offset += offset;
-	return print_level_offset;
-}
-
-const int tprintGetLevelElevation(void)
-{
-	return print_level_offset;
-}
-
 // Trace printf
 void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
 #ifdef HAVE_MUPDF

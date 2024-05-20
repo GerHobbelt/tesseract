@@ -92,47 +92,42 @@ static void Win32WarningHandler(const char *module, const char *fmt, va_list ap)
 #endif // _WIN32
 
 static void PrintVersionInfo() {
-  tprintSetLogLevelElevation(1);  // Debug -> Info
-  AutoExecOnScopeExit printElevator([]() {
-    // reset the log level elevation we just issued once we leave this function's scope.
-    return tprintSetLogLevelElevation(0);
-  });
   const char *versionStrP;
 
-  tprintDebug("tesseract {}\n", tesseract::TessBaseAPI::Version());
+  tprintInfo("tesseract {}\n", tesseract::TessBaseAPI::Version());
 
   versionStrP = getLeptonicaVersion();
-  tprintDebug("  {}\n", versionStrP);
+  tprintInfo("  {}\n", versionStrP);
   stringDestroy(&versionStrP);
 
   versionStrP = getImagelibVersions();
-  tprintDebug("  {}\n", versionStrP);
+  tprintInfo("  {}\n", versionStrP);
   stringDestroy(&versionStrP);
 
 #if defined(HAVE_NEON) || defined(__aarch64__)
   if (tesseract::SIMDDetect::IsNEONAvailable())
-    tprintDebug(" Found NEON\n");
+    tprintInfo(" Found NEON\n");
 #else
   if (tesseract::SIMDDetect::IsAVX512BWAvailable()) {
-    tprintDebug(" Found AVX512BW\n");
+    tprintInfo(" Found AVX512BW\n");
   }
   if (tesseract::SIMDDetect::IsAVX512FAvailable()) {
-    tprintDebug(" Found AVX512F\n");
+    tprintInfo(" Found AVX512F\n");
   }
   if (tesseract::SIMDDetect::IsAVX512VNNIAvailable()) {
-    tprintDebug(" Found AVX512VNNI\n");
+    tprintInfo(" Found AVX512VNNI\n");
   }
   if (tesseract::SIMDDetect::IsAVX2Available()) {
-    tprintDebug(" Found AVX2\n");
+    tprintInfo(" Found AVX2\n");
   }
   if (tesseract::SIMDDetect::IsAVXAvailable()) {
-    tprintDebug(" Found AVX\n");
+    tprintInfo(" Found AVX\n");
   }
   if (tesseract::SIMDDetect::IsFMAAvailable()) {
-    tprintDebug(" Found FMA\n");
+    tprintInfo(" Found FMA\n");
   }
   if (tesseract::SIMDDetect::IsSSEAvailable()) {
-    tprintDebug(" Found SSE4.1\n");
+    tprintInfo(" Found SSE4.1\n");
   }
 #endif
 #ifdef _OPENMP
@@ -140,14 +135,15 @@ static void PrintVersionInfo() {
 #endif
 #if defined(HAVE_LIBARCHIVE)
 #  if ARCHIVE_VERSION_NUMBER >= 3002000
-  tprintDebug(" Found {}\n", archive_version_details());
+  tprintInfo(" Found {}\n", archive_version_details());
 #  else
-  tprintDebug(" Found {}\n", archive_version_string());
+  tprintInfo(" Found {}\n", archive_version_string());
 #  endif // ARCHIVE_VERSION_NUMBER
 #endif   // HAVE_LIBARCHIVE
 #if defined(HAVE_LIBCURL)
-  tprintDebug(" Found {}\n", curl_version());
+  tprintInfo(" Found {}\n", curl_version());
 #endif
+  tprintInfo("\n");
 }
 
 static void PrintHelpForPSM() {
@@ -168,13 +164,14 @@ static void PrintHelpForPSM() {
       " particular order.\n"
       " 12    Sparse text with OSD.\n"
       " 13    Raw line. Treat the image as a single text line,\n"
-      "       bypassing hacks that are Tesseract-specific.\n";
+      "       bypassing hacks that are Tesseract-specific.\n"
+      "\n";
 
 #if DISABLED_LEGACY_ENGINE
   const char *disabled_osd_msg = "\nNOTE: The OSD modes are currently disabled.\n";
-  tprintDebug("{}{}", msg, disabled_osd_msg);
+  tprintInfo("{}{}", msg, disabled_osd_msg);
 #else
-  tprintDebug("{}", msg);
+  tprintInfo("{}", msg);
 #endif
 }
 
@@ -185,9 +182,10 @@ static void PrintHelpForOEM() {
       "  0    Legacy engine only.\n"
       "  1    Neural nets LSTM engine only.\n"
       "  2    Legacy + LSTM engines.\n"
-      "  3    Default, based on what is available.\n";
+      "  3    Default, based on what is available.\n"
+      "\n";
 
-  tprintDebug("{}", msg);
+  tprintInfo("{}", msg);
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
@@ -205,7 +203,7 @@ static const char* basename(const char* path)
 
 static void PrintHelpExtra(const char *program) {
   program = basename(program);
-  tprintDebug(
+  tprintInfo(
       "Usage:\n"
       "  {} --help | --help-extra | --help-psm | "
 #if !DISABLED_LEGACY_ENGINE
@@ -247,7 +245,7 @@ static void PrintHelpExtra(const char *program) {
       "                        (page rendered then as image + OCR text hidden overlay)\n"
       "\n"
       "NOTE: These options must occur before any configfile.\n"
-      "",
+      "\n",
       program, program, program, program, program, program, program
 #if !DISABLED_LEGACY_ENGINE
       , program
@@ -256,12 +254,10 @@ static void PrintHelpExtra(const char *program) {
 
   PrintHelpForPSM();
 #if !DISABLED_LEGACY_ENGINE
-  tprintDebug("\n");
   PrintHelpForOEM();
 #endif
 
-  tprintDebug(
-      "\n"
+  tprintInfo(
       "Commands:\n"
       "\n"
       "  {} info [<trainingfile>...]\n"
@@ -296,13 +292,13 @@ static void PrintHelpExtra(const char *program) {
       "  {} help <section>\n"
       "where section is one of:\n"
       "  extra, oem, psm\n"
-      "",
+      "\n",
       program, program, program, program, program, program);
 }
 
 static void PrintHelpMessage(const char *program) {
   program = basename(program);
-  tprintDebug(
+  tprintInfo(
       "Usage:\n"
       "  {} --help | --help-extra | --version\n"
       "  {} help [section]\n"
@@ -320,7 +316,8 @@ static void PrintHelpMessage(const char *program) {
       "  --help-extra          Show extra help for advanced users.\n"
       "  --version             Show version information.\n"
       "  --list-langs          List available languages for tesseract engine.\n"
-      "  --print-parameters    Print tesseract parameters.\n",
+      "  --print-parameters    Print tesseract parameters.\n"
+	  "\n",
       program, program, program, program, program, program);
 }
 
@@ -353,11 +350,12 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
   std::vector<std::string> languages;
   api.GetAvailableLanguagesAsVector(&languages);
-  tprintDebug("List of available languages in \"{}\" ({}):\n",
+  tprintInfo("List of available languages in \"{}\" ({}):\n",
          api.GetDatapath(), languages.size());
   for (const auto &language : languages) {
-    tprintDebug("{}\n", language);
+    tprintInfo("{}\n", language);
   }
+  tprintInfo("\n");
 }
 
 /**
@@ -393,27 +391,28 @@ static void InfoTraineddata(const char** filenames) {
       tprintError("Error opening data file {}\n", filename);
     } else {
       if (mgr.IsLSTMAvailable()) {
-        tprintDebug("{} - LSTM\n", filename);
+        tprintInfo("{} - LSTM\n", filename);
       }
       if (mgr.IsBaseAvailable()) {
-        tprintDebug("{} - legacy\n", filename);
+        tprintInfo("{} - legacy\n", filename);
       }
     }
   }
+  tprintInfo("\n");
 }
 
 static void UnpackFiles(const char** filenames) {
   const char* filename;
   while ((filename = *filenames++) != nullptr) {
-    tprintDebug("Extracting {}\n", filename);
+    tprintInfo("Extracting {}\n", filename);
     tesseract::DocumentData images(filename);
     if (!images.LoadDocument(filename, 0, 0, nullptr)) {
       tprintError("Failed to read training data from {}!\n", filename);
       continue;
     }
 #if 0
-    tprintDebug("{} pages\n", images.NumPages());
-    tprintDebug("{} size\n", images.PagesSize());
+    tprintInfo("  {} pages\n", images.NumPages());
+    tprintInfo("  {} size\n", images.PagesSize());
 #endif
     for (int page = 0; page < images.NumPages(); page++) {
       std::string basename = filename;
@@ -423,19 +422,19 @@ static void UnpackFiles(const char** filenames) {
       const tesseract::ImageData* image = images.GetPage(page);
 #if 0
       const char* imagefilename = image->imagefilename().c_str();
-      tprintDebug("fn: {}\n", imagefilename);
+      tprintInfo("fn: {}\n", imagefilename);
 #endif
       const char* transcription = image->transcription().c_str();
       std::string gt_filename = stream.str() + ".gt.txt";
       FILE* f = fopen(gt_filename.c_str(), "wb");
       if (f == nullptr) {
-        tprintError("Writing {} failed\n", gt_filename);
+        tprintError("Writing ground truth transcription to file '{}' for document page #{} failed\n", gt_filename, page);
         continue;
       }
       fprintf(f, "%s\n", transcription);
       fclose(f);
 #if 0
-      tprintDebug("gt page {}: {}\n", page, transcription);
+      tprintInfo("Ground truth transcription for document page #{}: {}\n", page, transcription);
 #endif
       Pix* pix = image->GetPix();
       std::string image_filename = stream.str() + ".png";
@@ -448,7 +447,7 @@ static void UnpackFiles(const char** filenames) {
       const TBOX& box = boxes[0];
       box.print();
       const GenericVector<STRING>& box_texts = image->box_texts();
-      tprintDebug("gt: {}\n", box_texts[0]);
+      tprintInfo("gt: {}\n", box_texts[0]);
 #endif
     }
   }

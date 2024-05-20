@@ -2621,7 +2621,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
-  // TODO? write/flush log output
+  // TODO? write/flush log output / ReportDebugInfo() ?
 
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
@@ -3180,6 +3180,14 @@ const Dawg *TessBaseAPI::GetDawg(int i) const {
 /** Return the number of dawgs loaded into tesseract_ object. */
 int TessBaseAPI::NumDawgs() const {
   return tesseract_ == nullptr ? 0 : tesseract_->getDict().NumDawgs();
+}
+
+
+void TessBaseAPI::ReportDebugInfo() {
+  if (tesseract_ == nullptr) {
+    return;
+  }
+  tesseract_->ReportDebugInfo();
 }
 
 void TessBaseAPI::SetupDebugAllPreset() {
