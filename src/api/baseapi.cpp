@@ -2621,6 +2621,8 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
+  // TODO? write/flush log output
+
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
   }
