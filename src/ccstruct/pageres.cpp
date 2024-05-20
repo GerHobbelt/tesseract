@@ -21,6 +21,10 @@
  *
  **********************************************************************/
 
+#include <leptonica/environ.h>
+#include <tesseract/assert.h>
+#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
+
 #include "pageres.h"
 
 #include "blamer.h"   // for BlamerBundle
@@ -36,9 +40,6 @@
 #include "stepblob.h" // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "tprintf.h"  // for tprintf
 
-#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
-
-#include <cassert> // for assert
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
 
@@ -531,6 +532,12 @@ void WERD_RES::FilterWordChoices(int debug_level) {
   WERD_CHOICE_IT it(&best_choices);
   int index = 0;
   for (it.forward(); !it.at_first(); it.forward(), ++index) {
+
+    // The option that is the best raw choice is never filtered off.
+    if (raw_choice != nullptr && raw_choice->unichar_string() == it.data()->unichar_string()) {
+      continue;
+    }
+
     WERD_CHOICE *choice = it.data();
     float threshold = StopperAmbigThreshold(best_choice->adjust_factor(),
                                             choice->adjust_factor());

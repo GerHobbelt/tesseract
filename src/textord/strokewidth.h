@@ -89,7 +89,7 @@ public:
   // Corrects the data structures for the given rotation.
   void CorrectForRotation(const FCOORD &rerotation, ColPartitionGrid *part_grid);
 
-  // Finds leader partitions and inserts them into the give grid.
+  // Finds leader partitions and inserts them into the given grid.
   void FindLeaderPartitions(TO_BLOCK *block, ColPartitionGrid *part_grid);
 
   // Finds and marks noise those blobs that look like bits of vertical lines
@@ -268,6 +268,7 @@ private:
   // Helper returns true if we are looking only for vertical textlines,
   // taking into account any rotation that has been done.
   bool FindingVerticalOnly(PageSegMode pageseg_mode) const {
+    return false;
     if (rerotation_.y() == 0.0f) {
       return pageseg_mode == PSM_SINGLE_BLOCK_VERT_TEXT;
     }
@@ -276,6 +277,7 @@ private:
   // Helper returns true if we are looking only for horizontal textlines,
   // taking into account any rotation that has been done.
   bool FindingHorizontalOnly(PageSegMode pageseg_mode) const {
+    return true;
     if (rerotation_.y() == 0.0f) {
       return !PSM_ORIENTATION_ENABLED(pageseg_mode) && pageseg_mode != PSM_SINGLE_BLOCK_VERT_TEXT;
     }

@@ -571,11 +571,11 @@ bool DocumentData::ReCachePages() {
     pages_offset_ %= loaded_pages;
     set_total_pages(loaded_pages);
     set_memory_used(memory_used() + image_data->MemoryUsed());
-    if (true) {
-      tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+#if 01
+      tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
               loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-              document_name_.c_str());
-    }
+              document_name_);
+#endif
     return !pages_.empty();
   }
 #endif

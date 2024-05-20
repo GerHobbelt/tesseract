@@ -97,7 +97,7 @@ public:
   /// byte packed with the MSB of the first byte being the first pixel, and a
   /// one pixel is WHITE. For binary images set bytes_per_pixel=0.
   void SetImage(const unsigned char *imagedata, int width, int height, int bytes_per_pixel,
-                int bytes_per_line, int exif = 1, const float angle = 0);
+                int bytes_per_line, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Store the coordinates of the rectangle to process for later use.
   /// Doesn't actually do any thresholding.
@@ -156,7 +156,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix, int exif = 1, const float angle = 0);
+  void SetImage(const Image pix, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.

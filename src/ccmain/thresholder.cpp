@@ -34,10 +34,6 @@
 #include <cstring>
 #include <tuple>
 
-#if defined(HAVE_MUPDF)
-#include "mupdf/assertions.h"
-#endif
-
 
 namespace tesseract {
 
@@ -78,7 +74,8 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line, int exif, const float angle) {
+                                int bytes_per_pixel, int bytes_per_line, int exif, 
+                                const float angle, bool upscale) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
@@ -134,7 +131,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       tprintError("Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
 
-  SetImage(pix, exif, angle);
+  SetImage(pix, exif, angle, upscale);
   pix.destroy();
 }
 
@@ -166,13 +163,18 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
+void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bool upscale) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
 
-  // Rotate if specified by exif orientation value
-  Image src, temp1, temp2;
+  // Note that pix.clone() does not actually clone the data,
+  // it simply makes a new pointer to the existing data.
+  // Therefore, there should not be any performance penalty
+  // to having several copies of the same image here.
+
+  // Rotate if specified by exif orientation value.
+  Image src, temp1, temp2, temp3;
   if (exif == 3 || exif == 4) {
     temp1 = pixRotateOrth(pix, 2);
   } else if (exif == 5 || exif == 6) {
@@ -190,11 +192,21 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
     temp2 = temp1.clone();
   }
 
+  if (upscale) {
+    tprintDebug("Upscaling image.\n");
+    // Scale up by 2x if requested.
+    // 2x is a special case that is both faster and better quality than other scales.
+    temp3 = pixScale(temp2, 2.0, 2.0);
+  } else {
+    temp3 = temp2.clone();
+  }
+
   // Rotate if additional rotation angle is specified
-  src = pixRotate(temp2, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+  src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
 
   temp1.destroy();
   temp2.destroy();
+  temp3.destroy();
 
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);

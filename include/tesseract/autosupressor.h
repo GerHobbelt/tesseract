@@ -27,7 +27,7 @@ namespace tesseract {
   class TESS_API TessBaseAPI;
   class TESS_API Tesseract;
   
-  typedef void AutoSupressDatumEventHandler(AutoSupressDatum *datum, TessBaseAPI *api_ref, Tesseract *ocr_ref);
+  typedef void AutoSupressDatumEventHandler(AutoSupressDatum *datum);
 
   class AutoSupressDatum {
   public:
@@ -74,10 +74,18 @@ namespace tesseract {
 
     void fire() {
         if (event_handler_) {
-          event_handler_(this, api_ref_, ocr_ref_);
+          event_handler_(this);
         }
         // make sure we only fire *once*:
         marker_ = INT_MIN / 2;
+    }
+
+    Tesseract *tesseractInstance() const {
+      return ocr_ref_;
+    }
+
+    TessBaseAPI *tesseractAPIinstance() const {
+      return api_ref_;
     }
 
   protected:
