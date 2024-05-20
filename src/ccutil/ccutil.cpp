@@ -94,7 +94,11 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
 #if defined(TESSDATA_PREFIX)
     // Use tessdata prefix which was compiled in.
-    datadir = TESSDATA_PREFIX "/tessdata";
+    // Note that some software (for example conda) patches TESSDATA_PREFIX
+    // in the binary, so it should not be used directly with a std::string.
+    tessdata_prefix = TESSDATA_PREFIX;
+    datadir = tessdata_prefix;
+    datadir += "/tessdata/";
 #else
     datadir = "./";
     std::string subdir = datadir;
@@ -106,10 +110,9 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   }
 
   // check for missing directory separator
-  const char *lastchar = datadir.c_str();
-  lastchar += datadir.length() - 1;
-  if ((strcmp(lastchar, "/") != 0) && (strcmp(lastchar, "\\") != 0)) {
-    datadir += "/";
+  const char lastchar = datadir.back();
+  if (lastchar != '/' && lastchar != '\\') {
+    datadir += '/';
   }
 }
 
