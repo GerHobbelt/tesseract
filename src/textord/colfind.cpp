@@ -845,7 +845,7 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
 #endif
 
   // Start by identifying the single column set, and using it as a baseline for assigned_costs.
-  ColPartitionSet *single_column_set;
+  ColPartitionSet *single_column_set = nullptr;
   for (int col_i = 0; col_i < column_count; ++col_i) {
     if (column_sets_.at(col_i)->ColumnCount() == 1) {
       single_column_set = column_sets_.at(col_i);
