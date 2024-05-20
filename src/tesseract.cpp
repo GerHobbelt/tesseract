@@ -1113,7 +1113,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   {
     TessBaseAPI api;
-    AutoSupressMarker supress_premature_log_reporting(api.GetLogReportingHoldoffMarkerRef());
 
     api.SetOutputName(outputbase);
 
