@@ -15,7 +15,7 @@ namespace fs {
   using namespace ::std::filesystem;
 #endif
 
-  bool exists(const char *filename) {
+  static inline bool exists(const char *filename) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
     return _access(filename, 0) == 0;
 #else

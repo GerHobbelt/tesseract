@@ -1384,7 +1384,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.ReportParamsUsageStatistics();
     }
 
-    supress_premature_log_reporting.stepdown();
+    // TODO? write/flush log output
     api.Clear();
   }
   // ^^^ end of scope for the Tesseract `api` instance
