@@ -42,9 +42,6 @@
 #endif
 #include "mutableiterator.h" // for MutableIterator
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
-#if defined(USE_OPENCL)
-#  include "openclwrapper.h" // for OpenclDevice
-#endif
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
 #include "params.h"          // for BoolParam, IntParam, DoubleParam, Stri...
@@ -246,27 +243,6 @@ const char *TessBaseAPI::Version() {
 }
 
 /**
- * If compiled with OpenCL AND an available OpenCL
- * device is deemed faster than serial code, then
- * "device" is populated with the cl_device_id
- * and returns sizeof(cl_device_id)
- * otherwise *device=nullptr and returns 0.
- */
-size_t TessBaseAPI::getOpenCLDevice(void **data) {
-#ifdef USE_OPENCL
-  ds_device device = OpenclDevice::getDeviceSelection();
-  if (device.type == DS_DEVICE_OPENCL_DEVICE) {
-    *data = new cl_device_id;
-    memcpy(*data, &device.oclDeviceID, sizeof(cl_device_id));
-    return sizeof(cl_device_id);
-  }
-#endif
-
-  *data = nullptr;
-  return 0;
-}
-
-/**
  * Set the name of the input file. Needed only for training and
  * loading a UNLV zone file.
  */
@@ -423,10 +399,6 @@ int TessBaseAPI::Init(const char *data, int data_size, const char *language, Ocr
     delete tesseract_;
     tesseract_ = nullptr;
   }
-#ifdef USE_OPENCL
-  OpenclDevice od;
-  od.InitEnv();
-#endif
   bool reset_classifier = true;
   if (tesseract_ == nullptr) {
     reset_classifier = false;
@@ -1639,7 +1611,9 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     return nullptr;
   }
 
+#if !defined(NDEBUG)
   int lcnt = 1, bcnt = 1, pcnt = 1, wcnt = 1;
+#endif
   int page_id = page_number + 1; // we use 1-based page numbers.
 
   int page_num = page_id;
@@ -1721,6 +1695,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_WORD));
     tsv_str += "\t";
 
+#if !defined(NDEBUG)
     // Increment counts if at end of block/paragraph/textline.
     if (res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD)) {
       lcnt++;
@@ -1731,13 +1706,16 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     if (res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD)) {
       bcnt++;
     }
+#endif
 
     do {
       tsv_str += std::unique_ptr<const char[]>(res_it->GetUTF8Text(RIL_SYMBOL)).get();
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
     tsv_str += "\n"; // end of row
+#if !defined(NDEBUG)
     wcnt++;
+#endif
   }
 
   char *ret = new char[tsv_str.length() + 1];
