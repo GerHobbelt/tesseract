@@ -645,28 +645,6 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintError("Could not create ALTO output file: {}\n", strerror(errno));
-        error = true;
-      }
-    }
-
-    b = tess->tessedit_create_page_xml;
-    if (b) {
-      auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
-      if (renderer->happy()) {
-        renderers.push_back(std::move(renderer));
-      } else {
-        tprintError("Could not create PAGE output file: %s\n", strerror(errno));
-        error = true;
-      }
-    }
-
-    b = tess->tessedit_create_page_xml;
-    if (b) {
-      auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
-      if (renderer->happy()) {
-        renderers.push_back(std::move(renderer));
-      } else {
         tprintError("Could not create PAGE output file: %s\n", strerror(errno));
         error = true;
       }

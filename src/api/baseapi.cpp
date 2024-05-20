@@ -3231,7 +3231,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   SetVariable("tessedit_create_hocr", "Y");
   SetVariable("tessedit_create_alto", "Y");
-  SetVariable("tessedit_create_page", "Y");
+  SetVariable("tessedit_create_page_xml", "Y");
   SetVariable("tessedit_create_tsv", "Y");
   SetVariable("tessedit_create_pdf", "Y");
   SetVariable("textonly_pdf", "n");
@@ -3358,7 +3358,7 @@ void TessBaseAPI::SetupDefaultPreset() {
   // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
   SetVariable("tessedit_create_hocr", "Y");
   SetVariable("tessedit_create_alto", "Y");
-  SetVariable("tessedit_create_page", "Y");
+  SetVariable("tessedit_create_page_xml", "Y");
   SetVariable("tessedit_create_tsv", "Y");
   SetVariable("tessedit_create_pdf", "Y");
   SetVariable("textonly_pdf", "n");

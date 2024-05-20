@@ -193,12 +193,11 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bo
   }
 
   if (upscale) {
-    tprintDebug("Upscaling image\n");
+    tprintDebug("Upscaling image.\n");
     // Scale up by 2x if requested.
     // 2x is a special case that is both faster and better quality than other scales.
     temp3 = pixScale(temp2, 2.0, 2.0);
   } else {
-    tprintDebug("Not upscaling image image\n");
     temp3 = temp2.clone();
   }
 
