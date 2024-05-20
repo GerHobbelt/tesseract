@@ -159,10 +159,11 @@ ColumnFinder::~ColumnFinder() {
 // determine the gross textline alignment of the page.
 void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix,
                                        TO_BLOCK *input_block) {
-  part_grid_.Init(gridsize() / 2, bleft(), tright());
+  auto gridspacing = gridsize() / 2;
+  part_grid_.Init(gridspacing, bleft(), tright());
   delete stroke_width_;
-  stroke_width_ = new StrokeWidth(tesseract_, gridsize() / 2, bleft(), tright());
-  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridsize() / 2);
+  stroke_width_ = new StrokeWidth(tesseract_, gridspacing, bleft(), tright());
+  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridspacing);
   input_block->ReSetAndReFilterBlobs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_blocks) {
@@ -175,7 +176,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   nontext_map_.destroy();
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
-  CCNonTextDetect nontext_detect(tesseract_, gridsize() / 2, bleft(), tright());
+  CCNonTextDetect nontext_detect(tesseract_, gridspacing, bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   nontext_map_ =
       nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
@@ -546,9 +547,9 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
 
 
 void ColumnFinder::DisplayGrid() {
-  ScrollView *col_win = MakeWindow(50, 300, "Grid");
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
   col_win->Stroke(1);
-  col_win->Pen(ScrollView::BLUE);
+  col_win->Pen(Diagnostics::BLUE);
   for (int i = 0; i < gridheight_; ++i) {
     col_win->Line(0, i * gridsize_, gridwidth_ * gridsize_, i * gridsize_);
   }
@@ -561,15 +562,15 @@ void ColumnFinder::DisplayGrid() {
 // Displays the column edges at each grid y coordinate defined by
 // best_columns_.
 void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
-    ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
-    DisplayBoxes(col_win);
-    col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
-    for (int i = 0; i < gridheight_; ++i) {
-      ColPartitionSet* columns = best_columns_[i];
-      if (columns != nullptr) {
-        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
-      }
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
+  for (int i = 0; i < gridheight_; ++i) {
+    ColPartitionSet *columns = best_columns_[i];
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
     }
+  }
   col_win->UpdateWindow();
 }
 
@@ -804,7 +805,8 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
             color = ScrollView::ORANGE;
           }
 
-          col_set->DisplayColumnEdges2(j * gridsize_, (j + 1) * gridsize_, color, col_win);
+          col_win->Pen(color);
+          col_set->DisplayColumnEdges(j * gridsize_, (j + 1) * gridsize_, col_win);
 
         }
         col_win->UpdateWindow();
