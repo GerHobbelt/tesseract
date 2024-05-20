@@ -576,7 +576,7 @@ namespace tesseract {
   
   void DebugPixa::WriteHTML(const char* filename) {
     ASSERT0(tesseract_ != nullptr);
-    bool go = !!holdoff;
+    bool go = !!1;                  // TODO: holdoff handling
     if (HasContent() && go) {
       const char *ext = strrchr(filename, '.');
       std::string partname(filename);
