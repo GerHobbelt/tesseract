@@ -689,9 +689,7 @@ libtesseract_la_SOURCES += src/viewer/svmnode.cpp
 libtesseract_la_SOURCES += src/viewer/svutil.cpp
 
 EXTRA_PROGRAMS += svpaint
-svpaint_CPPFLAGS =
-svpaint_CPPFLAGS += -I$(top_builddir)/include
-svpaint_CPPFLAGS += -I$(top_srcdir)/include
+svpaint_CPPFLAGS = $(AM_CPPFLAGS)
 svpaint_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
 svpaint_CPPFLAGS += -I$(top_srcdir)/src/viewer
 svpaint_SOURCES = src/svpaint.cpp
@@ -751,7 +749,7 @@ libtesseract_la_SOURCES += src/fmt/src/format.cc
 
 bin_PROGRAMS = tesseract
 tesseract_SOURCES = src/tesseract.cpp
-tesseract_CPPFLAGS =
+tesseract_CPPFLAGS = $(AM_CPPFLAGS)
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/arch
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/ccmain
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
@@ -763,10 +761,6 @@ tesseract_CPPFLAGS += -I$(top_srcdir)/src/textord
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/viewer
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
-tesseract_CPPFLAGS += $(AM_CPPFLAGS)
-if VISIBILITY
-tesseract_CPPFLAGS += -DTESS_IMPORTS
-endif
 
 tesseract_LDFLAGS = $(OPENMP_CXXFLAGS)
 
@@ -812,12 +806,11 @@ endif
 
 CLEANFILES += $(EXTRA_PROGRAMS)
 
-training_CPPFLAGS := -DPANGO_ENABLE_ENGINE
+training_CPPFLAGS = $(AM_CPPFLAGS)
+training_CPPFLAGS += -DPANGO_ENABLE_ENGINE
 training_CPPFLAGS += -DTESS_COMMON_TRAINING_API=
 training_CPPFLAGS += -DTESS_PANGO_TRAINING_API=
 training_CPPFLAGS += -DTESS_UNICHARSET_TRAINING_API=
-training_CPPFLAGS += -I$(top_builddir)/include
-training_CPPFLAGS += -I$(top_srcdir)/include
 training_CPPFLAGS += -I$(top_srcdir)/src/training
 training_CPPFLAGS += -I$(top_srcdir)/src/training/common
 training_CPPFLAGS += -I$(top_srcdir)/src/training/pango
@@ -1155,7 +1148,7 @@ TESTDATA_DIR=$(shell cd $(top_srcdir) && pwd)/test/testdata
 # Suppress some memory leaks reported by LeakSanitizer.
 export LSAN_OPTIONS=suppressions=$(top_srcdir)/unittest/tesseract_leaksanitizer.supp
 
-unittest_CPPFLAGS =
+unittest_CPPFLAGS = $(AM_CPPFLAGS)
 unittest_CPPFLAGS += -DTESSBIN_DIR="\"$(abs_top_builddir)\""
 unittest_CPPFLAGS += -DLANGDATA_DIR="\"$(LANGDATA_DIR)\""
 unittest_CPPFLAGS += -DTESSDATA_DIR="\"$(TESSDATA_DIR)\""
@@ -1168,8 +1161,6 @@ endif # DISABLED_LEGACY_ENGINE
 unittest_CPPFLAGS += -DTESS_COMMON_TRAINING_API=
 unittest_CPPFLAGS += -DTESS_PANGO_TRAINING_API=
 unittest_CPPFLAGS += -DTESS_UNICHARSET_TRAINING_API=
-unittest_CPPFLAGS += -I$(top_builddir)/include
-unittest_CPPFLAGS += -I$(top_srcdir)/include
 unittest_CPPFLAGS += -I$(top_srcdir)/src/arch
 unittest_CPPFLAGS += -I$(top_srcdir)/src/ccmain
 unittest_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
