@@ -325,7 +325,7 @@ int ColPartitionSet::UnmatchedWidth(ColPartitionSet *part_set) {
     int y = part->MidY();
     BLOBNBOX_C_IT box_it(part->boxes());
     for (box_it.mark_cycle_pt(); !box_it.cycled_list(); box_it.forward()) {
-      const TBOX &box = it.data()->bounding_box();
+      const TBOX &box = box_it.data()->bounding_box();
       // Assume that the whole blob is outside any column iff its x-middle
       // is outside.
       int x = (box.left() + box.right()) / 2;
@@ -410,6 +410,19 @@ void ColPartitionSet::DisplayColumnEdges(int y_bottom, int y_top,
     win->Line(part->RightAtY(y_top), y_top, part->RightAtY(y_bottom), y_bottom);
   }
 }
+
+void ColPartitionSet::DisplayColumnEdges3(int y_bottom, int y_top,
+                                          ScrollViewReference &win) {
+  ColPartition_IT it(&parts_);
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    ColPartition *part = it.data();
+    auto color = part->good_width() ? Diagnostics::GREEN : Diagnostics::RED;
+    win->Pen(color);          
+    win->Line(part->LeftAtY(y_top), y_top, part->LeftAtY(y_bottom), y_bottom);
+    win->Line(part->RightAtY(y_top), y_top, part->RightAtY(y_bottom), y_bottom);
+  }
+}
+
 
 #endif // !GRAPHICS_DISABLED
 

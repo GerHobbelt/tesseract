@@ -166,18 +166,16 @@ TESS_API void TessDeleteIntArray(const int *arr);
 /* Renderer API */
 TESS_API TessResultRenderer *TessTextRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessHOcrRendererCreate(const char *outputbase);
-TESS_API TessResultRenderer *TessHOcrRendererCreate2(const char *outputbase,
-                                                     BOOL font_info);
+TESS_API TessResultRenderer *TessHOcrRendererCreate2(const char *outputbase, BOOL font_info);
 TESS_API TessResultRenderer *TessAltoRendererCreate(const char *outputbase);
+TESS_API TessResultRenderer *TessPAGERendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessTsvRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessPDFRendererCreate(const char *outputbase,
-                                                   const char *datadir,
-                                                   BOOL textonly);
+                                                   const char *datadir, BOOL textonly);
 TESS_API TessResultRenderer *TessUnlvRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessBoxTextRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessLSTMBoxRendererCreate(const char *outputbase);
-TESS_API TessResultRenderer *TessWordStrBoxRendererCreate(
-    const char *outputbase);
+TESS_API TessResultRenderer *TessWordStrBoxRendererCreate(const char *outputbase);
 
 TESS_API void TessDeleteResultRenderer(TessResultRenderer *renderer);
 TESS_API void TessResultRendererInsert(TessResultRenderer *renderer,
@@ -340,6 +338,7 @@ TESS_API char *TessBaseAPIGetUTF8Text(TessBaseAPI *handle);
 TESS_API char *TessBaseAPIGetHOCRText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetAltoText(TessBaseAPI *handle, int page_number);
+TESS_API char *TessBaseAPIGetPAGEText(TessBaseAPI *handle, int page_number);
 TESS_API char *TessBaseAPIGetTsvText(TessBaseAPI *handle, int page_number);
 
 TESS_API char *TessBaseAPIGetBoxText(TessBaseAPI *handle, int page_number);

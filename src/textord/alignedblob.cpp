@@ -172,7 +172,7 @@ bool AlignedBlob::WithinTestRegion(int detail_level, int x, int y) {
 void AlignedBlob::DisplayTabs(ScrollViewReference &tab_win) {
   ASSERT0(tab_win);
   // For every tab in the grid, display it.
-  GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> gsearch(this);
+  BlobGridSearch gsearch(this);
   gsearch.StartFullSearch();
   BLOBNBOX *bbox;
   while ((bbox = gsearch.NextFullSearch()) != nullptr) {
@@ -413,7 +413,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     xmin -= p.min_gutter;
   }
   // Setup a vertical search for an aligned blob.
-  GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> vsearch(this);
+  BlobGridSearch vsearch(this);
   if (WithinTestRegion(2, x_start, start_y)) {
     tprintDebug("Starting {} {} search at {}-{},{}, search_size={}, gutter={}\n",
             p.ragged ? "Ragged" : "Aligned", p.right_tab ? "Right" : "Left", xmin, xmax, start_y,
@@ -433,8 +433,8 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     }
     TBOX nbox = neighbour->bounding_box();
     int n_y = (nbox.top() + nbox.bottom()) / 2;
-    if ((!top_to_bottom && n_y > start_y + p.max_v_gap) ||
-        (top_to_bottom && n_y < start_y - p.max_v_gap)) {
+    if ((!top_to_bottom && nbox.top() > start_y + p.max_v_gap) ||
+        (top_to_bottom && nbox.bottom() < start_y - p.max_v_gap)) {
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintDebug("Neighbour too far at ({},{})->({},{})\n", nbox.left(), nbox.bottom(), nbox.right(),
                 nbox.top());

@@ -2254,8 +2254,10 @@ void Tesseract::font_recognition_pass(PAGE_RES *page_res) {
           font_id2 = itr3->first;
         }
       }
+#if 0
       tprintDebug("Modal Font: {}; Letter: {}; Font: {}; Score: {}\n", fontinfo_table_.at(itr1->first).name, unicharset.id_to_unichar(itr2->first), fontinfo_table_.at(font_id1).name, score1);
       tprintDebug("Modal Font: {}; Letter: {}; Font: {}; Score: {}\n", fontinfo_table_.at(itr1->first).name, unicharset.id_to_unichar(itr2->first), fontinfo_table_.at(font_id2).name, score2);
+#endif
     }
   }
 }
