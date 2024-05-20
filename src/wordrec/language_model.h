@@ -150,16 +150,13 @@ protected:
   inline float ComputeConsistencyAdjustment(const LanguageModelDawgInfo *dawg_info,
                                             const LMConsistencyInfo &consistency_info) {
     if (dawg_info != nullptr) {
-      return ComputeAdjustment(consistency_info.NumInconsistentCase(),
-                               language_model_penalty_case) +
+      return ComputeAdjustment(consistency_info.NumInconsistentCase(), language_model_penalty_case) +
              (consistency_info.inconsistent_script ? language_model_penalty_script : 0.0f);
     }
     return (ComputeAdjustment(consistency_info.NumInconsistentPunc(), language_model_penalty_punc) +
             ComputeAdjustment(consistency_info.NumInconsistentCase(), language_model_penalty_case) +
-            ComputeAdjustment(consistency_info.NumInconsistentChartype(),
-                              language_model_penalty_chartype) +
-            ComputeAdjustment(consistency_info.NumInconsistentSpaces(),
-                              language_model_penalty_spacing) +
+            ComputeAdjustment(consistency_info.NumInconsistentChartype(), language_model_penalty_chartype) +
+            ComputeAdjustment(consistency_info.NumInconsistentSpaces(), language_model_penalty_spacing) +
             (consistency_info.inconsistent_script ? language_model_penalty_script : 0.0f) +
             (consistency_info.inconsistent_font ? language_model_penalty_font : 0.0f));
   }

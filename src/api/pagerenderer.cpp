@@ -17,6 +17,7 @@
 
 #include <tesseract/debugheap.h>
 #include <tesseract/baseapi.h> // for TessBaseAPI
+#include <tesseract/renderer.h>
 
 #include <locale>              // for std::locale::classic
 #include <ctime>
@@ -341,7 +342,7 @@ static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss, tesseract::
   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl) != 0) {
       ptaJoin(pts_ltr, pts_rtl, 0, -1);
-      pts_rtl = DestroyAndCreatePta(pts_rtl);
+      DestroyAndCreatePta(pts_rtl);
     }
     ptaJoin(pts_ltr, ptss, 0, -1);
   } else {
@@ -391,7 +392,7 @@ Pta *SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_directi
   float x0, y0, x1, y1;
   Pta *sorted_baseline_pts;
 
-  sorted_baseline_pts = ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, NULL);
+  sorted_baseline_pts = ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, nullptr);
 
   do {
     ptaGetPt(sorted_baseline_pts, index, &x0, &y0);
@@ -426,16 +427,18 @@ Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts, tesseract::Writ
   for (int p = 0; p < num_pts; ++p) {
     ptaGetPt(baseline_pts, p, &x0, &y0);
     if (x0 < x_min) {
-      ptaGetPt(baseline_pts, p + 1, &x1, &y1);
-      if (x1 < x_min) {
-        continue;
-      } else {
-        GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
-        y0 = int(x_min * m + b);
-        x0 = x_min;
+      if (p + 1 < num_pts) {
+        ptaGetPt(baseline_pts, p + 1, &x1, &y1);
+        if (x1 < x_min) {
+          continue;
+        } else {
+          GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
+          y0 = int(x_min * m + b);
+          x0 = x_min;
+        }
       }
     } else if (x0 > x_max) {
-      if (ptaGetCount(baseline_clipped_pts) > 0) {
+      if (ptaGetCount(baseline_clipped_pts) > 0 && p > 0) {
         ptaGetPt(baseline_pts, p - 1, &x1, &y1);
         // See comment above
         GetSlopeAndOffset(x1, y1, x0, y0, &m, &b);
@@ -452,7 +455,21 @@ Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts, tesseract::Writ
   } else {
     SimplifyLinePolygon(baseline_clipped_pts, 3, 1);
   }
-  SimplifyLinePolygon(baseline_clipped_pts, 3, writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM ? 0 : 1);
+  SimplifyLinePolygon(
+      baseline_clipped_pts, 3,
+      writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM ? 0 : 1);
+
+  // Check the number of points in baseline_clipped_pts after processing
+  int clipped_pts_count = ptaGetCount(baseline_clipped_pts);
+
+  if (clipped_pts_count < 2) {
+    // If there's only one point in baseline_clipped_pts, duplicate it
+    ptaDestroy(&baseline_clipped_pts); // Clean up the created but unused Pta
+    baseline_clipped_pts = ptaCreate(0);
+    ptaAddPt(baseline_clipped_pts, x_min, y_min);
+    ptaAddPt(baseline_clipped_pts, x_max, y_min);
+  }
+
   return baseline_clipped_pts;
 }
 
@@ -464,7 +481,7 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
   int x0, y0, x1, y1;
   float m, b;
   float x_min, y_min, x_max, y_max;
-  float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
+  float delta_median, delta_median_Q1, delta_median_Q3;
   NUMA *bin_line, *poly_bl_delta;
   Pta* baseline_recalc_pts = NULL;
   Pta* baseline_clipped_pts;
@@ -546,9 +563,8 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
 
   // Calculate quartiles to find outliers
   numaGetMedian(poly_bl_delta, &delta_median);
-  numaGetRankValue(poly_bl_delta, 0.25, NULL, 0, &delta_median_Q1);
-  numaGetRankValue(poly_bl_delta, 0.75, NULL, 0, &delta_median_Q3);
-  delta_median_IQR = abs(delta_median_Q3 - delta_median_Q1);
+  numaGetRankValue(poly_bl_delta, 0.25, nullptr, 0, &delta_median_Q1);
+  numaGetRankValue(poly_bl_delta, 0.75, nullptr, 0, &delta_median_Q3);
 
   // Fit baseline into the polygon
   // TODO: Needs maybe some adjustments to suppress fitting to superscript glyphs
@@ -638,8 +654,10 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
         "pagecontent.xsd\">\n"
         "\t<Metadata");
 
-    // If a URL is used to recognize a image add it as <Metadata externalRef="url">
-    if (std::regex_search(api->GetInputName(), std::regex("^(https?|ftp|ssh):"))) {
+    // If a URL is used to recognize a image add it as <Metadata
+    // externalRef="url">
+    if (std::regex_search(api->GetInputName(),
+                          std::regex("^(https?|ftp|ssh):"))) {
       AppendString(" externalRef=\"");
       AppendString(api->GetInputName());
       AppendString("\" ");
@@ -649,7 +667,8 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
         ">\n"
         "\t\t<Creator>Tesseract - ");
     AppendString(TESSERACT_VERSION_STR);
-    // If gmtime conversion is problematic maybe l_getFormattedDate can be used here
+    // If gmtime conversion is problematic maybe l_getFormattedDate can be used
+    // here
     // char *datestr = l_getFormattedDate();
     std::time_t now = std::time(nullptr);
     std::tm *now_tm = std::gmtime(&now);
@@ -736,10 +755,11 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   std::stringstream word_str;
   std::stringstream page_str;
 
-  float x1, y1, x2, y2, word_conf, line_conf, block_conf;
+  float x1, y1, x2, y2;
 
-  tesseract::Orientation orientation_block;
-  tesseract::WritingDirection writing_direction_block;
+  tesseract::Orientation orientation_block = ORIENTATION_PAGE_UP;
+  tesseract::WritingDirection writing_direction_block =
+      WRITING_DIRECTION_LEFT_TO_RIGHT;
   tesseract::TextlineOrder textline_order_block;
 
   Pta *block_top_pts = ptaCreate(0);
@@ -766,14 +786,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
 
   // Use "C" locale (needed for int values larger than 999).
   page_str.imbue(std::locale::classic());
-  reading_order_str << "\t<Page "
-                    << "imageFilename=\"" << GetInputName();
+  reading_order_str << "\t<Page " << "imageFilename=\"" << GetInputName();
   // AppendString(api->GetInputName());
-  reading_order_str << "\" "
-                    << "imageWidth=\"" << rect_width_ << "\" "
+  reading_order_str << "\" " << "imageWidth=\"" << rect_width_ << "\" "
                     << "imageHeight=\"" << rect_height_ << "\">\n";
-
-  // TODO: Do we need to create a random number here?
   std::size_t ro_id = std::hash<std::string>{}(GetInputName());
   reading_order_str << "\t\t<ReadingOrder>\n"
                     << "\t\t\t<OrderedGroup id=\"ro" << ro_id
@@ -816,6 +832,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         break;
     }
 
+    float block_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       // Add Block to reading order
       reading_order_str << "\t\t\t\t<RegionRefIndexed "
@@ -826,25 +843,23 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       res_it->Orientation(&orientation_block, &writing_direction_block,
                           &textline_order_block, &deskew_angle);
       block_conf = ((res_it->Confidence(RIL_BLOCK)) / 100.);
-      page_str << "\t\t<TextRegion id=\"r" << rcnt << "\" "
-               << "custom=\""
+      page_str << "\t\t<TextRegion id=\"r" << rcnt << "\" " << "custom=\""
                << "readingOrder {index:" << rcnt << ";} ";
-      if (writing_direction_block != 0) {
+      if (writing_direction_block != WRITING_DIRECTION_LEFT_TO_RIGHT) {
         page_str << "readingDirection {"
                  << WritingDirectionToStr(writing_direction_block) << ";} ";
       }
       page_str << "orientation {" << orientation_block << ";}\">\n";
       page_str << "\t\t\t";
-      if (!POLYGONFLAG && LEVELFLAG == 0) {
+      if ((!POLYGONFLAG || (orientation_block != ORIENTATION_PAGE_UP &&
+                            orientation_block != ORIENTATION_PAGE_DOWN)) &&
+          LEVELFLAG == 0) {
         AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
       }
     }
 
     // Writing direction changes at a per-word granularity
-    tesseract::WritingDirection writing_direction;
-    tesseract::WritingDirection writing_direction_before;
-    
-    writing_direction = writing_direction_block;
+    auto writing_direction = writing_direction_block;
     if (writing_direction_block != WRITING_DIRECTION_TOP_TO_BOTTOM) {
       switch (res_it->WordDirection()) {
         case DIR_LEFT_TO_RIGHT:
@@ -859,22 +874,31 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     }
 
     bool ttb_flag = (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM);
+    // TODO: Rework polygon handling if line is skewed (90 or 180 degress),
+    // for now using LinePts
+    bool skewed_flag = (orientation_block != ORIENTATION_PAGE_UP &&
+                        orientation_block != ORIENTATION_PAGE_DOWN);
 
+    float line_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
-      writing_direction_before = writing_direction;
+      // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);
-      line_content << res_it->GetUTF8Text(RIL_TEXTLINE);
+      std::string textline = res_it->GetUTF8Text(RIL_TEXTLINE);
+      if (textline.back() == '\n') {
+        textline.erase(textline.length() - 1);
+      }
+      line_content << HOcrEscape(textline.c_str());
       line_str << "\t\t\t<TextLine id=\"r" << rcnt << "l" << lcnt << "\" ";
-      if (writing_direction != 0 &&
+      if (writing_direction != WRITING_DIRECTION_LEFT_TO_RIGHT &&
           writing_direction != writing_direction_block) {
         line_str << "readingDirection=\""
                  << WritingDirectionToStr(writing_direction) << "\" ";
       }
-      line_str << "custom=\""
-               << "readingOrder {index:" << lcnt << ";}\">\n";
+      line_str << "custom=\"" << "readingOrder {index:" << lcnt << ";}\">\n";
       // If level is linebased, get the line polygon and baseline
-      if (LEVELFLAG == 0 && !POLYGONFLAG) {
-        AddPointToWordPolygon(res_it.get(), RIL_TEXTLINE, line_top_ltr_pts, line_bottom_ltr_pts, writing_direction);
+      if (LEVELFLAG == 0 && (!POLYGONFLAG || skewed_flag)) {
+        AddPointToWordPolygon(res_it.get(), RIL_TEXTLINE, line_top_ltr_pts,
+                              line_bottom_ltr_pts, writing_direction);
         AddBaselineToPTA(res_it.get(), RIL_TEXTLINE, line_baseline_pts);
         if (ttb_flag) {
           line_baseline_pts = TransposePolygonline(line_baseline_pts);
@@ -886,22 +910,23 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
     bool last_word_in_cblock = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
 
-    word_conf = ((res_it->Confidence(RIL_WORD)) / 100.);
+    float word_conf = ((res_it->Confidence(RIL_WORD)) / 100.);
 
     // Create word stream if word level output is active
     if (LEVELFLAG > 0) {
       word_str << "\t\t\t\t<Word id=\"r" << rcnt << "l" << lcnt << "w" << wcnt
                << "\" readingDirection=\""
                << WritingDirectionToStr(writing_direction) << "\" "
-               << "custom=\""
-               << "readingOrder {index:" << wcnt << ";}\">\n";
-      if (!POLYGONFLAG || ttb_flag) {
-        AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
+               << "custom=\"" << "readingOrder {index:" << wcnt << ";}\">\n";
+      if ((!POLYGONFLAG || skewed_flag) || ttb_flag) {
+        AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
+                              writing_direction);
       }
     }
 
-    if (POLYGONFLAG && ttb_flag && LEVELFLAG == 0) {
-      AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts, writing_direction);
+    if (POLYGONFLAG && !skewed_flag && ttb_flag && LEVELFLAG == 0) {
+      AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
+                            writing_direction);
     }
 
     // Get the word baseline information
@@ -909,24 +934,28 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
 
     // Get the word text content and polygon
     do {
-      const std::unique_ptr<const char[]> grapheme(res_it->GetUTF8Text(RIL_SYMBOL));
+      const std::unique_ptr<const char[]> grapheme(
+          res_it->GetUTF8Text(RIL_SYMBOL));
       if (grapheme && grapheme[0] != 0) {
         word_content << HOcrEscape(grapheme.get()).c_str();
-        if (POLYGONFLAG && !ttb_flag){
-          AddPointToWordPolygon(res_it.get(), RIL_SYMBOL, word_top_pts, word_bottom_pts, writing_direction);
+        if (POLYGONFLAG && !skewed_flag && !ttb_flag) {
+          AddPointToWordPolygon(res_it.get(), RIL_SYMBOL, word_top_pts,
+                                word_bottom_pts, writing_direction);
         }
       }
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
 
-    if (LEVELFLAG > 0 || POLYGONFLAG) {
+    if (LEVELFLAG > 0 || (POLYGONFLAG && !skewed_flag)) {
       // Sort wordpolygons
       word_top_pts = RecalcPolygonline(word_top_pts, 1 - ttb_flag);
       word_bottom_pts = RecalcPolygonline(word_bottom_pts, 0 + ttb_flag);
 
       // AppendLinePolygon
-      AppendLinePolygon(line_top_ltr_pts, line_top_rtl_pts, word_top_pts, writing_direction);
-      AppendLinePolygon(line_bottom_ltr_pts, line_bottom_rtl_pts, word_bottom_pts, writing_direction);
+      AppendLinePolygon(line_top_ltr_pts, line_top_rtl_pts, word_top_pts,
+                        writing_direction);
+      AppendLinePolygon(line_bottom_ltr_pts, line_bottom_rtl_pts,
+                        word_bottom_pts, writing_direction);
 
       // Word level polygon
       word_bottom_pts = ReversePolygonline(word_bottom_pts, 1);
@@ -954,7 +983,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
                << "\t\t\t\t\t</TextEquiv>\n"
                << "\t\t\t\t</Word>\n";
     }
-    if (LEVELFLAG > 0 || POLYGONFLAG) {
+    if (LEVELFLAG > 0 || (POLYGONFLAG && !skewed_flag)) {
       // Add wordbaseline to linebaseline
       if (ttb_flag) {
         word_baseline_pts = TransposePolygonline(word_baseline_pts);
@@ -967,12 +996,27 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     word_top_pts = DestroyAndCreatePta(word_top_pts);
     word_bottom_pts = DestroyAndCreatePta(word_bottom_pts);
 
+    // Check why this combination of words is not working as expected!
     // Write the word contents to the line
-    line_content << word_content.str();
+#if 0
+    if (!last_word_in_line && writing_direction_before != writing_direction &&
+        writing_direction < 2 && writing_direction_before < 2 &&
+        res_it->WordDirection()) {
+      if (writing_direction_before == WRITING_DIRECTION_LEFT_TO_RIGHT) {
+        // line_content << "‏" << word_content.str();
+      } else {
+        // line_content << "‎" << word_content.str();
+      }
+    } else {
+      // line_content << word_content.str();
+    }
+    // Check if WordIsNeutral
+    if (res_it->WordDirection()) {
+      writing_direction_before = writing_direction;
+    }
+#endif
     word_content.str("");
-
     wcnt++;
-
 
     // Write line information to the output
     if (last_word_in_line) {
@@ -985,10 +1029,11 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         ptaJoin(line_bottom_ltr_pts, line_bottom_rtl_pts, 0, -1);
         line_bottom_rtl_pts = DestroyAndCreatePta(line_bottom_rtl_pts);
       }
-      if (POLYGONFLAG || LEVELFLAG > 0) {
+      if ((POLYGONFLAG && !skewed_flag) || LEVELFLAG > 0) {
         // Recalc Polygonlines
         line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, 1 - ttb_flag);
-        line_bottom_ltr_pts = RecalcPolygonline(line_bottom_ltr_pts, 0 + ttb_flag);
+        line_bottom_ltr_pts =
+            RecalcPolygonline(line_bottom_ltr_pts, 0 + ttb_flag);
 
         // Smooth the polygonline
         SimplifyLinePolygon(line_top_ltr_pts, 5, 1 - ttb_flag);
@@ -1003,7 +1048,8 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         // FitBaselineIntoLinePolygon(line_bottom_ltr_pts, line_baseline_pts,
         // writing_direction); and it only cut it to the length and simplifies
         // the linepolyon
-        line_baseline_pts = ClipAndSimplifyBaseline(line_bottom_ltr_pts, line_baseline_pts, writing_direction);
+        line_baseline_pts = ClipAndSimplifyBaseline(
+            line_bottom_ltr_pts, line_baseline_pts, writing_direction);
 
         // Update polygon of the block
         UpdateBlockPoints(block_top_pts, block_bottom_pts, line_top_ltr_pts,
@@ -1014,7 +1060,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       ptaJoin(line_top_ltr_pts, line_bottom_ltr_pts, 0, -1);
       line_bottom_ltr_pts = DestroyAndCreatePta(line_bottom_ltr_pts);
 
-      if (LEVELFLAG > 0 && !POLYGONFLAG) {
+      if (LEVELFLAG > 0 && !(POLYGONFLAG && !skewed_flag)) {
         line_top_ltr_pts = PolygonToBoxCoords(line_top_ltr_pts);
       }
 
@@ -1047,17 +1093,15 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       region_content << line_content.str();
       line_content.str("");
       if (!last_word_in_cblock) {
-        region_content << "\n\t\t\t\t\t";
+        region_content << '\n';
       }
       lcnt++;
       wcnt = 0;
-    } else {
-      line_content << " ";
     }
 
     // Write region information to the output
     if (last_word_in_cblock) {
-      if (POLYGONFLAG || LEVELFLAG > 0) {
+      if ((POLYGONFLAG && !skewed_flag) || LEVELFLAG > 0) {
         page_str << "<Coords points=\"";
         block_bottom_pts = ReversePolygonline(block_bottom_pts, 1);
         ptaJoin(block_top_pts, block_bottom_pts, 0, -1);

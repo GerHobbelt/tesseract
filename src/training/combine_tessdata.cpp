@@ -29,11 +29,6 @@
 #include <cerrno>
 #include <iostream> // std::cout
 
-#if defined(HAVE_MUPDF)
-#include "mupdf/fitz.h"           // fz_basename
-#include "mupdf/helpers/dir.h"
-#endif
-
 using namespace tesseract;
 
 static int list_components(TessdataManager &tm, const char *filename) {

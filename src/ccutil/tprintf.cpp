@@ -42,55 +42,87 @@ namespace tesseract {
 
 #ifdef HAVE_MUPDF
 
+// We've gathered a single, entire, message: now output it line-by-line (if it's multi-line internally).
+static void write_gathered_log_message(int level, const std::string &msg) {
+  const char *s = msg.c_str();
+
+  if (!strncmp(s, "ERROR: ", 7)) {
+    s += 7;
+  } else if (!strncmp(s, "WARNING: ", 9)) {
+    s += 9;
+  }
+
+  switch (level) {
+    case T_LOG_ERROR:
+      fz_error(NULL, "%s", s);
+      break;
+    case T_LOG_WARN:
+      fz_warn(NULL, "%s", s);
+      break;
+    case T_LOG_INFO:
+      fz_info(NULL, "%s", s);
+      break;
+    case T_LOG_DEBUG:
+    default:
+      fz_info(NULL, "%s", s);
+      break;
+  }
+}
+
 // Warning: tprintf() is invoked in tesseract for PARTIAL lines, so we SHOULD gather these fragments
 // here before dispatching the gathered lines to the appropriate back-end API!
-static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args args) {
-  static int block_level = T_LOG_DEBUG;
+//
+// This routine does this "message gathering" per loglevel this way: as long as the loglevel remains
+// the same we're clearly busy logging the same overarching message.
+// The *proper* behvaiour is to end a message with a `\n` LF, but when the loglevel changes this is
+// treated as another (*irregular*) end-of-message signal and the gathered message will be logged.
+static void gather_and_log_a_single_tprintf_line(int level, fmt::string_view format, fmt::format_args args) {
+  static int block_level = INT_MAX;
+  static std::string msg_buffer;
+
   // sanity check/clipping: there's no log level beyond ERROR severity: ERROR is the highest it can possibly get.
   if (level < T_LOG_ERROR) {
-	  level = T_LOG_ERROR;
-  }
-  // make the entire message line have the most severe log level given for any part of the line:
-  if (level < block_level) {
-    block_level = level;
+    level = T_LOG_ERROR;
   }
 
   auto msg = fmt::vformat(format, args);
 
-  static std::string msg_buffer;
-  msg_buffer += msg;
-  if (!msg_buffer.ends_with('\n'))
-    return;
+  // check the loglevel remains the same across the message particles: if not, this is a after-the-fact
+  // *irregular* message end marker!
+  if (level != block_level) {
+    if (block_level != INT_MAX) {
+      // after-the-fact end-of-message: log/dump the buffered log message!
+      if (!msg_buffer.ends_with('\n'))
+        msg_buffer += '\n';
+      write_gathered_log_message(block_level, msg_buffer);
+      msg_buffer.clear();
 
-  const char *s = msg_buffer.c_str();
-  level = block_level;
+      // now we've handled the irregular end-of-message for the pre-exisiting buffered message,
+      // continue processing the current message (particle).
+    }
 
-  if (!strncmp(s, "ERROR: ", 7))
-    fz_error(NULL, "%s", s + 7);
-  else if (!strncmp(s, "WARNING: ", 9))
-    fz_warn(NULL, "%s", s + 9);
-  else {
-	switch (level) {
-	case T_LOG_ERROR:
-      fz_error(NULL, "%s", s);
-	  break;
-	case T_LOG_WARN:
-	  fz_warn(NULL, "%s", s);
-	  break;
-	case T_LOG_INFO:
-      fz_info(NULL, "%s", s);
-	  break;
-	case T_LOG_DEBUG:
-	default:
-      fz_info(NULL, "%s", s);
-	  break;
-	}
+    block_level = level;
   }
 
-  msg_buffer.clear();
+  bool end_signaled = msg.ends_with('\n');
+
+  // when this is a partial message, store it in the buffer until later, when the message is completed.
+  if (!end_signaled) {
+    msg_buffer += msg;
+    return;
+  }
+
+  // `msg` carries a complete message, or at least the end of it:
+  // when there's some old stuff waiting for us, append to it and proceed to log.
+  if (!msg_buffer.empty()) {
+    msg = msg_buffer + msg;
+    msg_buffer.clear();
+  }
+
+  write_gathered_log_message(level, msg);
 
   // reset next line log level to lowest possible:
-  block_level = T_LOG_DEBUG;
+  block_level = INT_MAX;
 }
 
 #endif
@@ -105,29 +137,10 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
 static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
 #endif
 
-static int print_level_offset = 0;
-
-int tprintSetLogLevelElevation(int offset)
-{
-	print_level_offset = offset;
-	return print_level_offset;
-}
-
-int tprintAddLogLevelElevation(int offset)
-{
-	print_level_offset += offset;
-	return print_level_offset;
-}
-
-const int tprintGetLevelElevation(void)
-{
-	return print_level_offset;
-}
-
 // Trace printf
 void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
 #ifdef HAVE_MUPDF
-	fz_tess_tprintf(level, format, args);
+  gather_and_log_a_single_tprintf_line(level, format, args);
 #else
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file

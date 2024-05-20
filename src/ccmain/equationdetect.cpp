@@ -1444,7 +1444,7 @@ void EquationDetect::PaintColParts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  lang_tesseract_->ClearPixForDebugView();
+  //lang_tesseract_->ClearPixForDebugView();
 }
 
 void EquationDetect::PrintSpecialBlobsDensity(const ColPartition &part) const {

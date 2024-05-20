@@ -114,7 +114,6 @@ Network *NetworkBuilder::BuildFromString(const StaticShape &input_shape, const c
       return ParseOutput(input_shape, str);
     default:
       tprintError("Invalid network spec:{}\n", *str);
-      return nullptr;
   }
   return nullptr;
 }

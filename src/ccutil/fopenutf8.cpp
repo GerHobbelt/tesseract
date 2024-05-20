@@ -11,9 +11,7 @@
 #include "fopenutf8.h"
 
 #include "winutils.h"
-#if defined(HAVE_MUPDF)
-#include "mupdf/helpers/dir.h"
-#endif
+#include <leptonica/environ.h>
 
 namespace tesseract {
 

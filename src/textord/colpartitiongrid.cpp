@@ -1639,8 +1639,16 @@ BlobRegionType ColPartitionGrid::SmoothInOneDirection(
       return BRT_POLYIMAGE;
     }
     if ((text_dir != BRT_VERT_TEXT || flow_type != BTFT_CHAIN) &&
-        counts[NPT_HTEXT] > 0 && htext_score >= kSmoothDecisionMargin) {
-      *best_distance = dists[NPT_HTEXT][0];
+        (counts[NPT_HTEXT] + counts[NPT_WEAK_HTEXT]) > 0 && htext_score >= kSmoothDecisionMargin) {
+
+      if (!dists[NPT_WEAK_HTEXT].empty() &&
+          *best_distance > dists[NPT_WEAK_HTEXT][0]) {
+        *best_distance = dists[NPT_WEAK_HTEXT][0];
+      }
+      if (!dists[NPT_HTEXT].empty() &&
+          *best_distance > dists[NPT_HTEXT][0]) {
+        *best_distance = dists[NPT_HTEXT][0];
+      }
       return BRT_TEXT;
     } else if ((text_dir != BRT_TEXT || flow_type != BTFT_CHAIN) &&
                counts[NPT_VTEXT] > 0 && vtext_score >= kSmoothDecisionMargin) {
@@ -1717,7 +1725,7 @@ void ColPartitionGrid::AccumulatePartDistances(
       if (debug) {
         tprintDebug("Weak {}\n", n_boxes);
       }
-    } else {
+    } else if (n_type == BRT_NOISE || n_type == BRT_POLYIMAGE || n_type == BRT_RECTIMAGE) {
       count_vector = &dists[NPT_IMAGE];
       if (debug) {
         tprintDebug("Image {}\n", n_boxes);
