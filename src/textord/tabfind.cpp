@@ -565,7 +565,7 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   left_tab_boxes_.clear();
   right_tab_boxes_.clear();
   // For every bbox in the grid, determine whether it uses a tab on an edge.
-  GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> gsearch(this);
+  BlobGridSearch gsearch(this);
   gsearch.StartFullSearch();
   BLOBNBOX *bbox;
   while ((bbox = gsearch.NextFullSearch()) != nullptr) {

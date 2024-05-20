@@ -391,7 +391,7 @@ Pta *SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_directi
   float x0, y0, x1, y1;
   Pta *sorted_baseline_pts;
 
-  sorted_baseline_pts = ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, NULL);
+  sorted_baseline_pts = ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, nullptr);
 
   do {
     ptaGetPt(sorted_baseline_pts, index, &x0, &y0);
@@ -479,7 +479,7 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
   int num_pts, num_bin, x0, y0, x1, y1;
   float m, b;
   float x_min, y_min, x_max, y_max;
-  float delta_median, delta_median_Q1, delta_median_Q3, delta_median_IQR;
+  float delta_median, delta_median_Q1, delta_median_Q3;
   NUMA *bin_line, *poly_bl_delta;
   Pta* baseline_recalc_pts = NULL;
   Pta* baseline_clipped_pts;
@@ -561,9 +561,8 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
 
   // Calculate quartiles to find outliers
   numaGetMedian(poly_bl_delta, &delta_median);
-  numaGetRankValue(poly_bl_delta, 0.25, NULL, 0, &delta_median_Q1);
-  numaGetRankValue(poly_bl_delta, 0.75, NULL, 0, &delta_median_Q3);
-  delta_median_IQR = abs(delta_median_Q3 - delta_median_Q1);
+  numaGetRankValue(poly_bl_delta, 0.25, nullptr, 0, &delta_median_Q1);
+  numaGetRankValue(poly_bl_delta, 0.75, nullptr, 0, &delta_median_Q3);
 
   // Fit baseline into the polygon
   // TODO: Needs maybe some adjustments to suppress fitting to superscript glyphs
@@ -754,11 +753,11 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   std::stringstream word_str;
   std::stringstream page_str;
 
-  float x1, y1, x2, y2, word_conf, line_conf, block_conf;
+  float x1, y1, x2, y2;
 
-  tesseract::Orientation orientation_block;
-  //tesseract::Orientation orientation_line;
-  tesseract::WritingDirection writing_direction_block;
+  tesseract::Orientation orientation_block = ORIENTATION_PAGE_UP;
+  tesseract::WritingDirection writing_direction_block =
+      WRITING_DIRECTION_LEFT_TO_RIGHT;
   tesseract::TextlineOrder textline_order_block;
 
   Pta *block_top_pts = ptaCreate(0);
@@ -831,6 +830,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         break;
     }
 
+    float block_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       // Add Block to reading order
       reading_order_str << "\t\t\t\t<RegionRefIndexed "
@@ -841,27 +841,23 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       res_it->Orientation(&orientation_block, &writing_direction_block,
                           &textline_order_block, &deskew_angle);
       block_conf = ((res_it->Confidence(RIL_BLOCK)) / 100.);
-      page_str << "\t\t<TextRegion id=\"r" << rcnt << "\" "
-               << "custom=\""
+      page_str << "\t\t<TextRegion id=\"r" << rcnt << "\" " << "custom=\""
                << "readingOrder {index:" << rcnt << ";} ";
-      if (writing_direction_block != 0) {
+      if (writing_direction_block != WRITING_DIRECTION_LEFT_TO_RIGHT) {
         page_str << "readingDirection {"
                  << WritingDirectionToStr(writing_direction_block) << ";} ";
       }
       page_str << "orientation {" << orientation_block << ";}\">\n";
       page_str << "\t\t\t";
-      if ((!POLYGONFLAG ||
-           (orientation_block != 0 && orientation_block != 2)) &&
+      if ((!POLYGONFLAG || (orientation_block != ORIENTATION_PAGE_UP &&
+                            orientation_block != ORIENTATION_PAGE_DOWN)) &&
           LEVELFLAG == 0) {
         AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
       }
     }
 
     // Writing direction changes at a per-word granularity
-    tesseract::WritingDirection writing_direction;
-    //tesseract::WritingDirection writing_direction_before;
-    
-    writing_direction = writing_direction_block;
+    auto writing_direction = writing_direction_block;
     if (writing_direction_block != WRITING_DIRECTION_TOP_TO_BOTTOM) {
       switch (res_it->WordDirection()) {
         case DIR_LEFT_TO_RIGHT:
@@ -878,14 +874,20 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     bool ttb_flag = (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM);
     // TODO: Rework polygon handling if line is skewed (90 or 180 degress),
     // for now using LinePts
-    bool skewed_flag = (orientation_block != 0 && orientation_block != 2);
+    bool skewed_flag = (orientation_block != ORIENTATION_PAGE_UP &&
+                        orientation_block != ORIENTATION_PAGE_DOWN);
 
+    float line_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);
-      line_content << HOcrEscape(res_it->GetUTF8Text(RIL_TEXTLINE)).c_str();
+      std::string textline = res_it->GetUTF8Text(RIL_TEXTLINE);
+      if (textline.back() == '\n') {
+        textline.erase(textline.length() - 1);
+      }
+      line_content << HOcrEscape(textline.c_str());
       line_str << "\t\t\t<TextLine id=\"r" << rcnt << "l" << lcnt << "\" ";
-      if (writing_direction != 0 &&
+      if (writing_direction != WRITING_DIRECTION_LEFT_TO_RIGHT &&
           writing_direction != writing_direction_block) {
         line_str << "readingDirection=\""
                  << WritingDirectionToStr(writing_direction) << "\" ";
@@ -906,7 +908,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
     bool last_word_in_cblock = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
 
-    word_conf = ((res_it->Confidence(RIL_WORD)) / 100.);
+    float word_conf = ((res_it->Confidence(RIL_WORD)) / 100.);
 
     // Create word stream if word level output is active
     if (LEVELFLAG > 0) {
@@ -1089,12 +1091,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       region_content << line_content.str();
       line_content.str("");
       if (!last_word_in_cblock) {
-        region_content << "\n\t\t\t\t\t";
+        region_content << '\n';
       }
       lcnt++;
       wcnt = 0;
-    } else {
-      line_content << " ";
     }
 
     // Write region information to the output
