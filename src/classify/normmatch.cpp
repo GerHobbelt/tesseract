@@ -62,14 +62,14 @@ struct NORM_PROTOS {
  *       1 / (1 + (NormAdj / midpoint) ^ curl)
  */
 static float NormEvidenceOf(float NormAdj) {
-  NormAdj /= classify_norm_adj_midpoint;
+  NormAdj /= static_cast<float>(classify_norm_adj_midpoint);
 
   if (classify_norm_adj_curl == 3) {
     NormAdj = NormAdj * NormAdj * NormAdj;
   } else if (classify_norm_adj_curl == 2) {
     NormAdj = NormAdj * NormAdj;
   } else {
-    NormAdj = pow(NormAdj, static_cast<float>(classify_norm_adj_curl));
+    NormAdj = std::pow(NormAdj, static_cast<float>(classify_norm_adj_curl));
   }
   return (1 / (1 + NormAdj));
 }
@@ -84,7 +84,7 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 DOUBLE_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
 DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
 /** Weight of width variance against height and vertical position. */
-const double kWidthErrorWeighting = 0.125;
+const float kWidthErrorWeighting = 0.125f;
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
