@@ -763,9 +763,10 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  * will automatically perform recognition.
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
-                           int bytes_per_pixel, int bytes_per_line, int exif, const float angle) {
+                           int bytes_per_pixel, int bytes_per_line, int exif, 
+                           const float angle, bool upscale) {
   if (InternalResetImage()) {
-    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, exif, angle);
+    thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, exif, angle, upscale);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -786,7 +787,7 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * Use Pix where possible. Tesseract uses Pix as its internal representation
  * and it is therefore more efficient to provide a Pix directly.
  */
-void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle) {
+void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle, bool upscale) {
   if (InternalResetImage()) {
     if (pixGetSpp(pix) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
@@ -795,12 +796,12 @@ void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle) {
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
-    thresholder_->SetImage(pix, exif, angle);
+    thresholder_->SetImage(pix, exif, angle, upscale);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
 
-int TessBaseAPI::SetImageFile(int exif, const float angle) {
+int TessBaseAPI::SetImageFile(int exif, const float angle, bool upscale) {
     const char *filename1 = "/input";
     Pix *pix = pixRead(filename1);
     if (pix == nullptr) {
@@ -814,7 +815,7 @@ int TessBaseAPI::SetImageFile(int exif, const float angle) {
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
-    thresholder_->SetImage(pix, exif, angle);
+    thresholder_->SetImage(pix, exif, angle, upscale);
     SetInputImage(thresholder_->GetPixRect());
     pixDestroy(&pix);
     return 0;
