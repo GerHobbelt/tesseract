@@ -134,7 +134,7 @@ inline void chomp_string(char *str) {
 }
 
 // return the smallest multiple of block_size greater than or equal to n.
-inline int RoundUp(int n, int block_size) {
+static inline int RoundUp(int n, int block_size) {
   return block_size * ((n + block_size - 1) / block_size);
 }
 
@@ -188,7 +188,7 @@ inline void IntersectRange(const T &lower1, const T &upper1, T *lower2, T *upper
 // Proper modulo arithmetic operator. Returns a mod b that works for -ve a.
 // For any integer a and positive b, returns r : 0<=r<b and a=n*b + r for
 // some integer n.
-inline int Modulo(int a, int b) {
+static inline int Modulo(int a, int b) {
   return (a % b + b) % b;
 }
 
@@ -197,7 +197,7 @@ inline int Modulo(int a, int b) {
 // counting at 0. With simple rounding 1/3 = 0, 0/3 = 0 -1/3 = 0, -2/3 = 0,
 // -3/3 = 0 and -4/3 = -1.
 // I want 1/3 = 0, 0/3 = 0, -1/3 = 0, -2/3 = -1, -3/3 = -1 and -4/3 = -1.
-inline int DivRounded(int a, int b) {
+static inline int DivRounded(int a, int b) {
   if (b < 0) {
     return -DivRounded(a, -b);
   }
@@ -205,7 +205,7 @@ inline int DivRounded(int a, int b) {
 }
 
 // Return a double cast to int with rounding.
-inline int IntCastRounded(double x) {
+static inline int IntCastRounded(double x) {
   ASSERT0(std::isfinite(x));
   ASSERT0(x < INT_MAX);
   ASSERT0(x > INT_MIN);
@@ -213,7 +213,7 @@ inline int IntCastRounded(double x) {
 }
 
 // Return a float cast to int with rounding.
-inline int IntCastRounded(float x) {
+static inline int IntCastRounded(float x) {
   ASSERT0(std::isfinite(x));
   return x >= 0.0F ? static_cast<int>(x + 0.5F) : -static_cast<int>(-x + 0.5F);
 }
@@ -226,7 +226,7 @@ inline int IntCastRounded(TFloat x) {
 #endif
 
 // Reverse the order of bytes in a n byte quantity for big/little-endian switch.
-inline void ReverseN(void *ptr, int num_bytes) {
+static inline void ReverseN(void *ptr, int num_bytes) {
   ASSERT0(num_bytes == 1 || num_bytes == 2 || num_bytes == 4 || num_bytes == 8);
   char *cptr = static_cast<char *>(ptr);
   int halfsize = num_bytes / 2;
@@ -238,7 +238,7 @@ inline void ReverseN(void *ptr, int num_bytes) {
 }
 
 // Reverse the order of bytes in a 32 bit quantity for big/little-endian switch.
-inline void Reverse32(void *ptr) {
+static inline void Reverse32(void *ptr) {
   ReverseN(ptr, 4);
 }
 

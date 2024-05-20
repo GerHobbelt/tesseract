@@ -59,8 +59,8 @@ public:
   }
 
   std::string input_file_path; // name of currently processed input file
-  std::string datadir;       // dir for data files
-  std::string imagebasename; // name of image
+  std::string datadir;         // dir for data files
+  std::string imagebasename;   // name of image
   std::string lang;
   std::string language_data_path_prefix;
   UNICHARSET unicharset;
