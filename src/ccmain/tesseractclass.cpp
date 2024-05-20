@@ -50,11 +50,8 @@
 
 namespace tesseract {
 
-Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMarkerRef)
-    : parent_instance_(parent),
-      reporting_holdoff_((parent != nullptr && LogReportingHoldoffMarkerRef == nullptr)
-                        ? parent->GetLogReportingHoldoffMarkerRef()
-                        : *LogReportingHoldoffMarkerRef)
+Tesseract::Tesseract(Tesseract *parent)
+    : parent_instance_(parent)
     , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
                   "Take segmentation and labeling from box file", params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
@@ -127,7 +124,7 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
                     params())
     , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
-                      "Which OCR engine(s) to run (Tesseract, LSTM, both). "
+                      "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
                       "Defaults to loading and running the most accurate "
                       "available.",
                       params())
@@ -547,15 +544,9 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     sub_lang->Clear(invoked_by_destructor);
   }
 
-  // almost identical code to Tesseract::ReportDebugInfo():
-  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
-    pixa_debug_.WriteHTML(file_path.c_str());
+  ReportDebugInfo();
 
-    ClearPixForDebugView();
-    pixa_debug_.Clear(invoked_by_destructor);
-  }
-  else if (invoked_by_destructor) {
+  if (invoked_by_destructor) {
     ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
   }
@@ -814,67 +805,211 @@ void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
   pixa_debug_.AddClippedPix(pix, title);
 }
 
-
-void Tesseract::ResyncVariablesInternally() {
-    if (lstm_recognizer_ != nullptr) {
-        lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
-        lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
-        lstm_recognizer_->SetDebug(tess_debug_lstm);
-    }
-
-#if !DISABLED_LEGACY_ENGINE
-    if (language_model_ != nullptr) {
-        int lvl = language_model_->language_model_debug_level;
-
-#if 0
-        language_model_->CopyDebugParameters(this, &Classify::getDict());
-
-        INT_VAR_H(language_model_debug_level);
-        BOOL_VAR_H(language_model_ngram_on);
-        INT_VAR_H(language_model_ngram_order);
-        INT_VAR_H(language_model_viterbi_list_max_num_prunable);
-        INT_VAR_H(language_model_viterbi_list_max_size);
-        DOUBLE_VAR_H(language_model_ngram_small_prob);
-        DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
-        BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-        DOUBLE_VAR_H(language_model_ngram_scale_factor);
-        DOUBLE_VAR_H(language_model_ngram_rating_factor);
-        BOOL_VAR_H(language_model_ngram_space_delimited_language);
-        INT_VAR_H(language_model_min_compound_length);
-        // Penalties used for adjusting path costs and final word rating.
-        DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
-        DOUBLE_VAR_H(language_model_penalty_non_dict_word);
-        DOUBLE_VAR_H(language_model_penalty_punc);
-        DOUBLE_VAR_H(language_model_penalty_case);
-        DOUBLE_VAR_H(language_model_penalty_script);
-        DOUBLE_VAR_H(language_model_penalty_chartype);
-        DOUBLE_VAR_H(language_model_penalty_font);
-        DOUBLE_VAR_H(language_model_penalty_spacing);
-        DOUBLE_VAR_H(language_model_penalty_increment);
-        INT_VAR_H(wordrec_display_segmentations);
-        BOOL_VAR_H(language_model_use_sigmoidal_certainty);
-#endif
-    }
-#endif
-
-    // init sub-languages:
-     for (auto &sub_tess : sub_langs_) {
-        if (sub_tess != nullptr) {
-            auto lvl = (bool)sub_tess->debug_display_page;
-        }
-    }
+// Destroy any existing pix and return a pointer to the pointer.
+void Tesseract::set_pix_binary(Image pix) {
+  pix_binary_.destroy();
+  pix_binary_ = pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
+  }
 }
 
-void Tesseract::ReportDebugInfo() {
-    if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-        AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+void Tesseract::set_pix_grey(Image grey_pix) {
+  pix_grey_.destroy();
+  pix_grey_ = grey_pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
+  }
+}
 
-        std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
-        pixa_debug_.WriteHTML(file_path.c_str());
+// Takes ownership of the given original_pix.
+void Tesseract::set_pix_original(Image original_pix) {
+  pix_original_.destroy();
+  pix_original_ = original_pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
+  }
+}
 
-        ClearPixForDebugView();
-        pixa_debug_.Clear();
+Image Tesseract::GetPixForDebugView() {
+  if (pix_for_debug_view_ != nullptr) {
+    return pix_for_debug_view_;
+  }
+
+  pix_for_debug_view_ = pixConvertTo32(pix_binary_);
+  return pix_for_debug_view_;
+}
+
+void Tesseract::ClearPixForDebugView() {
+  if (pix_for_debug_view_ != nullptr) {
+    pix_for_debug_view_.destroy();
+    pix_for_debug_view_ = nullptr;
+  }
+}
+
+// Returns a pointer to a Pix representing the best available resolution image
+// of the page, with best available bit depth as second priority. Result can
+// be of any bit depth, but never color-mapped, as that has always been
+// removed. Note that in grey and color, 0 is black and 255 is
+// white. If the input was binary, then black is 1 and white is 0.
+// To tell the difference pixGetDepth() will return 32, 8 or 1.
+// In any case, the return value is a borrowed Pix, and should not be
+// deleted or pixDestroyed.
+Image Tesseract::BestPix() const {
+  if (pix_original_ != nullptr && pixGetWidth(pix_original_) == ImageWidth()) {
+    return pix_original_;
+  } else if (pix_grey_ != nullptr) {
+    return pix_grey_;
+  } else {
+    return pix_binary_;
+  }
+}
+
+void Tesseract::set_pix_thresholds(Image thresholds) {
+  pix_thresholds_.destroy();
+  pix_thresholds_ = thresholds;
+}
+
+void Tesseract::set_source_resolution(int ppi) {
+  source_resolution_ = ppi;
+}
+
+int Tesseract::ImageWidth() const {
+  return pixGetWidth(pix_binary_);
+}
+
+int Tesseract::ImageHeight() const {
+  return pixGetHeight(pix_binary_);
+}
+
+void Tesseract::SetScaledColor(int factor, Image color) {
+  scaled_factor_ = factor;
+  scaled_color_ = color;
+}
+
+Tesseract * Tesseract::get_sub_lang(int index) const {
+  return sub_langs_[index];
+}
+
+// Returns true if any language uses Tesseract (as opposed to LSTM).
+bool Tesseract::AnyTessLang() const {
+  if (tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
+    return true;
+  }
+  for (auto &lang_ref : sub_langs_) {
+    if (lang_ref->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
+      return true;
     }
+  }
+  return false;
+}
+
+// Returns true if any language uses the LSTM.
+bool Tesseract::AnyLSTMLang() const {
+  if (tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
+    return true;
+  }
+  for (auto &lang_ref : sub_langs_) {
+    if (lang_ref->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
+  TessdataManager mgr;
+  std::vector<std::string> nil;
+
+  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
+}
+
+// debug PDF output helper methods:
+void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
+  if (pix == nullptr)
+    return;
+
+  pixa_debug_.AddPix(pix, title);
+}
+
+int Tesseract::PushNextPixDebugSection(const std::string &title) { // sibling
+  return pixa_debug_.PushNextSection(title);
+}
+
+int Tesseract::PushSubordinatePixDebugSection(const std::string &title) { // child
+  return pixa_debug_.PushSubordinateSection(title);
+}
+
+void Tesseract::PopPixDebugSection(int handle) { // pop active; return focus to parent
+  pixa_debug_.WriteSectionParamsUsageReport();
+
+  pixa_debug_.PopSection(handle);
+}
+
+void Tesseract::ResyncVariablesInternally() {
+  if (lstm_recognizer_ != nullptr) {
+    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
+    lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
+    lstm_recognizer_->SetDebug(tess_debug_lstm);
+  }
+
+#if !DISABLED_LEGACY_ENGINE
+  if (language_model_ != nullptr) {
+    int lvl = language_model_->language_model_debug_level;
+
+#if 0
+  language_model_->CopyDebugParameters(this, &Classify::getDict());
+
+  INT_VAR_H(language_model_debug_level);
+  BOOL_VAR_H(language_model_ngram_on);
+  INT_VAR_H(language_model_ngram_order);
+  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
+  INT_VAR_H(language_model_viterbi_list_max_size);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
+  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
+  BOOL_VAR_H(language_model_ngram_space_delimited_language);
+  INT_VAR_H(language_model_min_compound_length);
+  // Penalties used for adjusting path costs and final word rating.
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
+  INT_VAR_H(wordrec_display_segmentations);
+  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
+#endif
+  }
+#endif
+
+  // init sub-languages:
+  for (auto &sub_tess : sub_langs_) {
+    if (sub_tess != nullptr) {
+      auto lvl = (bool)sub_tess->debug_display_page;
+    }
+  }
+}
+
+
+void Tesseract::ReportDebugInfo() {
+  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+    AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
+    pixa_debug_.WriteHTML(file_path.c_str());
+
+    ClearPixForDebugView();
+    pixa_debug_.Clear();
+  }
 }
 
 } // namespace tesseract
