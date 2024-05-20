@@ -144,13 +144,6 @@ public:
   */
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
 
-  AutoSupressDatum& GetLogReportingHoldoffMarkerRef() {
-      return reporting_holdoff_;
-  };
-
-protected:
-  AutoSupressDatum reporting_holdoff_;
-
 public:
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
@@ -403,7 +396,8 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line, int exif = 1, const float angle = 0);
+                int bytes_per_pixel, int bytes_per_line, int exif = 1, 
+                const float angle = 0, bool upscale = false);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -413,9 +407,9 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix, int exif = 1, const float angle = 0);
+  void SetImage(Pix *pix, int exif = 1, const float angle = 0, bool upscale = false);
 
-  int SetImageFile(int exif = 1, const float angle = 0);
+  int SetImageFile(int exif = 1, const float angle = 0, bool upscale = false);
 
   /**
    * Preprocessing the InputImage 
@@ -669,8 +663,7 @@ public:
   /// Get bounding boxes of the cols of a table
   /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
   std::vector<std::tuple<int, int, int, int> > GetTableCols(
-      unsigned
-          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+    unsigned i ///< Index of the table, for upper limit \see GetNumberOfTables()
   );
 
   /**
@@ -896,6 +889,12 @@ public:
   }
 
   void set_min_orientation_margin(double margin);
+
+  void SetupDebugAllPreset();
+  void SetupDefaultPreset();
+
+  void ReportDebugInfo();
+
   /* @} */
 
 protected:

@@ -565,7 +565,7 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   left_tab_boxes_.clear();
   right_tab_boxes_.clear();
   // For every bbox in the grid, determine whether it uses a tab on an edge.
-  GridSearch<BLOBNBOX, BLOBNBOX_CLIST, BLOBNBOX_C_IT> gsearch(this);
+  BlobGridSearch gsearch(this);
   gsearch.StartFullSearch();
   BLOBNBOX *bbox;
   while ((bbox = gsearch.NextFullSearch()) != nullptr) {
@@ -1069,6 +1069,7 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
       col_count += new_count;
       col_widths->add(right, -new_count);
     }
+
     if (col_count > kMinLinesInColumn &&
         col_count > kMinFractionalLinesInColumn * total_col_count) {
       auto *w = new ICOORDELT(0, width);
