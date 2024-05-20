@@ -373,6 +373,7 @@ public:
   DOUBLE_VAR_H(classify_char_norm_range);
   DOUBLE_VAR_H(classify_max_rating_ratio);
   DOUBLE_VAR_H(classify_max_certainty_margin);
+  BOOL_VAR_H(classify_cp_dq_bad_height);
 
   /* adaptmatch.cpp ***********************************************************/
   BOOL_VAR_H(tess_cn_matching);
