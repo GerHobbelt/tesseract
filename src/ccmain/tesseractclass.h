@@ -534,10 +534,9 @@ public:
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
                      const std::string &language, OcrEngineMode oem, 
-				     const std::vector<std::string> &configs,
-				     const std::vector<std::string> &vars_vec,
-				     const std::vector<std::string> &vars_values,
-                     bool set_only_non_debug_params,
+				             const std::vector<std::string> &configs,
+				             const std::vector<std::string> &vars_vec,
+				             const std::vector<std::string> &vars_values,
                      TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
 
@@ -561,15 +560,12 @@ public:
   // 
   // vars_values is an optional corresponding vector of values for the variables
   // in vars_vec.
-  // 
-  // If set_only_non_debug_params is true, only params that do not contain
-  // "debug" in the name will be set.
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
                               const std::string &language, OcrEngineMode oem, 
-						      const std::vector<std::string> &configs,
-						      const std::vector<std::string> &vars_vec,
-						      const std::vector<std::string> &vars_values,
-                              bool set_only_non_debug_params, TessdataManager *mgr);
+						                  const std::vector<std::string> &configs,
+						                  const std::vector<std::string> &vars_vec,
+						                  const std::vector<std::string> &vars_values,
+                              TessdataManager *mgr);
 
 #if !DISABLED_LEGACY_ENGINE
   // Set the universal_id member of each font to be unique among all
@@ -582,10 +578,10 @@ public:
 
   bool init_tesseract_lang_data(const std::string &arg0,
                                 const std::string &language, OcrEngineMode oem, 
-							    const std::vector<std::string> &configs,
-							    const std::vector<std::string> &vars_vec,
-							    const std::vector<std::string> &vars_values,
-                                bool set_only_non_debug_params, TessdataManager *mgr);
+							                  const std::vector<std::string> &configs,
+							                  const std::vector<std::string> &vars_vec,
+							                  const std::vector<std::string> &vars_values,
+                                TessdataManager *mgr);
 
   void ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,
                            std::vector<std::string> *not_to_load);
@@ -1003,6 +999,8 @@ public:
   STRING_VAR_H(file_type);
   BOOL_VAR_H(tessedit_override_permuter);
   STRING_VAR_H(tessedit_load_sublangs);
+  STRING_VAR_H(languages_to_try);
+  STRING_VAR_H(reactangles_to_process);
 #if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(tessedit_use_primary_params_model);
 #endif

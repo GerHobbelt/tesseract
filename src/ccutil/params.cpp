@@ -1049,22 +1049,20 @@ bool StringParam::inspect_value(ParamValueContainer& dst) const {
 bool ParamUtils::ReadParamsFile(const std::string &file,
                                 const ParamsVectorSet &member_params,
 								                ParamSetBySourceType source_type,
-								                ParamPtr source,
-								                bool quietly_ignore
+								                ParamPtr source
 ) {
   TFile fp;
   if (!fp.Open(file.c_str(), nullptr)) {
     tprintError("read_params_file: Can't open/read file {}\n", file);
     return true;
   }
-  return ReadParamsFromFp(&fp, member_params, source_type, source, quietly_ignore);
+  return ReadParamsFromFp(&fp, member_params, source_type, source);
 }
 
 bool ParamUtils::ReadParamsFromFp(TFile *fp,
 								const ParamsVectorSet& member_params,
 								ParamSetBySourceType source_type,
-								ParamPtr source,
-								bool quietly_ignore
+								ParamPtr source
 ) {
 #define LINE_SIZE 4096
   char line[LINE_SIZE]; // input line
@@ -1100,7 +1098,7 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
           valptr++; // find end of blanks
         } while (std::isspace(*valptr));
       }
-      foundit = SetParam((const char *)nameptr, (const char*)valptr, member_params, source_type, source, quietly_ignore);
+      foundit = SetParam((const char *)nameptr, (const char*)valptr, member_params, source_type, source);
 
       if (!foundit) {
         anyerr = true; // had an error
@@ -1197,8 +1195,7 @@ template <>
 bool ParamUtils::SetParam<int32_t>(
 	  const char* name, const int32_t value,
 	  const ParamsVectorSet& set,
-	  ParamSetBySourceType source_type, ParamPtr source,
-	  bool quietly_ignore
+	  ParamSetBySourceType source_type, ParamPtr source
 ) {
 	{
 		IntParam* param = FindParam<IntParam>(name, set);
@@ -1219,8 +1216,7 @@ template <>
 bool ParamUtils::SetParam<bool>(
     const char* name, const bool value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     BoolParam* param = FindParam<BoolParam>(name, set);
@@ -1241,8 +1237,7 @@ template <>
 bool ParamUtils::SetParam<double>(
     const char* name, const double value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     DoubleParam* param = FindParam<DoubleParam>(name, set);
@@ -1262,8 +1257,7 @@ bool ParamUtils::SetParam<double>(
 bool ParamUtils::SetParam(
     const char* name, const std::string &value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     StringParam* param = FindParam<StringParam>(name, set);
@@ -1283,8 +1277,7 @@ bool ParamUtils::SetParam(
 bool ParamUtils::SetParam(
     const char* name, const char *value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   Param* param = FindParam(name, set, ANY_TYPE_PARAM);
   if (param != nullptr) {
@@ -1299,11 +1292,10 @@ template <ParamAcceptableValueType T>
 bool ParamUtils::SetParam(
 	const char* name, const T value,
 	ParamsVector& set,
-	ParamSetBySourceType source_type, ParamPtr source,
-	bool quietly_ignore
+	ParamSetBySourceType source_type, ParamPtr source
 ) {
 	ParamsVectorSet pvec({ &set });
-	return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+	return SetParam<T>(name, value, pvec, source_type, source);
 }
 #endif
 
@@ -1311,19 +1303,17 @@ bool ParamUtils::SetParam(
 bool ParamUtils::SetParam(
   const char* name, const char* value,
   ParamsVector& set,
-  ParamSetBySourceType source_type, ParamPtr source,
-  bool quietly_ignore
+  ParamSetBySourceType source_type, ParamPtr source
 ) {
   ParamsVectorSet pvec({ &set });
-  return SetParam(name, value, pvec, source_type, source, quietly_ignore);
+  return SetParam(name, value, pvec, source_type, source);
 }
 
 
 bool ParamUtils::InspectParamAsString(
 	  std::string* value_ref, const char* name,
 	  const ParamsVectorSet& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask
 ) {
 	return false;
 }
@@ -1331,8 +1321,7 @@ bool ParamUtils::InspectParamAsString(
 bool ParamUtils::InspectParamAsString(
 	  std::string* value_ref, const char* name,
 	  const ParamsVector& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }
@@ -1340,8 +1329,7 @@ bool ParamUtils::InspectParamAsString(
 bool ParamUtils::InspectParam(
 	  ParamValueContainer& value_dst, const char* name,
 	  const ParamsVectorSet& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }
@@ -1349,8 +1337,7 @@ bool ParamUtils::InspectParam(
 bool ParamUtils::InspectParam(
 	  ParamValueContainer& value_dst, const char* name,
 	  const ParamsVector& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }

@@ -144,7 +144,6 @@ public:
   */
   bool CheckAndReportIfImageTooLarge(const Pix* pix = nullptr /* default: use GetInputImage() data */ ) const;
 
-public:
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
   const std::string &GetOutputName();
@@ -157,24 +156,21 @@ public:
    * E.g. `SetVariable("tessedit_char_blacklist", "xyz");` to ignore 'x', 'y' and 'z'.
    * Or `SetVariable("classify_bln_numeric_mode", "1");` to set numeric-only mode.
    *
-   * Returns false if the name lookup failed.
+   * Returns false if the name lookup failed (or the set-value attempt is rejected
+   * for any reason).
    *
    * SetVariable() may be used before Init(), but settings will revert to
    * defaults on End().
    *
-   * Note: Must be called after Init(). Only works for non-init variables
-   * (init variables should be passed to Init()).
+   * Note: critical variables are "locked" during the Init() phase and any attempt
+   * to set them to a different value before the End() call will be ignored/rejected
+   * while an error message about the attempt is logged. 
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
   bool SetVariable(const char *name, bool value);
   bool SetVariable(const char *name, double value);
   bool SetVariable(const char *name, const std::string &value);
-  bool SetDebugVariable(const char *name, const char *value);
-  bool SetDebugVariable(const char *name, int value);
-  bool SetDebugVariable(const char *name, bool value);
-  bool SetDebugVariable(const char *name, double value);
-  bool SetDebugVariable(const char *name, const std::string &value);
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
@@ -265,44 +261,32 @@ public:
    * call End() and then use SetVariable before Init. This is only a very
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
-   *
-   * If set_only_non_debug_params is true, only params that do not contain
-   * "debug" in the name will be set.
    */
-  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
-           const std::vector<std::string> &configs,
+  int InitFull(const char *datapath, 
            const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &vars_values);
 
   int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
 
   int InitSimple(const char *datapath, const char *language);
 
   // Reads the traineddata via a FileReader from path `datapath`.
-  int InitFullWithReader(const char *datapath, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
+  int InitFullWithReader(const char *datapath, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+           FileReader reader);
 
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
-  int InitFromMemory(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
+  int InitFromMemory(const char *data, int data_size, 
            const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &vars_values);
 
 protected:
-  int InitFullRemainder(const char *datapath, const char *data, int data_size, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
+  int InitFullRemainder(const char *datapath, const char *data, int data_size, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+           FileReader reader);
 
 public:
   /**
@@ -340,9 +324,7 @@ public:
    * Note: only non-init params will be set (init params are set by Init()).
    */
   void ReadConfigFile(const char *filename);
-  /** Same as above, but only set debug params from the given config file. */
-  void ReadDebugConfigFile(const char *filename);
-
+  
   /**
    * Set the current page segmentation mode. Defaults to PSM_SINGLE_BLOCK.
    * The mode is stored as an IntParam so it can also be modified by
@@ -880,9 +862,10 @@ public:
   /** Return the number of dawgs loaded into tesseract_ object. */
   int NumDawgs() const;
 
-  Tesseract *tesseract() const {
-    return tesseract_;
-  }
+  /// Returns a reference to the internal instance of the Tesseract class;
+  /// the presence of which is guaranteed, i.e. the returned pointer
+  /// WILL NOT be `nullptr`.
+  Tesseract& tesseract() const;
 
   OcrEngineMode oem() const {
     return last_oem_requested_;
@@ -941,13 +924,13 @@ protected:
   }
 
 protected:
-  Tesseract *tesseract_;          ///< The underlying data object.
+  mutable Tesseract *tesseract_;     ///< The underlying data object.
 #if !DISABLED_LEGACY_ENGINE
-  Tesseract *osd_tesseract_;      ///< For orientation & script detection.
-  EquationDetect *equ_detect_;    ///< The equation detector.
+  Tesseract *osd_tesseract_;         ///< For orientation & script detection.
+  EquationDetect *equ_detect_;       ///< The equation detector.
 #endif
-  FileReader reader_;             ///< Reads files from any filesystem.
-  ImageThresholder *thresholder_; ///< Image thresholding module.
+  FileReader reader_;                ///< Reads files from any filesystem.
+  ImageThresholder *thresholder_;    ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.

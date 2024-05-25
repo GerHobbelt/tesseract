@@ -70,7 +70,7 @@ Tesseract::Tesseract(Tesseract *parent)
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
-    INT_MEMBER(tessedit_pageseg_mode, PSM_SINGLE_BLOCK,
+    INT_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
                "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, "
                "4=column, "
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
@@ -396,6 +396,8 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+    , STRING_MEMBER(languages_to_try, "", "List of languages to try when OCRing the next pages.", params())
+    , STRING_MEMBER(reactangles_to_process, "", "List of rectangle areas in the page image to process. When none are specified, the entire page is processed.", params())
 #if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
@@ -925,7 +927,7 @@ int Tesseract::init_tesseract(const std::string &datapath, const std::string &la
   TessdataManager mgr;
   std::vector<std::string> nil;
 
-  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
+  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, &mgr);
 }
 
 // debug PDF output helper methods:

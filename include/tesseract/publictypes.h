@@ -165,11 +165,11 @@ enum PageSegMode {
   PSM_AUTO_OSD = 1,      ///< Automatic page segmentation with orientation and
                          ///< script detection. (OSD)
   PSM_AUTO_ONLY = 2,     ///< Automatic page segmentation, but no OSD, or OCR.
-  PSM_AUTO = 3,          ///< Fully automatic page segmentation, but no OSD.
+  PSM_AUTO = 3,          ///< Fully automatic page segmentation, but no OSD. (Default.)
   PSM_SINGLE_COLUMN = 4, ///< Assume a single column of text of variable sizes.
   PSM_SINGLE_BLOCK_VERT_TEXT = 5, ///< Assume a single uniform block of
                                   ///< vertically aligned text.
-  PSM_SINGLE_BLOCK = 6, ///< Assume a single uniform block of text. (Default.)
+  PSM_SINGLE_BLOCK = 6, ///< Assume a single uniform block of text.
   PSM_SINGLE_LINE = 7,  ///< Treat the image as a single text line.
   PSM_SINGLE_WORD = 8,  ///< Treat the image as a single word.
   PSM_CIRCLE_WORD = 9,  ///< Treat the image as a single word in a circle.

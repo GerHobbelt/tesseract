@@ -93,7 +93,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
                                          const std::vector<std::string> &configs,
                                          const std::vector<std::string> &vars_vec,
                                          const std::vector<std::string> &vars_values,
-                                         bool set_only_non_debug_params, TessdataManager *mgr) {
+                                         TessdataManager *mgr) {
   // Set the language data path prefix
   lang = !language.empty() ? language : "eng";
   language_data_path_prefix = datadir;
@@ -357,10 +357,10 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str) {
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
                               const std::string &language, OcrEngineMode oem, 
-							  const std::vector<std::string> &configs,
-							  const std::vector<std::string> &vars_vec,
-							  const std::vector<std::string> &vars_values,
-                              bool set_only_non_debug_params, TessdataManager *mgr) {
+							                const std::vector<std::string> &configs,
+							                const std::vector<std::string> &vars_vec,
+							                const std::vector<std::string> &vars_values,
+                              TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
   ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
@@ -400,7 +400,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_str, oem, configs,
                                                          vars_vec, vars_values,
-                                                         set_only_non_debug_params, mgr);
+                                                         mgr);
       // Forget that language, but keep any reader we were given.
       mgr->Clear();
 
@@ -476,17 +476,13 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 //
 // vars_values is an optional corresponding vector of values for the variables
 // in vars_vec.
-//
-// If set_only_non_debug_params is true, only params that do not contain
-// "debug" in the name will be set.
 int Tesseract::init_tesseract_internal(const std::string &arg0, const std::string &textbase,
                                        const std::string &language, OcrEngineMode oem,
                                        const std::vector<std::string> &configs,
                                        const std::vector<std::string> &vars_vec,
                                        const std::vector<std::string> &vars_values,
-                                       bool set_only_non_debug_params, TessdataManager *mgr) {
-  if (!init_tesseract_lang_data(arg0, language, oem, configs, vars_vec,
-                                vars_values, set_only_non_debug_params, mgr)) {
+                                       TessdataManager *mgr) {
+  if (!init_tesseract_lang_data(arg0, language, oem, configs, vars_vec, vars_values, mgr)) {
     return -1;
   }
   if (tessedit_init_config_only) {

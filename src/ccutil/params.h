@@ -60,8 +60,8 @@ enum ParamSetBySourceType {
 	PARAM_VALUE_IS_DEFAULT = 0,
 
 	PARAM_VALUE_IS_RESET,
-	PARAM_VALUE_IS_SET_BY_ASSIGN,			// 'indirect' write: value is copied over from elsewhere via operator=.
-	PARAM_VALUE_IS_SET_BY_PARAM,			// 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
+	PARAM_VALUE_IS_SET_BY_ASSIGN,			    // 'indirect' write: value is copied over from elsewhere via operator=.
+	PARAM_VALUE_IS_SET_BY_PARAM,			    // 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
 	PARAM_VALUE_IS_SET_BY_APPLICATION,		// 'explicit' write: user / application code set the param value, whatever it is now.
 };
 
@@ -96,10 +96,10 @@ typedef Param * ParamPtr;
 
 // reduce noise by using macros to help set up the member prototypes
 
-#define SOURCE_TYPE																\
+#define SOURCE_TYPE																                        \
 		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION
 
-#define SOURCE_REF																\
+#define SOURCE_REF																                        \
 		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION,	\
 		ParamPtr source = nullptr
 
@@ -297,72 +297,52 @@ public:
   // 
   // Variable names are followed by one of more whitespace characters,
   // followed by the Value, which spans the rest of line.
-  //
-  // Any Variables listed in the file which do not match the given
-  // constraint are ignored, but are reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   static bool ReadParamsFile(const std::string &file, // filename to read
 	  const ParamsVectorSet &set, 
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
 
   // Read parameters from the given file pointer.
   // Otherwise identical to ReadParamsFile().
   static bool ReadParamsFromFp(TFile *fp,
 	  const ParamsVectorSet &set,
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
 
   // Set a parameter to have the given value.
-  //
-  // A Variable, which does not match the given constraint, is ignored, 
-  // but is reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   template <ParamAcceptableValueType T>
   static bool SetParam(
 	  const char *name, const T value, 
 	  const ParamsVectorSet &set,
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
   static bool SetParam(
     const char* name, const char *value,
     const ParamsVectorSet& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
   static bool SetParam(
     const char* name, const std::string& value,
     const ParamsVectorSet& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
 
   // Set a parameter to have the given value.
-  //
-  // A Variable, which does not match the given constraint, is ignored, 
-  // but is reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   template <ParamAcceptableValueType T>
   static bool SetParam(
 	  const char *name, const T value, 
 	  ParamsVector &set, 
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
   static bool SetParam(
     const char* name, const char* value,
     ParamsVector& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
   static bool SetParam(
     const char* name, const std::string& value,
     ParamsVector& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
 
   // Produces a pointer (reference) to the parameter with the given name (of the
@@ -410,8 +390,7 @@ public:
   static bool InspectParamAsString(
 	  std::string *value_ref, const char *name, 
 	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a string and does not add 
@@ -425,8 +404,7 @@ public:
   static bool InspectParamAsString(
 	  std::string *value_ref, const char *name, 
 	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a ParamValueContainer and does not add 
@@ -440,8 +418,7 @@ public:
   static bool InspectParam(
 	  ParamValueContainer &value_dst, const char *name, 
 	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a ParamValueContainer and does not add 
@@ -455,8 +432,7 @@ public:
   static bool InspectParam(
 	  ParamValueContainer &value_dst, const char *name, 
 	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Print all parameters in the given set(s) to the given file.
@@ -530,32 +506,28 @@ template <>
 bool ParamUtils::SetParam<int32_t>(
     const char* name, const int32_t value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <>
 bool ParamUtils::SetParam<bool>(
     const char* name, const bool value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <>
 bool ParamUtils::SetParam<double>(
     const char* name, const double value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <ParamAcceptableValueType T>
 bool ParamUtils::SetParam(
   const char* name, const T value,
   ParamsVector& set,
-  ParamSetBySourceType source_type, ParamPtr source,
-  bool quietly_ignore
+  ParamSetBySourceType source_type, ParamPtr source
 ) {
   ParamsVectorSet pvec({ &set });
-  return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+  return SetParam<T>(name, value, pvec, source_type, source);
 }
 #endif
 //--------------------

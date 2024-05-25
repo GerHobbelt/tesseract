@@ -526,7 +526,7 @@ static int ParseArgs(int argc, const char** argv,
     } else if ((strcmp(verb, "-v") == 0) || (strcmp(verb, "--version") == 0)) {
       cmd |= VERSION;
     } else if (strcmp(verb, "-l") == 0 && i + 1 < argc) {
-      vars_vec->push_back("languages");
+      vars_vec->push_back("languages_to_try");
       vars_values->push_back(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--tessdata-dir") == 0 && i + 1 < argc) {
@@ -614,11 +614,11 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
     bool b;
-    auto *tess = api.tesseract();
+    Tesseract &tess = api.tesseract();
 
-    b = tess->tessedit_create_hocr;
+    b = tess.tessedit_create_hocr;
     if (b) {
-      bool font_info = tess->hocr_font_info;
+      bool font_info = tess.hocr_font_info;
       auto renderer = std::make_unique<tesseract::TessHOcrRenderer>(outputbase, font_info);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -628,7 +628,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_alto;
+    b = tess.tessedit_create_alto;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessAltoRenderer>(outputbase);
       if (renderer->happy()) {
@@ -639,7 +639,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_page_xml;
+    b = tess.tessedit_create_page_xml;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
       if (renderer->happy()) {
@@ -650,9 +650,9 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_tsv;
+    b = tess.tessedit_create_tsv;
     if (b) {
-      bool lang_info = tess->tsv_lang_info;
+      bool lang_info = tess.tsv_lang_info;
       auto renderer = std::make_unique<tesseract::TessTsvRenderer>(outputbase, lang_info);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -662,13 +662,13 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_pdf;
+    b = tess.tessedit_create_pdf;
     if (b) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
       if (_setmode(_fileno(stdout), _O_BINARY) == -1)
         tprintError("Cannot set STDIN to binary: {}", strerror(errno));
 #endif // WIN32
-      bool textonly = tess->textonly_pdf;
+      bool textonly = tess.textonly_pdf;
       auto renderer = std::make_unique<tesseract::TessPDFRenderer>(outputbase, api.GetDatapath(), textonly);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -678,9 +678,9 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_write_unlv;
+    b = tess.tessedit_write_unlv;
     if (b) {
-      b = tess->unlv_tilde_crunching.set_value(true);
+      b = tess.unlv_tilde_crunching.set_value(true);
       auto renderer = std::make_unique<tesseract::TessUnlvRenderer>(outputbase);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
@@ -690,7 +690,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_lstmbox;
+    b = tess.tessedit_create_lstmbox;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessLSTMBoxRenderer>(outputbase);
       if (renderer->happy()) {
@@ -701,7 +701,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_boxfile;
+    b = tess.tessedit_create_boxfile;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessBoxTextRenderer>(outputbase);
       if (renderer->happy()) {
@@ -712,7 +712,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_wordstrbox;
+    b = tess.tessedit_create_wordstrbox;
     if (b) {
       auto renderer = std::make_unique<tesseract::TessWordStrBoxRenderer>(outputbase);
       if (renderer->happy()) {
@@ -723,7 +723,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    b = tess->tessedit_create_txt;
+    b = tess.tessedit_create_txt;
     if (b) {
       // Create text output if no other output was requested
       // even if text output was not explicitly requested unless
@@ -817,13 +817,10 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   (void)tesseract::SetConsoleModeToUTF8();
 
-  const char *outputbase = nullptr;
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
   int ret_val = EXIT_SUCCESS;
 
-  tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
-  tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
   std::vector<std::string> vars_vec;
   std::vector<std::string> vars_values;
   std::vector<std::string> path_params;
@@ -909,6 +906,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
       return EXIT_FAILURE;
     }
 
+    // TODO: locate the outputbase (directory) argument in the parsed-from-CLI set:
+    // the ones that follow it should be viable config files, while all preceding it
+    // should be viable image files (or image *list* files); we wish to support
+    // processing multiple image files in one run, so it's not *obvious* index '1' any more!
+
     // first argument: the SOURCE IMAGE,
     vars_vec.push_back("source_image");
     vars_values.push_back(path_params[0]);
@@ -926,28 +928,52 @@ extern "C" int tesseract_main(int argc, const char** argv)
         return EXIT_FAILURE;
       }
 
-      //source_image
+      // make sure the debug_all preset is set up BEFORE any command-line arguments
+      // direct tesseract to set some arbitrary parameters just below,
+      // for otherwise those `-c xyz=v` commands may be overruled by the
+      // debug_all preset!
+      if (debug_all) {
+        api.SetupDebugAllPreset();
 
-      lang = api.languages;
+#if 0
+        // repeat the `-c var=val` load as debug_all MAY have overwritten some of
+        // these user-specified settings in the call above.
+        if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
+          return EXIT_FAILURE;
+        }
+#endif
+      }
+
+      Tesseract &tess = api.tesseract();
+
+#if 0
+      //source_image
+      lang = api.languages_to_try;
+      tesseract::PageSegMode pagesegmode = tesseract::PSM_AUTO;
+      tesseract::OcrEngineMode enginemode = tesseract::OEM_DEFAULT;
       pagesegmode = api.tessedit_pageseg_mode;
       enginemode = api.tessedit_ocr_engine_mode;
+#endif
 
-  if (pagesegmode == tesseract::PSM_OSD_ONLY) {
+  if (tess.tessedit_pageseg_mode == tesseract::PSM_OSD_ONLY) {
     // OSD = orientation and script detection.
-    if (lang != nullptr && strcmp(lang, "osd")) {
+    if (!tess.languages_to_try.empty() && strcmp(tess.languages_to_try.c_str(), "osd") != 0) {
       // If the user explicitly specifies a language (other than osd)
       // or a script, only orientation can be detected.
-      tprintWarn("Detects only orientation with -l {}\n", lang);
+      tprintWarn("Detects only orientation with -l {}\n", tess.languages_to_try);
     } else {
       // That mode requires osd.traineddata to detect orientation and script.
-      lang = "osd";
+      tess.languages_to_try = "osd";
     }
 
-    if (lang == nullptr) {
+    assert(tess.languages_to_try.empty());
+#if 0
+    if (tess.languages_to_try.empty()) {
       // Set default language model if none was given and a model file is
       // needed.
-      lang = "eng";
+      tess.languages_to_try = "eng";
     }
+#endif
   }
 
 #if 0
@@ -957,23 +983,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
   tesseract::Dict::GlobalDawgCache();
 #endif
 
-    api.SetOutputName(outputbase);
+#if 0
+    api.SetOutputName(outputbase ::: output_base_path);
+#endif
 
-    const int init_failed = api.InitFull(datapath, lang, enginemode, path_params, vars_vec, vars_values, false);
-
-    // make sure the debug_all preset is set up BEFORE any command-line arguments
-    // direct tesseract to set some arbitrary parameters just below,
-    // for otherwise those `-c xyz=v` commands may be overruled by the
-    // debug_all preset!
-    if (debug_all) {
-      api.SetupDebugAllPreset();
-
-      // repeat the `-c var=val` load as debug_all MAY have overwritten some of
-      // these user-specified settings in the call above.
-      if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
-        return EXIT_FAILURE;
-      }
-    }
+    const int init_failed = api.InitFull(datapath, path_params, vars_vec, vars_values);
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();
@@ -999,7 +1013,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       return EXIT_FAILURE;
     }
 
-    ASSERT_HOST(api.tesseract() != nullptr);
+    ASSERT_HOST(&api.tesseract() != nullptr);
 
     // if we've done all we had to do, it's time to go bye bye.
     if (!cmd) {
@@ -1007,7 +1021,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
       return EXIT_SUCCESS;
     }
 
-    if (rectangle_mode) {
+    if (!tess.reactangles_to_process.empty()) {
+      BOXA *rects = Tesseract::ParseRectsString(tess.reactangles_to_process.c_str());
+
       Pix* pixs = pixRead(image);
       if (!pixs) {
         tprintError("Cannot open input file: {}\n", image);
@@ -1032,50 +1048,35 @@ extern "C" int tesseract_main(int argc, const char** argv)
         return EXIT_FAILURE;
       }
 
-      // for each rectangle
-      const char* delim = "+";
-      char* token;
-      char* specstr = strdup(rectangle_str);
+      // for each rectangle...
+      bool errored = false;
+      auto n = boxaGetCount(rects);
+      for (int boxidx = 0; boxidx < n; boxidx++) {
+        l_int32 top, left, width, height, bottom, right;
+        errored |= (0 != boxaGetBoxGeometry(rects, boxidx, &left, &top, &width, &height));
 
-      token = strtok(specstr, delim);
+        bottom = top + height;
+        right = left + width;
 
-      while (token != NULL) {
-        int left = 0;
-        int top = 0;
-        int width = 0;
-        int height = 0;
-        char* utf8 = NULL;
+        // clamp this rectangle
+        if (left < 0) {
+          left = 0;
+        }
 
-        // syntax = x30y60w50h100
-        int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
-        if (params == 4) {
-          // clamp this rectangle
-          if (left < 0) {
-            left = 0;
-          }
+        if (top < 0) {
+          top = 0;
+        }
 
-          if (top < 0) {
-            top = 0;
-          }
+        if (right > pixs->w) {
+          width = pixs->w - left;
+        }
 
-          if (width <= 0) {
-            width = 1;
-          }
+        if (bottom > pixs->h) {
+          height = pixs->h - top;
+        }
 
-          if (height <= 0) {
-            height = 1;
-          }
-
-          if (left + width > pixs->w) {
-            width = pixs->w - left;
-          }
-
-          if (top + height > pixs->h) {
-            height = pixs->h - top;
-          }
-
-XXXXX
-BOXA *Tesseract::ParseRectsString(const char *rects_str);
+        if (width > 0 && height > 0) {
+          char *utf8 = NULL;
 
           api.SetRectangle(left, top, width, height);
           utf8 = api.GetUTF8Text();
@@ -1084,20 +1085,15 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str);
             delete[] utf8;
             utf8 = NULL;
           }
+        } else {
+          tprintError("incorrect rectangle size/shape as it doesn't sit on the page image (width: {}, height: {}) as this is what we got after clipping it with the source image: (left: {}, top: {}, width: {}, height: {})\n", pixs->w, pixs->h, left, top, width, height);
+          errored = true;
         }
-        else {
-          tprintError("incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
-          fclose(fout);
-          pixDestroy(&pixs);
-          return EXIT_FAILURE;
-        }
-        token = strtok(NULL, delim);
       }
-
+      boxaDestroy(&rects);
       fclose(fout);
       pixDestroy(&pixs);
-      free(specstr);
-      return EXIT_SUCCESS;
+      return errored ? EXIT_FAILURE : EXIT_SUCCESS;
     }
 
     // record the currently active input image path as soon as possible:
@@ -1151,7 +1147,7 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str);
         (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
 
       if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
-        if (!api.tesseract()->AnyTessLang()) {
+        if (!api.tesseract().AnyTessLang()) {
           fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
           return EXIT_FAILURE;
         }
