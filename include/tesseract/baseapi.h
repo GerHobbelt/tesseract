@@ -430,7 +430,10 @@ public:
   Pix *GetThresholdedImage();
 
   /**
-   * Saves a .png image of the type specified by `type` to the file `filename`
+   * Saves a .png image of the type specified by `type` to the file `filename`.
+   *
+   * Type 0 is the original image, type 1 is the greyscale (derivative) image
+   * and type 2 is the binary (thresholded) derivative image.
    */
   void WriteImage(const int type);
 
@@ -631,15 +634,13 @@ public:
   /// Gives the (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
   /// coordinates of the i-th table.
   std::tuple<int, int, int, int> GetTableBoundingBox(
-      unsigned
-          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+      unsigned i ///< Index of the table, for upper limit \see GetNumberOfTables()
   );
 
   /// Get bounding boxes of the rows of a table
   /// return values are (top_left.x, top_left.y, bottom_right.x, bottom_right.y)
   std::vector<std::tuple<int, int, int, int> > GetTableRows(
-      unsigned
-          i ///< Index of the table, for upper limit \see GetNumberOfTables()
+      unsigned i ///< Index of the table, for upper limit \see GetNumberOfTables()
   );
 
   /// Get bounding boxes of the cols of a table
@@ -827,6 +828,7 @@ public:
    * in a separate API at some future time.
    */
   int IsValidWord(const char *word) const;
+
   // Returns true if utf8_character is defined in the UniCharset.
   bool IsValidCharacter(const char *utf8_character) const;
 

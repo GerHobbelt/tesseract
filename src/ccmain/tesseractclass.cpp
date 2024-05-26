@@ -923,11 +923,18 @@ bool Tesseract::AnyLSTMLang() const {
   return false;
 }
 
+int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr) {
+  std::vector<std::string> nil;
+  assert(mgr != nullptr);
+
+  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
+}
+
 int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
   TessdataManager mgr;
   std::vector<std::string> nil;
 
-  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, &mgr);
+  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
 }
 
 // debug PDF output helper methods:
@@ -960,8 +967,7 @@ void Tesseract::ResyncVariablesInternally() {
   }
 
 #if !DISABLED_LEGACY_ENGINE
-  if (language_model_ != nullptr) {
-    int lvl = language_model_->language_model_debug_level;
+    int lvl = language_model_.language_model_debug_level;
 
 #if 0
   language_model_->CopyDebugParameters(this, &Classify::getDict());
@@ -991,7 +997,6 @@ void Tesseract::ResyncVariablesInternally() {
   INT_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
-  }
 #endif
 
   // init sub-languages:

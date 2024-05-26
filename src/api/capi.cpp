@@ -225,7 +225,7 @@ BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle, const char *filen
 }
 
 int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, 
-                     const char **configs_vec, size_t configs_size, const char **vars_vec,
+                     const char **vars_vec,
                      const char **vars_values, size_t vars_vec_size) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
@@ -236,13 +236,8 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath,
     }
   }
   std::vector<std::string> configs;
-  if (configs_vec != nullptr) {
-  for (size_t i = 0; i < configs_size; i++) {
-    configs.emplace_back(configs_vec[i]);
-  }
-  }
 
-  return handle->InitFull(datapath, configs, varNames, varValues);
+  return handle->InitFull(datapath, varNames, varValues);
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
@@ -284,7 +279,7 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size,
   }
   }
 
-  return handle->InitFromMemory(data, data_size, configs, varNames, varValues);
+  return handle->InitFromMemory(data, data_size, varNames, varValues);
 }
 
 const char *TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI *handle) {

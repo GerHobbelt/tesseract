@@ -163,8 +163,7 @@ static void PrintHelpForPSM() {
       "  8    Treat the image as a single word.\n"
       "  9    Treat the image as a single word in a circle.\n"
       " 10    Treat the image as a single character.\n"
-      " 11    Sparse text. Find as much text as possible in no"
-      " particular order.\n"
+      " 11    Sparse text. Find as much text as possible in no particular order.\n"
       " 12    Sparse text with OSD.\n"
       " 13    Raw line. Treat the image as a single text line,\n"
       "       bypassing hacks that are Tesseract-specific.\n"
@@ -246,6 +245,16 @@ static void PrintHelpExtra(const char *program) {
       "                        Specify path to source page image which will be\n"
       "                        used as image underlay in PDF output.\n"
       "                        (page rendered then as image + OCR text hidden overlay)\n"
+      "  --config PATH         Specify the location of config file(s).\n"
+      "                        You can specify multiple config files by issuing this\n"
+      "                        option multiple times, once for each config file.\n"
+      "                        When this option is used, it is assumed no further\n"
+      "                        config files will be listed at the end of the command line.\n"
+      "  --outputbase PATH     Specify the output base path (with possible filename\n"
+      "                        at the end); this is equivalent to specifying the base path\n"
+      "                        as an independent argument, but this option is useful\n"
+      "                        when specifying multiple image input files: then those do not\n"
+      "                        have to be followed by the base path at the end of the list.\n"
       "\n"
       "NOTE: These options must occur before any configfile.\n"
       "\n",
@@ -456,8 +465,7 @@ typedef enum {
 
 // Return a CommandVerb mix + parsed arguments in vectors
 static int ParseArgs(int argc, const char** argv,
-                      std::vector<std::string>* vars_vec,
-                      std::vector<std::string>* vars_values,
+                     ParamsVector *vars_vec,
                       std::vector<std::string>* path_args) {
   bool dash_dash = false;
   int i;
@@ -526,42 +534,42 @@ static int ParseArgs(int argc, const char** argv,
     } else if ((strcmp(verb, "-v") == 0) || (strcmp(verb, "--version") == 0)) {
       cmd |= VERSION;
     } else if (strcmp(verb, "-l") == 0 && i + 1 < argc) {
-      vars_vec->push_back("languages_to_try");
-      vars_values->push_back(argv[i + 1]);
+      StringParam *p = vars_vec->find<StringParam>("languages_to_try");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--tessdata-dir") == 0 && i + 1 < argc) {
-      vars_vec->push_back("tessdata_path");
-      vars_values->push_back(argv[i + 1]);
+      StringParam *p = vars_vec->find<StringParam>("tessdata_path");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--dpi") == 0 && i + 1 < argc) {
-      vars_vec->push_back("user_defined_dpi");
-      vars_values->push_back(argv[i + 1]);
+      IntParam *p = vars_vec->find<IntParam>("user_defined_dpi");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--loglevel") == 0 && i + 1 < argc) {
-      vars_vec->push_back("loglevel");
-      vars_values->push_back(argv[i + 1]);
+      IntParam *p = vars_vec->find<IntParam>("loglevel");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--user-words") == 0 && i + 1 < argc) {
-      vars_vec->push_back("user_words_file");
-      vars_values->push_back(argv[i + 1]);
+      StringParam *p = vars_vec->find<StringParam>("user_words_file");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--user-patterns") == 0 && i + 1 < argc) {
-      vars_vec->push_back("user_patterns_file");
-      vars_values->push_back(argv[i + 1]);
+      StringParam *p = vars_vec->find<StringParam>("user_patterns_file");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--list-langs") == 0) {
       cmd |= LIST_LANGUAGES;
     } else if (strcmp(verb, "--rectangle") == 0 && i + 1 < argc) {
-      vars_vec->push_back("reactangles_to_process");
-      vars_values->push_back(argv[i + 1]);
+      StringParam *p = vars_vec->find<StringParam>("reactangles_to_process");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--psm") == 0 && i + 1 < argc) {
-      vars_vec->push_back("tessedit_pageseg_mode");
-      vars_values->push_back(argv[i + 1]);
+      IntParam *p = vars_vec->find<IntParam>("tessedit_pageseg_mode");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--oem") == 0 && i + 1 < argc) {
-      vars_vec->push_back("tessedit_ocr_engine_mode");
-      vars_values->push_back(argv[i + 1]);
+      IntParam *p = vars_vec->find<IntParam>("tessedit_ocr_engine_mode");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--print-parameters") == 0) {
       cmd |= PRINT_PARAMETERS;
@@ -579,11 +587,23 @@ static int ParseArgs(int argc, const char** argv,
         return false;
       }
       std::string name(var_stmt, p - var_stmt);
-      vars_vec->push_back(name);
-      vars_values->push_back(p + 1);
+      Param *v = vars_vec->find(name.c_str(), ANY_TYPE_PARAM);
+      v->set_value(p + 1);
     } else if (strcmp(verb, "--visible-pdf-image") == 0 && i + 1 < argc) {
-      vars_vec->push_back("visible_pdf_image");
-      vars_values->push_back(argv[i + 1]);
+      IntParam *p = vars_vec->find<IntParam>("visible_pdf_image");
+      p->set_value(argv[i + 1]);
+      ++i;
+    } else if (strcmp(verb, "--config") == 0 && i + 1 < argc) {
+      StringParam *p = vars_vec->find<StringParam>("config_files");
+      std::string cfs = p->value();
+      if (!cfs.empty())
+        cfs += ';';       // separator suitable for all platforms AFAIAC.
+      cfs += argv[i + 1];
+      p->set_value(cfs);
+      ++i;
+    } else if (strcmp(verb, "--outputbase") == 0 && i + 1 < argc) {
+      StringParam *p = vars_vec->find<StringParam>("output_base_path");
+      p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--") == 0) {
       dash_dash = true;
@@ -817,12 +837,12 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   (void)tesseract::SetConsoleModeToUTF8();
 
-  const char *datapath = nullptr;
-  const char *visible_pdf_image_file = nullptr;
+  //const char *datapath = nullptr;
+  //const char *visible_pdf_image_file = nullptr;
   int ret_val = EXIT_SUCCESS;
 
-  std::vector<std::string> vars_vec;
-  std::vector<std::string> vars_values;
+  //std::vector<std::string> vars_vec;
+  //std::vector<std::string> vars_values;
   std::vector<std::string> path_params;
 
   if (std::getenv("LEPT_MSG_SEVERITY")) {
@@ -844,7 +864,14 @@ extern "C" int tesseract_main(int argc, const char** argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
-  int cmd = ParseArgs(argc, argv, &vars_vec, &vars_values, &path_params);
+  TessBaseAPI api;
+  Tesseract &tess = api.tesseract();
+  // get the list of available parameters for both Tesseract instances and as globals:
+  // that's the superset we accept at the command line.
+    auto& parlst = tess.params_collective();
+    ParamsVector args_muster = parlst.flattened_copy();
+
+  int cmd = ParseArgs(argc, argv, &args_muster, &path_params);
   if (cmd == WE_ARE_BUGGERED) {
     return EXIT_FAILURE;
   }
@@ -890,41 +917,78 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   if (cmd == UNPACK) {
     UnpackFiles(path_params);
-  }
+  } else {
+    assert(cmd == DO_OCR);
 
-  if (cmd == DO_OCR) {
     // pull the path_params[] set apart into three different parts:
     // - source image(s) / imagelist (text) files
     // - target == output base name
     // - config files, to be loaded after tesseract instance is initialized
-    if (path_params.size() < 1) {
-      tprintError("Missing source image file as command line argument\n");
-      return EXIT_FAILURE;
-    }
-    if (path_params.size() < 2) {
-      tprintError("Error, missing outputbase command line argument\n");
-      return EXIT_FAILURE;
-    }
-
-    // TODO: locate the outputbase (directory) argument in the parsed-from-CLI set:
+    //
+    // 
+    // Locate the outputbase (directory) argument in the parsed-from-CLI set:
     // the ones that follow it should be viable config files, while all preceding it
     // should be viable image files (or image *list* files); we wish to support
     // processing multiple image files in one run, so it's not *obvious* index '1' any more!
 
-    // first argument: the SOURCE IMAGE,
-    vars_vec.push_back("source_image");
-    vars_values.push_back(path_params[0]);
+    if (path_params.size() < 1) {
+      tprintError("Missing source image file as command line argument\n");
+      return EXIT_FAILURE;
+    }
 
-    // outputbase follows image.
-    vars_vec.push_back("output_base_path");
-    vars_values.push_back(path_params[1]);
+    // First check if we may expect config files at the end of the list; if so,
+    // collect them.
+    StringParam *cfgs = args_muster.find<StringParam>("config_files");
+    bool expect_cfg_files_at_end_of_list = !(cfgs && !cfgs->value().empty());
 
-    // the remaining set are the config files
-    path_params.erase(path_params.begin(), path_params.begin() + 1);
-  
-      TessBaseAPI api;
+    StringParam *obp = args_muster.find<StringParam>("output_base_path");
+    bool outputbasepath_is_specified = !(obp && !obp->value().empty());
 
-      if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
+    if (expect_cfg_files_at_end_of_list) {
+      int min_expected_non_cfg_files = (outputbasepath_is_specified ? 1 : 2);
+
+      while (path_params.size() << 1 > min_expected_non_cfg_files) {
+        std::string cfgpath = path_params.back();
+        if (fs::exists(cfgpath) && !fs::is_directory(cfgpath)) {
+          path_params.pop_back();
+          ParamsVectorSet muster_set({args_muster});
+          if (ParamUtils::ReadParamsFile(cfgpath, muster_set, PARAM_VALUE_IS_SET_BY_CONFIGFILE)) {
+            return EXIT_FAILURE;
+          }
+        }
+      }
+
+      // this parameter MAY have been set in one of those config files so better to recheck:
+      obp = args_muster.find<StringParam>("output_base_path");
+      outputbasepath_is_specified = !(obp && !obp->value().empty());
+    }
+
+    // second: grab the output_base_path if we haven't already:
+    if (!outputbasepath_is_specified) {
+      if (path_params.size() < 2) {
+        tprintError("Error, missing outputbase command line argument\n");
+        return EXIT_FAILURE;
+      }
+
+      std::string outpath = path_params.back();
+      path_params.pop_back();
+      obp = args_muster.find<StringParam>("output_base_path");
+      obp->set_value(outpath);
+    }
+
+    // ... and now our path_params list is all images and image-list files.
+    // Recognizing the latter (vs. older text-based image file formats) takes
+    // a little heuristic, which we'll employ now to transform those into
+    // an (updated) list of image files...
+    if (api.ExpandImagelistFilesInSet(&path_params, args_muster) < 0) {
+      return EXIT_FAILURE;
+    }
+
+
+
+
+
+      if (!SetVariablesFromCLArgs(api, args_muster)) {
         return EXIT_FAILURE;
       }
 
@@ -987,7 +1051,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     api.SetOutputName(outputbase ::: output_base_path);
 #endif
 
-    const int init_failed = api.InitFull(datapath, path_params, vars_vec, vars_values);
+    const int init_failed = api.InitFull(datapath, path_params, args_muster);
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();

@@ -67,14 +67,13 @@ const double kMinGutterWidthGrid = 0.5;
 const double kMaxDistToPartSizeRatio = 1.5;
 
 #if !GRAPHICS_DISABLED
-static BOOL_VAR(textord_tabfind_show_initial_partitions, false, "Show partition bounds");
-static BOOL_VAR(textord_tabfind_show_reject_blobs, false, "Show blobs rejected as noise");
-static INT_VAR(textord_tabfind_show_partitions, 0,
-               "Show partition bounds, waiting if >1 (ScrollView)");
-static BOOL_VAR(textord_tabfind_show_columns, false, "Show column bounds (ScrollView)");
-static BOOL_VAR(textord_tabfind_show_blocks, false, "Show final block bounds (ScrollView)");
+BOOL_VAR(textord_tabfind_show_initial_partitions, false, "Show partition bounds");
+BOOL_VAR(textord_tabfind_show_reject_blobs, false, "Show blobs rejected as noise");
+INT_VAR(textord_tabfind_show_partitions, 0, "Show partition bounds, waiting if >1 (ScrollView)");
+BOOL_VAR(textord_tabfind_show_columns, false, "Show column bounds (ScrollView)");
+BOOL_VAR(textord_tabfind_show_blocks, false, "Show final block bounds (ScrollView)");
 #endif
-static BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
+BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 

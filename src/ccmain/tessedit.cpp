@@ -75,7 +75,7 @@ void Tesseract::read_config_file(const char *filename) {
       }
     }
   }
-  ParamUtils::ReadParamsFile(path, this->params_collective());
+  ParamUtils::ReadParamsFile(path, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
 }
 
 // Returns false if a unicharset file for the specified language was not found
@@ -131,7 +131,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, this->params_collective());
+    ParamUtils::ReadParamsFromFp(&fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
 
   // Load tesseract variables from config files. This is done after loading
@@ -230,9 +230,9 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Load pass1 and pass2 weights (for now these two sets are the same, but in
   // the future separate sets of weights can be generated).
   for (int p = ParamsModel::PTRAIN_PASS1; p < ParamsModel::PTRAIN_NUM_PASSES; ++p) {
-    language_model_->setParamsModelPass(static_cast<ParamsModel::PassEnum>(p));
+    language_model_.setParamsModelPass(static_cast<ParamsModel::PassEnum>(p));
     if (mgr->GetComponent(TESSDATA_PARAMS_MODEL, &fp)) {
-      if (!language_model_->LoadParamsModelFromFp(lang.c_str(), &fp)) {
+      if (!language_model_.LoadParamsModelFromFp(lang.c_str(), &fp)) {
         return false;
       }
     }
@@ -356,7 +356,6 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str) {
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
-                              const std::string &language, OcrEngineMode oem, 
 							                const std::vector<std::string> &configs,
 							                const std::vector<std::string> &vars_vec,
 							                const std::vector<std::string> &vars_values,
@@ -437,14 +436,14 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     // otherwise use default language model weights.
     if (tessedit_use_primary_params_model) {
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->copyParamsModel(this->language_model_->getParamsModel());
+        sub_lang->language_model_.copyParamsModel(this->language_model_.getParamsModel());
       }
       tprintDebug("Using params model of the primary language.\n");
     } else {
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->clearParamsModel();
+        sub_lang->language_model_.clearParamsModel();
       }
-      this->language_model_->clearParamsModel();
+      this->language_model_.clearParamsModel();
     }
   }
 #endif

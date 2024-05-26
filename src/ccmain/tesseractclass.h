@@ -200,7 +200,7 @@ public:
   virtual ~Tesseract() override;
 
   // Return appropriate dictionary
-  Dict &getDict() override;
+  virtual Dict &getDict() override;
 
   // Clear as much used memory as possible without resetting the adaptive
   // classifier or losing any other classifier data.
@@ -533,11 +533,11 @@ public:
   // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem, 
 				             const std::vector<std::string> &configs,
 				             const std::vector<std::string> &vars_vec,
 				             const std::vector<std::string> &vars_values,
                      TessdataManager *mgr);
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
 
   // Common initialization for a single language.

@@ -56,6 +56,13 @@
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
 #include "winutils.h"
+#include "colfind.h"         // for param globals
+#include "oldbasel.h"        // for param globals
+#include "tovars.h"          // for param globals
+#include "makerow.h"         // for param globals
+#include "topitch.h"         // for param globals
+#include "polyaprx.h"        // for param globals
+#include "edgblob.h"         // for param globals
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -523,7 +530,6 @@ int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMo
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
   std::vector<std::string> nil;
-  tesseract().tessedit_ocr_engine_mode = oem;
   tesseract().languages_to_try = language;
   return InitFullRemainder(datapath, nullptr, 0, nil, nil, nullptr);
 }
@@ -567,6 +573,8 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
   }
   std::string datapath = path ? path : tesseract().languages_to_try.c_str();
 
+  // TODO: re-evaluate this next (old) code chunk which decides when to reset the tesseract instance.
+ 
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract().lang stores the language
@@ -603,7 +611,7 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
   }
 
   language_ = language;
-  last_oem_requested_ = oem;
+  last_oem_requested_ = oem();
 
 #if !DISABLED_LEGACY_ENGINE
   // For same language and datapath, just reset the adaptive classifier.
@@ -1465,7 +1473,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-    tess.applybox_page = page_number;
+    tess.applybox_page.set_value(page_number, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
     if (two_pass) {
@@ -1528,7 +1536,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   }
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
-    SetVariable("applybox_page", pgn);
+    tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {
@@ -1733,8 +1741,8 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
   }
   else {
-  SetVariable("applybox_page", -1);
-  r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+    tesseract().applybox_page.set_value(-1, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+    r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
 
   // Clean up memory as needed
@@ -2959,8 +2967,7 @@ int TessBaseAPI::FindLines() {
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
-      } else if (osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY,
-                                         nil, nil, nil, &mgr) == 0) {
+      } else if (osd_tesseract_->init_tesseract(datapath_, "osd", OEM_TESSERACT_ONLY, &mgr) == 0) {
         osd_tesseract_->set_source_resolution(thresholder_->GetSourceYResolution());
       } else {
         tprintWarn(
@@ -3181,181 +3188,194 @@ void TessBaseAPI::ReportDebugInfo() {
 }
 
 void TessBaseAPI::SetupDebugAllPreset() {
-  SetVariable("verbose_process", "Y");
+  Tesseract& tess = tesseract();
+  Textord &textord = *tess.mutable_textord();
+  
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
+
+  verbose_process.set_value(true, SRC);
+  
 #if !GRAPHICS_DISABLED
-  SetVariable("scrollview_support", "Y");
+  scrollview_support.set_value(true, SRC);
 #endif
 
-  SetVariable("textord_tabfind_show_images", "Y");
-  // SetVariable("textord_tabfind_show_vlines", "Y");
+  textord_tabfind_show_images.set_value(true, SRC);
+  // textord_tabfind_show_vlines.set_value(true, SRC);
 
 #if !GRAPHICS_DISABLED
-  SetVariable("textord_tabfind_show_initial_partitions", "Y");
-  SetVariable("textord_tabfind_show_reject_blobs", "Y");
-  SetVariable("textord_tabfind_show_partitions", "2");
-  SetVariable("textord_tabfind_show_columns", "Y");
-  SetVariable("textord_tabfind_show_blocks", "Y");
+  textord_tabfind_show_initial_partitions.set_value(true, SRC);
+  textord_tabfind_show_reject_blobs.set_value(true, SRC);
+  textord_tabfind_show_partitions.set_value(2, SRC);
+  textord_tabfind_show_columns.set_value(true, SRC);
+  textord_tabfind_show_blocks.set_value(true, SRC);
 #endif
 
-  SetVariable("textord_noise_debug", "Y");
-  SetVariable("textord_oldbl_debug", "N"); // very noisy output
-  SetVariable("textord_baseline_debug", "Y");
-  SetVariable("textord_debug_block", "9");
-  SetVariable("textord_debug_bugs", "9");
-  SetVariable("textord_debug_tabfind", "1" /* "9" */); // very noisy output
+  textord.textord_noise_debug.set_value(true, SRC);
+  textord_oldbl_debug.set_value(false, SRC); // turned OFF, for 'true' produces very noisy output
+  textord.textord_baseline_debug.set_value(true, SRC);
+  textord_debug_block.set_value(9, SRC);
+  textord_debug_bugs.set_value(9, SRC);
+  textord_debug_tabfind.set_value(1 /* 9 */, SRC); // '9' produces very noisy output
 
-  SetVariable("textord_debug_baselines", "Y");
-  SetVariable("textord_debug_blob", "Y");
-  SetVariable("textord_debug_blob", "Y");
-  SetVariable("textord_debug_pitch_metric", "Y");
-  SetVariable("textord_debug_fixed_pitch_test", "Y");
-  SetVariable("textord_debug_pitch", "Y");
-  SetVariable("textord_debug_printable", "Y");
-  SetVariable("textord_debug_xheights", "Y");
-  SetVariable("textord_debug_xheights", "Y");
+  textord_debug_baselines.set_value(true, SRC);
+  textord_debug_blob.set_value(true, SRC);
+  textord_debug_pitch_metric.set_value(true, SRC);
+  textord_debug_fixed_pitch_test.set_value(true, SRC);
+  textord_debug_pitch.set_value(true, SRC);
+  textord_debug_printable.set_value(true, SRC);
+  textord_debug_xheights.set_value(true, SRC);
+  textord_debug_xheights.set_value(true, SRC);
 
-  SetVariable("textord_show_initial_words", "Y");
-  SetVariable("textord_blocksall_fixed", "Y");
-  SetVariable("textord_blocksall_prop", "Y");
+  textord_show_initial_words.set_value(true, SRC);
+  textord_blocksall_fixed.set_value(true, SRC);
+  textord_blocksall_prop.set_value(true, SRC);
 
-  SetVariable("tessedit_create_hocr", "Y");
-  SetVariable("tessedit_create_alto", "Y");
-  SetVariable("tessedit_create_page_xml", "Y");
-  SetVariable("tessedit_create_tsv", "Y");
-  SetVariable("tessedit_create_pdf", "Y");
-  SetVariable("textonly_pdf", "n");
-  SetVariable("tessedit_write_unlv", "Y");
-  SetVariable("tessedit_create_lstmbox", "Y");
-  SetVariable("tessedit_create_boxfile", "Y");
-  SetVariable("tessedit_create_wordstrbox", "Y");
-  SetVariable("tessedit_create_txt", "Y");
+  tess.tessedit_create_hocr.set_value(true, SRC);
+  tess.tessedit_create_alto.set_value(true, SRC);
+  tess.tessedit_create_page_xml.set_value(true, SRC);
+  tess.tessedit_create_tsv.set_value(true, SRC);
+  tess.tessedit_create_pdf.set_value(true, SRC);
+  tess.textonly_pdf.set_value(false, SRC); // turned OFF
+  tess.tessedit_write_unlv.set_value(true, SRC);
+  tess.tessedit_create_lstmbox.set_value(true, SRC);
+  tess.tessedit_create_boxfile.set_value(true, SRC);
+  tess.tessedit_create_wordstrbox.set_value(true, SRC);
+  tess.tessedit_create_txt.set_value(true, SRC);
 
-  SetVariable("tessedit_dump_choices", "Y");
-  SetVariable("tessedit_dump_pageseg_images", "Y");
+  tess.tessedit_dump_choices.set_value(true, SRC);
+  tess.tessedit_dump_pageseg_images.set_value(true, SRC);
 
-  SetVariable("tessedit_write_images", "Y");
+  tess.tessedit_write_images.set_value(true, SRC);
 
-  SetVariable("tessedit_adaption_debug", "Y");
-  SetVariable("tessedit_debug_block_rejection", "Y");
-  SetVariable("tessedit_debug_doc_rejection", "Y");
-  SetVariable("tessedit_debug_fonts", "Y");
-  SetVariable("tessedit_debug_quality_metrics", "Y");
+  tess.tessedit_adaption_debug.set_value(true, SRC);
+  tess.tessedit_debug_block_rejection.set_value(true, SRC);
+  tess.tessedit_debug_doc_rejection.set_value(true, SRC);
+  tess.tessedit_debug_fonts.set_value(true, SRC);
+  tess.tessedit_debug_quality_metrics.set_value(true, SRC);
 
-  SetVariable("tessedit_rejection_debug", "Y");
-  SetVariable("tessedit_timing_debug", "Y");
+  tess.tessedit_rejection_debug.set_value(true, SRC);
+  tess.tessedit_timing_debug.set_value(true, SRC);
 
-  SetVariable("tessedit_bigram_debug", "Y");
+  tess.tessedit_bigram_debug.set_value(true, SRC);
 
-  SetVariable("tess_debug_lstm", debug_all >= 1 ? "1" : "0"); // LSTM debug output is extremely noisy
+  tess.tess_debug_lstm.set_value(debug_all >= 1 ? 1 : 0, SRC); // LSTM debug output is extremely noisy
 
-  SetVariable("debug_noise_removal", "Y");
+  tess.debug_noise_removal.set_value(true, SRC);
 
-  SetVariable("classify_debug_level", debug_all); // LSTM debug output is extremely noisy
-  SetVariable("classify_learning_debug_level", "9");
-  SetVariable("classify_debug_character_fragments", "Y");
-  SetVariable("classify_enable_adaptive_debugger", "Y");
-  // SetVariable("classify_learn_debug_str", "????????????????");
-  SetVariable("matcher_debug_separate_windows", "Y");
-  SetVariable("matcher_debug_flags", "Y");
-  SetVariable("matcher_debug_level", "3");
+  tess.classify_debug_level.set_value(debug_all, SRC); // LSTM debug output is extremely noisy
+  tess.classify_learning_debug_level.set_value(9, SRC);
+  tess.classify_debug_character_fragments.set_value(true, SRC);
+  tess.classify_enable_adaptive_debugger.set_value(true, SRC);
+  // tess.classify_learn_debug_str.set_value("????????????????", SRC);
+  tess.matcher_debug_separate_windows.set_value(true, SRC);
+  tess.matcher_debug_flags.set_value(true, SRC);
+  tess.matcher_debug_level.set_value(3, SRC);
 
-  SetVariable("multilang_debug_level", "3");
+  tess.multilang_debug_level.set_value(3, SRC);
 
-  SetVariable("paragraph_debug_level", "3");
+  tess.paragraph_debug_level.set_value(3, SRC);
 
-  SetVariable("segsearch_debug_level", "3");
+  tess.segsearch_debug_level.set_value(3, SRC);
 
-  SetVariable("stopper_debug_level", "3");
+  // TODO: synchronize the settings of all Dict instances during Dict object creation and after any change...
 
-  SetVariable("superscript_debug", "Y");
+  Dict &dict = tess.getInitialDict();
+  dict.stopper_debug_level.set_value(3, SRC);
 
-  SetVariable("crunch_debug", "Y");
+  tess.superscript_debug.set_value(true, SRC);
 
-  SetVariable("dawg_debug_level", "1"); // noisy
+  tess.crunch_debug.set_value(true, SRC);
 
-  SetVariable("debug_fix_space_level", "9");
-  SetVariable("debug_x_ht_level", "3");
-  // SetVariable("debug_file", "xxxxxxxxxxxxxxxxx");
-  // SetVariable("debug_output_path", "xxxxxxxxxxxxxx");
-  SetVariable("debug_misc", "Y");
+  dict.dawg_debug_level.set_value(1, SRC); // noisy
 
-  SetVariable("hyphen_debug_level", "3");
+  tess.debug_fix_space_level.set_value(9, SRC);
+  tess.debug_x_ht_level.set_value(3, SRC);
+  // tess.debug_file.set_value("xxxxxxxxxxxxxxxxx", SRC);
+  // tess.debug_output_path.set_Value("xxxxxxxxxxxxxx", SRC);
+  debug_misc.set_value(true, SRC);
 
-  SetVariable("language_model_debug_level", "0"); /* 7 */
+  dict.hyphen_debug_level.set_value(3, SRC);
 
-  SetVariable("tosp_debug_level", "3");
+  LanguageModelSettings &langmodel = tess.getLanguageModelSettings();
 
-  SetVariable("wordrec_debug_level", "3");
+  langmodel.language_model_debug_level.set_value(0, SRC); /* 7 */
 
-  SetVariable("word_to_debug", "Y");
+  textord.tosp_debug_level.set_value(3, SRC);
 
-  SetVariable("scribe_save_grey_rotated_image", "Y");
-  SetVariable("scribe_save_binary_rotated_image", "Y");
-  SetVariable("scribe_save_original_rotated_image", "Y");
+  tess.wordrec_debug_level.set_value(3, SRC);
 
-  SetVariable("hocr_font_info", "Y");
-  SetVariable("hocr_char_boxes", "Y");
-  SetVariable("hocr_images", "Y");
+  dict.word_to_debug.set_value(true, SRC);
 
-  SetVariable("thresholding_debug", "Y");
+  tess.scribe_save_grey_rotated_image.set_value(true, SRC);
+  tess.scribe_save_binary_rotated_image.set_value(true, SRC);
+  tess.scribe_save_original_rotated_image.set_value(true, SRC);
 
-  SetVariable("preprocess_graynorm_mode", "0"); // 0..3
+  tess.hocr_font_info.set_value(true, SRC);
+  tess.hocr_char_boxes.set_value(true, SRC);
+  tess.hocr_images.set_value(true, SRC);
 
-  SetVariable("tessedit_bigram_debug", "Y");
+  tess.thresholding_debug.set_value(true, SRC);
 
-  SetVariable("wordrec_debug_blamer", "Y");
+  tess.preprocess_graynorm_mode.set_value(0, SRC); // 0..3
 
-  SetVariable("devanagari_split_debugimage", "Y");
-  SetVariable("devanagari_split_debuglevel", "3");
+  tess.tessedit_bigram_debug.set_value(true, SRC);
 
-  SetVariable("gapmap_debug", "Y");
+  tess.wordrec_debug_blamer.set_value(true, SRC);
 
-  SetVariable("poly_debug", "N"); // very noisy output
+  devanagari_split_debugimage.set_value(true, SRC);
+  devanagari_split_debuglevel.set_value(3, SRC);
 
-  SetVariable("edges_debug", "Y");
+  gapmap_debug.set_value(true, SRC);
 
-  SetVariable("ambigs_debug_level", "3");
+  poly_debug.set_value(false, SRC); // turned OFF: 'othwerwise 'true' produces very noisy output
 
-  SetVariable("applybox_debug", "Y");
+  edges_debug.set_value(true, SRC);
 
-  SetVariable("bidi_debug", "Y");
+  tess.ambigs_debug_level.set_value(3, SRC);
 
-  SetVariable("chop_debug", "Y");
+  tess.applybox_debug.set_value(true, SRC);
 
-  SetVariable("debug_baseline_fit", "1"); // 0..3
-  SetVariable("debug_baseline_y_coord", "-2000");
+  tess.bidi_debug.set_value(true, SRC);
 
-  SetVariable("showcase_threshold_methods", debug_all > 2 ? "Y" : "N");
+  tess.chop_debug.set_value(true, SRC);
 
-  SetVariable("debug_write_unlv", "Y");
-  SetVariable("debug_line_finding", "Y");
-  SetVariable("debug_image_normalization", "Y");
-  SetVariable("debug_do_not_use_scrollview_app", "Y");
+  tess.debug_baseline_fit.set_value(1, SRC); // 0..3
+  tess.debug_baseline_y_coord.set_value(-2000, SRC);
 
-  SetVariable("interactive_display_mode", "Y");
+  tess.showcase_threshold_methods.set_value((debug_all > 2), SRC);
 
-  SetVariable("debug_display_page", "Y");
-  SetVariable("debug_display_page_blocks", "Y");
-  SetVariable("debug_display_page_baselines", "Y");
+  tess.debug_write_unlv.set_value(true, SRC);
+  tess.debug_line_finding.set_value(true, SRC);
+  tess.debug_image_normalization.set_value(true, SRC);
+  tess.debug_do_not_use_scrollview_app.set_value(true, SRC);
 
-  tesseract().ResyncVariablesInternally();
+  tess.interactive_display_mode.set_value(true, SRC);
+
+  tess.debug_display_page.set_value(true, SRC);
+  tess.debug_display_page_blocks.set_value(true, SRC);
+  tess.debug_display_page_baselines.set_value(true, SRC);
+
+  tess.ResyncVariablesInternally();
 }
 
 void TessBaseAPI::SetupDefaultPreset() {
-  // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
-  SetVariable("tessedit_create_hocr", "Y");
-  SetVariable("tessedit_create_alto", "Y");
-  SetVariable("tessedit_create_page_xml", "Y");
-  SetVariable("tessedit_create_tsv", "Y");
-  SetVariable("tessedit_create_pdf", "Y");
-  SetVariable("textonly_pdf", "n");
-  SetVariable("tessedit_write_unlv", "Y");
-  SetVariable("tessedit_create_lstmbox", "Y");
-  SetVariable("tessedit_create_boxfile", "Y");
-  SetVariable("tessedit_create_wordstrbox", "Y");
-  SetVariable("tessedit_create_txt", "Y");
+  Tesseract &tess = tesseract();
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
 
-  tesseract().ResyncVariablesInternally();
+  // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
+  tess.tessedit_create_hocr.set_value(true, SRC);
+  tess.tessedit_create_alto.set_value(true, SRC);
+  tess.tessedit_create_page_xml.set_value(true, SRC);
+  tess.tessedit_create_tsv.set_value(true, SRC);
+  tess.tessedit_create_pdf.set_value(true, SRC);
+  tess.textonly_pdf.set_value(false, SRC);         // turned OFF
+  tess.tessedit_write_unlv.set_value(true, SRC);
+  tess.tessedit_create_lstmbox.set_value(true, SRC);
+  tess.tessedit_create_boxfile.set_value(true, SRC);
+  tess.tessedit_create_wordstrbox.set_value(true, SRC);
+  tess.tessedit_create_txt.set_value(true, SRC);
+
+  tess.ResyncVariablesInternally();
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */

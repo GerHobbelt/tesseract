@@ -131,11 +131,11 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
           ParamUtils::PrintParams(config_fp, params_collective(), false);
           fclose(config_fp);
         }
-        ParamUtils::ReadParamsFile(word_config, params_collective());
+        ParamUtils::ReadParamsFile(word_config, params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
       }
     } else {
       if (backup_config_file_ != nullptr) {
-        ParamUtils::ReadParamsFile(backup_config_file_, params_collective());
+        ParamUtils::ReadParamsFile(backup_config_file_, params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
         backup_config_file_ = nullptr;
       }
     }

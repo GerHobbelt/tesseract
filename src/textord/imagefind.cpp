@@ -39,7 +39,7 @@
 
 namespace tesseract {
 
-static INT_VAR(textord_tabfind_show_images, false, "Show image blobs");
+INT_VAR(textord_tabfind_show_images, false, "Show image blobs");
 
 // Fraction of width or height of on pixels that can be discarded from a
 // roughly rectangular image.
