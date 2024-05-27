@@ -249,7 +249,7 @@ int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *lang
     configs.emplace_back(configs_vec[i]);
   }
   }
-  return handle->InitFull(datapath, language, oem, configs, nil, nil);
+  return handle->InitFull(datapath, language, oem, configs);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,
