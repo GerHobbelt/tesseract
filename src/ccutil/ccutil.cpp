@@ -20,6 +20,7 @@
 #include "ccutil.h"
 #include "winutils.h"
 #include "pathutils.h"
+#include "helpers.h"
 
 #if defined(_WIN32)
 #  include <io.h> // for _access
@@ -45,15 +46,6 @@ CCUtil::CCUtil()
 // It is defined here, so the compiler can create a single vtable
 // instead of weak vtables in every compilation unit.
 CCUtil::~CCUtil() = default;
-
-// convert all path separators from native to '/'.
-static void unixify_path(std::string &s) {
-  std::string::size_type n = 0;
-  while ((n = s.find('\\', n)) != std::string::npos) {
-    s[n] = '/';
-    n++;
-  }
-}
 
 /**
  * Return `true` when the given directory contains at least one `*traineddata*` file
