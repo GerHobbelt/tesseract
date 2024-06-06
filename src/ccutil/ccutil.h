@@ -58,6 +58,7 @@ public:
     return params_collective_;
   }
 
+  std::string visible_image_file_path; // name of currently input file, used for visible overlays only
   std::string input_file_path; // name of currently processed input file
   std::string datadir;         // dir for data files
   std::string imagebasename;   // name of image
@@ -80,6 +81,8 @@ public:
   // params_ should be initialized before parameters are added to it.
   INT_VAR_H(ambigs_debug_level);
   BOOL_VAR_H(use_ambigs_for_adaption);
+  BOOL_VAR_H(debug_datadir_discovery);
+  STRING_VAR_H(datadir_base_path);
 };
 
 } // namespace tesseract
