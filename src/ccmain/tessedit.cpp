@@ -362,7 +362,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
                               TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
-  ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
+  ParseLanguageString(languages_to_try, &langs_to_load, &langs_not_to_load);
 
   for (auto &lang : sub_langs_) {
     delete lang;
@@ -388,7 +388,6 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   for (size_t lang_index = 0; lang_index < langs_to_load.size(); ++lang_index) {
     const auto &lang_to_load = langs_to_load[lang_index];
     if (!IsStrInList(lang_to_load, langs_not_to_load)) {
-      const char *lang_str = lang_to_load.c_str();
       Tesseract *tess_to_init;
       if (!loaded_primary) {
         tess_to_init = this;
@@ -397,7 +396,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         tess_to_init->main_setup(arg0, textbase);
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_str, oem, configs,
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, oem, configs,
                                                          vars_vec, vars_values,
                                                          mgr);
       // Forget that language, but keep any reader we were given.
@@ -405,14 +404,14 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       if (!loaded_primary) {
         if (result < 0) {
-          tprintError("Failed loading language '{}'\n", lang_str);
+          tprintError("Failed loading language '{}'\n", lang_to_load);
         } else {
           ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
           loaded_primary = true;
         }
       } else {
         if (result < 0) {
-          tprintError("Failed loading sub-language '{}'\n", lang_str);
+          tprintError("Failed loading sub-language '{}'\n", lang_to_load);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);

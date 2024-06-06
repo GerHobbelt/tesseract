@@ -64,6 +64,12 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Break input into lines and remap boxes if present", params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
                   "Dump intermediate images made during page segmentation", params())
+    , STRING_MEMBER(raw_input_image_path, "", "Path where the raw input page image will be loaded from. Empty when the source image will be fed to teseract through other means / API calls.", params())
+    , STRING_MEMBER(segmentation_mask_input_image_path, "", "Path where the optional segmentation mask page image will be loaded from. Empty when the source image will be fed to teseract through other means. RED channel identifies text segments; BLUE channel identifies graphics (non-text) segments; GREEN channel is reserved for specials. All segments are processed in order of decreasing tint intensity per channel.", params())
+    , STRING_MEMBER(visible_output_source_image_path, "", "Path where the visible page image overlay will be loaded from; this is relevant for PDF output which may produce a page layout using the visible_output_image for page display, while embedding the OCR text output as an invisble overlay suitable for text extraction and copy&paste selection by the user afterwards.", params())
+    , STRING_MEMBER(debug_output_base_path, "", "Path template where the various debug/log files and supporting raw / processed image stages will be saved as part of the debug/diagnostics output.", params())
+    , STRING_MEMBER(debug_output_modes, "html", "A colon-separated set of debug/diagnostics output modes you wish to see output alongside the OCR result. These formats are supported: html, text.", params())
+    , STRING_MEMBER(output_base_path, "", "Path template where the OCR output files will be saved.", params())
     , DOUBLE_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
                     params())
@@ -133,8 +139,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", params())
     , STRING_MEMBER(tessedit_char_unblacklist, "",
                     "List of chars to override tessedit_char_blacklist.", params())
-    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.",
-                  params())
+    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.", params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
                  "Whether to use the top-line splitting process for Devanagari "
                  "documents while performing page-segmentation.",
@@ -191,8 +196,7 @@ Tesseract::Tesseract(Tesseract *parent)
                   "confuse layout analysis, determining diacritics vs noise.",
                   params())
     , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", params())
-    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.",
-                    params())
+    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
@@ -218,8 +222,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
     , DOUBLE_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
     , DOUBLE_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
-    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
-                    params())
+    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.", params())
     , DOUBLE_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
@@ -227,8 +230,7 @@ Tesseract::Tesseract(Tesseract *parent)
                  "bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, "
                  "bit 5 = CHECK_AMBIG_WERD)",
                  params())
-    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.",
-                  params())
+    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.", params())
     , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
     , BOOL_MEMBER(test_pt, false, "Test for point.", params())
     , DOUBLE_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
@@ -459,7 +461,6 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Detect music staff and remove intersecting components.", params())
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
-    , STRING_MEMBER(rectangles_to_process, "", "List of rectangle areas to process in the source image.", params())
     , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
     , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
     , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", params())
@@ -927,14 +928,18 @@ int Tesseract::init_tesseract(const std::string &datapath, const std::string &la
   std::vector<std::string> nil;
   assert(mgr != nullptr);
 
-  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
+  // TODO: set language + oem
+  
+  return init_tesseract(datapath, mgr);
 }
 
 int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
   TessdataManager mgr;
   std::vector<std::string> nil;
 
-  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
+  // TODO: set language + oem
+
+  return init_tesseract(datapath, &mgr);
 }
 
 // debug PDF output helper methods:
@@ -967,7 +972,7 @@ void Tesseract::ResyncVariablesInternally() {
   }
 
 #if !DISABLED_LEGACY_ENGINE
-    int lvl = language_model_.language_model_debug_level;
+  int lvl = language_model_.language_model_debug_level;
 
 #if 0
   language_model_->CopyDebugParameters(this, &Classify::getDict());

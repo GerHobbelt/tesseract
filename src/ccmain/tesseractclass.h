@@ -803,6 +803,12 @@ public:
   float ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_shift);
   //// Data members ///////////////////////////////////////////////////////
   // TODO(ocr-team): Find and remove obsolete parameters.
+  STRING_VAR_H(raw_input_image_path);
+  STRING_VAR_H(segmentation_mask_input_image_path);
+  STRING_VAR_H(visible_output_source_image_path);
+  STRING_VAR_H(debug_output_base_path);
+  STRING_VAR_H(debug_output_modes);
+  STRING_VAR_H(output_base_path);
   BOOL_VAR_H(tessedit_resegment_from_boxes);
   BOOL_VAR_H(tessedit_resegment_from_line_boxes);
   BOOL_VAR_H(tessedit_train_from_boxes);
@@ -1027,7 +1033,6 @@ public:
   DOUBLE_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
   DOUBLE_VAR_H(max_page_gradient_recognize);
-  STRING_VAR_H(rectangles_to_process);
   BOOL_VAR_H(scribe_save_binary_rotated_image);
   BOOL_VAR_H(scribe_save_grey_rotated_image);
   BOOL_VAR_H(scribe_save_original_rotated_image);

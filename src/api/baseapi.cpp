@@ -43,7 +43,7 @@
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
-#include <tesseract/params.h>          // for BoolParam, IntParam, DoubleParam, Stri...
+#include "global_params.h"
 #include "pdblock.h"         // for PDBLK
 #include "points.h"          // for FCOORD
 #include "polyblk.h"         // for POLY_BLOCK
@@ -69,6 +69,7 @@
 #include <tesseract/osdetect.h>       // for OSResults, OSBestResult, OrientationId...
 #include <tesseract/renderer.h>       // for TessResultRenderer
 #include <tesseract/resultiterator.h> // for ResultIterator
+#include <tesseract/params.h>         // for Param, ..., ParamVectorSet class definitions
 #include <tesseract/assert.h>
 
 #include <cmath>    // for round, M_PI
@@ -302,7 +303,7 @@ void TessBaseAPI::SetInputName(const char *name) {
 
 /** Set the name of the visible image files. Needed only for PDF output. */
 void TessBaseAPI::SetVisibleImageFilename(const char* name) {
-  visible_image_file_ = name ? name : "";
+  tesseract().visible_image_file_path = name ? name : "";
 }
 
 /**
@@ -367,11 +368,11 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  output_file_ = name ? name : "";
+  tesseract().output_file_path = name ? name : "";
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
-  return output_file_;
+  return tesseract().output_file_path;
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -513,65 +514,158 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * The language is (usually) an ISO 639-3 string or nullptr will default to eng.
  * If numeric_mode is true, then only digits and Roman numerals will
  * be returned.
+ * 
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::InitFull(const char *datapath, 
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values) {
-  return InitFullRemainder(datapath, nullptr, 0, vars_vec, vars_values, nullptr);
-}
-
-int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
+int TessBaseAPI::Init(const char* datapath,
+                      ParamsVectorSet& vars)
+{
   std::vector<std::string> nil;
-  tesseract().tessedit_ocr_engine_mode = oem;
-  tesseract().languages_to_try = language;
-  return InitFullRemainder(datapath, nullptr, 0, nil, nil, nullptr);
+  ParamsVectorSet vars;
+  FileReader nada;
+  Tesseract &tess = tesseract();
+  //tess.tessedit_ocr_engine_mode = oem;
+  //tess.languages_to_try = language;
+  if (tess.language_data_base_path.is_set() && !strempty(datapath) && tess.language_data_base_path != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.language_data_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
 
-int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  std::vector<std::string> nil;
-  tesseract().languages_to_try = language;
-  return InitFullRemainder(datapath, nullptr, 0, nil, nil, nullptr);
-}
-
-// In-memory version reads the traineddata file directly from the given
-// data[data_size] array. Also implements the version with a datapath in data,
-// flagged by data_size = 0.
-int TessBaseAPI::InitFromMemory(const char *data, int data_size,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values) 
+int TessBaseAPI::Init(const char *datapath,
+         ParamsVectorSet &vars,
+                      const std::vector<std::string> &configs)
 {
-  return InitFullRemainder(nullptr, data, data_size, 
-    vars_vec,
-    vars_values, 
-    nullptr);
+
 }
 
-int TessBaseAPI::InitFullWithReader(const char *path,
-  const std::vector<std::string> &vars_vec,
-  const std::vector<std::string> &vars_values, 
-  FileReader reader) 
+int TessBaseAPI::Init(ParamsVectorSet& vars)
 {
-  return InitFullRemainder(path, nullptr, 0,
-    vars_vec,
-    vars_values, 
-    reader);
+
 }
 
-int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_size,
-    const std::vector<std::string> &vars_vec,
-    const std::vector<std::string> &vars_values, 
-    FileReader reader) 
+int TessBaseAPI::Init(ParamsVectorSet& vars,
+                      const std::vector<std::string>& configs)
 {
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+                      const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+// Reads the traineddata via a FileReader from path `datapath`.
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+// In-memory version reads the traineddata directly from the given
+// data[data_size] array.
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values,
+                   const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init_Internal(const char *path,
+                    ParamsVectorSet& vars,
+                    const std::vector<std::string>& configs,
+                    FileReader reader,
+                      const char* data, size_t data_size)
+{
+  Tesseract& tess = tesseract();
 #if 0
-  if (tesseract().languages_to_try.empty()) {
-    tesseract().languages_to_try = "";
+  if (tess.languages_to_try.empty()) {
+    tess.languages_to_try = "";
   }
 #endif
   if (data == nullptr) {
     data = "";
+    data_size = 0;        // as a precaution to prevent invalid user-set value to 
   }
-  std::string datapath = path ? path : tesseract().languages_to_try.c_str();
+  std::string datapath = path ? path : tess.languages_to_try;
 
   // TODO: re-evaluate this next (old) code chunk which decides when to reset the tesseract instance.
  
@@ -580,9 +674,11 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
   // initialized successfully, while tesseract().lang stores the language
   // actually used. They differ only if the requested language was nullptr, in
   // which case tesseract().lang is set to the Tesseract default ("eng").
-  if (tesseract_ != nullptr &&
+  if (
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem || (language_ != language && tesseract_->lang != language))) {
+       last_oem_requested_ != oem() || (language_ != language && tesseract_->lang != language))) {
+    // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
+    assert(0);
     delete tesseract_;
     tesseract_ = nullptr;
   }
@@ -597,12 +693,10 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     if (data_size != 0) {
       mgr.LoadMemBuffer(language, data, data_size);
     }
-    if (tesseract_->init_tesseract(datapath, output_file_, vars_vec, vars_values, &mgr) != 0) {
+    if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
       return -1;
     }
   }
-
-  Tesseract& tess = tesseract();
 
   // Update datapath and language requested for the last valid initialization.
   datapath_ = std::move(datapath);
@@ -642,14 +736,12 @@ const char *TessBaseAPI::GetInitLanguagesAsString() const {
  */
 void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-  if (tesseract_ != nullptr) {
     Tesseract& tess = tesseract();
     langs->push_back(tess.lang);
     int num_subs = tess.num_sub_langs();
     for (int i = 0; i < num_subs; ++i) {
       langs->push_back(tess.get_sub_lang(i)->lang);
     }
-  }
 }
 
 /**
@@ -657,10 +749,9 @@ void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) co
  */
 void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-  if (tesseract_ != nullptr) {
-    addAvailableLanguages(tesseract().datadir, "", langs);
+    Tesseract& tess = tesseract();
+    addAvailableLanguages(tess.datadir, "", langs);
     std::sort(langs->begin(), langs->end());
-  }
 }
 
 /**
@@ -691,7 +782,7 @@ void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
 
 /** Return the current page segmentation mode. */
 PageSegMode TessBaseAPI::GetPageSegMode() const {
-  return static_cast<PageSegMode>(static_cast<int>(tesseract().tessedit_pageseg_mode));
+  return static_cast<PageSegMode>(tesseract().tessedit_pageseg_mode.value());
 }
 
 /**
@@ -1161,14 +1252,15 @@ PageIterator *TessBaseAPI::AnalyseLayout() {
 
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
   if (FindLines() == 0) {
-    AutoPopDebugSectionLevel section_handle(tesseract_, tesseract().PushSubordinatePixDebugSection("Analyse Layout"));
+    Tesseract& tess = tesseract();
+    AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Analyse Layout"));
 
     if (block_list_->empty()) {
       return nullptr; // The page was empty.
     }
     page_res_ = new PAGE_RES(merge_similar_words, block_list_, nullptr);
     DetectParagraphs(false);
-    return new PageIterator(page_res_, tesseract_, thresholder_->GetScaleFactor(),
+    return new PageIterator(page_res_, tess, thresholder_->GetScaleFactor(),
                             thresholder_->GetScaledYResolution(), rect_left_, rect_top_,
                             rect_width_, rect_height_);
   }
@@ -1190,7 +1282,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     return -1;
   }
 
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Recognize (OCR)"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Recognize (OCR)"));
 
   delete page_res_;
   if (block_list_->empty()) {
@@ -1222,7 +1314,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 
   if (tess.tessedit_train_line_recognizer) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
     if (!tess.TrainLineRecognizer(tess.input_file_path.c_str(), output_file_, block_list_)) {
       return -1;
     }
@@ -1231,7 +1323,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 #if !DISABLED_LEGACY_ENGINE
   if (tess.tessedit_make_boxes_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
     tess.CorrectClassifyWords(page_res_);
     return 0;
   }
@@ -1240,7 +1332,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   int result = 0;
   if (tess.SupportsInteractiveScrollView()) {
 #if !GRAPHICS_DISABLED
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
     tess.pgeditor_main(rect_width_, rect_height_, page_res_);
 
     // The page_res is invalid after an interactive session, so cleanup
@@ -1253,12 +1345,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
 #if !DISABLED_LEGACY_ENGINE
   } else if (tess.tessedit_train_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train From Boxes"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train From Boxes"));
     std::string fontname;
     ExtractFontName(output_file_.c_str(), &fontname);
     tess.ApplyBoxTraining(fontname, page_res_);
   } else if (tess.tessedit_ambigs_training) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train Ambigs"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Ambigs"));
     FILE *training_output_file = tess.init_recog_training(tess.input_file_path.c_str());
     // OCR the page segmented into words by tesseract.
     tess.recog_training_segmented(tess.input_file_path.c_str(), page_res_, monitor,
@@ -1266,7 +1358,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("The Main Recognition Phase"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
 #if !GRAPHICS_DISABLED
     if (scrollview_support) {
@@ -1276,7 +1368,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
     // Now run the main recognition.
     if (!tess.paragraph_text_based) {
-      AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
+      AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
 #if !GRAPHICS_DISABLED
       if (scrollview_support) {
@@ -1285,7 +1377,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
     }
 
-    AutoPopDebugSectionLevel subsection_handle2(tesseract_, tess.PushSubordinatePixDebugSection("Recognize All Words"));
+    AutoPopDebugSectionLevel subsection_handle2(&tess, tess.PushSubordinatePixDebugSection("Recognize All Words"));
     if (tess.recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
 #if !GRAPHICS_DISABLED
       if (scrollview_support) {
@@ -1294,7 +1386,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
       subsection_handle2.pop();
       if (tess.paragraph_text_based) {
-        AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
+        AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
 #if !GRAPHICS_DISABLED
         if (scrollview_support) {
@@ -1347,7 +1439,7 @@ static const char* NormalizationModeName(int mode) {
 // Grayscale normalization (preprocessing)
 bool TessBaseAPI::NormalizeImage(int mode) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Normalize Image"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Normalize Image"));
 
   if (!GetInputImage()) {
     tprintError("Please use SetImage before applying the image pre-processing steps.\n");
@@ -1392,8 +1484,8 @@ const char *TessBaseAPI::GetInputName() {
 }
 
 const char * TessBaseAPI::GetVisibleImageFilename() {
-  if (!visible_image_file_.empty()) {
-    return visible_image_file_.c_str();
+  if (tesseract_ != nullptr && !tesseract_->visible_image_file_path.empty()) {
+    return tesseract_->visible_image_file_path.c_str();
   }
   return nullptr;
 }
@@ -1557,7 +1649,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Process pages"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Process pages"));
   
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
 #if !DISABLED_LEGACY_ENGINE
@@ -1759,7 +1851,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel page_level_handle(tesseract_, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tess.tessedit_page_number))));
+  AutoPopDebugSectionLevel page_level_handle(&tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tess.tessedit_page_number))));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
   SetInputName(filename);
@@ -2955,8 +3047,7 @@ int TessBaseAPI::FindLines() {
       TessdataManager mgr(reader_);
       std::vector<std::string> nil;
       if (datapath_.empty()) {
-        tprintWarn(
-            "Auto orientation and script detection requested,"
+        tprintWarn("Auto orientation and script detection requested,"
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
@@ -3478,7 +3569,6 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
     str[dpos++] = '_';
 
   f.resize(dpos);
-
 
   return std::move(f);
 }

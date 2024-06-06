@@ -30,6 +30,7 @@
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/autosupressor.h>     // for AutoSupressDatum
+#include <tesseract/params.h>
 
 #include <cstdio>
 #include <tuple>  // for std::tuple
@@ -232,28 +233,30 @@ public:
    * Instances are now mostly thread-safe and totally independent,
    * but some global parameters remain. Basically it is safe to use multiple
    * TessBaseAPIs in different threads in parallel, UNLESS:
-   * you use SetVariable on some of the Params in classify and textord.
+   * you use SetVariable on some of the Params in `classify` and `textord`.
    * If you do, then the effect will be to change it for all your instances.
    *
-   * Start tesseract. Returns zero on success and -1 on failure.
+   * Starts tesseract. Returns zero on success and -1 on failure.
    * NOTE that the only members that may be called before Init are those
    * listed above here in the class definition.
    *
    * The datapath must be the name of the tessdata directory.
-   * The language is (usually) an ISO 639-3 string or nullptr will default to
+   * The language is (usually) an ISO 639-3 string or, when empty or nullptr, will default to
    * "eng". It is entirely safe (and eventually will be efficient too) to call
-   * Init multiple times on the same instance to change language, or just
+   * Init() multiple times on the same instance to change language, or just
    * to reset the classifier.
+   * 
    * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
-   * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
+   * that multiple languages are to be loaded. E.g. "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
-   * with one or more other languages, so the ~ sign is available to override
+   * with one or more other languages, so the `~` sign is available to override
    * that. E.g. if "hin" were set to load "eng" by default, then "hin+~eng" would force
    * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
    * applicable language, and there is more chance of hallucinating incorrect
    * words.
+   * 
    * WARNING: On changing languages, all Tesseract parameters are reset
    * back to their default values. (Which may vary between languages.)
    * If you have a rare need to set a Variable that controls
@@ -262,31 +265,80 @@ public:
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
    */
-  int InitFull(const char *datapath, 
+  int Init(const char *datapath,
+           ParamsVectorSet &vars);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(ParamsVectorSet &vars);
+
+  int Init(ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values);
 
-  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
-
-  int InitSimple(const char *datapath, const char *language);
-
-  // Reads the traineddata via a FileReader from path `datapath`.
-  int InitFullWithReader(const char *datapath, 
+  int Init(const char *datapath,
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode oem);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath, const char *language);
+
+  int Init(const char *datapath, const char *language,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language);
+
+  int Init(const char *language,
+           const std::vector<std::string> &configs);
+
+  // Reads the traineddata via a FileReader from path `datapath`.
+  int Init(const char *datapath, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs,
            FileReader reader);
 
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
-  int InitFromMemory(const char *data, int data_size, 
+  int InitFromMemory(const char *data, size_t data_size, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values);
 
+  int InitFromMemory(const char *data, size_t data_size, 
+          const std::vector<std::string> &vars_vec,
+          const std::vector<std::string> &vars_values,
+          const std::vector<std::string> &configs);
+
 protected:
-  int InitFullRemainder(const char *datapath, const char *data, int data_size, 
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           FileReader reader);
+  int Init_Internal(const char *datapath,
+                    ParamsVectorSet &vars,
+                    const std::vector<std::string> &configs,
+                    FileReader reader,
+                    const char *data = nullptr, size_t data_size = 0);
 
 public:
   /**
@@ -806,9 +858,15 @@ public:
    * Close down tesseract and free up all memory. `End()` is equivalent to
    * destructing and reconstructing your TessBaseAPI.
    * Once `End()` has been used, none of the other API functions may be used
-   * other than Init and anything declared above it in the class definition.
+   * other than Init() and anything declared above it in the class definition.
    */
   void End();
+
+  /**
+   * Equivalent to calling End() but with the added feature of all
+   * parameters being reset to factory defaults.
+   */
+  void ResetToDefaults();
 
   /**
    * Clear any library-level memory caches.
