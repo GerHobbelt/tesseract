@@ -24,7 +24,7 @@
 
 #include "pdf_ttf.h"
 #include "tprintf.h"
-#include "helpers.h" // for Swap
+#include "helpers.h" // for Swap, copy_string
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
@@ -505,10 +505,7 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
       pdf_str << "ET\n"; // end the text object
     }
   }
-  const std::string &text = pdf_str.str();
-  char *result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(pdf_str.str());
 }
 
 bool TessPDFRenderer::BeginDocumentHandler() {

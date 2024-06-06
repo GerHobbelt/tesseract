@@ -32,7 +32,7 @@
 #include <leptonica/environ.h>    // for l_uint8
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
 #include "errcode.h" // for ASSERT_HOST
-#include "helpers.h" // for IntCastRounded, chomp_string
+#include "helpers.h" // for IntCastRounded, chomp_string, copy_string
 #include "host.h"    // for MAX_PATH
 #include "imagedata.h" // for ImageData, DocumentData
 #include <leptonica/imageio.h> // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
@@ -1993,9 +1993,7 @@ char *TessBaseAPI::GetUTF8Text() {
     const std::unique_ptr<const char[]> para_text(it->GetUTF8Text(RIL_PARA));
     text += para_text.get();
   } while (it->Next(RIL_PARA));
-  char *result = new char[text.length() + 1];
-  strncpy(result, text.c_str(), text.length() + 1);
-  return result;
+  return copy_string(text);
 }
 
 size_t TessBaseAPI::GetNumberOfTables() const
@@ -2228,9 +2226,7 @@ char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
     tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are consioered to a part of.
   }
 
-  char *ret = new char[tsv_str.length() + 1];
-  strcpy(ret, tsv_str.c_str());
-  return ret;
+  return copy_string(tsv_str);
 }
 
 /** The 5 numbers output for each box (the usual 4 and a page number.) */
@@ -2478,10 +2474,7 @@ char *TessBaseAPI::GetOsdText(int page_number) {
          << "Orientation confidence: " << orient_conf << "\n"
          << "Script: " << script_name << "\n"
          << "Script confidence: " << script_conf << "\n";
-  const std::string &text = stream.str();
-  char *result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(stream.str());
 }
 
 #endif // !DISABLED_LEGACY_ENGINE
