@@ -19,8 +19,8 @@
  *
  **********************************************************************/
 
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef TESSERACT_PARAMS_H
+#define TESSERACT_PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
 
