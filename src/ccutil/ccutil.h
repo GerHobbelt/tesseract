@@ -35,7 +35,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for HANDLE, ...
 #endif
-#include "params.h"
+#include <tesseract/params.h>
 #include "unicharset.h"
 
 namespace tesseract {

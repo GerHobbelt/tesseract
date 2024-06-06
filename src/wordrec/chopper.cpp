@@ -31,7 +31,7 @@
 #include "matrix.h"         // for MATRIX
 #include "normalis.h"       // for DENORM
 #include "pageres.h"        // for WERD_RES
-#include "params.h"         // for IntParam, BoolParam
+#include <tesseract/params.h>         // for IntParam, BoolParam
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST (ptr ...
 #include "rect.h"           // for TBOX
 #include "render.h"         // for display_blob

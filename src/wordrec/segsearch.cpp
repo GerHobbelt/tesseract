@@ -30,7 +30,7 @@
 #include "lm_state.h"       // for BestChoiceBundle, ViterbiStateEntry
 #include "matrix.h"         // for MATRIX_COORD, MATRIX
 #include "pageres.h"        // for WERD_RES
-#include "params.h"         // for BoolParam, IntParam, DoubleParam
+#include <tesseract/params.h>         // for BoolParam, IntParam, DoubleParam
 #include "ratngs.h"         // for BLOB_CHOICE_LIST, BLOB_CHOICE_IT
 #include "tprintf.h"        // for tprintf
 #include "wordrec.h"        // for Wordrec, SegSearchPending (ptr only)

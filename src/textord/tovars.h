@@ -20,7 +20,7 @@
 #ifndef TOVARS_H
 #define TOVARS_H
 
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

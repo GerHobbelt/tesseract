@@ -20,7 +20,7 @@
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
+#  include <tesseract/params.h>
 #  include "tprintf.h"
 
 namespace tesseract {
@@ -70,7 +70,7 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include "mastertrainer.h"
 #  include "mf.h"
 #  include "oldlist.h"
-#  include "params.h"
+#  include <tesseract/params.h>
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
 #  include "tprintf.h"

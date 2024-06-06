@@ -28,7 +28,7 @@
 #include "fpoint.h"
 #include "mfoutline.h"
 #include "ocrfeatures.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "trainingsample.h"
 
 #include <cmath>

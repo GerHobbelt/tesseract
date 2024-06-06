@@ -26,7 +26,7 @@
 #include "control.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"

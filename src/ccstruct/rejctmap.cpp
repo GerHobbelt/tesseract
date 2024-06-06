@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

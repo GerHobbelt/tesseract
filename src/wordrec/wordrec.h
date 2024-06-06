@@ -27,7 +27,7 @@
 
 #  include <cstdint>    // for int16_t, int32_t
 #  include "classify.h" // for Classify
-#  include "params.h"   // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
+#  include <tesseract/params.h>   // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
 #  include "ratngs.h"   // for WERD_CHOICE
 
 namespace tesseract {
@@ -74,7 +74,7 @@ public:
 #  include "language_model.h"
 #  include "matrix.h"
 #  include "oldlist.h" // for LIST
-#  include "params.h"  // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
+#  include <tesseract/params.h>  // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
 #  include "points.h"  // for ICOORD
 #  include "ratngs.h"  // for BLOB_CHOICE_LIST (ptr only), BLOB_CHOI...
 #  include "seam.h"    // for SEAM (ptr only), PRIORITY

@@ -22,7 +22,7 @@
 #include <cstdio>
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "tessclassifier.h"
 #include "tesseractclass.h"
 #include "mupdf/fitz/string-util.h"
