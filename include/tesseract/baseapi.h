@@ -71,6 +71,15 @@ using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
 
 /**
+ * Defines the trinity of page images to be used by tesseract for each page to be OCR'ed.
+ */
+struct ImagePageFileSpec {
+  std::string page_image_path;          // the page image which must be OCR'ed.
+  std::string segment_mask_image_path;  // an optional segmentation assistant page image. When not RGB, anything non-white is considered content.
+  std::string visible_page_image_path;  // an optional image, specifically for PDF page overlay usage.
+};
+
+/**
  * Base class for all tesseract APIs.
  * Specific classes can add ability to work on different inputs or produce
  * different outputs.
@@ -230,6 +239,22 @@ public:
   bool GetVariableAsString(const char *name, std::string *val) const;
 
   /**
+   * Inspect the path_params list (which lists images and image-list files)
+   * and recognize the latter (vs. older text-based image file formats) and
+   * expand these into a set of image file paths.
+   *
+   * This process applies a little heuristic for performance reasons:
+   * so as not to have to load every listed image file entirely, we merely
+   * fetch the initial couple of kilobytes and check if that part is
+   * a (aborted) list of file paths, rather than (text-based) image data.
+   * If it is, then it is treated as an image list file and expanded in line,
+   * while otherwise it is flagged as an image file.
+   *
+   * Returns a non-empty set of page image specs on success. The returned set is empty on error.
+   */
+  std::vector<ImagePageFileSpec> ExpandImagelistFilesInSet(const std::vector<std::string> &path_params);
+
+  /**
    * Instances are now mostly thread-safe and totally independent,
    * but some global parameters remain. Basically it is safe to use multiple
    * TessBaseAPIs in different threads in parallel, UNLESS:
@@ -303,6 +328,11 @@ public:
   int Init(const char *datapath, const char *language);
 
   int Init(const char *datapath, const char *language,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language, OcrEngineMode oem);
+
+  int Init(const char *language, OcrEngineMode oem,
            const std::vector<std::string> &configs);
 
   int Init(const char *language);

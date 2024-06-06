@@ -590,7 +590,7 @@ static int ParseArgs(int argc, const char** argv,
       Param *v = vars_vec->find(name.c_str(), ANY_TYPE_PARAM);
       v->set_value(p + 1);
     } else if (strcmp(verb, "--visible-pdf-image") == 0 && i + 1 < argc) {
-      IntParam *p = vars_vec->find<IntParam>("visible_pdf_image_path");
+      IntParam *p = vars_vec->find<IntParam>("visible_image_file_path");
       p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--config") == 0 && i + 1 < argc) {
@@ -838,11 +838,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
   (void)tesseract::SetConsoleModeToUTF8();
 
   //const char *datapath = nullptr;
-  //const char *visible_pdf_image_path = nullptr;
   int ret_val = EXIT_SUCCESS;
 
-  //std::vector<std::string> vars_vec;
-  //std::vector<std::string> vars_values;
   std::vector<std::string> path_params;
 
   if (std::getenv("LEPT_MSG_SEVERITY")) {
@@ -951,7 +948,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
         std::string cfgpath = path_params.back();
         if (fs::exists(cfgpath) && !fs::is_directory(cfgpath)) {
           path_params.pop_back();
-          ParamsVectorSet muster_set({args_muster});
+          ParamsVectorSet muster_set;
+          muster_set.add(args_muster);
           if (ParamUtils::ReadParamsFile(cfgpath, muster_set, PARAM_VALUE_IS_SET_BY_CONFIGFILE)) {
             return EXIT_FAILURE;
           }
@@ -980,12 +978,10 @@ extern "C" int tesseract_main(int argc, const char** argv)
     // Recognizing the latter (vs. older text-based image file formats) takes
     // a little heuristic, which we'll employ now to transform those into
     // an (updated) list of image files...
-    if (api.ExpandImagelistFilesInSet(&path_params, args_muster) < 0) {
+    auto pages = api.ExpandImagelistFilesInSet(&path_params);
+    if (pages.size() == 0) {
       return EXIT_FAILURE;
     }
-
-
-
 
 
       if (!SetVariablesFromCLArgs(api, args_muster)) {
@@ -1048,10 +1044,10 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 
 #if 0
-    api.SetOutputName(outputbase ::: output_base_path);
+    api.SetOutputName(outputbase ::: output_base_path / output_base_filename);
 #endif
 
-    const int init_failed = api.InitFull(datapath, path_params, args_muster);
+    const int init_failed = api.Init(datapath, path_params, args_muster);
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();
@@ -1167,8 +1163,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
     FixPageSegMode(api, pagesegmode);
 
-    if (tess.visible_pdf_image_path) {
-      api.SetVisibleImageFilename(tess.visible_pdf_image_path);
+    if (tess.visible_image_file_path) {
+      api.SetVisibleImageFilename(tess.visible_image_file_path);
     }
 
     if (pagesegmode == tesseract::PSM_AUTO_ONLY) {

@@ -71,7 +71,12 @@
 
 
 namespace tesseract {
-    
+
+// Return `true` when string in NULL or empty.
+static inline bool strempty(const char *s) {
+  return s == nullptr || *s == 0;
+}
+
 // convert all path separators from native to '/'.
 static inline void unixify_path(std::string &s) {
   std::string::size_type n = 0;

@@ -31,7 +31,7 @@ Here's the original feature request upstream: https://github.com/tesseract-ocr/t
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
 
 
-# tesseract-ocr with visible_pdf_image
+# tesseract-ocr
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 

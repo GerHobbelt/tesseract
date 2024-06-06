@@ -356,9 +356,9 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str) {
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
-							                const std::vector<std::string> &configs,
 							                const std::vector<std::string> &vars_vec,
-							                const std::vector<std::string> &vars_values,
+                              const std::vector<std::string> &vars_values,
+                              const std::vector<std::string> &configs,
                               TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
@@ -396,7 +396,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         tess_to_init->main_setup(arg0, textbase);
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, oem, configs,
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, static_cast<tesseract::OcrEngineMode>(this->tessedit_ocr_engine_mode.value()), configs,
                                                          vars_vec, vars_values,
                                                          mgr);
       // Forget that language, but keep any reader we were given.

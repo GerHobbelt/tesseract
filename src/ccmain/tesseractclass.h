@@ -533,12 +533,13 @@ public:
   // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-				             const std::vector<std::string> &configs,
 				             const std::vector<std::string> &vars_vec,
-				             const std::vector<std::string> &vars_values,
+                     const std::vector<std::string> &vars_values,
+                     const std::vector<std::string> &configs,
                      TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
+  int init_tesseract(const std::string &datapath, TessdataManager *mgr);
 
   // Common initialization for a single language.
   // 
@@ -809,6 +810,7 @@ public:
   STRING_VAR_H(debug_output_base_path);
   STRING_VAR_H(debug_output_modes);
   STRING_VAR_H(output_base_path);
+  STRING_VAR_H(output_base_filename);
   BOOL_VAR_H(tessedit_resegment_from_boxes);
   BOOL_VAR_H(tessedit_resegment_from_line_boxes);
   BOOL_VAR_H(tessedit_train_from_boxes);

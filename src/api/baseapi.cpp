@@ -63,6 +63,7 @@
 #include "topitch.h"         // for param globals
 #include "polyaprx.h"        // for param globals
 #include "edgblob.h"         // for param globals
+#include "pathutils.h"       // for fs namespace
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -368,11 +369,11 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  tesseract().output_file_path = name ? name : "";
+  tesseract().output_base_filename = name ? name : "";
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
-  return tesseract().output_file_path;
+  return tesseract().output_base_filename;
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -521,14 +522,14 @@ int TessBaseAPI::Init(const char* datapath,
                       ParamsVectorSet& vars)
 {
   std::vector<std::string> nil;
-  ParamsVectorSet vars;
+  //ParamsVectorSet vars;
   FileReader nada;
   Tesseract &tess = tesseract();
   //tess.tessedit_ocr_engine_mode = oem;
   //tess.languages_to_try = language;
-  if (tess.language_data_base_path.is_set() && !strempty(datapath) && tess.language_data_base_path != datapath) {
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path != datapath) {
     // direct parameter overrides previous parameter set-up
-    tess.language_data_base_path = datapath;
+    tess.datadir_base_path = datapath;
   }
   return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
@@ -603,6 +604,17 @@ int TessBaseAPI::Init(const char* datapath, const char* language,
 
 }
 
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem,
+         const std::vector<std::string> &configs)
+{
+
+}
+
 int TessBaseAPI::Init(const char* language)
 {
 
@@ -650,12 +662,11 @@ int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
 }
 
 int TessBaseAPI::Init_Internal(const char *path,
-                    ParamsVectorSet& vars,
-                    const std::vector<std::string>& configs,
-                    FileReader reader,
-                      const char* data, size_t data_size)
-{
-  Tesseract& tess = tesseract();
+                               ParamsVectorSet &vars,
+                               const std::vector<std::string> &configs,
+                               FileReader reader,
+                               const char *data, size_t data_size) {
+  Tesseract &tess = tesseract();
 #if 0
   if (tess.languages_to_try.empty()) {
     tess.languages_to_try = "";
@@ -663,12 +674,21 @@ int TessBaseAPI::Init_Internal(const char *path,
 #endif
   if (data == nullptr) {
     data = "";
-    data_size = 0;        // as a precaution to prevent invalid user-set value to 
+    data_size = 0; // as a precaution to prevent invalid user-set value to
   }
-  std::string datapath = path ? path : tess.languages_to_try;
+  std::string datapath;
+  if (!strempty(path)) {
+    datapath = path;
+  } else if (!tess.datadir_base_path.empty()) {
+    datapath = tess.datadir_base_path;
+  } else {
+    datapath = tess.languages_to_try;
+  }
 
   // TODO: re-evaluate this next (old) code chunk which decides when to reset the tesseract instance.
- 
+
+  std::string buggered_languge = "XYZ";
+
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract().lang stores the language
@@ -676,7 +696,7 @@ int TessBaseAPI::Init_Internal(const char *path,
   // which case tesseract().lang is set to the Tesseract default ("eng").
   if (
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem() || (language_ != language && tesseract_->lang != language))) {
+       last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang != buggered_languge))) {
     // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
     assert(0);
     delete tesseract_;
@@ -691,7 +711,7 @@ int TessBaseAPI::Init_Internal(const char *path,
     }
     TessdataManager mgr(reader_);
     if (data_size != 0) {
-      mgr.LoadMemBuffer(language, data, data_size);
+      mgr.LoadMemBuffer(buggered_languge, data, data_size);
     }
     if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
       return -1;
@@ -704,7 +724,7 @@ int TessBaseAPI::Init_Internal(const char *path,
     datapath_ = tess.datadir;
   }
 
-  language_ = language;
+  language_ = buggered_languge;
   last_oem_requested_ = oem();
 
 #if !DISABLED_LEGACY_ENGINE
@@ -1260,7 +1280,7 @@ PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
     }
     page_res_ = new PAGE_RES(merge_similar_words, block_list_, nullptr);
     DetectParagraphs(false);
-    return new PageIterator(page_res_, tess, thresholder_->GetScaleFactor(),
+    return new PageIterator(page_res_, &tess, thresholder_->GetScaleFactor(),
                             thresholder_->GetScaledYResolution(), rect_left_, rect_top_,
                             rect_width_, rect_height_);
   }
@@ -3460,6 +3480,223 @@ void TessBaseAPI::SetupDefaultPreset() {
   tess.tessedit_create_txt.set_value(true, SRC);
 
   tess.ResyncVariablesInternally();
+}
+
+
+// sanity check for the imagelist expander below: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+static inline bool is_sane_imagelist_line(const char *p) {
+  while (*p) {
+    uint8_t c = *p++;
+    if (c < ' ' && c != '\t')
+      return false;
+  }
+  return true;
+}
+
+#if defined(_MSC_VER) && !defined(strtok_r)
+static inline char *strtok_r(char * s, const char * sep, char ** state) {
+  return strtok_s(s, sep, state);
+}
+#endif
+
+static void destroy_il_buffer(char *buf) {
+  free(buf);
+}
+
+std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std::vector<std::string>& paths) {
+  std::vector<ImagePageFileSpec> rv;
+
+  for (auto spec : paths) {
+    // each item in the list must exist?
+    if (!fs::exists(spec)) {
+      // TODO
+      continue;
+    }
+
+    const size_t SAMPLESIZE = 8192;
+
+    // load the first ~8K and see if that chunk contains a decent set of file paths: is so, the heuristic says it's an imagelist, rather than an image file.
+    char scratch[SAMPLESIZE + 2];
+    ConfigFile f(spec); // not a problem that this one opens the file in "r" (CRLF conversion) mode: we're after text files and the others will quickly be discovered below.
+    if (!f) {
+      // TODO
+      continue;
+    }
+    auto l = fread(scratch, 1, SAMPLESIZE, f());
+    // when it's an imagelist, it MAY be smaller than our scratch buffer!
+    if (l == 0 || ferror(f())) {
+      // TODO
+      continue;
+    }
+    // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
+    scratch[l] = 0;
+    scratch[l + 1] = 0;
+
+    bool is_imagelist = true;
+    std::vector<char *> lines;
+    char *state = nullptr;
+    char *s = strtok_r(scratch, "\r\n", &state);
+    while (s) {
+      char *p = s + strspn(s, " \t");
+
+      // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+      if (!is_sane_imagelist_line(p)) {
+        is_imagelist = false;
+        break;
+      }
+
+      // skip comment lines and empty lines:
+      if (!strchr("#;", *p)) {
+        lines.push_back(s);
+      }
+
+      s = strtok_r(nullptr, "\r\n", &state);
+    }
+    // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
+    if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
+      // the last line will be damaged due to our sampling, so we better discard that one:
+      (void)lines.pop_back();
+    }
+
+    if (is_imagelist) {
+      int error_count = 0;
+      int sample_count = 0;
+      // validate the lines in the sample:
+      for (auto spec : lines) {
+        // parse and chop into 1..3 file paths: image;mask;overlay
+        state = nullptr;
+        int count = 0;
+        char *s = strtok_r(spec, ";", &state);
+        while (s) {
+          count++;
+          char *p = s + strspn(s, " \t");
+
+          // trim whitespace at the end...
+          char *e = p + strlen(p);
+          while (e > p) {
+            if (isspace(p[-1])) {
+              *p-- = 0;
+              continue;
+            }
+            break;
+          }
+
+          sample_count++;
+          if (!fs::exists(p)) {
+            error_count++;
+          }
+
+          s = strtok_r(nullptr, ";", &state);
+        }
+        if (count < 1 || count > 3) {
+          error_count++;
+        }
+      }
+
+      // we tolerate about 1-in-10 file errors here...
+      float err_ratio = error_count * 100.0f / sample_count;
+      is_imagelist = (err_ratio < 10.0 /* percent */);
+    }
+
+    if (is_imagelist) {
+      // now that we know the sample is a sensible imagelist, grab the entire thing and parse it entirely...
+      const size_t listfilesize = fs::file_size(spec);
+
+      std::unique_ptr<char, void (*)(char *)> buffer((char *)malloc(listfilesize + 2), destroy_il_buffer);
+      if (!buffer) {
+        // TODO
+        continue;
+      }
+
+      // rewind file
+      fseek(f(), 0, SEEK_SET);
+      l = fread(buffer.get(), 1, listfilesize, f());
+      if (l != listfilesize || ferror(f())) {
+        // TODO
+        continue;
+      }
+      // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
+      char *b = buffer.get();
+      b[l] = 0;
+      b[l + 1] = 0;
+
+      std::vector<char *> lines;
+      char *state = nullptr;
+      char *s = strtok_r(buffer.get(), "\r\n", &state);
+      while (s) {
+        char *p = s + strspn(s, " \t");
+
+        // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+        if (!is_sane_imagelist_line(p)) {
+          is_imagelist = false;
+          break;
+        }
+
+        // skip comment lines and empty lines:
+        if (!strchr("#;", *p)) {
+          lines.push_back(s);
+        }
+
+        s = strtok_r(nullptr, "\r\n", &state);
+      }
+
+      // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
+      if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
+        // the last line will be damaged due to our sampling, so we better discard that one:
+        (void)lines.pop_back();
+      }
+
+      int error_count = 0;
+      int sample_count = 0;
+      // parse & validate the lines:
+      for (auto spec : lines) {
+        // parse and chop into 1..3 file paths: image;mask;overlay
+        state = nullptr;
+        std::vector<std::string> fspecs;
+        char *s = strtok_r(spec, ";", &state);
+        while (s) {
+          char *p = s + strspn(s, " \t");
+
+          // trim whitespace at the end...
+          char *e = p + strlen(p);
+          while (e > p) {
+            if (isspace(p[-1])) {
+              *p-- = 0;
+              continue;
+            }
+            break;
+          }
+
+          sample_count++;
+          if (!fs::exists(p)) {
+            error_count++;
+          }
+
+          fspecs.push_back(p);
+
+          s = strtok_r(nullptr, ";", &state);
+        }
+        if (fspecs.size() < 1 || fspecs.size() > 3) {
+          error_count++;
+        } else {
+          ImagePageFileSpec sp = {fspecs[0]};
+          if (fspecs.size() > 1) {
+            sp.segment_mask_image_path = fspecs[1];
+          }
+          if (fspecs.size() > 2) {
+            sp.visible_page_image_path = fspecs[2];
+          }
+          rv.push_back(sp);
+        }
+      }
+    }
+    else {
+      // not an image list: pick this one up as a sole image file spec:
+      ImagePageFileSpec sp = {spec};
+      rv.push_back(sp);
+    }
+  }
+  return rv;
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */

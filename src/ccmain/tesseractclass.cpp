@@ -70,6 +70,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(debug_output_base_path, "", "Path template where the various debug/log files and supporting raw / processed image stages will be saved as part of the debug/diagnostics output.", params())
     , STRING_MEMBER(debug_output_modes, "html", "A colon-separated set of debug/diagnostics output modes you wish to see output alongside the OCR result. These formats are supported: html, text.", params())
     , STRING_MEMBER(output_base_path, "", "Path template where the OCR output files will be saved.", params())
+    , STRING_MEMBER(output_base_filename, "", "Filename template: the OCR output files will be named based on this template.", params())
     , DOUBLE_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
                     params())
@@ -940,6 +941,15 @@ int Tesseract::init_tesseract(const std::string &datapath, const std::string &la
   // TODO: set language + oem
 
   return init_tesseract(datapath, &mgr);
+}
+
+int Tesseract::init_tesseract(const std::string &datapath, TessdataManager *mgr) {
+  std::vector<std::string> nil;
+  assert(mgr != nullptr);
+
+  // TODO: set language + oem
+
+  return init_tesseract(datapath, mgr);
 }
 
 // debug PDF output helper methods:
