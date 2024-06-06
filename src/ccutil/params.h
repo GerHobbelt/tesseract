@@ -23,8 +23,6 @@
 #define PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
-#include "tprintf.h"          // for printf (when debugging this code)
-#include "mupdf/assertions.h" // for ASSERT
 
 #include <cstdint>
 #include <cstdio>
@@ -655,7 +653,7 @@ public:
     // the sum of the previous section's counts: the collected history from previous runs during this application life time.
     int prev_sum_reading;
     int prev_sum_writing;
-	  int prev_sum_changing;
+    int prev_sum_changing;
   } access_counts_t;
 
   access_counts_t access_counts() const;
