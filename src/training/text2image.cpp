@@ -679,7 +679,7 @@ static int Main() {
             render.RenderToImage(to_render_utf8 + offset, strlen(to_render_utf8 + offset), &pix);
       }
       if (pix != nullptr) {
-        float rotation = FLAGS_my_rotation ;
+        float rotation = FLAGS_my_rotation;
         if (pass == 1) {
           // Pass 2, do mirror rotation.
           rotation = -1 * page_rotation[page_num];
