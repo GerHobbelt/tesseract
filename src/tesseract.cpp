@@ -590,7 +590,7 @@ static int ParseArgs(int argc, const char** argv,
       Param *v = vars_vec->find(name.c_str(), ANY_TYPE_PARAM);
       v->set_value(p + 1);
     } else if (strcmp(verb, "--visible-pdf-image") == 0 && i + 1 < argc) {
-      IntParam *p = vars_vec->find<IntParam>("visible_pdf_image");
+      IntParam *p = vars_vec->find<IntParam>("visible_pdf_image_path");
       p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--config") == 0 && i + 1 < argc) {
@@ -838,7 +838,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   (void)tesseract::SetConsoleModeToUTF8();
 
   //const char *datapath = nullptr;
-  //const char *visible_pdf_image_file = nullptr;
+  //const char *visible_pdf_image_path = nullptr;
   int ret_val = EXIT_SUCCESS;
 
   //std::vector<std::string> vars_vec;
@@ -1167,8 +1167,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
     FixPageSegMode(api, pagesegmode);
 
-    if (visible_pdf_image_file) {
-      api.SetVisibleImageFilename(visible_pdf_image_file);
+    if (tess.visible_pdf_image_path) {
+      api.SetVisibleImageFilename(tess.visible_pdf_image_path);
     }
 
     if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
