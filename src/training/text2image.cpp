@@ -221,17 +221,13 @@ INT_PARAM_FLAG(glyph_resized_size, 0,
 INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
                       "Final_size=glyph_resized_size+2*glyph_num_border_pixels_to_pad");
 
-static DOUBLE_PARAM_FLAG(my_rotation, 0.0,
-                         "define rotation in radians");
+DOUBLE_PARAM_FLAG(my_rotation, 0.0, "define rotation in radians");
 
-static INT_PARAM_FLAG(my_blur, 1,
-                         "define blur");
+INT_PARAM_FLAG(my_blur, 1, "define blur");
 
-static DOUBLE_PARAM_FLAG(my_noise, 0.0,
-                         "define stdev of noise");
+DOUBLE_PARAM_FLAG(my_noise, 0.0, "define stdev of noise");
 
-static INT_PARAM_FLAG(my_smooth, 1,
-                         "define blur");
+INT_PARAM_FLAG(my_smooth, 1, "define blur");
 
 namespace tesseract {
 
