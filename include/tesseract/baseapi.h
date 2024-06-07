@@ -31,6 +31,7 @@
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/autosupressor.h>     // for AutoSupressDatum
 #include <tesseract/params.h>
+#include <tesseract/filepath.h>
 
 #include <cstdio>
 #include <tuple>  // for std::tuple

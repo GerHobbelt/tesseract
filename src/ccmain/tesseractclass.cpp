@@ -949,7 +949,7 @@ int Tesseract::init_tesseract(const std::string &datapath, TessdataManager *mgr)
 
   // TODO: set language + oem
 
-  return init_tesseract(datapath, mgr);
+  return init_tesseract(datapath, XXXX, mgr);
 }
 
 // debug PDF output helper methods:
