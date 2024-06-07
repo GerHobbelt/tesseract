@@ -3505,124 +3505,52 @@ static void destroy_il_buffer(char *buf) {
 
 std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std::vector<std::string>& paths) {
   std::vector<ImagePageFileSpec> rv;
+  std::ostringstream errmsg;
 
   for (auto spec : paths) {
     // each item in the list must exist?
     if (!fs::exists(spec)) {
-      // TODO
-      continue;
+      errmsg << "Specified file does not exist. Path: " << spec << "\n";
+      goto continue_on_error;
+      //continue;
     }
 
-    const size_t SAMPLESIZE = 8192;
+    {
+      const size_t SAMPLESIZE = 8192;
 
-    // load the first ~8K and see if that chunk contains a decent set of file paths: is so, the heuristic says it's an imagelist, rather than an image file.
-    char scratch[SAMPLESIZE + 2];
-    ConfigFile f(spec); // not a problem that this one opens the file in "r" (CRLF conversion) mode: we're after text files and the others will quickly be discovered below.
-    if (!f) {
-      // TODO
-      continue;
-    }
-    auto l = fread(scratch, 1, SAMPLESIZE, f());
-    // when it's an imagelist, it MAY be smaller than our scratch buffer!
-    if (l == 0 || ferror(f())) {
-      // TODO
-      continue;
-    }
-    // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
-    scratch[l] = 0;
-    scratch[l + 1] = 0;
-
-    bool is_imagelist = true;
-    std::vector<char *> lines;
-    char *state = nullptr;
-    char *s = strtok_r(scratch, "\r\n", &state);
-    while (s) {
-      char *p = s + strspn(s, " \t");
-
-      // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
-      if (!is_sane_imagelist_line(p)) {
-        is_imagelist = false;
-        break;
-      }
-
-      // skip comment lines and empty lines:
-      if (!strchr("#;", *p)) {
-        lines.push_back(s);
-      }
-
-      s = strtok_r(nullptr, "\r\n", &state);
-    }
-    // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
-    if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
-      // the last line will be damaged due to our sampling, so we better discard that one:
-      (void)lines.pop_back();
-    }
-
-    if (is_imagelist) {
-      int error_count = 0;
-      int sample_count = 0;
-      // validate the lines in the sample:
-      for (auto spec : lines) {
-        // parse and chop into 1..3 file paths: image;mask;overlay
-        state = nullptr;
-        int count = 0;
-        char *s = strtok_r(spec, ";", &state);
-        while (s) {
-          count++;
-          char *p = s + strspn(s, " \t");
-
-          // trim whitespace at the end...
-          char *e = p + strlen(p);
-          while (e > p) {
-            if (isspace(p[-1])) {
-              *p-- = 0;
-              continue;
-            }
-            break;
-          }
-
-          sample_count++;
-          if (!fs::exists(p)) {
-            error_count++;
-          }
-
-          s = strtok_r(nullptr, ";", &state);
+      // load the first ~8K and see if that chunk contains a decent set of file paths: is so, the heuristic says it's an imagelist, rather than an image file.
+      char scratch[SAMPLESIZE + 2];
+      ConfigFile f(spec); // not a problem that this one opens the file in "r" (CRLF conversion) mode: we're after text files and the others will quickly be discovered below.
+      if (!f) {
+        errmsg << "Cannot open/access specified file";
+        int ecode = errno;
+        if (ecode != E_OK) {
+          errmsg << " due to error: " << strerror(errno);
         }
-        if (count < 1 || count > 3) {
-          error_count++;
+        errmsg << ". Path: " << spec << "\n";
+        goto continue_on_error;
+        // continue;
+      }
+      auto l = fread(scratch, 1, SAMPLESIZE, f());
+      // when it's an imagelist, it MAY be smaller than our scratch buffer!
+      if (l == 0 || ferror(f())) {
+        errmsg << "Failed to read a first chunk of the specified file";
+        int ecode = errno;
+        if (ecode != E_OK) {
+          errmsg << " due to error: " << strerror(errno);
         }
-      }
-
-      // we tolerate about 1-in-10 file errors here...
-      float err_ratio = error_count * 100.0f / sample_count;
-      is_imagelist = (err_ratio < 10.0 /* percent */);
-    }
-
-    if (is_imagelist) {
-      // now that we know the sample is a sensible imagelist, grab the entire thing and parse it entirely...
-      const size_t listfilesize = fs::file_size(spec);
-
-      std::unique_ptr<char, void (*)(char *)> buffer((char *)malloc(listfilesize + 2), destroy_il_buffer);
-      if (!buffer) {
-        // TODO
-        continue;
-      }
-
-      // rewind file
-      fseek(f(), 0, SEEK_SET);
-      l = fread(buffer.get(), 1, listfilesize, f());
-      if (l != listfilesize || ferror(f())) {
-        // TODO
-        continue;
+        errmsg << ". Tried to read " << SAMPLESIZE << " bytes, received " << l << " bytes.  Path: " << spec << "\n";
+        goto continue_on_error;
+        // continue;
       }
       // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
-      char *b = buffer.get();
-      b[l] = 0;
-      b[l + 1] = 0;
+      scratch[l] = 0;
+      scratch[l + 1] = 0;
 
+      bool is_imagelist = true;
       std::vector<char *> lines;
       char *state = nullptr;
-      char *s = strtok_r(buffer.get(), "\r\n", &state);
+      char *s = strtok_r(scratch, "\r\n", &state);
       while (s) {
         char *p = s + strspn(s, " \t");
 
@@ -3639,59 +3567,152 @@ std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std:
 
         s = strtok_r(nullptr, "\r\n", &state);
       }
-
       // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
       if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
         // the last line will be damaged due to our sampling, so we better discard that one:
         (void)lines.pop_back();
       }
 
-      int error_count = 0;
-      int sample_count = 0;
-      // parse & validate the lines:
-      for (auto spec : lines) {
-        // parse and chop into 1..3 file paths: image;mask;overlay
-        state = nullptr;
-        std::vector<std::string> fspecs;
-        char *s = strtok_r(spec, ";", &state);
+      if (is_imagelist) {
+        int error_count = 0;
+        int sample_count = 0;
+        // validate the lines in the sample:
+        for (auto spec : lines) {
+          // parse and chop into 1..3 file paths: image;mask;overlay
+          state = nullptr;
+          int count = 0;
+          char *s = strtok_r(spec, ";", &state);
+          while (s) {
+            count++;
+            char *p = s + strspn(s, " \t");
+
+            // trim whitespace at the end...
+            char *e = p + strlen(p);
+            while (e > p) {
+              if (isspace(p[-1])) {
+                *p-- = 0;
+                continue;
+              }
+              break;
+            }
+
+            sample_count++;
+            if (!fs::exists(p)) {
+              error_count++;
+            }
+
+            s = strtok_r(nullptr, ";", &state);
+          }
+          if (count < 1 || count > 3) {
+            error_count++;
+          }
+        }
+
+        // we tolerate about 1-in-10 file errors here...
+        float err_ratio = error_count * 100.0f / sample_count;
+        is_imagelist = (err_ratio < 10.0 /* percent */);
+      }
+
+      if (is_imagelist) {
+        // now that we know the sample is a sensible imagelist, grab the entire thing and parse it entirely...
+        const size_t listfilesize = fs::file_size(spec);
+
+        std::unique_ptr<char, void (*)(char *)> buffer((char *)malloc(listfilesize + 2), destroy_il_buffer);
+        if (!buffer) {
+          // TODO
+          continue;
+        }
+
+        // rewind file
+        fseek(f(), 0, SEEK_SET);
+        l = fread(buffer.get(), 1, listfilesize, f());
+        if (l != listfilesize || ferror(f())) {
+          // TODO
+          continue;
+        }
+        // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
+        char *b = buffer.get();
+        b[l] = 0;
+        b[l + 1] = 0;
+
+        std::vector<char *> lines;
+        char *state = nullptr;
+        char *s = strtok_r(buffer.get(), "\r\n", &state);
         while (s) {
           char *p = s + strspn(s, " \t");
 
-          // trim whitespace at the end...
-          char *e = p + strlen(p);
-          while (e > p) {
-            if (isspace(p[-1])) {
-              *p-- = 0;
-              continue;
-            }
+          // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+          if (!is_sane_imagelist_line(p)) {
+            is_imagelist = false;
             break;
           }
 
-          sample_count++;
-          if (!fs::exists(p)) {
+          // skip comment lines and empty lines:
+          if (!strchr("#;", *p)) {
+            lines.push_back(s);
+          }
+
+          s = strtok_r(nullptr, "\r\n", &state);
+        }
+
+        // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
+        if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
+          // the last line will be damaged due to our sampling, so we better discard that one:
+          (void)lines.pop_back();
+        }
+
+        int error_count = 0;
+        int sample_count = 0;
+        // parse & validate the lines:
+        for (auto spec : lines) {
+          // parse and chop into 1..3 file paths: image;mask;overlay
+          state = nullptr;
+          std::vector<std::string> fspecs;
+          char *s = strtok_r(spec, ";", &state);
+          while (s) {
+            char *p = s + strspn(s, " \t");
+
+            // trim whitespace at the end...
+            char *e = p + strlen(p);
+            while (e > p) {
+              if (isspace(p[-1])) {
+                *p-- = 0;
+                continue;
+              }
+              break;
+            }
+
+            sample_count++;
+            if (!fs::exists(p)) {
+              error_count++;
+            }
+
+            fspecs.push_back(p);
+
+            s = strtok_r(nullptr, ";", &state);
+          }
+          if (fspecs.size() < 1 || fspecs.size() > 3) {
             error_count++;
+          } else {
+            ImagePageFileSpec sp = {fspecs[0]};
+            if (fspecs.size() > 1) {
+              sp.segment_mask_image_path = fspecs[1];
+            }
+            if (fspecs.size() > 2) {
+              sp.visible_page_image_path = fspecs[2];
+            }
+            rv.push_back(sp);
           }
-
-          fspecs.push_back(p);
-
-          s = strtok_r(nullptr, ";", &state);
         }
-        if (fspecs.size() < 1 || fspecs.size() > 3) {
-          error_count++;
-        } else {
-          ImagePageFileSpec sp = {fspecs[0]};
-          if (fspecs.size() > 1) {
-            sp.segment_mask_image_path = fspecs[1];
-          }
-          if (fspecs.size() > 2) {
-            sp.visible_page_image_path = fspecs[2];
-          }
-          rv.push_back(sp);
-        }
+      } else {
+        // not an image list: pick this one up as a sole image file spec:
+        goto continue_on_error;
       }
     }
-    else {
-      // not an image list: pick this one up as a sole image file spec:
+
+    if (false) {
+continue_on_error:
+      // treat situation as simple as possible: `spec` is not an image list; pick this one up as a sole image file spec:
       ImagePageFileSpec sp = {spec};
       rv.push_back(sp);
     }
