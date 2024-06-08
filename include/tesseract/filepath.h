@@ -46,7 +46,6 @@ public:
   const char *unixified();      // all native directory separators replaced by UNIX-y '/'
 
   const char *normalized();
-  std::filesystem::path &normalized_path();
 
   const char *display(int max_dir_count = 4, bool reduce_middle_instead_of_start_part = false);
 
@@ -59,14 +58,14 @@ protected:
   bool has_unixified_the_slot{false};
   bool unixified_is_different{false};
 
-  bool beautify_from_middle{false};     // caches `reduce_middle_instead_of_start_part`
+  bool beautify_from_middle{false};      // caches `reduce_middle_instead_of_start_part`
   uint8_t beautify_slot_span{0};         // caches `max_dir_count`
 
   // storage:
   // 
   // (We like to keep our class SMALL in memory footprint, which is why we don't bulk it out with std::string instances (~40 bytes each), but use allocated `char *` instead.)
   char *orig_path{nullptr};
-  std::filesystem::path *canonicalized{nullptr};
+  char *canonicalized{nullptr};
   char *beautified_path{nullptr};
 };
 

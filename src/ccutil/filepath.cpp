@@ -37,8 +37,7 @@ FilePath::FilePath(const char *path) {
 }
 FilePath::FilePath(const std::string &path) : FilePath(path.c_str()) {
 }
-FilePath::FilePath(const std::filesystem::path &filepath) {
-  canonicalized = new std::filesystem::path(filepath);
+FilePath::FilePath(const std::filesystem::path &filepath) : FilePath(filepath.string().c_str()) {
 }
 
 FilePath::~FilePath() {
@@ -53,16 +52,17 @@ FilePath::~FilePath() {
 const char *FilePath::original() const {
   if (orig_path)
     return orig_path;
-  if (canonicalized)
-    return canonicalized->string().c_str();
   return nullptr;
 }
 const char *FilePath::unixified() {
-  const char *s = original();
+  const char *s = orig_path;
 
-  if (has_unixified_the_slot || !s) {
+  if (has_unixified_the_slot) {
     return s;
   } else {
+    if (!s) {
+      throw new std::exception("Cannot request unixified path when that path has not been set up yet.");
+    }
     const char *delim = strchr(s, '\\');
     if (!delim) {
       has_unixified_the_slot = true;
@@ -71,9 +71,6 @@ const char *FilePath::unixified() {
     }
 
     // 'nuke' the original path for this as we don't want to cache this one separately and that change is 'harmless' IMHO.
-    if (!orig_path) {
-      orig_path = new_strdup(s);
-    }
     char *p = orig_path;
     for(;;) {
       p = strchr(p, '\\');
@@ -88,32 +85,21 @@ const char *FilePath::unixified() {
   }
 }
 
-std::filesystem::path &FilePath::normalized_path() {
+const char *FilePath::normalized() {
   if (!has_canonicalized_slot) {
     // did user specify a path type, rather than a string for the path? If so, make sure we copy the original before we canonicalize it!
     if (!orig_path) {
-      if (!canonicalized) {
-        throw new std::exception("Cannot request normalized/canonicalized path when that path has not been set up yet.");
-      }
-
-      orig_path = new_strdup(canonicalized->string().c_str());
+      throw new std::exception("Cannot request normalized/canonicalized path when that path has not been set up yet.");
     }
 
     std::filesystem::path cn = orig_path;
-    if (!canonicalized) {
-      canonicalized = new std::filesystem::path();
-    }
-    *canonicalized = std::filesystem::weakly_canonical(cn);
+    cn = std::filesystem::weakly_canonical(cn);
+    canonicalized = new_strdup(cn.string().c_str());
     has_canonicalized_slot = true;
   }
   assert(canonicalized != nullptr);
 
-  return *canonicalized;
-}
-
-const char *FilePath::normalized() {
-  std::filesystem::path &cn = normalized_path();
-  return cn.string().c_str();
+  return canonicalized;
 }
 
 const char *FilePath::display(int max_dir_count, bool reduce_middle_instead_of_start_part) {
@@ -131,8 +117,8 @@ const char *FilePath::display(int max_dir_count, bool reduce_middle_instead_of_s
   const char *s;
 
   // do we have a canonical flavor, or must we use the original as a base?
-  if (canonicalized) {
-    s = canonicalized->string().c_str();
+  if (canonicalized && beautify_slot_span > 0) {
+    s = canonicalized;
   } else if (orig_path) {
     s = orig_path;
   } else {
@@ -140,16 +126,16 @@ const char *FilePath::display(int max_dir_count, bool reduce_middle_instead_of_s
   }
 
   // do we need to reduce the path for beauty's sake?
-  if (beautify_slot_span == 0) {
+  if (beautify_slot_span <= 0) {
     // beautified_path = s;
     return s;
   }
 
   // additional limiting heuristic: when beautify_slot_span is non-zero, hence a path width limit is specified,
-  // we then assume that, for beauty's sake, every path particle is at most 16 characters wide: we TRY to keep
+  // we then assume that, for beauty's sake, every path particle is at most 15 characters wide: we TRY to keep
   // the beautified path within that length, by further reducing the number of path elements shown when
   // overflow is apparent.
-  unsigned max_plen = max_dir_count * (16 + 1);
+  unsigned max_plen = max_dir_count * (15 + 1);
   auto slen = strlen(s);
 
   // are we already within bounds of what we like? If so, then there's no need for shortening...
