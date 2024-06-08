@@ -570,10 +570,11 @@ bool IntParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamP
 	if (!!on_modify_f_) {
 		ParamValueContainer old(value_);
 		ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
 
 		value_ = value;
 
-		on_modify_f_(name_, *this, source_type, source, old, now);
+		on_modify_f_(name_, *this, source_type, source, old, now, dflt);
 
 		if (const int32_t* val = std::get_if<int32_t>(&now)) {
 			value_ = *val;
@@ -637,6 +638,10 @@ void IntParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source
   }
 }
 
+bool IntParam::is_set() const {
+  return (value_ != default_);
+}
+
 std::string IntParam::formatted_value_str() const {
   return std::to_string(value_);
 }
@@ -674,10 +679,11 @@ bool BoolParam::set_value(bool value, ParamSetBySourceType source_type, ParamPtr
 	if (!!on_modify_f_) {
 		ParamValueContainer old(value_);
 		ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
 
 		value_ = value;
 
-		on_modify_f_(name_, *this, source_type, source, old, now);
+		on_modify_f_(name_, *this, source_type, source, old, now, dflt);
 
 		if (const bool* val = std::get_if<bool>(&now)) {
 			value_ = *val;
@@ -815,6 +821,10 @@ void BoolParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType sourc
   }
 }
 
+bool BoolParam::is_set() const {
+  return (value_ != default_);
+}
+
 std::string BoolParam::formatted_value_str() const {
   return value_ ? "true" : "false";
 }
@@ -855,10 +865,11 @@ bool DoubleParam::set_value(double value, ParamSetBySourceType source_type, Para
 	if (!!on_modify_f_) {
 		ParamValueContainer old(value_);
 		ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
 
 		value_ = value;
 
-		on_modify_f_(name_, *this, source_type, source, old, now);
+		on_modify_f_(name_, *this, source_type, source, old, now, dflt);
 
 		if (const double* val = std::get_if<double>(&now)) {
 			value_ = *val;
@@ -920,6 +931,10 @@ void DoubleParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType sou
   }
 }
 
+bool DoubleParam::is_set() const {
+  return (value_ != default_);
+}
+
 std::string DoubleParam::formatted_value_str() const {
 #if 0
   return std::to_string(value_);   // always outputs %.6f format style values
@@ -975,10 +990,11 @@ bool StringParam::set_value(const char* value, ParamSetBySourceType source_type,
 	if (!!on_modify_f_) {
 		ParamValueContainer old(value_);
 		ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
 
 		value_ = value;
 
-		on_modify_f_(name_, *this, source_type, source, old, now);
+		on_modify_f_(name_, *this, source_type, source, old, now, dflt);
 
 		if (const std::string* val = std::get_if<std::string>(&now)) {
 			value_ = *val;
@@ -1056,6 +1072,10 @@ void StringParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType sou
   else {
     ResetToDefault(source_type);
   }
+}
+
+bool StringParam::is_set() const {
+  return (value_ != default_);
 }
 
 std::string StringParam::formatted_value_str() const {

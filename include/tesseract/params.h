@@ -120,6 +120,15 @@ typedef std::unordered_map<
 	ParamHash /* equality check */
 > ParamsHashTableType;
 
+typedef void *ParamVoidPtrDataType;
+
+struct ParamArbitraryOtherType {
+  void *data_ptr;
+  size_t data_size;
+  size_t extra_size;
+  void *extra_ptr1;
+  void *extra_ptr2;
+};
 
 // --- section setting up various C++ template constraint helpers ---
 //
@@ -167,6 +176,19 @@ concept ParamAcceptableValueType = std::is_integral<T>::value
                                    //|| std::is_base_of<std::string, T>::value
   ;
 
+template <typename T>
+concept ParamAcceptableOtherType = !std::is_integral<T>::value
+                                   && !std::is_base_of<bool, T>::value
+                                   && !std::is_floating_point<T>::value
+                                   && !std::is_base_of<char*, T>::value  // fails as per https://stackoverflow.com/questions/23986784/why-is-base-of-fails-when-both-are-just-plain-char-type
+                                   && !std::is_same<char*, T>::value
+                                   && !std::is_same<const char*, T>::value
+                                   //|| std::is_nothrow_convertible<char*, T>::value
+                                   //|| std::is_nothrow_convertible<const char*, T>::value
+                                   //|| std::is_nothrow_convertible<bool, T>::value || std::is_nothrow_convertible<double, T>::value || std::is_nothrow_convertible<int32_t, T>::value
+                                   && !std::is_base_of<std::string, T>::value
+    ;
+
 static_assert(ParamAcceptableValueType<int>);
 static_assert(ParamAcceptableValueType<double>);
 static_assert(ParamAcceptableValueType<bool>);
@@ -174,6 +196,8 @@ static_assert(!ParamAcceptableValueType<const char *>);
 static_assert(!ParamAcceptableValueType<char*>);
 static_assert(!ParamAcceptableValueType<std::string>);
 static_assert(!ParamAcceptableValueType<std::string&>);
+static_assert(ParamAcceptableOtherType<ParamVoidPtrDataType>);
+static_assert(ParamAcceptableOtherType<ParamArbitraryOtherType>);
 
 //template<typename T>
 //concept ParamDerivativeType = std::is_base_of<Param, T>::value;
@@ -311,7 +335,7 @@ Param* ParamsVectorSet::find<Param>(
 
 class Param;
 
-typedef std::variant<bool, int, double, std::string> ParamValueContainer;
+typedef std::variant<bool, int, double, std::string, ParamVoidPtrDataType, ParamArbitraryOtherType> ParamValueContainer;
 
 typedef std::function<void (
 	const char * /* name */, 
@@ -319,7 +343,8 @@ typedef std::function<void (
 	ParamSetBySourceType /* source type */,
 	ParamPtr /* optional setter/parent */, 
 	ParamValueContainer & /* old value */, 
-	ParamValueContainer & /* new value */
+	ParamValueContainer & /* new value */,
+	ParamValueContainer & /* default value */
 )> ParamOnModifyFunction;
 
 
@@ -712,6 +737,8 @@ public:
   virtual void ResetToDefault(SOURCE_TYPE) = 0;
   virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) = 0;
 
+  virtual bool is_set() const = 0;
+
   Param(const Param &o) = delete;
   Param(Param &&o) = delete;
   Param(const Param &&o) = delete;
@@ -755,6 +782,52 @@ protected:
 };
 
 
+// Use this one for arbitrary other classes of parameter you wish to use/track:
+template <class T>
+class TypedParam : public Param {
+public:
+  TypedParam(T value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~TypedParam() = default;
+
+  operator T() const;
+  void operator=(T value);
+
+  virtual bool set_value(const char *v, SOURCE_REF) override;
+  virtual bool set_value(int32_t v, SOURCE_REF) override;
+  virtual bool set_value(bool v, SOURCE_REF) override;
+  virtual bool set_value(double v, SOURCE_REF) override;
+  bool set_value(T v, SOURCE_REF);
+
+  T value() const;
+
+  virtual void ResetToDefault(SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
+
+  virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char *value_type_str() const override;
+
+  virtual bool inspect_value(ParamValueContainer &dst) const override;
+
+  TypedParam(const TypedParam<T> &o) = delete;
+  TypedParam(TypedParam<T> &&o) = delete;
+  TypedParam(const TypedParam<T> &&o) = delete;
+
+  TypedParam<T> &operator=(const TypedParam<T> &other) = delete;
+  TypedParam<T> &operator=(TypedParam<T> &&other) = delete;
+  TypedParam<T> &operator=(const TypedParam<T> &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
+private:
+  T value_;
+  T default_;
+};
+
+
 class IntParam : public Param {
 public:
   IntParam(int32_t value, const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
@@ -772,6 +845,8 @@ public:
 
   virtual void ResetToDefault(SOURCE_TYPE) override;
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
 
   virtual std::string formatted_value_str() const override;
   virtual std::string raw_value_str() const override;
@@ -812,6 +887,8 @@ public:
 
   virtual void ResetToDefault(SOURCE_TYPE) override;
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
 
   virtual std::string formatted_value_str() const override;
   virtual std::string raw_value_str() const override;
@@ -883,6 +960,8 @@ public:
   virtual void ResetToDefault(SOURCE_TYPE) override;
   virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
 
+  virtual bool is_set() const override;
+
   virtual std::string formatted_value_str() const override;
   virtual std::string raw_value_str() const override;
   virtual const char* value_type_str() const override;
@@ -907,7 +986,7 @@ private:
 
 class DoubleParam : public Param {
 public:
-  DoubleParam(double value, const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  DoubleParam(double value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
   virtual ~DoubleParam() = default;
 
   operator double() const;
@@ -921,11 +1000,13 @@ public:
   double value() const;
 
   virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
 
   virtual std::string formatted_value_str() const override;
   virtual std::string raw_value_str() const override;
-  virtual const char* value_type_str() const override;
+  virtual const char *value_type_str() const override;
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 

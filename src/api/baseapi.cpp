@@ -270,7 +270,8 @@ TessBaseAPI::TessBaseAPI()
                                          ParamSetBySourceType type,
                                          ParamPtr parent,
                                          ParamValueContainer &old_val,
-                                         ParamValueContainer &new_val) {
+                                         ParamValueContainer &new_val,
+                                         ParamValueContainer &default_val) {
     this->SetupDebugAllPreset();
   });
 }
