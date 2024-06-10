@@ -853,7 +853,7 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   if (word_res->chopped_word == nullptr) {
     // Setup word normalization parameters.
-    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
@@ -1108,7 +1108,7 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
   if (it != nullptr) {
     WERD_RES *word_res = it->word();
     word_res->x_height = it->row()->row->x_height();
-    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, it->row()->row, it->block()->block);
     TWERD *bln_word = word_res->chopped_word;

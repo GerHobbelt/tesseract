@@ -190,10 +190,10 @@ public:
 
   // Provides access to the UNICHARSET that this classifier works with.
   const UNICHARSET &GetUnicharset() const {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   UNICHARSET &GetUnicharset() {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   // Provides access to the UnicharCompress that this classifier works with.
   const UnicharCompress &GetRecoder() const {
@@ -375,14 +375,14 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
-  int debug_ = 0;
+  int debug___ = 0;
 
 public:
   void SetDebug(int v) {
-	debug_ = std::max(0, v);
+	debug___ = std::max(0, v);
   }
   int HasDebug() const {
-	  return debug_;
+	  return debug___;
   }
 
 protected:

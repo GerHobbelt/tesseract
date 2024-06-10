@@ -106,23 +106,39 @@ public:
    * reading a UNLV zone file, and for searchable PDF output.
    */
   void SetInputName(const char *name);
+
   /**
    * These functions are required for searchable PDF output.
    * We need our hands on the input file so that we can include
    * it in the PDF without transcoding. If that is not possible,
    * we need the original image. Finally, resolution metadata
    * is stored in the PDF so we need that as well.
+   *
+   * @{
    */
+
   const char *GetInputName();
+
   // Takes ownership of the input pix.
   void SetInputImage(Pix *pix);
+
   Pix *GetInputImage();
+
   int GetSourceYResolution();
+
   const char *GetDatapath();
+
   void SetVisibleImageFilename(const char *name);
+
   const char *GetVisibleImageFilename();
+
   void SetVisibleImage(Pix *pix);
+
   Pix* GetVisibleImage();
+
+  /**
+   * @}
+   */
 
   /**
   * Return a memory capacity cost estimate for the given image dimensions and
@@ -157,6 +173,8 @@ public:
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
+
+  /** Get the name of the bonus output files, which are used for debugging. */
   const std::string &GetOutputName();
 
   /**
@@ -175,21 +193,31 @@ public:
    *
    * Note: critical variables are "locked" during the Init() phase and any attempt
    * to set them to a different value before the End() call will be ignored/rejected
-   * while an error message about the attempt is logged. 
+   * while an error message about the attempt is logged.
+   *
+   * @{
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
   bool SetVariable(const char *name, bool value);
   bool SetVariable(const char *name, double value);
   bool SetVariable(const char *name, const std::string &value);
+  /**
+   * @}
+   */
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
    * Fills in `value` with the value of the parameter.
+   *
+   * @{
    */
   bool GetIntVariable(const char *name, int *value) const;
   bool GetBoolVariable(const char *name, bool *value) const;
   bool GetDoubleVariable(const char *name, double *value) const;
+  /**
+   * @}
+   */
 
   /**
    * Returns the pointer to the string that represents the value of the
@@ -290,6 +318,8 @@ public:
    * call End() and then use SetVariable before Init. This is only a very
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
+   *
+   * @{
    */
   int Init(const char *datapath,
            ParamsVectorSet &vars);
@@ -341,7 +371,7 @@ public:
   int Init(const char *language,
            const std::vector<std::string> &configs);
 
-  // Reads the traineddata via a FileReader from path `datapath`.
+  /// Reads the traineddata via a FileReader from path `datapath`.
   int Init(const char *datapath, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
@@ -370,6 +400,8 @@ protected:
                     const std::vector<std::string> &configs,
                     FileReader reader,
                     const char *data = nullptr, size_t data_size = 0);
+
+/** @} */
 
 public:
   /**
@@ -624,8 +656,7 @@ public:
    * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
    * DetectOS, or anything else that changes the internal PAGE_RES.
    */
-  PageIterator *AnalyseLayout();
-  PageIterator *AnalyseLayout(bool merge_similar_words);
+  PageIterator *AnalyseLayout(bool merge_similar_words = false);
 
   /**
    * Recognize the image from SetAndThresholdImage, generating Tesseract
@@ -638,6 +669,8 @@ public:
   /**
    * Methods to retrieve information after SetAndThresholdImage(),
    * Recognize() or TesseractRect(). (Recognize is called implicitly if needed.)
+   *
+   * @{
    */
 
   /**
@@ -863,6 +896,8 @@ public:
    */
   int *AllWordConfidences();
 
+  /** @} */
+
 #if !DISABLED_LEGACY_ENGINE
   /**
    * Applies the given word to the adaptive classifier if possible.
@@ -918,7 +953,7 @@ public:
    */
   int IsValidWord(const char *word) const;
 
-  // Returns true if utf8_character is defined in the UniCharset.
+  /// Returns true if utf8_character is defined in the UniCharset.
   bool IsValidCharacter(const char *utf8_character) const;
 
   bool GetTextDirection(int *out_offset, float *out_slope);

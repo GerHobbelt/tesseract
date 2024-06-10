@@ -300,12 +300,14 @@ Tesseract& TessBaseAPI::tesseract() const {
  * loading a UNLV zone file.
  */
 void TessBaseAPI::SetInputName(const char *name) {
-  tesseract().input_file_path = name ? name : "";
+  Tesseract &tess = tesseract();
+  tess.input_file_path_ = name;
 }
 
 /** Set the name of the visible image files. Needed only for PDF output. */
 void TessBaseAPI::SetVisibleImageFilename(const char* name) {
-  tesseract().visible_image_file_path = name ? name : "";
+  Tesseract &tess = tesseract();
+  tess.visible_image_file_path_ = name;
 }
 
 /**
@@ -370,7 +372,7 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  tesseract().output_base_filename = name ? name : "";
+  tesseract().output_base_filename.set_value(name);
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
@@ -528,7 +530,7 @@ int TessBaseAPI::Init(const char* datapath,
   Tesseract &tess = tesseract();
   //tess.tessedit_ocr_engine_mode = oem;
   //tess.languages_to_try = language;
-  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path != datapath) {
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
     // direct parameter overrides previous parameter set-up
     tess.datadir_base_path = datapath;
   }
@@ -697,7 +699,7 @@ int TessBaseAPI::Init_Internal(const char *path,
   // which case tesseract().lang is set to the Tesseract default ("eng").
   if (
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang != buggered_languge))) {
+       last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang_ != buggered_languge))) {
     // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
     assert(0);
     delete tesseract_;
@@ -712,7 +714,7 @@ int TessBaseAPI::Init_Internal(const char *path,
     }
     TessdataManager mgr(reader_);
     if (data_size != 0) {
-      mgr.LoadMemBuffer(buggered_languge, data, data_size);
+      mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
     }
     if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
       return -1;
@@ -721,8 +723,8 @@ int TessBaseAPI::Init_Internal(const char *path,
 
   // Update datapath and language requested for the last valid initialization.
   datapath_ = std::move(datapath);
-  if (datapath_.empty() && !tess.datadir.empty()) {
-    datapath_ = tess.datadir;
+  if (datapath_.empty() && !tess.datadir_.empty()) {
+    datapath_ = tess.datadir_;
   }
 
   language_ = buggered_languge;
@@ -757,12 +759,12 @@ const char *TessBaseAPI::GetInitLanguagesAsString() const {
  */
 void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-    Tesseract& tess = tesseract();
-    langs->push_back(tess.lang);
-    int num_subs = tess.num_sub_langs();
-    for (int i = 0; i < num_subs; ++i) {
-      langs->push_back(tess.get_sub_lang(i)->lang);
-    }
+  Tesseract &tess = tesseract();
+  langs->push_back(tess.lang_);
+  int num_subs = tess.num_sub_langs();
+  for (int i = 0; i < num_subs; ++i) {
+    langs->push_back(tess.get_sub_lang(i)->lang_);
+  }
 }
 
 /**
@@ -770,9 +772,9 @@ void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) co
  */
 void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-    Tesseract& tess = tesseract();
-    addAvailableLanguages(tess.datadir, "", langs);
-    std::sort(langs->begin(), langs->end());
+  Tesseract &tess = tesseract();
+  addAvailableLanguages(tess.datadir_, "", langs);
+  std::sort(langs->begin(), langs->end());
 }
 
 /**
@@ -1267,10 +1269,6 @@ int TessBaseAPI::GetThresholdedImageScaleFactor() const {
  * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
-PageIterator *TessBaseAPI::AnalyseLayout() {
-  return AnalyseLayout(false);
-}
-
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
   if (FindLines() == 0) {
     Tesseract& tess = tesseract();
@@ -1317,11 +1315,11 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   if (tess.tessedit_resegment_from_line_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from line boxes.\n");
-    page_res_ = tess.ApplyBoxes(tess.input_file_path.c_str(), true, block_list_);
+    page_res_ = tess.ApplyBoxes(tess.input_file_path_.c_str(), true, block_list_);
   } else if (tess.tessedit_resegment_from_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from page boxes.\n");
-    page_res_ = tess.ApplyBoxes(tess.input_file_path.c_str(), false, block_list_);
+    page_res_ = tess.ApplyBoxes(tess.input_file_path_.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
@@ -1336,7 +1334,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
   if (tess.tessedit_train_line_recognizer) {
     AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
-    if (!tess.TrainLineRecognizer(tess.input_file_path.c_str(), output_file_, block_list_)) {
+    if (!tess.TrainLineRecognizer(tess.input_file_path_.c_str(), output_file_, block_list_)) {
       return -1;
     }
     tess.CorrectClassifyWords(page_res_);
@@ -1372,9 +1370,9 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     tess.ApplyBoxTraining(fontname, page_res_);
   } else if (tess.tessedit_ambigs_training) {
     AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Ambigs"));
-    FILE *training_output_file = tess.init_recog_training(tess.input_file_path.c_str());
+    FILE *training_output_file = tess.init_recog_training(tess.input_file_path_.c_str());
     // OCR the page segmented into words by tesseract.
-    tess.recog_training_segmented(tess.input_file_path.c_str(), page_res_, monitor,
+    tess.recog_training_segmented(tess.input_file_path_.c_str(), page_res_, monitor,
                                          training_output_file);
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
@@ -1498,21 +1496,21 @@ Pix* TessBaseAPI::GetVisibleImage() {
 }
 
 const char *TessBaseAPI::GetInputName() {
-  if (tesseract_ != nullptr && !tesseract_->input_file_path.empty()) {
-    return tesseract_->input_file_path.c_str();
+  if (tesseract_ != nullptr && !tesseract_->input_file_path_.empty()) {
+    return tesseract_->input_file_path_.c_str();
   }
   return nullptr;
 }
 
 const char * TessBaseAPI::GetVisibleImageFilename() {
-  if (tesseract_ != nullptr && !tesseract_->visible_image_file_path.empty()) {
-    return tesseract_->visible_image_file_path.c_str();
+  if (tesseract_ != nullptr && !tesseract_->visible_image_file_path_.empty()) {
+    return tesseract_->visible_image_file_path_.c_str();
   }
   return nullptr;
 }
 
 const char *TessBaseAPI::GetDatapath() {
-  return tesseract().datadir.c_str();
+  return tesseract().datadir_.c_str();
 }
 
 int TessBaseAPI::GetSourceYResolution() {
@@ -2797,7 +2795,7 @@ int TessBaseAPI::IsValidWord(const char *word) const {
 }
 // Returns true if utf8_character is defined in the UniCharset.
 bool TessBaseAPI::IsValidCharacter(const char *utf8_character) const {
-  return tesseract().unicharset.contains_unichar(utf8_character);
+  return tesseract().unicharset_.contains_unichar(utf8_character);
 }
 
 // TODO(rays) Obsolete this function and replace with a more aptly named
@@ -3085,7 +3083,7 @@ int TessBaseAPI::FindLines() {
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
-  if (tess.SegmentPage(tess.input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
+  if (tess.SegmentPage(tess.input_file_path_.c_str(), block_list_, osd_tess, &osr) < 0) {
     return -1;
   }
 
@@ -3186,7 +3184,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     tess.AddPixDebugPage(tess.pix_binary(), "DetectOS : Thresholded Image");
   }
 
-  return tess.orientation_and_script_detection(tess.input_file_path.c_str(), osr) > 0;
+  return tess.orientation_and_script_detection(tess.input_file_path_.c_str(), osr) > 0;
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
@@ -3268,7 +3266,7 @@ void TessBaseAPI::DetectParagraphs(bool after_text_recognition) {
 
 /** This method returns the string form of the specified unichar. */
 const char *TessBaseAPI::GetUnichar(int unichar_id) const {
-  return tesseract().unicharset.id_to_unichar(unichar_id);
+  return tesseract().unicharset_.id_to_unichar(unichar_id);
 }
 
 /** Return the pointer to the i-th dawg loaded into tesseract_ object. */
@@ -3367,7 +3365,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.debug_noise_removal.set_value(true, SRC);
 
-  tess.classify_debug_level.set_value(debug_all, SRC); // LSTM debug output is extremely noisy
+  tess.classify_debug_level.set_value(debug_all.value(), SRC); // LSTM debug output is extremely noisy
   tess.classify_learning_debug_level.set_value(9, SRC);
   tess.classify_debug_character_fragments.set_value(true, SRC);
   tess.classify_enable_adaptive_debugger.set_value(true, SRC);

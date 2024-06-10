@@ -117,7 +117,7 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
     word->word->bounding_box().print();
   }
   if (word->best_choice->length() < word_length) {
-    UNICHAR_ID space_id = unicharset.unichar_to_id(" ");
+    UNICHAR_ID space_id = unicharset_.unichar_to_id(" ");
     while (word->best_choice->length() < word_length) {
       word->best_choice->append_unichar_id(space_id, 1, 0.0, word->best_choice->certainty());
     }

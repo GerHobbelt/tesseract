@@ -62,15 +62,10 @@ struct NORM_PROTOS {
  *       1 / (1 + (NormAdj / midpoint) ^ curl)
  */
 static float NormEvidenceOf(float NormAdj) {
-  NormAdj /= static_cast<float>(classify_norm_adj_midpoint);
+  NormAdj /= classify_norm_adj_midpoint.value();
 
-  if (classify_norm_adj_curl == 3) {
-    NormAdj = NormAdj * NormAdj * NormAdj;
-  } else if (classify_norm_adj_curl == 2) {
-    NormAdj = NormAdj * NormAdj;
-  } else {
-    NormAdj = std::pow(NormAdj, static_cast<float>(classify_norm_adj_curl));
-  }
+  NormAdj = std::pow(NormAdj, classify_norm_adj_curl.value());
+
   return (1 / (1 + NormAdj));
 }
 
@@ -122,7 +117,7 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
   LIST Protos = NormProtos->Protos[ClassId];
 
   if (DebugMatch) {
-    tprintDebug("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
+    tprintDebug("\nChar norm for class {}\n", unicharset_.id_to_unichar(ClassId));
   }
 
   iterate(Protos) {
@@ -187,7 +182,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
   int NumProtos;
 
   /* allocate and initialization data structure */
-  auto NormProtos = new NORM_PROTOS(unicharset.size());
+  auto NormProtos = new NORM_PROTOS(unicharset_.size());
 
   /* read file header and save in data structure */
   NormProtos->NumParams = ReadSampleSize(fp);
@@ -203,8 +198,8 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
     if (stream.fail()) {
       continue;
     }
-    if (unicharset.contains_unichar(unichar)) {
-      unichar_id = unicharset.unichar_to_id(unichar);
+    if (unicharset_.contains_unichar(unichar)) {
+      unichar_id = unicharset_.unichar_to_id(unichar);
       Protos = NormProtos->Protos[unichar_id];
       for (int i = 0; i < NumProtos; i++) {
         Protos = push_last(Protos, ReadPrototype(fp, NormProtos->NumParams));

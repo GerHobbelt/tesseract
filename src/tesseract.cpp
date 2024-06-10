@@ -978,7 +978,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     // Recognizing the latter (vs. older text-based image file formats) takes
     // a little heuristic, which we'll employ now to transform those into
     // an (updated) list of image files...
-    auto pages = api.ExpandImagelistFilesInSet(&path_params);
+    auto pages = api.ExpandImagelistFilesInSet(path_params);
     if (pages.size() == 0) {
       return EXIT_FAILURE;
     }
@@ -1047,7 +1047,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     api.SetOutputName(outputbase ::: output_base_path / output_base_filename);
 #endif
 
-    const int init_failed = api.Init(datapath, path_params, args_muster);
+    const int init_failed = api.Init(tess.datadir_base_path, path_params, args_muster);
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();
@@ -1084,9 +1084,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
     if (!tess.reactangles_to_process.empty()) {
       BOXA *rects = Tesseract::ParseRectsString(tess.reactangles_to_process.c_str());
 
-      Pix* pixs = pixRead(image);
+      Pix* pixs = pixRead(tess.input_file_path_.c_str());
       if (!pixs) {
-        tprintError("Cannot open input file: {}\n", image);
+        tprintError("Cannot open input file: {}\n", tess.input_file_path_);
         return EXIT_FAILURE;
       }
 
@@ -1159,18 +1159,18 @@ extern "C" int tesseract_main(int argc, const char** argv)
     // record the currently active input image path as soon as possible:
     // this path is also used to construct the destination path for 
     // various debug output files.
-    api.SetInputName(image);
+    api.SetInputName(tess.input_file_path_.c_str());
 
-    FixPageSegMode(api, pagesegmode);
+    FixPageSegMode(api, api.GetPageSegMode());
 
-    if (tess.visible_image_file_path) {
-      api.SetVisibleImageFilename(tess.visible_image_file_path);
+    if (!tess.visible_image_file_path_.empty()) {
+      api.SetVisibleImageFilename(tess.visible_image_file_path_.c_str());
     }
 
-    if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
-      Pix* pixs = pixRead(image);
+    if (tess.tessedit_pageseg_mode == tesseract::PSM_AUTO_ONLY) {
+      Pix *pixs = pixRead(tess.input_file_path_.c_str());
       if (!pixs) {
-        tprintError("Leptonica can't process input file: {}\n", image);
+        tprintError("Leptonica can't process input file: {}\n", tess.input_file_path_);
         return 2;
       }
 
@@ -1201,13 +1201,13 @@ extern "C" int tesseract_main(int argc, const char** argv)
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
       bool b = false;
-      bool in_training_mode = (api.GetBoolVariable("tessedit_ambigs_training", &b) && b) ||
-        (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
-        (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
-        (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
+      bool in_training_mode = (tess.tessedit_ambigs_training) ||
+        (tess.tessedit_resegment_from_boxes) ||
+        (tess.tessedit_make_boxes_from_boxes) ||
+        (tess.tessedit_train_line_recognizer);
 
       if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
-        if (!api.tesseract().AnyTessLang()) {
+        if (!tess.AnyTessLang()) {
           fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
           return EXIT_FAILURE;
         }
@@ -1243,11 +1243,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
       if (in_training_mode) {
         renderers.push_back(nullptr);
       } else if (outputbase != nullptr) {
-        succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
+        succeed &= !PreloadRenderers(api, renderers, api.GetPageSegMode(), outputbase);
         if (succeed && renderers.empty()) {
           // default: TXT + HOCR renderer
           api.SetupDefaultPreset();
-          succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
+          succeed &= !PreloadRenderers(api, renderers, api.GetPageSegMode(), outputbase);
         }
       }
 
@@ -1258,10 +1258,10 @@ extern "C" int tesseract_main(int argc, const char** argv)
         }
 #endif
 
-        succeed &= api.ProcessPages(image, nullptr, 0, renderers[0].get());
+        succeed &= api.ProcessPages(tess.input_file_path_.c_str(), nullptr, 0, renderers[0].get());
 
         if (!succeed) {
-          tprintError("Error during page processing. File: {}\n", image);
+          tprintError("Error during page processing. File: {}\n", tess.input_file_path_);
           ret_val = EXIT_FAILURE;
         }
       }

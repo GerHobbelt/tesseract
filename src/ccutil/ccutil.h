@@ -58,18 +58,18 @@ public:
     return params_collective_;
   }
 
-  std::string visible_image_file_path; // name of currently input file, used for visible overlays only
-  std::string input_file_path; // name of currently processed input file
-  std::string datadir;         // dir for data files
-  std::string imagebasename;   // name of image
-  std::string lang;
-  std::string language_data_path_prefix;
-  UNICHARSET unicharset;
+  std::string visible_image_file_path_; // name of currently input file, used for visible overlays only
+  std::string input_file_path_; // name of currently processed input file
+  std::string datadir_;         // dir for data files
+  std::string imagebasename_;   // name of image
+  std::string lang_;
+  std::string language_data_path_prefix_;
+  UNICHARSET unicharset_;
 #if !DISABLED_LEGACY_ENGINE
-  UnicharAmbigs unichar_ambigs;
+  UnicharAmbigs unichar_ambigs_;
 #endif
-  std::string imagefile; // image file name
-  std::string directory; // main directory
+  std::string imagefile_; // image file name
+  std::string directory_; // main directory
 
 private:
   ParamsVector params_;

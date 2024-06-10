@@ -596,7 +596,7 @@ void Tesseract::ResetDocumentDictionary() {
 
 void Tesseract::SetBlackAndWhitelist() {
   // Set the white and blacklists (if any)
-  unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+  unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                      tessedit_char_whitelist.c_str(),
                                      tessedit_char_unblacklist.c_str());
   if (lstm_recognizer_) {
@@ -607,7 +607,7 @@ void Tesseract::SetBlackAndWhitelist() {
   }
   // Black and white lists should apply to all loaded classifiers.
   for (auto &sub_lang : sub_langs_) {
-    sub_lang->unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+    sub_lang->unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                                  tessedit_char_whitelist.c_str(),
                                                  tessedit_char_unblacklist.c_str());
     if (sub_lang->lstm_recognizer_) {
@@ -925,33 +925,6 @@ bool Tesseract::AnyLSTMLang() const {
   return false;
 }
 
-int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr) {
-  std::vector<std::string> nil;
-  assert(mgr != nullptr);
-
-  // TODO: set language + oem
-  
-  return init_tesseract(datapath, mgr);
-}
-
-int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
-  TessdataManager mgr;
-  std::vector<std::string> nil;
-
-  // TODO: set language + oem
-
-  return init_tesseract(datapath, &mgr);
-}
-
-int Tesseract::init_tesseract(const std::string &datapath, TessdataManager *mgr) {
-  std::vector<std::string> nil;
-  assert(mgr != nullptr);
-
-  // TODO: set language + oem
-
-  return init_tesseract(datapath, XXXX, mgr);
-}
-
 // debug PDF output helper methods:
 void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
   if (pix == nullptr)
@@ -976,7 +949,7 @@ void Tesseract::PopPixDebugSection(int handle) { // pop active; return focus to 
 
 void Tesseract::ResyncVariablesInternally() {
   if (lstm_recognizer_ != nullptr) {
-    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
+    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix_);
     lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
     lstm_recognizer_->SetDebug(tess_debug_lstm);
   }
@@ -1027,7 +1000,7 @@ void Tesseract::ReportDebugInfo() {
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang_.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
 
     ClearPixForDebugView();

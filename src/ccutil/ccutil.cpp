@@ -38,9 +38,7 @@ CCUtil::CCUtil()
     , params_collective_({&params_, &GlobalParams()})
       , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
       , BOOL_MEMBER(use_ambigs_for_adaption, false, "Use ambigs for deciding whether to adapt to a character", params())
-      , BOOL_MEMBER(debug_datadir_discovery, false, "Show which paths tesseract will inspect while looking for its designated data directory, which contains the traineddata, configs, etc.", params())
-      , STRING_MEMBER(datadir_base_path, nullptr, "The designated tesseract data directory, which contains the traineddata, configs, etc.; setting this variable is one way to help tesseract locate the desired data path. (C++ API, the location of the current tesseract binary/application, the environment variable TESSDATA_PREFIX and current working directory are the other ways)", params())
-{}
+      , BOOL_MEMBER(debug_datadir_discovery, false, "Show which paths tesseract will inspect while looking for its designated data directory, which contains the traineddata, configs, etc.", params()), STRING_MEMBER(datadir_base_path, "", "The designated tesseract data directory, which contains the traineddata, configs, etc.; setting this variable is one way to help tesseract locate the desired data path. (C++ API, the location of the current tesseract binary/application, the environment variable TESSDATA_PREFIX and current working directory are the other ways) A null/empty path spec means ignore-look-elsewhere for hints to the actual data directory, i.e. go down the afore-mentioned list to find the data path.", params()) {}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable
@@ -235,18 +233,18 @@ static bool determine_datadir(std::string &datadir, const std::string &argv0, co
  */
 void CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
   if (output_image_basename == "-" /* stdout */)
-    imagebasename = "tesseract-stdio-session";
+    imagebasename_ = "tesseract-stdio-session";
   else
-    imagebasename = output_image_basename; /**< name of output/debug image(s) */
+    imagebasename_ = output_image_basename; /**< name of output/debug image(s) */
 
-  if (!determine_datadir(datadir, argv0, this->datadir_base_path.value(), this->debug_datadir_discovery)) {
-    assert(datadir.empty());
+  if (!determine_datadir(datadir_, argv0, this->datadir_base_path.value(), this->debug_datadir_discovery)) {
+    assert(datadir_.empty());
     // TODO
     assert(0);
   }
 
   // check for missing directory separator
-  assert(datadir.ends_with('/'));
+  assert(datadir_.ends_with('/'));
 }
 
 } // namespace tesseract

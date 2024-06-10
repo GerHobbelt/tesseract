@@ -386,7 +386,7 @@ protected:
   // Member variables.
 
   LanguageModel language_model_;
-  PRIORITY pass2_ok_split;
+  PRIORITY pass2_ok_split_;
 
 public:
   // Stores the best choice for the previous word in the paragraph.

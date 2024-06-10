@@ -237,15 +237,9 @@ float SubfeatureEvidence(FEATURE Feature, PROTO_STRUCT *Proto) {
  *       1 / (1 + (sim / midpoint) ^ curl)
  */
 double EvidenceOf(double Similarity) {
-  Similarity /= training_similarity_midpoint;
+  Similarity /= training_similarity_midpoint.value();
 
-  if (training_similarity_curl == 3) {
-    Similarity = Similarity * Similarity * Similarity;
-  } else if (training_similarity_curl == 2) {
-    Similarity = Similarity * Similarity;
-  } else {
-    Similarity = pow(Similarity, training_similarity_curl);
-  }
+  Similarity = std::pow(Similarity, training_similarity_curl.value());
 
   return (1.0 / (1.0 + Similarity));
 }

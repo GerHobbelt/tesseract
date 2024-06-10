@@ -158,14 +158,14 @@ public:
   ~Dict();
 
   const UNICHARSET &getUnicharset() const {
-    return getCCUtil()->unicharset;
+    return getCCUtil()->unicharset_;
   }
   UNICHARSET &getUnicharset() {
-    return getCCUtil()->unicharset;
+    return getCCUtil()->unicharset_;
   }
 #if !DISABLED_LEGACY_ENGINE
   const UnicharAmbigs &getUnicharAmbigs() const {
-    return getCCUtil()->unichar_ambigs;
+    return getCCUtil()->unichar_ambigs_;
   }
 #endif
   // Returns true if unichar_id is a word compounding character like - or /.
@@ -415,7 +415,7 @@ public:
   /// Calls probability_in_context_ member function.
   double ProbabilityInContext(const char *context, int context_bytes, const char *character,
                               int character_bytes) {
-    return (this->*probability_in_context_)(getCCUtil()->lang.c_str(), context, context_bytes,
+    return (this->*probability_in_context_)(getCCUtil()->lang_.c_str(), context, context_bytes,
                                             character, character_bytes);
   }
 
