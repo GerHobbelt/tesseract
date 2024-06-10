@@ -603,7 +603,7 @@ bool IntParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr so
 	return set_value(val, source_type, source);
 }
 
-IntParam::IntParam(int32_t value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+IntParam::ValueTypedParam(int32_t value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
   : Param(name, comment, owner, init, on_modify_f) {
   value_ = value;
   default_ = value;
@@ -628,10 +628,10 @@ void IntParam::ResetToDefault(ParamSetBySourceType source_type) {
   set_value(default_, source_type, nullptr);
 }
 
-void IntParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+void IntParam::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
   IntParam* param = vec.find<IntParam>(name_);
   if (param) {
-    set_value(*param, source_type, param);
+    set_value(param->value(), source_type, param);
   }
   else {
     ResetToDefault(source_type);
@@ -646,7 +646,7 @@ std::string IntParam::formatted_value_str() const {
   return std::to_string(value_);
 }
 
-const char* IntParam::value_type_str() const {
+const char *IntParam::value_type_str() const {
   return "integer";
 }
 
@@ -654,7 +654,7 @@ std::string IntParam::raw_value_str() const {
   return std::to_string(value_);
 }
 
-bool IntParam::inspect_value(ParamValueContainer & dst) const {
+bool IntParam::inspect_value(ParamValueContainer &dst) const {
   dst = static_cast<int>(value_);
   return true;
 }
@@ -782,7 +782,7 @@ bool BoolParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr s
 	return set_value(!zero, source_type, source);
 }
 
-BoolParam::BoolParam(bool value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+BoolParam::ValueTypedParam(bool value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
   : Param(name, comment, owner, init, on_modify_f) {
   value_ = value;
   default_ = value;
@@ -811,10 +811,10 @@ void BoolParam::ResetToDefault(ParamSetBySourceType source_type) {
   set_value(default_, source_type, nullptr);
 }
 
-void BoolParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+void BoolParam::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
   BoolParam* param = vec.find<BoolParam>(name_);
   if (param) {
-    set_value(*param, source_type, param);
+    set_value(param->value(), source_type, param);
   }
   else {
     ResetToDefault(source_type);
@@ -829,7 +829,7 @@ std::string BoolParam::formatted_value_str() const {
   return value_ ? "true" : "false";
 }
 
-const char* BoolParam::value_type_str() const {
+const char *BoolParam::value_type_str() const {
   return "boolean";
 }
 
@@ -837,7 +837,7 @@ std::string BoolParam::raw_value_str() const {
   return value_ ? "true": "false";
 }
 
-bool BoolParam::inspect_value(ParamValueContainer& dst) const {
+bool BoolParam::inspect_value(ParamValueContainer &dst) const {
   dst = value_;
   return true;
 }
@@ -894,7 +894,7 @@ bool DoubleParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPt
 	return set_value(val, source_type, source);
 }
 
-DoubleParam::DoubleParam(double value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+DoubleParam::ValueTypedParam(double value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
   : Param(name, comment, owner, init, on_modify_f) {
   value_ = value;
   default_ = value;
@@ -921,10 +921,10 @@ double DoubleParam::value() const {
 void DoubleParam::ResetToDefault(ParamSetBySourceType source_type) {
   set_value(default_, source_type, nullptr);
 }
-void DoubleParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+void DoubleParam::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
   DoubleParam* param = vec.find<DoubleParam>(name_);
   if (param) {
-    set_value(*param, source_type, param);
+    set_value(param->value(), source_type, param);
   }
   else {
     ResetToDefault(source_type);
@@ -946,7 +946,7 @@ std::string DoubleParam::formatted_value_str() const {
 #endif
 }
 
-const char* DoubleParam::value_type_str() const {
+const char *DoubleParam::value_type_str() const {
   return "floating point";
 }
 
@@ -961,7 +961,7 @@ std::string DoubleParam::raw_value_str() const {
 #endif
 }
 
-bool DoubleParam::inspect_value(ParamValueContainer& dst) const {
+bool DoubleParam::inspect_value(ParamValueContainer &dst) const {
   dst = value_;
   return true;
 }
@@ -979,10 +979,7 @@ ParamPtr DoubleParam::clone() const {
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StringParam::set_value(const char* value, ParamSetBySourceType source_type, ParamPtr source) {
-	if (value == nullptr)
-		value = "";
-
+bool StringParam::set_value(const std::string &value, ParamSetBySourceType source_type, ParamPtr source) {
 	access_counts_.writing++;
 	if (value != value_ && value != default_)
 		access_counts_.changing++;
@@ -1006,6 +1003,12 @@ bool StringParam::set_value(const char* value, ParamSetBySourceType source_type,
 	return true;
 }
 
+bool StringParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+  if (v == nullptr)
+    v = "";
+  std::string val = v;
+  return set_value(val, source_type, source);
+}
 bool StringParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
 	std::string val = std::to_string(v);
 	return set_value(val.c_str(), source_type, source);
@@ -1019,34 +1022,46 @@ bool StringParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr
 	return set_value(val.c_str(), source_type, source);
 }
 
-StringParam::StringParam(const char* value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+StringParam::StringTypedParam(const std::string &value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
   : Param(name, comment, owner, init, on_modify_f) {
   value_ = value;
   default_ = value;
+
   type_ = STRING_PARAM;
 }
 
-StringParam::operator std::string& () {
+StringParam::StringTypedParam(const std::string *value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : StringParam::StringTypedParam(*value, name, comment, owner, init, on_modify_f) {}
+
+StringParam::StringTypedParam(const char *value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : StringParam::StringTypedParam(std::string(value), name, comment, owner, init, on_modify_f) {}
+
+
+StringParam::operator const std::string &() {
   access_counts_.reading++;
   return value_;
 }
-const char* StringParam::c_str() const {
+const char *StringParam::c_str() const {
   access_counts_.reading++;
   return value_.c_str();
 }
+#if 0
 bool StringParam::contains(char c) const {
   access_counts_.reading++;
   return value_.find(c) != std::string::npos;
 }
+#endif
 bool StringParam::empty() const {
   access_counts_.reading++;
   return value_.empty();
 }
-bool StringParam::operator==(const std::string& other) const {
+#if ENABLE_PARAM_COMPARISON_OPERATORS
+bool StringParam::operator==(const std::string &other) const {
   access_counts_.reading++;
   return value_ == other;
 }
-void StringParam::operator=(const std::string& value) {
+#endif
+void StringParam::operator= (const std::string &value) {
   access_counts_.writing++;
   if (value != value_ && value != default_)
     access_counts_.changing++;
@@ -1054,7 +1069,7 @@ void StringParam::operator=(const std::string& value) {
 }
 
 
-const std::string& StringParam::value() const {
+const std::string &StringParam::value() const {
   access_counts_.reading++;
   return value_;
 }
@@ -1064,7 +1079,7 @@ void StringParam::ResetToDefault(ParamSetBySourceType source_type) {
   (void) Param::set_value(v, source_type, nullptr);
 }
 
-void StringParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+void StringParam::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
   StringParam* param = vec.find<StringParam>(name_);
   if (param) {
     set_value(param, source_type, param);
@@ -1085,7 +1100,7 @@ std::string StringParam::formatted_value_str() const {
   return std::move(rv);
 }
 
-const char* StringParam::value_type_str() const {
+const char *StringParam::value_type_str() const {
   return "string";
 }
 
@@ -1094,15 +1109,333 @@ std::string StringParam::raw_value_str() const {
   return std::move(rv);
 }
 
-bool StringParam::inspect_value(ParamValueContainer& dst) const {
+bool StringParam::inspect_value(ParamValueContainer &dst) const {
   dst = value_;
   return true;
 }
 
 ParamPtr StringParam::clone() const {
-  StringParam *p = new StringParam(value_.c_str(), name_str(), info_str(), owner());
+  StringParam *p = new StringParam(value_, name_str(), info_str(), owner());
   return p;
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// StringSetParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool StringSetParam::set_value(const std::vector<std::string> &value, ParamSetBySourceType source_type, ParamPtr source) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+
+  if (!!on_modify_f_) {
+    ParamValueContainer old(value_);
+    ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
+
+    value_ = value;
+
+    on_modify_f_(name_, *this, source_type, source, old, now, dflt);
+
+    if (const ParamStringSetType *val = std::get_if<ParamStringSetType>(&now)) {
+      value_ = *val;
+    }
+  } else {
+    value_ = value;
+  }
+  return true;
+}
+
+bool StringSetParam::set_value(const std::vector<std::string> *value, ParamSetBySourceType source_type, ParamPtr source) {
+  if (value == nullptr) {
+    std::vector<std::string> empty;
+    return set_value(empty, source_type, source);
+  } else {
+    return set_value(*value, source_type, source);
+  }
+}
+
+bool StringSetParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
+  std::string val = std::to_string(v);
+  return set_value(val.c_str(), source_type, source);
+}
+bool StringSetParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+  const char *val = (v ? "true" : "false");
+  return set_value(val, source_type, source);
+}
+bool StringSetParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+  std::string val = std::to_string(v);
+  return set_value(val.c_str(), source_type, source);
+}
+
+static const char *strset_separators = ";|";
+
+static inline std::vector<std::string> parse_string_set(const char *v) {
+  std::vector<std::string> val;
+  if (v != nullptr && *v != 0) {
+    // parse string into set: these are ';' semicolon or '|' pipe symbol separated, unless otherwise specified.
+    // use the first separator we encounter for the entire set, i.e. we DO NOT support mixing several separators in the input string!
+    unsigned pos = strspn(v, strset_separators);
+    char sep[2] = {v[pos], 0};
+    while (*v) {
+      unsigned pos = strspn(v, sep);
+      std::string s(v, pos);
+      val.push_back(s);
+      v += pos;
+      if (*v)
+        v++;
+    }
+  }
+  return val;
+}
+
+bool StringSetParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+  return set_value(parse_string_set(v), source_type, source);
+}
+
+StringSetParam::RefTypedParam(const std::vector<std::string> &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+
+  parse_f_ = parse_f;
+  format_f_ = format_f;
+
+  type_ = STRING_SET_PARAM;
+}
+
+StringSetParam::RefTypedParam(const std::vector<std::string> *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : StringSetParam::RefTypedParam(*value, parse_f, format_f, name, comment, owner, init, on_modify_f)
+{}
+
+StringSetParam::RefTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : StringSetParam::RefTypedParam(std::vector<std::string>(), parse_f, format_f, name, comment, owner, init, on_modify_f)
+{
+  parse_string_set(value);
+}
+
+StringSetParam::operator const std::string &() {
+  access_counts_.reading++;
+  return format_string_set();
+}
+const char *StringSetParam::c_str() const {
+  access_counts_.reading++;
+  return value_.c_str();
+}
+bool StringSetParam::contains(char c) const {
+  access_counts_.reading++;
+  return value_.find(c) != std::string::npos;
+}
+bool StringSetParam::empty() const {
+  access_counts_.reading++;
+  return value_.empty();
+}
+#if ENABLE_PARAM_COMPARISON_OPERATORS
+bool StringSetParam::operator==(const std::string &other) const {
+  access_counts_.reading++;
+  return value_ == other;
+}
+#endif
+void StringSetParam::operator= (const std::string &value) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+  value_ = value;
+}
+
+const std::string &StringSetParam::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void StringSetParam::ResetToDefault(ParamSetBySourceType source_type) {
+  const std::string &v = default_;
+  (void)Param::set_value(v, source_type, nullptr);
+}
+
+void StringSetParam::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
+  StringParam *param = vec.find<StringParam>(name_);
+  if (param) {
+    set_value(param, source_type, param);
+  } else {
+    ResetToDefault(source_type);
+  }
+}
+
+bool StringSetParam::is_set() const {
+  return (value_ != default_);
+}
+
+std::string StringSetParam::formatted_value_str() const {
+  std::string rv = "\u00AB";
+  rv += value_;
+  rv += "\u00BB";
+  return std::move(rv);
+}
+
+const char *StringSetParam::value_type_str() const {
+  return "string";
+}
+
+std::string StringSetParam::raw_value_str() const {
+  std::string rv(value_);
+  return std::move(rv);
+}
+
+bool StringSetParam::inspect_value(ParamValueContainer &dst) const {
+  dst = value_;
+  return true;
+}
+
+ParamPtr StringSetParam::clone() const {
+  StringSetParam *p = new StringSetParam(value_, name_str(), info_str(), owner());
+  return p;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// StringParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool StringParam::set_value(const char *value, ParamSetBySourceType source_type, ParamPtr source) {
+  if (value == nullptr)
+    value = "";
+
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+
+  if (!!on_modify_f_) {
+    ParamValueContainer old(value_);
+    ParamValueContainer now(value);
+    ParamValueContainer dflt(default_);
+
+    value_ = value;
+
+    on_modify_f_(name_, *this, source_type, source, old, now, dflt);
+
+    if (const std::string *val = std::get_if<std::string>(&now)) {
+      value_ = *val;
+    }
+  } else {
+    value_ = value;
+  }
+  return true;
+}
+
+bool IntSetParamBase::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
+  std::string val = std::to_string(v);
+  return set_value(val.c_str(), source_type, source);
+}
+bool IntSetParamBase::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+  const char *val = (v ? "true" : "false");
+  return set_value(val, source_type, source);
+}
+bool IntSetParamBase::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+  std::string val = std::to_string(v);
+  return set_value(val.c_str(), source_type, source);
+}
+
+IntSetParamBase::RefTypedParam(const std::string &value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+  type_ = STRING_PARAM;
+}
+
+IntSetParamBase::RefTypedParam(const std::string *value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : IntSetParamBase::RefTypedParam(*value, name, comment, owner, init, on_modify_f) {}
+
+IntSetParam::IntSetParam(const char *value, const char *name, const char *comment, ParamsVector &owner, bool init, ParamOnModifyFunction on_modify_f)
+    : IntSetParamBase::RefTypedParam(value, name, comment, owner, init, on_modify_f) {}
+
+IntSetParamBase::operator const std::string &() {
+  access_counts_.reading++;
+  return value_;
+}
+const char *IntSetParamBase::c_str() const {
+  access_counts_.reading++;
+  return value_.c_str();
+}
+bool IntSetParam::contains(char c) const {
+  access_counts_.reading++;
+  return value_.find(c) != std::string::npos;
+}
+bool IntSetParamBase::empty() const {
+  access_counts_.reading++;
+  return value_.empty();
+}
+#if ENABLE_PARAM_COMPARISON_OPERATORS
+bool IntSetParamBase::operator==(const std::string &other) const {
+  access_counts_.reading++;
+  return value_ == other;
+}
+#endif
+void IntSetParamBase::operator= (const std::string &value) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+  value_ = value;
+}
+
+const std::string &IntSetParamBase::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void IntSetParamBase::ResetToDefault(ParamSetBySourceType source_type) {
+  const std::string &v = default_;
+  (void)Param::set_value(v, source_type, nullptr);
+}
+
+void IntSetParamBase::ResetFrom(const ParamsVectorSet &vec, ParamSetBySourceType source_type) {
+  IntSetParam *param = vec.find<IntSetParam>(name_);
+  if (param) {
+    set_value(param, source_type, param);
+  } else {
+    ResetToDefault(source_type);
+  }
+}
+
+bool IntSetParamBase::is_set() const {
+  return (value_ != default_);
+}
+
+std::string IntSetParamBase::formatted_value_str() const {
+  std::string rv = "\u00AB";
+  rv += value_;
+  rv += "\u00BB";
+  return std::move(rv);
+}
+
+const char *IntSetParamBase::value_type_str() const {
+  return "string";
+}
+
+std::string IntSetParamBase::raw_value_str() const {
+  std::string rv(value_);
+  return std::move(rv);
+}
+
+bool IntSetParamBase::inspect_value(ParamValueContainer &dst) const {
+  dst = value_;
+  return true;
+}
+
+ParamPtr IntSetParamBase::clone() const {
+  IntSetParam *p = new IntSetParam(value_, name_str(), info_str(), owner());
+  return p;
+}
+
+
 
 
 
@@ -1204,6 +1537,20 @@ StringParam* ParamUtils::FindParam<StringParam>(
     const ParamsVectorSet& set
 ) {
   return set.find<StringParam>(name);
+}
+
+template <>
+StringSetParam *ParamUtils::FindParam<StringSetParam>(
+    const char *name,
+    const ParamsVectorSet &set) {
+  return set.find<StringSetParam>(name);
+}
+
+template <>
+IntSetParam *ParamUtils::FindParam<IntSetParam>(
+    const char *name,
+    const ParamsVectorSet &set) {
+  return set.find<IntSetParam>(name);
 }
 
 template <>

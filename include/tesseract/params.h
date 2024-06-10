@@ -38,10 +38,6 @@
 namespace tesseract {
 
 class Param;
-class IntParam;
-class BoolParam;
-class StringParam;
-class DoubleParam;
 class TFile;
 
 // The value types supported by the Param class hierarchy. These identifiers can be bitwise-OR-ed
@@ -49,13 +45,16 @@ class TFile;
 enum ParamType {
 	UNKNOWN_PARAM = 0,
 
-	INT_PARAM = 1,            // 32-bit signed integer
-	BOOL_PARAM = 2,
-	DOUBLE_PARAM = 4,
-	STRING_PARAM = 8,
-  CUSTOM_PARAM = 16,        // a yet-unspecified type: provided as an advanced-use generic parameter value storage container for when the otrher, basic, value types do not suffice in userland code. The tesseract core does not employ this value type anywhere: we do have compound paramater values, mostly sets of file paths, but those are encoded as *string* value in their parameter value.
+	INT_PARAM =         0x0001,            // 32-bit signed integer
+  BOOL_PARAM =        0x0002,
+  DOUBLE_PARAM =      0x0004,
+  STRING_PARAM =      0x0008,
+  STRING_SET_PARAM =  0x0010,
+  INT_SET_PARAM =     0x0020,
+  DOUBLE_SET_PARAM =  0x0040,
+  CUSTOM_PARAM =      0x0080, // a yet-unspecified type: provided as an advanced-use generic parameter value storage container for when the other, basic, value types do not suffice in userland code. The tesseract core does not employ this value type anywhere: we do have compound paramater values, mostly sets of file paths, but those are encoded as *string* value in their parameter value.
 
-	ANY_TYPE_PARAM = 31,      // catch-all identifier for the selection/filter functions: there this is used to match *any and all* parameter value types encountered.
+	ANY_TYPE_PARAM =    0x00FF, // catch-all identifier for the selection/filter functions: there this is used to match *any and all* parameter value types encountered.
 };
 
 // Identifiers used to indicate the *origin* of the current parameter value. Used for reporting/diagnostic purposes. Do not treat these
@@ -72,6 +71,7 @@ enum ParamSetBySourceType {
   PARAM_VALUE_IS_SET_BY_APPLICATION,    // 'explicit' write: user / application code set the param value, whatever it is now.
 };
 
+// --------------------------------------------------------------------------------------------------
 
 // Custom equivalent of std::hash<Param> + std::equal_to<Param> for std::unordered_map<const char *key, Param & value>.
 class ParamHash
@@ -87,6 +87,8 @@ public:
 	bool operator()( const char * lhs, const char * rhs ) const noexcept;
 };
 
+// --------------------------------------------------------------------------------------------------
+
 // Custom implementation of class Compare for std::sort.
 class ParamComparer
 {
@@ -96,6 +98,8 @@ public:
 	// compare as a-less-b? for purposes of std::sort et al:
 	bool operator()( const char * lhs, const char * rhs ) const;
 };
+
+// --------------------------------------------------------------------------------------------------
 
 // Readability helper types: reference and pointer to `Param` base class.
 typedef Param & ParamRef;
@@ -126,9 +130,13 @@ struct ParamArbitraryOtherType {
   void *data_ptr;
   size_t data_size;
   size_t extra_size;
-  void *extra_ptr1;
-  void *extra_ptr2;
+  void *extra_ptr;
 };
+
+typedef std::vector<std::string> ParamStringSetType;
+typedef std::vector<int32_t> ParamIntSetType;
+typedef std::vector<bool> ParamBoolSetType;
+typedef std::vector<double> ParamDoubleSetType;
 
 // --- section setting up various C++ template constraint helpers ---
 //
@@ -198,6 +206,10 @@ static_assert(!ParamAcceptableValueType<std::string>);
 static_assert(!ParamAcceptableValueType<std::string&>);
 static_assert(ParamAcceptableOtherType<ParamVoidPtrDataType>);
 static_assert(ParamAcceptableOtherType<ParamArbitraryOtherType>);
+static_assert(ParamAcceptableOtherType<ParamStringSetType>);
+static_assert(ParamAcceptableOtherType<ParamIntSetType>);
+static_assert(ParamAcceptableOtherType<ParamBoolSetType>);
+static_assert(ParamAcceptableOtherType<ParamDoubleSetType>);
 
 //template<typename T>
 //concept ParamDerivativeType = std::is_base_of<Param, T>::value;
@@ -214,6 +226,8 @@ static_assert(ParamAcceptableOtherType<ParamArbitraryOtherType>);
 
 // --- END of section setting up various C++ template constraint helpers ---
 
+
+// --------------------------------------------------------------------------------------------------
 
 // A set (vector) of parameters. While this is named *vector* the internal organization
 // is hash table based to provide fast random-access add / remove / find functionality.
@@ -276,9 +290,10 @@ public:
 	friend class ParamsVectorSet;
 };
 
+// --------------------------------------------------------------------------------------------------
 
 // an (ad-hoc?) collection of ParamsVector instances.
-class ParamsVectorSet {
+class ParamsVectorSet final {
 private:
 	std::vector<ParamsVector *> collection_;
 
@@ -309,33 +324,11 @@ public:
   ParamsVector flattened_copy(ParamType accepted_types_mask = ANY_TYPE_PARAM) const;
 };
 
-// ready-made template instances:
-template <>
-IntParam* ParamsVectorSet::find<IntParam>(
-  const char* name
-) const;
-template <>
-BoolParam* ParamsVectorSet::find<BoolParam>(
-  const char* name
-) const;
-template <>
-DoubleParam* ParamsVectorSet::find<DoubleParam>(
-  const char* name
-) const;
-template <>
-StringParam* ParamsVectorSet::find<StringParam>(
-  const char* name
-) const;
-template <>
-Param* ParamsVectorSet::find<Param>(
-  const char* name
-) const;
-//--------------------
-
+// --------------------------------------------------------------------------------------------------
 
 class Param;
 
-typedef std::variant<bool, int, double, std::string, ParamVoidPtrDataType, ParamArbitraryOtherType> ParamValueContainer;
+typedef std::variant<bool, int, double, std::string, ParamStringSetType, ParamIntSetType, ParamBoolSetType, ParamDoubleSetType, ParamVoidPtrDataType, ParamArbitraryOtherType> ParamValueContainer;
 
 typedef std::function<void (
 	const char * /* name */, 
@@ -347,252 +340,7 @@ typedef std::function<void (
 	ParamValueContainer & /* default value */
 )> ParamOnModifyFunction;
 
-
-// Utility functions for working with Tesseract parameters.
-class TESS_API ParamUtils {
-public:
-  // Reads a file of parameter definitions and set/modify the values therein.
-  // If the filename begins with a `+` or `-`, the Variables will be
-  // ORed or ANDed with any current values.
-  // 
-  // Blank lines and lines beginning # are ignored.
-  // 
-  // Variable names are followed by one of more whitespace characters,
-  // followed by the Value, which spans the rest of line.
-  static bool ReadParamsFile(const std::string &file, // filename to read
-	  const ParamsVectorSet &set, 
-	  SOURCE_REF
-  );
-
-  // Read parameters from the given file pointer.
-  // Otherwise identical to ReadParamsFile().
-  static bool ReadParamsFromFp(TFile *fp,
-	  const ParamsVectorSet &set,
-	  SOURCE_REF
-  );
-
-  // Set a parameter to have the given value.
-  template <ParamAcceptableValueType T>
-  static bool SetParam(
-	  const char *name, const T value, 
-	  const ParamsVectorSet &set,
-	  SOURCE_REF
-  );
-  static bool SetParam(
-    const char* name, const char *value,
-    const ParamsVectorSet& set,
-    SOURCE_REF
-  );
-  static bool SetParam(
-    const char* name, const std::string& value,
-    const ParamsVectorSet& set,
-    SOURCE_REF
-  );
-
-  // Set a parameter to have the given value.
-  template <ParamAcceptableValueType T>
-  static bool SetParam(
-	  const char *name, const T value, 
-	  ParamsVector &set, 
-	  SOURCE_REF
-  );
-  static bool SetParam(
-    const char* name, const char* value,
-    ParamsVector& set,
-    SOURCE_REF
-  );
-  static bool SetParam(
-    const char* name, const std::string& value,
-    ParamsVector& set,
-    SOURCE_REF
-  );
-
-  // Produces a pointer (reference) to the parameter with the given name (of the
-  // appropriate type) if it was found in any of the given vectors.
-  // When `set` is empty, the `GlobalParams()` vector will be assumed 
-  // instead.
-  //
-  // Returns nullptr when param is not known.
-  template <ParamDerivativeType T>
-  static T *FindParam(
-	  const char *name, 
-	  const ParamsVectorSet &set
-  );
-  static Param* FindParam(
-    const char* name,
-    const ParamsVectorSet& set,
-    ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Produces a pointer (reference) to the parameter with the given name (of the
-  // appropriate type) if it was found in any of the given vectors.
-  // When `set` is empty, the `GlobalParams()` vector will be assumed
-  // instead.
-  //
-  // Returns nullptr when param is not known.
-  template <ParamDerivativeType T>
-  static T *FindParam(
-	  const char *name, 
-	  const ParamsVector &set
-  );
-  static Param* FindParam(
-    const char* name,
-    const ParamsVector& set,
-    ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Fetches the value of the named param as a string and does not add 
-  // this access to the read counter tally. This is useful, f.e., when printing 'init' 
-  // (only-settable-before-first-use) parameters to config file or log file, independent
-  // from the actual work process. 
-  // Returns false if not found. Prints a message via `tprintf()` to report this fact 
-  // (see also `FindParam()`).
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static bool InspectParamAsString(
-	  std::string *value_ref, const char *name, 
-	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Fetches the value of the named param as a string and does not add 
-  // this access to the read counter tally. This is useful, f.e., when printing 'init' 
-  // (only-settable-before-first-use) parameters to config file or log file, independent
-  // from the actual work process. 
-  // Returns false if not found. Prints a message via `tprintf()` to report this fact 
-  // (see also `FindParam()`).
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static bool InspectParamAsString(
-	  std::string *value_ref, const char *name, 
-	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Fetches the value of the named param as a ParamValueContainer and does not add 
-  // this access to the read counter tally. This is useful, f.e., when editing 'init' 
-  // (only-settable-before-first-use) parameters in a UI before starting the actual 
-  // process.
-  // Returns false if not found. Prints a message via `tprintf()` to report this 
-  // fact (see also `FindParam()`).
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static bool InspectParam(
-	  ParamValueContainer &value_dst, const char *name, 
-	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Fetches the value of the named param as a ParamValueContainer and does not add 
-  // this access to the read counter tally. This is useful, f.e., when editing 'init' 
-  // (only-settable-before-first-use) parameters in a UI before starting the actual 
-  // process.
-  // Returns false if not found. Prints a message via `tprintf()` to report this 
-  // fact (see also `FindParam()`).
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static bool InspectParam(
-	  ParamValueContainer &value_dst, const char *name, 
-	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM
-  );
-
-  // Print all parameters in the given set(s) to the given file.
-  static void PrintParams(FILE *fp, const ParamsVectorSet &set, bool print_info = true);
-
-  // Report parameters' usage statistics, i.e. report which params have been
-  // set, modified and read/checked until now during this run-time's lifetime.
-  //
-  // Use this method for run-time 'discovery' about which tesseract parameters
-  // are actually *used* during your particular usage of the library, ergo
-  // answering the question:
-  // "Which of all those parameters are actually *relevant* to my use case today?"
-  // 
-  // When `section_title` is NULL, this will report the lump sum parameter usage
-  // for the entire run. When `section_title` is NOT NULL, this will only report
-  // the parameters that were actually used (R/W) during the last section of the
-  // run, i.e. since the previous invocation of this reporting method (or when
-  // it hasn't been called before: the start of the application).
-  //
-  // Unless `f` is stdout/stderr, this method reports via `tprintf()` as well. 
-  // When `f` is a valid handle, then the report is written to the given FILE, 
-  // which may be stdout/stderr.
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectorSet &set, const char *section_title = nullptr);
-
-  // Resets all parameters back to default values;
-  static void ResetToDefaults(const ParamsVectorSet &set, SOURCE_TYPE);
-};
-
-// template instances:
-#if 01
-template <>
-IntParam* ParamUtils::FindParam<IntParam>(
-    const char* name,
-    const ParamsVectorSet& set
-);
-template <>
-BoolParam* ParamUtils::FindParam<BoolParam>(
-    const char* name,
-    const ParamsVectorSet& set
-);
-template <>
-DoubleParam* ParamUtils::FindParam<DoubleParam>(
-    const char* name,
-    const ParamsVectorSet& set
-);
-template <>
-StringParam* ParamUtils::FindParam<StringParam>(
-    const char* name,
-    const ParamsVectorSet& set
-);
-template <>
-Param* ParamUtils::FindParam<Param>(
-    const char* name,
-    const ParamsVectorSet& set
-);
-template <ParamDerivativeType T>
-T* ParamUtils::FindParam(
-  const char* name,
-  const ParamsVector& set
-) {
-  ParamsVectorSet pvec({ const_cast<ParamsVector*>(&set) });
-
-  return FindParam<T>(
-    name,
-    pvec
-  );
-}
-template <>
-bool ParamUtils::SetParam<int32_t>(
-    const char* name, const int32_t value,
-    const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source
-);
-template <>
-bool ParamUtils::SetParam<bool>(
-    const char* name, const bool value,
-    const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source
-);
-template <>
-bool ParamUtils::SetParam<double>(
-    const char* name, const double value,
-    const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source
-);
-template <ParamAcceptableValueType T>
-bool ParamUtils::SetParam(
-  const char* name, const T value,
-  ParamsVector& set,
-  ParamSetBySourceType source_type, ParamPtr source
-) {
-  ParamsVectorSet pvec({ &set });
-  return SetParam<T>(name, value, pvec, source_type, source);
-}
-#endif
-//--------------------
+// --------------------------------------------------------------------------------------------------
 
 // A simple FILE/stdio wrapper class which supports reading from stdin or regular file.
 class ConfigFile {
@@ -649,8 +397,13 @@ private:
 };
 
 
+// --------------------------------------------------------------------------------------------------
+
 // Definition of various parameter types.
 class Param {
+protected:
+  Param(const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+
 public:
   virtual ~Param() = default;
 
@@ -756,9 +509,6 @@ public:
   ParamOnModifyFunction clear_on_modify_handler();
 
 protected:
-  Param(const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-
-protected:
   const char *name_; // name of this parameter
   const char *info_; // for menus
 
@@ -781,155 +531,36 @@ protected:
   mutable access_counts_t access_counts_;
 };
 
+// --------------------------------------------------------------------------------------------------
 
-// Use this one for arbitrary other classes of parameter you wish to use/track:
+/*
+ * NOTE: a previous version of these typed parameter classes used C++ templates, but I find that templates cannot do one thing:
+ * make sure that the copy and move constructors + operator= methods for the *final class* are matched, unless such a class is
+ * only a `using` statement of a template instantiation.
+ * 
+ * Hence we succumb to using preprocessor macros below instead, until someone better versed in C++ than me comes along a keeps thing readable; I didn't succeed
+ * for the RefTypeParam-based StringSetPAram and IntSetParam classes, so those are produced with some help from the preprocessor
+ * instead.
+ */
+
+// Using this one as the base for fundamental types:
 template <class T>
-class TypedParam : public Param {
+class ValueTypedParam : public Param {
 public:
-  TypedParam(T value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  virtual ~TypedParam() = default;
+  using Param::Param;
+  using Param::operator=;
+public:
+  ValueTypedParam(const T value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~ValueTypedParam() = default;
 
   operator T() const;
-  void operator=(T value);
+  void operator=(const T value);
 
   virtual bool set_value(const char *v, SOURCE_REF) override;
   virtual bool set_value(int32_t v, SOURCE_REF) override;
   virtual bool set_value(bool v, SOURCE_REF) override;
   virtual bool set_value(double v, SOURCE_REF) override;
-  bool set_value(T v, SOURCE_REF);
-
-  T value() const;
-
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
-
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  TypedParam(const TypedParam<T> &o) = delete;
-  TypedParam(TypedParam<T> &&o) = delete;
-  TypedParam(const TypedParam<T> &&o) = delete;
-
-  TypedParam<T> &operator=(const TypedParam<T> &other) = delete;
-  TypedParam<T> &operator=(TypedParam<T> &&other) = delete;
-  TypedParam<T> &operator=(const TypedParam<T> &&other) = delete;
-
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
-
-private:
-  T value_;
-  T default_;
-};
-
-
-class IntParam : public Param {
-public:
-  IntParam(int32_t value, const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  virtual ~IntParam() = default;
-
-  operator int32_t() const;
-  void operator=(int32_t value);
-
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-
-  int32_t value() const;
-
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
-
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char* value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  IntParam(const IntParam &o) = delete;
-  IntParam(IntParam &&o) = delete;
-  IntParam(const IntParam &&o) = delete;
-
-  IntParam &operator=(const IntParam &other) = delete;
-  IntParam &operator=(IntParam &&other) = delete;
-  IntParam &operator=(const IntParam &&other) = delete;
-
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
-
-private:
-	int32_t value_;
-	int32_t default_;
-};
-
-class BoolParam : public Param {
-public:
-  BoolParam(bool value, const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  virtual ~BoolParam() = default;
-
-  operator bool() const;
-  void operator=(bool value);
-
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-
-  bool value() const;
-
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
-
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char* value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  BoolParam(const BoolParam &o) = delete;
-  BoolParam(BoolParam &&o) = delete;
-  BoolParam(const BoolParam &&o) = delete;
-
-  BoolParam &operator=(const BoolParam &other) = delete;
-  BoolParam &operator=(BoolParam &&other) = delete;
-  BoolParam &operator=(const BoolParam &&other) = delete;
-
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
-
-private:
-  bool value_;
-  bool default_;
-};
-
-class StringParam : public Param {
-public:
-  StringParam(const char* value, const char* name, const char* comment, ParamsVector& owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  virtual ~StringParam() = default;
-
-  operator std::string& ();
-  const char* c_str() const;
-
-  bool contains(char c) const;
-  bool empty() const;
-
-  bool operator==(const std::string& other) const;
-  void operator=(const std::string& value);
-
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
+  //bool set_value(T v, SOURCE_REF);
 
   // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
   // due to this nasty little blurb:
@@ -955,49 +586,7 @@ public:
   // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
   using Param::set_value;
 
-  const std::string &value() const;
-
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet& vec, SOURCE_TYPE) override;
-
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char* value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  StringParam(const StringParam &o) = delete;
-  StringParam(StringParam &&o) = delete;
-  StringParam(const StringParam &&o) = delete;
-
-  StringParam &operator=(const StringParam &other) = delete;
-  StringParam &operator=(StringParam &&other) = delete;
-  StringParam &operator=(const StringParam &&other) = delete;
-
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
-
-private:
-  std::string value_;
-  std::string default_;
-};
-
-class DoubleParam : public Param {
-public:
-  DoubleParam(double value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  virtual ~DoubleParam() = default;
-
-  operator double() const;
-  void operator=(double value);
-
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-
-  double value() const;
+  T value() const;
 
   virtual void ResetToDefault(SOURCE_TYPE) override;
   virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
@@ -1010,27 +599,665 @@ public:
 
   virtual bool inspect_value(ParamValueContainer &dst) const override;
 
-  DoubleParam(const DoubleParam &o) = delete;
-  DoubleParam(DoubleParam &&o) = delete;
-  DoubleParam(const DoubleParam &&o) = delete;
+  ValueTypedParam(const ValueTypedParam<T> &o) = delete;
+  ValueTypedParam(ValueTypedParam<T> &&o) = delete;
+  ValueTypedParam(const ValueTypedParam<T> &&o) = delete;
 
-  DoubleParam &operator=(const DoubleParam &other) = delete;
-  DoubleParam &operator=(DoubleParam &&other) = delete;
-  DoubleParam &operator=(const DoubleParam &&other) = delete;
+  ValueTypedParam<T> &operator=(const ValueTypedParam<T> &other) = delete;
+  ValueTypedParam<T> &operator=(ValueTypedParam<T> &&other) = delete;
+  ValueTypedParam<T> &operator=(const ValueTypedParam<T> &&other) = delete;
 
   // Returns a copy of this parameter. That instance is allocated on the heap.
   virtual ParamPtr clone() const override;
 
-private:
-  double value_;
-  double default_;
+protected:
+  T value_;
+  T default_;
 };
 
+// --------------------------------------------------------------------------------------------------
+
+// Use this one for std::String parameters: those are kinda special...
+template <class T>
+class StringTypedParam : public Param {
+  using RTP = StringTypedParam<T>;
+
+public:
+  StringTypedParam(const char *value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit StringTypedParam(const T &value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit StringTypedParam(const T *value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~StringTypedParam() = default;
+
+  // operator T() const;
+  operator const T &() const;
+  operator const T *() const;
+  // void operator=(T value);
+  void operator=(const T &value);
+  void operator=(const T *value);
+
+  operator const std::string &();
+  const char *c_str() const;
+
+  bool empty() const;
+
+  virtual bool set_value(const char *v, SOURCE_REF) override;
+  virtual bool set_value(int32_t v, SOURCE_REF) override;
+  virtual bool set_value(bool v, SOURCE_REF) override;
+  virtual bool set_value(double v, SOURCE_REF) override;
+  // bool set_value(T v, SOURCE_REF);
+  bool set_value(const T &v, SOURCE_REF);
+  bool set_value(const T *v, SOURCE_REF);
+
+  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
+  // due to this nasty little blurb:
+  //
+  // > Member lookup rules are defined in Section 10.2/2
+  // >
+  // > The following steps define the result of name lookup in a class scope, C.
+  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
+  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
+  // > so hidden are eliminated from consideration.          <-- !!!
+  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
+  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
+  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
+  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
+  //
+  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
+  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
+  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
+  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
+  // here, but it works! !@#$%^&* C++!
+  //
+  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
+  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
+  using Param::set_value;
+
+  const T &value() const;
+
+  virtual void ResetToDefault(SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
+
+  virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char *value_type_str() const override;
+
+  virtual bool inspect_value(ParamValueContainer &dst) const override;
+
+  StringTypedParam(const RTP &o) = delete;
+  StringTypedParam(RTP &&o) = delete;
+  StringTypedParam(const RTP &&o) = delete;
+
+  RTP &operator=(const RTP &other) = delete;
+  RTP &operator=(RTP &&other) = delete;
+  RTP &operator=(const RTP &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
+protected:
+  T value_;
+  T default_;
+};
+
+// --------------------------------------------------------------------------------------------------
+
+// Use this one for arbitrary other classes of parameter you wish to use/track:
+template <class T>
+class RefTypedParam : public Param {
+  using RTP = RefTypedParam<T>;
+
+public:
+  typedef bool ParamParseValueFunction(T &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
+  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const T &src);
+
+public:
+  RefTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit RefTypedParam(const T &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit RefTypedParam(const T *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~RefTypedParam() = default;
+
+  //operator T() const;
+  operator const T&() const;
+  operator const T *() const;
+  //void operator=(T value);
+  void operator=(const T &value);
+  void operator=(const T *value);
+
+  operator const std::string &();
+  const char* c_str() const;
+
+  bool empty() const;
+
+  virtual bool set_value(const char *v, SOURCE_REF) override;
+  virtual bool set_value(int32_t v, SOURCE_REF) override;
+  virtual bool set_value(bool v, SOURCE_REF) override;
+  virtual bool set_value(double v, SOURCE_REF) override;
+  //bool set_value(T v, SOURCE_REF);
+  bool set_value(const T &v, SOURCE_REF);
+  bool set_value(const T *v, SOURCE_REF);
+
+  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
+  // due to this nasty little blurb:
+  //
+  // > Member lookup rules are defined in Section 10.2/2
+  // >
+  // > The following steps define the result of name lookup in a class scope, C.
+  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
+  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
+  // > so hidden are eliminated from consideration.          <-- !!!
+  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
+  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
+  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
+  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
+  //
+  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
+  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
+  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
+  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
+  // here, but it works! !@#$%^&* C++!
+  //
+  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
+  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
+  using Param::set_value;
+
+  const T &value() const;
+
+  virtual void ResetToDefault(SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
+
+  virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char *value_type_str() const override;
+
+  virtual bool inspect_value(ParamValueContainer &dst) const override;
+
+  void set_parse_f(ParamParseValueFunction *new_parse_f);
+  ParamParseValueFunction *get_parse_f() const;
+  void set_format_f(ParamFormatValueFunction *new_format_f);
+  ParamFormatValueFunction *get_format_f() const;
+
+  RefTypedParam(const RTP &o) = delete;
+  RefTypedParam(RTP &&o) = delete;
+  RefTypedParam(const RTP &&o) = delete;
+
+  RTP &operator=(const RTP &other) = delete;
+  RTP &operator=(RTP &&other) = delete;
+  RTP &operator=(const RTP &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
+protected:
+  T value_;
+  T default_;
+
+  ParamParseValueFunction *parse_f_;
+  ParamFormatValueFunction *format_f_;
+};
+
+// --------------------------------------------------------------------------------------------------
+
+// Use this one for sets (array/vector) of basic types:
+template <class ElemT>
+class BasicVectorTypedParam : public Param {
+  using RTP = BasicVectorTypedParam<ElemT>;
+  using VecT = std::vector<ElemT>;
+
+public:
+  typedef bool ParamParseValueFunction(VecT &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
+  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const VecT &src);
+
+public:
+  BasicVectorTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit BasicVectorTypedParam(const VecT &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit BasicVectorTypedParam(const VecT *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~BasicVectorTypedParam() = default;
+
+  // operator T() const;
+  operator const VecT &() const;
+  operator const VecT *() const;
+  // void operator=(T value);
+  void operator=(const VecT &value);
+  void operator=(const VecT *value);
+
+  operator const std::string &();
+  const char *c_str() const;
+
+  bool empty() const;
+
+  virtual bool set_value(const char *v, SOURCE_REF) override;
+  virtual bool set_value(int32_t v, SOURCE_REF) override;
+  virtual bool set_value(bool v, SOURCE_REF) override;
+  virtual bool set_value(double v, SOURCE_REF) override;
+  // bool set_value(T v, SOURCE_REF);
+  bool set_value(const VecT &v, SOURCE_REF);
+  bool set_value(const VecT *v, SOURCE_REF);
+
+  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
+  // due to this nasty little blurb:
+  //
+  // > Member lookup rules are defined in Section 10.2/2
+  // >
+  // > The following steps define the result of name lookup in a class scope, C.
+  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
+  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
+  // > so hidden are eliminated from consideration.          <-- !!!
+  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
+  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
+  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
+  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
+  //
+  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
+  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
+  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
+  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
+  // here, but it works! !@#$%^&* C++!
+  //
+  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
+  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
+  using Param::set_value;
+
+  const VecT &value() const;
+
+  virtual void ResetToDefault(SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
+
+  virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char *value_type_str() const override;
+
+  virtual bool inspect_value(ParamValueContainer &dst) const override;
+
+  void set_parse_f(ParamParseValueFunction *new_parse_f);
+  ParamParseValueFunction *get_parse_f() const;
+  void set_format_f(ParamFormatValueFunction *new_format_f);
+  ParamFormatValueFunction *get_format_f() const;
+
+  BasicVectorTypedParam(const RTP &o) = delete;
+  BasicVectorTypedParam(RTP &&o) = delete;
+  BasicVectorTypedParam(const RTP &&o) = delete;
+
+  RTP &operator=(const RTP &other) = delete;
+  RTP &operator=(RTP &&other) = delete;
+  RTP &operator=(const RTP &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
+protected:
+  VecT value_;
+  VecT default_;
+
+  ParamParseValueFunction *parse_f_;
+  ParamFormatValueFunction *format_f_;
+};
+
+// --------------------------------------------------------------------------------------------------
+
+// Use this one for sets (array/vector) of user-defined / custom types:
+template <class ElemT>
+class ObjectVectorTypedParam : public Param {
+  using RTP = ObjectVectorTypedParam<ElemT>;
+  using VecT = std::vector<ElemT>;
+
+public:
+  typedef bool ParamParseValueFunction(VecT &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
+  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const VecT &src);
+
+public:
+  ObjectVectorTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit ObjectVectorTypedParam(const VecT &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  explicit ObjectVectorTypedParam(const VecT *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  virtual ~ObjectVectorTypedParam() = default;
+
+  // operator T() const;
+  operator const VecT &() const;
+  operator const VecT *() const;
+  // void operator=(T value);
+  void operator=(const VecT &value);
+  void operator=(const VecT *value);
+
+  operator const std::string &();
+  const char *c_str() const;
+
+  bool empty() const;
+
+  virtual bool set_value(const char *v, SOURCE_REF) override;
+  virtual bool set_value(int32_t v, SOURCE_REF) override;
+  virtual bool set_value(bool v, SOURCE_REF) override;
+  virtual bool set_value(double v, SOURCE_REF) override;
+  // bool set_value(T v, SOURCE_REF);
+  bool set_value(const VecT &v, SOURCE_REF);
+  bool set_value(const VecT *v, SOURCE_REF);
+
+  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
+  // due to this nasty little blurb:
+  //
+  // > Member lookup rules are defined in Section 10.2/2
+  // >
+  // > The following steps define the result of name lookup in a class scope, C.
+  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
+  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
+  // > so hidden are eliminated from consideration.          <-- !!!
+  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
+  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
+  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
+  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
+  //
+  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
+  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
+  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
+  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
+  // here, but it works! !@#$%^&* C++!
+  //
+  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
+  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
+  using Param::set_value;
+
+  const VecT &value() const;
+
+  virtual void ResetToDefault(SOURCE_TYPE) override;
+  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+
+  virtual bool is_set() const override;
+
+  virtual std::string formatted_value_str() const override;
+  virtual std::string raw_value_str() const override;
+  virtual const char *value_type_str() const override;
+
+  virtual bool inspect_value(ParamValueContainer &dst) const override;
+
+  void set_parse_f(ParamParseValueFunction *new_parse_f);
+  ParamParseValueFunction *get_parse_f() const;
+  void set_format_f(ParamFormatValueFunction *new_format_f);
+  ParamFormatValueFunction *get_format_f() const;
+
+  ObjectVectorTypedParam(const RTP &o) = delete;
+  ObjectVectorTypedParam(RTP &&o) = delete;
+  ObjectVectorTypedParam(const RTP &&o) = delete;
+
+  RTP &operator=(const RTP &other) = delete;
+  RTP &operator=(RTP &&other) = delete;
+  RTP &operator=(const RTP &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
+protected:
+  VecT value_;
+  VecT default_;
+
+  ParamParseValueFunction *parse_f_;
+  ParamFormatValueFunction *format_f_;
+};
+
+// --------------------------------------------------------------------------------------------------
+
+// see note above: these must be using statements, not derived classes, or otherwise the constructor/operator delete instructions in that base template won't deliver as expected!
+
+using IntParam = ValueTypedParam<int32_t>;
+using BoolParam = ValueTypedParam<bool>;
+using DoubleParam = ValueTypedParam<double>;
+
+using StringParam = StringTypedParam<std::string>;
+
+using StringSetParam = BasicVectorTypedParam<std::string>;
+using IntSetParam = BasicVectorTypedParam<int32_t>;
+using BoolSetParam = BasicVectorTypedParam<bool>;
+using DoubleSetParam = BasicVectorTypedParam<double>;
+
+// --------------------------------------------------------------------------------------------------
+
+// Utility functions for working with Tesseract parameters.
+class TESS_API ParamUtils {
+public:
+  // Reads a file of parameter definitions and set/modify the values therein.
+  // If the filename begins with a `+` or `-`, the Variables will be
+  // ORed or ANDed with any current values.
+  //
+  // Blank lines and lines beginning # are ignored.
+  //
+  // Variable names are followed by one of more whitespace characters,
+  // followed by the Value, which spans the rest of line.
+  static bool ReadParamsFile(const std::string &file, // filename to read
+                             const ParamsVectorSet &set,
+                             SOURCE_REF);
+
+  // Read parameters from the given file pointer.
+  // Otherwise identical to ReadParamsFile().
+  static bool ReadParamsFromFp(TFile *fp,
+                               const ParamsVectorSet &set,
+                               SOURCE_REF);
+
+  // Set a parameter to have the given value.
+  template <ParamAcceptableValueType T>
+  static bool SetParam(
+      const char *name, const T value,
+      const ParamsVectorSet &set,
+      SOURCE_REF);
+  static bool SetParam(
+      const char *name, const char *value,
+      const ParamsVectorSet &set,
+      SOURCE_REF);
+  static bool SetParam(
+      const char *name, const std::string &value,
+      const ParamsVectorSet &set,
+      SOURCE_REF);
+
+  // Set a parameter to have the given value.
+  template <ParamAcceptableValueType T>
+  static bool SetParam(
+      const char *name, const T value,
+      ParamsVector &set,
+      SOURCE_REF);
+  static bool SetParam(
+      const char *name, const char *value,
+      ParamsVector &set,
+      SOURCE_REF);
+  static bool SetParam(
+      const char *name, const std::string &value,
+      ParamsVector &set,
+      SOURCE_REF);
+
+  // Produces a pointer (reference) to the parameter with the given name (of the
+  // appropriate type) if it was found in any of the given vectors.
+  // When `set` is empty, the `GlobalParams()` vector will be assumed
+  // instead.
+  //
+  // Returns nullptr when param is not known.
+  template <ParamDerivativeType T>
+  static T *FindParam(
+      const char *name,
+      const ParamsVectorSet &set);
+  static Param *FindParam(
+      const char *name,
+      const ParamsVectorSet &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Produces a pointer (reference) to the parameter with the given name (of the
+  // appropriate type) if it was found in any of the given vectors.
+  // When `set` is empty, the `GlobalParams()` vector will be assumed
+  // instead.
+  //
+  // Returns nullptr when param is not known.
+  template <ParamDerivativeType T>
+  static T *FindParam(
+      const char *name,
+      const ParamsVector &set);
+  static Param *FindParam(
+      const char *name,
+      const ParamsVector &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Fetches the value of the named param as a string and does not add
+  // this access to the read counter tally. This is useful, f.e., when printing 'init'
+  // (only-settable-before-first-use) parameters to config file or log file, independent
+  // from the actual work process.
+  // Returns false if not found. Prints a message via `tprintf()` to report this fact
+  // (see also `FindParam()`).
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static bool InspectParamAsString(
+      std::string *value_ref, const char *name,
+      const ParamsVectorSet &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Fetches the value of the named param as a string and does not add
+  // this access to the read counter tally. This is useful, f.e., when printing 'init'
+  // (only-settable-before-first-use) parameters to config file or log file, independent
+  // from the actual work process.
+  // Returns false if not found. Prints a message via `tprintf()` to report this fact
+  // (see also `FindParam()`).
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static bool InspectParamAsString(
+      std::string *value_ref, const char *name,
+      const ParamsVector &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Fetches the value of the named param as a ParamValueContainer and does not add
+  // this access to the read counter tally. This is useful, f.e., when editing 'init'
+  // (only-settable-before-first-use) parameters in a UI before starting the actual
+  // process.
+  // Returns false if not found. Prints a message via `tprintf()` to report this
+  // fact (see also `FindParam()`).
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static bool InspectParam(
+      ParamValueContainer &value_dst, const char *name,
+      const ParamsVectorSet &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Fetches the value of the named param as a ParamValueContainer and does not add
+  // this access to the read counter tally. This is useful, f.e., when editing 'init'
+  // (only-settable-before-first-use) parameters in a UI before starting the actual
+  // process.
+  // Returns false if not found. Prints a message via `tprintf()` to report this
+  // fact (see also `FindParam()`).
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static bool InspectParam(
+      ParamValueContainer &value_dst, const char *name,
+      const ParamsVector &set,
+      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+
+  // Print all parameters in the given set(s) to the given file.
+  static void PrintParams(FILE *fp, const ParamsVectorSet &set, bool print_info = true);
+
+  // Report parameters' usage statistics, i.e. report which params have been
+  // set, modified and read/checked until now during this run-time's lifetime.
+  //
+  // Use this method for run-time 'discovery' about which tesseract parameters
+  // are actually *used* during your particular usage of the library, ergo
+  // answering the question:
+  // "Which of all those parameters are actually *relevant* to my use case today?"
+  //
+  // When `section_title` is NULL, this will report the lump sum parameter usage
+  // for the entire run. When `section_title` is NOT NULL, this will only report
+  // the parameters that were actually used (R/W) during the last section of the
+  // run, i.e. since the previous invocation of this reporting method (or when
+  // it hasn't been called before: the start of the application).
+  //
+  // Unless `f` is stdout/stderr, this method reports via `tprintf()` as well.
+  // When `f` is a valid handle, then the report is written to the given FILE,
+  // which may be stdout/stderr.
+  //
+  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
+  static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectorSet &set, const char *section_title = nullptr);
+
+  // Resets all parameters back to default values;
+  static void ResetToDefaults(const ParamsVectorSet &set, SOURCE_TYPE);
+};
+
+// template instances:
+template <>
+IntParam *ParamUtils::FindParam<IntParam>(
+    const char *name,
+    const ParamsVectorSet &set);
+template <>
+BoolParam *ParamUtils::FindParam<BoolParam>(
+    const char *name,
+    const ParamsVectorSet &set);
+template <>
+DoubleParam *ParamUtils::FindParam<DoubleParam>(
+    const char *name,
+    const ParamsVectorSet &set);
+template <>
+StringParam *ParamUtils::FindParam<StringParam>(
+    const char *name,
+    const ParamsVectorSet &set);
+template <>
+Param *ParamUtils::FindParam<Param>(
+    const char *name,
+    const ParamsVectorSet &set);
+template <ParamDerivativeType T>
+T *ParamUtils::FindParam(
+    const char *name,
+    const ParamsVector &set) {
+  ParamsVectorSet pvec({const_cast<ParamsVector *>(&set)});
+
+  return FindParam<T>(
+      name,
+      pvec);
+}
+template <>
+bool ParamUtils::SetParam<int32_t>(
+    const char *name, const int32_t value,
+    const ParamsVectorSet &set,
+    ParamSetBySourceType source_type, ParamPtr source);
+template <>
+bool ParamUtils::SetParam<bool>(
+    const char *name, const bool value,
+    const ParamsVectorSet &set,
+    ParamSetBySourceType source_type, ParamPtr source);
+template <>
+bool ParamUtils::SetParam<double>(
+    const char *name, const double value,
+    const ParamsVectorSet &set,
+    ParamSetBySourceType source_type, ParamPtr source);
+template <ParamAcceptableValueType T>
+bool ParamUtils::SetParam(
+    const char *name, const T value,
+    ParamsVector &set,
+    ParamSetBySourceType source_type, ParamPtr source) {
+  ParamsVectorSet pvec({&set});
+  return SetParam<T>(name, value, pvec, source_type, source);
+}
+
+// --------------------------------------------------------------------------------------------------
+
+// ready-made template instances:
+template <>
+IntParam *ParamsVectorSet::find<IntParam>(
+    const char *name) const;
+template <>
+BoolParam *ParamsVectorSet::find<BoolParam>(
+    const char *name) const;
+template <>
+DoubleParam *ParamsVectorSet::find<DoubleParam>(
+    const char *name) const;
+template <>
+StringParam *ParamsVectorSet::find<StringParam>(
+    const char *name) const;
+template <>
+Param *ParamsVectorSet::find<Param>(
+    const char *name) const;
+
+// --------------------------------------------------------------------------------------------------
 
 // remove the macros to help set up the member prototypes
 
 #undef SOURCE_TYPE															
 #undef SOURCE_REF																
+
+// --------------------------------------------------------------------------------------------------
+
 
 
 
