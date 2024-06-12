@@ -141,7 +141,8 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
       return 1;
     }
 
-    if (!p->set_value(rhs)) {
+    p->set_value(rhs);
+    if (p->has_faulted()) {
       tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
       return 1;
     }

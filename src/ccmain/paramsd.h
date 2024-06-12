@@ -30,11 +30,6 @@
 namespace tesseract {
 
 class SVMenuNode;
-
-class BoolParam;
-class DoubleParam;
-class IntParam;
-class StringParam;
 class Tesseract;
 
 // A rather hackish helper structure which can take any kind of parameter input

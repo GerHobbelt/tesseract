@@ -700,7 +700,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
 
     b = tess.tessedit_write_unlv;
     if (b) {
-      b = tess.unlv_tilde_crunching.set_value(true);
+      tess.unlv_tilde_crunching.set_value(true);
       auto renderer = std::make_unique<tesseract::TessUnlvRenderer>(outputbase);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));

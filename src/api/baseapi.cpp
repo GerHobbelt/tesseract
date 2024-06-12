@@ -2655,7 +2655,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
 
-  tess.classify_enable_learning = 0;
+  tess.classify_enable_learning = false;
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
   if (tess.applybox_debug) {

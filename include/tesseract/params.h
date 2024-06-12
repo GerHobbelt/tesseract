@@ -51,10 +51,12 @@ enum ParamType {
   STRING_PARAM =      0x0008,
   STRING_SET_PARAM =  0x0010,
   INT_SET_PARAM =     0x0020,
-  DOUBLE_SET_PARAM =  0x0040,
-  CUSTOM_PARAM =      0x0080, // a yet-unspecified type: provided as an advanced-use generic parameter value storage container for when the other, basic, value types do not suffice in userland code. The tesseract core does not employ this value type anywhere: we do have compound paramater values, mostly sets of file paths, but those are encoded as *string* value in their parameter value.
+  BOOL_SET_PARAM =    0x0040,
+  DOUBLE_SET_PARAM =  0x0080,
+  CUSTOM_PARAM =      0x0100, // a yet-unspecified type: provided as an advanced-use generic parameter value storage container for when the other, basic, value types do not suffice in userland code. The tesseract core does not employ this value type anywhere: we do have compound paramater values, mostly sets of file paths, but those are encoded as *string* value in their parameter value.
+  CUSTOM_SET_PARAM =  0x0200, // a yet-unspecified vector type.
 
-	ANY_TYPE_PARAM =    0x00FF, // catch-all identifier for the selection/filter functions: there this is used to match *any and all* parameter value types encountered.
+	ANY_TYPE_PARAM =    0x03FF, // catch-all identifier for the selection/filter functions: there this is used to match *any and all* parameter value types encountered.
 };
 
 // Identifiers used to indicate the *origin* of the current parameter value. Used for reporting/diagnostic purposes. Do not treat these
@@ -71,7 +73,24 @@ enum ParamSetBySourceType {
   PARAM_VALUE_IS_SET_BY_APPLICATION,    // 'explicit' write: user / application code set the param value, whatever it is now.
 };
 
-// --------------------------------------------------------------------------------------------------
+/**
+ * The default application source_type starts out as PARAM_VALUE_IS_SET_BY_ASSIGN.
+ * Discerning applications may want to set the default source type to PARAM_VALUE_IS_SET_BY_APPLICATION
+ * or PARAM_VALUE_IS_SET_BY_CONFIGFILE, depending on where the main workflow is currently at,
+ * while the major OCR tesseract APIs will set source type to PARAM_VALUE_IS_SET_BY_CORE_RUN
+ * (if the larger, embedding, application hasn't already).
+ *
+ * The purpose here is to be able to provide improved diagnostics reports about *who* did *what* to
+ * *which* parameters *when* exactly.
+ */
+void set_current_application_default_param_source_type(ParamSetBySourceType source_type);
+
+/**
+ * Produces the current default application source type; intended to be used internally by our parameters support library code.
+ */
+ParamSetBySourceType get_current_application_default_param_source_type();
+
+  // --------------------------------------------------------------------------------------------------
 
 // Custom equivalent of std::hash<Param> + std::equal_to<Param> for std::unordered_map<const char *key, Param & value>.
 class ParamHash
@@ -260,7 +279,7 @@ public:
   // It is used to collect, set up and then pass parameter vectors into the tesseract Init* instance
   // methods: by using a (cloned and) *owning* parameter vector, we can simply collect and pass any configuration parameters
   // we wish to have adjusted into the tesseract instance and have these 'activated' only then, i.e. we won't risk
-  // modifying any *live* paramters while working on/with the vector-owned set.
+  // modifying any *live* parameters while working on/with the vector-owned set.
   void mark_as_all_params_owner();
 
   void add(ParamPtr param_ref);
@@ -326,22 +345,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------
 
-class Param;
-
-typedef std::variant<bool, int, double, std::string, ParamStringSetType, ParamIntSetType, ParamBoolSetType, ParamDoubleSetType, ParamVoidPtrDataType, ParamArbitraryOtherType> ParamValueContainer;
-
-typedef std::function<void (
-	const char * /* name */, 
-	ParamRef /* target */, 
-	ParamSetBySourceType /* source type */,
-	ParamPtr /* optional setter/parent */, 
-	ParamValueContainer & /* old value */, 
-	ParamValueContainer & /* new value */,
-	ParamValueContainer & /* default value */
-)> ParamOnModifyFunction;
-
-// --------------------------------------------------------------------------------------------------
-
 // A simple FILE/stdio wrapper class which supports reading from stdin or regular file.
 class ConfigFile {
 public:
@@ -402,20 +405,42 @@ private:
 // Definition of various parameter types.
 class Param {
 protected:
-  Param(const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  Param(const char *name, const char *comment, ParamsVector &owner, bool init = false);
 
 public:
   virtual ~Param() = default;
 
-  const char* name_str() const;
-  const char* info_str() const;
-  bool is_init() const;
-  bool is_debug() const;
+  const char *name_str() const noexcept;
+  const char *info_str() const noexcept;
+  bool is_init() const noexcept;
+  bool is_debug() const noexcept;
+  bool is_set() const noexcept;
+  bool is_set_to_non_default_value() const noexcept;
+  bool is_locked() const noexcept;
+  bool has_faulted() const noexcept;
 
-  ParamSetBySourceType set_mode() const;
-  Param* is_set_by() const;
+  void lock(bool locking = true);
 
-  ParamsVector& owner() const;
+  // Signal a (recoverable) fault; used, together with has_faulted() and reset_fault(), by the parameter classes' internals when,
+  // f.e., a string value doesn't parse or fails to pass a parameter's validation checks.
+  //
+  // This signal remains signaled until the next call to reset_fault().
+  // DO NOTE that any subsequent parameter value *write* operations for this parameter will internally *reset* the fault state,
+  // thus using a clean slate against which the next parse+write (validation+modify checks) will be checked for (new) faults.
+  //
+  // DO NOTE that each call to `fault()` will bump the error signal count (statistics) for this parameter, hence any 
+  // application-level reporting of parameter usage statistics will not miss to report these faults from having occurred.
+  void fault() noexcept;
+
+  // Reset the fault state of this parameter, so any subsequent write operation will not be aborted/skipped any more.
+  // 
+  // Is used to turn the fault signaled state OFF and parse+write a new incoming value.
+  void reset_fault() noexcept;
+
+  ParamSetBySourceType set_mode() const noexcept;
+  Param *is_set_by() const noexcept;
+
+  ParamsVector &owner() const noexcept;
   
   // We track Param/Variable setup/changes/usage through this administrative struct.
   // It helps us to diagnose and report which tesseract Params (Variables) are actually
@@ -424,22 +449,86 @@ public:
   // some Params will have been modified due to others having been set, e.g. `debug_all`.
   typedef struct access_counts {
     // the current section's counts
-    int reading;  
-    int writing;            // counting the number of *write* actions, answering the question "did we assign a value to this one during this run?"
-    int changing;           // counting the number of times a *write* action resulted in an actual *value change*, answering the question "did we use a non-default value for this one during this run?"
+    uint16_t reading;  
+    uint16_t writing;   // counting the number of *write* actions, answering the question "did we assign a value to this one during this run?"
+    uint16_t changing;  // counting the number of times a *write* action resulted in an actual *value change*, answering the question "did we use a non-default value for this one during this run?"
+    uint16_t faulting;  
 
     // the sum of the previous section's counts: the collected history from previous runs during this application life time.
-    int prev_sum_reading;
-    int prev_sum_writing;
-    int prev_sum_changing;
+    uint16_t prev_sum_reading;
+    uint16_t prev_sum_writing;
+    uint16_t prev_sum_changing;
+    uint16_t prev_sum_faulting;
   } access_counts_t;
 
-  access_counts_t access_counts() const;
+  const access_counts_t &access_counts() const noexcept;
 
   // Reset the access count statistics in preparation for the next run.
   // As a side effect the current run's access count statistics will be added to the history
   // set, available via the `prev_sum_*` access_counts_t members.
-  void reset_access_counts();
+  void reset_access_counts() noexcept;
+
+  enum ValueFetchPurpose {
+    // Fetches the (raw, parseble for re-use via set_value()) value of the param as a string and does not add
+    // this access to the read counter tally. This is useful, f.e., when checking 
+    // parameters' values before deciding to modify them via a CLI, UI interface or config file (re)load.
+    //
+    // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_RAW_DATA_4_INSPECT,
+
+    // Fetches the (formatted for print/display) value of the param as a string and does not add
+    // this access to the read counter tally. This is useful, f.e., when printing 'init'
+    // (only-settable-before-first-use) parameters to config file or log file, independent
+    // from the actual work process.
+    //
+    // We do not count this read access as this method is for *display* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_DATA_FORMATTED_4_DISPLAY,
+
+    // Fetches the (raw, parseble for re-use via set_value() or storing to serialized text data format files) value of the param as a string and DOES add
+    // this access to the read counter tally. This is useful, f.e., when printing 'init'
+    // (only-settable-before-first-use) parameters to config file, independent
+    // from the actual work process.
+    //
+    // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_DATA_4_USE,
+
+    // Fetches the (raw, parseble for re-use via set_value()) default value of the param as a string and does not add
+    // this access to the read counter tally. This is useful, f.e., when checking
+    // parameters' values before deciding to modify them via a CLI, UI interface or config file (re)load.
+    //
+    // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_RAW_DEFAULT_DATA_4_INSPECT,
+
+    // Fetches the (formatted for print/display) default value of the param as a string and does not add
+    // this access to the read counter tally. This is useful, f.e., when printing 'init'
+    // (only-settable-before-first-use) parameters to config file or log file, independent
+    // from the actual work process.
+    //
+    // We do not count this read access as this method is for *display* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_DEFAULT_DATA_FORMATTED_4_DISPLAY,
+
+    // Return string representing the type of the parameter value, e.g. "integer"
+    //
+    // We do not count this read access as this method is for *display* purposes only and we do not
+    // wish to tally those together with the actual work code accessing this parameter through
+    // the other functions: set_value() and assignment operators.
+    VALSTR_PURPOSE_TYPE_INFO,
+  };
+
+  // Fetches the (possibly formatted) value of the param as a string; see the ValueFetchPurpose
+  // enum documentation for detailed info which purposes are counted in the access statistics
+  // and which aren't.
+  virtual std::string value_str(ValueFetchPurpose purpose) const = 0;
 
   // Fetches the (formatted for print/display) value of the param as a string and does not add 
   // this access to the read counter tally. This is useful, f.e., when printing 'init' 
@@ -449,7 +538,7 @@ public:
   // We do not count this read access as this method is for *display* purposes only and we do not
   // wish to tally those together with the actual work code accessing this parameter through
   // the other functions: set_value() and assignment operators.
-  virtual std::string formatted_value_str() const = 0;
+  std::string formatted_value_str() const;
 
   // Fetches the (raw, parseble for re-use via set_value()) value of the param as a string and does not add 
   // this access to the read counter tally. This is useful, f.e., when printing 'init' 
@@ -459,38 +548,49 @@ public:
   // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
   // wish to tally those together with the actual work code accessing this parameter through
   // the other functions: set_value() and assignment operators.
-  virtual std::string raw_value_str() const = 0;
+  std::string raw_value_str() const;
+
+  // Fetches the (formatted for print/display) default value of the param as a string and does not add
+  // this access to the read counter tally. This is useful, f.e., when printing 'init'
+  // (only-settable-before-first-use) parameters to config file or log file, independent
+  // from the actual work process.
+  //
+  // We do not count this read access as this method is for *display* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
+  std::string formatted_default_value_str() const;
+
+  // Fetches the (raw, parseble for re-use via set_value()) default value of the param as a string and does not add
+  // this access to the read counter tally. This is useful, f.e., when printing 'init'
+  // (only-settable-before-first-use) parameters to config file or log file, independent
+  // from the actual work process.
+  //
+  // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
+  std::string raw_default_value_str() const;
 
   // Return string representing the type of the parameter value, e.g. "integer"
   //
   // We do not count this read access as this method is for *display* purposes only and we do not
   // wish to tally those together with the actual work code accessing this parameter through
   // the other functions: set_value() and assignment operators.
-  virtual const char *value_type_str() const = 0;
+  std::string value_type_str() const;
 
-  // Fetches the value of the param and delivers it in a ParamValueContainer union. 
-  // Does not add this access to the read counter tally. This is useful, f.e., when 
-  // editing 'init' (only-settable-before-first-use) parameters in a UI before starting
-  // the actual work process.
-  //
-  // We do not count this read access as this method is for *display/custom handling support* purposes only and we do not
-  // wish to tally those together with the actual work code accessing this parameter through
-  // the other functions: set_value() and assignment operators.
-  virtual bool inspect_value(ParamValueContainer &dst) const = 0;
-
-  virtual bool set_value(const char *v, SOURCE_REF) = 0;
-  virtual bool set_value(int32_t v, SOURCE_REF) = 0;
-  virtual bool set_value(bool v, SOURCE_REF) = 0;
-  virtual bool set_value(double v, SOURCE_REF) = 0;
+  virtual void set_value(const char *v, SOURCE_REF) = 0;
 
   // generic:
-  bool set_value(const ParamValueContainer &v, SOURCE_REF);
-  bool set_value(const std::string &v, SOURCE_REF);
+  void set_value(const std::string &v, SOURCE_REF);
 
-  virtual void ResetToDefault(SOURCE_TYPE) = 0;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) = 0;
+  // return void instead of Param-based return type as we don't accept any copy/move constructors either!
+  void operator=(const char *value);
+  void operator=(const std::string &value);
 
-  virtual bool is_set() const = 0;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) = 0;
 
   Param(const Param &o) = delete;
   Param(Param &&o) = delete;
@@ -500,38 +600,39 @@ public:
   Param &operator=(Param &&other) = delete;
   Param &operator=(const Param &&other) = delete;
 
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const = 0;
-
-  ParamType type() const;
-
-  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
-  ParamOnModifyFunction clear_on_modify_handler();
+  ParamType type() const noexcept;
 
 protected:
   const char *name_; // name of this parameter
   const char *info_; // for menus
 
-  ParamOnModifyFunction on_modify_f_;
-  
+  Param *setter_;
+  ParamsVector &owner_;
+
 #if 0
   ParamValueContainer value_;
   ParamValueContainer default_;
 #endif
-  ParamType type_ : 15;
+  mutable access_counts_t access_counts_;
 
-  ParamSetBySourceType set_mode_ : 15;
+  ParamType type_ : 13;
+
+  ParamSetBySourceType set_mode_ : 4;
 
   bool init_ : 1; // needs to be set before first use, i.e. can be set 'during application init phase only'
   bool debug_ : 1;
-
-  Param *setter_;
-  ParamsVector &owner_; 
-  
-  mutable access_counts_t access_counts_;
+  bool set_ : 1;
+  bool set_to_non_default_value_ : 1;
+  bool locked_ : 1;
+  bool error_ : 1;
 };
 
 // --------------------------------------------------------------------------------------------------
+
+#define THE_4_HANDLERS_PROTO                                                                    \
+      const char *name, const char *comment, ParamsVector &owner, bool init = false,            \
+      ParamOnModifyFunction on_modify_f = 0, ParamOnValidateFunction on_validate_f = 0,         \
+      ParamOnParseFunction on_parse_f = 0, ParamOnFormatFunction on_format_f = 0
 
 /*
  * NOTE: a previous version of these typed parameter classes used C++ templates, but I find that templates cannot do one thing:
@@ -539,76 +640,78 @@ protected:
  * only a `using` statement of a template instantiation.
  * 
  * Hence we succumb to using preprocessor macros below instead, until someone better versed in C++ than me comes along a keeps thing readable; I didn't succeed
- * for the RefTypeParam-based StringSetPAram and IntSetParam classes, so those are produced with some help from the preprocessor
+ * for the RefTypeParam-based StringSetParam and IntSetParam classes, so those are produced with some help from the preprocessor
  * instead.
  */
 
 // Using this one as the base for fundamental types:
 template <class T>
 class ValueTypedParam : public Param {
+  using RTP = ValueTypedParam<T>;
+
 public:
   using Param::Param;
   using Param::operator=;
+
+  // Return when modify/write action may proceed; throw an exception on (non-recovered) error. `new_value` MAY have been adjusted by this modify handler. The modify handler is not supposed to modify any read/write/modify access accounting data. Minor infractions (which resulted in some form of recovery) may be signaled by flagging the parameter state via its fault() API method.
+  typedef void (*ParamOnModifyFunction)(RTP &target, const T old_value, T &new_value, const T default_value, ParamSetBySourceType source_type, ParamPtr optional_setter);
+
+  // Return when validation action passed and modify/write may proceed; throw an exception on (non-recovered) error. `new_value` MAY have been adjusted by this validation handler. The validation handler is not supposed to modify any read/write/modify access accounting data. Minor infractions (which resulted in some form of recovery) may be signaled by flagging the parameter state via its fault() API method.
+  typedef void (*ParamOnValidateFunction)(RTP &target, const T old_value, T &new_value, const T default_value, ParamSetBySourceType source_type);
+
+  // Return when the parse action (parsing `source_value_str` starting at offset `pos`) completed successfully or required only minor recovery; throw an exception on (non-recovered) error.
+  // `new_value` will contain the parsed value produced by this parse handler, while `pos` will have been moved to the end of the parsed content.
+  // The string parse handler is not supposed to modify any read/write/modify access accounting data.
+  // Minor infractions (which resulted in some form of recovery) may be signaled by flagging the parameter state via its fault() API method.
+  typedef void (*ParamOnParseFunction)(RTP& target, T& new_value, const std::string &source_value_str, unsigned int &pos, ParamSetBySourceType source_type);
+
+  // Return the formatted string value, depending on the formatting purpose. The format handler is not supposed to modify any read/write/modify access accounting data.
+  // This formatting action is supposed to always succeed or fail fatally (e.g. out of heap memory) by throwing an exception.
+  // The formatter implementation is not supposed to signal any errors via the fault() API method.
+  typedef std::string (*ParamOnFormatFunction)(const RTP &source, const T value, const T default_value, ValueFetchPurpose purpose);
+
 public:
-  ValueTypedParam(const T value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  ValueTypedParam(const T value, THE_4_HANDLERS_PROTO);
   virtual ~ValueTypedParam() = default;
 
   operator T() const;
   void operator=(const T value);
 
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-  //bool set_value(T v, SOURCE_REF);
+  virtual void set_value(const char *v, SOURCE_REF) override;
+  void set_value(T v, SOURCE_REF);
 
-  // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
-  // due to this nasty little blurb:
-  //
-  // > Member lookup rules are defined in Section 10.2/2
-  // >
-  // > The following steps define the result of name lookup in a class scope, C.
-  // > First, every declaration for the name in the class and in each of its base class sub-objects is considered. A member name f
-  // > in one sub-object B hides a member name f in a sub-object A if A is a base class sub-object of B. Any declarations that are
-  // > so hidden are eliminated from consideration.          <-- !!!
-  // > Each of these declarations that was introduced by a using-declaration is considered to be from each sub-object of C that is
-  // > of the type containing the declara-tion designated by the using-declaration. If the resulting set of declarations are not
-  // > all from sub-objects of the same type, or the set has a nonstatic member and includes members from distinct sub-objects,
-  // > there is an ambiguity and the program is ill-formed. Otherwise that set is the result of the lookup.
-  //
-  // Found here: https://stackoverflow.com/questions/5368862/why-do-multiple-inherited-functions-with-same-name-but-different-signatures-not
-  // which seems to be off-topic due to the mutiple-inheritance issues discussed there, but the phrasing of that little C++ standards blurb
-  // is such that it applies to our situation as well, where we only replace/override a *subset* of the available set_value() methods from
-  // the Params class. Half a year later and I stumble across that little paragraph; would never have thought to apply a `using` statement
-  // here, but it works! !@#$%^&* C++!
-  //
-  // Incidentally, the fruity thing about it all is that it only errors out for StringParam in params.cpp, while a sane individual would've
-  // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
-  using Param::set_value;
+  T value() const noexcept;
 
-  T value() const;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) override;
 
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+  virtual std::string value_str(ValueFetchPurpose purpose) const override;
 
-  virtual bool is_set() const override;
+  ValueTypedParam(const RTP &o) = delete;
+  ValueTypedParam(RTP &&o) = delete;
+  ValueTypedParam(const RTP &&o) = delete;
 
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
+  RTP &operator=(const RTP &other) = delete;
+  RTP &operator=(RTP &&other) = delete;
+  RTP &operator=(const RTP &&other) = delete;
 
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  void clear_on_modify_handler();
+  ParamOnValidateFunction set_on_validate_handler(ParamOnValidateFunction on_validate_f);
+  void clear_on_validate_handler();
+  ParamOnParseFunction set_on_parse_handler(ParamOnParseFunction on_parse_f);
+  void clear_on_parse_handler();
+  ParamOnFormatFunction set_on_format_handler(ParamOnFormatFunction on_format_f);
+  void clear_on_format_handler();
 
-  ValueTypedParam(const ValueTypedParam<T> &o) = delete;
-  ValueTypedParam(ValueTypedParam<T> &&o) = delete;
-  ValueTypedParam(const ValueTypedParam<T> &&o) = delete;
-
-  ValueTypedParam<T> &operator=(const ValueTypedParam<T> &other) = delete;
-  ValueTypedParam<T> &operator=(ValueTypedParam<T> &&other) = delete;
-  ValueTypedParam<T> &operator=(const ValueTypedParam<T> &&other) = delete;
-
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
+protected:
+  ParamOnModifyFunction on_modify_f_;
+  ParamOnValidateFunction on_validate_f_;
+  ParamOnParseFunction on_parse_f_;
+  ParamOnFormatFunction on_format_f_;
 
 protected:
   T value_;
@@ -623,9 +726,27 @@ class StringTypedParam : public Param {
   using RTP = StringTypedParam<T>;
 
 public:
-  StringTypedParam(const char *value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit StringTypedParam(const T &value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit StringTypedParam(const T *value, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  using Param::Param;
+  using Param::operator=;
+
+  // Return true when modify action may proceed. `new_value` MAY have been adjusted by this modify handler. The modify handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnModifyFunction)(RTP &target, const T &old_value, T &new_value, const T &default_value, ParamSetBySourceType source_type, ParamPtr optional_setter);
+
+  // Return true when validation action passed and modify/write may proceed. `new_value` MAY have been adjusted by this validation handler. The validation handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnValidateFunction)(RTP &target, const T &old_value, T &new_value, const T &default_value, ParamSetBySourceType source_type);
+
+  // Return true when parse action succeeded (parsing `source_value_str` starting at offset `pos`).
+  // `new_value` will contain the parsed value produced by this parse handler, while `pos` will have been moved to the end of the parsed content.
+  // The string parse handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnParseFunction)(RTP &target, T &new_value, const std::string &source_value_str, unsigned int &pos, ParamSetBySourceType source_type);
+
+  // Return the formatted string value, depending on the formatting purpose. The format handler is not supposed to modify any read/write/modify access accounting data.
+  typedef std::string (*ParamOnFormatFunction)(const RTP &source, const T &value, const T& default_value, ValueFetchPurpose purpose);
+
+public:
+  StringTypedParam(const char *value, THE_4_HANDLERS_PROTO);
+  StringTypedParam(const T &value, THE_4_HANDLERS_PROTO);
+  explicit StringTypedParam(const T *value, THE_4_HANDLERS_PROTO);
   virtual ~StringTypedParam() = default;
 
   // operator T() const;
@@ -638,15 +759,14 @@ public:
   operator const std::string &();
   const char *c_str() const;
 
-  bool empty() const;
+  bool empty() const noexcept;
 
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-  // bool set_value(T v, SOURCE_REF);
-  bool set_value(const T &v, SOURCE_REF);
-  bool set_value(const T *v, SOURCE_REF);
+  bool contains(const std::string &sv) const noexcept;
+  bool contains(char ch) const noexcept;
+  bool contains(const char *s) const noexcept;
+
+  virtual void set_value(const char *v, SOURCE_REF) override;
+  void set_value(const T &v, SOURCE_REF);
 
   // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
   // due to this nasty little blurb:
@@ -672,18 +792,15 @@ public:
   // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
   using Param::set_value;
 
-  const T &value() const;
+  const T &value() const noexcept;
 
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) override;
 
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
+  virtual std::string value_str(ValueFetchPurpose purpose) const override;
 
   StringTypedParam(const RTP &o) = delete;
   StringTypedParam(RTP &&o) = delete;
@@ -693,8 +810,20 @@ public:
   RTP &operator=(RTP &&other) = delete;
   RTP &operator=(const RTP &&other) = delete;
 
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  void clear_on_modify_handler();
+  ParamOnValidateFunction set_on_validate_handler(ParamOnValidateFunction on_validate_f);
+  void clear_on_validate_handler();
+  ParamOnParseFunction set_on_parse_handler(ParamOnParseFunction on_parse_f);
+  void clear_on_parse_handler();
+  ParamOnFormatFunction set_on_format_handler(ParamOnFormatFunction on_format_f);
+  void clear_on_format_handler();
+
+protected:
+  ParamOnModifyFunction on_modify_f_;
+  ParamOnValidateFunction on_validate_f_;
+  ParamOnParseFunction on_parse_f_;
+  ParamOnFormatFunction on_format_f_;
 
 protected:
   T value_;
@@ -704,18 +833,32 @@ protected:
 // --------------------------------------------------------------------------------------------------
 
 // Use this one for arbitrary other classes of parameter you wish to use/track:
-template <class T>
+template <class T, class Assistant>
 class RefTypedParam : public Param {
-  using RTP = RefTypedParam<T>;
+  using RTP = RefTypedParam<T, Assistant>;
 
 public:
-  typedef bool ParamParseValueFunction(T &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
-  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const T &src);
+  using Param::Param;
+  using Param::operator=;
+
+  // Return true when modify action may proceed. `new_value` MAY have been adjusted by this modify handler. The modify handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnModifyFunction)(RTP &target, const T &old_value, T &new_value, const T &default_value, ParamSetBySourceType source_type, ParamPtr optional_setter);
+
+  // Return true when validation action passed and modify/write may proceed. `new_value` MAY have been adjusted by this validation handler. The validation handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnValidateFunction)(RTP &target, const T &old_value, T &new_value, const T &default_value, ParamSetBySourceType source_type);
+
+  // Return true when parse action succeeded (parsing `source_value_str` starting at offset `pos`).
+  // `new_value` will contain the parsed value produced by this parse handler, while `pos` will have been moved to the end of the parsed content.
+  // The string parse handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnParseFunction)(RTP &target, T &new_value, const std::string &source_value_str, unsigned int &pos, ParamSetBySourceType source_type);
+
+  // Return the formatted string value, depending on the formatting purpose. The format handler is not supposed to modify any read/write/modify access accounting data.
+  typedef std::string (*ParamOnFormatFunction)(const RTP &source, const T &value, const T& default_value, ValueFetchPurpose purpose);
 
 public:
-  RefTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit RefTypedParam(const T &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit RefTypedParam(const T *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  RefTypedParam(const char *value, const Assistant &assist, THE_4_HANDLERS_PROTO);
+  RefTypedParam(const T &value, const Assistant &assist, THE_4_HANDLERS_PROTO);
+  explicit RefTypedParam(const T *value, const Assistant &assist, THE_4_HANDLERS_PROTO);
   virtual ~RefTypedParam() = default;
 
   //operator T() const;
@@ -725,18 +868,19 @@ public:
   void operator=(const T &value);
   void operator=(const T *value);
 
+  // Produce a reference to the parameter-internal assistant instance.
+  // 
+  // Used, for example, by the parse handler, to obtain info about delimiters, etc., necessary to successfully parse a string value into a T object.
+  Assistant &get_assistant();
+  const Assistant &get_assistant() const;
+
   operator const std::string &();
   const char* c_str() const;
 
-  bool empty() const;
+  bool empty() const noexcept;
 
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-  //bool set_value(T v, SOURCE_REF);
-  bool set_value(const T &v, SOURCE_REF);
-  bool set_value(const T *v, SOURCE_REF);
+  virtual void set_value(const char *v, SOURCE_REF) override;
+  void set_value(const T &v, SOURCE_REF);
 
   // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
   // due to this nasty little blurb:
@@ -762,23 +906,15 @@ public:
   // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
   using Param::set_value;
 
-  const T &value() const;
+  const T &value() const noexcept;
 
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) override;
 
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  void set_parse_f(ParamParseValueFunction *new_parse_f);
-  ParamParseValueFunction *get_parse_f() const;
-  void set_format_f(ParamFormatValueFunction *new_format_f);
-  ParamFormatValueFunction *get_format_f() const;
+  virtual std::string value_str(ValueFetchPurpose purpose) const override;
 
   RefTypedParam(const RTP &o) = delete;
   RefTypedParam(RTP &&o) = delete;
@@ -788,33 +924,55 @@ public:
   RTP &operator=(RTP &&other) = delete;
   RTP &operator=(const RTP &&other) = delete;
 
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  void clear_on_modify_handler();
+  ParamOnValidateFunction set_on_validate_handler(ParamOnValidateFunction on_validate_f);
+  void clear_on_validate_handler();
+  ParamOnParseFunction set_on_parse_handler(ParamOnParseFunction on_parse_f);
+  void clear_on_parse_handler();
+  ParamOnFormatFunction set_on_format_handler(ParamOnFormatFunction on_format_f);
+  void clear_on_format_handler();
+
+protected:
+  ParamOnModifyFunction on_modify_f_;
+  ParamOnValidateFunction on_validate_f_;
+  ParamOnParseFunction on_parse_f_;
+  ParamOnFormatFunction on_format_f_;
 
 protected:
   T value_;
   T default_;
-
-  ParamParseValueFunction *parse_f_;
-  ParamFormatValueFunction *format_f_;
 };
 
 // --------------------------------------------------------------------------------------------------
 
 // Use this one for sets (array/vector) of basic types:
-template <class ElemT>
+template <class ElemT, class Assistant>
 class BasicVectorTypedParam : public Param {
-  using RTP = BasicVectorTypedParam<ElemT>;
+  using RTP = BasicVectorTypedParam<ElemT, Assistant>;
   using VecT = std::vector<ElemT>;
 
 public:
-  typedef bool ParamParseValueFunction(VecT &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
-  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const VecT &src);
+  using Param::Param;
+  using Param::operator=;
+
+  // Return true when modify action may proceed. `new_value` MAY have been adjusted by this modify handler. The modify handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnModifyFunction)(RTP &target, const VecT &old_value, VecT &new_value, const VecT &default_value, ParamSetBySourceType source_type, ParamPtr optional_setter);
+
+  // Return true when validation action passed and modify/write may proceed. `new_value` MAY have been adjusted by this validation handler. The validation handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnValidateFunction)(RTP &target, const VecT &old_value, VecT &new_value, const VecT &default_value, ParamSetBySourceType source_type);
+
+  // Return true when parse action succeeded (parsing `source_value_str` starting at offset `pos`).
+  // `new_value` will contain the parsed value produced by this parse handler, while `pos` will have been moved to the end of the parsed content.
+  // The string parse handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnParseFunction)(RTP &target, VecT &new_value, const std::string &source_value_str, unsigned int &pos, ParamSetBySourceType source_type);
+
+  // Return the formatted string value, depending on the formatting purpose. The format handler is not supposed to modify any read/write/modify access accounting data.
+  typedef std::string (*ParamOnFormatFunction)(const RTP &source, const VecT &value, const VecT& default_value, ValueFetchPurpose purpose);
 
 public:
-  BasicVectorTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit BasicVectorTypedParam(const VecT &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit BasicVectorTypedParam(const VecT *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  BasicVectorTypedParam(const char *value, const Assistant &assist, THE_4_HANDLERS_PROTO);
+  BasicVectorTypedParam(const VecT &value, const Assistant &assist, THE_4_HANDLERS_PROTO);
   virtual ~BasicVectorTypedParam() = default;
 
   // operator T() const;
@@ -822,20 +980,20 @@ public:
   operator const VecT *() const;
   // void operator=(T value);
   void operator=(const VecT &value);
-  void operator=(const VecT *value);
+
+  // Produce a reference to the parameter-internal assistant instance.
+  //
+  // Used, for example, by the parse handler, to obtain info about delimiters, etc., necessary to successfully parse a string value into a T object.
+  Assistant &get_assistant();
+  const Assistant &get_assistant() const;
 
   operator const std::string &();
   const char *c_str() const;
 
-  bool empty() const;
+  bool empty() const noexcept;
 
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-  // bool set_value(T v, SOURCE_REF);
-  bool set_value(const VecT &v, SOURCE_REF);
-  bool set_value(const VecT *v, SOURCE_REF);
+  virtual void set_value(const char *v, SOURCE_REF) override;
+  void set_value(const VecT& v, SOURCE_REF);
 
   // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
   // due to this nasty little blurb:
@@ -861,23 +1019,15 @@ public:
   // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
   using Param::set_value;
 
-  const VecT &value() const;
+  const VecT &value() const noexcept;
 
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) override;
 
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  void set_parse_f(ParamParseValueFunction *new_parse_f);
-  ParamParseValueFunction *get_parse_f() const;
-  void set_format_f(ParamFormatValueFunction *new_format_f);
-  ParamFormatValueFunction *get_format_f() const;
+  virtual std::string value_str(ValueFetchPurpose purpose) const override;
 
   BasicVectorTypedParam(const RTP &o) = delete;
   BasicVectorTypedParam(RTP &&o) = delete;
@@ -887,33 +1037,56 @@ public:
   RTP &operator=(RTP &&other) = delete;
   RTP &operator=(const RTP &&other) = delete;
 
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  void clear_on_modify_handler();
+  ParamOnValidateFunction set_on_validate_handler(ParamOnValidateFunction on_validate_f);
+  void clear_on_validate_handler();
+  ParamOnParseFunction set_on_parse_handler(ParamOnParseFunction on_parse_f);
+  void clear_on_parse_handler();
+  ParamOnFormatFunction set_on_format_handler(ParamOnFormatFunction on_format_f);
+  void clear_on_format_handler();
+
+protected:
+  ParamOnModifyFunction on_modify_f_;
+  ParamOnValidateFunction on_validate_f_;
+  ParamOnParseFunction on_parse_f_;
+  ParamOnFormatFunction on_format_f_;
 
 protected:
   VecT value_;
   VecT default_;
-
-  ParamParseValueFunction *parse_f_;
-  ParamFormatValueFunction *format_f_;
+  Assistant assistant_;
 };
 
 // --------------------------------------------------------------------------------------------------
 
 // Use this one for sets (array/vector) of user-defined / custom types:
-template <class ElemT>
+template <class ElemT, class Assistant>
 class ObjectVectorTypedParam : public Param {
-  using RTP = ObjectVectorTypedParam<ElemT>;
+  using RTP = ObjectVectorTypedParam<ElemT, Assistant>;
   using VecT = std::vector<ElemT>;
 
 public:
-  typedef bool ParamParseValueFunction(VecT &dst, RTP target, const char *value, ParamSetBySourceType source_type, ParamPtr origin, ParamsVector *owner);
-  typedef bool ParamFormatValueFunction(std::string &dst, RTP source, const VecT &src);
+  using Param::Param;
+  using Param::operator=;
+
+  // Return true when modify action may proceed. `new_value` MAY have been adjusted by this modify handler. The modify handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnModifyFunction)(RTP &target, const VecT &old_value, VecT &new_value, const VecT &default_value, ParamSetBySourceType source_type, ParamPtr optional_setter);
+
+  // Return true when validation action passed and modify/write may proceed. `new_value` MAY have been adjusted by this validation handler. The validation handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnValidateFunction)(RTP &target, const VecT &old_value, VecT &new_value, const VecT &default_value, ParamSetBySourceType source_type);
+
+  // Return true when parse action succeeded (parsing `source_value_str` starting at offset `pos`).
+  // `new_value` will contain the parsed value produced by this parse handler, while `pos` will have been moved to the end of the parsed content.
+  // The string parse handler is not supposed to modify any read/write/modify access accounting data.
+  typedef void (*ParamOnParseFunction)(RTP &target, VecT &new_value, const std::string &source_value_str, unsigned int &pos, ParamSetBySourceType source_type);
+
+  // Return the formatted string value, depending on the formatting purpose. The format handler is not supposed to modify any read/write/modify access accounting data.
+  typedef std::string (*ParamOnFormatFunction)(const RTP &source, const VecT &value, const VecT& default_value, ValueFetchPurpose purpose);
 
 public:
-  ObjectVectorTypedParam(const char *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit ObjectVectorTypedParam(const VecT &value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
-  explicit ObjectVectorTypedParam(const VecT *value, ParamParseValueFunction *parse_f, ParamFormatValueFunction *format_f, const char *name, const char *comment, ParamsVector &owner, bool init = false, ParamOnModifyFunction on_modify_f = 0);
+  ObjectVectorTypedParam(const char *value, const Assistant &assist, THE_4_HANDLERS_PROTO);
+  ObjectVectorTypedParam(const VecT &value, const Assistant &assist, THE_4_HANDLERS_PROTO);
   virtual ~ObjectVectorTypedParam() = default;
 
   // operator T() const;
@@ -923,18 +1096,19 @@ public:
   void operator=(const VecT &value);
   void operator=(const VecT *value);
 
+  // Produce a reference to the parameter-internal assistant instance.
+  //
+  // Used, for example, by the parse handler, to obtain info about delimiters, etc., necessary to successfully parse a string value into a T object.
+  Assistant &get_assistant();
+  const Assistant &get_assistant() const;
+
   operator const std::string &();
   const char *c_str() const;
 
-  bool empty() const;
+  bool empty() const noexcept;
 
-  virtual bool set_value(const char *v, SOURCE_REF) override;
-  virtual bool set_value(int32_t v, SOURCE_REF) override;
-  virtual bool set_value(bool v, SOURCE_REF) override;
-  virtual bool set_value(double v, SOURCE_REF) override;
-  // bool set_value(T v, SOURCE_REF);
-  bool set_value(const VecT &v, SOURCE_REF);
-  bool set_value(const VecT *v, SOURCE_REF);
+  virtual void set_value(const char *v, SOURCE_REF) override;
+  void set_value(const VecT &v, SOURCE_REF);
 
   // the Param::set_value methods will not be considered by the compiler here, resulting in at least 1 compile error in params.cpp,
   // due to this nasty little blurb:
@@ -960,23 +1134,15 @@ public:
   // reckoned it'd bother all four of them: IntParam, FloatParam, etc.
   using Param::set_value;
 
-  const VecT &value() const;
+  const VecT &value() const noexcept;
 
-  virtual void ResetToDefault(SOURCE_TYPE) override;
-  virtual void ResetFrom(const ParamsVectorSet &vec, SOURCE_TYPE) override;
+  // Optionally the `source_vec` can be used to source the value to reset the parameter to.
+  // When no source vector is specified, or when the source vector does not specify this
+  // particular parameter, then its value is reset to the default value which was
+  // specified earlier in its constructor.
+  virtual void ResetToDefault(const ParamsVectorSet *source_vec = 0, SOURCE_TYPE) override;
 
-  virtual bool is_set() const override;
-
-  virtual std::string formatted_value_str() const override;
-  virtual std::string raw_value_str() const override;
-  virtual const char *value_type_str() const override;
-
-  virtual bool inspect_value(ParamValueContainer &dst) const override;
-
-  void set_parse_f(ParamParseValueFunction *new_parse_f);
-  ParamParseValueFunction *get_parse_f() const;
-  void set_format_f(ParamFormatValueFunction *new_format_f);
-  ParamFormatValueFunction *get_format_f() const;
+  virtual std::string value_str(ValueFetchPurpose purpose) const override;
 
   ObjectVectorTypedParam(const RTP &o) = delete;
   ObjectVectorTypedParam(RTP &&o) = delete;
@@ -986,18 +1152,30 @@ public:
   RTP &operator=(RTP &&other) = delete;
   RTP &operator=(const RTP &&other) = delete;
 
-  // Returns a copy of this parameter. That instance is allocated on the heap.
-  virtual ParamPtr clone() const override;
+  ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
+  void clear_on_modify_handler();
+  ParamOnValidateFunction set_on_validate_handler(ParamOnValidateFunction on_validate_f);
+  void clear_on_validate_handler();
+  ParamOnParseFunction set_on_parse_handler(ParamOnParseFunction on_parse_f);
+  void clear_on_parse_handler();
+  ParamOnFormatFunction set_on_format_handler(ParamOnFormatFunction on_format_f);
+  void clear_on_format_handler();
+
+protected:
+  ParamOnModifyFunction on_modify_f_;
+  ParamOnValidateFunction on_validate_f_;
+  ParamOnParseFunction on_parse_f_;
+  ParamOnFormatFunction on_format_f_;
 
 protected:
   VecT value_;
   VecT default_;
-
-  ParamParseValueFunction *parse_f_;
-  ParamFormatValueFunction *format_f_;
+  Assistant assistant_;
 };
 
 // --------------------------------------------------------------------------------------------------
+
+#undef THE_4_HANDLERS_PROTO
 
 // see note above: these must be using statements, not derived classes, or otherwise the constructor/operator delete instructions in that base template won't deliver as expected!
 
@@ -1007,10 +1185,28 @@ using DoubleParam = ValueTypedParam<double>;
 
 using StringParam = StringTypedParam<std::string>;
 
-using StringSetParam = BasicVectorTypedParam<std::string>;
-using IntSetParam = BasicVectorTypedParam<int32_t>;
-using BoolSetParam = BasicVectorTypedParam<bool>;
-using DoubleSetParam = BasicVectorTypedParam<double>;
+
+struct BasicVectorParamParseAssistant {
+  std::string parse_separators{"\t\r\n,;:|"}; //< list of separators accepted by the string parse handler. Any one of these separates individual elements in the array.
+
+  // For formatting the set for data serialzation / save purposes, the generated set may be wrapped in a prefix and postfix, e.g. "{" and "}".
+  std::string fmt_data_prefix{""};
+  std::string fmt_data_postfix{""};
+  std::string fmt_data_separator{","};
+
+  // For formatting the set for display purposes, the generated set may be wrapped in a prefix and postfix, e.g. "[" and "]".
+  std::string fmt_display_prefix{"["};
+  std::string fmt_display_postfix{"]"};
+  std::string fmt_display_separator{", "};
+
+  bool parse_should_cope_with_fmt_display_prefixes{true}; //< when true, the registered string parse handler is supposed to be able to cope with encountering the format display-output prefix and prefix strings.
+  bool parse_trims_surrounding_whitespace{true};  //< the string parse handler will trim any whitespace occurring before or after every value stored in the string.
+};
+
+using StringSetParam = BasicVectorTypedParam<std::string, BasicVectorParamParseAssistant>;
+using IntSetParam = BasicVectorTypedParam<int32_t, BasicVectorParamParseAssistant>;
+using BoolSetParam = BasicVectorTypedParam<bool, BasicVectorParamParseAssistant>;
+using DoubleSetParam = BasicVectorTypedParam<double, BasicVectorParamParseAssistant>;
 
 // --------------------------------------------------------------------------------------------------
 
@@ -1034,6 +1230,10 @@ public:
   static bool ReadParamsFromFp(TFile *fp,
                                const ParamsVectorSet &set,
                                SOURCE_REF);
+
+  // Set the application name to be mentioned in libparameters' error messages.
+  static void SetApplicationName(const char *appname = nullptr);
+  static const std::string &GetApplicationName();
 
   // Set a parameter to have the given value.
   template <ParamAcceptableValueType T>
@@ -1095,6 +1295,7 @@ public:
       const ParamsVector &set,
       ParamType accepted_types_mask = ANY_TYPE_PARAM);
 
+#if 0
   // Fetches the value of the named param as a string and does not add
   // this access to the read counter tally. This is useful, f.e., when printing 'init'
   // (only-settable-before-first-use) parameters to config file or log file, independent
@@ -1130,22 +1331,10 @@ public:
   //
   // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
   static bool InspectParam(
-      ParamValueContainer &value_dst, const char *name,
+      std::string &value_dst, const char *name,
       const ParamsVectorSet &set,
       ParamType accepted_types_mask = ANY_TYPE_PARAM);
-
-  // Fetches the value of the named param as a ParamValueContainer and does not add
-  // this access to the read counter tally. This is useful, f.e., when editing 'init'
-  // (only-settable-before-first-use) parameters in a UI before starting the actual
-  // process.
-  // Returns false if not found. Prints a message via `tprintf()` to report this
-  // fact (see also `FindParam()`).
-  //
-  // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
-  static bool InspectParam(
-      ParamValueContainer &value_dst, const char *name,
-      const ParamsVector &set,
-      ParamType accepted_types_mask = ANY_TYPE_PARAM);
+#endif
 
   // Print all parameters in the given set(s) to the given file.
   static void PrintParams(FILE *fp, const ParamsVectorSet &set, bool print_info = true);
