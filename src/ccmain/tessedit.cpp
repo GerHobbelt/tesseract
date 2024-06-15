@@ -132,7 +132,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    ParamUtils::ReadParamsFromFp(fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
 
   // Load tesseract variables from config files. This is done after loading

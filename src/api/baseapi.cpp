@@ -3406,7 +3406,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.wordrec_debug_level.set_value(3, SRC);
 
-  dict.word_to_debug.set_value(true, SRC);
+  //dict.word_to_debug.set_value("", SRC);
 
   tess.scribe_save_grey_rotated_image.set_value(true, SRC);
   tess.scribe_save_binary_rotated_image.set_value(true, SRC);

@@ -19,121 +19,79 @@
 namespace tesseract {
 
 
-void ParamUtils::PrintParams(FILE* fp, const ParamsVectorSet& set, bool print_info ) {
-
-}
-
-void ParamUtils::ReportParamsUsageStatistics(FILE* fp, const ParamsVectorSet& set, const char* section_title ) {
-
-}
-
-void ParamUtils::ResetToDefaults(const ParamsVectorSet& set, ParamSetBySourceType source_type) {
-
-}
-
-
-
 
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ConfigFile
+// ParamUtils
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ConfigFile::ConfigFile(const char *path)
-{
-	if (!path || !*path) {
-		_f = nullptr;
-		return;
-	}
-
-	_f = nullptr;
-
-	if (strieq(path, "/dev/stdin") || strieq(path, "stdin") || strieq(path, "-") || strieq(path, "1"))
-		_f = stdin;
-	else {
-		_f = fopenUtf8(path, "r");
-		if (!_f) {
-			tprintError("Cannot open file: '{}'\n", path);
-		}
-	}
+bool ParamUtils::ReadParamsFile(const std::string &file,
+                                const ParamsVectorSet &member_params,
+								                ParamSetBySourceType source_type,
+								                ParamPtr source
+) {
+  TFile fp;
+  if (!fp.Open(file.c_str(), nullptr)) {
+    tprintError("read_params_file: Can't open/read file {}\n", file);
+    return true;
+  }
+  return ReadParamsFromFp(&fp, member_params, source_type, source);
 }
 
-ConfigFile::~ConfigFile() {
-	if (_f) {
-		if (_f != stdin) {
-			fclose(_f);
-		} else {
-			fflush(_f);
-		}
-	}
+bool ParamUtils::ReadParamsFromFp(TFile *fp,
+                                  const ParamsVectorSet &member_params,
+                                  ParamSetBySourceType source_type,
+                                  ParamPtr source) {
+#define LINE_SIZE 4096
+  char line[LINE_SIZE]; // input line
+  bool anyerr = false;  // true if any error
+  bool foundit;         // found parameter
+  char *nameptr;        // name field
+  char *valptr;         // value field
+  unsigned linecounter = 0;
+
+  while (fp->FGets(line, LINE_SIZE) != nullptr) {
+    linecounter++;
+
+    // trimRight:
+    for (nameptr = line + strlen(line) - 1; nameptr >= line && std::isspace(*nameptr); nameptr--) {
+      ;
+    }
+    nameptr[1] = 0;
+    // trimLeft:
+    for (nameptr = line; *nameptr && std::isspace(*nameptr); nameptr++) {
+      ;
+    }
+
+    if (nameptr[0] && nameptr[0] != '#') {
+      // jump over variable name
+      for (valptr = nameptr; *valptr && !std::isspace(*valptr); valptr++) {
+        ;
+      }
+
+      if (*valptr) {    // found blank
+        *valptr = '\0'; // make name a string
+
+        do {
+          valptr++; // find end of blanks
+        } while (std::isspace(*valptr));
+      }
+      foundit = SetParam(nameptr, valptr, member_params, source_type, source);
+
+      if (!foundit) {
+        anyerr = true; // had an error
+        tprintError("Failure while processing parameter line: {}  {}\n", nameptr, valptr);
+      }
+    }
+  }
+  return anyerr;
 }
 
-FILE *ConfigFile::operator()() const {
-	return _f;
-}
 
 
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// ReportFile
-//
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// permanent lookup table:
-std::vector<std::string> ReportFile::_processed_file_paths;
-
-
-ReportFile::ReportFile(const char *path)
-{
-	if (!path || !*path) {
-		_f = nullptr;
-		return;
-	}
-
-	_f = nullptr;
-
-	if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
-		_f = stdout;
-	else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
-		_f = stderr;
-	else {
-		bool first = true;
-		for (std::string &i : _processed_file_paths) {
-			if (strieq(i.c_str(), path)) {
-				first = false;
-				break;
-			}
-		}
-		_f = fopenUtf8(path, first ? "w" : "a");
-		if (!_f) {
-			tprintError("Cannot produce parameter usage report file: '{}'\n", path);
-		}
-		else if (first) {
-			_processed_file_paths.push_back(path);
-		}
-	}
-}
-
-ReportFile::~ReportFile() {
-	if (_f) {
-		if (_f != stdout && _f != stderr) {
-			fclose(_f);
-		} else {
-			fflush(_f);
-		}
-	}
-}
-
-FILE * ReportFile::operator()() const {
-	return _f;
-}
 
 
 

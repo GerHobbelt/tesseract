@@ -23,9 +23,29 @@
 #define TESSERACT_PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
+
+class TFile;
+
+
+// --------------------------------------------------------------------------------------------------
+
+// Utility functions for working with Tesseract parameters.
+class TESS_API ParamUtils {
+public:
+  // Read parameters from the given file pointer.
+  // Otherwise identical to ReadParamsFile().
+  static bool ReadParamsFromFp(TFile *fp,
+                               const ParamsVectorSet &set,
+                               SOURCE_REF);
+
+};
+
+
+// --------------------------------------------------------------------------------------------------
+
 
 extern BOOL_VAR_H(stream_filelist);
 extern STRING_VAR_H(document_title);
