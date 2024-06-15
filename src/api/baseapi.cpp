@@ -70,7 +70,7 @@
 #include <tesseract/osdetect.h>       // for OSResults, OSBestResult, OrientationId...
 #include <tesseract/renderer.h>       // for TessResultRenderer
 #include <tesseract/resultiterator.h> // for ResultIterator
-#include <tesseract/params.h>         // for Param, ..., ParamVectorSet class definitions
+#include <parameters/parameters.h>    // for Param, ..., ParamVectorSet class definitions
 #include <tesseract/assert.h>
 
 #include <cmath>    // for round, M_PI
@@ -239,39 +239,38 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 TessBaseAPI::TessBaseAPI()
     : tesseract_(nullptr)
 #if !DISABLED_LEGACY_ENGINE
-    , osd_tesseract_(nullptr)
-    , equ_detect_(nullptr)
+      ,
+      osd_tesseract_(nullptr),
+      equ_detect_(nullptr)
 #endif
-    , reader_(nullptr)
-    ,
-    // thresholder_ is initialized to nullptr here, but will be set before use
-    // by: A constructor of a derived API or created
-    // implicitly when used in InternalResetImage.
-    thresholder_(nullptr)
-    , paragraph_models_(nullptr)
-    , block_list_(nullptr)
-    , page_res_(nullptr)
-    , pix_visible_image_(nullptr)
-    , last_oem_requested_(OEM_DEFAULT)
-    , recognition_done_(false)
-    , rect_left_(0)
-    , rect_top_(0)
-    , rect_width_(0)
-    , rect_height_(0)
-    , image_width_(0)
-    , image_height_(0) 
-{
+      ,
+      reader_(nullptr),
+      // thresholder_ is initialized to nullptr here, but will be set before use
+      // by: A constructor of a derived API or created
+      // implicitly when used in InternalResetImage.
+      thresholder_(nullptr),
+      paragraph_models_(nullptr),
+      block_list_(nullptr),
+      page_res_(nullptr),
+      pix_visible_image_(nullptr),
+      last_oem_requested_(OEM_DEFAULT),
+      recognition_done_(false),
+      rect_left_(0),
+      rect_top_(0),
+      rect_width_(0),
+      rect_height_(0),
+      image_width_(0),
+      image_height_(0) {
   // make sure the debug_all preset is set up BEFORE any command-line arguments
   // direct tesseract to set some arbitrary parameters just below,
   // for otherwise those `-c xyz=v` commands may be overruled by the
   // debug_all preset!
-  debug_all.set_on_modify_handler([this](const char *name,
-                                         ParamRef target,
-                                         ParamSetBySourceType type,
-                                         ParamPtr parent,
-                                         ParamValueContainer &old_val,
-                                         ParamValueContainer &new_val,
-                                         ParamValueContainer &default_val) {
+  debug_all.set_on_modify_handler([this](decltype(debug_all) &target,
+                                         const int32_t old_value,
+                                         int32_t &new_value,
+                                         const int32_t default_value,
+                                         ParamSetBySourceType source_type,
+                                         ParamPtr optional_setter) {
     this->SetupDebugAllPreset();
   });
 }

@@ -19,7 +19,7 @@
 #ifndef POLYAPRX_H
 #define POLYAPRX_H
 
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 

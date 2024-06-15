@@ -22,7 +22,7 @@
 #include "blobbox.h"
 #include "blobs.h"
 #include "ocrblock.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "statistc.h"
 
 namespace tesseract {

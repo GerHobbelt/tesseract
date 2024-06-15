@@ -24,7 +24,7 @@
 #include "unicharset.h"
 #include "tprintf.h" // for tprintf
 
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 #include <tesseract/unichar.h>
 #include "serialis.h"

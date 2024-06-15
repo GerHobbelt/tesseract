@@ -18,7 +18,7 @@
 #ifndef TESS_GLOBAL_PARAMS_H
 #define TESS_GLOBAL_PARAMS_H
 
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 

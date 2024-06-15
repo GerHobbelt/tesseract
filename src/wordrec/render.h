@@ -19,7 +19,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include <tesseract/params.h>     // for BOOL_VAR_H, BoolParam
+#include <parameters/parameters.h>     // for BOOL_VAR_H, BoolParam
 #include "scrollview.h" // ScrollView
 
 namespace tesseract {

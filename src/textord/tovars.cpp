@@ -20,7 +20,7 @@
 #include <tesseract/debugheap.h>
 
 #include "tovars.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 
 namespace tesseract {

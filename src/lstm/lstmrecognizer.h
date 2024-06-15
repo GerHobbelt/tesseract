@@ -23,7 +23,7 @@
 #include "matrix.h"
 #include "network.h"
 #include "networkscratch.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "recodebeam.h"
 #include "series.h"
 #include "unicharcompress.h"

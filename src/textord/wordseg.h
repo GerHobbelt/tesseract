@@ -20,7 +20,7 @@
 #define WORDSEG_H
 
 #include "blobbox.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "textord.h"
 
 namespace tesseract {

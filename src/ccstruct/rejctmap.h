@@ -41,7 +41,7 @@ OF THIS IMPLIED TEMPORAL ORDERING OF THE FLAGS!!!!
 #define REJCTMAP_H
 
 #include "errcode.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 #include <bitset>
 #include <memory>

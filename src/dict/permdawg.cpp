@@ -21,7 +21,7 @@
 ----------------------------------------------------------------------*/
 
 #include "dawg.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "stopper.h"
 #include "tprintf.h"
 

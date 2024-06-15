@@ -20,7 +20,7 @@
 #define FPCHOP_H
 
 #include "blobbox.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {

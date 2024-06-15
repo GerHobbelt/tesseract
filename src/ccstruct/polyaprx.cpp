@@ -22,7 +22,7 @@
 #include "coutln.h"  // for C_OUTLINE
 #include "errcode.h" // for ASSERT_HOST
 #include "mod128.h"  // for DIR128
-#include <tesseract/params.h>  // for BoolParam, BOOL_VAR
+#include <parameters/parameters.h>  // for BoolParam, BOOL_VAR
 #include "points.h"  // for ICOORD
 #include "rect.h"    // for TBOX
 #include "tprintf.h" // for tprintf

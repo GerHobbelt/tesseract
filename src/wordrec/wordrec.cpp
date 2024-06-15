@@ -40,7 +40,7 @@ Wordrec::Wordrec()
 #else // DISABLED_LEGACY_ENGINE not defined
 
 #  include "language_model.h"
-#  include <tesseract/params.h>
+#  include <parameters/parameters.h>
 
 namespace tesseract {
 Wordrec::Wordrec()

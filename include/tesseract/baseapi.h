@@ -30,7 +30,7 @@
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/autosupressor.h>     // for AutoSupressDatum
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include <tesseract/filepath.h>
 
 #include <cstdio>
@@ -42,6 +42,8 @@ struct Pixa;
 struct Boxa;
 
 namespace tesseract {
+
+using namespace parameters;
 
 class PAGE_RES;
 class ParagraphModel;

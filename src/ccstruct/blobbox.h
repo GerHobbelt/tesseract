@@ -23,7 +23,7 @@
 #include "elst2.h"      // for ELIST2_ITERATOR, ELIST2IZEH, ELIST2_LINK
 #include "errcode.h"    // for ASSERT_HOST
 #include "ocrblock.h"   // for BLOCK
-#include <tesseract/params.h>     // for DoubleParam, DOUBLE_VAR_H
+#include <parameters/parameters.h>     // for DoubleParam, DOUBLE_VAR_H
 #include "pdblock.h"    // for PDBLK
 #include "points.h"     // for FCOORD, ICOORD, ICOORDELT_LIST
 #include "quspline.h"   // for QSPLINE

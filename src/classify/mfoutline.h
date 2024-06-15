@@ -21,7 +21,7 @@
 #include "blobs.h"
 #include "fpoint.h"
 #include "oldlist.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 

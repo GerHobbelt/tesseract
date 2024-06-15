@@ -22,7 +22,7 @@
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
-#include <tesseract/params.h>        // for STRING_VAR
+#include <parameters/parameters.h>        // for STRING_VAR
 #include "simddetect.h"
 #include "tprintf.h" // for tprintf
 #include "tesstypes.h"

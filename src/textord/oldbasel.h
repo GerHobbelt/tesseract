@@ -20,7 +20,7 @@
 #define OLDBASEL_H
 
 #include "blobbox.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 

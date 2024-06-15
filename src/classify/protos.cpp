@@ -24,7 +24,7 @@
 
 #include "classify.h"
 #include "intproto.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "tprintf.h"
 
 #include <cmath> // for M_PI

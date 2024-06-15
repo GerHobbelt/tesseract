@@ -542,17 +542,18 @@ static int Main() {
   render.set_underline_continuation_prob(FLAGS_underline_continuation_prob);
 
   // Set text rendering orientation and their forms.
-  if (FLAGS_writing_mode == "horizontal") {
+  std::string writing_mode = FLAGS_writing_mode;
+  if (writing_mode == "horizontal") {
     // Render regular horizontal text (default).
     render.set_vertical_text(false);
     render.set_gravity_hint_strong(false);
     render.set_render_fullwidth_latin(false);
-  } else if (FLAGS_writing_mode == "vertical") {
+  } else if (writing_mode == "vertical") {
     // Render vertical text. Glyph orientation is selected by Pango.
     render.set_vertical_text(true);
     render.set_gravity_hint_strong(false);
     render.set_render_fullwidth_latin(false);
-  } else if (FLAGS_writing_mode == "vertical-upright") {
+  } else if (writing_mode == "vertical-upright") {
     // Render vertical text. Glyph orientation is set to be upright.
     // Also Basic Latin characters are converted to their fullwidth forms
     // on rendering, since fullwidth Latin characters are well designed to fit
@@ -562,7 +563,7 @@ static int Main() {
     render.set_gravity_hint_strong(true);
     render.set_render_fullwidth_latin(true);
   } else {
-    tprintError("Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
+    tprintError("Invalid writing mode: {}\n", writing_mode.c_str());
     return EXIT_FAILURE;
   }
 

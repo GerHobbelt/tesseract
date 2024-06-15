@@ -17,7 +17,7 @@
  **********************************************************************/
 
 #include "float2int.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "tesseractclass.h"
 
 #include <algorithm>

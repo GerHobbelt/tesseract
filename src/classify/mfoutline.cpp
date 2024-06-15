@@ -27,7 +27,7 @@
 #include "classify.h"
 #include "clusttool.h" //If remove you get caught in a loop somewhere
 #include "mfx.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 #include <cmath>
 #include <cstdio>

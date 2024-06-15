@@ -21,7 +21,7 @@
 
 #include "coutln.h"
 #include "crakedge.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "pdblock.h"
 #include "scrollview.h"
 

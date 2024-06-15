@@ -21,7 +21,7 @@
 #define BLKOCC_H
 
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 

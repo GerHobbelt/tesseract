@@ -22,7 +22,7 @@
 #include "mfdefs.h"
 #include "mfoutline.h"
 #include "normalis.h"
-#include <tesseract/params.h>
+#include <parameters/parameters.h>
 
 namespace tesseract {
 
