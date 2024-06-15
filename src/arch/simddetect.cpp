@@ -372,9 +372,10 @@ void SIMDDetect::Update() {
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif
-        "{}{}{}{}{} std::inner_product.\n",
+        "{}{}{}{}{}{} std std::inner_product.\n",
         cfg,
         (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
+        (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx-1" : "",
         (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx" : "",
         (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
         (sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
