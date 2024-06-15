@@ -35,7 +35,7 @@
 #include "blobbox.h"
 #include "linefind.h"
 #include "normalis.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "scrollview.h"
 #include "strokewidth.h"
 #include "tablefind.h"

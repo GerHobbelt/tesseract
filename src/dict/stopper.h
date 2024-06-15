@@ -17,7 +17,7 @@
 #ifndef STOPPER_H
 #define STOPPER_H
 
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 #include <tesseract/unichar.h>

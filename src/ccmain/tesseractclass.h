@@ -37,7 +37,7 @@
 #endif
 #include "genericvector.h"   // for PointerVector
 #include "pageres.h"         // for WERD_RES (ptr only), PAGE_RES (pt...
-#include <parameters/parameters.h>          // for BOOL_VAR_H, BoolParam, DoubleParam
+#include <tesseract/params.h>          // for BOOL_VAR_H, BoolParam, DoubleParam
 #include "points.h"          // for FCOORD
 #include "ratngs.h"          // for ScriptPos, WERD_CHOICE (ptr only)
 #include "tessdatamanager.h" // for TessdataManager

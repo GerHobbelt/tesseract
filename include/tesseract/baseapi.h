@@ -30,7 +30,7 @@
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/autosupressor.h>     // for AutoSupressDatum
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include <tesseract/filepath.h>
 
 #include <cstdio>

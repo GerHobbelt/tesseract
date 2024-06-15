@@ -25,7 +25,7 @@
 
 #include "colpartitiongrid.h"
 #include "linlsq.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "statistc.h"
 #include "tesseractclass.h"
 

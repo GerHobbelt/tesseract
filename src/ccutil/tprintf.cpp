@@ -23,7 +23,7 @@
 
 #include "tprintf.h"
 
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 
 #include <climits> // for INT_MAX
 #include <cstdio>

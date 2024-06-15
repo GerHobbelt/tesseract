@@ -23,7 +23,7 @@
 #define TESSERACT_PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 
 namespace tesseract {
 

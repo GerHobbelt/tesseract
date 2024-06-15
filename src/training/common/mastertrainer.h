@@ -35,7 +35,7 @@
 #include "intfeaturespace.h"
 #include "intfx.h"
 #include "intmatcher.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "shapetable.h"
 #include "trainingsample.h"
 #include "trainingsampleset.h"

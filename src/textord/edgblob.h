@@ -22,7 +22,7 @@
 #include "coutln.h"   // for C_OUTLINE
 #include "ocrblock.h" // for BLOCK
 #include "points.h"   // for ICOORD
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 
 #include <vector>
 

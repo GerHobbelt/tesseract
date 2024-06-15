@@ -20,7 +20,7 @@
 #define PROTOS_H
 
 #include "bitvec.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "unicity_table.h"
 
 #include <tesseract/unichar.h>

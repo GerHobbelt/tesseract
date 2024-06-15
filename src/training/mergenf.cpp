@@ -29,7 +29,7 @@
 #include "mergenf.h"
 #include "ocrfeatures.h"
 #include "oldlist.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "protos.h"
 
 #undef min

@@ -20,7 +20,7 @@
 #define SCANEDG_H
 
 #include "image.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 
 struct Pix;
 

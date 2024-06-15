@@ -70,7 +70,7 @@
 #include <tesseract/osdetect.h>       // for OSResults, OSBestResult, OrientationId...
 #include <tesseract/renderer.h>       // for TessResultRenderer
 #include <tesseract/resultiterator.h> // for ResultIterator
-#include <parameters/parameters.h>    // for Param, ..., ParamVectorSet class definitions
+#include <tesseract/params.h>    // for Param, ..., ParamVectorSet class definitions
 #include <tesseract/assert.h>
 
 #include <cmath>    // for round, M_PI

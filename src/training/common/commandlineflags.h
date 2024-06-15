@@ -21,7 +21,7 @@
 #include "export.h"
 #include <tesseract/export.h>
 #include <tesseract/version.h>
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include <tesseract/capi_training_tools.h>
 
 #include <cstdlib>

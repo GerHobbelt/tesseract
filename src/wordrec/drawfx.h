@@ -19,7 +19,7 @@
 #ifndef DRAWFX_H
 #define DRAWFX_H
 
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "scrollview.h"
 
 namespace tesseract {

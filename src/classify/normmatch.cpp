@@ -32,7 +32,7 @@
 #include "clusttool.h"
 #include "helpers.h"
 #include "normfeat.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "unicharset.h"
 
 #include <cmath>

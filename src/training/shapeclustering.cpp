@@ -24,7 +24,7 @@
 
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"

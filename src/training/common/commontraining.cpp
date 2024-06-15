@@ -70,7 +70,7 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include "mastertrainer.h"
 #  include "mf.h"
 #  include "oldlist.h"
-#  include <parameters/parameters.h>
+#  include <tesseract/params.h>
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
 #  include "tprintf.h"

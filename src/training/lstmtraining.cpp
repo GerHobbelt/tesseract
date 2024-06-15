@@ -35,7 +35,7 @@
 #include "unicharset/fileio.h"             // for LoadFileLinesToStrings
 #include "unicharset/lstmtester.h"
 #include "unicharset/lstmtrainer.h"
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "tprintf.h"
 #include "unicharset/unicharset_training_utils.h"
 

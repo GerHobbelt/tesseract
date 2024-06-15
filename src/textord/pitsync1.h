@@ -23,7 +23,7 @@
 #include "blobbox.h"
 #include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 #include "pithsync.h"
 #include "statistc.h"
 
