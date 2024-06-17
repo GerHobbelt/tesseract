@@ -86,6 +86,7 @@
 #include <vector>   // for std::vector
 #include <cfloat>
 
+#include <parameters/parameters.h>
 #include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
@@ -106,6 +107,8 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+
+using namespace ::parameters;
 
 namespace tesseract {
 

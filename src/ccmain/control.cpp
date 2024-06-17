@@ -22,6 +22,7 @@
 #endif
 
 #include <tesseract/debugheap.h>
+#include <parameters/parameters.h>
 
 #include <cctype>
 #include <cmath>

@@ -27,6 +27,8 @@
 
 namespace tesseract {
 
+using namespace ::parameters;
+
 class TFile;
 
 
@@ -39,7 +41,8 @@ public:
   // Otherwise identical to ReadParamsFile().
   static bool ReadParamsFromFp(TFile *fp,
                                const ParamsVectorSet &set,
-                               SOURCE_REF);
+                               ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION,
+                               ParamPtr source = nullptr);
 
 };
 

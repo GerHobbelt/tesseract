@@ -385,6 +385,10 @@ public:
            const std::vector<std::string> &configs,
            FileReader reader);
 
+  int Init(const char *datapath,
+           const char *language, OcrEngineMode oem,
+           FileReader reader);
+
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
   int InitFromMemory(const char *data, size_t data_size, 

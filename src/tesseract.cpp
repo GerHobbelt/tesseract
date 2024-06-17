@@ -38,6 +38,7 @@
 #endif
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
+#include <parameters/parameters.h>
 #include "simddetect.h"
 #include "tesseractclass.h" // for AnyTessLang
 #include "tprintf.h" // for tprintf
@@ -64,6 +65,7 @@
 #    include <tiffio.h>
 
 using namespace tesseract;
+using namespace parameters;
 
 static void Win32ErrorHandler(const char *module, const char *fmt, va_list ap) {
   char buf[2048] = "";
