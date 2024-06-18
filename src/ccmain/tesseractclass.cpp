@@ -432,8 +432,8 @@ Tesseract::Tesseract(Tesseract *parent)
                     params())
     , DOUBLE_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
                     "Fraction of height used as a minimum gap for aligned blobs.", params())
-    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params())
-    , BOOL_MEMBER(preserve_interword_spaces, false, "Preserve multiple interword spaces.",
+    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params()),
+      BOOL_MEMBER(preserve_interword_spaces, false, "When `true`: preserve multiple inter-word spaces as-is, or when `false`: compress multiple inter-word spaces to a single space character.",
                   params())
     , STRING_MEMBER(page_separator, "\f", "Page separator (default is form feed control character)",
                     params())
