@@ -276,6 +276,10 @@ public:
     return debug_str(unichar_to_id(unichar_repr));
   }
 
+  // Return a string containing the entire unichar set in human-readable
+  // form, for use in debug log/output.
+  std::string debug_full_set_as_string() const;
+
   // Adds a unichar representation to the set. If old_style is true, then
   // TATWEEL characters are kept and n-grams are allowed. Otherwise TATWEEL
   // characters are ignored/skipped as if they don't exist and n-grams that

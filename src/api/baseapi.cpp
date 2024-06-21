@@ -3442,7 +3442,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.bidi_debug.set_value(true, SRC);
 
-  tess.chop_debug.set_value(true, SRC);
+  tess.chop_debug.set_value(3, SRC);
 
   tess.debug_baseline_fit.set_value(1, SRC); // 0..3
   tess.debug_baseline_y_coord.set_value(-2000, SRC);

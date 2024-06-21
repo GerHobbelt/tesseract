@@ -300,7 +300,7 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  ASSERT_HOST(static_cast<unsigned>(id) < this->size());
+  ASSERT_HOST(static_cast<size_t>(id) < this->size());
   return unichars[id].representation;
 }
 
@@ -322,26 +322,31 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
   return unichars[id].representation;
 }
 
-// Return a string that reformats the utf8 str into the str followed
-// by its hex unicodes.
+// Return a string that reformats the utf8 str into the string
+// followed by its set of hexadecimal unicode codepoints, within square brackets.
 std::string UNICHARSET::debug_utf8_str(const char *str) {
   std::string result = str;
   result += " [";
   int step = 1;
   // Chop into unicodes and code each as hex.
-  for (int i = 0; str[i] != '\0'; i += step) {
+  int i;
+  for (i = 0; str[i] != '\0'; i += step) {
     char hex[sizeof(int) * 2 + 1];
     step = UNICHAR::utf8_step(str + i);
-    if (step == 0) {
+    if (step <= 1) {
       step = 1;
-      snprintf(hex, sizeof(hex), "%x", str[i]);
+      snprintf(hex, sizeof(hex), "$%02x", str[i]);
     } else {
       UNICHAR ch(str + i, step);
-      snprintf(hex, sizeof(hex), "%x", ch.first_uni());
+      snprintf(hex, sizeof(hex), "$%04x", ch.first_uni());
     }
-	hex[sizeof(hex) - 1] = 0;
+    hex[sizeof(hex) - 1] = 0;
     result += hex;
     result += " ";
+  }
+  // drop the trailing space:
+  if (i > 0) {
+    result.pop_back(1);
   }
   result += "]";
   return result;
@@ -359,24 +364,36 @@ std::string UNICHARSET::debug_str(UNICHAR_ID id) const {
   }
   const char *str = id_to_unichar(id);
   std::string result = debug_utf8_str(str);
+  // encode category: a/A/x: alpha; 0: number; p: punctuation; -: everything else.
+  result += "{";
+  bool is_other = true;
   // Append `a` for lower alpha, `A` for upper alpha, and `x` if alpha but neither.
   if (get_isalpha(id)) {
     if (get_islower(id)) {
       result += "a";
+      is_other = false;
     } else if (get_isupper(id)) {
       result += "A";
+      is_other = false;
     } else {
       result += "x";
+      is_other = false;
     }
   }
   // Append `0` if a digit.
   if (get_isdigit(id)) {
     result += "0";
+    is_other = false;
   }
-  // Append `p` is a punctuation symbol.
+  // Append `p` if it is a punctuation symbol.
   if (get_ispunctuation(id)) {
     result += "p";
+    is_other = false;
   }
+  if (is_other) {
+    result += "-";
+  }
+  result += "}";
   return result;
 }
 
@@ -770,6 +787,18 @@ bool UNICHARSET::save_to_string(std::string &str) const {
     }
   }
   return true;
+}
+
+std::string UNICHARSET::debug_full_set_as_string() const {
+  std::string str = fmt::format("(charcount: {})", this->size());
+  for (unsigned id = 0; id < this->size(); ++id) {
+    str += fmt::format(" '{}' ({}:{} {})",
+                       this->id_to_unichar(id),
+                       id,
+                       this->get_normed_unichar(id),
+                       this->debug_str(id));
+  }
+  return str;
 }
 
 class LocalFilePointer {

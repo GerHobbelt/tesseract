@@ -235,7 +235,7 @@ void Tesseract::MaximallyChopWord(const std::vector<TBOX> &boxes, BLOCK *block, 
     word_res->CloneChoppedToRebuild();
     return;
   }
-  if (chop_debug) {
+  if (chop_debug > 0) {
     tprintDebug("Maximally chopping word at:");
     word_res->word->bounding_box().print();
   }

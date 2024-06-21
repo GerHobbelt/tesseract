@@ -199,7 +199,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
   int debug_level_offset = 0;
   if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(bounding_box_) > 1) {
 	debug_level_offset = 2;
-	debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+	debug_baseline_detector_level += debug_level_offset;
   }
 
   // Now we obtained a direction from that fit, see if we can improve the
@@ -224,7 +224,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     good_baseline_ = false;
   }
 
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level -= debug_level_offset;
 
   return good_baseline_;
 }
@@ -240,12 +240,12 @@ void BaselineRow::AdjustBaselineToParallel(const FCOORD &direction) {
   int debug_level_offset = 0;
   if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(bounding_box_) > 1) {
 	  debug_level_offset = 2;
-	  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+	  debug_baseline_detector_level += debug_level_offset;
   }
 
   FitConstrainedIfBetter(direction, 0.0, displacement_modes_[0]);
 
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level -= debug_level_offset;
 }
 
 // Modifies the baseline to snap to the textline grid if the existing
@@ -321,7 +321,7 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
 	int debug_level_offset = 0;
 	if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(box) > 1) {
 		debug_level_offset = 2;
-		debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+		debug_baseline_detector_level += debug_level_offset;
 	}
 
 	FCOORD blob_pos((box.left() + box.right()) / 2.0f,
@@ -336,7 +336,7 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
 
 	UpdateRange(offset, &min_dist, &max_dist);
 
-	debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+	debug_baseline_detector_level -= debug_level_offset;
   }
   // Set up a histogram using disp_quant_factor_ as the bucket size.
   STATS dist_stats(IntCastRounded(min_dist / disp_quant_factor_),

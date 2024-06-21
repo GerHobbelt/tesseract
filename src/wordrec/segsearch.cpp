@@ -53,7 +53,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
                           &pain_points, &pending);
       InitialSegSearch(word_res, &pain_points, &pending, best_choice_bundle, blamer_bundle);
     }
-    if (chop_debug) {
+    if (chop_debug > 0) {
       SEAM::PrintSeams("Final seam list:", word_res->seam_array);
     }
 

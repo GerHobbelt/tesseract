@@ -1226,11 +1226,12 @@ bool split_stepped_spline( // make xstarts
         tprintDebug("Resegmenting spline failed - insufficient pts ({},{},{},{})\n", startindex,
                 centreindex, endindex, (int32_t)textord_spline_medianwin);
       }
+    } else if (textord_debug_baselines) {
+      tprintDebug("Spline step at {} is {}\n",
+                  xstarts[segment],
+                  baseline->step((xstarts[segment - 1] + xstarts[segment]) / 2.0,
+                                 (xstarts[segment] + xstarts[segment + 1]) / 2.0));
     }
-    //              else tprintDebug("Spline step at {} is {}\n",
-    //                      xstarts[segment],
-    //                      baseline->step((xstarts[segment-1]+xstarts[segment])/2.0,
-    //                      (xstarts[segment]+xstarts[segment+1])/2.0));
   }
   return doneany;
 }
