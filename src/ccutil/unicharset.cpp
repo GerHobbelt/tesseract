@@ -300,7 +300,9 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  ASSERT_HOST(static_cast<size_t>(id) < this->size());
+  if (id < 0 || static_cast<size_t>(id) >= this->size()) {
+    return OUTOFRANGE_UNICHAR;
+  }
   return unichars[id].representation;
 }
 
@@ -308,7 +310,9 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  ASSERT_HOST(static_cast<unsigned>(id) < this->size());
+  if (id < 0 || static_cast<size_t>(id) >= this->size()) {
+    return OUTOFRANGE_UNICHAR;
+  }
   // Resolve from the kCustomLigatures table if this is a private encoding.
   if (get_isprivate(id)) {
     const char *ch = id_to_unichar(id);
@@ -346,7 +350,7 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
   }
   // drop the trailing space:
   if (i > 0) {
-    result.pop_back(1);
+    result.pop_back();
   }
   result += "]";
   return result;
