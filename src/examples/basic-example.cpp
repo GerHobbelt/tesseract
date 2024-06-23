@@ -13,7 +13,7 @@ extern "C" int main(int argc, const char **argv)
 {
     // Initialize Tesseract API
     tesseract::TessBaseAPI api;
-    if (api.Init("eng")) {
+    if (api.InitSimple(nullptr, "eng")) {
         std::cerr << "Could not initialize Tesseract." << std::endl;
         return 1;
     }

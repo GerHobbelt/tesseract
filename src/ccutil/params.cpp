@@ -1,8 +1,9 @@
 /**********************************************************************
  * File:        params.cpp
  * Description: Initialization and setting of Tesseract parameters.
- * Author:      Ger Hobbelt
+ * Author:      Ray Smith
  *
+ * (C) Copyright 1991, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
  ** you may not use this file except in compliance with the License.
  ** You may obtain a copy of the License at
@@ -16,9 +17,1038 @@
 
 #include <tesseract/params.h>
 
+
+#include "params.h"
+
+#include "helpers.h"  // for chomp_string, mupdf imports, etc.: see also the header collision comment in there (MSVC-specific).
+#include "host.h"     // tesseract/export.h, windows.h for MAX_PATH
+#include "serialis.h" // for TFile
+#include "tprintf.h"
+#include "fopenutf8.h"
+
+#include <fmt/base.h>
+#include <fmt/format.h>
+
+#include <climits> // for INT_MIN, INT_MAX
+#include <cmath>   // for NAN, std::isnan
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <locale>  // for std::locale::classic
+#include <sstream> // for std::stringstream
+#include <functional>
+#include <exception>
+#include <cctype>  // for std::toupper
+
+#include <ghc/fs_std.hpp> // namespace fs = std::filesystem;   or   namespace fs = ghc::filesystem;
+
+#if defined(HAVE_MUPDF)
+#include "mupdf/assertions.h"
+#endif
+
+#ifdef _WIN32
+#  include <windows.h>
+#  define strcasecmp _stricmp
+#  define strncasecmp _strnicmp
+#else
+#  include <strings.h>
+#endif
+
+
 namespace tesseract {
 
+TESS_API
+ParamsVector &GlobalParams() {
+  static ParamsVector global_params("global"); // static auto-inits at startup
+  return global_params;
+}
 
+// -- local helper functions --
+
+static inline bool strieq(const char *s1, const char *s2) {
+	return strcasecmp(s1, s2) == 0;
+}
+
+static bool SafeAtoi(const char* str, int* val) {
+	char* endptr = nullptr;
+	*val = strtol(str, &endptr, 10);
+	return endptr != nullptr && *endptr == '\0';
+}
+
+static bool is_legal_fpval(double val) {
+	return !std::isnan(val) && val != HUGE_VAL;
+}
+
+static bool SafeAtod(const char* str, double* val) {
+	char* endptr = nullptr;
+	double d = NAN;
+	std::stringstream stream(str);
+	// Use "C" locale for reading double value.
+	stream.imbue(std::locale::classic());
+	stream >> d;
+	*val = 0;
+	bool success = is_legal_fpval(d);
+	if (success) {
+		*val = d;
+	}
+	return success;
+}
+
+static bool is_single_word(const char* s) {
+	if (!*s)
+		return false;
+	while (isalpha(*s))
+		s++;
+	while (isspace(*s))
+		s++;
+	return (!*s); // string must be at the end now...
+}
+
+// --- end of helper functions set ---
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ParamHash
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Note about Param names, i.e. Variable Names:
+// 
+// - accept both `-` and `_` in key names, e.g. user-specified 'debug-all' would match 'debug_all'
+//   in the database.
+// - names are matched case-*in*sensitive and must be ASCII. Unicode characters in Variable Names 
+//   are not supported.
+
+// calculate hash:
+std::size_t ParamHash::operator()(const Param& s) const noexcept {
+	const char * str = s.name_str();
+	return ParamHash()(str);
+}
+// calculate hash:
+std::size_t ParamHash::operator()(const char * s) const noexcept {
+	ASSERT0(s != nullptr);
+	uint32_t h = 1;
+	for (const char *p = s; *p ; p++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*p));
+		if (c == '-')
+			c = '_';
+		h *= 31397;
+		h += c;
+	}
+	return h;
+}
+
+// equal_to:
+bool ParamHash::operator()( const Param& lhs, const Param& rhs ) const noexcept {
+	ASSERT0(lhs.name_str() != nullptr);
+	ASSERT0(rhs.name_str() != nullptr);
+	return ParamHash()(lhs.name_str(), rhs.name_str());
+}
+// equal_to:
+bool ParamHash::operator()( const char * lhs, const char * rhs ) const noexcept {
+	ASSERT0(lhs != nullptr);
+	ASSERT0(rhs != nullptr);
+	for ( ; *lhs ; lhs++, rhs++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*lhs));
+		if (c == '-')
+			c = '_';
+		uint32_t d = std::toupper(static_cast<unsigned char>(*rhs));
+		if (d == '-')
+			d = '_';
+		if (c != d)
+			return false;
+	}
+	ASSERT0(*lhs == 0);
+	return *rhs == 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ParamComparer
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// compare as a-less-b? for purposes of std::sort et al:
+bool ParamComparer::operator()( const Param& lhs, const Param& rhs ) const {
+	return ParamComparer()(lhs.name_str(), rhs.name_str());
+}
+// compare as a-less-b? for purposes of std::sort et al:
+bool ParamComparer::operator()( const char * lhs, const char * rhs ) const {
+	ASSERT0(lhs != nullptr);
+	ASSERT0(rhs != nullptr);
+	for ( ; *lhs ; lhs++, rhs++) {
+		uint32_t c = std::toupper(static_cast<unsigned char>(*lhs));
+		if (c == '-')
+			c = '_';
+		uint32_t d = std::toupper(static_cast<unsigned char>(*rhs));
+		if (d == '-')
+			d = '_';
+		// long names come before short names; otherwise sort A->Z
+		if (c != d)
+			return d == 0 ? true : (c < d);
+	}
+	ASSERT0(*lhs == 0);
+	return *rhs == 0;
+}
+
+
+#ifndef NDEBUG
+static void check_and_report_name_collisions(const char *name, const ParamsHashTableType &table) {
+	if (table.contains(name)) {
+		std::string s = fmt::format("tesseract param name '{}' collision: double definition of param '{}'", name, name);
+		throw new std::logic_error(s);
+	}
+}
+static void check_and_report_name_collisions(const char *name, std::vector<ParamPtr> &table) {
+	for (Param *p : table) {
+		if (ParamHash()(p->name_str(), name)) {
+			std::string s = fmt::format("tesseract param name '{}' collision: double definition of param '{}'", name, name);
+			throw new std::logic_error(s);
+		}
+	}
+}
+#else
+#define check_and_report_name_collisions(name, table)     ((void)0)
+#endif
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ParamsVector
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ParamsVector::~ParamsVector() {
+	params_.clear();
+}
+
+ParamsVector::ParamsVector(const char *title) :
+	title_(title)
+{
+	params_.reserve(256);
+}
+
+// Note: std::initializer_list<ParamRef> causes compiler errors: error C2528: 'abstract declarator': you cannot create a pointer to a reference 
+// See also: https://skycoders.wordpress.com/2014/06/08/in-c-pointer-to-reference-is-illegal/
+// hence this is a bug:
+//   ParamsVector::ParamsVector(const char *title, std::initializer_list<ParamRef> vecs) : ......
+
+ParamsVector::ParamsVector(const char *title, std::initializer_list<ParamPtr> vecs) :
+	title_(title) 
+{
+	params_.reserve(256);
+
+	for (ParamPtr i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVector::add(ParamPtr param_ref) {
+	check_and_report_name_collisions(param_ref->name_str(), params_);
+	params_.insert({param_ref->name_str(), param_ref});
+}
+
+void ParamsVector::add(Param &param_ref) {
+	add(&param_ref);
+}
+
+void ParamsVector::add(std::initializer_list<ParamPtr> vecs) {
+	for (ParamPtr i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVector::remove(ParamPtr param_ref) {
+	params_.erase(param_ref->name_str());
+}
+
+void ParamsVector::remove(ParamRef param_ref) {
+	remove(&param_ref);
+}
+
+
+Param *ParamsVector::find(
+	const char *name, 
+	ParamType accepted_types_mask
+) const {
+	auto l = params_.find(name);
+	if (l != params_.end()) {
+		ParamPtr p = (*l).second;
+		if ((p->type() & accepted_types_mask) != 0) {
+			return p;
+		}
+	}
+	return nullptr;
+}
+
+
+template <>
+IntParam *ParamsVector::find<IntParam>(
+	const char *name
+) const {
+	return static_cast<IntParam *>(find(name, INT_PARAM));
+}
+
+template <>
+BoolParam *ParamsVector::find<BoolParam>(
+	const char *name
+) const {
+	return static_cast<BoolParam *>(find(name, BOOL_PARAM));
+}
+
+template <>
+DoubleParam *ParamsVector::find<DoubleParam>(
+	const char *name
+) const {
+	return static_cast<DoubleParam *>(find(name, DOUBLE_PARAM));
+}
+
+template <>
+StringParam *ParamsVector::find<StringParam>(
+	const char *name
+) const {
+	return static_cast<StringParam *>(find(name, STRING_PARAM));
+}
+
+template <>
+Param* ParamsVector::find<Param>(
+  const char* name
+) const {
+  return find(name, ANY_TYPE_PARAM);
+}
+
+
+std::vector<ParamPtr> ParamsVector::as_list(		
+	ParamType accepted_types_mask
+) const {
+	std::vector<ParamPtr> lst;
+	for (auto i : params_) {
+		ParamPtr p = i.second;
+		if ((p->type() & accepted_types_mask) != 0) {
+			lst.push_back(p);
+		}
+	}
+	return lst;
+}
+
+const char* ParamsVector::title() const {
+	return title_.c_str();
+}
+void ParamsVector::change_title(const char* title) {
+	title_ = title ? title : "";
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ParamsVectorSet
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ParamsVectorSet::~ParamsVectorSet() {
+	collection_.clear();
+}
+
+ParamsVectorSet::ParamsVectorSet() {
+}
+
+ParamsVectorSet::ParamsVectorSet(std::initializer_list<ParamsVector *> vecs) {
+	for (ParamsVector *i : vecs) {
+		add(i);
+	}
+}
+
+void ParamsVectorSet::add(ParamsVector &vec_ref) {
+	collection_.push_back(&vec_ref);
+}
+
+void ParamsVectorSet::add(ParamsVector *vec_ref) {
+        collection_.push_back(vec_ref);
+}
+
+void ParamsVectorSet::add(std::initializer_list<ParamsVector *> vecs) {
+	for (ParamsVector *i : vecs) {
+		add(i);
+	}
+}
+
+Param *ParamsVectorSet::find(
+	const char *name, 
+	ParamType accepted_types_mask
+) const {
+	for (ParamsVector *vec : collection_) {
+		auto l = vec->params_.find(name);
+		if (l != vec->params_.end()) {
+			ParamPtr p = (*l).second;
+			if ((p->type() & accepted_types_mask) != 0) {
+				return p;
+			}
+		}
+	}
+	return nullptr;
+}
+
+template <>
+IntParam *ParamsVectorSet::find<IntParam>(
+	const char *name
+) const {
+	return static_cast<IntParam *>(find(name, INT_PARAM));
+}
+
+template <>
+BoolParam *ParamsVectorSet::find<BoolParam>(
+	const char *name
+) const {
+	return static_cast<BoolParam *>(find(name, BOOL_PARAM));
+}
+
+template <>
+DoubleParam *ParamsVectorSet::find<DoubleParam>(
+	const char *name
+) const {
+	return static_cast<DoubleParam *>(find(name, DOUBLE_PARAM));
+}
+
+template <>
+StringParam *ParamsVectorSet::find<StringParam>(
+	const char *name
+) const {
+	return static_cast<StringParam *>(find(name, STRING_PARAM));
+}
+
+template <>
+Param* ParamsVectorSet::find<Param>(
+  const char* name
+) const {
+  return static_cast<Param*>(find(name, ANY_TYPE_PARAM));
+}
+
+std::vector<ParamPtr> ParamsVectorSet::as_list(		
+	ParamType accepted_types_mask
+) const {
+	std::vector<ParamPtr> lst;
+	for (ParamsVector *vec : collection_) {
+		for (auto i : vec->params_) {
+			ParamPtr p = i.second;
+			if ((p->type() & accepted_types_mask) != 0) {
+				lst.push_back(p);
+			}
+		}
+	}
+	return lst;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Param
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool Param::set_value(const ParamValueContainer &v, ParamSetBySourceType source_type, ParamPtr source) {
+	if (const int32_t* val = std::get_if<int32_t>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const bool* val = std::get_if<bool>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const double* val = std::get_if<double>(&v)) 
+		return set_value(*val, source_type, source);
+	else if (const std::string* val = std::get_if<std::string>(&v)) 
+		return set_value(*val, source_type, source);
+	else
+		throw new std::logic_error(fmt::format("tesseract param '{}' error: failed to get value from variant input arg", name_));
+}
+
+ParamOnModifyFunction Param::set_on_modify_handler(ParamOnModifyFunction on_modify_f) {
+  ParamOnModifyFunction rv = on_modify_f_;
+  on_modify_f_ = on_modify_f;
+  return rv;
+}
+ParamOnModifyFunction Param::clear_on_modify_handler() {
+  return set_on_modify_handler(0);
+}
+
+const char* Param::name_str() const {
+  return name_;
+}
+const char* Param::info_str() const {
+  return info_;
+}
+bool Param::is_init() const {
+  return init_;
+}
+bool Param::is_debug() const {
+  return debug_;
+}
+
+ParamSetBySourceType Param::set_mode() const {
+  return set_mode_;
+}
+Param* Param::is_set_by() const {
+  return setter_;
+}
+
+ParamsVector& Param::owner() const {
+  return owner_;
+}
+
+Param::access_counts_t Param::access_counts() const {
+  return access_counts_;
+}
+
+void Param::reset_access_counts() {
+  access_counts_.prev_sum_reading += access_counts_.reading;
+  access_counts_.prev_sum_writing += access_counts_.writing;
+  access_counts_.prev_sum_changing += access_counts_.changing;
+
+  access_counts_.reading = 0;
+  access_counts_.writing = 0;
+  access_counts_.changing = 0;
+}
+
+bool Param::set_value(const std::string& v, ParamSetBySourceType source_type, ParamPtr source) {
+  return set_value(v.c_str(), source_type, source);
+}
+
+ParamType Param::type() const {
+  return type_;
+}
+
+Param::Param(const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f) :
+  owner_(owner),
+  name_(name),
+  info_(comment),
+  init_(init),
+  type_(UNKNOWN_PARAM),
+  set_mode_(PARAM_VALUE_IS_DEFAULT),
+  setter_(nullptr),
+  on_modify_f_(on_modify_f),
+  access_counts_({ 0,0,0 })
+{
+  debug_ = (strstr(name, "debug") != nullptr) || (strstr(name, "display") != nullptr);
+
+  owner.add(this);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// IntParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool IntParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+
+		if (const int32_t* val = std::get_if<int32_t>(&now)) {
+			value_ = *val;
+		}
+	}
+	else {
+		value_ = value;
+	}
+	return true;
+}
+
+bool IntParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = 0;
+	return SafeAtoi(v, &val) && set_value(val, source_type, source);
+}
+bool IntParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = !!v;
+	return set_value(val, source_type, source);
+}
+bool IntParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	v = roundf(v);
+	if (v < INT32_MIN || v > INT32_MAX)
+		return false;
+
+	int32_t val = v;
+	return set_value(val, source_type, source);
+}
+
+IntParam::IntParam(int32_t value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+  : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+  type_ = INT_PARAM;
+}
+
+IntParam::operator int32_t() const {
+  access_counts_.reading++;
+  return value_;
+}
+void IntParam::operator=(int32_t value) {
+  set_value(value, PARAM_VALUE_IS_SET_BY_ASSIGN);
+}
+
+void IntParam::operator+=(int32_t value) {
+  set_value(value + *this, PARAM_VALUE_IS_SET_BY_ASSIGN);
+}
+void IntParam::operator-=(int32_t value) {
+  set_value(value - *this, PARAM_VALUE_IS_SET_BY_ASSIGN);
+}
+
+
+int32_t IntParam::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void IntParam::ResetToDefault(ParamSetBySourceType source_type) {
+  set_value(default_, source_type, nullptr);
+}
+
+void IntParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+  IntParam* param = vec.find<IntParam>(name_);
+  if (param) {
+    set_value(*param, source_type, param);
+  }
+  else {
+    ResetToDefault(source_type);
+  }
+}
+
+std::string IntParam::formatted_value_str() const {
+  return std::to_string(value_);
+}
+
+const char* IntParam::value_type_str() const {
+  return "integer";
+}
+
+std::string IntParam::raw_value_str() const {
+  return std::to_string(value_);
+}
+
+bool IntParam::inspect_value(ParamValueContainer & dst) const {
+  return false;
+}
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// BoolParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool BoolParam::set_value(bool value, ParamSetBySourceType source_type, ParamPtr source) {
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+
+		if (const bool* val = std::get_if<bool>(&now)) {
+			value_ = *val;
+		}
+	}
+	else {
+		value_ = value;
+	}
+	return true;
+}
+
+bool BoolParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	int32_t val = 0;
+	if (!SafeAtoi(v, &val)) {
+		while (isspace(*v))
+			v++;
+		switch (tolower(v[0])) {
+		case 't':
+			// true; only valid when a single char or word:
+			if (!is_single_word(v))
+				return false;
+			val = 1;
+			break;
+
+		case 'f':
+			// false; only valid when a single char or word:
+			if (!is_single_word(v))
+				return false;
+			val = 0;
+			break;
+
+		case 'y':
+		case 'j':
+			// yes / ja; only valid when a single char or word:
+			if (!is_single_word(v))
+				return false;
+			val = 1;
+			break;
+
+		case 'n':
+			// no; only valid when a single char or word:
+			if (!is_single_word(v))
+				return false;
+			val = 0;
+			break;
+
+		case 'x':
+			// on; only valid when alone:
+			if (v[1])
+				return false;
+			val = 1;
+			break;
+
+		case '-':
+		case '.':
+			// off; only valid when alone:
+			if (v[1])
+				return false;
+			val = 0;
+			break;
+
+		default:
+			return false;
+		}
+	}
+	bool b = (val != 0);
+	return set_value(b, source_type, source);
+}
+
+bool BoolParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
+	bool val = (v != 0);
+	return set_value(val, source_type, source);
+}
+
+// based on https://stackoverflow.com/questions/13698927/compare-double-to-zero-using-epsilon
+#define inline_constexpr   inline
+static inline_constexpr double epsilon_plus()
+{
+  const double a = 0.0;
+  return std::nextafter(a, std::numeric_limits<double>::max());
+}
+static inline_constexpr double epsilon_minus()
+{
+  const double a = 0.0;
+  return std::nextafter(a, std::numeric_limits<double>::lowest());
+}
+static bool is_zero(const double b)
+{
+  return epsilon_minus() <= b
+    && epsilon_plus() >= b;
+}
+
+bool BoolParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+  bool zero = is_zero(v);
+
+	return set_value(!zero, source_type, source);
+}
+
+BoolParam::BoolParam(bool value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+  : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+  type_ = BOOL_PARAM;
+}
+
+BoolParam::operator bool() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void BoolParam::operator=(bool value) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+  value_ = value;
+}
+
+
+bool BoolParam::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void BoolParam::ResetToDefault(ParamSetBySourceType source_type) {
+  set_value(default_, source_type, nullptr);
+}
+
+void BoolParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+  BoolParam* param = vec.find<BoolParam>(name_);
+  if (param) {
+    set_value(*param, source_type, param);
+  }
+  else {
+    ResetToDefault(source_type);
+  }
+}
+
+std::string BoolParam::formatted_value_str() const {
+  return value_ ? "true" : "false";
+}
+
+const char* BoolParam::value_type_str() const {
+  return "boolean";
+}
+
+std::string BoolParam::raw_value_str() const {
+  return value_ ? "true": "false";
+}
+
+bool BoolParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// DoubleParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool DoubleParam::set_value(double value, ParamSetBySourceType source_type, ParamPtr source) {
+	if (!is_legal_fpval(value))
+		return false;
+
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+
+		if (const double* val = std::get_if<double>(&now)) {
+			value_ = *val;
+		}
+	}
+	else {
+		value_ = value;
+	}
+	return true;
+}
+
+bool DoubleParam::set_value(const char *v, ParamSetBySourceType source_type, ParamPtr source) {
+	double val = 0.0;
+	return SafeAtod(v, &val) && set_value(val, source_type, source);
+}
+bool DoubleParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	double val = !!v;
+	return set_value(val, source_type, source);
+}
+bool DoubleParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
+	double val = v;
+	return set_value(val, source_type, source);
+}
+
+DoubleParam::DoubleParam(double value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+  : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+  type_ = DOUBLE_PARAM;
+}
+
+DoubleParam::operator double() const {
+  access_counts_.reading++;
+  return value_;
+}
+void DoubleParam::operator=(double value) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+  value_ = value;
+}
+
+
+double DoubleParam::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void DoubleParam::ResetToDefault(ParamSetBySourceType source_type) {
+  set_value(default_, source_type, nullptr);
+}
+void DoubleParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+  DoubleParam* param = vec.find<DoubleParam>(name_);
+  if (param) {
+    set_value(*param, source_type, param);
+  }
+  else {
+    ResetToDefault(source_type);
+  }
+}
+
+std::string DoubleParam::formatted_value_str() const {
+#if 0
+  return std::to_string(value_);   // always outputs %.6f format style values
+#else
+  char sbuf[40];
+  snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
+  sbuf[39] = 0;
+  return sbuf;
+#endif
+}
+
+const char* DoubleParam::value_type_str() const {
+  return "floating point";
+}
+
+std::string DoubleParam::raw_value_str() const {
+#if 0
+  return std::to_string(value_);   // always outputs %.6f format style values
+#else
+  char sbuf[40];
+  snprintf(sbuf, sizeof(sbuf), "%1.f", value_);
+  sbuf[39] = 0;
+  return sbuf;
+#endif
+}
+
+bool DoubleParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// StringParam
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool StringParam::set_value(const char* value, ParamSetBySourceType source_type, ParamPtr source) {
+	if (value == nullptr)
+		value = "";
+
+	access_counts_.writing++;
+	if (value != value_ && value != default_)
+		access_counts_.changing++;
+
+	if (!!on_modify_f_) {
+		ParamValueContainer old(value_);
+		ParamValueContainer now(value);
+
+		value_ = value;
+
+		on_modify_f_(name_, *this, source_type, source, old, now);
+
+		if (const std::string* val = std::get_if<std::string>(&now)) {
+			value_ = *val;
+		}
+	}
+	else {
+		value_ = value;
+	}
+	return true;
+}
+
+bool StringParam::set_value(int32_t v, ParamSetBySourceType source_type, ParamPtr source) {
+	std::string val = std::to_string(v);
+	return set_value(val.c_str(), source_type, source);
+}
+bool StringParam::set_value(bool v, ParamSetBySourceType source_type, ParamPtr source) {
+	const char *val = (v ? "true" : "false");
+	return set_value(val, source_type, source);
+}
+bool StringParam::set_value(double v, ParamSetBySourceType source_type, ParamPtr source) {
+	std::string val = std::to_string(v);
+	return set_value(val.c_str(), source_type, source);
+}
+
+StringParam::StringParam(const char* value, const char* name, const char* comment, ParamsVector& owner, bool init, ParamOnModifyFunction on_modify_f)
+  : Param(name, comment, owner, init, on_modify_f) {
+  value_ = value;
+  default_ = value;
+  type_ = STRING_PARAM;
+}
+
+StringParam::operator std::string& () {
+  access_counts_.reading++;
+  return value_;
+}
+const char* StringParam::c_str() const {
+  access_counts_.reading++;
+  return value_.c_str();
+}
+bool StringParam::contains(char c) const {
+  access_counts_.reading++;
+  return value_.find(c) != std::string::npos;
+}
+bool StringParam::empty() const {
+  access_counts_.reading++;
+  return value_.empty();
+}
+bool StringParam::operator==(const std::string& other) const {
+  access_counts_.reading++;
+  return value_ == other;
+}
+void StringParam::operator=(const std::string& value) {
+  access_counts_.writing++;
+  if (value != value_ && value != default_)
+    access_counts_.changing++;
+  value_ = value;
+}
+
+
+const std::string& StringParam::value() const {
+  access_counts_.reading++;
+  return value_;
+}
+
+void StringParam::ResetToDefault(ParamSetBySourceType source_type) {
+  const std::string& v = default_;
+  (void) Param::set_value(v, source_type, nullptr);
+}
+
+void StringParam::ResetFrom(const ParamsVectorSet& vec, ParamSetBySourceType source_type) {
+  StringParam* param = vec.find<StringParam>(name_);
+  if (param) {
+    set_value(param, source_type, param);
+  }
+  else {
+    ResetToDefault(source_type);
+  }
+}
+
+std::string StringParam::formatted_value_str() const {
+  std::string rv = "\u00AB";
+  rv += value_;
+  rv += "\u00BB";
+  return std::move(rv);
+}
+
+const char* StringParam::value_type_str() const {
+  return "string";
+}
+
+std::string StringParam::raw_value_str() const {
+  std::string rv(value_);
+  return std::move(rv);
+}
+
+bool StringParam::inspect_value(ParamValueContainer& dst) const {
+  return false;
+}
 
 
 
@@ -90,8 +1120,321 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
   return anyerr;
 }
 
+template <>
+IntParam* ParamUtils::FindParam<IntParam>(
+    const char* name,
+    const ParamsVectorSet& set
+) {
+  return set.find<IntParam>(name);
+}
+
+template <>
+BoolParam* ParamUtils::FindParam<BoolParam>(
+    const char* name,
+    const ParamsVectorSet& set
+) {
+  return set.find<BoolParam>(name);
+}
+
+template <>
+DoubleParam* ParamUtils::FindParam<DoubleParam>(
+    const char* name,
+    const ParamsVectorSet& set
+) {
+  return set.find<DoubleParam>(name);
+}
+
+template <>
+StringParam* ParamUtils::FindParam<StringParam>(
+    const char* name,
+    const ParamsVectorSet& set
+) {
+  return set.find<StringParam>(name);
+}
+
+template <>
+Param* ParamUtils::FindParam<Param>(
+    const char* name,
+    const ParamsVectorSet& set
+) {
+  return set.find<Param>(name);
+}
+
+Param* ParamUtils::FindParam(
+  const char* name,
+  const ParamsVectorSet& set,
+  ParamType accepted_types_mask
+) {
+  return set.find(name, accepted_types_mask);
+}
 
 
+#if 0
+template <ParamDerivativeType T>
+T* ParamUtils::FindParam(
+  const char* name,
+  const ParamsVector& set
+) {
+  ParamsVectorSet pvec({ &set });
+
+  return FindParam<T>(
+    name,
+    pvec
+  );
+}
+#endif
+
+
+Param* ParamUtils::FindParam(
+  const char* name,
+  const ParamsVector& set,
+  ParamType accepted_types_mask
+) {
+  ParamsVectorSet pvec;
+  const ParamsVector* set_ptr = &set;
+  pvec.add(const_cast<ParamsVector*>(set_ptr));
+
+  return FindParam(
+    name,
+    pvec,
+    accepted_types_mask
+  );
+}
+
+
+template <>
+bool ParamUtils::SetParam<int32_t>(
+	  const char* name, const int32_t value,
+	  const ParamsVectorSet& set,
+	  ParamSetBySourceType source_type, ParamPtr source,
+	  bool quietly_ignore
+) {
+	{
+		IntParam* param = FindParam<IntParam>(name, set);
+		if (param != nullptr) {
+			return param->set_value(value, source_type, source);
+		}
+	}
+	{
+		Param* param = FindParam<Param>(name, set);
+		if (param != nullptr) {
+			return param->set_value(value, source_type, source);
+		}
+	}
+	return false;
+}
+
+template <>
+bool ParamUtils::SetParam<bool>(
+    const char* name, const bool value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+) {
+  {
+    BoolParam* param = FindParam<BoolParam>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  {
+    Param* param = FindParam<Param>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  return false;
+}
+
+template <>
+bool ParamUtils::SetParam<double>(
+    const char* name, const double value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+) {
+  {
+    DoubleParam* param = FindParam<DoubleParam>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  {
+    Param* param = FindParam<Param>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  return false;
+}
+
+bool ParamUtils::SetParam(
+    const char* name, const std::string &value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+) {
+  {
+    StringParam* param = FindParam<StringParam>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  {
+    Param* param = FindParam<Param>(name, set);
+    if (param != nullptr) {
+      return param->set_value(value, source_type, source);
+    }
+  }
+  return false;
+}
+
+bool ParamUtils::SetParam(
+    const char* name, const char *value,
+    const ParamsVectorSet& set,
+    ParamSetBySourceType source_type, ParamPtr source,
+    bool quietly_ignore
+) {
+  Param* param = FindParam(name, set, ANY_TYPE_PARAM);
+  if (param != nullptr) {
+    return param->set_value(value, source_type, source);
+  }
+  return false;
+}
+
+
+#if 0
+template <ParamAcceptableValueType T>
+bool ParamUtils::SetParam(
+	const char* name, const T value,
+	ParamsVector& set,
+	ParamSetBySourceType source_type, ParamPtr source,
+	bool quietly_ignore
+) {
+	ParamsVectorSet pvec({ &set });
+	return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+}
+#endif
+
+
+bool ParamUtils::SetParam(
+  const char* name, const char* value,
+  ParamsVector& set,
+  ParamSetBySourceType source_type, ParamPtr source,
+  bool quietly_ignore
+) {
+  ParamsVectorSet pvec({ &set });
+  return SetParam(name, value, pvec, source_type, source, quietly_ignore);
+}
+
+
+bool ParamUtils::InspectParamAsString(
+	  std::string* value_ref, const char* name,
+	  const ParamsVectorSet& set,
+	  ParamType accepted_types_mask,
+	  bool quietly_ignore 
+) {
+	return false;
+}
+
+bool ParamUtils::InspectParamAsString(
+	  std::string* value_ref, const char* name,
+	  const ParamsVector& set,
+	  ParamType accepted_types_mask,
+	  bool quietly_ignore 
+) {
+	return false;
+}
+
+bool ParamUtils::InspectParam(
+	  ParamValueContainer& value_dst, const char* name,
+	  const ParamsVectorSet& set,
+	  ParamType accepted_types_mask,
+	  bool quietly_ignore 
+) {
+	return false;
+}
+
+bool ParamUtils::InspectParam(
+	  ParamValueContainer& value_dst, const char* name,
+	  const ParamsVector& set,
+	  ParamType accepted_types_mask,
+	  bool quietly_ignore 
+) {
+	return false;
+}
+
+void ParamUtils::PrintParams(FILE* fp, const ParamsVectorSet& set, bool print_info ) {
+
+}
+
+void ParamUtils::ReportParamsUsageStatistics(FILE* fp, const ParamsVectorSet& set, const char* section_title ) {
+
+}
+
+void ParamUtils::ResetToDefaults(const ParamsVectorSet& set, ParamSetBySourceType source_type) {
+
+}
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ReportFile
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// permanent lookup table:
+std::vector<std::string> ReportFile::_processed_file_paths;
+
+
+ReportFile::ReportFile(const char *path)
+{
+	if (!path || !*path) {
+		_f = nullptr;
+		return;
+	}
+
+	_f = nullptr;
+
+	if (strieq(path, "/dev/stdout") || strieq(path, "stdout") || strieq(path, "-") || strieq(path, "1"))
+		_f = stdout;
+	else if (strieq(path, "/dev/stderr") || strieq(path, "stderr") || strieq(path, "+") || strieq(path, "2"))
+		_f = stderr;
+	else {
+		bool first = true;
+		for (std::string &i : _processed_file_paths) {
+			if (strieq(i.c_str(), path)) {
+				first = false;
+				break;
+			}
+		}
+		_f = fopenUtf8(path, first ? "w" : "a");
+		if (!_f) {
+			tprintError("Cannot produce parameter usage report file: '{}'\n", path);
+		}
+		else if (first) {
+			_processed_file_paths.push_back(path);
+		}
+	}
+}
+
+ReportFile::~ReportFile() {
+	if (_f) {
+		if (_f != stdout && _f != stderr) {
+			fclose(_f);
+		} else {
+			fflush(_f);
+		}
+	}
+}
+
+FILE * ReportFile::operator()() const {
+	return _f;
+}
 
 
 
@@ -529,6 +1872,69 @@ void ParamUtils::SetApplicationName(const char* appname) {
 const std::string& ParamUtils::GetApplicationName() {
   return params_appname_4_reporting;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ConfigFile
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ConfigFile::ConfigFile(const char *path) {
+  if (!path || !*path) {
+    _f = nullptr;
+    return;
+  }
+
+  _f = nullptr;
+
+  if (strieq(path, "/dev/stdin") || strieq(path, "stdin") || strieq(path, "-") || strieq(path, "1"))
+    _f = stdin;
+  else {
+    fs::path p = fs::weakly_canonical(path);
+    std::u8string p8 = p.u8string();
+    std::string ps = reinterpret_cast<const char *>(p8.c_str());
+    _f = fopen(ps.c_str(), "r");
+    if (!_f) {
+      tprintError("Cannot open file for reading its content: {}\n", ps);
+    }
+  }
+}
+
+ConfigFile::~ConfigFile() {
+  if (_f) {
+    if (_f != stdin) {
+      fclose(_f);
+    } else {
+      fflush(_f);
+    }
+  }
+}
+
+FILE *ConfigFile::operator()() const {
+  return _f;
+}
+
 
 
 } // namespace tesseract

@@ -301,6 +301,7 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
     return INVALID_UNICHAR;
   }
   if (id < 0 || static_cast<size_t>(id) >= this->size()) {
+	assert(0);
     return OUTOFRANGE_UNICHAR;
   }
   return unichars[id].representation;
@@ -311,6 +312,7 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
     return INVALID_UNICHAR;
   }
   if (id < 0 || static_cast<size_t>(id) >= this->size()) {
+	assert(0);
     return OUTOFRANGE_UNICHAR;
   }
   // Resolve from the kCustomLigatures table if this is a private encoding.

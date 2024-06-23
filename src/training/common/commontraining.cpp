@@ -15,7 +15,7 @@
 
 #include <tesseract/debugheap.h>
 #include <tesseract/assert.h>
-#include <parameters/parameters.h>
+#include <tesseract/params.h>
 
 #include "commontraining.h"
 
@@ -140,7 +140,7 @@ int ParseArguments(int *argc, const char ***argv) {
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective());
   }
   return rv;
 }

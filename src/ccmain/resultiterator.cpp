@@ -27,7 +27,6 @@
 #include "tesseractclass.h"
 #include "unicharset.h"
 
-#include <parameters/parameters.h>
 #include <leptonica/allheaders.h>
 
 #include <set>
