@@ -197,15 +197,15 @@ bool TFile::Open(FILE *fp, int64_t end_offset) {
 char *TFile::FGets(char *buffer, int buffer_size) {
   ASSERT_HOST(!is_writing_);
   int size = 0;
-  while (size + 1 < buffer_size && offset_ < data_->size()) {
+  while (size + 2 < buffer_size && offset_ < data_->size()) {
     buffer[size++] = (*data_)[offset_++];
     if ((*data_)[offset_ - 1] == '\n') {
       break;
     }
   }
-  if (size < buffer_size) {
-    buffer[size] = '\0';
-  }
+  assert(size < buffer_size);
+  buffer[size] = '\0';
+
   return size > 0 ? buffer : nullptr;
 }
 

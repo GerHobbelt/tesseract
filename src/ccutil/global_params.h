@@ -1,9 +1,8 @@
 /**********************************************************************
- * File:        polyaprx.h
- * Description: Code for polygonal approximation from old edgeprog.
+ * File:        global_params.h
  * Author:      Ray Smith
- *
- * (C) Copyright 1993, Hewlett-Packard Ltd.
+ * 
+ * (C) Copyright 1991, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
  ** you may not use this file except in compliance with the License.
  ** You may obtain a copy of the License at
@@ -16,21 +15,29 @@
  *
  **********************************************************************/
 
-#ifndef POLYAPRX_H
-#define POLYAPRX_H
+#ifndef TESS_GLOBAL_PARAMS_H
+#define TESS_GLOBAL_PARAMS_H
 
-#include"params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 
-class C_OUTLINE;
-struct TESSLINE;
-
-extern BOOL_VAR_H(poly_debug);
-extern BOOL_VAR_H(poly_wide_objects_better);
-
-// convert a chain-coded input to the old OUTLINE approximation
-TESSLINE *ApproximateOutline(bool allow_detailed_fx, C_OUTLINE *c_outline);
+extern BOOL_VAR_H(stream_filelist);
+extern STRING_VAR_H(document_title);
+#ifdef HAVE_LIBCURL
+extern INT_VAR_H(curl_timeout);
+extern STRING_VAR_H(curl_cookiefile);
+#endif
+extern INT_VAR_H(debug_all);
+extern BOOL_VAR_H(debug_misc);
+extern BOOL_VAR_H(verbose_process);
+#if !GRAPHICS_DISABLED
+extern BOOL_VAR_H(scrollview_support);
+#endif
+extern STRING_VAR_H(vars_report_file);
+extern BOOL_VAR_H(report_all_variables);
+extern DOUBLE_VAR_H(allowed_image_memory_capacity);
+extern BOOL_VAR_H(two_pass);
 
 } // namespace tesseract
 

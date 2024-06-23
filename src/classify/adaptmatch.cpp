@@ -78,10 +78,12 @@
 
 namespace tesseract {
 
+#if 0
 // TODO: The parameter classify_enable_adaptive_matcher can cause
 // a segmentation fault if it is set to false (issue #256),
 // so override it here.
 #define classify_enable_adaptive_matcher true
+#endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
 
@@ -472,8 +474,7 @@ void Classify::EndAdaptiveClassifier() {
   std::string Filename;
   FILE *File;
 
-  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher &&
-      classify_save_adapted_templates) {
+  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
     Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
     File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
@@ -532,9 +533,15 @@ void Classify::EndAdaptiveClassifier() {
  *                            enables use of pre-adapted templates
  */
 void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
+
+#if !DISABLED_LEGACY_ENGINE
+
   if (!classify_enable_adaptive_matcher) {
     return;
   }
+
+  // TODO: make sure we don't initialize this one twice or more as the Tesseract instantiation order has subtly changed, depending on which APIs the userland code invokes first. [GHo]
+
   if (AllProtosOn != nullptr) {
     EndAdaptiveClassifier(); // Don't leak with multiple inits.
   }
@@ -598,6 +605,9 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
     delete AdaptedTemplates;
     AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
   }
+
+#endif   // !DISABLED_LEGACY_ENGINE
+
 } /* InitAdaptiveClassifier */
 
 void Classify::ResetAdaptiveClassifierInternal() {
@@ -1095,7 +1105,7 @@ void Classify::MasterMatcher(INT_TEMPLATES_STRUCT *templates, int16_t num_featur
     int_result.unichar_id = class_id;
     im_.Match(ClassForClassId(templates, class_id), protos, configs, num_features, features,
               &int_result, classify_adapt_feature_threshold, debug, matcher_debug_separate_windows);
-    bool is_debug = matcher_debug_level >= 2 || classify_debug_level > 1;
+    bool is_debug = (matcher_debug_level >= 2 || classify_debug_level > 1);
     ExpandShapesAndApplyCorrections(classes, is_debug, class_id, bottom, top, result.Rating,
                                     final_results->BlobLength, matcher_multiplier, norm_factors,
                                     &int_result, final_results);

@@ -44,19 +44,19 @@ namespace tesseract {
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-static BOOL_VAR(textord_really_old_xheight, false, "Use original wiseowl xheight");
+BOOL_VAR(textord_really_old_xheight, false, "Use original wiseowl xheight");
 BOOL_VAR(textord_oldbl_debug, false, "Debug old baseline generation");
-static BOOL_VAR(textord_debug_baselines, false, "Debug baseline generation");
-static BOOL_VAR(textord_oldbl_paradef, true, "Use para default mechanism");
-static BOOL_VAR(textord_oldbl_split_splines, true, "Split stepped splines");
-static BOOL_VAR(textord_oldbl_merge_parts, true, "Merge suspect partitions");
-static BOOL_VAR(oldbl_corrfix, true, "Improve correlation of heights");
-static BOOL_VAR(oldbl_xhfix, false, "Fix bug in modes threshold for xheights");
-static BOOL_VAR(textord_ocropus_mode, false, "Make baselines for ocropus");
-static DOUBLE_VAR(oldbl_xhfract, 0.4, "Fraction of est allowed in calc");
-static INT_VAR(oldbl_holed_losscount, 10, "Max lost before fallback line used");
-static DOUBLE_VAR(oldbl_dot_error_size, 1.26, "Max aspect ratio of a dot");
-static DOUBLE_VAR(textord_oldbl_jumplimit, 0.15, "X fraction for new partition");
+BOOL_VAR(textord_debug_baselines, false, "Debug baseline generation");
+BOOL_VAR(textord_oldbl_paradef, true, "Use para default mechanism");
+BOOL_VAR(textord_oldbl_split_splines, true, "Split stepped splines");
+BOOL_VAR(textord_oldbl_merge_parts, true, "Merge suspect partitions");
+BOOL_VAR(oldbl_corrfix, true, "Improve correlation of heights");
+BOOL_VAR(oldbl_xhfix, false, "Fix bug in modes threshold for xheights");
+BOOL_VAR(textord_ocropus_mode, false, "Make baselines for ocropus");
+DOUBLE_VAR(oldbl_xhfract, 0.4, "Fraction of est allowed in calc");
+INT_VAR(oldbl_holed_losscount, 10, "Max lost before fallback line used");
+DOUBLE_VAR(oldbl_dot_error_size, 1.26, "Max aspect ratio of a dot");
+DOUBLE_VAR(textord_oldbl_jumplimit, 0.15, "X fraction for new partition");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 

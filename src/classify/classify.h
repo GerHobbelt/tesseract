@@ -101,6 +101,11 @@ public:
     return dict_;
   }
 
+  // Return initial dictionary component that is always present in the tesseract instance.
+  Dict &getInitialDict() {
+    return dict_;
+  }
+
   const ShapeTable *shape_table() const {
     return shape_table_;
   }

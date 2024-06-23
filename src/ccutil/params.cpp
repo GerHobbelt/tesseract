@@ -217,11 +217,18 @@ static void check_and_report_name_collisions(const char *name, std::vector<Param
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ParamsVector::~ParamsVector() {
-	params_.clear();
+  if (is_params_owner_) {
+    // we are the owner of all these Param instances, so we should destroy them here!
+    for (auto i : params_) {
+      ParamPtr p = i.second;
+      delete p;
+    }
+  }
+  params_.clear();
 }
 
 ParamsVector::ParamsVector(const char *title) :
-	title_(title)
+  title_(title)
 {
 	params_.reserve(256);
 }
@@ -232,13 +239,17 @@ ParamsVector::ParamsVector(const char *title) :
 //   ParamsVector::ParamsVector(const char *title, std::initializer_list<ParamRef> vecs) : ......
 
 ParamsVector::ParamsVector(const char *title, std::initializer_list<ParamPtr> vecs) :
-	title_(title) 
+	title_(title)
 {
 	params_.reserve(256);
 
 	for (ParamPtr i : vecs) {
 		add(i);
 	}
+}
+
+void ParamsVector::mark_as_all_params_owner() {
+  is_params_owner_ = true;
 }
 
 void ParamsVector::add(ParamPtr param_ref) {
@@ -437,6 +448,20 @@ std::vector<ParamPtr> ParamsVectorSet::as_list(
 	return lst;
 }
 
+ParamsVector ParamsVectorSet::flattened_copy(
+  ParamType accepted_types_mask
+) const {
+  ParamsVector rv("muster");
+  rv.mark_as_all_params_owner();
+
+  std::vector<ParamPtr> srclst = as_list(accepted_types_mask);
+  for (ParamPtr ref : srclst) {
+    ParamPtr p = ref->clone();
+    rv.add(p);
+  }
+  return rv;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -625,11 +650,14 @@ std::string IntParam::raw_value_str() const {
 }
 
 bool IntParam::inspect_value(ParamValueContainer & dst) const {
-  return false;
+  dst = static_cast<int>(value_);
+  return true;
 }
 
-
-
+ParamPtr IntParam::clone() const {
+  IntParam *p = new IntParam(value_, name_str(), info_str(), owner());
+  return p;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -800,7 +828,13 @@ std::string BoolParam::raw_value_str() const {
 }
 
 bool BoolParam::inspect_value(ParamValueContainer& dst) const {
-  return false;
+  dst = value_;
+  return true;
+}
+
+ParamPtr BoolParam::clone() const {
+  BoolParam *p = new BoolParam(value_, name_str(), info_str(), owner());
+  return p;
 }
 
 
@@ -913,7 +947,13 @@ std::string DoubleParam::raw_value_str() const {
 }
 
 bool DoubleParam::inspect_value(ParamValueContainer& dst) const {
-  return false;
+  dst = value_;
+  return true;
+}
+
+ParamPtr DoubleParam::clone() const {
+  DoubleParam *p = new DoubleParam(value_, name_str(), info_str(), owner());
+  return p;
 }
 
 
@@ -1035,7 +1075,13 @@ std::string StringParam::raw_value_str() const {
 }
 
 bool StringParam::inspect_value(ParamValueContainer& dst) const {
-  return false;
+  dst = value_;
+  return true;
+}
+
+ParamPtr StringParam::clone() const {
+  StringParam *p = new StringParam(value_.c_str(), name_str(), info_str(), owner());
+  return p;
 }
 
 
@@ -1049,23 +1095,20 @@ bool StringParam::inspect_value(ParamValueContainer& dst) const {
 bool ParamUtils::ReadParamsFile(const std::string &file,
                                 const ParamsVectorSet &member_params,
 								                ParamSetBySourceType source_type,
-								                ParamPtr source,
-								                bool quietly_ignore
+								                ParamPtr source
 ) {
   TFile fp;
   if (!fp.Open(file.c_str(), nullptr)) {
     tprintError("read_params_file: Can't open/read file {}\n", file);
     return true;
   }
-  return ReadParamsFromFp(&fp, member_params, source_type, source, quietly_ignore);
+  return ReadParamsFromFp(&fp, member_params, source_type, source);
 }
 
 bool ParamUtils::ReadParamsFromFp(TFile *fp,
-								const ParamsVectorSet& member_params,
-								ParamSetBySourceType source_type,
-								ParamPtr source,
-								bool quietly_ignore
-) {
+                                  const ParamsVectorSet &member_params,
+                                  ParamSetBySourceType source_type,
+                                  ParamPtr source) {
 #define LINE_SIZE 4096
   char line[LINE_SIZE]; // input line
   bool anyerr = false;  // true if any error
@@ -1075,19 +1118,19 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
   unsigned linecounter = 0;
 
   while (fp->FGets(line, LINE_SIZE) != nullptr) {
-	linecounter++;
+    linecounter++;
 
-	// trimRight:
-	for (nameptr = line + strlen(line) - 1; nameptr >= line && std::isspace(*nameptr); nameptr--) {
-		;
-	}
-	nameptr[1] = 0;
-	// trimLeft:
-	for (nameptr = line; *nameptr && std::isspace(*nameptr); nameptr++) {
-		;
-	}
+    // trimRight:
+    for (nameptr = line + strlen(line) - 1; nameptr >= line && std::isspace(*nameptr); nameptr--) {
+      ;
+    }
+    nameptr[1] = 0;
+    // trimLeft:
+    for (nameptr = line; *nameptr && std::isspace(*nameptr); nameptr++) {
+      ;
+    }
 
-	if (nameptr[0] && nameptr[0] != '#') {
+    if (nameptr[0] && nameptr[0] != '#') {
       // jump over variable name
       for (valptr = nameptr; *valptr && !std::isspace(*valptr); valptr++) {
         ;
@@ -1095,12 +1138,12 @@ bool ParamUtils::ReadParamsFromFp(TFile *fp,
 
       if (*valptr) {    // found blank
         *valptr = '\0'; // make name a string
-  
-		do {
+
+        do {
           valptr++; // find end of blanks
         } while (std::isspace(*valptr));
       }
-      foundit = SetParam((const char *)nameptr, (const char*)valptr, member_params, source_type, source, quietly_ignore);
+      foundit = SetParam(nameptr, valptr, member_params, source_type, source);
 
       if (!foundit) {
         anyerr = true; // had an error
@@ -1197,8 +1240,7 @@ template <>
 bool ParamUtils::SetParam<int32_t>(
 	  const char* name, const int32_t value,
 	  const ParamsVectorSet& set,
-	  ParamSetBySourceType source_type, ParamPtr source,
-	  bool quietly_ignore
+	  ParamSetBySourceType source_type, ParamPtr source
 ) {
 	{
 		IntParam* param = FindParam<IntParam>(name, set);
@@ -1219,8 +1261,7 @@ template <>
 bool ParamUtils::SetParam<bool>(
     const char* name, const bool value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     BoolParam* param = FindParam<BoolParam>(name, set);
@@ -1241,8 +1282,7 @@ template <>
 bool ParamUtils::SetParam<double>(
     const char* name, const double value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     DoubleParam* param = FindParam<DoubleParam>(name, set);
@@ -1262,8 +1302,7 @@ bool ParamUtils::SetParam<double>(
 bool ParamUtils::SetParam(
     const char* name, const std::string &value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   {
     StringParam* param = FindParam<StringParam>(name, set);
@@ -1283,8 +1322,7 @@ bool ParamUtils::SetParam(
 bool ParamUtils::SetParam(
     const char* name, const char *value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 ) {
   Param* param = FindParam(name, set, ANY_TYPE_PARAM);
   if (param != nullptr) {
@@ -1299,11 +1337,10 @@ template <ParamAcceptableValueType T>
 bool ParamUtils::SetParam(
 	const char* name, const T value,
 	ParamsVector& set,
-	ParamSetBySourceType source_type, ParamPtr source,
-	bool quietly_ignore
+	ParamSetBySourceType source_type, ParamPtr source
 ) {
 	ParamsVectorSet pvec({ &set });
-	return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+	return SetParam<T>(name, value, pvec, source_type, source);
 }
 #endif
 
@@ -1311,19 +1348,17 @@ bool ParamUtils::SetParam(
 bool ParamUtils::SetParam(
   const char* name, const char* value,
   ParamsVector& set,
-  ParamSetBySourceType source_type, ParamPtr source,
-  bool quietly_ignore
+  ParamSetBySourceType source_type, ParamPtr source
 ) {
   ParamsVectorSet pvec({ &set });
-  return SetParam(name, value, pvec, source_type, source, quietly_ignore);
+  return SetParam(name, value, pvec, source_type, source);
 }
 
 
 bool ParamUtils::InspectParamAsString(
 	  std::string* value_ref, const char* name,
 	  const ParamsVectorSet& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask
 ) {
 	return false;
 }
@@ -1331,8 +1366,7 @@ bool ParamUtils::InspectParamAsString(
 bool ParamUtils::InspectParamAsString(
 	  std::string* value_ref, const char* name,
 	  const ParamsVector& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }
@@ -1340,8 +1374,7 @@ bool ParamUtils::InspectParamAsString(
 bool ParamUtils::InspectParam(
 	  ParamValueContainer& value_dst, const char* name,
 	  const ParamsVectorSet& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }
@@ -1349,8 +1382,7 @@ bool ParamUtils::InspectParam(
 bool ParamUtils::InspectParam(
 	  ParamValueContainer& value_dst, const char* name,
 	  const ParamsVector& set,
-	  ParamType accepted_types_mask,
-	  bool quietly_ignore 
+	  ParamType accepted_types_mask 
 ) {
 	return false;
 }
@@ -1365,6 +1397,50 @@ void ParamUtils::ReportParamsUsageStatistics(FILE* fp, const ParamsVectorSet& se
 
 void ParamUtils::ResetToDefaults(const ParamsVectorSet& set, ParamSetBySourceType source_type) {
 
+}
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// ConfigFile
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ConfigFile::ConfigFile(const char *path)
+{
+	if (!path || !*path) {
+		_f = nullptr;
+		return;
+	}
+
+	_f = nullptr;
+
+	if (strieq(path, "/dev/stdin") || strieq(path, "stdin") || strieq(path, "-") || strieq(path, "1"))
+		_f = stdin;
+	else {
+		_f = fopenUtf8(path, "r");
+		if (!_f) {
+			tprintError("Cannot open file: '{}'\n", path);
+		}
+	}
+}
+
+ConfigFile::~ConfigFile() {
+	if (_f) {
+		if (_f != stdin) {
+			fclose(_f);
+		} else {
+			fflush(_f);
+		}
+	}
+}
+
+FILE *ConfigFile::operator()() const {
+	return _f;
 }
 
 

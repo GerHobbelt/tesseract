@@ -26,6 +26,7 @@
 #include "ocrblock.h"
 #include "tabfind.h"
 #include "textlineprojection.h"
+#include "params.h"
 
 struct BLOCK_LIST;
 struct Boxa;
@@ -46,6 +47,16 @@ class StrokeWidth;
 class TempColumn_LIST;
 class EquationDetectBase;
 class TESS_API Tesseract;
+
+// globals
+#if !GRAPHICS_DISABLED
+extern BOOL_VAR_H(textord_tabfind_show_initial_partitions);
+extern BOOL_VAR_H(textord_tabfind_show_reject_blobs);
+extern INT_VAR_H(textord_tabfind_show_partitions);
+extern BOOL_VAR_H(textord_tabfind_show_columns);
+extern BOOL_VAR_H(textord_tabfind_show_blocks);
+#endif
+extern BOOL_VAR_H(textord_tabfind_find_tables);
 
 // The ColumnFinder class finds columns in the grid.
 class TESS_API ColumnFinder : public TabFind {

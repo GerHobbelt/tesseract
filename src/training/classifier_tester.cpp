@@ -72,11 +72,12 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   tesseract::Tesseract *tesseract = nullptr;
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
-    if ((*api)->InitOem(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
+    tesseract::TessBaseAPI *tess = *api;
+    if (tess->InitOem(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
       tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
-    tesseract = const_cast<tesseract::Tesseract *>((*api)->tesseract());
+    tesseract = const_cast<tesseract::Tesseract *>(&tess->tesseract());
     classify = static_cast<tesseract::Classify *>(tesseract);
     if (classify->shape_table() == nullptr) {
       tprintError("Tesseract must contain a ShapeTable!\n");

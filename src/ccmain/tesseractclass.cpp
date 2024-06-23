@@ -70,7 +70,7 @@ Tesseract::Tesseract(Tesseract *parent)
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
-    INT_MEMBER(tessedit_pageseg_mode, PSM_SINGLE_BLOCK,
+    INT_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
                "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, "
                "4=column, "
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
@@ -396,6 +396,8 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+    , STRING_MEMBER(languages_to_try, "", "List of languages to try when OCRing the next pages.", params())
+    , STRING_MEMBER(reactangles_to_process, "", "List of rectangle areas in the page image to process. When none are specified, the entire page is processed.", params())
 #if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
@@ -457,6 +459,7 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Detect music staff and remove intersecting components.", params())
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
+    , STRING_MEMBER(rectangles_to_process, "", "List of rectangle areas to process in the source image.", params())
     , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
     , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
     , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", params())
@@ -920,11 +923,18 @@ bool Tesseract::AnyLSTMLang() const {
   return false;
 }
 
+int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr) {
+  std::vector<std::string> nil;
+  assert(mgr != nullptr);
+
+  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
+}
+
 int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
   TessdataManager mgr;
   std::vector<std::string> nil;
 
-  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
+  return init_tesseract(datapath, {}, nil, nil, nil, &mgr);
 }
 
 // debug PDF output helper methods:
@@ -957,8 +967,7 @@ void Tesseract::ResyncVariablesInternally() {
   }
 
 #if !DISABLED_LEGACY_ENGINE
-  if (language_model_ != nullptr) {
-    int lvl = language_model_->language_model_debug_level;
+    int lvl = language_model_.language_model_debug_level;
 
 #if 0
   language_model_->CopyDebugParameters(this, &Classify::getDict());
@@ -988,7 +997,6 @@ void Tesseract::ResyncVariablesInternally() {
   INT_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
-  }
 #endif
 
   // init sub-languages:

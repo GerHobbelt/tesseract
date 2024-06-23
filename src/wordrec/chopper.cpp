@@ -489,7 +489,7 @@ void Wordrec::improve_by_chopping(float rating_cert_scale, WERD_RES *word,
     pain_point.col = blob_number + 1;
     pain_point.row = blob_number + 1;
     ProcessSegSearchPainPoint(0.0f, pain_point, "Chop2", pending, word, pain_points, blamer_bundle);
-    if (language_model_->language_model_ngram_on) {
+    if (language_model_.language_model_ngram_on) {
       // N-gram evaluation depends on the number of blobs in a chunk, so we
       // have to re-evaluate everything in the word.
       ResetNGramSearch(word, best_choice_bundle, *pending);
@@ -498,7 +498,7 @@ void Wordrec::improve_by_chopping(float rating_cert_scale, WERD_RES *word,
     // Run language model incrementally. (Except with the n-gram model on.)
     UpdateSegSearchNodes(rating_cert_scale, blob_number, pending, word, pain_points,
                          best_choice_bundle, blamer_bundle);
-  } while (!language_model_->AcceptableChoiceFound() && word->ratings->dimension() < kMaxNumChunks);
+  } while (!language_model_.AcceptableChoiceFound() && word->ratings->dimension() < kMaxNumChunks);
 
   // If after running only the chopper best_choice is incorrect and no blame
   // has been yet set, blame the classifier if best_choice is classifier's

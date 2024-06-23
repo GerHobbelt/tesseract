@@ -2,6 +2,7 @@
  * File:        params.h
  * Description: Class definitions of the *_VAR classes for tunable constants.
  * Author:      Ray Smith
+ * Author:      Ger Hobbelt
  * 
  * UTF8 detect helper statement: «bloody MSVC»
  *
@@ -18,12 +19,10 @@
  *
  **********************************************************************/
 
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef TESSERACT_PARAMS_H
+#define TESSERACT_PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
-#include "tprintf.h"          // for printf (when debugging this code)
-#include "mupdf/assertions.h" // for ASSERT
 
 #include <cstdint>
 #include <cstdio>
@@ -33,6 +32,7 @@
 #include <variant>
 #include <functional>
 #include <unordered_map>
+#include <memory>
 
 
 namespace tesseract {
@@ -44,25 +44,32 @@ class StringParam;
 class DoubleParam;
 class TFile;
 
-
+// The value types supported by the Param class hierarchy. These identifiers can be bitwise-OR-ed
+// to form a primitive selection/filter mask, as used in the `find()` functions and elsewhere.
 enum ParamType {
 	UNKNOWN_PARAM = 0,
 
-	INT_PARAM = 1,
+	INT_PARAM = 1,            // 32-bit signed integer
 	BOOL_PARAM = 2,
 	DOUBLE_PARAM = 4,
 	STRING_PARAM = 8,
+  CUSTOM_PARAM = 16,        // a yet-unspecified type: provided as an advanced-use generic parameter value storage container for when the otrher, basic, value types do not suffice in userland code. The tesseract core does not employ this value type anywhere: we do have compound paramater values, mostly sets of file paths, but those are encoded as *string* value in their parameter value.
 
-	ANY_TYPE_PARAM = 15,
+	ANY_TYPE_PARAM = 31,      // catch-all identifier for the selection/filter functions: there this is used to match *any and all* parameter value types encountered.
 };
 
+// Identifiers used to indicate the *origin* of the current parameter value. Used for reporting/diagnostic purposes. Do not treat these
+// as gospel; these are often assigned under limited/reduced information conditions, so they merely serve as report *hints*.
 enum ParamSetBySourceType {
 	PARAM_VALUE_IS_DEFAULT = 0,
 
 	PARAM_VALUE_IS_RESET,
-	PARAM_VALUE_IS_SET_BY_ASSIGN,			// 'indirect' write: value is copied over from elsewhere via operator=.
-	PARAM_VALUE_IS_SET_BY_PARAM,			// 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
-	PARAM_VALUE_IS_SET_BY_APPLICATION,		// 'explicit' write: user / application code set the param value, whatever it is now.
+	PARAM_VALUE_IS_SET_BY_ASSIGN,			    // 'indirect' write: value is copied over from elsewhere via operator=.
+  PARAM_VALUE_IS_SET_BY_PARAM,          // 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
+  PARAM_VALUE_IS_SET_BY_PRESET,         // 'indirect' write: a tesseract 'preset' parameter set was invoked and that one set this one as part of the action.
+  PARAM_VALUE_IS_SET_BY_CORE_RUN,       // 'explicit' write by the running tesseract core: before proceding with the next step the run-time adjusts this one, e.g. (incrementing) page number while processing a multi-page OCR run.
+  PARAM_VALUE_IS_SET_BY_CONFIGFILE,     // 'explicit' write by loading and processing a config file.
+  PARAM_VALUE_IS_SET_BY_APPLICATION,    // 'explicit' write: user / application code set the param value, whatever it is now.
 };
 
 
@@ -90,20 +97,22 @@ public:
 	bool operator()( const char * lhs, const char * rhs ) const;
 };
 
+// Readability helper types: reference and pointer to `Param` base class.
 typedef Param & ParamRef;
 typedef Param * ParamPtr;
 
 
-// reduce noise by using macros to help set up the member prototypes
+// Readability helper: reduce noise by using macros to help set up the member prototypes.
 
-#define SOURCE_TYPE																\
+#define SOURCE_TYPE																                        \
 		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION
 
-#define SOURCE_REF																\
+#define SOURCE_REF																                        \
 		ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION,	\
 		ParamPtr source = nullptr
 
-
+// Hash table used internally as a database table, collecting the compiled-in parameter instances.
+// Used to speed up the various `find()` functions, among others.
 typedef std::unordered_map<
 	const char * /* key */, 
 	ParamPtr /* value */, 
@@ -111,6 +120,10 @@ typedef std::unordered_map<
 	ParamHash /* equality check */
 > ParamsHashTableType;
 
+
+// --- section setting up various C++ template constraint helpers ---
+//
+// These assist C++ authors to produce viable template instances. 
 
 #if defined(__cpp_concepts)
 
@@ -175,20 +188,44 @@ static_assert(!ParamAcceptableValueType<std::string&>);
 
 #endif
 
+// --- END of section setting up various C++ template constraint helpers ---
 
+
+// A set (vector) of parameters. While this is named *vector* the internal organization
+// is hash table based to provide fast random-access add / remove / find functionality.
 class ParamsVector {
 private:
 	ParamsHashTableType params_;
+  bool is_params_owner_ = false;
 	std::string title_;
 
 public:
   ParamsVector() = delete;
   ParamsVector(const char* title);
-	ParamsVector(const char *title, std::initializer_list<ParamPtr> vecs);
+  ParamsVector(const char *title, std::initializer_list<ParamPtr> vecs);
 	
 	~ParamsVector();
 
-	void add(ParamPtr param_ref);
+  // **Warning**: this method may only safely be invoked *before* any parameters have been added to the set.
+  //
+  // Signal the ParamVector internals that this particular set is *parameter instances owner*, i.e. all parameters added to
+  // this set also transfer their ownership alongside: while the usual/regular ParamVector only stores *references*
+  // to parameter instances owned by *others*, now we will be owner of those parameter instances and thus responsible for heap memory cleanup
+  // once our ParamVector destructor is invoked.
+  //
+  // This feature is used, f.e., in tesseract when the command line parser collects the
+  // user-specified parameter values from the command line itself and various referenced or otherwise
+  // implicated configuration files: a 'muster set' of known compiled-in parameters is collected and cloned into such
+  // a 'owning' parameter vector, which is then passed on to the command line parser proper to use for both parameter name/type/value
+  // validations while parsing and storing the parsed values discovered.
+  // 
+  // It is used to collect, set up and then pass parameter vectors into the tesseract Init* instance
+  // methods: by using a (cloned and) *owning* parameter vector, we can simply collect and pass any configuration parameters
+  // we wish to have adjusted into the tesseract instance and have these 'activated' only then, i.e. we won't risk
+  // modifying any *live* paramters while working on/with the vector-owned set.
+  void mark_as_all_params_owner();
+
+  void add(ParamPtr param_ref);
 	void add(ParamRef param_ref);
 	void add(std::initializer_list<ParamPtr> vecs);
 
@@ -244,10 +281,11 @@ public:
 	std::vector<ParamPtr> as_list(		
 		ParamType accepted_types_mask = ANY_TYPE_PARAM
 	) const;
+
+  ParamsVector flattened_copy(ParamType accepted_types_mask = ANY_TYPE_PARAM) const;
 };
 
 // ready-made template instances:
-#if 01
 template <>
 IntParam* ParamsVectorSet::find<IntParam>(
   const char* name
@@ -268,7 +306,6 @@ template <>
 Param* ParamsVectorSet::find<Param>(
   const char* name
 ) const;
-#endif
 //--------------------
 
 
@@ -297,72 +334,52 @@ public:
   // 
   // Variable names are followed by one of more whitespace characters,
   // followed by the Value, which spans the rest of line.
-  //
-  // Any Variables listed in the file which do not match the given
-  // constraint are ignored, but are reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   static bool ReadParamsFile(const std::string &file, // filename to read
 	  const ParamsVectorSet &set, 
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
 
   // Read parameters from the given file pointer.
   // Otherwise identical to ReadParamsFile().
   static bool ReadParamsFromFp(TFile *fp,
 	  const ParamsVectorSet &set,
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
 
   // Set a parameter to have the given value.
-  //
-  // A Variable, which does not match the given constraint, is ignored, 
-  // but is reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   template <ParamAcceptableValueType T>
   static bool SetParam(
 	  const char *name, const T value, 
 	  const ParamsVectorSet &set,
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
   static bool SetParam(
     const char* name, const char *value,
     const ParamsVectorSet& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
   static bool SetParam(
     const char* name, const std::string& value,
     const ParamsVectorSet& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
 
   // Set a parameter to have the given value.
-  //
-  // A Variable, which does not match the given constraint, is ignored, 
-  // but is reported via `tprintf()` as ignored,
-  // unless you set `quietly_ignore`.
   template <ParamAcceptableValueType T>
   static bool SetParam(
 	  const char *name, const T value, 
 	  ParamsVector &set, 
-	  SOURCE_REF,
-	  bool quietly_ignore = false
+	  SOURCE_REF
   );
   static bool SetParam(
     const char* name, const char* value,
     ParamsVector& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
   static bool SetParam(
     const char* name, const std::string& value,
     ParamsVector& set,
-    SOURCE_REF,
-    bool quietly_ignore = false
+    SOURCE_REF
   );
 
   // Produces a pointer (reference) to the parameter with the given name (of the
@@ -410,8 +427,7 @@ public:
   static bool InspectParamAsString(
 	  std::string *value_ref, const char *name, 
 	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a string and does not add 
@@ -425,8 +441,7 @@ public:
   static bool InspectParamAsString(
 	  std::string *value_ref, const char *name, 
 	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a ParamValueContainer and does not add 
@@ -440,8 +455,7 @@ public:
   static bool InspectParam(
 	  ParamValueContainer &value_dst, const char *name, 
 	  const ParamsVectorSet &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Fetches the value of the named param as a ParamValueContainer and does not add 
@@ -455,8 +469,7 @@ public:
   static bool InspectParam(
 	  ParamValueContainer &value_dst, const char *name, 
 	  const ParamsVector &set, 
-	  ParamType accepted_types_mask = ANY_TYPE_PARAM,
-	  bool quietly_ignore = false
+	  ParamType accepted_types_mask = ANY_TYPE_PARAM
   );
 
   // Print all parameters in the given set(s) to the given file.
@@ -530,35 +543,52 @@ template <>
 bool ParamUtils::SetParam<int32_t>(
     const char* name, const int32_t value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <>
 bool ParamUtils::SetParam<bool>(
     const char* name, const bool value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <>
 bool ParamUtils::SetParam<double>(
     const char* name, const double value,
     const ParamsVectorSet& set,
-    ParamSetBySourceType source_type, ParamPtr source,
-    bool quietly_ignore
+    ParamSetBySourceType source_type, ParamPtr source
 );
 template <ParamAcceptableValueType T>
 bool ParamUtils::SetParam(
   const char* name, const T value,
   ParamsVector& set,
-  ParamSetBySourceType source_type, ParamPtr source,
-  bool quietly_ignore
+  ParamSetBySourceType source_type, ParamPtr source
 ) {
   ParamsVectorSet pvec({ &set });
-  return SetParam<T>(name, value, pvec, source_type, source, quietly_ignore);
+  return SetParam<T>(name, value, pvec, source_type, source);
 }
 #endif
 //--------------------
+
+// A simple FILE/stdio wrapper class which supports reading from stdin or regular file.
+class ConfigFile {
+public:
+  // Parse '-', 'stdin' and '1' as STDIN, or open a regular text file in UTF8 read mode.
+  //
+  // An error line is printed via `tprintf()` when the given path turns out not to be valid.
+  ConfigFile(const char *path);
+  ConfigFile(const std::string &path)
+      : ConfigFile(path.c_str()) {}
+  ~ConfigFile();
+
+  FILE *operator()() const;
+
+  operator bool() const {
+    return _f != nullptr;
+  };
+
+private:
+  FILE *_f;
+};
 
 // The very first time we call this one during the current run, we CREATE/OVERWRITE the target file.
 // Iff we happen to invoke this call multiple times for the same target file, any subsequent call
@@ -617,38 +647,57 @@ public:
   typedef struct access_counts {
     // the current section's counts
     int reading;  
-    int writing;
-  	int changing;
+    int writing;            // counting the number of *write* actions, answering the question "did we assign a value to this one during this run?"
+    int changing;           // counting the number of times a *write* action resulted in an actual *value change*, answering the question "did we use a non-default value for this one during this run?"
 
-    // the sum of the previous section's counts
+    // the sum of the previous section's counts: the collected history from previous runs during this application life time.
     int prev_sum_reading;
     int prev_sum_writing;
-	  int prev_sum_changing;
+    int prev_sum_changing;
   } access_counts_t;
 
   access_counts_t access_counts() const;
 
+  // Reset the access count statistics in preparation for the next run.
+  // As a side effect the current run's access count statistics will be added to the history
+  // set, available via the `prev_sum_*` access_counts_t members.
   void reset_access_counts();
 
   // Fetches the (formatted for print/display) value of the param as a string and does not add 
   // this access to the read counter tally. This is useful, f.e., when printing 'init' 
   // (only-settable-before-first-use) parameters to config file or log file, independent
-  // from the actual work process. 
+  // from the actual work process.
+  //
+  // We do not count this read access as this method is for *display* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
   virtual std::string formatted_value_str() const = 0;
 
   // Fetches the (raw, parseble for re-use via set_value()) value of the param as a string and does not add 
   // this access to the read counter tally. This is useful, f.e., when printing 'init' 
   // (only-settable-before-first-use) parameters to config file or log file, independent
   // from the actual work process. 
+  //
+  // We do not count this read access as this method is for *validation/comparison* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
   virtual std::string raw_value_str() const = 0;
 
   // Return string representing the type of the parameter value, e.g. "integer"
+  //
+  // We do not count this read access as this method is for *display* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
   virtual const char *value_type_str() const = 0;
 
   // Fetches the value of the param and delivers it in a ParamValueContainer union. 
   // Does not add this access to the read counter tally. This is useful, f.e., when 
   // editing 'init' (only-settable-before-first-use) parameters in a UI before starting
   // the actual work process.
+  //
+  // We do not count this read access as this method is for *display/custom handling support* purposes only and we do not
+  // wish to tally those together with the actual work code accessing this parameter through
+  // the other functions: set_value() and assignment operators.
   virtual bool inspect_value(ParamValueContainer &dst) const = 0;
 
   virtual bool set_value(const char *v, SOURCE_REF) = 0;
@@ -671,6 +720,9 @@ public:
   Param &operator=(Param &&other) = delete;
   Param &operator=(const Param &&other) = delete;
 
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const = 0;
+
   ParamType type() const;
 
   ParamOnModifyFunction set_on_modify_handler(ParamOnModifyFunction on_modify_f);
@@ -689,14 +741,15 @@ protected:
   ParamValueContainer value_;
   ParamValueContainer default_;
 #endif
-  ParamType type_;
+  ParamType type_ : 15;
 
-  ParamSetBySourceType set_mode_;
+  ParamSetBySourceType set_mode_ : 15;
+
+  bool init_ : 1; // needs to be set before first use, i.e. can be set 'during application init phase only'
+  bool debug_ : 1;
+
   Param *setter_;
   ParamsVector &owner_; 
-
-  bool init_;        // needs to be set before first use, i.e. can be set 'during application init phase only' 
-  bool debug_;
   
   mutable access_counts_t access_counts_;
 };
@@ -734,6 +787,9 @@ public:
   IntParam &operator=(IntParam &&other) = delete;
   IntParam &operator=(const IntParam &&other) = delete;
 
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
 private:
 	int32_t value_;
 	int32_t default_;
@@ -770,6 +826,9 @@ public:
   BoolParam &operator=(const BoolParam &other) = delete;
   BoolParam &operator=(BoolParam &&other) = delete;
   BoolParam &operator=(const BoolParam &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
 
 private:
   bool value_;
@@ -838,6 +897,9 @@ public:
   StringParam &operator=(StringParam &&other) = delete;
   StringParam &operator=(const StringParam &&other) = delete;
 
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
+
 private:
   std::string value_;
   std::string default_;
@@ -874,6 +936,9 @@ public:
   DoubleParam &operator=(const DoubleParam &other) = delete;
   DoubleParam &operator=(DoubleParam &&other) = delete;
   DoubleParam &operator=(const DoubleParam &&other) = delete;
+
+  // Returns a copy of this parameter. That instance is allocated on the heap.
+  virtual ParamPtr clone() const override;
 
 private:
   double value_;
