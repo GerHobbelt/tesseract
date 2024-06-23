@@ -6,6 +6,7 @@
 #include "tesseractclass.h"
 
 #include <leptonica/allheaders.h>
+#include <parameters/parameters.h>
 
 #include <string>
 #include <vector>
@@ -22,6 +23,8 @@
 #ifndef TESSERACT_DISABLE_DEBUG_FONTS 
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
 #endif
+
+using namespace parameters;
 
 namespace tesseract {
 

@@ -43,6 +43,8 @@ struct Boxa;
 
 namespace tesseract {
 
+using namespace parameters;
+
 class PAGE_RES;
 class ParagraphModel;
 class BLOCK_LIST;
@@ -321,40 +323,89 @@ public:
    *
    * @{
    */
-  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
+  int Init(const char *datapath,
+           ParamsVectorSet &vars);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(ParamsVectorSet &vars);
+
+  int Init(ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
            const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values);
+
+  int Init(const char *datapath,
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &configs);
 
-  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
+  int Init(const char *datapath, const char *language, OcrEngineMode oem);
 
-  int InitSimple(const char *datapath, const char *language);
+  int Init(const char *datapath, const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
 
-  // Reads the traineddata via a FileReader from path `datapath`.
-  int InitFullWithReader(const char *datapath, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
+  int Init(const char *datapath, const char *language);
+
+  int Init(const char *datapath, const char *language,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language, OcrEngineMode oem);
+
+  int Init(const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language);
+
+  int Init(const char *language,
+           const std::vector<std::string> &configs);
+
+  /// Reads the traineddata via a FileReader from path `datapath`.
+  int Init(const char *datapath, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const char *language, OcrEngineMode oem,
+           FileReader reader);
 
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
-  int InitFromMemory(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
+  int InitFromMemory(const char *data, size_t data_size, 
            const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &vars_values);
+
+  int InitFromMemory(const char *data, size_t data_size, 
+          const std::vector<std::string> &vars_vec,
+          const std::vector<std::string> &vars_values,
+          const std::vector<std::string> &configs);
 
 protected:
-  int InitFullRemainder(const char *datapath, const char *data, int data_size, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+  int Init_Internal(const char *datapath,
+                    ParamsVectorSet &vars,
+                    const std::vector<std::string> &configs,
+                    FileReader reader,
+                    const char *data = nullptr, size_t data_size = 0);
 
 /** @} */
 

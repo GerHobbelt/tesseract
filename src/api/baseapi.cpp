@@ -86,6 +86,7 @@
 #include <vector>   // for std::vector
 #include <cfloat>
 
+#include <parameters/parameters.h>
 #include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
@@ -106,6 +107,8 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+
+using namespace ::parameters;
 
 namespace tesseract {
 
@@ -265,12 +268,12 @@ TessBaseAPI::TessBaseAPI()
   // direct tesseract to set some arbitrary parameters just below,
   // for otherwise those `-c xyz=v` commands may be overruled by the
   // debug_all preset!
-  debug_all.set_on_modify_handler([this](const char *name,
-                                         ParamRef target,
-                                         ParamSetBySourceType type,
-                                         ParamPtr parent,
-                                         ParamValueContainer &old_val,
-                                         ParamValueContainer &new_val) {
+  debug_all.set_on_modify_handler([this](decltype(debug_all) &target,
+                                         const int32_t old_value,
+                                         int32_t &new_value,
+                                         const int32_t default_value,
+                                         ParamSetBySourceType source_type,
+                                         ParamPtr optional_setter) {
     this->SetupDebugAllPreset();
   });
 }
@@ -520,71 +523,160 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * 
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, 
-                    const std::vector<std::string> &configs,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values, 
-                    bool set_only_non_debug_params) {
-  return InitFullRemainder(datapath, nullptr, 0, language, oem, configs, vars_vec, vars_values,
-              set_only_non_debug_params, nullptr);
-}
-
-int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
+int TessBaseAPI::Init(const char* datapath,
+                      ParamsVectorSet& vars)
+{
   std::vector<std::string> nil;
-  return InitFullRemainder(datapath, nullptr, 0, language, oem, nil, nil, nil, false, nullptr);
-}
-
-int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  std::vector<std::string> nil;
-  return InitFullRemainder(datapath, nullptr, 0, language, OEM_DEFAULT, nil, nil, nil, false, nullptr);
-}
-
-// In-memory version reads the traineddata file directly from the given
-// data[data_size] array. Also implements the version with a datapath in data,
-// flagged by data_size = 0.
-int TessBaseAPI::InitFromMemory(const char *data, int data_size, const char *language, OcrEngineMode oem,
-                    const std::vector<std::string> &configs,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values, 
-                      bool set_only_non_debug_params) 
-{
-  return InitFullRemainder(nullptr, data, data_size, language,
-    oem,
-    configs,
-    vars_vec,
-    vars_values, 
-    set_only_non_debug_params,
-    nullptr);
-}
-
-int TessBaseAPI::InitFullWithReader(const char *path, const char *language, OcrEngineMode oem,
-  const std::vector<std::string> &configs,
-  const std::vector<std::string> &vars_vec,
-  const std::vector<std::string> &vars_values, 
-  bool set_only_non_debug_params,
-  FileReader reader) 
-{
-  return InitFullRemainder(path, nullptr, 0, language,
-    oem,
-    configs,
-    vars_vec,
-    vars_values, 
-    set_only_non_debug_params,
-    reader);
-}
-
-int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_size, const char *language,
-    OcrEngineMode oem,
-    const std::vector<std::string> &configs,
-    const std::vector<std::string> &vars_vec,
-    const std::vector<std::string> &vars_values, 
-    bool set_only_non_debug_params,
-    FileReader reader) 
-{
+  //ParamsVectorSet vars;
+  FileReader nada;
   Tesseract &tess = tesseract();
-  if (language == nullptr || language[0] == 0) {
-    language = "";
+  //tess.tessedit_ocr_engine_mode = oem;
+  //tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
   }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
+}
+
+int TessBaseAPI::Init(const char *datapath,
+         ParamsVectorSet &vars,
+                      const std::vector<std::string> &configs)
+{
+
+}
+
+int TessBaseAPI::Init(ParamsVectorSet& vars)
+{
+
+}
+
+int TessBaseAPI::Init(ParamsVectorSet& vars,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+                      const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem,
+         const std::vector<std::string> &configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+// Reads the traineddata via a FileReader from path `datapath`.
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+// In-memory version reads the traineddata directly from the given
+// data[data_size] array.
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values,
+                   const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init_Internal(const char *path,
+                               ParamsVectorSet &vars,
+                               const std::vector<std::string> &configs,
+                               FileReader reader,
+                               const char *data, size_t data_size) {
+  Tesseract &tess = tesseract();
+#if 0
+  if (tess.languages_to_try.empty()) {
+    tess.languages_to_try = "";
+  }
+#endif
   if (data == nullptr) {
     data = "";
     data_size = 0; // as a precaution to prevent invalid user-set value to
@@ -598,6 +690,10 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     datapath = tess.languages_to_try;
   }
 
+  // TODO: re-evaluate this next (old) code chunk which decides when to reset the tesseract instance.
+
+  std::string buggered_languge = "XYZ";
+
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract().lang stores the language
@@ -605,7 +701,7 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
   // which case tesseract().lang is set to the Tesseract default ("eng").
   if (
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem || (language_ != language && tesseract_->lang_ != language))) {
+       last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang_ != buggered_languge))) {
     // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
     assert(0);
     delete tesseract_;
@@ -620,11 +716,9 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     }
     TessdataManager mgr(reader_);
     if (data_size != 0) {
-      mgr.LoadMemBuffer(language, data, data_size);
+      mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
     }
-    if (tesseract_->init_tesseract(datapath, output_file_, language, oem, configs,
-                                   vars_vec, vars_values, set_only_non_debug_params,
-                                   &mgr) != 0) {
+    if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
       return -1;
     }
   }
@@ -635,8 +729,8 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     datapath_ = tess.datadir_;
   }
 
-  language_ = language;
-  last_oem_requested_ = oem;
+  language_ = buggered_languge;
+  last_oem_requested_ = oem();
 
 #if !DISABLED_LEGACY_ENGINE
   // For same language and datapath, just reset the adaptive classifier.
@@ -1492,7 +1586,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-    tess.applybox_page = page_number;
+    tess.applybox_page.set_value(page_number, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
     if (two_pass) {
@@ -1555,7 +1649,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   }
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
-    tess.applybox_page.set_value(pgn);
+    tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {
@@ -1760,7 +1854,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
   }
   else {
-    tesseract().applybox_page = -1;
+    tesseract().applybox_page.set_value(-1, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
 
@@ -2978,9 +3072,7 @@ int TessBaseAPI::FindLines() {
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
-      } else if (osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY,
-                                                nil, nil, nil, false, &mgr) == 0) {
-        osd_tess = osd_tesseract_;
+      } else if (osd_tesseract_->init_tesseract(datapath_, "osd", OEM_TESSERACT_ONLY, &mgr) == 0) {
         osd_tesseract_->set_source_resolution(thresholder_->GetSourceYResolution());
       } else {
         tprintWarn(
@@ -3204,7 +3296,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
   Tesseract& tess = tesseract();
   Textord &textord = *tess.mutable_textord();
   
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_ASSIGN;
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
 
   verbose_process.set_value(true, SRC);
   
@@ -3373,7 +3465,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
 void TessBaseAPI::SetupDefaultPreset() {
   Tesseract &tess = tesseract();
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_ASSIGN;
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
 
   // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
   tess.tessedit_create_hocr.set_value(true, SRC);

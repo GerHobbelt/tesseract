@@ -27,6 +27,7 @@
 #include "matchdefs.h"
 #include "pageres.h"
 #include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
@@ -75,7 +76,7 @@ void Tesseract::read_config_file(const char *filename) {
       }
     }
   }
-  ParamUtils::ReadParamsFile(path, this->params_collective());
+  ParamUtils::ReadParamsFile(path, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
 }
 
 // Returns false if a unicharset file for the specified language was not found
@@ -132,7 +133,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, this->params_collective());
+    ParamUtils::ReadParamsFromFp(fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
 
   // Load tesseract variables from config files. This is done after loading
@@ -357,14 +358,13 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str) {
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
-                              const std::string &language, OcrEngineMode oem, 
-							  const std::vector<std::string> &configs,
-							  const std::vector<std::string> &vars_vec,
-							  const std::vector<std::string> &vars_values,
-                              bool set_only_non_debug_params, TessdataManager *mgr) {
+							                const std::vector<std::string> &vars_vec,
+                              const std::vector<std::string> &vars_values,
+                              const std::vector<std::string> &configs,
+                              TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
-  ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
+  ParseLanguageString(languages_to_try, &langs_to_load, &langs_not_to_load);
 
   for (auto &lang : sub_langs_) {
     delete lang;
@@ -398,7 +398,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         tess_to_init->main_setup(arg0, textbase);
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, oem, configs,
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, static_cast<tesseract::OcrEngineMode>(this->tessedit_ocr_engine_mode.value()), configs,
                                                          vars_vec, vars_values,
                                                          mgr);
       // Forget that language, but keep any reader we were given.
