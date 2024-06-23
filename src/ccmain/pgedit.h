@@ -19,7 +19,7 @@
 #ifndef PGEDIT_H
 #define PGEDIT_H
 
-#include "params.h"     // for INT_VAR_H, IntParam, STRING_VAR_H, StringParam
+#include <tesseract/params.h>     // for INT_VAR_H, IntParam, STRING_VAR_H, StringParam
 #include "scrollview.h" // for SVEvent (ptr only), SVEventHandler, ScrollView
 
 namespace tesseract {

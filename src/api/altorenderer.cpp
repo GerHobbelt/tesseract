@@ -142,7 +142,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
 
   int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
 
-  if (tesseract_->input_file_path.empty()) {
+  if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
 

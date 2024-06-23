@@ -26,7 +26,7 @@
 #include "ocrblock.h"
 #include "tabfind.h"
 #include "textlineprojection.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 struct BLOCK_LIST;
 struct Boxa;

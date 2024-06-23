@@ -221,17 +221,13 @@ INT_PARAM_FLAG(glyph_resized_size, 0,
 INT_PARAM_FLAG(glyph_num_border_pixels_to_pad, 0,
                       "Final_size=glyph_resized_size+2*glyph_num_border_pixels_to_pad");
 
-static DOUBLE_PARAM_FLAG(my_rotation, 0.0,
-                         "define rotation in radians");
+DOUBLE_PARAM_FLAG(my_rotation, 0.0, "define rotation in radians");
 
-static INT_PARAM_FLAG(my_blur, 1,
-                         "define blur");
+INT_PARAM_FLAG(my_blur, 1, "define blur");
 
-static DOUBLE_PARAM_FLAG(my_noise, 0.0,
-                         "define stdev of noise");
+DOUBLE_PARAM_FLAG(my_noise, 0.0, "define stdev of noise");
 
-static INT_PARAM_FLAG(my_smooth, 1,
-                         "define blur");
+INT_PARAM_FLAG(my_smooth, 1, "define blur");
 
 namespace tesseract {
 
@@ -546,17 +542,18 @@ static int Main() {
   render.set_underline_continuation_prob(FLAGS_underline_continuation_prob);
 
   // Set text rendering orientation and their forms.
-  if (FLAGS_writing_mode == "horizontal") {
+  std::string writing_mode = FLAGS_writing_mode;
+  if (writing_mode == "horizontal") {
     // Render regular horizontal text (default).
     render.set_vertical_text(false);
     render.set_gravity_hint_strong(false);
     render.set_render_fullwidth_latin(false);
-  } else if (FLAGS_writing_mode == "vertical") {
+  } else if (writing_mode == "vertical") {
     // Render vertical text. Glyph orientation is selected by Pango.
     render.set_vertical_text(true);
     render.set_gravity_hint_strong(false);
     render.set_render_fullwidth_latin(false);
-  } else if (FLAGS_writing_mode == "vertical-upright") {
+  } else if (writing_mode == "vertical-upright") {
     // Render vertical text. Glyph orientation is set to be upright.
     // Also Basic Latin characters are converted to their fullwidth forms
     // on rendering, since fullwidth Latin characters are well designed to fit
@@ -566,7 +563,7 @@ static int Main() {
     render.set_gravity_hint_strong(true);
     render.set_render_fullwidth_latin(true);
   } else {
-    tprintError("Invalid writing mode: {}\n", FLAGS_writing_mode.c_str());
+    tprintError("Invalid writing mode: {}\n", writing_mode.c_str());
     return EXIT_FAILURE;
   }
 
@@ -683,7 +680,7 @@ static int Main() {
             render.RenderToImage(to_render_utf8 + offset, strlen(to_render_utf8 + offset), &pix);
       }
       if (pix != nullptr) {
-        float rotation = FLAGS_my_rotation ;
+        float rotation = FLAGS_my_rotation;
         if (pass == 1) {
           // Pass 2, do mirror rotation.
           rotation = -1 * page_rotation[page_num];

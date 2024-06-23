@@ -15,12 +15,13 @@
 
 #include <tesseract/debugheap.h>
 #include <tesseract/assert.h>
+#include <parameters/parameters.h>
 
 #include "commontraining.h"
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
+#  include <tesseract/params.h>
 #  include "tprintf.h"
 
 namespace tesseract {
@@ -70,7 +71,7 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include "mastertrainer.h"
 #  include "mf.h"
 #  include "oldlist.h"
-#  include "params.h"
+#  include <tesseract/params.h>
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
 #  include "tprintf.h"
@@ -139,7 +140,7 @@ int ParseArguments(int *argc, const char ***argv) {
   // Set additional parameters from config file if specified.
   if (!FLAGS_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
   return rv;
 }

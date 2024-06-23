@@ -182,6 +182,9 @@ static void PrintDetectorState(const ParagraphTheory &theory,
   for (const auto &model : theory.models()) {
     tprintDebug(" {}: {}\n", ++m, model->ToString());
   }
+  if (m == 0) {
+    tprintDebug(" [None]\n");
+  }
 }
 
 static void DebugDump(bool should_print, const char *phase, const ParagraphTheory &theory,

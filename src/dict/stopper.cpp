@@ -34,7 +34,7 @@
 #include "helpers.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 /*----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintDebug("Current ngram from spec: ");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, getUnicharset());
-          tprintDebug("Comparison result: {}\n", compare);
+          tprintDebug("Ambiguity comparison result: {}{}\n", compare, (compare == 0 ? " (we found an ambiguity)" : ""));
         }
         if (compare == 0) {
           // Record the place where we found an ambiguity.

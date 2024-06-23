@@ -21,7 +21,7 @@
 #define TESSERACT_TEXTORD_IMAGEFIND_H_
 
 #include "debugpixa.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 #include <cstdint>
 

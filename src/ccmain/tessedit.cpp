@@ -26,7 +26,8 @@
 #include "control.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
@@ -49,7 +50,7 @@ void Tesseract::read_config_file(const char *filename) {
     return;
   }
 
-  std::string path = datadir;
+  std::string path = datadir_;
   path += "configs/";
   path += filename;
   tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
@@ -57,7 +58,7 @@ void Tesseract::read_config_file(const char *filename) {
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
   } else {
-    path = datadir;
+    path = datadir_;
     path += "tessconfigs/";
     path += filename;
     tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
@@ -80,6 +81,7 @@ void Tesseract::read_config_file(const char *filename) {
 
 // Returns false if a unicharset file for the specified language was not found
 // or was invalid.
+// 
 // This function initializes TessdataManager. After TessdataManager is
 // no longer needed, TessdataManager::End() should be called.
 //
@@ -95,13 +97,13 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
                                          const std::vector<std::string> &vars_values,
                                          TessdataManager *mgr) {
   // Set the language data path prefix
-  lang = !language.empty() ? language : "eng";
-  language_data_path_prefix = datadir;
-  language_data_path_prefix += lang;
-  language_data_path_prefix += ".";
+  lang_ = !language.empty() ? language : "eng";
+  language_data_path_prefix_ = datadir_;
+  language_data_path_prefix_ += lang_;
+  language_data_path_prefix_ += ".";
 
   // Initialize TessdataManager.
-  std::string tessdata_path = language_data_path_prefix + kTrainedDataSuffix;
+  std::string tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
     tprintError("Error opening data file {}\n", tessdata_path);
     tprintInfo(
@@ -131,7 +133,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(&fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    ParamUtils::ReadParamsFromFp(fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
 
   // Load tesseract variables from config files. This is done after loading
@@ -197,10 +199,10 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Load the unicharset
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
     // Avoid requiring a unicharset when we aren't running base tesseract.
-    unicharset.CopyFrom(lstm_recognizer_->GetUnicharset());
+    unicharset_.CopyFrom(lstm_recognizer_->GetUnicharset());
   }
 #if !DISABLED_LEGACY_ENGINE
-  else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset.load_from_file(&fp, false)) {
+  else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset_.load_from_file(&fp, false)) {
     tprintError(
         "Tesseract (legacy) engine requested, but components are "
         "not present in {}!!\n",
@@ -208,22 +210,22 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     return false;
   }
 #endif // !DISABLED_LEGACY_ENGINE
-  if (unicharset.size() > MAX_NUM_CLASSES) {
+  if (unicharset_.size() > MAX_NUM_CLASSES) {
     tprintError("Size of unicharset is greater than MAX_NUM_CLASSES\n");
     return false;
   }
-  right_to_left_ = unicharset.major_right_to_left();
+  right_to_left_ = unicharset_.major_right_to_left();
 
 #if !DISABLED_LEGACY_ENGINE
   // Setup initial unichar ambigs table and read universal ambigs.
   UNICHARSET encoder_unicharset;
-  encoder_unicharset.CopyFrom(unicharset);
-  unichar_ambigs.InitUnicharAmbigs(unicharset, use_ambigs_for_adaption);
-  unichar_ambigs.LoadUniversal(encoder_unicharset, &unicharset);
+  encoder_unicharset.CopyFrom(unicharset_);
+  unichar_ambigs_.InitUnicharAmbigs(unicharset_, use_ambigs_for_adaption);
+  unichar_ambigs_.LoadUniversal(encoder_unicharset, universal_ambigs_debug_level, &unicharset_);
 
   if (!tessedit_ambigs_training && mgr->GetComponent(TESSDATA_AMBIGS, &fp)) {
-    unichar_ambigs.LoadUnicharAmbigs(encoder_unicharset, &fp, ambigs_debug_level,
-                                     use_ambigs_for_adaption, &unicharset);
+    unichar_ambigs_.LoadUnicharAmbigs(encoder_unicharset, &fp, ambigs_debug_level,
+                                     use_ambigs_for_adaption, &unicharset_);
   }
 
   // Init ParamsModel.
@@ -232,7 +234,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   for (int p = ParamsModel::PTRAIN_PASS1; p < ParamsModel::PTRAIN_NUM_PASSES; ++p) {
     language_model_.setParamsModelPass(static_cast<ParamsModel::PassEnum>(p));
     if (mgr->GetComponent(TESSDATA_PARAMS_MODEL, &fp)) {
-      if (!language_model_.LoadParamsModelFromFp(lang.c_str(), &fp)) {
+      if (!language_model_.LoadParamsModelFromFp(lang_.c_str(), &fp)) {
         return false;
       }
     }
@@ -268,10 +270,10 @@ void Tesseract::ParseLanguageString(const std::string &lang_str, std::vector<std
   // Look whether the model file uses a prefix which must be applied to
   // included model files as well.
   std::string prefix;
-  size_t found = lang.find_last_of('/');
+  size_t found = lang_.find_last_of('/');
   if (found != std::string::npos) {
     // A prefix was found.
-    prefix = lang.substr(0, found + 1);
+    prefix = lang_.substr(0, found + 1);
   }
   while (!remains.empty()) {
     // Find the start of the lang code and which vector to add to.
@@ -356,13 +358,13 @@ BOXA *Tesseract::ParseRectsString(const char *rects_str) {
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
-							                const std::vector<std::string> &configs,
 							                const std::vector<std::string> &vars_vec,
-							                const std::vector<std::string> &vars_values,
+                              const std::vector<std::string> &vars_values,
+                              const std::vector<std::string> &configs,
                               TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
-  ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
+  ParseLanguageString(languages_to_try, &langs_to_load, &langs_not_to_load);
 
   for (auto &lang : sub_langs_) {
     delete lang;
@@ -388,7 +390,6 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   for (size_t lang_index = 0; lang_index < langs_to_load.size(); ++lang_index) {
     const auto &lang_to_load = langs_to_load[lang_index];
     if (!IsStrInList(lang_to_load, langs_not_to_load)) {
-      const char *lang_str = lang_to_load.c_str();
       Tesseract *tess_to_init;
       if (!loaded_primary) {
         tess_to_init = this;
@@ -397,7 +398,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         tess_to_init->main_setup(arg0, textbase);
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_str, oem, configs,
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, static_cast<tesseract::OcrEngineMode>(this->tessedit_ocr_engine_mode.value()), configs,
                                                          vars_vec, vars_values,
                                                          mgr);
       // Forget that language, but keep any reader we were given.
@@ -405,14 +406,14 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       if (!loaded_primary) {
         if (result < 0) {
-          tprintError("Failed loading language '{}'\n", lang_str);
+          tprintError("Failed loading language '{}'\n", lang_to_load);
         } else {
           ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
           loaded_primary = true;
         }
       } else {
         if (result < 0) {
-          tprintError("Failed loading sub-language '{}'\n", lang_str);
+          tprintError("Failed loading sub-language '{}'\n", lang_to_load);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);

@@ -30,6 +30,8 @@
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/autosupressor.h>     // for AutoSupressDatum
+#include <tesseract/params.h>
+#include <tesseract/filepath.h>
 
 #include <cstdio>
 #include <tuple>  // for std::tuple
@@ -40,6 +42,8 @@ struct Pixa;
 struct Boxa;
 
 namespace tesseract {
+
+using namespace parameters;
 
 class PAGE_RES;
 class ParagraphModel;
@@ -70,6 +74,15 @@ using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
 
 /**
+ * Defines the trinity of page images to be used by tesseract for each page to be OCR'ed.
+ */
+struct ImagePageFileSpec {
+  std::string page_image_path;          // the page image which must be OCR'ed.
+  std::string segment_mask_image_path;  // an optional segmentation assistant page image. When not RGB, anything non-white is considered content.
+  std::string visible_page_image_path;  // an optional image, specifically for PDF page overlay usage.
+};
+
+/**
  * Base class for all tesseract APIs.
  * Specific classes can add ability to work on different inputs or produce
  * different outputs.
@@ -95,23 +108,39 @@ public:
    * reading a UNLV zone file, and for searchable PDF output.
    */
   void SetInputName(const char *name);
+
   /**
    * These functions are required for searchable PDF output.
    * We need our hands on the input file so that we can include
    * it in the PDF without transcoding. If that is not possible,
    * we need the original image. Finally, resolution metadata
    * is stored in the PDF so we need that as well.
+   *
+   * @{
    */
+
   const char *GetInputName();
+
   // Takes ownership of the input pix.
   void SetInputImage(Pix *pix);
+
   Pix *GetInputImage();
+
   int GetSourceYResolution();
+
   const char *GetDatapath();
+
   void SetVisibleImageFilename(const char *name);
+
   const char *GetVisibleImageFilename();
+
   void SetVisibleImage(Pix *pix);
+
   Pix* GetVisibleImage();
+
+  /**
+   * @}
+   */
 
   /**
   * Return a memory capacity cost estimate for the given image dimensions and
@@ -146,6 +175,8 @@ public:
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char *name);
+
+  /** Get the name of the bonus output files, which are used for debugging. */
   const std::string &GetOutputName();
 
   /**
@@ -164,21 +195,31 @@ public:
    *
    * Note: critical variables are "locked" during the Init() phase and any attempt
    * to set them to a different value before the End() call will be ignored/rejected
-   * while an error message about the attempt is logged. 
+   * while an error message about the attempt is logged.
+   *
+   * @{
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
   bool SetVariable(const char *name, bool value);
   bool SetVariable(const char *name, double value);
   bool SetVariable(const char *name, const std::string &value);
+  /**
+   * @}
+   */
 
   /**
    * Returns true if the parameter was found among Tesseract parameters.
    * Fills in `value` with the value of the parameter.
+   *
+   * @{
    */
   bool GetIntVariable(const char *name, int *value) const;
   bool GetBoolVariable(const char *name, bool *value) const;
   bool GetDoubleVariable(const char *name, double *value) const;
+  /**
+   * @}
+   */
 
   /**
    * Returns the pointer to the string that represents the value of the
@@ -229,31 +270,49 @@ public:
   bool GetVariableAsString(const char *name, std::string *val) const;
 
   /**
+   * Inspect the path_params list (which lists images and image-list files)
+   * and recognize the latter (vs. older text-based image file formats) and
+   * expand these into a set of image file paths.
+   *
+   * This process applies a little heuristic for performance reasons:
+   * so as not to have to load every listed image file entirely, we merely
+   * fetch the initial couple of kilobytes and check if that part is
+   * a (aborted) list of file paths, rather than (text-based) image data.
+   * If it is, then it is treated as an image list file and expanded in line,
+   * while otherwise it is flagged as an image file.
+   *
+   * Returns a non-empty set of page image specs on success. The returned set is empty on error.
+   */
+  std::vector<ImagePageFileSpec> ExpandImagelistFilesInSet(const std::vector<std::string> &path_params);
+
+  /**
    * Instances are now mostly thread-safe and totally independent,
    * but some global parameters remain. Basically it is safe to use multiple
    * TessBaseAPIs in different threads in parallel, UNLESS:
-   * you use SetVariable on some of the Params in classify and textord.
+   * you use SetVariable on some of the Params in `classify` and `textord`.
    * If you do, then the effect will be to change it for all your instances.
    *
-   * Start tesseract. Returns zero on success and -1 on failure.
+   * Starts tesseract. Returns zero on success and -1 on failure.
    * NOTE that the only members that may be called before Init are those
    * listed above here in the class definition.
    *
    * The datapath must be the name of the tessdata directory.
-   * The language is (usually) an ISO 639-3 string or nullptr will default to
+   * The language is (usually) an ISO 639-3 string or, when empty or nullptr, will default to
    * "eng". It is entirely safe (and eventually will be efficient too) to call
-   * Init multiple times on the same instance to change language, or just
+   * Init() multiple times on the same instance to change language, or just
    * to reset the classifier.
+   * 
    * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
-   * that multiple languages are to be loaded. Eg "hin+eng" will load Hindi and
+   * that multiple languages are to be loaded. E.g. "hin+eng" will load Hindi and
    * English. Languages may specify internally that they want to be loaded
-   * with one or more other languages, so the ~ sign is available to override
+   * with one or more other languages, so the `~` sign is available to override
    * that. E.g. if "hin" were set to load "eng" by default, then "hin+~eng" would force
    * loading only "hin". The number of loaded languages is limited only by
    * memory, with the caveat that loading additional languages will impact
    * both speed and accuracy, as there is more work to do to decide on the
    * applicable language, and there is more chance of hallucinating incorrect
    * words.
+   * 
    * WARNING: On changing languages, all Tesseract parameters are reset
    * back to their default values. (Which may vary between languages.)
    * If you have a rare need to set a Variable that controls
@@ -261,32 +320,94 @@ public:
    * call End() and then use SetVariable before Init. This is only a very
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
+   *
+   * @{
    */
-  int InitFull(const char *datapath, 
+  int Init(const char *datapath,
+           ParamsVectorSet &vars);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(ParamsVectorSet &vars);
+
+  int Init(ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values);
 
-  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
-
-  int InitSimple(const char *datapath, const char *language);
-
-  // Reads the traineddata via a FileReader from path `datapath`.
-  int InitFullWithReader(const char *datapath, 
+  int Init(const char *datapath,
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode oem);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath, const char *language);
+
+  int Init(const char *datapath, const char *language,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language, OcrEngineMode oem);
+
+  int Init(const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language);
+
+  int Init(const char *language,
+           const std::vector<std::string> &configs);
+
+  /// Reads the traineddata via a FileReader from path `datapath`.
+  int Init(const char *datapath, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const char *language, OcrEngineMode oem,
            FileReader reader);
 
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
-  int InitFromMemory(const char *data, int data_size, 
+  int InitFromMemory(const char *data, size_t data_size, 
            const std::vector<std::string> &vars_vec,
            const std::vector<std::string> &vars_values);
 
+  int InitFromMemory(const char *data, size_t data_size, 
+          const std::vector<std::string> &vars_vec,
+          const std::vector<std::string> &vars_values,
+          const std::vector<std::string> &configs);
+
 protected:
-  int InitFullRemainder(const char *datapath, const char *data, int data_size, 
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           FileReader reader);
+  int Init_Internal(const char *datapath,
+                    ParamsVectorSet &vars,
+                    const std::vector<std::string> &configs,
+                    FileReader reader,
+                    const char *data = nullptr, size_t data_size = 0);
+
+/** @} */
 
 public:
   /**
@@ -541,8 +662,7 @@ public:
    * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
    * DetectOS, or anything else that changes the internal PAGE_RES.
    */
-  PageIterator *AnalyseLayout();
-  PageIterator *AnalyseLayout(bool merge_similar_words);
+  PageIterator *AnalyseLayout(bool merge_similar_words = false);
 
   /**
    * Recognize the image from SetAndThresholdImage, generating Tesseract
@@ -555,6 +675,8 @@ public:
   /**
    * Methods to retrieve information after SetAndThresholdImage(),
    * Recognize() or TesseractRect(). (Recognize is called implicitly if needed.)
+   *
+   * @{
    */
 
   /**
@@ -780,6 +902,8 @@ public:
    */
   int *AllWordConfidences();
 
+  /** @} */
+
 #if !DISABLED_LEGACY_ENGINE
   /**
    * Applies the given word to the adaptive classifier if possible.
@@ -806,9 +930,15 @@ public:
    * Close down tesseract and free up all memory. `End()` is equivalent to
    * destructing and reconstructing your TessBaseAPI.
    * Once `End()` has been used, none of the other API functions may be used
-   * other than Init and anything declared above it in the class definition.
+   * other than Init() and anything declared above it in the class definition.
    */
   void End();
+
+  /**
+   * Equivalent to calling End() but with the added feature of all
+   * parameters being reset to factory defaults.
+   */
+  void ResetToDefaults();
 
   /**
    * Clear any library-level memory caches.
@@ -829,7 +959,7 @@ public:
    */
   int IsValidWord(const char *word) const;
 
-  // Returns true if utf8_character is defined in the UniCharset.
+  /// Returns true if utf8_character is defined in the UniCharset.
   bool IsValidCharacter(const char *utf8_character) const;
 
   bool GetTextDirection(int *out_offset, float *out_slope);

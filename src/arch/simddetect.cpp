@@ -22,7 +22,7 @@
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
-#include "params.h"        // for STRING_VAR
+#include <tesseract/params.h>        // for STRING_VAR
 #include "simddetect.h"
 #include "tprintf.h" // for tprintf
 #include "tesstypes.h"
@@ -318,66 +318,68 @@ void SIMDDetect::Update() {
   // Select code for calculation of dot product based on the
   // value of the config variable if that value is not empty.
   const char *dotproduct_method = "generic";
-  if (dotproduct == "auto") {
+  const std::string &cfg = dotproduct;
+  if (cfg == "auto") {
     // Automatic detection. Nothing to be done.
-  } else if (dotproduct == "generic") {
+  } else if (cfg == "generic") {
     // Generic code selected by config variable.
     SetDotProduct(DotProductGeneric);
     dotproduct_method = "generic";
-  } else if (dotproduct == "native") {
+  } else if (cfg == "native") {
     // Native optimized code selected by config variable.
     SetDotProduct(DotProductNative, IntSimdMatrix::intSimdMatrix);
     dotproduct_method = "native";
-  } else if (dotproduct == "avx2" && avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
+  } else if (cfg == "avx2" && avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) {
     // AVX2 selected by config variable.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx2";
-  } else if (dotproduct == "avx-1" && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+  } else if (cfg == "avx-1" && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX2 (Alternative Implementation) selected by config variable.
     SetDotProduct(DotProductAVX1, IntSimdMatrix::intSimdMatrixAVX2);
     dotproduct_method = "avx-1";
-  } else if (dotproduct == "avx" && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+  } else if (cfg == "avx" && avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // AVX selected by config variable.
     SetDotProduct(DotProductAVX, IntSimdMatrix::intSimdMatrixSSE);
     dotproduct_method = "avx";
-  } else if (dotproduct == "fma" && fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+  } else if (cfg == "fma" && fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // FMA selected by config variable.
     SetDotProduct(DotProductFMA, IntSimdMatrix::intSimdMatrix);
     dotproduct_method = "fma";
-  } else if (dotproduct == "sse" && sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
+  } else if (cfg == "sse" && sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) {
     // SSE selected by config variable.
     SetDotProduct(DotProductSSE, IntSimdMatrix::intSimdMatrixSSE);
     dotproduct_method = "sse";
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
-  } else if (dotproduct == "accelerate") {
+  } else if (cfg == "accelerate") {
     SetDotProduct(DotProductAccelerate, IntSimdMatrix::intSimdMatrix);
     dotproduct_method = "accelerate";
 #endif
 #if defined(HAVE_NEON) || defined(__aarch64__)
-  } else if (dotproduct == "neon" && neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
+  } else if (cfg == "neon" && neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) {
     // NEON selected by config variable.
     SetDotProduct(DotProductNEON, IntSimdMatrix::intSimdMatrixNEON);
     dotproduct_method = "neon";
 #endif
-  } else if (dotproduct == "std::inner_product") {
+  } else if (cfg == "std::inner_product" || cfg == "std") {
     // std::inner_product selected by config variable.
     SetDotProduct(DotProductStdInnerProduct, IntSimdMatrix::intSimdMatrix);
     dotproduct_method = "std::inner_product";
   } else {
     // Unsupported value of config variable.
-    tprintWarn("Ignoring unsupported config variable value: dotproduct={}\n"
-            "  Supported values for dotproduct: auto generic native"
+    tprintWarn(
+        "Ignoring unsupported config variable value: dotproduct={}\n"
+        "  Supported values for dotproduct: auto generic native"
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif
-		"{}{}{}{}{} std::inner_product.\n",
-		dotproduct.c_str(),
-	    (avx2_available_&& IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
-		(avx_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx" : "",
-		(fma_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
-		(sse_available_&& IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
-		(neon_available_&& IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : ""
-	);
+        "{}{}{}{}{}{} std std::inner_product.\n",
+        cfg,
+        (avx2_available_ && IntSimdMatrix::intSimdMatrixAVX2 != nullptr) ? " avx2" : "",
+        (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx-1" : "",
+        (avx_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " avx" : "",
+        (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
+        (sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
+        (neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : "");
   }
 
   dotproduct.set_value(dotproduct_method);

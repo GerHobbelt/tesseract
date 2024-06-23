@@ -35,7 +35,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include "host.h" // windows.h for HANDLE, ...
 #endif
-#include "params.h"
+#include <tesseract/params.h>
 #include "unicharset.h"
 
 namespace tesseract {
@@ -58,17 +58,18 @@ public:
     return params_collective_;
   }
 
-  std::string input_file_path; // name of currently processed input file
-  std::string datadir;         // dir for data files
-  std::string imagebasename;   // name of image
-  std::string lang;
-  std::string language_data_path_prefix;
-  UNICHARSET unicharset;
+  std::string visible_image_file_path_; // name of currently input file, used for visible overlays only
+  std::string input_file_path_; // name of currently processed input file
+  std::string datadir_;         // dir for data files
+  std::string imagebasename_;   // name of image
+  std::string lang_;
+  std::string language_data_path_prefix_;
+  UNICHARSET unicharset_;
 #if !DISABLED_LEGACY_ENGINE
-  UnicharAmbigs unichar_ambigs;
+  UnicharAmbigs unichar_ambigs_;
 #endif
-  std::string imagefile; // image file name
-  std::string directory; // main directory
+  std::string imagefile_; // image file name
+  std::string directory_; // main directory
 
 private:
   ParamsVector params_;
@@ -79,7 +80,10 @@ public:
   // These have to be declared and initialized after params_ member, since
   // params_ should be initialized before parameters are added to it.
   INT_VAR_H(ambigs_debug_level);
+  INT_VAR_H(universal_ambigs_debug_level);
   BOOL_VAR_H(use_ambigs_for_adaption);
+  BOOL_VAR_H(debug_datadir_discovery);
+  STRING_VAR_H(datadir_base_path);
 };
 
 } // namespace tesseract

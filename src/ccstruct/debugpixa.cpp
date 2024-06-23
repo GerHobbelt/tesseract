@@ -6,6 +6,7 @@
 #include "tesseractclass.h"
 
 #include <leptonica/allheaders.h>
+#include <parameters/parameters.h>
 
 #include <string>
 #include <vector>
@@ -22,6 +23,8 @@
 #ifndef TESSERACT_DISABLE_DEBUG_FONTS 
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
 #endif
+
+using namespace parameters;
 
 namespace tesseract {
 
@@ -608,9 +611,9 @@ namespace tesseract {
         languages << ": ";
         int i;
         for (i = 0; i < num_subs - 1; ++i) {
-          languages << tesseract_->get_sub_lang(i)->lang << " + ";
+          languages << tesseract_->get_sub_lang(i)->lang_ << " + ";
         }
-        languages << tesseract_->get_sub_lang(i)->lang << "</p>";
+        languages << tesseract_->get_sub_lang(i)->lang_ << "</p>";
       }
 
       fprintf(html(), "<html>\n\
@@ -682,14 +685,14 @@ namespace tesseract {
 ",
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown(tesseract_->input_file_path).c_str(),
-        check_unknown(tesseract_->imagebasename).c_str(),
-        check_unknown(tesseract_->imagefile).c_str(),
-        tesseract_->lang.c_str(),
+        check_unknown(tesseract_->input_file_path_).c_str(),
+        check_unknown(tesseract_->imagebasename_).c_str(),
+        check_unknown(tesseract_->imagefile_).c_str(),
+        tesseract_->lang_.c_str(),
         languages.str().c_str(),
-        check_unknown(tesseract_->language_data_path_prefix).c_str(),
-        check_unknown(tesseract_->datadir).c_str(),
-        check_unknown(tesseract_->directory).c_str()
+        check_unknown(tesseract_->language_data_path_prefix_).c_str(),
+        check_unknown(tesseract_->datadir_).c_str(),
+        check_unknown(tesseract_->directory_).c_str()
       );
 
       {
@@ -739,7 +742,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      tesseract::ParamsVectorSet &vec = tesseract_->params_collective();
+      ParamsVectorSet &vec = tesseract_->params_collective();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, title);
     }
   }

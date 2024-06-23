@@ -284,7 +284,7 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
     osr = &osr_;
   }
 
-  osr->unicharset = &this->unicharset;
+  osr->unicharset = &this->unicharset_;
   OrientationDetector o(allowed_scripts, osr);
   ScriptDetector s(allowed_scripts, osr, this);
 
@@ -456,14 +456,14 @@ ScriptDetector::ScriptDetector(const std::vector<int> *allowed_scripts, OSResult
   osr_ = osr;
   tess_ = tess;
   allowed_scripts_ = allowed_scripts;
-  katakana_id_ = tess_->unicharset.add_script(katakana_script);
-  hiragana_id_ = tess_->unicharset.add_script(hiragana_script);
-  han_id_ = tess_->unicharset.add_script(han_script);
-  hangul_id_ = tess_->unicharset.add_script(hangul_script);
-  japanese_id_ = tess_->unicharset.add_script(japanese_script_);
-  korean_id_ = tess_->unicharset.add_script(korean_script_);
-  latin_id_ = tess_->unicharset.add_script(latin_script);
-  fraktur_id_ = tess_->unicharset.add_script(fraktur_script_);
+  katakana_id_ = tess_->unicharset_.add_script(katakana_script);
+  hiragana_id_ = tess_->unicharset_.add_script(hiragana_script);
+  han_id_ = tess_->unicharset_.add_script(han_script);
+  hangul_id_ = tess_->unicharset_.add_script(hangul_script);
+  japanese_id_ = tess_->unicharset_.add_script(japanese_script_);
+  korean_id_ = tess_->unicharset_.add_script(korean_script_);
+  latin_id_ = tess_->unicharset_.add_script(latin_script);
+  fraktur_id_ = tess_->unicharset_.add_script(fraktur_script_);
 }
 
 
@@ -507,7 +507,7 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
       }
       done[id] = true;
 
-      const char *unichar = tess_->unicharset.id_to_unichar(choice->unichar_id());
+      const char *unichar = tess_->unicharset_.id_to_unichar(choice->unichar_id());
       // Save data from the first match
       if (prev_score < 0) {
         prev_score = -choice->certainty();

@@ -82,7 +82,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
     tesseract::TessBaseAPI api;
     tesseract::Dict &dict = api.tesseract().getDict();
     dict.output_ambig_words_file = output_file_str;
-    api.InitFull(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY);
+    api.Init(tessdata_dir, lang.c_str(), tesseract::OEM_TESSERACT_ONLY);
     FILE* input_file = fopen(input_file_str, "rb");
     if (input_file == nullptr) {
       tesseract::tprintError("Failed to open input wordlist file {}\n", input_file_str);

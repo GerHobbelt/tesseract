@@ -10,6 +10,7 @@
 
 #include "commandlineflags.h"
 #include <tesseract/baseapi.h> // TessBaseAPI::Version
+#include <parameters/parameters.h>
 #include <cmath>               // for std::isnan, NAN
 #include <locale>              // for std::locale::classic
 #include <sstream>             // for std::stringstream
@@ -17,6 +18,8 @@
 #include "errcode.h"
 #include "helpers.h"
 #include "tprintf.h"
+
+using namespace ::parameters;
 
 namespace tesseract {
 
@@ -141,7 +144,8 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
       return 1;
     }
 
-    if (!p->set_value(rhs)) {
+    p->set_value(rhs);
+    if (p->has_faulted()) {
       tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
       return 1;
     }

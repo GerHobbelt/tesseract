@@ -43,7 +43,7 @@
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
-#include "params.h"          // for BoolParam, IntParam, DoubleParam, Stri...
+#include "global_params.h"
 #include "pdblock.h"         // for PDBLK
 #include "points.h"          // for FCOORD
 #include "polyblk.h"         // for POLY_BLOCK
@@ -63,12 +63,14 @@
 #include "topitch.h"         // for param globals
 #include "polyaprx.h"        // for param globals
 #include "edgblob.h"         // for param globals
+#include "pathutils.h"       // for fs namespace
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
 #include <tesseract/osdetect.h>       // for OSResults, OSBestResult, OrientationId...
 #include <tesseract/renderer.h>       // for TessResultRenderer
 #include <tesseract/resultiterator.h> // for ResultIterator
+#include <tesseract/params.h>    // for Param, ..., ParamVectorSet class definitions
 #include <tesseract/assert.h>
 
 #include <cmath>    // for round, M_PI
@@ -84,6 +86,7 @@
 #include <vector>   // for std::vector
 #include <cfloat>
 
+#include <parameters/parameters.h>
 #include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
@@ -104,6 +107,8 @@
 #  include <unistd.h>
 #endif // _WIN32
 
+
+using namespace ::parameters;
 
 namespace tesseract {
 
@@ -237,38 +242,38 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 TessBaseAPI::TessBaseAPI()
     : tesseract_(nullptr)
 #if !DISABLED_LEGACY_ENGINE
-    , osd_tesseract_(nullptr)
-    , equ_detect_(nullptr)
+      ,
+      osd_tesseract_(nullptr),
+      equ_detect_(nullptr)
 #endif
-    , reader_(nullptr)
-    ,
-    // thresholder_ is initialized to nullptr here, but will be set before use
-    // by: A constructor of a derived API or created
-    // implicitly when used in InternalResetImage.
-    thresholder_(nullptr)
-    , paragraph_models_(nullptr)
-    , block_list_(nullptr)
-    , page_res_(nullptr)
-    , pix_visible_image_(nullptr)
-    , last_oem_requested_(OEM_DEFAULT)
-    , recognition_done_(false)
-    , rect_left_(0)
-    , rect_top_(0)
-    , rect_width_(0)
-    , rect_height_(0)
-    , image_width_(0)
-    , image_height_(0) 
-{
+      ,
+      reader_(nullptr),
+      // thresholder_ is initialized to nullptr here, but will be set before use
+      // by: A constructor of a derived API or created
+      // implicitly when used in InternalResetImage.
+      thresholder_(nullptr),
+      paragraph_models_(nullptr),
+      block_list_(nullptr),
+      page_res_(nullptr),
+      pix_visible_image_(nullptr),
+      last_oem_requested_(OEM_DEFAULT),
+      recognition_done_(false),
+      rect_left_(0),
+      rect_top_(0),
+      rect_width_(0),
+      rect_height_(0),
+      image_width_(0),
+      image_height_(0) {
   // make sure the debug_all preset is set up BEFORE any command-line arguments
   // direct tesseract to set some arbitrary parameters just below,
   // for otherwise those `-c xyz=v` commands may be overruled by the
   // debug_all preset!
-  debug_all.set_on_modify_handler([this](const char *name,
-                                         ParamRef target,
-                                         ParamSetBySourceType type,
-                                         ParamPtr parent,
-                                         ParamValueContainer &old_val,
-                                         ParamValueContainer &new_val) {
+  debug_all.set_on_modify_handler([this](decltype(debug_all) &target,
+                                         const int32_t old_value,
+                                         int32_t &new_value,
+                                         const int32_t default_value,
+                                         ParamSetBySourceType source_type,
+                                         ParamPtr optional_setter) {
     this->SetupDebugAllPreset();
   });
 }
@@ -297,12 +302,14 @@ Tesseract& TessBaseAPI::tesseract() const {
  * loading a UNLV zone file.
  */
 void TessBaseAPI::SetInputName(const char *name) {
-  tesseract().input_file_path = name ? name : "";
+  Tesseract &tess = tesseract();
+  tess.input_file_path_ = name;
 }
 
 /** Set the name of the visible image files. Needed only for PDF output. */
 void TessBaseAPI::SetVisibleImageFilename(const char* name) {
-  visible_image_file_ = name ? name : "";
+  Tesseract &tess = tesseract();
+  tess.visible_image_file_path_ = name;
 }
 
 /**
@@ -367,11 +374,11 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  output_file_ = name ? name : "";
+  tesseract().output_base_filename.set_value(name);
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
-  return output_file_;
+  return tesseract().output_base_filename;
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
@@ -513,76 +520,190 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * The language is (usually) an ISO 639-3 string or nullptr will default to eng.
  * If numeric_mode is true, then only digits and Roman numerals will
  * be returned.
+ * 
  * @return: 0 on success and -1 on initialization failure.
  */
-int TessBaseAPI::InitFull(const char *datapath, 
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values) {
-  return InitFullRemainder(datapath, nullptr, 0, vars_vec, vars_values, nullptr);
-}
-
-int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
+int TessBaseAPI::Init(const char* datapath,
+                      ParamsVectorSet& vars)
+{
   std::vector<std::string> nil;
-  tesseract().tessedit_ocr_engine_mode = oem;
-  tesseract().languages_to_try = language;
-  return InitFullRemainder(datapath, nullptr, 0, nil, nil, nullptr);
+  //ParamsVectorSet vars;
+  FileReader nada;
+  Tesseract &tess = tesseract();
+  //tess.tessedit_ocr_engine_mode = oem;
+  //tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
 
-int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  std::vector<std::string> nil;
-  tesseract().languages_to_try = language;
-  return InitFullRemainder(datapath, nullptr, 0, nil, nil, nullptr);
-}
-
-// In-memory version reads the traineddata file directly from the given
-// data[data_size] array. Also implements the version with a datapath in data,
-// flagged by data_size = 0.
-int TessBaseAPI::InitFromMemory(const char *data, int data_size,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values) 
+int TessBaseAPI::Init(const char *datapath,
+         ParamsVectorSet &vars,
+                      const std::vector<std::string> &configs)
 {
-  return InitFullRemainder(nullptr, data, data_size, 
-    vars_vec,
-    vars_values, 
-    nullptr);
+
 }
 
-int TessBaseAPI::InitFullWithReader(const char *path,
-  const std::vector<std::string> &vars_vec,
-  const std::vector<std::string> &vars_values, 
-  FileReader reader) 
+int TessBaseAPI::Init(ParamsVectorSet& vars)
 {
-  return InitFullRemainder(path, nullptr, 0,
-    vars_vec,
-    vars_values, 
-    reader);
+
 }
 
-int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_size,
-    const std::vector<std::string> &vars_vec,
-    const std::vector<std::string> &vars_values, 
-    FileReader reader) 
+int TessBaseAPI::Init(ParamsVectorSet& vars,
+                      const std::vector<std::string>& configs)
 {
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         ParamsVectorSet& vars,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+                      const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath, const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem)
+{
+
+}
+
+int TessBaseAPI::Init(const char *language, OcrEngineMode oem,
+         const std::vector<std::string> &configs)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language)
+{
+
+}
+
+int TessBaseAPI::Init(const char* language,
+                      const std::vector<std::string>& configs)
+{
+
+}
+
+// Reads the traineddata via a FileReader from path `datapath`.
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+                      FileReader reader)
+{
+
+}
+
+int TessBaseAPI::Init(const char* datapath,
+         const std::vector<std::string>& vars_vec,
+         const std::vector<std::string>& vars_values,
+         const std::vector<std::string>& configs,
+                      FileReader reader)
+{
+
+}
+
+// In-memory version reads the traineddata directly from the given
+// data[data_size] array.
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values)
+{
+
+}
+
+int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
+                   const std::vector<std::string>& vars_vec,
+                   const std::vector<std::string>& vars_values,
+                   const std::vector<std::string>& configs)
+{
+
+}
+
+int TessBaseAPI::Init_Internal(const char *path,
+                               ParamsVectorSet &vars,
+                               const std::vector<std::string> &configs,
+                               FileReader reader,
+                               const char *data, size_t data_size) {
+  Tesseract &tess = tesseract();
 #if 0
-  if (tesseract().languages_to_try.empty()) {
-    tesseract().languages_to_try = "";
+  if (tess.languages_to_try.empty()) {
+    tess.languages_to_try = "";
   }
 #endif
   if (data == nullptr) {
     data = "";
+    data_size = 0; // as a precaution to prevent invalid user-set value to
   }
-  std::string datapath = path ? path : tesseract().languages_to_try.c_str();
+  std::string datapath;
+  if (!strempty(path)) {
+    datapath = path;
+  } else if (!tess.datadir_base_path.empty()) {
+    datapath = tess.datadir_base_path;
+  } else {
+    datapath = tess.languages_to_try;
+  }
 
   // TODO: re-evaluate this next (old) code chunk which decides when to reset the tesseract instance.
- 
+
+  std::string buggered_languge = "XYZ";
+
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
   // initialized successfully, while tesseract().lang stores the language
   // actually used. They differ only if the requested language was nullptr, in
   // which case tesseract().lang is set to the Tesseract default ("eng").
-  if (tesseract_ != nullptr &&
+  if (
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem || (language_ != language && tesseract_->lang != language))) {
+       last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang_ != buggered_languge))) {
+    // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
+    assert(0);
     delete tesseract_;
     tesseract_ = nullptr;
   }
@@ -595,22 +716,20 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
     }
     TessdataManager mgr(reader_);
     if (data_size != 0) {
-      mgr.LoadMemBuffer(language, data, data_size);
+      mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
     }
-    if (tesseract_->init_tesseract(datapath, output_file_, vars_vec, vars_values, &mgr) != 0) {
+    if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
       return -1;
     }
   }
 
-  Tesseract& tess = tesseract();
-
   // Update datapath and language requested for the last valid initialization.
   datapath_ = std::move(datapath);
-  if (datapath_.empty() && !tess.datadir.empty()) {
-    datapath_ = tess.datadir;
+  if (datapath_.empty() && !tess.datadir_.empty()) {
+    datapath_ = tess.datadir_;
   }
 
-  language_ = language;
+  language_ = buggered_languge;
   last_oem_requested_ = oem();
 
 #if !DISABLED_LEGACY_ENGINE
@@ -642,13 +761,11 @@ const char *TessBaseAPI::GetInitLanguagesAsString() const {
  */
 void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-  if (tesseract_ != nullptr) {
-    Tesseract& tess = tesseract();
-    langs->push_back(tess.lang);
-    int num_subs = tess.num_sub_langs();
-    for (int i = 0; i < num_subs; ++i) {
-      langs->push_back(tess.get_sub_lang(i)->lang);
-    }
+  Tesseract &tess = tesseract();
+  langs->push_back(tess.lang_);
+  int num_subs = tess.num_sub_langs();
+  for (int i = 0; i < num_subs; ++i) {
+    langs->push_back(tess.get_sub_lang(i)->lang_);
   }
 }
 
@@ -657,10 +774,9 @@ void TessBaseAPI::GetLoadedLanguagesAsVector(std::vector<std::string> *langs) co
  */
 void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs) const {
   langs->clear();
-  if (tesseract_ != nullptr) {
-    addAvailableLanguages(tesseract().datadir, "", langs);
-    std::sort(langs->begin(), langs->end());
-  }
+  Tesseract &tess = tesseract();
+  addAvailableLanguages(tess.datadir_, "", langs);
+  std::sort(langs->begin(), langs->end());
 }
 
 /**
@@ -691,7 +807,7 @@ void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
 
 /** Return the current page segmentation mode. */
 PageSegMode TessBaseAPI::GetPageSegMode() const {
-  return static_cast<PageSegMode>(static_cast<int>(tesseract().tessedit_pageseg_mode));
+  return static_cast<PageSegMode>(tesseract().tessedit_pageseg_mode.value());
 }
 
 /**
@@ -1155,20 +1271,17 @@ int TessBaseAPI::GetThresholdedImageScaleFactor() const {
  * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
-PageIterator *TessBaseAPI::AnalyseLayout() {
-  return AnalyseLayout(false);
-}
-
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
   if (FindLines() == 0) {
-    AutoPopDebugSectionLevel section_handle(tesseract_, tesseract().PushSubordinatePixDebugSection("Analyse Layout"));
+    Tesseract& tess = tesseract();
+    AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Analyse Layout"));
 
     if (block_list_->empty()) {
       return nullptr; // The page was empty.
     }
     page_res_ = new PAGE_RES(merge_similar_words, block_list_, nullptr);
     DetectParagraphs(false);
-    return new PageIterator(page_res_, tesseract_, thresholder_->GetScaleFactor(),
+    return new PageIterator(page_res_, &tess, thresholder_->GetScaleFactor(),
                             thresholder_->GetScaledYResolution(), rect_left_, rect_top_,
                             rect_width_, rect_height_);
   }
@@ -1190,7 +1303,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     return -1;
   }
 
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Recognize (OCR)"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Recognize (OCR)"));
 
   delete page_res_;
   if (block_list_->empty()) {
@@ -1204,11 +1317,11 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   if (tess.tessedit_resegment_from_line_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from line boxes.\n");
-    page_res_ = tess.ApplyBoxes(tess.input_file_path.c_str(), true, block_list_);
+    page_res_ = tess.ApplyBoxes(tess.input_file_path_.c_str(), true, block_list_);
   } else if (tess.tessedit_resegment_from_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from page boxes.\n");
-    page_res_ = tess.ApplyBoxes(tess.input_file_path.c_str(), false, block_list_);
+    page_res_ = tess.ApplyBoxes(tess.input_file_path_.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
@@ -1222,8 +1335,8 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 
   if (tess.tessedit_train_line_recognizer) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
-    if (!tess.TrainLineRecognizer(tess.input_file_path.c_str(), output_file_, block_list_)) {
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
+    if (!tess.TrainLineRecognizer(tess.input_file_path_.c_str(), output_file_, block_list_)) {
       return -1;
     }
     tess.CorrectClassifyWords(page_res_);
@@ -1231,7 +1344,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   }
 #if !DISABLED_LEGACY_ENGINE
   if (tess.tessedit_make_boxes_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
     tess.CorrectClassifyWords(page_res_);
     return 0;
   }
@@ -1240,7 +1353,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   int result = 0;
   if (tess.SupportsInteractiveScrollView()) {
 #if !GRAPHICS_DISABLED
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
     tess.pgeditor_main(rect_width_, rect_height_, page_res_);
 
     // The page_res is invalid after an interactive session, so cleanup
@@ -1253,20 +1366,20 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
 #if !DISABLED_LEGACY_ENGINE
   } else if (tess.tessedit_train_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train From Boxes"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train From Boxes"));
     std::string fontname;
     ExtractFontName(output_file_.c_str(), &fontname);
     tess.ApplyBoxTraining(fontname, page_res_);
   } else if (tess.tessedit_ambigs_training) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Train Ambigs"));
-    FILE *training_output_file = tess.init_recog_training(tess.input_file_path.c_str());
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Ambigs"));
+    FILE *training_output_file = tess.init_recog_training(tess.input_file_path_.c_str());
     // OCR the page segmented into words by tesseract.
-    tess.recog_training_segmented(tess.input_file_path.c_str(), page_res_, monitor,
+    tess.recog_training_segmented(tess.input_file_path_.c_str(), page_res_, monitor,
                                          training_output_file);
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("The Main Recognition Phase"));
+    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
 #if !GRAPHICS_DISABLED
     if (scrollview_support) {
@@ -1276,7 +1389,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 
     // Now run the main recognition.
     if (!tess.paragraph_text_based) {
-      AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
+      AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
 #if !GRAPHICS_DISABLED
       if (scrollview_support) {
@@ -1285,7 +1398,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
     }
 
-    AutoPopDebugSectionLevel subsection_handle2(tesseract_, tess.PushSubordinatePixDebugSection("Recognize All Words"));
+    AutoPopDebugSectionLevel subsection_handle2(&tess, tess.PushSubordinatePixDebugSection("Recognize All Words"));
     if (tess.recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
 #if !GRAPHICS_DISABLED
       if (scrollview_support) {
@@ -1294,7 +1407,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
 #endif
       subsection_handle2.pop();
       if (tess.paragraph_text_based) {
-        AutoPopDebugSectionLevel subsection_handle(tesseract_, tess.PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
+        AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
 #if !GRAPHICS_DISABLED
         if (scrollview_support) {
@@ -1347,7 +1460,7 @@ static const char* NormalizationModeName(int mode) {
 // Grayscale normalization (preprocessing)
 bool TessBaseAPI::NormalizeImage(int mode) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Normalize Image"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Normalize Image"));
 
   if (!GetInputImage()) {
     tprintError("Please use SetImage before applying the image pre-processing steps.\n");
@@ -1385,21 +1498,21 @@ Pix* TessBaseAPI::GetVisibleImage() {
 }
 
 const char *TessBaseAPI::GetInputName() {
-  if (tesseract_ != nullptr && !tesseract_->input_file_path.empty()) {
-    return tesseract_->input_file_path.c_str();
+  if (tesseract_ != nullptr && !tesseract_->input_file_path_.empty()) {
+    return tesseract_->input_file_path_.c_str();
   }
   return nullptr;
 }
 
 const char * TessBaseAPI::GetVisibleImageFilename() {
-  if (!visible_image_file_.empty()) {
-    return visible_image_file_.c_str();
+  if (tesseract_ != nullptr && !tesseract_->visible_image_file_path_.empty()) {
+    return tesseract_->visible_image_file_path_.c_str();
   }
   return nullptr;
 }
 
 const char *TessBaseAPI::GetDatapath() {
-  return tesseract().datadir.c_str();
+  return tesseract().datadir_.c_str();
 }
 
 int TessBaseAPI::GetSourceYResolution() {
@@ -1557,7 +1670,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel section_handle(tesseract_, tess.PushSubordinatePixDebugSection("Process pages"));
+  AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Process pages"));
   
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
 #if !DISABLED_LEGACY_ENGINE
@@ -1759,7 +1872,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel page_level_handle(tesseract_, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tess.tessedit_page_number))));
+  AutoPopDebugSectionLevel page_level_handle(&tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tess.tessedit_page_number))));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
   SetInputName(filename);
@@ -2544,7 +2657,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
 
-  tess.classify_enable_learning = 0;
+  tess.classify_enable_learning = false;
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
   if (tess.applybox_debug) {
@@ -2684,7 +2797,7 @@ int TessBaseAPI::IsValidWord(const char *word) const {
 }
 // Returns true if utf8_character is defined in the UniCharset.
 bool TessBaseAPI::IsValidCharacter(const char *utf8_character) const {
-  return tesseract().unicharset.contains_unichar(utf8_character);
+  return tesseract().unicharset_.contains_unichar(utf8_character);
 }
 
 // TODO(rays) Obsolete this function and replace with a more aptly named
@@ -2955,8 +3068,7 @@ int TessBaseAPI::FindLines() {
       TessdataManager mgr(reader_);
       std::vector<std::string> nil;
       if (datapath_.empty()) {
-        tprintWarn(
-            "Auto orientation and script detection requested,"
+        tprintWarn("Auto orientation and script detection requested,"
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
@@ -2973,7 +3085,7 @@ int TessBaseAPI::FindLines() {
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
-  if (tess.SegmentPage(tess.input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
+  if (tess.SegmentPage(tess.input_file_path_.c_str(), block_list_, osd_tess, &osr) < 0) {
     return -1;
   }
 
@@ -3074,7 +3186,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     tess.AddPixDebugPage(tess.pix_binary(), "DetectOS : Thresholded Image");
   }
 
-  return tess.orientation_and_script_detection(tess.input_file_path.c_str(), osr) > 0;
+  return tess.orientation_and_script_detection(tess.input_file_path_.c_str(), osr) > 0;
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
@@ -3156,7 +3268,7 @@ void TessBaseAPI::DetectParagraphs(bool after_text_recognition) {
 
 /** This method returns the string form of the specified unichar. */
 const char *TessBaseAPI::GetUnichar(int unichar_id) const {
-  return tesseract().unicharset.id_to_unichar(unichar_id);
+  return tesseract().unicharset_.id_to_unichar(unichar_id);
 }
 
 /** Return the pointer to the i-th dawg loaded into tesseract_ object. */
@@ -3255,7 +3367,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.debug_noise_removal.set_value(true, SRC);
 
-  tess.classify_debug_level.set_value(debug_all, SRC); // LSTM debug output is extremely noisy
+  tess.classify_debug_level.set_value(debug_all.value(), SRC); // LSTM debug output is extremely noisy
   tess.classify_learning_debug_level.set_value(9, SRC);
   tess.classify_debug_character_fragments.set_value(true, SRC);
   tess.classify_enable_adaptive_debugger.set_value(true, SRC);
@@ -3297,7 +3409,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.wordrec_debug_level.set_value(3, SRC);
 
-  dict.word_to_debug.set_value(true, SRC);
+  //dict.word_to_debug.set_value("", SRC);
 
   tess.scribe_save_grey_rotated_image.set_value(true, SRC);
   tess.scribe_save_binary_rotated_image.set_value(true, SRC);
@@ -3330,7 +3442,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
   tess.bidi_debug.set_value(true, SRC);
 
-  tess.chop_debug.set_value(true, SRC);
+  tess.chop_debug.set_value(3, SRC);
 
   tess.debug_baseline_fit.set_value(1, SRC); // 0..3
   tess.debug_baseline_y_coord.set_value(-2000, SRC);
@@ -3369,6 +3481,244 @@ void TessBaseAPI::SetupDefaultPreset() {
   tess.tessedit_create_txt.set_value(true, SRC);
 
   tess.ResyncVariablesInternally();
+}
+
+
+// sanity check for the imagelist expander below: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+static inline bool is_sane_imagelist_line(const char *p) {
+  while (*p) {
+    uint8_t c = *p++;
+    if (c < ' ' && c != '\t')
+      return false;
+  }
+  return true;
+}
+
+#if defined(_MSC_VER) && !defined(strtok_r)
+static inline char *strtok_r(char * s, const char * sep, char ** state) {
+  return strtok_s(s, sep, state);
+}
+#endif
+
+static void destroy_il_buffer(char *buf) {
+  free(buf);
+}
+
+std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std::vector<std::string>& paths) {
+  std::vector<ImagePageFileSpec> rv;
+  std::ostringstream errmsg;
+
+  for (auto spec : paths) {
+    // each item in the list must exist?
+    if (!fs::exists(spec)) {
+      errmsg << "Specified file does not exist. Path: " << spec << "\n";
+      goto continue_on_error;
+      //continue;
+    }
+
+    {
+      const size_t SAMPLESIZE = 8192;
+
+      // load the first ~8K and see if that chunk contains a decent set of file paths: is so, the heuristic says it's an imagelist, rather than an image file.
+      char scratch[SAMPLESIZE + 2];
+      ConfigFile f(spec); // not a problem that this one opens the file in "r" (CRLF conversion) mode: we're after text files and the others will quickly be discovered below.
+      if (!f) {
+        errmsg << "Cannot open/access specified file";
+        int ecode = errno;
+        if (ecode != E_OK) {
+          errmsg << " due to error: " << strerror(errno);
+        }
+        errmsg << ". Path: " << spec << "\n";
+        goto continue_on_error;
+        // continue;
+      }
+      auto l = fread(scratch, 1, SAMPLESIZE, f());
+      // when it's an imagelist, it MAY be smaller than our scratch buffer!
+      if (l == 0 || ferror(f())) {
+        errmsg << "Failed to read a first chunk of the specified file";
+        int ecode = errno;
+        if (ecode != E_OK) {
+          errmsg << " due to error: " << strerror(errno);
+        }
+        errmsg << ". Tried to read " << SAMPLESIZE << " bytes, received " << l << " bytes.  Path: " << spec << "\n";
+        goto continue_on_error;
+        // continue;
+      }
+      // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
+      scratch[l] = 0;
+      scratch[l + 1] = 0;
+
+      bool is_imagelist = true;
+      std::vector<char *> lines;
+      char *state = nullptr;
+      char *s = strtok_r(scratch, "\r\n", &state);
+      while (s) {
+        char *p = s + strspn(s, " \t");
+
+        // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+        if (!is_sane_imagelist_line(p)) {
+          is_imagelist = false;
+          break;
+        }
+
+        // skip comment lines and empty lines:
+        if (!strchr("#;", *p)) {
+          lines.push_back(s);
+        }
+
+        s = strtok_r(nullptr, "\r\n", &state);
+      }
+      // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
+      if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
+        // the last line will be damaged due to our sampling, so we better discard that one:
+        (void)lines.pop_back();
+      }
+
+      if (is_imagelist) {
+        int error_count = 0;
+        int sample_count = 0;
+        // validate the lines in the sample:
+        for (auto spec : lines) {
+          // parse and chop into 1..3 file paths: image;mask;overlay
+          state = nullptr;
+          int count = 0;
+          char *s = strtok_r(spec, ";", &state);
+          while (s) {
+            count++;
+            char *p = s + strspn(s, " \t");
+
+            // trim whitespace at the end...
+            char *e = p + strlen(p);
+            while (e > p) {
+              if (isspace(p[-1])) {
+                *p-- = 0;
+                continue;
+              }
+              break;
+            }
+
+            sample_count++;
+            if (!fs::exists(p)) {
+              error_count++;
+            }
+
+            s = strtok_r(nullptr, ";", &state);
+          }
+          if (count < 1 || count > 3) {
+            error_count++;
+          }
+        }
+
+        // we tolerate about 1-in-10 file errors here...
+        float err_ratio = error_count * 100.0f / sample_count;
+        is_imagelist = (err_ratio < 10.0 /* percent */);
+      }
+
+      if (is_imagelist) {
+        // now that we know the sample is a sensible imagelist, grab the entire thing and parse it entirely...
+        const size_t listfilesize = fs::file_size(spec);
+
+        std::unique_ptr<char, void (*)(char *)> buffer((char *)malloc(listfilesize + 2), destroy_il_buffer);
+        if (!buffer) {
+          // TODO
+          continue;
+        }
+
+        // rewind file
+        fseek(f(), 0, SEEK_SET);
+        l = fread(buffer.get(), 1, listfilesize, f());
+        if (l != listfilesize || ferror(f())) {
+          // TODO
+          continue;
+        }
+        // make sure the sampled chunk is terminated before we go and parse it as a imagelist file (which may be damaged at the end as we sampled only the start of it!)
+        char *b = buffer.get();
+        b[l] = 0;
+        b[l + 1] = 0;
+
+        std::vector<char *> lines;
+        char *state = nullptr;
+        char *s = strtok_r(buffer.get(), "\r\n", &state);
+        while (s) {
+          char *p = s + strspn(s, " \t");
+
+          // sanity check: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.
+          if (!is_sane_imagelist_line(p)) {
+            is_imagelist = false;
+            break;
+          }
+
+          // skip comment lines and empty lines:
+          if (!strchr("#;", *p)) {
+            lines.push_back(s);
+          }
+
+          s = strtok_r(nullptr, "\r\n", &state);
+        }
+
+        // do we have a potentially sane imagelist? Do we need to truncate the damaged end, if it is?
+        if (l == SAMPLESIZE && is_imagelist && lines.size() >= 1) {
+          // the last line will be damaged due to our sampling, so we better discard that one:
+          (void)lines.pop_back();
+        }
+
+        int error_count = 0;
+        int sample_count = 0;
+        // parse & validate the lines:
+        for (auto spec : lines) {
+          // parse and chop into 1..3 file paths: image;mask;overlay
+          state = nullptr;
+          std::vector<std::string> fspecs;
+          char *s = strtok_r(spec, ";", &state);
+          while (s) {
+            char *p = s + strspn(s, " \t");
+
+            // trim whitespace at the end...
+            char *e = p + strlen(p);
+            while (e > p) {
+              if (isspace(p[-1])) {
+                *p-- = 0;
+                continue;
+              }
+              break;
+            }
+
+            sample_count++;
+            if (!fs::exists(p)) {
+              error_count++;
+            }
+
+            fspecs.push_back(p);
+
+            s = strtok_r(nullptr, ";", &state);
+          }
+          if (fspecs.size() < 1 || fspecs.size() > 3) {
+            error_count++;
+          } else {
+            ImagePageFileSpec sp = {fspecs[0]};
+            if (fspecs.size() > 1) {
+              sp.segment_mask_image_path = fspecs[1];
+            }
+            if (fspecs.size() > 2) {
+              sp.visible_page_image_path = fspecs[2];
+            }
+            rv.push_back(sp);
+          }
+        }
+      } else {
+        // not an image list: pick this one up as a sole image file spec:
+        goto continue_on_error;
+      }
+    }
+
+    if (false) {
+continue_on_error:
+      // treat situation as simple as possible: `spec` is not an image list; pick this one up as a sole image file spec:
+      ImagePageFileSpec sp = {spec};
+      rv.push_back(sp);
+    }
+  }
+  return rv;
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */
@@ -3478,7 +3828,6 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
     str[dpos++] = '_';
 
   f.resize(dpos);
-
 
   return std::move(f);
 }

@@ -157,7 +157,7 @@ bool LSTMRecognizer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   }
   bool include_charsets = mgr == nullptr || !mgr->IsComponentAvailable(TESSDATA_LSTM_RECODER) ||
                           !mgr->IsComponentAvailable(TESSDATA_LSTM_UNICHARSET);
-  if (include_charsets && !ccutil_.unicharset.load_from_file(fp, false)) {
+  if (include_charsets && !ccutil_.unicharset_.load_from_file(fp, false)) {
     return false;
   }
   if (!fp->DeSerialize(network_str_)) {
@@ -201,7 +201,7 @@ bool LSTMRecognizer::LoadCharsets(const TessdataManager *mgr) {
   if (!mgr->GetComponent(TESSDATA_LSTM_UNICHARSET, &fp)) {
     return false;
   }
-  if (!ccutil_.unicharset.load_from_file(&fp, false)) {
+  if (!ccutil_.unicharset_.load_from_file(&fp, false)) {
     return false;
   }
   if (!mgr->GetComponent(TESSDATA_LSTM_RECODER, &fp)) {
@@ -244,10 +244,10 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::st
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&ccutil_);
-  dict_->user_words_file.ResetFrom(params);
-  dict_->user_words_suffix.ResetFrom(params);
-  dict_->user_patterns_file.ResetFrom(params);
-  dict_->user_patterns_suffix.ResetFrom(params);
+  dict_->user_words_file.ResetToDefault(params);
+  dict_->user_words_suffix.ResetToDefault(params);
+  dict_->user_patterns_file.ResetToDefault(params);
+  dict_->user_patterns_suffix.ResetToDefault(params);
   dict_->SetupForLoad(Dict::GlobalDawgCache());
   dict_->LoadLSTM(lang, mgr);
   if (dict_->FinishLoad()) {
@@ -664,13 +664,13 @@ const char *LSTMRecognizer::DecodeSingleLabel(int label) {
 
 
 void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_prefix) {
-  ccutil_.language_data_path_prefix = language_data_path_prefix;
+  ccutil_.language_data_path_prefix_ = language_data_path_prefix;
 }
 
 void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
   if (src != nullptr && &ccutil_ != src) {
-      ccutil_.ambigs_debug_level = (int)src->ambigs_debug_level;
-      ccutil_.use_ambigs_for_adaption = (bool)src->use_ambigs_for_adaption;
+    ccutil_.ambigs_debug_level = src->ambigs_debug_level.value();
+    ccutil_.use_ambigs_for_adaption = src->use_ambigs_for_adaption.value();
   }
 
   if (dict_ != nullptr && dict_ != dict_src) {
