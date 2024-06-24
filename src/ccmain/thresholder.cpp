@@ -471,6 +471,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   int r = 0;
   l_int32 threshold_val = 0;
 
+  // TODO: code/history review why we don't use pix_grey here; 
+  // initial check points the finger at myself when I merged in the NlBin threshold algo, 
+  // which likes to also do its own to-greyscale conversion, which should really be done before, 
+  // in a previous stage in tesseract proper, rather than *specifically for NlBin only*. 
+  // Code/flow review required.
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
@@ -503,8 +508,9 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
+	// TODO: make sure every thresholding method reports a log line like this.
     if (tesseract_->thresholding_debug) {
-      tprintDebug("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
+      tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
