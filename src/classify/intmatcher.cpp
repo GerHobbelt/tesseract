@@ -1001,7 +1001,6 @@ void IntegerMatcher::DisplayProtoDebugInfo(INT_CLASS_STRUCT *ClassTemplate, BIT_
                                            const ScratchEvidence &tables,
                                            bool SeparateDebugWindows) {
   uint16_t ProtoNum;
-  uint16_t ActualProtoNum;
   PROTO_SET_STRUCT *ProtoSet;
   int ProtoSetIndex;
 
@@ -1013,7 +1012,7 @@ void IntegerMatcher::DisplayProtoDebugInfo(INT_CLASS_STRUCT *ClassTemplate, BIT_
 
   for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
     ProtoSet = ClassTemplate->ProtoSets[ProtoSetIndex];
-    ActualProtoNum = ProtoSetIndex * PROTOS_PER_PROTO_SET;
+    uint16_t ActualProtoNum = ProtoSetIndex * PROTOS_PER_PROTO_SET;
     for (ProtoNum = 0;
          ((ProtoNum < PROTOS_PER_PROTO_SET) && (ActualProtoNum < ClassTemplate->NumProtos));
          ProtoNum++, ActualProtoNum++) {
@@ -1086,13 +1085,12 @@ void ScratchEvidence::UpdateSumOfProtoEvidences(INT_CLASS_STRUCT *ClassTemplate,
   uint16_t ProtoNum;
   PROTO_SET_STRUCT *ProtoSet;
   int NumProtos;
-  uint16_t ActualProtoNum;
 
   NumProtos = ClassTemplate->NumProtos;
 
   for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
     ProtoSet = ClassTemplate->ProtoSets[ProtoSetIndex];
-    ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
+    uint16_t ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
     for (ProtoNum = 0; ((ProtoNum < PROTOS_PER_PROTO_SET) && (ActualProtoNum < NumProtos));
          ProtoNum++, ActualProtoNum++) {
       int temp = 0;
