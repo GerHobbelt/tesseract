@@ -1375,7 +1375,7 @@ bool TessBaseAPI::NormalizeImage(int mode) {
 
   Image pix = thresholder_->GetPixNormRectGrey();
   if (tess.debug_image_normalization) {
-    tess.AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin(Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
+    tess.AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin (Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
   }
   if (mode == 1) {
     SetInputImage(pix);
@@ -3091,7 +3091,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     }
     tess.set_pix_binary(pix);
 
-    tess.AddPixDebugPage(tess.pix_binary(), "DetectOS : Thresholded Image");
+    tess.AddPixDebugPage(tess.pix_binary(), "DetectOS (Orientation and Script) : Thresholded Image");
   }
 
   return tess.orientation_and_script_detection(tess.input_file_path_.c_str(), osr) > 0;
