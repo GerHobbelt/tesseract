@@ -31,6 +31,9 @@
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
 #include <sstream> // std::ostringstream
+#include <type_traits>
+
+#include <cpp/result.hpp>      // alternative for C++23 std::expected<>
 
 #include <leptonica/allheaders.h>
 #if LIBLEPT_MINOR_VERSION > 82
@@ -463,6 +466,33 @@ bool std::filesystem::exists(const char* filename) {
 #endif
 }
 
+//using loglevel_return_type = std::expected<int, bool>;
+using loglevel_return_type = cpp::result<int, bool>;
+
+static loglevel_return_type ParseLogLevel(const char *loglevel) {
+  // Allow the log levels which are used by log4cxx.
+  const std::string loglevel_string = loglevel;
+  static const std::map<const std::string, int> loglevels{
+      {"ALL", INT_MIN},
+      {"TRACE", 5000},
+      {"DEBUG", 10000},
+      {"INFO", 20000},
+      {"WARN", 30000},
+      {"ERROR", 40000},
+      {"FATAL", 50000},
+      {"OFF", INT_MAX},
+  };
+  try {
+    transform(loglevel_string.begin(), loglevel_string.end(), loglevel_string.begin(), ::toupper);
+    int loglevel = loglevels.at(loglevel_string);
+    return loglevel;
+  } catch (const std::out_of_range &e) {
+    // TODO: Allow numeric argument?
+    tprintError("Unsupported --loglevel {}\n", loglevel);
+    return cpp::fail(false);
+  }
+}
+
 static bool ParseArgs(int argc, const char** argv,
                       bool* do_recognize, bool* list_langs,
                       bool* print_parameters, bool* print_fonts_table,
@@ -474,6 +504,12 @@ static bool ParseArgs(int argc, const char** argv,
   *print_parameters = false;
   *print_fonts_table = false;
 
+  enum ParserState : int {
+    PARSED_INPUT_IMAGE = 0x01,
+	PARSED_OUTPUT_BASEDIR = 0x02,
+	PARSED_CONFIG_FILESET = 0x04
+  };
+  
   int i = 1;
   if (i < argc) {
     const char* verb = argv[i];
@@ -511,76 +547,109 @@ static bool ParseArgs(int argc, const char** argv,
   }
   bool noocr = false;
   bool dash_dash = false;
-  int state = 0;
+#define PUSH_VALUE_OR_YAK()                                                                                 \
+  if (i + 1 < argc) {                                                                                       \
+    i++;                                                                                                    \
+    vars_values->push_back(argv[i]);                                                                   \
+  }                                                                                                         \
+  else {                                                                                                    \
+    tprintError("Command line option '{}' is given without any value to assign.\n", argv[i]);  \
+    return false;                                                                                           \
+  }
+
+  int state = 0; // bitfield, marking each phase done.
   for (i = 1; i < argc; i++) {
+if (!dash_dash) {
     if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
       PrintHelpMessage(argv[0]);
       noocr = true;
+	  continue;
     } else if (strcmp(argv[i], "--help-extra") == 0) {
         PrintHelpExtra(argv[0]);
       noocr = true;
+	  continue;
     } else if ((strcmp(argv[i], "--help-psm") == 0)) {
       PrintHelpForPSM();
       noocr = true;
+	  continue;
 #if !DISABLED_LEGACY_ENGINE
     } else if ((strcmp(argv[i], "--help-oem") == 0)) {
       PrintHelpForOEM();
       noocr = true;
+	  continue;
 #endif
     } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--version") == 0)) {
       PrintVersionInfo();
       noocr = true;
-    } else if (strcmp(argv[i], "-l") == 0 && i + 1 < argc) {
-      vars_vec->push_back("languages");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--tessdata-dir") == 0 && i + 1 < argc) {
-      vars_vec->push_back("tessdata_path");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--dpi") == 0 && i + 1 < argc) {
-      vars_vec->push_back("source_image_dpi");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
-      vars_vec->push_back("loglevel");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--user-words") == 0 && i + 1 < argc) {
+	  continue;
+    } else if (strcmp(argv[i], "-l") == 0) {
+      vars_vec->push_back("languages");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--tessdata-dir") == 0) {
+      vars_vec->push_back("tessdata_path");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--dpi") == 0) {
+      vars_vec->push_back("source_image_dpi");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--loglevel") == 0) {
+      vars_vec->push_back("loglevel");                            // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--user-words") == 0) {
       vars_vec->push_back("user_words_file");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--user-patterns") == 0 && i + 1 < argc) {
+      PUSH_VALUE_OR_YAK();
+	  continue;
+    } else if (strcmp(argv[i], "--user-patterns") == 0) {
       vars_vec->push_back("user_patterns_file");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
+      PUSH_VALUE_OR_YAK();
+      continue;
     } else if (strcmp(argv[i], "--list-langs") == 0) {
       noocr = true;
       *list_langs = true;
-    } else if (strcmp(argv[i], "--rectangle") == 0 && i + 1 < argc) {
-      vars_vec->push_back("reactangle_to_process");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
-      vars_vec->push_back("page_segmenting_mode");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
-    } else if (strcmp(argv[i], "--oem") == 0 && i + 1 < argc) {
-      vars_vec->push_back("engine_mode");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
+	  continue;
+    } else if (strcmp(argv[i], "--rectangle") == 0) {
+      vars_vec->push_back("reactangle_to_process");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--outputbase") == 0) {
+      vars_vec->push_back("output_base_path");                       // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      state |= PARSED_OUTPUT_BASEDIR;
+	  continue;
+    } else if (strcmp(argv[i], "--config") == 0) {
+      PUSH_VALUE_OR_YAK();                                                  // [i_a] NEW
+      state |= PARSED_CONFIG_FILESET;
+	  continue;
+    } else if (strcmp(argv[i], "--psm") == 0) {
+      vars_vec->push_back("page_segmenting_mode");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--oem") == 0) {
+      vars_vec->push_back("engine_mode");                   // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
     } else if (strcmp(argv[i], "--print-parameters") == 0) {
       noocr = true;
       *print_parameters = true;
+	  continue;
 #if !DISABLED_LEGACY_ENGINE
     } else if (strcmp(argv[i], "--print-fonts-table") == 0) {
       noocr = true;
       *print_fonts_table = true;
+	  continue;
 #endif  // !DISABLED_LEGACY_ENGINE
-    } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+    } else if (strcmp(argv[i], "-c") == 0) {
       // handled properly after api init
+      if (i + 1 >= argc) {
+        tprintError("Command line option '-c' is given without a parameter=value assignment following.\n");
+        return false;
+      }
       const char *var_stmt = argv[i + 1];
       ++i;
+
       const char *p = strchr(var_stmt, '=');
       if (!p) {
         tprintError("Missing '=' in '-c' configvar assignment statement: '{}'\n", var_stmt);
@@ -589,44 +658,76 @@ static bool ParseArgs(int argc, const char** argv,
       std::string name(var_stmt, p - var_stmt);
       vars_vec->push_back(name);
       vars_values->push_back(p + 1);
-    } else if (strcmp(argv[i], "--visible-pdf-image") == 0 && i + 1 < argc) {
-      vars_vec->push_back("visible_pdf_image");
-      vars_values->push_back(argv[i + 1]);
-      ++i;
+	  continue;
+    } else if (strcmp(argv[i], "--source-image") == 0) {
+      vars_vec->push_back("source_image");                              // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--mixed-masks-image") == 0) {
+      vars_vec->push_back("mixed_masks_image");                              // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--threshold-level-image") == 0) {
+      vars_vec->push_back("threshold_level_image");                              // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--text-mask-image") == 0) {
+      vars_vec->push_back("text_mask_image");                              // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--nontext-mask-image") == 0) {
+      vars_vec->push_back("nontext_mask_image");                              // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
+    } else if (strcmp(argv[i], "--visible-pdf-image") == 0) {
+      vars_vec->push_back("visible_pdf_image");                       // [i_a] NEW
+      PUSH_VALUE_OR_YAK();
+      continue;
     } else if (strcmp(argv[i], "--") == 0) {
       dash_dash = true;
-    } else if (state == 0 && (dash_dash || argv[i][0] != '-')) {
-      // first + second non-opt argument: the SOURCE IMAGE,
-      vars_vec->push_back("source_image");
+	  continue;
+    } 
+	}
+	if (dash_dash || argv[i][0] != '-') {
+		if (!(state & PARSED_INPUT_IMAGE)) {
+      // first non-opt argument: the SOURCE IMAGE,
+      vars_vec->push_back("source_image");                   // [i_a] NEW
       vars_values->push_back(argv[i]);
       // outputbase follows image, DO allow options in between.
-      ++state;
-    } else if (state == 1 && (dash_dash || argv[i][0] != '-')) {
+      state |= PARSED_INPUT_IMAGE;
+	  continue;
+    } else if (!(state & PARSED_OUTPUT_BASEDIR)) {
       // second non-opt argument: the OUTPUTBASE (follows image)
-      vars_vec->push_back("output_base_path");
+      vars_vec->push_back("output_base_path");                   // [i_a] NEW
       vars_values->push_back(argv[i]);
-      ++state;
-    } else if (state == 2 && (dash_dash || argv[i][0] != '-')) {
+      state |= PARSED_OUTPUT_BASEDIR;
+	  continue;
+    } else if ((state & PARSED_OUTPUT_BASEDIR) && (state & PARSED_INPUT_IMAGE)) {
       // third and further non-opt arguments: the (optional) CONFIG FILES
       config_files->push_back(argv[i]);
-    } else {
+	  state |= PARSED_CONFIG_FILESET;
+	  continue;
+    }
+	}
+	 
       // Unexpected argument.
       tprintError("Unknown command line argument '{}'\n", argv[i]);
       return false;
-    }
   }
 
-  if (state < 1 && noocr == false) {
+  if (!(state & PARSED_INPUT_IMAGE) && noocr == false) {
     tprintError("Missing input image command line argument.\n");
     PrintVeryShortHelpMessage(argv[0]);
     return false;
   }
 
-  if (state < 2 && noocr == false) {
+  if (!(state & PARSED_OUTPUT_BASEDIR) && noocr == false) {
     tprintError("Missing output base path command line argument.\n");
     PrintVeryShortHelpMessage(argv[0]);
     return false;
   }
+
+#undef PUSH_VALUE_OR_YAK
 
   *do_recognize = !noocr;
   return true;
@@ -852,15 +953,15 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   (void)tesseract::SetConsoleModeToUTF8();
 
-  const char *lang = nullptr;
-  const char *image = nullptr;
-  const char *visible_image_file = nullptr;
-  const char *outputbase = nullptr;
+  //const char *lang = nullptr;
+  //const char *image = nullptr;
+  //const char *visible_image_file = nullptr;
+  //const char *outputbase = nullptr;
   const char *datapath = nullptr;
-  const char *visible_pdf_image_file = nullptr;
-  bool rectangle_mode = false;
+  //const char *visible_pdf_image_file = nullptr;
+  //bool rectangle_mode = false;
   bool do_recognize = false;
-  const char* rectangle_str = NULL;
+  //const char* rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
@@ -905,21 +1006,28 @@ extern "C" int tesseract_main(int argc, const char** argv)
     TessBaseAPI api;
       Tesseract &tess = api.tesseract();
 
+    if (!api.InitParameters(vars_vec, vars_values)) {
+        return EXIT_FAILURE;
+      }
+
+      // set up the debug_all preset; the preset does not overrule any previously configured parameter values!
+      SetupDebugAllPreset(api);
+
   if (tess.tessedit_pageseg_mode == tesseract::PSM_OSD_ONLY) {
     // OSD = orientation and script detection.
-    if (lang != nullptr && strcmp(lang, "osd")) {
+    if (!tess.languages_to_try.empty() && tess.languages_to_try != "osd") {
       // If the user explicitly specifies a language (other than osd)
       // or a script, only orientation can be detected.
-      tprintWarn("Detects only orientation with -l {}\n", lang);
-    } else {
+      tprintWarn("Detects only orientation with -l {}\n", tess.languages_to_try.c_str());
+    } else if (tess.languages_to_try.empty()) {
       // That mode requires osd.traineddata to detect orientation and script.
-      lang = "osd";
+      tess.languages_to_try.set_value("osd");
     }
   }
 
-  if (lang == nullptr && do_recognize) {
+  if (tess.languages_to_try.empty() && do_recognize) {
     // Set default language model if none was given and a model file is needed.
-    lang = "eng";
+    tess.languages_to_try.set_value("eng");
   }
 
   if (image == nullptr && do_recognize) {
@@ -934,13 +1042,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 
     api.SetOutputName(outputbase);
-
-    if (!api.InitParameters(vars_vec, vars_values)) {
-      return EXIT_FAILURE;
-    }
-
-    // set up the debug_all preset; the preset does not overrule any previously configured parameter values!
-    SetupDebugAllPreset(api);
 
     const int init_failed = api.InitFull(datapath, lang, enginemode, config_files);
 
