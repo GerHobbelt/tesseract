@@ -572,10 +572,11 @@ public:
   // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem,
                      const std::vector<std::string> &configs,
                      TessdataManager *mgr);
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
+  int init_tesseract(const std::string &datapath, TessdataManager *mgr);
 
   // Common initialization for a single language.
   // 

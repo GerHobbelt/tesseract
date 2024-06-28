@@ -925,13 +925,6 @@ bool Tesseract::AnyLSTMLang() const {
   return false;
 }
 
-int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
-  TessdataManager mgr;
-  std::vector<std::string> nil;
-
-  return init_tesseract(datapath, {}, language, oem, nil, &mgr);
-}
-
 // debug PDF output helper methods:
 void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
   if (pix == nullptr)
