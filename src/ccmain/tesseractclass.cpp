@@ -929,7 +929,7 @@ int Tesseract::init_tesseract(const std::string &datapath, const std::string &la
   TessdataManager mgr;
   std::vector<std::string> nil;
 
-  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
+  return init_tesseract(datapath, {}, language, oem, nil, &mgr);
 }
 
 // debug PDF output helper methods:

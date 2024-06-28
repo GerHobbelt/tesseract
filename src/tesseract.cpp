@@ -333,30 +333,18 @@ static void PrintHelpMessage(const char *program) {
       program, program, program, program, program, program);
 }
 
-static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char** argv) {
-  bool success = true;
-  char opt1[256], opt2[255];
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
-      strncpy(opt1, argv[i + 1], 255);
-      opt1[255] = '\0';
-      char *p = strchr(opt1, '=');
-      if (!p) {
-        tprintError("Missing '=' in configvar assignment for '{}'\n", opt1);
-        success = false;
-        break;
-      }
-      *p = 0;
-      strncpy(opt2, strchr(argv[i + 1], '=') + 1, sizeof(opt2) - 1);
-      opt2[254] = 0;
-      ++i;
-
-      if (!api.SetVariable(opt1, opt2)) {
-        tprintError("Could not set option: {}={}\n", opt1, opt2);
-      }
-    }
-  }
-  return success;
+static void PrintVeryShortHelpMessage(const char *program) {
+  program = basename(program);
+  tprintInfo(
+      "\n",
+      "Run\n"
+      "  {} --help\n"
+      "for first order on-line help.\n"
+      "\n"
+      "We expected a commandline format like:\n"
+      "  {} [options...] <imagename> <outputbase> [options...] [<configfile>...]\n"
+      "\n",
+      program, program);
 }
 
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
@@ -611,16 +599,14 @@ static bool ParseArgs(int argc, const char** argv,
       // first + second non-opt argument: the SOURCE IMAGE,
       vars_vec->push_back("source_image");
       vars_values->push_back(argv[i]);
-      ++i;
-      if (i == argc) {
-        tprintError("Missing outputbase command line argument.\n");
-        return false;
-      }
-      // outputbase follows image, don't allow options at that position.
+      // outputbase follows image, DO allow options in between.
+      ++state;
+    } else if (state == 1 && (dash_dash || argv[i][0] != '-')) {
+      // second non-opt argument: the OUTPUTBASE (follows image)
       vars_vec->push_back("output_base_path");
       vars_values->push_back(argv[i]);
       ++state;
-    } else if (state == 1 && (dash_dash || argv[i][0] != '-')) {
+    } else if (state == 2 && (dash_dash || argv[i][0] != '-')) {
       // third and further non-opt arguments: the (optional) CONFIG FILES
       config_files->push_back(argv[i]);
     } else {
@@ -631,7 +617,14 @@ static bool ParseArgs(int argc, const char** argv,
   }
 
   if (state < 1 && noocr == false) {
-    PrintHelpMessage(argv[0]);
+    tprintError("Missing input image command line argument.\n");
+    PrintVeryShortHelpMessage(argv[0]);
+    return false;
+  }
+
+  if (state < 2 && noocr == false) {
+    tprintError("Missing output base path command line argument.\n");
+    PrintVeryShortHelpMessage(argv[0]);
     return false;
   }
 
@@ -940,25 +933,16 @@ extern "C" int tesseract_main(int argc, const char** argv)
   tesseract::Dict::GlobalDawgCache();
 #endif
 
-
     api.SetOutputName(outputbase);
 
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
+    if (!api.InitParameters(vars_vec, vars_values)) {
       return EXIT_FAILURE;
     }
 
-    const int init_failed = api.InitFull(datapath, lang, enginemode, config_files, vars_vec, vars_values, false);
-
-    // make sure the debug_all preset is set up BEFORE any command-line arguments
-    // direct tesseract to set some arbitrary parameters just below,
-    // for otherwise those `-c xyz=v` commands may be overruled by the
-    // debug_all preset!
+    // set up the debug_all preset; the preset does not overrule any previously configured parameter values!
     SetupDebugAllPreset(api);
 
-    // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
-    }
+    const int init_failed = api.InitFull(datapath, lang, enginemode, config_files);
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();

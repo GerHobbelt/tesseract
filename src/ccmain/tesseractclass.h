@@ -525,7 +525,46 @@ public:
   int16_t count_alphanums(const WERD_CHOICE &word);
   int16_t count_alphas(const WERD_CHOICE &word);
 
+  // Read a configuration file carrying a set of tesseract parameters.
+  // Any parameter (listed in the config file) which has not been set yet, will
+  // be set, while already set-up parameters are silently skipped.
+  // Thus we can establish an easy order of precendence, where
+  // first-come-first-serve i.e. the first occurrence of a parameter
+  // determines its value.
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
   void read_config_file(const char *filename);
+
+  // Set each to the specified parameters to the given value, iff the parameter
+  // has not been set yet.
+  // Invoking this call before invoking read_config_file() will override
+  // the setting in the config file for each of the listed variables.
+  //
+  // Return false when unknown parameters are listed in the vector;
+  // otherwise return true (already set parameters will have been skipped
+  // silently).
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
+  bool InitParameters(const std::vector<std::string> &vars_vec,
+                       const std::vector<std::string> &vars_values);
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values will not be altered by this call; use this
+  // method if you want to keep the currently active parameter values as a kind
+  // of 'good initial setup' for any subsequent teseract action.
+  void ReadyParametersForReinitialization();
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values are reset to their factory defaults by this call.
+  void ResetParametersToFactoryDefault();
 
   // Initialize for potentially a set of languages defined by the language
   // string and recursively any additional languages required by any language
@@ -533,11 +572,8 @@ public:
   // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem, 
-				     const std::vector<std::string> &configs,
-				     const std::vector<std::string> &vars_vec,
-				     const std::vector<std::string> &vars_values,
-                     bool set_only_non_debug_params,
+                     const std::string &language, OcrEngineMode oem,
+                     const std::vector<std::string> &configs,
                      TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
 
@@ -564,8 +600,6 @@ public:
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
                               const std::string &language, OcrEngineMode oem, 
 						                  const std::vector<std::string> &configs,
-						                  const std::vector<std::string> &vars_vec,
-						                  const std::vector<std::string> &vars_values,
                               TessdataManager *mgr);
 
 #if !DISABLED_LEGACY_ENGINE
@@ -580,8 +614,6 @@ public:
   bool init_tesseract_lang_data(const std::string &arg0,
                                 const std::string &language, OcrEngineMode oem, 
 							                  const std::vector<std::string> &configs,
-							                  const std::vector<std::string> &vars_vec,
-							                  const std::vector<std::string> &vars_values,
                                 TessdataManager *mgr);
 
   void ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,

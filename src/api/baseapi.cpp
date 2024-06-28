@@ -371,7 +371,7 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  tesseract().output_base_filename.set_value(name);
+  tesseract().output_base_filename.set_value(name, PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
@@ -379,11 +379,23 @@ const std::string &TessBaseAPI::GetOutputName() {
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective());
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 bool TessBaseAPI::SetVariable(const char *name, int value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective());
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+}
+
+bool TessBaseAPI::SetVariable(const char *name, bool value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+}
+
+bool TessBaseAPI::SetVariable(const char *name, double value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+}
+
+bool TessBaseAPI::SetVariable(const char *name, const std::string &value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
@@ -432,6 +444,24 @@ bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const 
   }
   return false;
 }
+
+
+bool TessBaseAPI::InitParameters(const std::vector<std::string> &vars_vec,
+                                 const std::vector<std::string> &vars_values) {
+  Tesseract &tess = tesseract();
+  return tess.InitParameters(vars_vec, vars_values);
+}
+
+void TessBaseAPI::ReadyParametersForReinitialization() {
+  Tesseract &tess = tesseract();
+  tess.ReadyParametersForReinitialization();
+}
+
+void TessBaseAPI::ResetParametersToFactoryDefault() {
+  Tesseract &tess = tesseract();
+  tess.ResetParametersToFactoryDefault();
+}
+
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -521,64 +551,45 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * @return: 0 on success and -1 on initialization failure.
  */
 int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, 
-                    const std::vector<std::string> &configs,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values, 
-                    bool set_only_non_debug_params) {
-  return InitFullRemainder(datapath, nullptr, 0, language, oem, configs, vars_vec, vars_values,
-              set_only_non_debug_params, nullptr);
+                    const std::vector<std::string> &configs) {
+  return InitFullRemainder(datapath, nullptr, 0, language, oem, configs, nullptr);
 }
 
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
   std::vector<std::string> nil;
-  return InitFullRemainder(datapath, nullptr, 0, language, oem, nil, nil, nil, false, nullptr);
+  return InitFullRemainder(datapath, nullptr, 0, language, oem, nil, nullptr);
 }
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
   std::vector<std::string> nil;
-  return InitFullRemainder(datapath, nullptr, 0, language, OEM_DEFAULT, nil, nil, nil, false, nullptr);
+  return InitFullRemainder(datapath, nullptr, 0, language, OEM_DEFAULT, nil, nullptr);
 }
 
 // In-memory version reads the traineddata file directly from the given
 // data[data_size] array. Also implements the version with a datapath in data,
 // flagged by data_size = 0.
 int TessBaseAPI::InitFromMemory(const char *data, int data_size, const char *language, OcrEngineMode oem,
-                    const std::vector<std::string> &configs,
-                      const std::vector<std::string> &vars_vec,
-                      const std::vector<std::string> &vars_values, 
-                      bool set_only_non_debug_params) 
+                    const std::vector<std::string> &configs) 
 {
   return InitFullRemainder(nullptr, data, data_size, language,
     oem,
     configs,
-    vars_vec,
-    vars_values, 
-    set_only_non_debug_params,
     nullptr);
 }
 
 int TessBaseAPI::InitFullWithReader(const char *path, const char *language, OcrEngineMode oem,
   const std::vector<std::string> &configs,
-  const std::vector<std::string> &vars_vec,
-  const std::vector<std::string> &vars_values, 
-  bool set_only_non_debug_params,
   FileReader reader) 
 {
   return InitFullRemainder(path, nullptr, 0, language,
     oem,
     configs,
-    vars_vec,
-    vars_values, 
-    set_only_non_debug_params,
     reader);
 }
 
 int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_size, const char *language,
     OcrEngineMode oem,
     const std::vector<std::string> &configs,
-    const std::vector<std::string> &vars_vec,
-    const std::vector<std::string> &vars_values, 
-    bool set_only_non_debug_params,
     FileReader reader) 
 {
   Tesseract &tess = tesseract();
@@ -623,7 +634,6 @@ int TessBaseAPI::InitFullRemainder(const char *path, const char *data, int data_
       mgr.LoadMemBuffer(language, data, data_size);
     }
     if (tesseract_->init_tesseract(datapath, output_file_, language, oem, configs,
-                                   vars_vec, vars_values, set_only_non_debug_params,
                                    &mgr) != 0) {
       return -1;
     }
@@ -708,7 +718,7 @@ void TessBaseAPI::ReadConfigFile(const char *filename) {
  * ReadConfigFile or SetVariable("tessedit_pageseg_mode", mode as string).
  */
 void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
-  tesseract().tessedit_pageseg_mode.set_value(mode);
+  tesseract().tessedit_pageseg_mode.set_value(mode, PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 /** Return the current page segmentation mode. */
@@ -1555,7 +1565,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   }
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
-    tess.applybox_page.set_value(pgn);
+    tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {
@@ -2979,7 +2989,7 @@ int TessBaseAPI::FindLines() {
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
       } else if (osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY,
-                                                nil, nil, nil, false, &mgr) == 0) {
+                                                nil, &mgr) == 0) {
         osd_tess = osd_tesseract_;
         osd_tesseract_->set_source_resolution(thresholder_->GetSourceYResolution());
       } else {
@@ -3099,7 +3109,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 #endif // !DISABLED_LEGACY_ENGINE
 
 void TessBaseAPI::set_min_orientation_margin(double margin) {
-  tesseract().min_orientation_margin.set_value(margin);
+  tesseract().min_orientation_margin.set_value(margin, PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 /**
@@ -3204,7 +3214,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
   Tesseract& tess = tesseract();
   Textord &textord = *tess.mutable_textord();
   
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_ASSIGN;
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
 
   verbose_process.set_value(true, SRC);
   
@@ -3373,7 +3383,7 @@ void TessBaseAPI::SetupDebugAllPreset() {
 
 void TessBaseAPI::SetupDefaultPreset() {
   Tesseract &tess = tesseract();
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_ASSIGN;
+  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
 
   // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
   tess.tessedit_create_hocr.set_value(true, SRC);

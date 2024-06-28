@@ -24,6 +24,7 @@
 #include <tesseract/export.h> // for TESS_API
 #include "tprintf.h"          // for printf (when debugging this code)
 #include "mupdf/assertions.h" // for ASSERT
+#include <tesseract/fmt-support.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -55,15 +56,31 @@ enum ParamType {
 
 	ANY_TYPE_PARAM = 15,
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(ParamType);
 
+static inline auto format_as(ParamType t) {
+  return fmt::underlying(t);
+}
+
+// The method used to set the parameter. Works as a precedence order, where PARAM_VALUE_IS_RESET and PARAM_VALUE_IS_DEFAULT always execute,
+// PARAM_VALUE_IS_SET_BY_ASSIGN et al may set the parameter only once (until it is 'reset'), while
+// PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS is the takes-no-prisoners override anything level.
 enum ParamSetBySourceType {
 	PARAM_VALUE_IS_DEFAULT = 0,
 
 	PARAM_VALUE_IS_RESET,
-	PARAM_VALUE_IS_SET_BY_ASSIGN,			// 'indirect' write: value is copied over from elsewhere via operator=.
-	PARAM_VALUE_IS_SET_BY_PARAM,			// 'indirect' write: other Param's OnChange code set the param value, whatever it is now.
-	PARAM_VALUE_IS_SET_BY_APPLICATION,		// 'explicit' write: user / application code set the param value, whatever it is now.
+  PARAM_VALUE_IS_SET_BY_PRESET,              // 'indirect' write: the param value is configured through a chosen preset (template).
+  PARAM_VALUE_IS_SET_BY_CONFIG,              // 'direct' write: value is picked up from a configuration set, probably a config file which has been loaded.
+  PARAM_VALUE_IS_SET_BY_ASSIGN,              // 'direct' write: value is copied over from elsewhere via operator=.
+  PARAM_VALUE_IS_SET_BY_PARAM,               // 'indirect' write: other Param's OnChange code set the param value, if it hasn't already been set by assignment (or higher precedence level).
+  PARAM_VALUE_IS_SET_BY_APPLICATION,         // 'explicit' write: user / application code set the param value, if it hasn't laready been set by assignment (or higher precedence level).
+  PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS, // 'explicit' write: tesseract internals alter the param value, whatever it is now (highest precedence; overrides anyone and everyone).
 };
+DECL_FMT_FORMAT_TESSENUMTYPE(ParamSetBySourceType);
+
+static inline auto format_as(ParamSetBySourceType t) {
+  return fmt::underlying(t);
+}
 
 
 // Custom equivalent of std::hash<Param> + std::equal_to<Param> for std::unordered_map<const char *key, Param & value>.
@@ -484,6 +501,8 @@ public:
   // When `set` is empty, the `GlobalParams()` vector will be assumed instead.
   static void ReportParamsUsageStatistics(FILE *fp, const ParamsVectorSet &set, const char *section_title = nullptr);
 
+  static void ReadyParametersForReinitialization(const ParamsVectorSet &set, SOURCE_TYPE);
+
   // Resets all parameters back to default values;
   static void ResetToDefaults(const ParamsVectorSet &set, SOURCE_TYPE);
 };
@@ -701,7 +720,12 @@ protected:
   
   mutable access_counts_t access_counts_;
 };
+DECL_FMT_FORMAT_TESSOBJTYPE(Param);
 
+static inline auto format_as(const Param &t) {
+  auto s = fmt::format("{}({}):{}", t.name_str(), t.value_type_str(), t.formatted_value_str());
+  return s;
+}
 
 class IntParam : public Param {
 public:

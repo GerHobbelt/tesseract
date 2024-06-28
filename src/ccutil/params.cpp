@@ -543,6 +543,23 @@ Param::Param(const char* name, const char* comment, ParamsVector& owner, bool in
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool IntParam::set_value(int32_t value, ParamSetBySourceType source_type, ParamPtr source) {
+  switch (set_mode_) {
+    case PARAM_VALUE_IS_DEFAULT:
+    case PARAM_VALUE_IS_RESET:
+    case PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS:
+      // apply always
+      break;
+
+    default:
+      if (set_mode_ < source_type)
+        break;
+      // silently ignore this write attempt: order of precedence override.
+      tprintDebug("Silently ignoring parameter {} write due to precedence: current level: {} vs. write attempt level: {} (present value: {}, skipped: {})\n",
+        name_str(), set_mode(), source_type, formatted_value_str(), value);
+      return false;
+  }
+  set_mode_ = source_type;
+
 	access_counts_.writing++;
 	if (value != value_ && value != default_)
 		access_counts_.changing++;
@@ -651,7 +668,24 @@ bool IntParam::inspect_value(ParamValueContainer & dst) const {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool BoolParam::set_value(bool value, ParamSetBySourceType source_type, ParamPtr source) {
-	access_counts_.writing++;
+  switch (set_mode_) {
+    case PARAM_VALUE_IS_DEFAULT:
+    case PARAM_VALUE_IS_RESET:
+    case PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS:
+      // apply always
+      break;
+
+    default:
+      if (set_mode_ < source_type)
+        break;
+      // silently ignore this write attempt: order of precedence override.
+      tprintDebug("Silently ignoring parameter {} write due to precedence: current level: {} vs. write attempt level: {} (present value: {}, skipped: {})\n",
+                  name_str(), set_mode(), source_type, formatted_value_str(), value);
+      return false;
+  }
+  set_mode_ = source_type;
+
+  access_counts_.writing++;
 	if (value != value_ && value != default_)
 		access_counts_.changing++;
 
@@ -826,6 +860,23 @@ bool DoubleParam::set_value(double value, ParamSetBySourceType source_type, Para
 	if (!is_legal_fpval(value))
 		return false;
 
+  switch (set_mode_) {
+    case PARAM_VALUE_IS_DEFAULT:
+    case PARAM_VALUE_IS_RESET:
+    case PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS:
+      // apply always
+      break;
+
+    default:
+      if (set_mode_ < source_type)
+        break;
+      // silently ignore this write attempt: order of precedence override.
+      tprintDebug("Silently ignoring parameter {} write due to precedence: current level: {} vs. write attempt level: {} (present value: {}, skipped: {})\n",
+        name_str(), set_mode(), source_type, formatted_value_str(), value);
+      return false;
+  }
+  set_mode_ = source_type;
+
 	access_counts_.writing++;
 	if (value != value_ && value != default_)
 		access_counts_.changing++;
@@ -939,6 +990,23 @@ bool DoubleParam::inspect_value(ParamValueContainer& dst) const {
 bool StringParam::set_value(const char* value, ParamSetBySourceType source_type, ParamPtr source) {
 	if (value == nullptr)
 		value = "";
+
+  switch (set_mode_) {
+    case PARAM_VALUE_IS_DEFAULT:
+    case PARAM_VALUE_IS_RESET:
+    case PARAM_VALUE_IS_SET_BY_TESSERACT_INTERNALS:
+      // apply always
+      break;
+
+    default:
+      if (set_mode_ < source_type)
+        break;
+      // silently ignore this write attempt: order of precedence override.
+      tprintDebug("Silently ignoring parameter {} write due to precedence: current level: {} vs. write attempt level: {} (present value: {}, skipped: {})\n",
+        name_str(), set_mode(), source_type, formatted_value_str(), value);
+      return false;
+  }
+  set_mode_ = source_type;
 
 	access_counts_.writing++;
 	if (value != value_ && value != default_)
@@ -1369,6 +1437,10 @@ void ParamUtils::PrintParams(FILE* fp, const ParamsVectorSet& set, bool print_in
 }
 
 void ParamUtils::ReportParamsUsageStatistics(FILE* fp, const ParamsVectorSet& set, const char* section_title ) {
+
+}
+
+void ParamUtils::ReadyParametersForReinitialization(const ParamsVectorSet& set, ParamSetBySourceType source_type) {
 
 }
 

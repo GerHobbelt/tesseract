@@ -225,6 +225,25 @@ public:
    */
   const char *GetStringVariable(const char *name) const;
 
+  // Set up the Tesseract parameters listed in `vars_vec[]` to the specified values
+  // in `vars_values[]`.
+  bool InitParameters(const std::vector<std::string> &vars_vec,
+                      const std::vector<std::string> &vars_values);
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values will not be altered by this call; use this
+  // method if you want to keep the currently active parameter values as a kind
+  // of 'good initial setup' for any subsequent teseract action.
+  void ReadyParametersForReinitialization();
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values are reset to their factory defaults by this call.
+  void ResetParametersToFactoryDefault();
+
 #if !DISABLED_LEGACY_ENGINE
 
   /**
@@ -322,10 +341,7 @@ public:
    * @{
    */
   int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
-           const std::vector<std::string> &configs,
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &configs);
 
   int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
 
@@ -333,28 +349,21 @@ public:
 
   // Reads the traineddata via a FileReader from path `datapath`.
   int InitFullWithReader(const char *datapath, const char *language,
-           OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+                         OcrEngineMode mode,
+                         const std::vector<std::string> &configs,
+                         FileReader reader);
 
   // In-memory version reads the traineddata directly from the given
   // data[data_size] array.
   int InitFromMemory(const char *data, int data_size, const char *language,
            OcrEngineMode mode, 
-           const std::vector<std::string> &configs,
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> &configs);
 
 protected:
   int InitFullRemainder(const char *datapath, const char *data, int data_size, const char *language,
            OcrEngineMode mode, 
            const std::vector<std::string> &configs,
-           const std::vector<std::string> &vars_vec,
-           const std::vector<std::string> &vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+           FileReader reader);
 
 /** @} */
 
