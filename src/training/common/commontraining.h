@@ -21,7 +21,7 @@
 #include <tesseract/export.h>
 #include "commandlineflags.h"
 #include "export.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <tesseract/baseapi.h>
 

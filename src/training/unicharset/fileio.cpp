@@ -31,7 +31,7 @@
 #include "errcode.h"
 #include "fileio.h"
 #include "host.h" // includes windows.h for BOOL, ...
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

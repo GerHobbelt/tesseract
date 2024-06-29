@@ -18,7 +18,7 @@
 
 #include <tesseract/unichar.h>
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #define UNI_MAX_LEGAL_UTF32 0x0010FFFF
 

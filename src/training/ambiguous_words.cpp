@@ -26,7 +26,7 @@
 
 #include <tesseract/baseapi.h>
 #include "helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "tesseract/capi_training_tools.h"
 

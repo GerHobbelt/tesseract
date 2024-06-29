@@ -19,7 +19,7 @@
 
 #include "common/commontraining.h"
 #include "unicharset/lstmtester.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 using namespace tesseract;
 

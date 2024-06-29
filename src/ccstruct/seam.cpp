@@ -21,7 +21,7 @@
 #include "seam.h"
 
 #include "blobs.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

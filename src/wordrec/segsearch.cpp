@@ -32,7 +32,7 @@
 #include "pageres.h"        // for WERD_RES
 #include <tesseract/params.h>         // for BoolParam, IntParam, DoubleParam
 #include "ratngs.h"         // for BLOB_CHOICE_LIST, BLOB_CHOICE_IT
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "wordrec.h"        // for Wordrec, SegSearchPending (ptr only)
 
 namespace tesseract {

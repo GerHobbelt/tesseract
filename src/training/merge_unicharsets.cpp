@@ -18,7 +18,7 @@
 
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 using namespace tesseract;
 

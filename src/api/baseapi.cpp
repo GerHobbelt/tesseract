@@ -51,7 +51,7 @@
 #include "stepblob.h"        // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "tessdatamanager.h" // for TessdataManager, kTrainedDataSuffix
 #include "tesseractclass.h"  // for Tesseract
-#include "tprintf.h"         // for tprintf
+#include <tesseract/tprintf.h>         // for tprintf
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder

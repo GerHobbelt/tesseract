@@ -22,7 +22,7 @@
 
 #include <tesseract/debugheap.h>
 #include "unicharset.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <tesseract/params.h>
 

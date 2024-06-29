@@ -39,7 +39,7 @@
 #ifdef INCLUDE_TENSORFLOW
 #  include "tfnetwork.h"
 #endif
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

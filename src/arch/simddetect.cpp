@@ -24,7 +24,7 @@
 #include "intsimdmatrix.h" // for IntSimdMatrix
 #include <tesseract/params.h>        // for STRING_VAR
 #include "simddetect.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 #include "tesstypes.h"
 
 #if !defined(__clang__) && defined(__GNUC__) && (__GNUC__ < 12)

@@ -25,7 +25,7 @@
 #include <tesseract/params.h>  // for BoolParam, BOOL_VAR
 #include "points.h"  // for ICOORD
 #include "rect.h"    // for TBOX
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <cstdint> // for INT16_MAX, int8_t
 

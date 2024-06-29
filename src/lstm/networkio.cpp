@@ -23,7 +23,7 @@
 #include "functions.h"
 #include "statistc.h"
 #include "recodebeam.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

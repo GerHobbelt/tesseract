@@ -60,7 +60,7 @@
 #include "shapetable.h"      // for UnicharRating, ShapeTable, Shape, Uni...
 #include "tessclassifier.h"  // for TessClassifier
 #include "tessdatamanager.h" // for TessdataManager, TESSDATA_INTTEMP
-#include "tprintf.h"         // for tprintf
+#include <tesseract/tprintf.h>         // for tprintf
 #include "trainingsample.h"  // for TrainingSample
 #include "unicharset.h"      // for UNICHARSET, CHAR_FRAGMENT, UNICHAR_SPACE
 #include "unicity_table.h"   // for UnicityTable

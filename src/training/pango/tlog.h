@@ -26,7 +26,7 @@
 
 #include "../common/commandlineflags.h"
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 TESS_PANGO_TRAINING_API
 DECLARE_INT_PARAM_FLAG(tlog_level);

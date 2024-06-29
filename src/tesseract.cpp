@@ -44,7 +44,7 @@
 #include <parameters/parameters.h>
 #include "simddetect.h"
 #include "tesseractclass.h" // for AnyTessLang
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 #include "tlog.h"
 #include "pathutils.h"
 #include "imagedata.h" // DocumentData

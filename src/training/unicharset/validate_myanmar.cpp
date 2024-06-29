@@ -6,7 +6,7 @@
 #include "validate_myanmar.h"
 #include "errcode.h"
 #include "icuerrorcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #if defined(HAS_LIBICU)
 

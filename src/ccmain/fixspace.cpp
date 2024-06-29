@@ -31,7 +31,7 @@
 #include "stepblob.h"       // for C_BLOB_IT, C_BLOB_LIST, C_BLOB
 #include "tesseractclass.h" // for Tesseract, TesseractStats, WordData
 #include "tessvars.h"       // for debug_fp
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "unicharset.h"     // for UNICHARSET
 #include "werd.h"           // for WERD, W_EOL, W_FUZZY_NON, W_FUZZY_SP
 

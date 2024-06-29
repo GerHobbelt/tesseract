@@ -27,7 +27,7 @@
 
 #include "../unicharset/fileio.h"
 #include "../unicharset/normstrngs.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset.h"
 
 #if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)

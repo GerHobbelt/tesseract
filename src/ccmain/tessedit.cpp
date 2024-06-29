@@ -31,7 +31,7 @@
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #if !DISABLED_LEGACY_ENGINE
 #  include "chop.h"
 #  include "intmatcher.h"

@@ -45,7 +45,7 @@
 #include "oldlist.h"
 #include "protos.h"
 #include "shapetable.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicity_table.h"
 #include "mupdf/fitz/string-util.h"
 

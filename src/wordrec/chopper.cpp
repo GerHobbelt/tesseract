@@ -38,7 +38,7 @@
 #include "seam.h"           // for SEAM
 #include "split.h"          // for remove_edgept
 #include "stopper.h"        // for DANGERR
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "wordrec.h"        // for Wordrec, SegSearchPending (ptr only)
 
 namespace tesseract {

@@ -18,7 +18,7 @@
 
 #include "dict.h"
 
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cstdio>
 

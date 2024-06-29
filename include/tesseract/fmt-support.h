@@ -63,4 +63,4 @@ namespace tesseract {                                                           
   /* re-open namepsace tesseract */
 
 
-#endif // TESSERACT_API_BASEAPI_H_
+#endif

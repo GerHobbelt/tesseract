@@ -32,7 +32,7 @@
 #if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "trainingsample.h"
 #include "tesseractclass.h"
 

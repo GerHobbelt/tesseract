@@ -23,7 +23,7 @@
 #include <tesseract/debugheap.h>
 
 #include "pdf_ttf.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "helpers.h" // for Swap, copy_string
 
 #include <leptonica/allheaders.h>

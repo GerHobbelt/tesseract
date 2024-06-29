@@ -17,7 +17,7 @@
 #include <vector>              // for std::vector
 #include "errcode.h"
 #include "helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 using namespace ::parameters;
 

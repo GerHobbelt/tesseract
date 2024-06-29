@@ -21,7 +21,7 @@
 #include "makerow.h"
 #include "pitsync1.h"
 #include "topitch.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cfloat> // for FLT_MAX
 #include <cmath>

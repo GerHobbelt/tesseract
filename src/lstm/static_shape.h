@@ -21,7 +21,7 @@
 #include <tesseract/fmt-support.h>
 
 #include "serialis.h" // for TFile
-#include "tprintf.h"  // for tprintf
+#include <tesseract/tprintf.h>  // for tprintf
 
 namespace tesseract {
 

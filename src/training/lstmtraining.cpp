@@ -36,7 +36,7 @@
 #include "unicharset/lstmtester.h"
 #include "unicharset/lstmtrainer.h"
 #include <tesseract/params.h>
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 using namespace tesseract;

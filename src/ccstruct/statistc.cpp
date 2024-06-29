@@ -25,7 +25,7 @@
 
 #include "errcode.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "helpers.h"
 

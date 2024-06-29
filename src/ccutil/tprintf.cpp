@@ -21,7 +21,7 @@
 #  include "config_auto.h"
 #endif
 
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <tesseract/params.h>
 
