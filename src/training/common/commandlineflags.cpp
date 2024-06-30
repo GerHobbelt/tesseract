@@ -97,7 +97,7 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
     if (equals_position == nullptr) {
       lhs = current_arg;
     } else {
-      lhs.assign(current_arg, equals_position - current_arg);
+      lhs.assign(current_arg, equals_position);
     }
     if (!lhs.length()) {
       tprintError("Bad argument: {}\n", argv[i]);
