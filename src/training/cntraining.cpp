@@ -191,7 +191,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   }
   FreeTrainingSamples(CharList);
   int desc_index = ShortNameToFeatureType(FeatureDefs, PROGRAM_FEATURE_TYPE);
-  if (WriteNormProtos(FLAGS_D.c_str(), NormProtoList, FeatureDefs.FeatureDesc[desc_index]))
+  if (WriteNormProtos(trainer_directory.c_str(), NormProtoList, FeatureDefs.FeatureDesc[desc_index]))
     rv = EXIT_FAILURE;
   FreeNormProtoList(NormProtoList);
   for (auto& freeable_proto : freeable_protos) {

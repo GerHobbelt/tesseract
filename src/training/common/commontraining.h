@@ -114,7 +114,7 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
 //   Loads xheights from -X option.
 //   Loads samples from .tr files in remaining command-line args.
 //   Deletes outliers and computes canonical samples.
-//   If FLAGS_output_trainer is set, saves the trainer for future use.
+//   If trainer_output_trainer is set, saves the trainer for future use.
 // Computes canonical and cloud features.
 // If shape_table is not nullptr, but failed to load, make a fake flat one,
 // as shape clustering was not run.

@@ -58,8 +58,8 @@ protected:
     std::locale::global(system_locale);
 
     l_chooseDisplayProg(L_DISPLAY_WITH_XZGV);
-    FLAGS_fonts_dir = TESTING_DIR;
-    FLAGS_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fonts_dir = TESTING_DIR;
+    trainer_fontconfig_tmpdir = FLAGS_test_tmpdir;
     file::MakeTmpdir();
     PangoFontInfo::SoftInitFontConfig(); // init early
   }

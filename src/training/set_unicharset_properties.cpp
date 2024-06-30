@@ -39,7 +39,7 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
   tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
 
   // Check validity of input flags.
-  if (FLAGS_U.empty() || FLAGS_O.empty()) {
+  if (trainer_input_unicharset_file.empty() || trainer_output_unicharset_file.empty()) {
     tprintError("Specify both input and output unicharsets!\n");
     return EXIT_FAILURE;
   }
@@ -48,8 +48,8 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
     return EXIT_FAILURE;
   }
 
-  tesseract::SetPropertiesForInputFile(FLAGS_script_dir.c_str(), FLAGS_U.c_str(), FLAGS_O.c_str(),
-                                       FLAGS_X.c_str());
+  tesseract::SetPropertiesForInputFile(FLAGS_script_dir.c_str(), trainer_input_unicharset_file.c_str(), trainer_output_unicharset_file.c_str(),
+                                       trainer_xheights.c_str());
   return EXIT_SUCCESS;
 }
 

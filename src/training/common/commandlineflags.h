@@ -26,6 +26,7 @@
 
 #include <cstdlib>
 
+#if 0
 #define INT_PARAM_FLAG(name, val, comment) INT_VAR(FLAGS_##name, val, comment)
 #define DECLARE_INT_PARAM_FLAG(name) extern INT_VAR_H(FLAGS_##name)
 #define DOUBLE_PARAM_FLAG(name, val, comment) DOUBLE_VAR(FLAGS_##name, val, comment)
@@ -34,31 +35,46 @@
 #define DECLARE_BOOL_PARAM_FLAG(name) extern BOOL_VAR_H(FLAGS_##name)
 #define STRING_PARAM_FLAG(name, val, comment) STRING_VAR(FLAGS_##name, val, comment)
 #define DECLARE_STRING_PARAM_FLAG(name) extern STRING_VAR_H(FLAGS_##name)
+#endif
 
 namespace tesseract {
 
 // Flags from commontraining.cpp
 // Command line arguments for font_properties, xheights and unicharset.
+
 TESS_COMMON_TRAINING_API
-DECLARE_INT_PARAM_FLAG(debug_level);
+extern INT_VAR_H(trainer_debug_level);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(D);
+extern INT_VAR_H(trainer_load_images);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(F);
+extern STRING_VAR_H(trainer_configfile);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(O);
+extern STRING_VAR_H(trainer_directory);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(U);
+extern STRING_VAR_H(trainer_font_properties);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(X);
+extern STRING_VAR_H(trainer_xheights);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(fonts_dir);
+extern STRING_VAR_H(trainer_input_unicharset_file);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(fontconfig_tmpdir);
+extern STRING_VAR_H(trainer_output_unicharset_file);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(output_trainer);
+extern STRING_VAR_H(trainer_output_trainer);
 TESS_COMMON_TRAINING_API
-DECLARE_STRING_PARAM_FLAG(test_ch);
+extern STRING_VAR_H(trainer_test_ch);
+TESS_COMMON_TRAINING_API
+extern STRING_VAR_H(trainer_fonts_dir);
+TESS_COMMON_TRAINING_API
+extern STRING_VAR_H(trainer_fontconfig_tmpdir);
+TESS_COMMON_TRAINING_API
+extern DOUBLE_VAR_H(clusterconfig_min_samples_fraction);
+TESS_COMMON_TRAINING_API
+extern DOUBLE_VAR_H(clusterconfig_max_illegal);
+TESS_COMMON_TRAINING_API
+extern DOUBLE_VAR_H(clusterconfig_independence);
+TESS_COMMON_TRAINING_API
+extern DOUBLE_VAR_H(clusterconfig_confidence);
+
 
 // Parse commandline flags and values. Prints the usage string and exits on
 // input of --help or --version.
