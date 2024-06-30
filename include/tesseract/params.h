@@ -34,21 +34,6 @@ class TFile;
 
 // --------------------------------------------------------------------------------------------------
 
-// Utility functions for working with Tesseract parameters.
-class TESS_API ExtraUtils {
-public:
-  // Read parameters from the given file pointer.
-  // Otherwise identical to ReadParamsFile().
-  static bool ReadParamsFromFp(TFile *fp,
-                               const ParamsVectorSet &set,
-                               ParamSetBySourceType source_type = PARAM_VALUE_IS_SET_BY_APPLICATION,
-                               ParamPtr source = nullptr);
-
-};
-
-
-// --------------------------------------------------------------------------------------------------
-
 
 extern BOOL_VAR_H(stream_filelist);
 extern STRING_VAR_H(document_title);
