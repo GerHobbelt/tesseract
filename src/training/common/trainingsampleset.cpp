@@ -606,10 +606,10 @@ void TrainingSampleSet::SetupFontIdMap() {
 // Finds the sample for each font, class pair that has least maximum
 // distance to all the other samples of the same font, class.
 // OrganizeByFontAndClass must have been already called.
-void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool debug) {
+void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map) {
   ASSERT_HOST(font_class_array_ != nullptr);
   IntFeatureDist f_table;
-  if (debug) {
+  if (trainer_debug_level > 0) {
     tprintDebug("Feature table size {}\n", map.sparse_size());
   }
   f_table.Init(&map);
@@ -626,7 +626,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
       if (fcinfo.samples.empty() || (kTestChar >= 0 && c != kTestChar)) {
         fcinfo.canonical_sample = -1;
         fcinfo.canonical_dist = 0.0f;
-        if (debug) {
+        if (trainer_debug_level > 0) {
           tprintDebug("Skipping class {}\n", c);
         }
         continue;
@@ -681,7 +681,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
         worst_s1 = max_s1;
         worst_s2 = max_s2;
       }
-      if (debug) {
+      if (trainer_debug_level > 0) {
         tprintDebug(
             "Found {} samples of class {}={}, font {}, "
             "dist range [{}, {}], worst pair= {}, {}\n",
@@ -691,7 +691,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
       }
     }
   }
-  if (debug) {
+  if (trainer_debug_level > 0) {
     tprintDebug("Global worst dist = {}, between sample {} and {}\n", global_worst_dist, worst_s1,
             worst_s2);
   }

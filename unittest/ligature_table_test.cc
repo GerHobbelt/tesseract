@@ -49,8 +49,8 @@ protected:
     static std::locale system_locale("");
     std::locale::global(system_locale);
 
-    FLAGS_fonts_dir = TESTING_DIR;
-    FLAGS_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fonts_dir = TESTING_DIR;
+    trainer_fontconfig_tmpdir = FLAGS_test_tmpdir;
     file::MakeTmpdir();
     PangoFontInfo::SoftInitFontConfig(); // init early
   }

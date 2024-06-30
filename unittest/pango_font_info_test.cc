@@ -72,8 +72,8 @@ protected:
     static std::locale system_locale("");
     std::locale::global(system_locale);
 
-    FLAGS_fonts_dir = TESTING_DIR;
-    FLAGS_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fonts_dir = TESTING_DIR;
+    trainer_fontconfig_tmpdir = FLAGS_test_tmpdir;
     file::MakeTmpdir();
     PangoFontInfo::SoftInitFontConfig(); // init early
   }
@@ -187,8 +187,8 @@ protected:
   // Creates a fake fonts.conf file that points to the testdata fonts for
   // fontconfig to initialize with.
   static void SetUpTestCase() {
-    FLAGS_fonts_dir = TESTING_DIR;
-    FLAGS_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fonts_dir = TESTING_DIR;
+    trainer_fontconfig_tmpdir = FLAGS_test_tmpdir;
     if (!font_map) {
       font_map = pango_cairo_font_map_new_for_font_type(CAIRO_FONT_TYPE_FT);
     }
