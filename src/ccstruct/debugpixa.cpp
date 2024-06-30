@@ -725,7 +725,7 @@ namespace tesseract {
       fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html());
       
       tesseract::ParamsVectorSet &vec = tesseract_->params_collective();
-      ParamUtils::ReportParamsUsageStatistics(html(), vec, nullptr);
+      ParamUtils::ReportParamsUsageStatistics(html, vec);
 
       fputs("</pre>\n</body>\n</html>\n", html());
     }

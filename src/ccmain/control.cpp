@@ -125,13 +125,7 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
     if (word_box.major_overlap(target_word_box)) {
       if (backup_config_file_ == nullptr) {
         backup_config_file_ = kBackUpConfigFile;
-        FILE *config_fp = fopen(backup_config_file_, "wb");
-        if (config_fp == nullptr) {
-          tprintError("Failed to open file \"{}\"\n", backup_config_file_);
-        } else {
-          ParamUtils::PrintParams(config_fp, params_collective(), false);
-          fclose(config_fp);
-        }
+        ParamUtils::PrintParams(backup_config_file_, params_collective(), false);
         ParamUtils::ReadParamsFile(word_config, params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
       }
     } else {

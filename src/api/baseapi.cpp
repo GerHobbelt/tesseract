@@ -541,7 +541,7 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
   tesseract::ParamsVectorSet &vec = tesseract().params_collective();
   std::string fpath = tesseract::vars_report_file;
   ReportFile f(fpath);
-  ParamUtils::ReportParamsUsageStatistics(f(), vec, nullptr);
+  ParamUtils::ReportParamsUsageStatistics(f, vec);
 }
 
 /**
@@ -748,7 +748,7 @@ int TessBaseAPI::Init_Internal(const char *path,
     if (data_size != 0) {
       mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
     }
-    if (tess.init_tesseract(datapath, output_file_, vars, &mgr) != 0) {
+    if (tess.init_tesseract(datapath, output_file_, &mgr) != 0) {
       return -1;
     }
   }

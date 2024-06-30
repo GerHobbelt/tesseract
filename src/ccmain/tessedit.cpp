@@ -76,7 +76,7 @@ void Tesseract::read_config_file(const char *filename) {
       }
     }
   }
-  ParamUtils::ReadParamsFile(path, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+  ParamUtils::ReadParamsFile(path, this->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
 }
 
 bool Tesseract::InitParameters(const std::vector<std::string> &vars_vec,
