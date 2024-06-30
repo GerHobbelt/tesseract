@@ -27,18 +27,47 @@
 
 #include <climits> // for INT_MAX
 #include <cstdio>
+#include <map>    // for std::map
+#include <string>
+#include <algorithm>
+#include <type_traits>
 
-#ifdef HAVE_MUPDF
+#include <cpp/result.hpp> // alternative for C++23 std::expected<>
 
-#include "mupdf/fitz/config.h"
-#include "mupdf/fitz/system.h"
-#include "mupdf/fitz/version.h"
-#include "mupdf/fitz/context.h"
-#include "mupdf/assertions.h"     // for ASSERT
+#include <spdlog/spdlog.h>
 
-#endif
+#include "tlog.h"
+#include "porting.h"
+
 
 namespace tesseract {
+
+// using loglevel_return_type = std::expected<int, bool>;
+using loglevel_return_type = cpp::result<int, bool>;
+
+static loglevel_return_type ParseLogLevel(const char *loglevel) {
+  // Allow the log levels which are used by log4cxx.
+  const std::string loglevel_string = loglevel;
+  static const std::map<const std::string, int> loglevels{
+      {"ALL", INT_MIN},
+      {"TRACE", 5000},
+      {"DEBUG", 10000},
+      {"INFO", 20000},
+      {"WARN", 30000},
+      {"ERROR", 40000},
+      {"FATAL", 50000},
+      {"OFF", INT_MAX},
+  };
+  try {
+    std::transform(loglevel_string.begin(), loglevel_string.end(), loglevel_string.begin(), ::toupper);
+    int loglevel = loglevels.at(loglevel_string);
+    return loglevel;
+  } catch (const std::out_of_range &e) {
+    // TODO: Allow numeric argument?
+    tprintError("Unsupported --loglevel {}\n", loglevel);
+    return cpp::fail(false);
+  }
+}
 
 #ifdef HAVE_MUPDF
 
@@ -46,25 +75,32 @@ namespace tesseract {
 static void write_gathered_log_message(int level, const std::string &msg) {
   const char *s = msg.c_str();
 
-  if (!strncmp(s, "ERROR: ", 7)) {
+  if (!strncasecmp(s, "ERROR: ", 7)) {
     s += 7;
-  } else if (!strncmp(s, "WARNING: ", 9)) {
+    if (level > T_LOG_ERROR)
+      level = T_LOG_ERROR;
+  } else if (!strncasecmp(s, "WARNING: ", 9)) {
     s += 9;
+    if (level > T_LOG_WARN)
+      level = T_LOG_WARN;
   }
 
   switch (level) {
     case T_LOG_ERROR:
-      fz_error(NULL, "%s", s);
+      spdlog::error(s);
       break;
     case T_LOG_WARN:
-      fz_warn(NULL, "%s", s);
+      spdlog::warn(s);
       break;
     case T_LOG_INFO:
-      fz_info(NULL, "%s", s);
+      spdlog::info(s);
       break;
     case T_LOG_DEBUG:
     default:
-      fz_info(NULL, "%s", s);
+      spdlog::debug(s);
+      break;
+    case T_LOG_TRACE:
+      spdlog::trace(s);
       break;
   }
 }
@@ -83,6 +119,8 @@ static void gather_and_log_a_single_tprintf_line(int level, fmt::string_view for
   // sanity check/clipping: there's no log level beyond ERROR severity: ERROR is the highest it can possibly get.
   if (level < T_LOG_ERROR) {
     level = T_LOG_ERROR;
+  } else if (level > T_LOG_TRACE) {
+    level = T_LOG_TRACE;
   }
 
   auto msg = fmt::vformat(format, args);
@@ -133,15 +171,14 @@ static void gather_and_log_a_single_tprintf_line(int level, fmt::string_view for
 // output any error/info/debug messages and have the callbacks which MAY be registered with those APIs
 // handle any writing to logfile, etc., thus *obsoleting/duplicating* the `debug_file` configuration
 // option here.
-#ifndef HAVE_MUPDF
+#if 0
 static STRING_VAR(debug_file, "", "File to send tesseract::tprintf output to");
 #endif
 
 // Trace printf
 void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
-#ifdef HAVE_MUPDF
   gather_and_log_a_single_tprintf_line(level, format, args);
-#else
+#if 0
   const char *debug_file_name = debug_file.c_str();
   static FILE *debugfp = nullptr; // debug file
 
