@@ -125,12 +125,22 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
     if (word_box.major_overlap(target_word_box)) {
       if (backup_config_file_ == nullptr) {
         backup_config_file_ = kBackUpConfigFile;
-        ParamUtils::PrintParams(backup_config_file_, params_collective(), false);
-        ParamUtils::ReadParamsFile(word_config, params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+        {
+          StdioReportWriter reporter(backup_config_file_, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
+          ParamUtils::PrintParams(reporter, params_collective());
+        }
+        // making sure the reporter is out-of-scope, and therefore the file *closed*, before we read the next config.
+        // Not important unless someone adversarial makes word_config point to the same file as kBackUpConfigFile
+        // in a nutty attempt to down the bugger.
+        {
+          StdioConfigReader reader(word_config);
+          ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+        }
       }
     } else {
       if (backup_config_file_ != nullptr) {
-        ParamUtils::ReadParamsFile(backup_config_file_, params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+        StdioConfigReader reader(backup_config_file_);
+        ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
         backup_config_file_ = nullptr;
       }
     }
