@@ -27,7 +27,7 @@
 using namespace tesseract;
 
 // The directory that is searched for universal script unicharsets.
-static STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
+STRING_VAR(script_dir, "", "Directory name for input script unicharsets/xheights");
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
