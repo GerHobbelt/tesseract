@@ -30,28 +30,28 @@ DictSettings::DictSettings(CCUtil *owner)
     : ccutil_(owner)
     , STRING_MEMBER(user_words_file, "", "A filename of user-provided words.",
                     owner->params())
-    , STRING_INIT_MEMBER(user_words_suffix, "",
+    , STRING_MEMBER(user_words_suffix, "",
                          "A suffix of user-provided words located in tessdata.",
                          owner->params())
     , STRING_MEMBER(user_patterns_file, "", "A filename of user-provided patterns.",
                     owner->params())
-    , STRING_INIT_MEMBER(user_patterns_suffix, "",
+    , STRING_MEMBER(user_patterns_suffix, "",
                          "A suffix of user-provided patterns located in "
                          "tessdata.",
                          owner->params())
-    , BOOL_INIT_MEMBER(load_system_dawg, true, "Load system word dawg.", owner->params())
-    , BOOL_INIT_MEMBER(load_freq_dawg, true, "Load frequent word dawg.", owner->params())
-    , BOOL_INIT_MEMBER(load_unambig_dawg, true, "Load unambiguous word dawg.",
+    , BOOL_MEMBER(load_system_dawg, true, "Load system word dawg.", owner->params())
+    , BOOL_MEMBER(load_freq_dawg, true, "Load frequent word dawg.", owner->params())
+    , BOOL_MEMBER(load_unambig_dawg, true, "Load unambiguous word dawg.",
                        owner->params())
-    , BOOL_INIT_MEMBER(load_punc_dawg, true,
+    , BOOL_MEMBER(load_punc_dawg, true,
                        "Load dawg with punctuation"
                        " patterns.",
                        owner->params())
-    , BOOL_INIT_MEMBER(load_number_dawg, true,
+    , BOOL_MEMBER(load_number_dawg, true,
                        "Load dawg with number"
                        " patterns.",
                        owner->params())
-    , BOOL_INIT_MEMBER(load_bigram_dawg, true,
+    , BOOL_MEMBER(load_bigram_dawg, true,
                        "Load dawg with special word "
                        "bigrams.",
                        owner->params())

@@ -130,7 +130,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
                     params())
-    , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
+    , INT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
                       "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
                       "Defaults to loading and running the most accurate "
                       "available.",
@@ -415,7 +415,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())
-    , BOOL_INIT_MEMBER(tessedit_init_config_only, false,
+    , BOOL_MEMBER(tessedit_init_config_only, false,
                        "Only initialize with the config file. Useful if the "
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",
