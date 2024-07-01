@@ -36,13 +36,10 @@ using namespace tesseract;
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-STRING_PARAM_FLAG(classifier, "", "Classifier to test");
-#if !defined(BUILD_MONOLITHIC)
-STRING_PARAM_FLAG(lang, "eng", "Language to test");
-#else
-DECLARE_STRING_PARAM_FLAG(lang);        // already declared in combine_lang_model.cpp
-#endif
-STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
+STRING_VAR(test_classifier, "", "Classifier to test");
+STRING_VAR(test_lang, "eng", "Language to test");
+STRING_VAR(test_tessdata_dir, "", "Directory of traineddata files");
+INT_VAR(test_report_level, 0, "The amount of diagnostics reporting you wish to see while run the test. 0 = no output. 1 = bottom-line error rate. 2 = bottom-line error rate + time. 3 = font-level error rate + time. 4 = list of all errors + short classifier debug output on 16 errors. 5 = list of all errors + short classifier debug output on 25 errors.");
 
 enum ClassifierName { CN_PRUNER, CN_FULL, CN_COUNT };
 
@@ -62,7 +59,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
     }
   }
   if (classifier == CN_COUNT) {
-    tprintError("Invalid classifier name:{}\n", FLAGS_classifier.c_str());
+    tprintError("Invalid classifier name:{}\n", test_classifier.c_str());
     return nullptr;
   }
 
@@ -73,7 +70,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
     tesseract::TessBaseAPI *tess = *api;
-    if (tess->Init(FLAGS_tessdata_dir.c_str(), FLAGS_lang.c_str(), engine_mode) < 0) {
+    if (tess->Init(test_tessdata_dir.c_str(), test_lang.c_str(), engine_mode) < 0) {
       tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
@@ -132,9 +129,9 @@ extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** 
   tesseract::TessBaseAPI *api;
   // Decode the classifier string.
   tesseract::ShapeClassifier *shape_classifier =
-      InitializeClassifier(FLAGS_classifier.c_str(), trainer->unicharset(), argc, argv, &api);
+      InitializeClassifier(test_classifier.c_str(), trainer->unicharset(), argc, argv, &api);
   if (shape_classifier == nullptr) {
-    tprintError("Classifier init failed!:{}\n", FLAGS_classifier.c_str());
+    tprintError("Classifier init failed!:{}\n", test_classifier.c_str());
     return EXIT_FAILURE;
   }
 
@@ -144,7 +141,7 @@ extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** 
   trainer->ReplicateAndRandomizeSamplesIfRequired();
 
   trainer->TestClassifierOnSamples(tesseract::CT_UNICHAR_TOP1_ERR,
-                                   std::max(3, static_cast<int>(FLAGS_debug_level)), false,
+                                   test_report_level, false,
                                    shape_classifier, nullptr);
   delete shape_classifier;
   delete api;
