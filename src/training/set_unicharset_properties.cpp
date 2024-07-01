@@ -30,7 +30,7 @@ using namespace tesseract;
 
 // The directory that is searched for universal script unicharsets.
 #if !defined(BUILD_MONOLITHIC)
-STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
+STRING_VAR(script_dir, "", "Directory name for input script unicharsets/xheights");
 #else
 DECLARE_STRING_PARAM_FLAG(script_dir);        // already declared in combine_lang_model.cpp
 #endif
