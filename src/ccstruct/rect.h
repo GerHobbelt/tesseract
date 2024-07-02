@@ -299,7 +299,7 @@ public:
     tprintDebug("Bounding box=(l:{},b:{}->r:{},t:{})\n", left(), bottom(), right(), top());
   }
   // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
-  void print_to_str(std::string &str) const;
+  const std::string &print_to_str() const;
 
 #if !GRAPHICS_DISABLED
   void plot(                  // use current settings

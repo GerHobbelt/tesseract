@@ -221,13 +221,15 @@ void TBOX::plot(                  // use current settings
 }
 
 // Appends the bounding box as ({},{})->({},{}) to a string.
-void TBOX::print_to_str(std::string &str) const {
+const std::string &TBOX::print_to_str() const {
   // "({},{})->({},{})", left(), bottom(), right(), top()
-  str += "(" + std::to_string(left());
+  std::string str;
+  str  = "(" + std::to_string(left());
   str += "," + std::to_string(bottom());
   str += ")->(" + std::to_string(right());
   str += "," + std::to_string(top());
   str += ')';
+  return str;
 }
 
 // Writes to the given file. Returns false in case of error.
