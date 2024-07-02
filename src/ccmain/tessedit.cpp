@@ -44,7 +44,7 @@ namespace tesseract {
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
 void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
-  if (filename || !*filename) {
+  if (!filename || !*filename) {
     tprintError("empty config filename specified. No config loaded.\n");
     return;
   }
@@ -153,6 +153,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     }
   }
 
+  // Write the effective (a.k.a. currently active) tesseract parameter set to disk for later diagnosis / re-use.
   if (!tessedit_write_params_to_file.empty()) {
     FILE *params_file = fopen(tessedit_write_params_to_file.c_str(), "wb");
     if (params_file != nullptr) {
