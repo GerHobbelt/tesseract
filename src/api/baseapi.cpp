@@ -1605,7 +1605,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
   AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-  AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tesseract_->tessedit_page_number))));
+  AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
   SetInputName(filename);
@@ -1729,7 +1729,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-    tesseract_->AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", static_cast<int>(tesseract_->tessedit_page_number)));
+    tesseract_->AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tesseract_->tessedit_page_number));
   }
 
   if (failed && retry_config != nullptr && retry_config[0] != '\0') {
