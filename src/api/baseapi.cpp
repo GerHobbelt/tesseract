@@ -1587,7 +1587,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
   }
   else {
-	SetVariable("applybox_page", -1);
+	SetVariable("applybox_page", -1 /* all pages */);
 	r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
 

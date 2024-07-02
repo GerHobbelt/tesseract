@@ -38,7 +38,7 @@ static const float kCertaintyScale = 2.0f;
 // Worst acceptable certainty for a dictionary word.
 static const float kWorstDictCertainty = -25.0f /* / kCertaintyScale */ ;
 
-// Generates training data for training a line recognizer, eg LSTM.
+// Generates training data for training a line recognizer, e.g. LSTM.
 // Breaks the page into lines, according to the boxes, and writes them to a
 // serialized DocumentData based on output_basename.
 // Return true if successful, false if an error occurred.
