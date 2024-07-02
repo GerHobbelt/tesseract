@@ -285,38 +285,13 @@ namespace tesseract {
     char* base = s;
 
     for (int i = 0; i < len; i++, s++) {
-      switch (*s) {
-      case ' ':
-      case '\n':
-      case ':':
-      case '=':
-      case '`':
-      case '\'':
-      case '"':
-      case '~':
-      case '?':
-      case '*':
-      case '|':
-      case '&':
-      case '<':
-      case '>':
-      case '{':
-      case '}':
-      case '\\':
-      case '/':
+      char c = *s;
+
+      if (isalnum(c) || c == '_' || c == '-') {
+        *d++ = *s;
+      } else {
         if (d > base && d[-1] != '.')
           *d++ = '.';
-        continue;
-
-      default:
-        if (isprint(*s)) {
-          *d++ = *s;
-        }
-        else {
-          if (d > base && d[-1] != '.')
-            *d++ = '.';
-        }
-        continue;
       }
     }
 
