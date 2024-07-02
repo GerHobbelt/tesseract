@@ -464,37 +464,11 @@ typedef enum {
   WE_ARE_BUGGERED = 0x8000
 } CommandVerb;
 
-//using loglevel_return_type = std::expected<int, bool>;
-using loglevel_return_type = cpp::result<int, bool>;
-
-static loglevel_return_type ParseLogLevel(const char *loglevel) {
-  // Allow the log levels which are used by log4cxx.
-  const std::string loglevel_string = loglevel;
-  static const std::map<const std::string, int> loglevels{
-      {"ALL", INT_MIN},
-      {"TRACE", 5000},
-      {"DEBUG", 10000},
-      {"INFO", 20000},
-      {"WARN", 30000},
-      {"ERROR", 40000},
-      {"FATAL", 50000},
-      {"OFF", INT_MAX},
-  };
-  try {
-    transform(loglevel_string.begin(), loglevel_string.end(), loglevel_string.begin(), ::toupper);
-    int loglevel = loglevels.at(loglevel_string);
-    return loglevel;
-  } catch (const std::out_of_range &e) {
-    // TODO: Allow numeric argument?
-    tprintError("Unsupported --loglevel {}\n", loglevel);
-    return cpp::fail(false);
-  }
-}
 
 // Return a CommandVerb mix + parsed arguments in vectors
 static int ParseArgs(int argc, const char** argv,
-                     ParamsVector *vars_vec,
-                      std::vector<std::string>* path_args) {
+                     ParamsVectorSet &vars_vec,
+                     ParamsVector &surplus) {
   bool dash_dash = false;
   enum ParserState : int {
     PARSED_INPUT_IMAGE = 0x01,
@@ -682,8 +656,6 @@ static int ParseArgs(int argc, const char** argv,
       continue;
     } else if (strcmp(verb, "--config") == 0 && i + 1 < argc) {
       StringParam *p = vars_vec->find<StringParam>("config_files");
-	  continue;
-    } 
       std::string cfs = p->value();
       if (!cfs.empty())
         cfs += ';';       // separator suitable for all platforms AFAIAC.
@@ -977,7 +949,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   //const char* rectangle_str = NULL;
   int ret_val = EXIT_SUCCESS;
 
-  std::vector<std::string> path_params;
+  //std::vector<std::string> path_params;
 
   if (std::getenv("LEPT_MSG_SEVERITY")) {
     // Get Leptonica message level from environment variable.
@@ -1003,9 +975,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
   // get the list of available parameters for both Tesseract instances and as globals:
   // that's the superset we accept at the command line.
     auto& parlst = tess.params_collective();
-    ParamsVector args_muster = parlst.flattened_copy();
+  ParamsVector surplus_args;
 
-  int cmd = ParseArgs(argc, argv, &args_muster, &path_params);
+  int cmd = ParseArgs(argc, argv, parlst, surplus_args);
   if (cmd == WE_ARE_BUGGERED) {
     return EXIT_FAILURE;
   }
