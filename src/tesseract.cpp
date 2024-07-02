@@ -390,7 +390,7 @@ static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const 
       ++i;
 
       if (!api.SetVariable(opt1, opt2)) {
-        tprintError("Could not set option: {}={}\n", opt1, opt2);
+        tprintError("Could not set the (obviously unknown) option `{}={}`\n", opt1, opt2);
       }
     }
   }
