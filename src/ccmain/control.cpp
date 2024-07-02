@@ -1319,9 +1319,9 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   if (debug) {
     tprintDebug("{} word with lang {} at:", word->done ? "Already done" : "Processing",
             most_recently_used_->lang);
-    auto bbox = word->word->bounding_box();
+    TBOX bbox = word->word->bounding_box();
     bbox.print();
-    AddClippedPixDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}", most_recently_used_->lang));
+    AddClippedPixDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}; bounding box: {}", most_recently_used_->lang, bbox.print_to_str()));
   }
   if (word->done) {
     // If done on pass1, leave it as-is.

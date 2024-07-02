@@ -491,7 +491,9 @@ namespace tesseract {
       int depth = pixGetDepth(pixs);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-    PIX *bgimg = cliprects[idx].area() > 0 ? nullptr : tesseract_->pix_original();
+    auto cliprect = cliprects[idx];
+    auto clip_area = cliprect.area();
+    PIX *bgimg = clip_area > 0 ? nullptr : tesseract_->pix_original();
 
     write_one_pix_for_html(html, counter, fn.c_str(), pixs,
                            caption.c_str(),
