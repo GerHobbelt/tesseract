@@ -841,7 +841,6 @@ public:
   INT_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(preprocess_graynorm_mode);
   INT_VAR_H(thresholding_method);
-  BOOL_VAR_H(showcase_threshold_methods);
   BOOL_VAR_H(thresholding_debug);
   DOUBLE_VAR_H(thresholding_window_size);
   DOUBLE_VAR_H(thresholding_kfactor);

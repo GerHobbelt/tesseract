@@ -93,9 +93,6 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
                  "adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background, 5 = Nlbin.",
                  params())
-    , BOOL_MEMBER(showcase_threshold_methods, false,
-                  "Showcase the available threshold methods as part of the thresholding process.",
-                  params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process.",
                   params())
