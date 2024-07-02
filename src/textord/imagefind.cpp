@@ -219,7 +219,7 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
   *pixa = nullptr;
 
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pix, "Conn Comp Image");
+    tesseract_->AddPixDebugPage(pix, "ConnCompAndRectangularize: Conn Comp Image");
   }
   // Find the individual image regions in the mask image.
   *boxa = pixConnComp(pix, pixa, 8);
@@ -234,7 +234,7 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
     int x_start, x_end, y_start, y_end;
     Image img_pix = pixaGetPix(*pixa, i, L_CLONE);
     if (textord_tabfind_show_images) {
-      tesseract_->AddPixDebugPage(img_pix, fmt::format("A component @ index {}", i));
+      tesseract_->AddPixDebugPage(img_pix, fmt::format("ConnCompAndRectangularize: A component @ index {}", i));
     }
     if (pixNearlyRectangular(img_pix, kMinRectangularFraction, kMaxRectangularFraction,
                              kMaxRectangularGradient, &x_start, &y_start, &x_end, &y_end)) {

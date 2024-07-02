@@ -823,9 +823,9 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   if (tesseract_->pix_binary() == nullptr) {
-	if (verbose_process) {
-      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
-	}
+	  if (verbose_process) {
+        tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+	  }
 
     Image pix = Image();
 	  if (!Threshold(&pix.pix_)) {
@@ -1729,7 +1729,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-    tesseract_->AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tesseract_->tessedit_page_number));
+    tesseract_->AddPixDebugPage(page_pix, fmt::format("processed page #{} (thresholded) : text recog done", 1 + tesseract_->tessedit_page_number));
   }
 
   if (failed && retry_config != nullptr && retry_config[0] != '\0') {
@@ -2670,7 +2670,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
             const char *sequence = "c1.1 + d3.3";
             const int dispsep = 0;
             Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
+            tesseract_->AddPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {}", sequence));
             pix_post.destroy();
           }
 
@@ -2699,7 +2699,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
             const char *sequence = "c1.1 + d3.3";
             const int dispsep = 0;
             Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-            tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
+            tesseract_->AddPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
             pix_post.destroy();
           }
 

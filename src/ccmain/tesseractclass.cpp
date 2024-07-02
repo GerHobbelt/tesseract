@@ -799,10 +799,6 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
   pixDestroy(&ppix32);
 }
 
-void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
-  pixa_debug_.AddClippedPix(pix, title);
-}
-
 
 void Tesseract::ResyncVariablesInternally() {
     if (lstm_recognizer_ != nullptr) {
