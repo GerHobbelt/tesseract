@@ -27,7 +27,7 @@
 using namespace tesseract;
 
 // The directory that is searched for universal script unicharsets.
-STRING_VAR(script_dir, "", "Directory name for input script unicharsets/xheights");
+STRING_VAR(unicharsets_script_dir, "", "Directory name for input script unicharsets/xheights");
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
@@ -43,12 +43,12 @@ extern "C" int tesseract_set_unicharset_properties_main(int argc, const char** a
     tprintError("Specify both input and output unicharsets!\n");
     return EXIT_FAILURE;
   }
-  if (FLAGS_script_dir.empty()) {
+  if (unicharsets_script_dir.empty()) {
     tprintError("Must specify a script_dir!\n");
     return EXIT_FAILURE;
   }
 
-  tesseract::SetPropertiesForInputFile(FLAGS_script_dir.c_str(), trainer_input_unicharset_file.c_str(), trainer_output_unicharset_file.c_str(),
+  tesseract::SetPropertiesForInputFile(unicharsets_script_dir.c_str(), trainer_input_unicharset_file.c_str(), trainer_output_unicharset_file.c_str(),
                                        trainer_xheights.c_str());
   return EXIT_SUCCESS;
 }

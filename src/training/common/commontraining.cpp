@@ -24,8 +24,8 @@
 
 namespace tesseract {
 
-INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
-INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
+INT_VAR(debug_level, 0, "Level of Trainer debugging");
+INT_VAR(load_images, 0, "Load images with tr files");
 STRING_VAR(configfile, "", "File to load more configs from");
 STRING_VAR(D, "", "Directory to write output files to");
 STRING_VAR(F, "font_properties", "File listing font properties");
