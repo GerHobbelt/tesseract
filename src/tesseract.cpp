@@ -1321,10 +1321,11 @@ extern "C" int tesseract_main(int argc, const char** argv)
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
       bool b = false;
-      bool in_training_mode = (api.GetBoolVariable("tessedit_ambigs_training", &b) && b) ||
-                              (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
-                              (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
-                              (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
+      bool in_training_mode =
+          (bool(api.tesseract()->tessedit_ambigs_training)) ||
+          (bool(api.tesseract()->tessedit_resegment_from_boxes)) ||
+          (bool(api.tesseract()->tessedit_make_boxes_from_boxes)) ||
+          (bool(api.tesseract()->tessedit_train_line_recognizer));
 
       if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
         if (!api.tesseract()->AnyTessLang()) {
@@ -1366,17 +1367,17 @@ extern "C" int tesseract_main(int argc, const char** argv)
         succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
         if (succeed && renderers.empty()) {
           // default: TXT + HOCR renderer
-          api.SetVariable("tessedit_create_hocr", "Y");
-          api.SetVariable("tessedit_create_alto", "Y");
-          api.SetVariable("tessedit_create_page", "Y");
-          api.SetVariable("tessedit_create_tsv", "Y");
-          api.SetVariable("tessedit_create_pdf", "Y");
-          api.SetVariable("textonly_pdf", "n");
-          api.SetVariable("tessedit_write_unlv", "Y");
-          api.SetVariable("tessedit_create_lstmbox", "Y");
-          api.SetVariable("tessedit_create_boxfile", "Y");
-          api.SetVariable("tessedit_create_wordstrbox", "Y");
-          api.SetVariable("tessedit_create_txt", "Y");
+          api.tesseract()->tessedit_create_hocr.set_value(true);
+          api.tesseract()->tessedit_create_alto.set_value(true);
+          api.tesseract()->tessedit_create_page.set_value(true);
+          api.tesseract()->tessedit_create_tsv.set_value(true);
+          api.tesseract()->tessedit_create_pdf.set_value(true);
+          api.tesseract()->textonly_pdf.set_value(true);
+          api.tesseract()->tessedit_write_unlv.set_value(true);
+          api.tesseract()->tessedit_create_lstmbox.set_value(true);
+          api.tesseract()->tessedit_create_boxfile.set_value(true);
+          api.tesseract()->tessedit_create_wordstrbox.set_value(true);
+          api.tesseract()->tessedit_create_txt.set_value(true);
 
           succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
         }
