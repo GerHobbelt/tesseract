@@ -1321,7 +1321,7 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
             most_recently_used_->lang);
     TBOX bbox = word->word->bounding_box();
     bbox.print();
-    AddClippedPixDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}; bounding box: {}", most_recently_used_->lang, bbox.print_to_str()));
+    AddPixCompedOverOrigDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}; bounding box: {}", most_recently_used_->lang, bbox.print_to_str()));
   }
   if (word->done) {
     // If done on pass1, leave it as-is.

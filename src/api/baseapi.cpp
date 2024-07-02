@@ -2640,7 +2640,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         const char *sequence = "c1.1 + d3.3";
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} (just an example to showcase what leptonica can do for us!)", sequence));
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} (just an example to showcase what leptonica can do for us!)", sequence));
         pix_post.destroy();
       }
 	  } else {
@@ -2665,7 +2665,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         const char *sequence = "c1.1 + d3.3";
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
         pix_post.destroy();
       }
     }

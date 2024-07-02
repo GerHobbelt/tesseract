@@ -141,7 +141,7 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
   }
   {
     Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
-    tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
+    tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
   }
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();
