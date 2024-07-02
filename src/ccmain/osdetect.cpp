@@ -173,14 +173,20 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
   }
 
   line_finder_.FindAndRemoveLines(resolution, pix, &vertical_x, &vertical_y, nullptr, &v_lines, &h_lines);
-  AddPixDebugPage(pix, "Removing nontext regions: after FindAndRemoveLines : result");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(pix, "Removing nontext regions: after FindAndRemoveLines : result");
+  }
   Image im_pix = image_finder_.FindImages(pix);
-  AddPixDebugPage(im_pix, "Removing nontext regions: after FindAndRemoveLines : mask or image on-text) areas");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(im_pix, "Removing nontext regions: after FindAndRemoveLines : mask or image on-text) areas");
+  }
   if (im_pix != nullptr) {
     pixSubtract(pix, pix, im_pix);
     im_pix.destroy();
   }
-  AddPixDebugPage(pix, "Removing nontext regions: after FindImages + Subtract : result");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(pix, "Removing nontext regions: after FindImages + Subtract : result");
+  }
 
   mutable_textord()->find_components(pix_binary(), blocks, to_blocks);
 }

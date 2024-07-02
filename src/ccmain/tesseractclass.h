@@ -1062,6 +1062,8 @@ public:
   BOOL_VAR_H(debug_display_page);
   BOOL_VAR_H(debug_display_page_blocks);
   BOOL_VAR_H(debug_display_page_baselines);
+  BOOL_VAR_H(dump_segmented_word_images);
+  BOOL_VAR_H(dump_osdetect_process_images);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
