@@ -1033,7 +1033,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
   }
 }
 
-void pause_key(void) {
+static void pause_key(void) {
   (void)fgetc(stdin);
 }
 
@@ -1058,7 +1058,9 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #  endif
 #endif
 
+#if 0
   atexit(pause_key);
+#endif
 
   const char *lang = nullptr;
   const char *image = nullptr;
