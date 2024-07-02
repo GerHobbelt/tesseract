@@ -27,7 +27,7 @@
 #include <memory>
 #include <string>
 
-BOOL_PARAM_FLAG(display, false, "Display image for inspection");
+BOOL_VAR(stringrenderer_display, false, "Display image for inspection");
 
 namespace tesseract {
 
@@ -61,13 +61,13 @@ protected:
 
     l_chooseDisplayProg(L_DISPLAY_WITH_XZGV);
     trainer_fonts_dir = TESTING_DIR;
-    trainer_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fontconfig_tmpdir = stringrenderer_test_tmpdir;
     file::MakeTmpdir();
     PangoFontInfo::SoftInitFontConfig(); // init early
   }
 
   void DisplayClusterBoxes(Image pix) {
-    if (!FLAGS_display) {
+    if (!stringrenderer_display) {
       return;
     }
     const std::vector<BoxChar *> &boxchars = renderer_->GetBoxes();
@@ -411,7 +411,7 @@ TEST_F(StringRendererTest, DoesRenderAllFontsToImage) {
       EXPECT_TRUE(pix != nullptr);
       EXPECT_STRNE("", font_used.c_str());
     }
-    if (FLAGS_display) {
+    if (stringrenderer_display) {
       pixDisplay(pix, 0, 0);
     }
     pix.destroy();

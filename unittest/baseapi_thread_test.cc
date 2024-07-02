@@ -36,18 +36,18 @@
 #include "testdata.h"
 
 // Run with Tesseract instances.
-BOOL_PARAM_FLAG(test_tesseract, true, "Test tesseract instances");
+BOOL_VAR(test_tesseract, true, "Test tesseract instances");
 // Run with Cube instances.
 // Note that with TSAN, Cube typically takes much longer to test. Ignoring
 // std::string operations using the associated tess_tsan.ignore file when
 // testing Cube significantly reduces testing time.
-BOOL_PARAM_FLAG(test_cube, true, "Test Cube instances");
+BOOL_VAR(test_cube, true, "Test Cube instances");
 
 // When used with TSAN, having more repetitions can help in finding hidden
 // thread-safety violations at the expense of increased testing time.
-INT_PARAM_FLAG(reps, 1, "Num of parallel test repetitions to run.");
+INT_VAR(test_reps, 1, "Num of parallel test repetitions to run.");
 
-INT_PARAM_FLAG(max_concurrent_instances, 0,
+INT_VAR(test_max_concurrent_instances, 0,
                "Maximum number of instances to run in parallel at any given "
                "instant. The number of concurrent instances cannot exceed "
                "reps * number_of_langs_tested, which is also the default value.");
@@ -66,11 +66,11 @@ static const char *kCubeTruthText[] = {"\xe0\xa4\xb0\xe0\xa4\xbe\xe0\xa4\x9c",
 class BaseapiThreadTest : public ::testing::Test {
 protected:
   static void SetUpTestCase() {
-    CHECK(FLAGS_test_tesseract || FLAGS_test_cube)
+    CHECK(test_test_tesseract || test_test_cube)
         << "Need to test at least one of Tesseract/Cube!";
     // Form a list of langs/gt_text/image_files we will work with.
     std::vector<std::string> image_files;
-    if (FLAGS_test_tesseract) {
+    if (test_test_tesseract) {
       int i = 0;
       while (kTessLangs[i] && kTessTruthText[i] && kTessImages[i]) {
         langs_.emplace_back(kTessLangs[i]);
@@ -80,7 +80,7 @@ protected:
       }
       LOG(INFO) << "Testing Tesseract on " << i << " languages.";
     }
-    if (FLAGS_test_cube) {
+    if (test_test_cube) {
       int i = 0;
       while (kCubeLangs[i] && kCubeTruthText[i] && kCubeImages[i]) {
         langs_.emplace_back(kCubeLangs[i]);
@@ -93,10 +93,10 @@ protected:
     num_langs_ = langs_.size();
 
     // Pre-load the images into an array. We will be making multiple copies of
-    // an image here if FLAGS_reps > 1 and that is intentional. In this test, we
+    // an image here if test_reps > 1 and that is intentional. In this test, we
     // wish to not make any assumptions about the thread-safety of Pix objects,
     // and so entirely disallow concurrent access of a Pix instance.
-    const int n = num_langs_ * FLAGS_reps;
+    const int n = num_langs_ * test_reps;
     for (int i = 0; i < n; ++i) {
       std::string path = TESTING_DIR "/" + image_files[i % num_langs_];
       Image new_pix = pixRead(path.c_str());
@@ -105,8 +105,8 @@ protected:
     }
 
 #ifdef INCLUDE_TENSORFLOW
-    pool_size_ = (FLAGS_max_concurrent_instances < 1) ? num_langs_ * FLAGS_reps
-                                                      : FLAGS_max_concurrent_instances;
+    pool_size_ = (test_max_concurrent_instances < 1) ? num_langs_ * test_reps
+                                                      : test_max_concurrent_instances;
 #endif
   }
 
@@ -191,7 +191,7 @@ TEST_F(BaseapiThreadTest, TestBasicSanity) {
 // Test concurrent instance initialization.
 TEST_F(BaseapiThreadTest, TestInit) {
 #ifdef INCLUDE_TENSORFLOW
-  const int n = num_langs_ * FLAGS_reps;
+  const int n = num_langs_ * test_reps;
   ResetPool();
   std::vector<TessBaseAPI> tess(n);
   for (int i = 0; i < n; ++i) {
@@ -204,7 +204,7 @@ TEST_F(BaseapiThreadTest, TestInit) {
 // Test concurrent recognition.
 TEST_F(BaseapiThreadTest, TestRecognition) {
 #ifdef INCLUDE_TENSORFLOW
-  const int n = num_langs_ * FLAGS_reps;
+  const int n = num_langs_ * test_reps;
   std::vector<TessBaseAPI> tess(n);
   // Initialize api instances in a single thread.
   for (int i = 0; i < n; ++i) {
@@ -222,7 +222,7 @@ TEST_F(BaseapiThreadTest, TestRecognition) {
 
 TEST_F(BaseapiThreadTest, TestAll) {
 #ifdef INCLUDE_TENSORFLOW
-  const int n = num_langs_ * FLAGS_reps;
+  const int n = num_langs_ * test_reps;
   ResetPool();
   for (int i = 0; i < n; ++i) {
     pool_->Schedule(std::bind(VerifyTextResult, nullptr, pix_[i], langs_[i % num_langs_],
