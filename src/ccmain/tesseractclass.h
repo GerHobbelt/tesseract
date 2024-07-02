@@ -1085,6 +1085,10 @@ public:
   void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
     AddClippedPixDebugPage(pix, bbox, title.c_str());
   }
+  void AddClippedPixDebugPage(const Image &pix, const char *title);
+  void AddClippedPixDebugPage(const Image &pix, const std::string &title) {
+    AddClippedPixDebugPage(pix, title.c_str());
+  }
 
   int PushNextPixDebugSection(const std::string &title) { // sibling
     return pixa_debug_.PushNextSection(title);

@@ -78,6 +78,7 @@ bool Input::Backward(bool debug, const NetworkIO &fwd_deltas, NetworkScratch *sc
 // Creates and returns a Pix of appropriate size for the network from the
 // image_data. If non-null, *image_scale returns the image scale factor used.
 // Returns nullptr on error.
+/* static */
 Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *network, int min_width,
                               TRand *randomizer, float *image_scale) {
   // Note that NumInputs() is defined as input image height.
@@ -102,6 +103,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // Scale to target height, if the shape's height is > 1, or its depth if the
 // height == 1. If height == 0 then no scaling.
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
+/* static */
 void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *randomizer,
                             NetworkIO *input) {
   bool color = shape.depth() == 3;
@@ -139,9 +141,7 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
   }
   {
     Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
-    if (verbose_process) {
-      tess->AddPixDebugPage(normed_pix, fmt::format("LSTM: Input Layer: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
-    }
+    tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
   }
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();

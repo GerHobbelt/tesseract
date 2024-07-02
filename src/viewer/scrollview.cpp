@@ -1192,7 +1192,7 @@ void BackgroundScrollView::Clear() {
   SendMsg("clear()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddPixDebugPage(pix, GetName());
+    tesseract_->AddClippedPixDebugPage(pix, GetName());
     PrepCanvas();
 
     dirty = false;
@@ -1454,7 +1454,7 @@ void BackgroundScrollView::UpdateWindow() {
   SendMsg("update()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddPixDebugPage(pix, fmt::format("{}::update", GetName()));
+    tesseract_->AddClippedPixDebugPage(pix, fmt::format("{}::update", GetName()));
     // DO NOT clear the canvas!
 
     dirty = false;
@@ -1503,7 +1503,7 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
 
   //SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
 
-  tesseract_->AddPixDebugPage(image, title);
+  tesseract_->AddClippedPixDebugPage(image, title);
 
   int w = pixGetWidth(image);
   int h = pixGetHeight(image);
