@@ -1442,7 +1442,8 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
       AddBoxToTSV(res_it.get(), RIL_BLOCK, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for block
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_BLOCK)); // end of row for block
+      tsv_str += "\t\n";
     }
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
       par_num++;
@@ -1454,7 +1455,8 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
       AddBoxToTSV(res_it.get(), RIL_PARA, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for para
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_PARA)); // end of row for block
+      tsv_str += "\t\n";
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       line_num++;
@@ -1465,7 +1467,8 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(line_num);
       tsv_str += "\t" + std::to_string(word_num);
       AddBoxToTSV(res_it.get(), RIL_TEXTLINE, tsv_str);
-      tsv_str += "\t-1\t\n"; // end of row for line
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_TEXTLINE)); // end of row for block
+      tsv_str += "\t\n";
     }
 
     // Now, process the word...
@@ -1502,6 +1505,8 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
     tsv_str += "\n"; // end of row
+
+    tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are considered to a part of.
 #if !defined(NDEBUG)
     wcnt++;
 #endif
