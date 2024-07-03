@@ -177,7 +177,7 @@ static void PrintDetectorState(const ParagraphTheory &theory,
     rows[i].AppendDebugInfo(theory, row);
     row.push_back(RtlEmbed(ri.text, !ri.ltr));
   }
-  PrintTable(output, " ");
+  PrintTable(output, "\t");
 
   tprintDebug("Active Paragraph Models:\n");
   unsigned m = 0;
