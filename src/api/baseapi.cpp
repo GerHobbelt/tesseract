@@ -2639,7 +2639,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
         if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per -pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
         }
         tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
 
@@ -2667,7 +2667,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
         if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per -pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
         }
         tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
 
