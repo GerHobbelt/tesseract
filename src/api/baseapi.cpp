@@ -824,7 +824,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   }
   if (tesseract_->pix_binary() == nullptr) {
 	if (verbose_process) {
-      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
     Image pix = Image();
@@ -2638,6 +2638,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
       if (tesseract_->tessedit_dump_pageseg_images) {
         tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
+        if (verbose_process) {
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per -pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+        }
         tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
 
         const char *sequence = "c1.1 + d3.3";
@@ -2663,6 +2666,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
       if (tesseract_->tessedit_dump_pageseg_images) {
         tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
         tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+        if (verbose_process) {
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per -pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+        }
         tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
 
         const char *sequence = "c1.1 + d3.3";
@@ -2672,6 +2678,10 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         pix_post.destroy();
       }
     }
+  }
+  if (verbose_process) {
+    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract may attempt to *invert* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that the count of text pixels in a page must be less background pixels and very dark pages with white text are dealt with by *inverting* them so that the OCR will be fed word image snippets it trained to deal with: (dark) black text on (light) white plain background. Also note that tesseract is not geared towards recognizing and dealing nicely with other page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
+    tprintInfo("PROCESS: By removing all non-text image elements in the page image before you feed it to tesseract also will have a notable effect on the thresholding algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels. Remember: only *foreground* pixels that turn up as 'black' in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text: anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -2714,7 +2724,7 @@ int TessBaseAPI::FindLines() {
   }
   if (tesseract_->pix_binary() == nullptr) {
 	if (verbose_process) {
-      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
 	Image pix = Image();
