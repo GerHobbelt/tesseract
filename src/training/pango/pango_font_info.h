@@ -708,6 +708,7 @@ public:
 private:
   static std::vector<std::string> available_fonts_; // cache list
 };
+
 } // namespace tesseract
 
 #endif

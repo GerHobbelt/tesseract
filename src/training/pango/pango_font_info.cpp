@@ -121,7 +121,7 @@ std::string PangoFontInfo::DescriptionName() const {
 // trainer_fonts_dir and the cache to trainer_fontconfig_tmpdir.
 void PangoFontInfo::SoftInitFontConfig() {
   if (fonts_dir_.empty()) {
-    HardInitFontConfig(trainer_fonts_dir.c_str(), trainer_fontconfig_tmpdir.c_str());
+    HardInitFontConfig(FLAGS_fonts_dir.c_str(), FLAGS_fontconfig_tmpdir.c_str());
   }
 }
 
