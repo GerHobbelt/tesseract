@@ -1017,9 +1017,8 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
     api.SetVariable("debug_write_unlv", "Y");
     api.SetVariable("debug_line_finding", "Y");
     api.SetVariable("debug_image_normalization", "Y");
-    api.SetVariable("debug_do_not_use_scrollview_app", "Y");
 
-    api.SetVariable("interactive_display_mode", "Y");
+    api.SetVariable("interactive_display_mode", "N");
 
     api.SetVariable("debug_display_page", "Y");
     api.SetVariable("debug_display_page_blocks", "Y");

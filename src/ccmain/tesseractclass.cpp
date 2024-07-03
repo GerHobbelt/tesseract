@@ -392,8 +392,8 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
     , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", params())
-    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", params())
-    , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
+    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively? Turn OFF (false) to NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params()),
+      STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
@@ -459,7 +459,6 @@ Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMar
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
-    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", params())
     , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params()) 

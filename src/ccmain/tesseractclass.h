@@ -284,7 +284,7 @@ public:
   void ReportDebugInfo();
 
   bool SupportsInteractiveScrollView() {
-    return (interactive_display_mode && !debug_do_not_use_scrollview_app);
+    return interactive_display_mode;
   }
 
   // Return a memory capacity cost estimate for the given image / current original image.
@@ -1057,7 +1057,6 @@ public:
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
-  BOOL_VAR_H(debug_do_not_use_scrollview_app);
   BOOL_VAR_H(debug_display_page);
   BOOL_VAR_H(debug_display_page_blocks);
   BOOL_VAR_H(debug_display_page_baselines);
