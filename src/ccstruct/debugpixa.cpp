@@ -1053,6 +1053,11 @@ namespace tesseract {
     table tr:last-child th, table tr:last-child td {\n\
       border-bottom: none;\n\
     }\n\
+    code {\n\
+      padding-left: 0.25em;\n\
+      padding-right: 0.25em;\n\
+      background-color: #daffdd;\n\
+    }\n\
   </style>\n\
 </head>\n\
 <body>\n\

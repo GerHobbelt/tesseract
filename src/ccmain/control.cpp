@@ -396,6 +396,10 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
     if (w > 0) {
       word->prev_word = &(*words)[w - 1];
     }
+    if (debug) {
+      tprintDebug("Pass{}: chunk #{}: now going to OCR content at bbox:{}\n",
+          pass_n, w + 1, word->word->word->bounding_box().print_to_str());
+    }
     if (monitor != nullptr) {
       monitor->ocr_alive = true;
       if (pass_n == 1) {
