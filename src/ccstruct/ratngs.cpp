@@ -688,6 +688,7 @@ unsigned int WERD_CHOICE::TotalOfStates() const {
  * Print WERD_CHOICE to stdout.
  */
 void WERD_CHOICE::print(const char *msg) const {
+  TPrintGroupLinesTillEndOfScope push;
   std::string s = fmt::format("{} : ", msg);
   for (unsigned int i = 0; i < length_; ++i) {
     s += fmt::format("'{}' ", unicharset_->id_to_unichar(unichar_ids_[i]));
@@ -718,6 +719,7 @@ void WERD_CHOICE::print(const char *msg) const {
 
 // Prints the segmentation state with an introductory message.
 void WERD_CHOICE::print_state(const char *msg) const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("{}", msg);
   for (unsigned int i = 0; i < length_; ++i) {
     tprintDebug(" {}", state_[i]);
@@ -843,6 +845,7 @@ bool EqualIgnoringCaseAndPunct(const WERD_CHOICE &word1,
  */
 void print_ratings_list(const char *msg, BLOB_CHOICE_LIST *ratings,
                         const UNICHARSET &current_unicharset) {
+  TPrintGroupLinesTillEndOfScope push;
   if (ratings->empty()) {
     tprintDebug("{}:<none>\n", msg);
     return;
@@ -859,7 +862,7 @@ void print_ratings_list(const char *msg, BLOB_CHOICE_LIST *ratings,
     }
   }
   tprintDebug("\n");
-  fflush(stdout);
+  //fflush(stdout);
 }
 
 } // namespace tesseract
