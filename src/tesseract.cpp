@@ -614,7 +614,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       };
       try {
         auto loglevel = loglevels.at(loglevel_string);
-        FLAGS_tlog_level = loglevel;
+        tlog_level = loglevel;
       } catch (const std::out_of_range &e) {
 		(void)e;		// unused variable
         // TODO: Allow numeric argument?

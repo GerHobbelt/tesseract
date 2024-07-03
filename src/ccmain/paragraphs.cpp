@@ -122,6 +122,8 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
     linewidth += max_col_width;
   }
 
+  TPrintGroupLinesTillEndOfScope push;
+
   linewidth += max_col_widths.size() * strlen(colsep);
   for (const auto &row : rows) {
     std::string msg;
@@ -182,6 +184,9 @@ static void PrintDetectorState(const ParagraphTheory &theory,
   for (const auto &model : theory.models()) {
     tprintDebug(" {}: {}\n", ++m, model->ToString());
   }
+  if (m == 0) {
+    tprintDebug(" <none>\n");
+  }
 }
 
 static void DebugDump(bool should_print, const char *phase, const ParagraphTheory &theory,
@@ -196,6 +201,7 @@ static void DebugDump(bool should_print, const char *phase, const ParagraphTheor
 // Print out the text for rows[row_start, row_end)
 static void PrintRowRange(const std::vector<RowScratchRegisters> &rows, int row_start,
                           int row_end) {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("======================================\n");
   for (int row = row_start; row < row_end; row++) {
     tprintDebug("{}\n", rows[row].ri_->text.c_str());
