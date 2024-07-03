@@ -27,9 +27,176 @@ namespace tesseract {
 
 #if defined(HAVE_MUPDF)
 
+  static inline bool findPos(const std::vector<unsigned int> &arr, unsigned int value) {
+    for (const auto &elem : arr) {
+      if (elem == value) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static void add_encoded_as_html(std::ostringstream &dst, const char *style,
                                   const char *message) {
-  int state = 0;  // -1 = blockquote; >= 1 = header
+    // when messages carry embedded TABs, they may well be tables and we should help the user a little by rendering them to HTML as such.
+    if (strchr(message, '\t')) {
+      // scan to see if this could serve as a (multiline?) table.
+      std::vector<unsigned int> LF_positions;
+      std::vector<std::vector<unsigned int>> TAB_positions(1);
+      std::vector<unsigned int> *active_TABs = &TAB_positions[0];
+      unsigned int tab_count_per_line_min = UINT_MAX;
+      unsigned int tab_count_per_line_max = 0;
+      unsigned int tab_count_avg = 0;
+      unsigned int tab_count = 0;
+      unsigned int line_count = 0;
+      size_t pos = 0;
+      size_t last_LF = 0;
+      for (;;) {
+        auto pos2 = strcspn(message + pos, "\t\n");
+        pos += pos2;
+        switch (message[pos]) {
+          case '\t':
+            active_TABs->push_back(pos);
+
+            tab_count++;
+            if (tab_count > tab_count_per_line_max)
+              tab_count_per_line_max = tab_count;
+            pos++;
+            continue;
+
+          case '\n':
+            LF_positions.push_back(pos);
+            
+            active_TABs->push_back(pos);   // end of line marker
+            TAB_positions.push_back({});
+            active_TABs = &TAB_positions[TAB_positions.size() - 1];
+
+            last_LF = pos;
+            // don't count empty lines when we check for the minimum # of tabs per line:
+            if (pos2 > 0) {
+              if (tab_count_per_line_min > tab_count)
+                tab_count_per_line_min = tab_count;
+              line_count++;
+              tab_count_avg += tab_count;
+              tab_count = 0;
+            }
+            pos++;
+            continue;
+
+          case 0:
+            if (pos > last_LF + 1) {
+              // end of line marker: SENTINEL if last part was non-empty, 
+              // i.e. when we have something left to print after the 
+              // last '\n' LF.
+              active_TABs->push_back(pos); 
+              LF_positions.push_back(pos); // ditto
+            }
+            TAB_positions.push_back({});  // end of entire chunk: EOF
+            LF_positions.push_back(pos); // ditto
+
+            // don't count empty lines when we check for the minimum # of tabs per line:
+            if (pos2 > 0) {
+              if (tab_count_per_line_min > tab_count)
+                tab_count_per_line_min = tab_count;
+              line_count++;
+              tab_count_avg += tab_count;
+            }
+            break;
+        }
+        break;
+      }
+
+      // heuristic: tolerate a very few TABs as if it were regular content?
+      //
+      // We tolerate about 50% lines without any TAB as a rough heuristic.
+      tab_count_avg *= 128;
+      tab_count_avg /= line_count;
+      if (tab_count_avg >= 64) {
+        tab_count_per_line_max++; // turns the max TAB count in a max column count.
+
+        // Do it as a table; total column count equals tab_count_per_line_max
+        int line = 0;
+
+        active_TABs = &TAB_positions[line];
+        unsigned int line_spos = 0;
+        unsigned int line_epos = line_epos = LF_positions[line];
+        while (active_TABs->size() > 0) {
+          const char *end_plug = nullptr;
+
+          while (active_TABs->size() == 1) {
+            // special treatment for leader lines: treat these as NOT part of the table.
+            if (!end_plug) {
+              if (style)
+                dst << "<p class=\"" << style << "\">";
+              else
+                dst << "<p>";
+            } else {
+              dst << end_plug;
+            }
+            std::string_view particle(message + line_spos,
+                                      line_epos - line_spos);
+            dst << particle;
+            line++;
+            line_spos = line_epos + 1;
+            line_epos = LF_positions[line];
+            active_TABs = &TAB_positions[line];
+            
+            end_plug = "\n<br>\n";
+          }
+
+          if (end_plug)
+            dst << "</p>\n";
+
+          // hit the end sentinel? if so, end it all.
+          if (active_TABs->size() == 0)
+            break;
+
+          // first row is a header row(? --> nope, guess not...)
+          const char *td_elem = "td";
+
+          dst << "<table>\n";
+
+          int tab = 0;
+          while (active_TABs->size() > 1) {
+            dst << "<tr>\n";
+
+            tab = 0;
+            unsigned int tab_spos = line_spos;
+            unsigned int tab_epos = (*active_TABs)[tab];
+            unsigned int colcount = active_TABs->size();
+            while (tab < colcount - 1) {
+              dst << "<" << td_elem << ">";
+              std::string_view particle(message + tab_spos,
+                                        tab_epos - tab_spos);
+              dst << particle;
+              dst << "</" << td_elem << ">";
+              tab++;
+              tab_spos = tab_epos + 1;
+              tab_epos = (*active_TABs)[tab];
+            }
+
+            {
+              dst << "<" << td_elem << " colspan=\""
+                  << (tab_count_per_line_max - tab) << "\">";
+              std::string_view particle(message + tab_spos,
+                                        tab_epos - tab_spos);
+              dst << particle;
+              dst << "</" << td_elem << "></tr>\n";
+            }
+
+            line++;
+            line_spos = line_epos + 1;
+            line_epos = LF_positions[line];
+            active_TABs = &TAB_positions[line];
+          }
+
+          dst << "</table>\n";
+        }
+        return;
+      }
+      // otherwise treat it as regular content. The TAB will be encoded then...
+    }
+    int state = 0;  // -1 = blockquote; >= 1 = header; 0 = regular line of text --> treat as a paragraph
     if (0 == strncmp(message, "PROCESS: ", 9)) {
       state = -1;
       dst << "<blockquote>";
@@ -59,7 +226,7 @@ namespace tesseract {
 
     const char *start = message;
     while (*message) {
-      auto pos = strcspn(message, "\n<>&`*");
+      auto pos = strcspn(message, "\n<>&`*\t");
       if (pos > 0) {
         std::string_view particle(message, pos);
         dst << particle;
@@ -94,14 +261,17 @@ namespace tesseract {
           // which, in our case, cannot break across lines as we only use this for
           // simple stuff.
           //
-          // furthermore, we require it's preceded (and trailed) by whitespace:
+          // furthermore, we require it's preceded by whitespace and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:
           if (message > start && isspace(message[-1])) {
             pos = 0;
             do {
               pos++;
               auto pos2 = strcspn(message + pos, "\n`");
               pos += pos2;
-            } while (message[pos] == '`' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+            } while (message[pos] == '`' && message[pos + 1] != 0 &&
+                     (isalnum(message[pos + 1]) || 
+                       /* when we're dealing with 'quoted' backquotes, such as in: '`', then the quotes of any kind will both follow AND precede the backtick: */
+                       message[pos + 1] == message[pos - 1]));
 
             if (message[pos] == '`') {
               dst << "<code>";
@@ -140,6 +310,11 @@ namespace tesseract {
             }
           }
           dst << '*';
+          message++;
+          continue;
+
+        case '\t':
+          dst << "<code>TAB</code>";
           message++;
           continue;
       }
@@ -849,12 +1024,34 @@ namespace tesseract {
     blockquote {\n\
       margin-left: 2em;\n\
       margin-right: 2em;\n\
-      padding: 0.25em 1em;\n\
+      padding: 0.25em 4em;\n\
       border: solid 4px #b0cfff;\n\
       background-color: #ebf3ff;\n\
+      max-width: 66em;\n\
     }\n\
     em {\n\
       background-color: #ebf3ff;\n\
+    }\n\
+    table {\n\
+      border: solid 10px black;\n\
+      text-align: left;\n\
+      border-collapse: collapse;\n\
+    }\n\
+    th, td {\n\
+      text-align: left;\n\
+      border: solid 10px grey;\n\
+      padding: 0.1em 0.5em;\n\
+      border-left: none;\n\
+      border-top: none;\n\
+    }\n\
+    table tr:nth-child(even) {\n\
+      background: #ebf3ff;\n\
+    }\n\
+    table th:last-child, table td:last-child {\n\
+      border-right: none;\n\
+    }\n\
+    table tr:last-child th, table tr:last-child td {\n\
+      border-bottom: none;\n\
     }\n\
   </style>\n\
 </head>\n\
