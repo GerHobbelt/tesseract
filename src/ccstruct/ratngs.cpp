@@ -693,7 +693,7 @@ void WERD_CHOICE::print(const char *msg) const {
   for (unsigned int i = 0; i < length_; ++i) {
     s += fmt::format("'{}' ", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
-  tprintDebug("{}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
+  tprintDebug("WERD_CHOICE {}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
           s, length_, rating_, certainty_,
           adjust_factor_, permuter_, min_x_height_, max_x_height_, dangerous_ambig_found_);
   if (length_ > 0) {
@@ -709,7 +709,7 @@ void WERD_CHOICE::print(const char *msg) const {
       for (unsigned int i = 0; i < length_; ++i) {
         s += fmt::format("\t{}", state_[i]);
       }
-      s += "\nCertainty:";
+      s += "\ncertainty:";
       for (unsigned int i = 0; i < length_; ++i) {
         s += fmt::format("\t{}", certainties_[i]);
       }
