@@ -361,7 +361,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
     if (res > estimated_resolution && res < kMaxCredibleResolution) {
       estimated_resolution = res;
-      tprintInfo("Estimating resolution as {}\n", estimated_resolution);
+      tprintInfo("Estimating resolution as {} dpi (pixels / inch)\n", estimated_resolution);
     }
   }
 
