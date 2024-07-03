@@ -1081,6 +1081,7 @@ int Tesseract::RetryWithLanguage(const WordData &word_data, WordRecognizer recog
     *in_word = nullptr;
   }
   if (debug) {
+    TPrintGroupLinesTillEndOfScope push;
     for (unsigned int i = 0; i < new_words.size(); ++i) {
       new_words[i]->DebugTopChoice("Lang result");
     }

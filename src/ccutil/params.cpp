@@ -137,9 +137,11 @@ protected:
   FILE *file_;
 };
 
-class ParamsReportDefaultWriter : public ParamsReportWriter {
+class ParamsReportDefaultWriter : public ParamsReportWriter,
+                                  protected TPrintGroupLinesTillEndOfScope {
 public:
-  ParamsReportDefaultWriter() : ParamsReportWriter(nullptr) {}
+  ParamsReportDefaultWriter()
+      : ParamsReportWriter(nullptr), TPrintGroupLinesTillEndOfScope() {}
   virtual ~ParamsReportDefaultWriter() = default;
 
   virtual void Write(const std::string message) {
@@ -149,7 +151,8 @@ public:
 protected:
 };
 
-class ParamsReportFileDuoWriter : public ParamsReportWriter {
+class ParamsReportFileDuoWriter : public ParamsReportWriter,
+                                  protected TPrintGroupLinesTillEndOfScope {
 public:
   ParamsReportFileDuoWriter(FILE *f) : ParamsReportWriter(f) {
     is_separate_file_ = (f != nullptr && f != stderr && f != stdout);
@@ -188,8 +191,11 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
     writer.reset(new ParamsReportDefaultWriter());
   }
 
-  writer->Write(fmt::format("\n\nTesseract Parameter Usage Statistics{}: which params have been relevant?\n"
-                            "----------------------------------------------------------------------\n\n",
+  writer->Write(fmt::format("\n\n"
+                            "## Tesseract Parameter Usage Statistics{}: which params have been relevant?\n"
+                            "----------------------------------------------------------------------\n"
+                            "(WR legenda: `.`: zero/nil; `w`: written once, `W`: ~ twice or more; `r` = read once, `R`: ~ twice or more)\n"
+                            "\n\n",
                             (section_title != nullptr ? fmt::format(" for section: {}", section_title) : "")));
 
   // first collect all parameter names:
@@ -250,7 +256,7 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 #if !defined(NDEBUG)
 	  if (rv == 0) 
 	  {
-	  	fprintf(stderr, "Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
+	  	tprintError("Apparently you have double-defined Tesseract Variable: '%s'! Fix that in the source code!\n", a.name);
 	    ASSERT0(!"Apparently you have double-defined a Tesseract Variable.");
 
         rv = a.ref - b.ref;

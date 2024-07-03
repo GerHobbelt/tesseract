@@ -62,6 +62,22 @@ void tprintDebug(const S *format, Args &&...args) {
 	vTessPrint(T_LOG_DEBUG + tprintGetLevelElevation(), format, fmt::make_format_args(args...));
 }
 
+/////////////////////////////////////////////////////////////////////////////////
+
+// Signal the tprintf line gatherer that the next lines printed, even when terminated
+// by a '\n' newline, are to be kept together as a single pack, a single message.
+// 
+// Any such grouping is ended by the class instance going out of scope (and its destructor
+// being invoked to produce the desired 'side effect') or the grouping is broken up
+// when a different log level message zips through: errors break up warnings/info/debug info, etc.
+//
+// Anyway, this class only lives for its side effects in tprint log channel:
+class TPrintGroupLinesTillEndOfScope {
+public:
+  TPrintGroupLinesTillEndOfScope();   // push grouping signal
+  ~TPrintGroupLinesTillEndOfScope();  // pop pending grouping signal
+};
+
 } // namespace tesseract
 
 #endif // define TESSERACT_CCUTIL_TPRINTF_H
