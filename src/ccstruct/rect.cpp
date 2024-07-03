@@ -197,7 +197,7 @@ std::string TBOX::print_to_str() const {
       str += ")[=>zero area]";
       return str;
     } else {
-      return "<<null_box>>";
+      return "<null_box>";
     }
   }
 }
