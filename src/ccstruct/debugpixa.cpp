@@ -261,17 +261,19 @@ namespace tesseract {
           // which, in our case, cannot break across lines as we only use this for
           // simple stuff.
           //
-          // furthermore, we require it's preceded by whitespace and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:
-          if (message > start && isspace(message[-1])) {
+          // furthermore, we require it's preceded by whitespace or punctuation and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:...
+          //
+          // Re the condition used below:
+          //     (isalnum(message[-1]) || message[+1] == message[-1])
+          // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
+          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
             pos = 0;
             do {
               pos++;
               auto pos2 = strcspn(message + pos, "\n`");
               pos += pos2;
             } while (message[pos] == '`' && message[pos + 1] != 0 &&
-                     (isalnum(message[pos + 1]) || 
-                       /* when we're dealing with 'quoted' backquotes, such as in: '`', then the quotes of any kind will both follow AND precede the backtick: */
-                       message[pos + 1] == message[pos - 1]));
+                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
 
             if (message[pos] == '`') {
               dst << "<code>";
@@ -1033,19 +1035,19 @@ namespace tesseract {
       background-color: #ebf3ff;\n\
     }\n\
     table {\n\
-      border: solid 10px black;\n\
+      border: solid 2px black;\n\
       text-align: left;\n\
       border-collapse: collapse;\n\
     }\n\
     th, td {\n\
       text-align: left;\n\
-      border: solid 10px grey;\n\
+      border: solid 1px grey;\n\
       padding: 0.1em 0.5em;\n\
       border-left: none;\n\
       border-top: none;\n\
     }\n\
-    table tr:nth-child(even) {\n\
-      background: #ebf3ff;\n\
+    table tr:nth-child(odd) {\n\
+      background: #eeeff0;\n\
     }\n\
     table th:last-child, table td:last-child {\n\
       border-right: none;\n\
