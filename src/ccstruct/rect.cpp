@@ -176,13 +176,28 @@ void TBOX::plot(                    // paint box
 // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
 std::string TBOX::print_to_str() const {
   // "(%d,%d)->(%d,%d)", left(), bottom(), right(), top()
-  std::string str;
-  str  = "(" + std::to_string(left());
-  str += "," + std::to_string(bottom());
-  str += ")->(" + std::to_string(right());
-  str += "," + std::to_string(top());
-  str += ')';
-  return str;
+  if (!null_box()) {
+    std::string str;
+    str = "(" + std::to_string(left());
+    str += "," + std::to_string(bottom());
+    str += ")->(" + std::to_string(right());
+    str += "," + std::to_string(top());
+    str += ')';
+    return str;
+  } else {
+    // if we still got a kind of sane corner coordinate, don't hesitate to report it:
+    if (right() >= 0 && top() >= 0) {
+      std::string str;
+      str = "(" + std::to_string(left());
+      str += "," + std::to_string(bottom());
+      str += ")->(" + std::to_string(right());
+      str += "," + std::to_string(top());
+      str += ")[=>zero area]";
+      return str;
+    } else {
+      return "<<null_box>>";
+    }
+  }
 }
 
 // Writes to the given file. Returns false in case of error.
