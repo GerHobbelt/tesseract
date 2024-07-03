@@ -809,7 +809,7 @@ static int SelectBestWords(double rating_ratio, double certainty_margin, bool de
       int next_n_left = INT32_MAX;
       WordGap(*new_words, n, &n_right, &next_n_left);
       if (std::max(b_right, n_right) < std::min(next_b_left, next_n_left)) {
-        // The word breaks overlap. [start_b,b] and [start_n, n] match.
+        // The word breaks overlap. [start_b, b] and [start_n, n] match.
         break;
       }
       // Keep searching for the matching word break.
@@ -854,10 +854,16 @@ static int SelectBestWords(double rating_ratio, double certainty_margin, bool de
     }
     if (debug) {
       tprintf(
-          "%d new words %s than %d old words: r: %g v %g c: %g v %g"
-          " valid dict: %d v %d\n",
+          "%d new words %s than %d old words: rating: %g vs. %g certainty: %g vs. %g"
+          " valid dict: %d vs. %d\n",
           end_n - start_n, new_better ? "better" : "worse", end_b - start_b, n_rating, b_rating,
           n_certainty, b_certainty, n_valid_permuter, b_valid_permuter);
+
+      tprintf("The new %zu *best* words produced: [", out_words.size());
+      for (int ow = 0; ow < out_words.size(); ow++) {
+        tprintf("`%s` ", out_words[ow]->best_choice->unichar_string().c_str());
+      }
+      tprintf("]\n");
     }
     // Move on to the next group.
     b = end_b;
@@ -1319,9 +1325,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   clock_t start_t = clock();
   const bool debug = classify_debug_level > 0 || multilang_debug_level > 0;
   if (debug) {
-    tprintf("%s word with lang %s at:", word->done ? "Already done" : "Processing",
-            most_recently_used_->lang.c_str());
-    word->word->bounding_box().print();
+    tprintf("%s word with lang %s at: %s\n", word->done ? "Already done" : "Processing",
+            most_recently_used_->lang.c_str(), word->word->bounding_box().print_to_str().c_str());
   }
   if (word->done) {
     // If done on pass1, leave it as-is.
