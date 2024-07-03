@@ -728,7 +728,7 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
 }
 
 void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
-  // extract part from the source image pix and fade the srroundings,
+  // extract part from the source image pix and fade the surroundings,
   // so a human can easily spot which bbox is the current focus but also
   // quickly spot where the extracted part originated within the large source image.
   int iw = pixGetWidth(pix);
@@ -791,13 +791,13 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox
   boxDestroy(&b);
   pixDestroy(&ppix);
   ASSERT0(bbox.area() > 0);
-  pixa_debug_.AddClippedPix(ppix32, bbox, title);
+  pixa_debug_.AddPixWithBBox(ppix32, bbox, title);
 
   pixDestroy(&ppix32);
 }
 
 void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *title) {
-  pixa_debug_.AddClippedPix(pix, title);
+  pixa_debug_.AddPixWithBBox(pix, title);
 }
 
 

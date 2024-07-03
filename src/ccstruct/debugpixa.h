@@ -34,8 +34,8 @@ namespace tesseract {
     // Adds the given pix to the set of pages in the PDF file, with the given
     // caption added to the top.
     void AddPix(const Image& pix, const char* caption);
-    void AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption);
-    void AddClippedPix(const Image &pix, const char *caption);
+    void AddPixWithBBox(const Image &pix, const TBOX &bbox, const char *caption);
+    void AddPixWithBBox(const Image &pix, const char *caption);
 
     // Return reference to info stream, where you can collect the diagnostic information gathered.
     //
@@ -125,11 +125,12 @@ namespace tesseract {
 #endif
   };
 
-  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
                                   float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor);
+                                  float src_factor, float background_factor,
+                                  const TBOX *cliprect);
 
-  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image);
+  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect);
 
   typedef int AutoExecOnScopeExitFunction_f(void);
 

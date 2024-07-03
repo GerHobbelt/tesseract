@@ -953,7 +953,7 @@ void BackgroundScrollView::PrepCanvas(void) {
 
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
-  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
   ASSERT0(pix.pix_ != wh_pix.pix_);
   wh_pix.destroy();
 }

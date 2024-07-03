@@ -135,11 +135,11 @@ namespace tesseract {
 
   // Adds the given pix to the set of pages in the PDF file, with the given
   // caption added to the top.
-  void DebugPixa::AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption) {
+  void DebugPixa::AddPixWithBBox(const Image &pix, const TBOX &bbox, const char *caption) {
     AddPixInternal(pix, bbox, caption);
   }
 
-  void DebugPixa::AddClippedPix(const Image &pix, const char *caption) {
+  void DebugPixa::AddPixWithBBox(const Image &pix, const char *caption) {
     TBOX bbox(pix);
     AddPixInternal(pix, bbox, caption);
   }
@@ -325,9 +325,11 @@ namespace tesseract {
     return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
   }
 
-  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
                                   float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor) {
+                                  float src_factor, float background_factor, 
+                                  const TBOX *cliprect) 
+  {
     int w, h, depth;
     ASSERT0(src != nullptr);
     pixGetDimensions(src, &w, &h, &depth);
@@ -339,26 +341,81 @@ namespace tesseract {
       pixGetDimensions(background, &ow, &oh, &od);
 
       Image toplayer = pixConvertTo32(src);
-      Image botlayer = pixConvertTo32(background);
+      Image botlayer = pixConvertTo32(const_cast<PIX*>(background));  // quick hack
 
       if (w != ow || h != oh) {
-        // smaller images are generally masks, etc. and we DO NOT want to be
-        // confused by the smoothness introduced by regular scaling, so we apply
-        // brutal sampled scale then:
-        if (w < ow && h < oh) {
-          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w,
-                                                 oh * 1.0f / h, 0.0f, 0.0f);
-        } else if (w > ow && h > oh) {
-          // the new image has been either scaled up vs. the original OR a border
-          // was added (TODO)
-          //
-          // for now, we simply apply regular smooth scaling
-          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        if (cliprect != nullptr) {
+          // when a TBOX is provided, you can bet your bottom dollar `src` is an 'extract' of `background`
+          // and we therefore should paint it back onto there at the right spot:
+          // the cliprectx/y coordinates will tell us!
+          int cx, cy, cw, ch;
+          cx = cliprect->left();
+          cy = cliprect->top();
+          cw = cliprect->width();
+          ch = cliprect->height();
+
+          // when the clipping rectangle indicates another area than we got in `src`, we need to scale `src` first:
+          // 
+          // smaller images are generally masks, etc. and we DO NOT want to be
+          // confused by the smoothness introduced by regular scaling, so we
+          // apply brutal sampled scale then:
+          if (w != cw || h != ch) {
+            if (w < cw && h < ch) {
+              toplayer = pixScaleBySamplingWithShift(toplayer, cw * 1.0f / w, ch * 1.0f / h, 0.0f, 0.0f);
+            } else if (w > cw && h > ch) {
+              // the new image has been either scaled up vs. the original OR a
+              // border was added (TODO)
+              //
+              // for now, we simply apply regular smooth scaling
+              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+            } else {
+              // scale a clipped partial to about match the size of the
+              // original/base image, so the generated HTML + image sequence is
+              // more, äh, uniform/readable.
+#if 0
+              ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+            }
+
+            pixGetDimensions(toplayer, &w, &h, &depth);
+          }
+            // now composite over 30% grey: this is done by simply resizing to background using 30% grey as a 'border':
+          int bl = cx;
+          int br = ow - cx - cw;
+          int bt = cy;
+          int bb = oh - cy - ch;
+          
+          if (bl || br || bt || bb) {
+            l_uint32 grey;
+            const int g = int(0.7 * 256);
+            (void)composeRGBAPixel(g, g, g, 256, &grey);
+            toplayer = pixAddBorderGeneral(toplayer, bl, br, bt, bb, grey);
+          }
         } else {
-          // scale a clipped partial to about match the size of the original/base image, 
-		  // so the generated HTML + image sequence is more, äh, uniform/readable.
-          ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
-          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          // no cliprect specified, so `src` must be scaled version of
+          // `background`.
+          //
+          // smaller images are generally masks, etc. and we DO NOT want to be
+          // confused by the smoothness introduced by regular scaling, so we
+          // apply brutal sampled scale then:
+          if (w < ow && h < oh) {
+            toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
+          } else if (w > ow && h > oh) {
+            // the new image has been either scaled up vs. the original OR a
+            // border was added (TODO)
+            //
+            // for now, we simply apply regular smooth scaling
+            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          } else {
+            // scale a clipped partial to about match the size of the
+            // original/base image, so the generated HTML + image sequence is
+            // more, äh, uniform/readable.
+#if 0
+            ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          }
         }
       }
 
@@ -425,11 +482,11 @@ namespace tesseract {
     }
   }
 
-  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image) {
-    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085);
+  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect) {
+    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
+  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const TBOX *cliprect = nullptr, const Pix* original_image = nullptr)
   {
     if (!!pix) {
     const char* pixfname = fz_basename(img_filename);
@@ -453,7 +510,7 @@ namespace tesseract {
       }
     })();
 
-    Image img = MixWithLightRedTintedBackground(pix, original_image);
+    Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
     pixWrite(img_filename, img, IFF_PNG);
     img.destroy();
 
@@ -491,14 +548,25 @@ namespace tesseract {
       int depth = pixGetDepth(pixs);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-    auto cliprect = cliprects[idx];
+    TBOX cliprect = cliprects[idx];
     auto clip_area = cliprect.area();
-    PIX *bgimg = clip_area > 0 ? nullptr : tesseract_->pix_original();
+    PIX *bgimg = nullptr;
+    if (clip_area > 0) {
+      bgimg = tesseract_->pix_original();
+    }
 
-    write_one_pix_for_html(html, counter, fn.c_str(), pixs,
-                           caption.c_str(),
-                           captions[idx].c_str(),
+    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[idx].c_str());
+
+    if (clip_area > 0 && false) {
+      counter++;
+      snprintf(in, 40, ".img%04d", counter);
+      fn = partname + in + cprefix + caption + /* ext */ ".png";
+
+      write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
+                           captions[idx].c_str(), 
+                           &cliprect,
                            bgimg);
+    }
 
     pixs.destroy();
   }
@@ -680,7 +748,7 @@ namespace tesseract {
       {
         std::string fn(partname + ".img-original.png");
 
-        write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
+        write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
 
       // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
