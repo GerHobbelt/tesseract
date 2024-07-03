@@ -287,7 +287,11 @@ public:
   }
 
   void print() const { // print
-    tprintf("Bounding box=(%d,%d)->(%d,%d)\n", left(), bottom(), right(), top());
+    if (!null_box()) {
+      tprintf("Bounding box=(%d,%d)->(%d,%d)[=>width:%d,height:%d]\n", left(), bottom(), right(), top(), width(), height());
+    } else {
+      tprintf("Bounding box=<null_box>:(%d,%d)->(%d,%d)[=>zero area]\n", left(), bottom(), right(), top());
+    }
   }
   // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
   std::string print_to_str() const;
