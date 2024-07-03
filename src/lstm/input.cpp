@@ -105,7 +105,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
 /* static */
 void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *randomizer,
-                            NetworkIO *input) {
+                            NetworkIO *input, const TBOX &line_box, float scale_factor) {
   bool color = shape.depth() == 3;
   Image var_pix = pix;
   int depth = pixGetDepth(var_pix);
@@ -141,7 +141,7 @@ void Input::PreparePixInput(const StaticShape &shape, const Image pix, TRand *ra
   }
   {
     Tesseract *tess = ScrollViewManager::GetActiveTesseractInstance();
-    tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
+    tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, bbox:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();
