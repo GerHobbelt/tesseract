@@ -26,6 +26,134 @@
 namespace tesseract {
 
 #if defined(HAVE_MUPDF)
+
+  static void add_encoded_as_html(std::ostringstream &dst, const char *style,
+                                  const char *message) {
+  int state = 0;  // -1 = blockquote; >= 1 = header
+    if (0 == strncmp(message, "PROCESS: ", 9)) {
+      state = -1;
+      dst << "<blockquote>";
+      message += 9;
+    } else if (message[0] == '#') {
+      int pos = 1;
+      while (message[pos] == '#')
+        pos++;
+      if (pos <= 6 && message[pos] == ' ') {
+        state = pos;
+        if (style)
+          dst << "\n\n<h" << "123456"[state] << " class=\"" << style << "\">";
+        else
+          dst << "\n\n<h" << "123456"[state] << ">";
+        pos++;
+        while (message[pos] == ' ')
+          pos++;
+        message += pos;
+      }
+    }
+    if (state <= 0) {
+      if (style)
+        dst << "<p class=\"" << style << "\">";
+      else
+        dst << "<p>";
+    }
+
+    const char *start = message;
+    while (*message) {
+      auto pos = strcspn(message, "\n<>&`*");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        dst << particle;
+        message += pos;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          dst << "&lt;";
+          message++;
+          continue;
+
+        case '>':
+          dst << "&gt;";
+          message++;
+          continue;
+
+        case '&':
+          dst << "&amp;";
+          message++;
+          continue;
+
+        case '\n':
+          dst << "\n<br>";
+          message++;
+          continue;
+
+        case '`':
+          // markdown-ish in-line code phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded (and trailed) by whitespace:
+          if (message > start && isspace(message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n`");
+              pos += pos2;
+            } while (message[pos] == '`' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+
+            if (message[pos] == '`') {
+              dst << "<code>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</code>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '`';
+          message++;
+          continue;
+
+        case '*':
+          // markdown-ish in-line emphasis phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded (and trailed) by whitespace:
+          if (message > start && isspace(message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n*");
+              pos += pos2;
+            } while (message[pos] == '*' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+
+            if (message[pos] == '*') {
+              dst << "<em>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</em>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '*';
+          message++;
+          continue;
+      }
+    }
+
+    if (state < 0) {
+      dst << "</p></blockquote>\n\n";
+    } else if (state > 0) {
+      dst << "</h" << "123456"[state] << ">\n\n";
+    } else {
+      dst << "</p>\n\n";
+    }
+  }
+
   void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
   {
     DebugPixa *self = (DebugPixa *)user;
@@ -33,7 +161,7 @@ namespace tesseract {
       (self->fz_cbs[0])(self->fz_ctx, self->fz_cb_userptr[0], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p class=\"error\">" << message << "</p>\n\n";
+    add_encoded_as_html(f, "error", message);
   }
 
   void DebugPixa::fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -43,7 +171,7 @@ namespace tesseract {
       (self->fz_cbs[1])(self->fz_ctx, self->fz_cb_userptr[1], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p class=\"warning\">" << message << "</p>\n\n";
+    add_encoded_as_html(f, "warning", message);
   }
 
   void DebugPixa::fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -53,7 +181,7 @@ namespace tesseract {
       (self->fz_cbs[2])(self->fz_ctx, self->fz_cb_userptr[2], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p>" << message << "</p>\n\n";
+    add_encoded_as_html(f, nullptr, message);
   }
 #endif
 
@@ -717,6 +845,16 @@ namespace tesseract {
       max-width: 70em;\n\
       margin-left: 0;\n\
       background-color: #c5d5ed;\n\
+    }\n\
+    blockquote {\n\
+      margin-left: 2em;\n\
+      margin-right: 2em;\n\
+      padding: 0.25em 1em;\n\
+      border: solid 4px #b0cfff;\n\
+      background-color: #ebf3ff;\n\
+    }\n\
+    em {\n\
+      background-color: #ebf3ff;\n\
     }\n\
   </style>\n\
 </head>\n\
