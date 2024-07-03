@@ -182,7 +182,9 @@ std::string TBOX::print_to_str() const {
     str += "," + std::to_string(bottom());
     str += ")->(" + std::to_string(right());
     str += "," + std::to_string(top());
-    str += ')';
+    str += ")[=>w:" + std::to_string(width());
+    str += ",h:" + std::to_string(height());
+    str += ']';
     return str;
   } else {
     // if we still got a kind of sane corner coordinate, don't hesitate to report it:
