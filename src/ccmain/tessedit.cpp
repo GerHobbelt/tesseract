@@ -52,7 +52,7 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
   std::string path = datadir;
   path += "configs/";
   path += filename;
-  tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+  tprintDebug("Read Config: test if '{}' is a readable file: ", path);
   FILE *fp;
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
@@ -60,21 +60,26 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
     path = datadir;
     path += "tessconfigs/";
     path += filename;
-    tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+    tprintDebug("NO.\n"
+      "Read Config: test if '{}' is a readable file: ", path);
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
       fclose(fp);
     } else {
       path = filename;
-      tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+      tprintDebug("NO.\n"
+      "Read Config: test if '{}' is a readable file: ", path);
       if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
         fclose(fp);
       }
       else {
-        tprintError("config file '{}' cannot be opened / does not exist.\n", path);
+        tprintDebug("NO.\n");
+        tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked.\n", filename);
         return;
       }
     }
   }
+  tprintDebug("YES\n");
+
   ParamUtils::ReadParamsFile(path.c_str(), constraint, this->params());
 }
 
