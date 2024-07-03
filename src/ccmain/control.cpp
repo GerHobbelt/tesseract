@@ -1004,7 +1004,7 @@ static int SelectBestWords(double rating_ratio, double certainty_margin, bool de
       int next_n_left = INT32_MAX;
       WordGap(*new_words, n, &n_right, &next_n_left);
       if (std::max(b_right, n_right) < std::min(next_b_left, next_n_left)) {
-        // The word breaks overlap. [start_b,b] and [start_n, n] match.
+        // The word breaks overlap. [start_b, b] and [start_n, n] match.
         break;
       }
       // Keep searching for the matching word break.
@@ -1049,10 +1049,16 @@ static int SelectBestWords(double rating_ratio, double certainty_margin, bool de
     }
     if (debug) {
       tprintDebug(
-          "{} new words {} than {} old words: r: {} v {} c: {} v {}"
-          " valid dict: {} v {}\n",
+          "{} new words {} than {} old words: rating: new {} vs. old {}; certainty: {} vs. {};"
+          " valid dict: {} vs. {}\n",
           end_n - start_n, new_better ? "better" : "worse", end_b - start_b, n_rating, b_rating,
           n_certainty, b_certainty, n_valid_permuter, b_valid_permuter);
+
+      tprintDebug("The new {} *best* words produced: [", out_words.size());
+      for (int ow = 0; ow < out_words.size(); ow++) {
+        tprintDebug("`{}` ", out_words[ow]->best_choice->unichar_string());
+      }
+      tprintDebug("]\n");
     }
     // Move on to the next group.
     b = end_b;
@@ -1514,11 +1520,9 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
     TBOX bbox = word->word->bounding_box();
-    tprintDebug("pass: {} :: {} word with lang {} at: {}\n", 
-      pass_n,
-      word->done ? "Already done" : "Processing",
-                  most_recently_used_->lang,
-          bbox.print_to_str());
+    tprintDebug("pass: {} :: {} word with lang {} at: {}\n", pass_n,
+                (word->done ? "Already done" : "Processing"),
+                most_recently_used_->lang, bbox.print_to_str());
   }
   if (word->done) {
     // If done on pass1, leave it as-is.
