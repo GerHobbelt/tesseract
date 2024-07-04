@@ -228,24 +228,6 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
 }
 
 
-static void tess_reporting_holdoff_eventhandler(AutoSupressDatum *datum, TessBaseAPI *api_ref, Tesseract *ocr_ref) {
-    Tesseract *tess = ocr_ref;
-    if (!tess) {
-        if (api_ref) {
-            tess = api_ref->tesseract();
-        }
-    }
-
-	if (debug_misc) {
-      tprintDebug("tesseract ({}) log holdoff lock released.\n", (void *)tess);
-	}
-
-    if (tess) {
-        tess->ReportDebugInfo();
-    }
-}
-
-
 TessBaseAPI::TessBaseAPI()
     : tesseract_(nullptr)
 #if !DISABLED_LEGACY_ENGINE
@@ -269,8 +251,7 @@ TessBaseAPI::TessBaseAPI()
     , rect_width_(0)
     , rect_height_(0)
     , image_width_(0)
-    , image_height_(0) 
-    , reporting_holdoff_(this, nullptr /* tesseract_ */, tess_reporting_holdoff_eventhandler) {
+    , image_height_(0) {
 }
 
 TessBaseAPI::~TessBaseAPI() {
@@ -311,7 +292,7 @@ size_t TessBaseAPI::getOpenCLDevice(void **data) {
  */
 void TessBaseAPI::SetInputName(const char *name) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
   }
   tesseract_->input_file_path = name ? name : "";
 }
@@ -392,13 +373,13 @@ const std::string &TessBaseAPI::GetOutputName() {
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
   }
   return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
 }
 bool TessBaseAPI::SetVariable(const char *name, int value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
   }
   std::string v = fmt::format("{}", value);
   return ParamUtils::SetParam(name, v.c_str(), SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tesseract_->params());
@@ -406,7 +387,7 @@ bool TessBaseAPI::SetVariable(const char *name, int value) {
 
 bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
   }
   return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_DEBUG_ONLY, tesseract_->params());
 }
@@ -586,7 +567,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   bool reset_classifier = true;
   if (tesseract_ == nullptr) {
     reset_classifier = false;
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
     if (reader != nullptr) {
       reader_ = reader;
     }
@@ -664,7 +645,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs)
  */
 void TessBaseAPI::InitForAnalysePage() {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
 #if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
@@ -692,7 +673,7 @@ void TessBaseAPI::ReadDebugConfigFile(const char *filename) {
  */
 void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
   }
   tesseract_->tessedit_pageseg_mode.set_value(mode);
 }
@@ -757,8 +738,6 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
                            int bytes_per_pixel, int bytes_per_line, float angle) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (InternalResetImage()) {
     thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, angle);
     SetInputImage(thresholder_->GetPixRect());
@@ -782,8 +761,6 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * and it is therefore more efficient to provide a Pix directly.
  */
 void TessBaseAPI::SetImage(Pix *pix, float angle) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (InternalResetImage()) {
     if (pixGetSpp(pix) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
@@ -803,8 +780,6 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
  * can be recognized with the same image.
  */
 void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (thresholder_ == nullptr) {
     return;
   }
@@ -817,8 +792,6 @@ void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
  * Get a copy of the internal thresholded image from Tesseract.
  */
 Pix *TessBaseAPI::GetThresholdedImage() {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (tesseract_ == nullptr || thresholder_ == nullptr) {
     return nullptr;
   }
@@ -1037,7 +1010,6 @@ PageIterator *TessBaseAPI::AnalyseLayout() {
 }
 
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
   if (FindLines() == 0) {
     AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Analyse Layout"));
 
@@ -1058,8 +1030,6 @@ PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
  * internal structures.
  */
 int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (tesseract_ == nullptr) {
     return -1;
   }
@@ -1417,7 +1387,6 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 // processing required due to being in a training mode.
 bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
                                TessResultRenderer *renderer) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Process pages"));
   
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
@@ -1604,7 +1573,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
   AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
@@ -2565,8 +2533,6 @@ void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
 
 /** Common code for setting the image. */
 bool TessBaseAPI::InternalResetImage() {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (tesseract_ == nullptr) {
     tprintError("Please call Init before attempting to set an image.\n");
     return false;
@@ -2704,8 +2670,6 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 
 /** Find lines from the image making the BLOCK_LIST. */
 int TessBaseAPI::FindLines() {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (thresholder_ == nullptr || thresholder_->IsEmpty()) {
     tprintError("Please call SetImage before attempting recognition.\n");
     return -1;
@@ -2717,7 +2681,7 @@ int TessBaseAPI::FindLines() {
     return 0;
   }
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(nullptr, &GetLogReportingHoldoffMarkerRef());
+    tesseract_ = new Tesseract(nullptr);
 #if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
@@ -2875,8 +2839,6 @@ int TessBaseAPI::TextLength(int *blob_count) const {
  * Returns true if the image was processed successfully.
  */
 bool TessBaseAPI::DetectOS(OSResults *osr) {
-  AutoSupressMarker supress_premature_log_reporting(GetLogReportingHoldoffMarkerRef());
-
   if (tesseract_ == nullptr) {
     return false;
   }
@@ -2986,6 +2948,17 @@ const Dawg *TessBaseAPI::GetDawg(int i) const {
 /** Return the number of dawgs loaded into tesseract_ object. */
 int TessBaseAPI::NumDawgs() const {
   return tesseract_ == nullptr ? 0 : tesseract_->getDict().NumDawgs();
+}
+
+void TessBaseAPI::FinalizeAndWriteDiagnosticsReport() {
+  if (tesseract_ == nullptr) {
+    ASSERT_HOST_MSG(false,
+                    "FinalizeAndWriteDiagnosticsReport was invoked without a "
+                    "live tesseract instance: you may have a bug that looses a "
+                    "lot of tesseract diagnostics info + reporting for you.");
+    return;
+  };
+  tesseract_->ReportDebugInfo();
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */

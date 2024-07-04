@@ -194,16 +194,8 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract(Tesseract *parent = nullptr, AutoSupressDatum *LogReportingHoldoffMarkerRef = nullptr);
+  Tesseract(Tesseract *parent = nullptr);
   virtual ~Tesseract() override;
-
-protected:
-  AutoSupressDatum &reporting_holdoff_;
-
-public:
-  AutoSupressDatum &GetLogReportingHoldoffMarkerRef() {
-    return reporting_holdoff_;
-  };
 
   // Return appropriate dictionary
   Dict &getDict() override;

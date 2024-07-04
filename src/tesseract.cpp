@@ -1032,11 +1032,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
   }
 }
 
-static void pause_key(void) {
-  (void)fgetc(stdin);
-}
-
-  /**********************************************************************
+/**********************************************************************
  *  main()
  *
  **********************************************************************/
@@ -1129,7 +1125,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
   {
       TessBaseAPI api;
-      AutoSupressMarker supress_premature_log_reporting(api.GetLogReportingHoldoffMarkerRef());
 
       api.SetOutputName(outputbase);
 
@@ -1402,7 +1397,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.ReportParamsUsageStatistics();
     }
 
-    supress_premature_log_reporting.stepdown();
+    api.FinalizeAndWriteDiagnosticsReport();  //  --> ReportDebugInfo()
     api.Clear();
   }
   // ^^^ end of scope for the Tesseract `api` instance

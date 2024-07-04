@@ -50,11 +50,8 @@
 
 namespace tesseract {
 
-Tesseract::Tesseract(Tesseract *parent, AutoSupressDatum *LogReportingHoldoffMarkerRef)
-    : parent_instance_(parent),
-      reporting_holdoff_((parent != nullptr && LogReportingHoldoffMarkerRef == nullptr)
-                        ? parent->GetLogReportingHoldoffMarkerRef()
-                        : *LogReportingHoldoffMarkerRef)
+Tesseract::Tesseract(Tesseract *parent)
+    : parent_instance_(parent)
     , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
                   "Take segmentation and labeling from box file", params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
