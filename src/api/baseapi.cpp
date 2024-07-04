@@ -3484,13 +3484,15 @@ void TessBaseAPI::SetupDebugAllPreset() {
   tess.debug_write_unlv.set_value(true, SRC);
   tess.debug_line_finding.set_value(true, SRC);
   tess.debug_image_normalization.set_value(true, SRC);
-  tess.debug_do_not_use_scrollview_app.set_value(true, SRC);
 
-  tess.interactive_display_mode.set_value(true, SRC);
+  tess.interactive_display_mode.set_value(false, SRC);       // graphics, but do not invoke ScrollView app.
 
   tess.debug_display_page.set_value(true, SRC);
   tess.debug_display_page_blocks.set_value(true, SRC);
   tess.debug_display_page_baselines.set_value(true, SRC);
+
+  tess.dump_segmented_word_images.set_value(true, SRC);
+  tess.dump_osdetect_process_images.set_value(true, SRC);
 
   tess.ResyncVariablesInternally();
 }

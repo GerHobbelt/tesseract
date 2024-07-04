@@ -724,7 +724,7 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
 
   if (tesseract_->debug_line_finding) {
 #if !GRAPHICS_DISABLED
-    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+    if (!tesseract_->interactive_display_mode && (pix_vline != nullptr || pix_hline != nullptr)) {
       int width = pixGetWidth(pix);
       int height = pixGetHeight(pix);
       ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);
@@ -767,7 +767,7 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
                       pix_non_hline, pix, h_lines);
   if (tesseract_->debug_line_finding) {
 #if !GRAPHICS_DISABLED
-    if (!tesseract_->debug_do_not_use_scrollview_app && (pix_vline != nullptr || pix_hline != nullptr)) {
+    if (!tesseract_->interactive_display_mode && (pix_vline != nullptr || pix_hline != nullptr)) {
       int width = pixGetWidth(pix);
       int height = pixGetHeight(pix);
       ScrollViewReference win = ScrollViewManager::MakeScrollView(tesseract_, "LinesMask", 0, 0, width, height, width, height);

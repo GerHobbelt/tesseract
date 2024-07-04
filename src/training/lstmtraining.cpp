@@ -54,20 +54,12 @@ BOOL_VAR(training_reset_learning_rate, false,
                        "Resets all stored learning rates to the value specified by --learning_rate.");
 DOUBLE_VAR(training_momentum, 0.5, "Decay factor for repeating deltas.");
 DOUBLE_VAR(training_adam_beta, 0.999, "Decay factor for repeating deltas.");
-#if !defined(BUILD_MONOLITHIC)
 INT_VAR(training_max_image_MB, 6000, "Max memory to use for images.");
-#else
-DECLARE_INT_VAR(training_max_image_MB); // already declared in lstmeval.cpp
-#endif
 STRING_VAR(training_continue_from, "", "Existing model to extend");
 STRING_VAR(training_model_output, "lstmtrain", "Basename for output models");
 STRING_VAR(training_train_listfile, "",
                          "File listing training files in lstmf training format.");
-#if !defined(BUILD_MONOLITHIC)
 STRING_VAR(training_eval_listfile, "", "File listing eval files in lstmf training format.");
-#else
-DECLARE_STRING_VAR(training_eval_listfile); // already declared in lstmeval.cpp
-#endif
 #if defined(__USE_GNU) || defined(_MSC_VER)
 BOOL_VAR(training_debug_float, false, "Raise error on certain float errors.");
 #endif
@@ -80,11 +72,7 @@ INT_VAR(training_append_index, -1,
                       " attach the new network defined by net_spec");
 BOOL_VAR(training_debug_network, false, "Get info on distribution of weight values");
 INT_VAR(training_max_iterations, 0, "If set, exit after this many iterations");
-#if !defined(BUILD_MONOLITHIC)
 STRING_VAR(training_traineddata, "", "Combined Dawgs/Unicharset/Recoder for language model");
-#else
-DECLARE_STRING_VAR(training_traineddata); // already declared in lstmeval.cpp
-#endif
 STRING_VAR(training_old_traineddata, "",
                          "When changing the character set, this specifies the old"
                          " character set that is to be replaced");
