@@ -29,6 +29,311 @@ using namespace parameters;
 namespace tesseract {
 
 #if defined(HAVE_MUPDF)
+
+  static inline bool findPos(const std::vector<unsigned int> &arr, unsigned int value) {
+    for (const auto &elem : arr) {
+      if (elem == value) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static void add_encoded_as_html(std::ostringstream &dst, const char *style,
+                                  const char *message) {
+    // when messages carry embedded TABs, they may well be tables and we should help the user a little by rendering them to HTML as such.
+    if (strchr(message, '\t')) {
+      // scan to see if this could serve as a (multiline?) table.
+      std::vector<unsigned int> LF_positions;
+      std::vector<std::vector<unsigned int>> TAB_positions(1);
+      std::vector<unsigned int> *active_TABs = &TAB_positions[0];
+      unsigned int tab_count_per_line_min = UINT_MAX;
+      unsigned int tab_count_per_line_max = 0;
+      unsigned int tab_count_avg = 0;
+      unsigned int tab_count = 0;
+      unsigned int line_count = 0;
+      size_t pos = 0;
+      size_t last_LF = 0;
+      for (;;) {
+        auto pos2 = strcspn(message + pos, "\t\n");
+        pos += pos2;
+        switch (message[pos]) {
+          case '\t':
+            active_TABs->push_back(pos);
+
+            tab_count++;
+            if (tab_count > tab_count_per_line_max)
+              tab_count_per_line_max = tab_count;
+            pos++;
+            continue;
+
+          case '\n':
+            LF_positions.push_back(pos);
+            
+            active_TABs->push_back(pos);   // end of line marker
+            TAB_positions.push_back({});
+            active_TABs = &TAB_positions[TAB_positions.size() - 1];
+
+            last_LF = pos;
+            // don't count empty lines when we check for the minimum # of tabs per line:
+            if (pos2 > 0) {
+              if (tab_count_per_line_min > tab_count)
+                tab_count_per_line_min = tab_count;
+              line_count++;
+              tab_count_avg += tab_count;
+              tab_count = 0;
+            }
+            pos++;
+            continue;
+
+          case 0:
+            if (pos > last_LF + 1) {
+              // end of line marker: SENTINEL if last part was non-empty, 
+              // i.e. when we have something left to print after the 
+              // last '\n' LF.
+              active_TABs->push_back(pos); 
+              LF_positions.push_back(pos); // ditto
+            }
+            TAB_positions.push_back({});  // end of entire chunk: EOF
+            LF_positions.push_back(pos); // ditto
+
+            // don't count empty lines when we check for the minimum # of tabs per line:
+            if (pos2 > 0) {
+              if (tab_count_per_line_min > tab_count)
+                tab_count_per_line_min = tab_count;
+              line_count++;
+              tab_count_avg += tab_count;
+            }
+            break;
+        }
+        break;
+      }
+
+      // heuristic: tolerate a very few TABs as if it were regular content?
+      //
+      // We tolerate about 50% lines without any TAB as a rough heuristic.
+      tab_count_avg *= 128;
+      tab_count_avg /= line_count;
+      if (tab_count_avg >= 64) {
+        tab_count_per_line_max++; // turns the max TAB count in a max column count.
+
+        // Do it as a table; total column count equals tab_count_per_line_max
+        int line = 0;
+
+        active_TABs = &TAB_positions[line];
+        unsigned int line_spos = 0;
+        unsigned int line_epos = line_epos = LF_positions[line];
+        while (active_TABs->size() > 0) {
+          const char *end_plug = nullptr;
+
+          while (active_TABs->size() == 1) {
+            // special treatment for leader lines: treat these as NOT part of the table.
+            if (!end_plug) {
+              if (style)
+                dst << "<p class=\"" << style << "\">";
+              else
+                dst << "<p>";
+            } else {
+              dst << end_plug;
+            }
+            std::string_view particle(message + line_spos,
+                                      line_epos - line_spos);
+            dst << particle;
+            line++;
+            line_spos = line_epos + 1;
+            line_epos = LF_positions[line];
+            active_TABs = &TAB_positions[line];
+            
+            end_plug = "\n<br>\n";
+          }
+
+          if (end_plug)
+            dst << "</p>\n";
+
+          // hit the end sentinel? if so, end it all.
+          if (active_TABs->size() == 0)
+            break;
+
+          // first row is a header row(? --> nope, guess not...)
+          const char *td_elem = "td";
+
+          dst << "<table>\n";
+
+          int tab = 0;
+          while (active_TABs->size() > 1) {
+            dst << "<tr>\n";
+
+            tab = 0;
+            unsigned int tab_spos = line_spos;
+            unsigned int tab_epos = (*active_TABs)[tab];
+            unsigned int colcount = active_TABs->size();
+            while (tab < colcount - 1) {
+              dst << "<" << td_elem << ">";
+              std::string_view particle(message + tab_spos,
+                                        tab_epos - tab_spos);
+              dst << particle;
+              dst << "</" << td_elem << ">";
+              tab++;
+              tab_spos = tab_epos + 1;
+              tab_epos = (*active_TABs)[tab];
+            }
+
+            {
+              dst << "<" << td_elem << " colspan=\""
+                  << (tab_count_per_line_max - tab) << "\">";
+              std::string_view particle(message + tab_spos,
+                                        tab_epos - tab_spos);
+              dst << particle;
+              dst << "</" << td_elem << "></tr>\n";
+            }
+
+            line++;
+            line_spos = line_epos + 1;
+            line_epos = LF_positions[line];
+            active_TABs = &TAB_positions[line];
+          }
+
+          dst << "</table>\n";
+        }
+        return;
+      }
+      // otherwise treat it as regular content. The TAB will be encoded then...
+    }
+    int state = 0;  // -1 = blockquote; >= 1 = header; 0 = regular line of text --> treat as a paragraph
+    if (0 == strncmp(message, "PROCESS: ", 9)) {
+      state = -1;
+      dst << "<blockquote>";
+      message += 9;
+    } else if (message[0] == '#') {
+      int pos = 1;
+      while (message[pos] == '#')
+        pos++;
+      if (pos <= 6 && message[pos] == ' ') {
+        state = pos;
+        if (style)
+          dst << "\n\n<h" << "123456"[state] << " class=\"" << style << "\">";
+        else
+          dst << "\n\n<h" << "123456"[state] << ">";
+        pos++;
+        while (message[pos] == ' ')
+          pos++;
+        message += pos;
+      }
+    }
+    if (state <= 0) {
+      if (style)
+        dst << "<p class=\"" << style << "\">";
+      else
+        dst << "<p>";
+    }
+
+    const char *start = message;
+    while (*message) {
+      auto pos = strcspn(message, "\n<>&`*\t");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        dst << particle;
+        message += pos;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          dst << "&lt;";
+          message++;
+          continue;
+
+        case '>':
+          dst << "&gt;";
+          message++;
+          continue;
+
+        case '&':
+          dst << "&amp;";
+          message++;
+          continue;
+
+        case '\n':
+          dst << "\n<br>";
+          message++;
+          continue;
+
+        case '`':
+          // markdown-ish in-line code phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded by whitespace or punctuation and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:...
+          //
+          // Re the condition used below:
+          //     (isalnum(message[-1]) || message[+1] == message[-1])
+          // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
+          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n`");
+              pos += pos2;
+            } while (message[pos] == '`' && message[pos + 1] != 0 &&
+                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
+
+            if (message[pos] == '`') {
+              dst << "<code>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</code>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '`';
+          message++;
+          continue;
+
+        case '*':
+          // markdown-ish in-line emphasis phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded (and trailed) by whitespace:
+          if (message > start && isspace(message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n*");
+              pos += pos2;
+            } while (message[pos] == '*' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+
+            if (message[pos] == '*') {
+              dst << "<em>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</em>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '*';
+          message++;
+          continue;
+
+        case '\t':
+          dst << "<code>TAB</code>";
+          message++;
+          continue;
+      }
+    }
+
+    if (state < 0) {
+      dst << "</p></blockquote>\n\n";
+    } else if (state > 0) {
+      dst << "</h" << "123456"[state] << ">\n\n";
+    } else {
+      dst << "</p>\n\n";
+    }
+  }
+
   void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
   {
     DebugPixa *self = (DebugPixa *)user;
@@ -36,7 +341,7 @@ namespace tesseract {
       (self->fz_cbs[0])(self->fz_ctx, self->fz_cb_userptr[0], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p class=\"error\">" << message << "</p>\n\n";
+    add_encoded_as_html(f, "error", message);
   }
 
   void DebugPixa::fz_warn_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -46,7 +351,7 @@ namespace tesseract {
       (self->fz_cbs[1])(self->fz_ctx, self->fz_cb_userptr[1], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p class=\"warning\">" << message << "</p>\n\n";
+    add_encoded_as_html(f, "warning", message);
   }
 
   void DebugPixa::fz_info_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -56,7 +361,7 @@ namespace tesseract {
       (self->fz_cbs[2])(self->fz_ctx, self->fz_cb_userptr[2], message);
     }
     auto& f = self->GetInfoStream();
-    f << "<p>" << message << "</p>\n\n";
+    add_encoded_as_html(f, nullptr, message);
   }
 #endif
 
@@ -138,11 +443,11 @@ namespace tesseract {
 
   // Adds the given pix to the set of pages in the PDF file, with the given
   // caption added to the top.
-  void DebugPixa::AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption) {
+  void DebugPixa::AddPixWithBBox(const Image &pix, const TBOX &bbox, const char *caption) {
     AddPixInternal(pix, bbox, caption);
   }
 
-  void DebugPixa::AddClippedPix(const Image &pix, const char *caption) {
+  void DebugPixa::AddPixWithBBox(const Image &pix, const char *caption) {
     TBOX bbox(pix);
     AddPixInternal(pix, bbox, caption);
   }
@@ -288,38 +593,13 @@ namespace tesseract {
     char* base = s;
 
     for (int i = 0; i < len; i++, s++) {
-      switch (*s) {
-      case ' ':
-      case '\n':
-      case ':':
-      case '=':
-      case '`':
-      case '\'':
-      case '"':
-      case '~':
-      case '?':
-      case '*':
-      case '|':
-      case '&':
-      case '<':
-      case '>':
-      case '{':
-      case '}':
-      case '\\':
-      case '/':
+      char c = *s;
+
+      if (isalnum(c) || c == '_' || c == '-') {
+        *d++ = *s;
+      } else {
         if (d > base && d[-1] != '.')
           *d++ = '.';
-        continue;
-
-      default:
-        if (isprint(*s)) {
-          *d++ = *s;
-        }
-        else {
-          if (d > base && d[-1] != '.')
-            *d++ = '.';
-        }
-        continue;
       }
     }
 
@@ -353,9 +633,11 @@ namespace tesseract {
     return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
   }
 
-  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
                                   float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor) {
+                                  float src_factor, float background_factor, 
+                                  const TBOX *cliprect) 
+  {
     int w, h, depth;
     ASSERT0(src != nullptr);
     pixGetDimensions(src, &w, &h, &depth);
@@ -367,26 +649,81 @@ namespace tesseract {
       pixGetDimensions(background, &ow, &oh, &od);
 
       Image toplayer = pixConvertTo32(src);
-      Image botlayer = pixConvertTo32(background);
+      Image botlayer = pixConvertTo32(const_cast<PIX*>(background));  // quick hack
 
       if (w != ow || h != oh) {
-        // smaller images are generally masks, etc. and we DO NOT want to be
-        // confused by the smoothness introduced by regular scaling, so we apply
-        // brutal sampled scale then:
-        if (w < ow && h < oh) {
-          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w,
-                                                 oh * 1.0f / h, 0.0f, 0.0f);
-        } else if (w > ow && h > oh) {
-          // the new image has been either scaled up vs. the original OR a border
-          // was added (TODO)
-          //
-          // for now, we simply apply regular smooth scaling
-          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        if (cliprect != nullptr) {
+          // when a TBOX is provided, you can bet your bottom dollar `src` is an 'extract' of `background`
+          // and we therefore should paint it back onto there at the right spot:
+          // the cliprectx/y coordinates will tell us!
+          int cx, cy, cw, ch;
+          cx = cliprect->left();
+          cy = cliprect->top();
+          cw = cliprect->width();
+          ch = cliprect->height();
+
+          // when the clipping rectangle indicates another area than we got in `src`, we need to scale `src` first:
+          // 
+          // smaller images are generally masks, etc. and we DO NOT want to be
+          // confused by the smoothness introduced by regular scaling, so we
+          // apply brutal sampled scale then:
+          if (w != cw || h != ch) {
+            if (w < cw && h < ch) {
+              toplayer = pixScaleBySamplingWithShift(toplayer, cw * 1.0f / w, ch * 1.0f / h, 0.0f, 0.0f);
+            } else if (w > cw && h > ch) {
+              // the new image has been either scaled up vs. the original OR a
+              // border was added (TODO)
+              //
+              // for now, we simply apply regular smooth scaling
+              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+            } else {
+              // scale a clipped partial to about match the size of the
+              // original/base image, so the generated HTML + image sequence is
+              // more, äh, uniform/readable.
+#if 0
+              ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+            }
+
+            pixGetDimensions(toplayer, &w, &h, &depth);
+          }
+            // now composite over 30% grey: this is done by simply resizing to background using 30% grey as a 'border':
+          int bl = cx;
+          int br = ow - cx - cw;
+          int bt = cy;
+          int bb = oh - cy - ch;
+          
+          if (bl || br || bt || bb) {
+            l_uint32 grey;
+            const int g = int(0.7 * 256);
+            (void)composeRGBAPixel(g, g, g, 256, &grey);
+            toplayer = pixAddBorderGeneral(toplayer, bl, br, bt, bb, grey);
+          }
         } else {
-          // scale a clipped partial to about match the size of the original/base image, 
-		  // so the generated HTML + image sequence is more, äh, uniform/readable.
-          ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
-          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          // no cliprect specified, so `src` must be scaled version of
+          // `background`.
+          //
+          // smaller images are generally masks, etc. and we DO NOT want to be
+          // confused by the smoothness introduced by regular scaling, so we
+          // apply brutal sampled scale then:
+          if (w < ow && h < oh) {
+            toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
+          } else if (w > ow && h > oh) {
+            // the new image has been either scaled up vs. the original OR a
+            // border was added (TODO)
+            //
+            // for now, we simply apply regular smooth scaling
+            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          } else {
+            // scale a clipped partial to about match the size of the
+            // original/base image, so the generated HTML + image sequence is
+            // more, äh, uniform/readable.
+#if 0
+            ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+          }
         }
       }
 
@@ -453,11 +790,11 @@ namespace tesseract {
     }
   }
 
-  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image) {
-    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085);
+  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect) {
+    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, Pix* original_image)
+  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const TBOX *cliprect = nullptr, const Pix* original_image = nullptr)
   {
     if (!!pix) {
     const char* pixfname = fz_basename(img_filename);
@@ -481,7 +818,7 @@ namespace tesseract {
       }
     })();
 
-    Image img = MixWithLightRedTintedBackground(pix, original_image);
+    Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
     pixWrite(img_filename, img, IFF_PNG);
     img.destroy();
 
@@ -519,12 +856,25 @@ namespace tesseract {
       int depth = pixGetDepth(pixs);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-    PIX *bgimg = cliprects[idx].area() > 0 ? nullptr : tesseract_->pix_original();
+    TBOX cliprect = cliprects[idx];
+    auto clip_area = cliprect.area();
+    PIX *bgimg = nullptr;
+    if (clip_area > 0) {
+      bgimg = tesseract_->pix_original();
+    }
 
-    write_one_pix_for_html(html, counter, fn.c_str(), pixs,
-                           caption.c_str(),
-                           captions[idx].c_str(),
+    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[idx].c_str());
+
+    if (clip_area > 0 && false) {
+      counter++;
+      snprintf(in, 40, ".img%04d", counter);
+      fn = partname + in + cprefix + caption + /* ext */ ".png";
+
+      write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
+                           captions[idx].c_str(), 
+                           &cliprect,
                            bgimg);
+    }
 
     pixs.destroy();
   }
@@ -668,6 +1018,43 @@ namespace tesseract {
       margin-left: 0;\n\
       background-color: #c5d5ed;\n\
     }\n\
+    blockquote {\n\
+      margin-left: 2em;\n\
+      margin-right: 2em;\n\
+      padding: 0.25em 4em;\n\
+      border: solid 4px #b0cfff;\n\
+      background-color: #ebf3ff;\n\
+      max-width: 66em;\n\
+    }\n\
+    em {\n\
+      background-color: #ebf3ff;\n\
+    }\n\
+    table {\n\
+      border: solid 2px black;\n\
+      text-align: left;\n\
+      border-collapse: collapse;\n\
+    }\n\
+    th, td {\n\
+      text-align: left;\n\
+      border: solid 1px grey;\n\
+      padding: 0.1em 0.5em;\n\
+      border-left: none;\n\
+      border-top: none;\n\
+    }\n\
+    table tr:nth-child(odd) {\n\
+      background: #eeeff0;\n\
+    }\n\
+    table th:last-child, table td:last-child {\n\
+      border-right: none;\n\
+    }\n\
+    table tr:last-child th, table tr:last-child td {\n\
+      border-bottom: none;\n\
+    }\n\
+    code {\n\
+      padding-left: 0.25em;\n\
+      padding-right: 0.25em;\n\
+      background-color: #daffdd;\n\
+    }\n\
   </style>\n\
 </head>\n\
 <body>\n\
@@ -698,7 +1085,7 @@ namespace tesseract {
       {
         std::string fn(partname + ".img-original.png");
 
-        write_one_pix_for_html(html(), 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.", nullptr);
+        write_one_pix_for_html(html(), 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
 
       // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks

@@ -113,6 +113,7 @@ MATRIX *MATRIX::DeepCopy() const {
 
 // Print the best guesses out of the match rating matrix.
 void MATRIX::print(const UNICHARSET &unicharset) const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Ratings Matrix (top 3 choices)\n");
   int dim = dimension();
   int band_width = bandwidth();

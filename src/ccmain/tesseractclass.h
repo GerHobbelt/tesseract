@@ -249,7 +249,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   bool SupportsInteractiveScrollView() const {
-    return (interactive_display_mode && !debug_do_not_use_scrollview_app);
+    return interactive_display_mode;
   }
 #else
   constexpr bool SupportsInteractiveScrollView() const {
@@ -854,7 +854,6 @@ public:
   INT_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(preprocess_graynorm_mode);
   INT_VAR_H(thresholding_method);
-  BOOL_VAR_H(showcase_threshold_methods);
   BOOL_VAR_H(thresholding_debug);
   DOUBLE_VAR_H(thresholding_window_size);
   DOUBLE_VAR_H(thresholding_kfactor);
@@ -1077,10 +1076,11 @@ public:
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
-  BOOL_VAR_H(debug_do_not_use_scrollview_app);
   BOOL_VAR_H(debug_display_page);
   BOOL_VAR_H(debug_display_page_blocks);
   BOOL_VAR_H(debug_display_page_baselines);
+  BOOL_VAR_H(dump_segmented_word_images);
+  BOOL_VAR_H(dump_osdetect_process_images);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
@@ -1094,13 +1094,13 @@ public:
     AddPixDebugPage(pix, title.c_str());
   }
 
-  void AddClippedPixDebugPage(const Image &pix, const TBOX& bbox, const char *title);
-  void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
-    AddClippedPixDebugPage(pix, bbox, title.c_str());
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX& bbox, const char *title);
+  void AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
+    AddPixCompedOverOrigDebugPage(pix, bbox, title.c_str());
   }
-  void AddClippedPixDebugPage(const Image &pix, const char *title);
-  void AddClippedPixDebugPage(const Image &pix, const std::string &title) {
-    AddClippedPixDebugPage(pix, title.c_str());
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const char *title);
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title) {
+    AddPixCompedOverOrigDebugPage(pix, title.c_str());
   }
 
   int PushNextPixDebugSection(const std::string &title);

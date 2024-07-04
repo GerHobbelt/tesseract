@@ -260,6 +260,7 @@ void WERD::copy_on(WERD *other) {
  */
 
 void WERD::print() const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Blanks= {}\n", blanks);
   bounding_box().print();
   tprintDebug("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());

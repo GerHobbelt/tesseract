@@ -903,6 +903,11 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
     api.SetupDebugAllPreset();
+// TODO: move these into preset; stuff from merge.............
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    api.SetVariable("interactive_display_mode", "N");
+    api.SetVariable("dump_segmented_word_images", "Y");
+    api.SetVariable("dump_osdetect_process_images", "Y");
   }
 }
 

@@ -554,6 +554,7 @@ void STATS::print() const {
   if (buckets_ == nullptr) {
     return;
   }
+  TPrintGroupLinesTillEndOfScope push;
   int32_t min = min_bucket() - rangemin_;
   int32_t max = max_bucket() - rangemin_;
 
@@ -579,6 +580,7 @@ void STATS::print_summary() const {
   if (buckets_ == nullptr) {
     return;
   }
+  TPrintGroupLinesTillEndOfScope push;
   int32_t min = min_bucket();
   int32_t max = max_bucket();
   tprintDebug("Total count={}\n", total_count_);

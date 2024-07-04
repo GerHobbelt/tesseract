@@ -167,6 +167,7 @@ void ROW::move(      // reposition row
 void ROW::print( // print
     FILE *fp     // file to print on
 ) const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Kerning= {}\n", kerning);
   tprintDebug("Spacing= {}\n", spacing);
   bound_box.print();

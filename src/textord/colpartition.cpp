@@ -2371,8 +2371,7 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
     // The last time, everything is shifted up 1, so we present OKSpacingBlip
     // with neighbourhood-1 and check that PN_LOWER matches the median.
     if (neighbourhood[PN_LOWER] == nullptr ||
-        (!neighbourhood[PN_UPPER]->SpacingsEqual(*neighbourhood[PN_LOWER],
-                                                 resolution) &&
+        (!neighbourhood[PN_UPPER]->SpacingsEqual(*neighbourhood[PN_LOWER], resolution) &&
          (neighbourhood[PN_UPPER] == nullptr ||
           neighbourhood[PN_LOWER] == nullptr ||
           !OKSpacingBlip(resolution, median_space, neighbourhood, 0)) &&
@@ -2405,7 +2404,8 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
         int top_spacing = static_cast<int>(total_top / total_count + 0.5);
         int bottom_spacing = static_cast<int>(total_bottom / total_count + 0.5);
         if (textord_debug_tabfind > 0) {
-          tprintDebug("Spacing run ended. Cause:");
+          TPrintGroupLinesTillEndOfScope push;
+          tprintDebug("Spacing run ended. Cause: ");
           if (neighbourhood[PN_LOWER] == nullptr) {
             tprintDebug("No more lines\n");
           } else {
@@ -2439,7 +2439,7 @@ void ColPartition::SmoothSpacings(int resolution, int page_height,
           upper->set_top_spacing(top_spacing);
           upper->set_bottom_spacing(bottom_spacing);
           if (textord_debug_tabfind > 0) {
-            tprintDebug("Setting mean on:");
+            tprintDebug("Setting mean on: ");
             upper->Print();
           }
           sum_it.forward();

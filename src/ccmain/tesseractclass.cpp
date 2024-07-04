@@ -97,9 +97,6 @@ Tesseract::Tesseract(Tesseract *parent)
                  "adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background, 5 = Nlbin.",
                  params())
-    , BOOL_MEMBER(showcase_threshold_methods, false,
-                  "Showcase the available threshold methods as part of the thresholding process.",
-                  params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process.",
                   params())
@@ -395,8 +392,8 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
     , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the internal processing engine. You can see how tesseract has processed the image: if the resulting `tessinput.tif` file looks problematic, try some of these image processing operations before passing the image to Tesseract.", params())
-    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", params())
-    , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
+    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively? Turn OFF (false) to NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params()),
+      STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
     , STRING_MEMBER(languages_to_try, "", "List of languages to try when OCRing the next pages.", params())
@@ -470,10 +467,11 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
-    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", params())
-    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params())
+    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params()) 
+    , BOOL_MEMBER(dump_segmented_word_images, false, "Display intermediate individual bbox/word images about to be fed into the OCR engine in debug_pixa.", params()) 
+    , BOOL_MEMBER(dump_osdetect_process_images, false, "Display intermediate OS (Orientation & Skew) image stages in debug_pixa.", params()) 
 
     , pixa_debug_(this)
     , splitter_(this)
@@ -737,8 +735,8 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   return false;
 }
 
-void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
-  // extract part from the source image pix and fade the srroundings,
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
+  // extract part from the source image pix and fade the surroundings,
   // so a human can easily spot which bbox is the current focus but also
   // quickly spot where the extracted part originated within the large source image.
   int iw = pixGetWidth(pix);
@@ -801,13 +799,13 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
   boxDestroy(&b);
   pixDestroy(&ppix);
   ASSERT0(bbox.area() > 0);
-  pixa_debug_.AddClippedPix(ppix32, bbox, title);
+  pixa_debug_.AddPixWithBBox(ppix32, bbox, title);
 
   pixDestroy(&ppix32);
 }
 
-void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
-  pixa_debug_.AddClippedPix(pix, title);
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *title) {
+  pixa_debug_.AddPixWithBBox(pix, title);
 }
 
 // Destroy any existing pix and return a pointer to the pointer.
@@ -1000,7 +998,7 @@ void Tesseract::ReportDebugInfo() {
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang_.c_str(), "html");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
 
     ClearPixForDebugView();

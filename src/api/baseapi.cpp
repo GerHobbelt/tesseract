@@ -978,7 +978,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   Tesseract& tess = tesseract();
   if (tess.pix_binary() == nullptr) {
   if (verbose_process) {
-      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
   }
 
     Image pix = Image();
@@ -1884,7 +1884,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
   }
   else {
-    tesseract().applybox_page.set_value(-1, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+    tesseract().applybox_page.set_value(-1 /* all pages */, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
 
@@ -1902,7 +1902,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
                               const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
-  AutoPopDebugSectionLevel page_level_handle(&tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", static_cast<int>(tess.tessedit_page_number))));
+  AutoPopDebugSectionLevel page_level_handle(tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
   SetInputName(filename);
@@ -1981,21 +1981,15 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   {
     Image input_img = GetInputImage();
 
-  if ((graynorm_mode > 0 || tess.showcase_threshold_methods) && NormalizeImage(graynorm_mode) && tess.tessedit_write_images) {
-    // Write normalized image 
-    Pix *p1;
-    if (graynorm_mode == 2) {
-      p1 = thresholder_->GetPixRect();
-    } else {
-      p1 = GetInputImage();
-    }
-    tess.AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
-  }
-
-    // rewind the normalize operation as it was only showcased, but not intended for use by the remainder of the process:
-    if (tess.showcase_threshold_methods && (graynorm_mode <= 0)) {
-      SetInputImage(input_img);
-      SetImage(pix);
+    if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tess.tessedit_write_images) {
+      // Write normalized image 
+      Pix *p1;
+      if (graynorm_mode == 2) {
+        p1 = thresholder_->GetPixRect();
+      } else {
+        p1 = GetInputImage();
+      }
+      tess.AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
     }
   }
 
@@ -2026,7 +2020,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
 
   if (tess.tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-    tess.AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", static_cast<int>(tess.tessedit_page_number)));
+    tess.AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tess.tessedit_page_number));
   }
 
   if (failed && retry_config != nullptr && retry_config[0] != '\0') {
@@ -2268,7 +2262,7 @@ char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_BLOCK, tsv_str);
-      tsv_str += "\t-1";
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_BLOCK)); // end of row for block
       if (lang_info) {
         tsv_str += "\t";
       }
@@ -2289,7 +2283,7 @@ char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_PARA, tsv_str);
-      tsv_str += "\t-1";
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_PARA)); // end of row for block
       if (lang_info) {
         tsv_str += "\t" + lang;
       }
@@ -2306,7 +2300,7 @@ char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
       tsv_str += "\t" + std::to_string(word_num);
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_TEXTLINE, tsv_str);
-      tsv_str += "\t-1";
+      tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_TEXTLINE)); // end of row for block
       if (lang_info) {
         tsv_str += "\t";
       }
@@ -2366,7 +2360,7 @@ char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
     tsv_str += "\n"; // end of row
 
-    tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are consioered to a part of.
+    tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are considered to a part of.
   }
 
   return copy_string(tsv_str);
@@ -2941,68 +2935,76 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
-  auto selected_thresholding_method = static_cast<ThresholdMethod>(tess.thresholding_method.value());
-  auto thresholding_method = selected_thresholding_method;
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
 
-  AutoPopDebugSectionLevel subsec_handle(tesseract_, tess.PushSubordinatePixDebugSection(tess.showcase_threshold_methods ? "Showcase threshold methods..." : fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
+  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
 
-  // debug_all/showcase_threshold_methods: assist diagnostics by cycling through all thresholding methods and applying each,
-  // saving each result to a separate diagnostic image for later evaluation, before commencing
-  // and finally applying the *user-selected* threshold method and continue with the OCR process:
-  for (int m = 0; m <= (int)ThresholdMethod::Max; m++)
   {
-    bool go = false;
+    tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
 
-    if (m != (int)ThresholdMethod::Max)
-    {
-      if (!tess.showcase_threshold_methods) {
-      m = (int)ThresholdMethod::Max - 1;    // jump to the last round of the loop: we need only one round through here.
-        continue;
-    }
+	  if (selected_thresholding_method == ThresholdMethod::Otsu) {
+		  Image pix_binary(*pix);
+		  if (!thresholder_->ThresholdToPix(&pix_binary)) {
+			  return false;
+		  }
 
-      thresholding_method = (ThresholdMethod)m;
-    }
-    else
-    {
-      if (tess.showcase_threshold_methods) {
-        tess.PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-      }
+		  *pix = pix_binary;
 
-      // on last round, we reset to the selected threshold method
-      thresholding_method = selected_thresholding_method;
-      go = true;
-    }
+		  if (!thresholder_->IsBinary()) {
+			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+			  tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+		  } else {
+			  tesseract_->set_pix_thresholds(nullptr);
+			  tesseract_->set_pix_grey(nullptr);
+		  }
 
-    {
-      auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(thresholding_method);
-
-      if (!ok) {
-        return false;
-      }
-
-      if (go)
-        *pix = pix_binary;
-
-      tess.set_pix_thresholds(pix_thresholds);
-      tess.set_pix_grey(pix_grey);
-
-      std::string caption = ThresholdMethodName(thresholding_method);
-
-      if (tess.tessedit_dump_pageseg_images || tess.showcase_threshold_methods || show_threshold_images) {
-        tess.AddPixDebugPage(tess.pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-        tess.AddPixDebugPage(tess.pix_thresholds(), fmt::format("{} : Thresholds", caption));
-        tess.AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+      if (tesseract_->tessedit_dump_pageseg_images) {
+        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
+        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
+        if (verbose_process) {
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+        }
+        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
 
         const char *sequence = "c1.1 + d3.3";
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tess.AddClippedPixDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} (just an example to showcase what leptonica can do for us!)", sequence));
         pix_post.destroy();
       }
+	  } else {
+		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
 
-      if (!go)
-        pix_binary.destroy();
+		  if (!ok) {
+			  return false;
+		  }
+
+		  *pix = pix_binary;
+
+		  tesseract_->set_pix_thresholds(pix_thresholds);
+		  tesseract_->set_pix_grey(pix_grey);
+
+      std::string caption = ThresholdMethodName(selected_thresholding_method);
+
+      if (tesseract_->tessedit_dump_pageseg_images) {
+        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+        if (verbose_process) {
+          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+        }
+        tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+
+        const char *sequence = "c1.1 + d3.3";
+        const int dispsep = 0;
+        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
+        pix_post.destroy();
+      }
     }
+  }
+  if (verbose_process) {
+    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract may attempt to *invert* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that the count of text pixels in a page must be less background pixels and very dark pages with white text are dealt with by *inverting* them so that the OCR will be fed word image snippets it trained to deal with: (dark) black text on (light) white plain background. Also note that tesseract is not geared towards recognizing and dealing nicely with other page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
+    tprintInfo("PROCESS: By removing all non-text image elements in the page image before you feed it to tesseract also will have a notable effect on the thresholding algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels. Remember: only *foreground* pixels that turn up as 'black' in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text: anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -3042,7 +3044,7 @@ int TessBaseAPI::FindLines() {
 
   if (tess.pix_binary() == nullptr) {
     if (verbose_process) {
-      tprintInfo("PROCESS: source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
+      tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
     }
 
     Image pix = Image();

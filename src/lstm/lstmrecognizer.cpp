@@ -364,7 +364,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
-  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
+  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
@@ -381,7 +381,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       Image inv_pix = pixClone(pix);
       pixInvert(inv_pix, pix);
-      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs);
+      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);

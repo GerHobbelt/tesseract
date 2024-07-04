@@ -182,7 +182,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   bool cjk_mode = textord_use_cjk_fp_model;
 
   if (debug_write_unlv && !name.empty()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), tessedit_page_number, "pre-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), 1 + tessedit_page_number, "pre-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
@@ -204,7 +204,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   }
 
   if (debug_write_unlv && !name.empty()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), tessedit_page_number, "post-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), 1 + tessedit_page_number, "post-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
@@ -361,7 +361,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
     if (res > estimated_resolution && res < kMaxCredibleResolution) {
       estimated_resolution = res;
-      tprintInfo("Estimating resolution as {}\n", estimated_resolution);
+      tprintInfo("Estimating resolution as {} dpi (pixels / inch)\n", estimated_resolution);
     }
   }
 

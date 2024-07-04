@@ -296,10 +296,14 @@ public:
   }
 
   void print() const { // print
-    tprintDebug("Bounding box=(l:{},b:{}->r:{},t:{})\n", left(), bottom(), right(), top());
+    if (!null_box()) {
+      tprintDebug("Bounding box=(l:{},b:{}->r:{},t:{})[=>width:{},height:{}]\n", left(), bottom(), right(), top(), width(), height());
+    } else {
+      tprintDebug("Bounding box=<null_box>:(l:{},b:{}->r:{},t:{})[=>zero area]\n", left(), bottom(), right(), top());
+    }
   }
   // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
-  void print_to_str(std::string &str) const;
+  std::string print_to_str() const;
 
 #if !GRAPHICS_DISABLED
   void plot(                  // use current settings

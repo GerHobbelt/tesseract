@@ -227,6 +227,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
         wrong_ngram[wrong_ngram_index + 1] = INVALID_UNICHAR_ID;
         int compare = UnicharIdArrayUtils::compare(wrong_ngram, ambig_spec->wrong_ngram);
         if (stopper_debug_level > 2) {
+          TPrintGroupLinesTillEndOfScope push;
           tprintDebug("Candidate ngram: ");
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintDebug("Current ngram from spec: ");

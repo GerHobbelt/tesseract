@@ -962,7 +962,7 @@ void BackgroundScrollView::PrepCanvas(void) {
 
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
-  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
   ASSERT0(pix.pix_ != wh_pix.pix_);
   wh_pix.destroy();
 }
@@ -1199,7 +1199,7 @@ void BackgroundScrollView::Clear() {
   SendMsg("clear()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddClippedPixDebugPage(pix, GetName());
+    tesseract_->AddPixCompedOverOrigDebugPage(pix, GetName());
     PrepCanvas();
 
     dirty = false;
@@ -1461,7 +1461,7 @@ void BackgroundScrollView::UpdateWindow() {
   SendMsg("update()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddClippedPixDebugPage(pix, fmt::format("{}::update", GetName()));
+    tesseract_->AddPixCompedOverOrigDebugPage(pix, fmt::format("{}::update", GetName()));
     // DO NOT clear the canvas!
 
     dirty = false;
@@ -1510,7 +1510,7 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
 
   //SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
 
-  tesseract_->AddClippedPixDebugPage(image, title);
+  tesseract_->AddPixCompedOverOrigDebugPage(image, title);
 
   int w = pixGetWidth(image);
   int h = pixGetHeight(image);

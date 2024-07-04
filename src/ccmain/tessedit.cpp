@@ -45,7 +45,7 @@ namespace tesseract {
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
 void Tesseract::read_config_file(const char *filename) {
-  if (filename || !*filename) {
+  if (!filename || !*filename) {
     tprintError("empty config filename specified. No config loaded.\n");
     return;
   }
@@ -53,7 +53,7 @@ void Tesseract::read_config_file(const char *filename) {
   std::string path = datadir_;
   path += "configs/";
   path += filename;
-  tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+  tprintDebug("Read Config: test if '{}' is a readable file: ", path);
   FILE *fp;
   if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     fclose(fp);
@@ -61,21 +61,26 @@ void Tesseract::read_config_file(const char *filename) {
     path = datadir_;
     path += "tessconfigs/";
     path += filename;
-    tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+    tprintDebug("NO.\n"
+      "Read Config: test if '{}' is a readable file: ", path);
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
       fclose(fp);
     } else {
       path = filename;
-      tprintDebug("Read Config: test if '{}' is a readable file.\n", path);
+      tprintDebug("NO.\n"
+      "Read Config: test if '{}' is a readable file: ", path);
       if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
         fclose(fp);
       }
       else {
-        tprintError("config file '{}' cannot be opened / does not exist.\n", path);
+        tprintDebug("NO.\n");
+        tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked.\n", filename);
         return;
       }
     }
   }
+  tprintDebug("YES\n");
+
   ParamUtils::ReadParamsFile(path, this->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
 }
 
@@ -178,6 +183,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     read_config_file(configs[i].c_str());
   }
 
+  // Write the effective (a.k.a. currently active) tesseract parameter set to disk for later diagnosis / re-use.
   if (!tessedit_write_params_to_file.empty()) {
     FILE *params_file = fopen(tessedit_write_params_to_file.c_str(), "wb");
     if (params_file != nullptr) {

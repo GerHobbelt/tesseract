@@ -189,6 +189,7 @@ void BLOCK::print( // print list of sides
     FILE *,        ///< file to print on
     bool dump      ///< print full detail
 ) {
+  TPrintGroupLinesTillEndOfScope push;
   ICOORDELT_IT it = &pdblk.leftside; // iterator
 
   pdblk.box.print();
