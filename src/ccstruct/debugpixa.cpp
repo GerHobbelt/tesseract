@@ -40,8 +40,8 @@ namespace tesseract {
     if (length == 0)
       return;
     const char *start = message;
-    // sneaky: we 'know' we will only need this for modifiable content that was sent to us, i.e. we're 
-    // trampling through a std::string internal buffer or similar. 
+    // sneaky: we 'know' we will only need this for modifiable content that was
+    // sent to us, i.e. we're trampling through a std::string internal buffer or similar. 
     // (Like with the stuff that's coming out of do_transmit_logline().)
     // 
     // Ultimately we don't change anything, so we're legally safe, but it is assuming some things 
@@ -49,11 +49,13 @@ namespace tesseract {
     // therefor a nasty bit of code, that Just Works(tm) with minimal overhead and easier to read
     // internals than when we were to do this 'clean' with a lot of 'are we there yet' checks vs.
     // the NUL sentinel check we now permit ourselves to get away with!
-    char sentinel_backup = start[length - 1];
+    char sentinel_backup = 0;
+    if (length != UINT_MAX)
+      sentinel_backup = start[length];
     // hence, we only *temporarily* violate the higher expectations of `const char *message` when we 
     // actually need to do the temporary 'plug in a NUL sentinel for now' work.
     if (sentinel_backup) {
-      const_cast<char *>(start)[length - 1] = 0;
+      const_cast<char *>(start)[length] = 0;
     }
     // now we can act as if the incoming message string is always neatly NUL-sentinelled like any good ol' C string.
     while (*message) {
@@ -125,7 +127,7 @@ namespace tesseract {
           // simple stuff.
           //
           // furthermore, we require it's preceded (and trailed) by whitespace:
-          if (message > start && isspace(message[-1])) {
+          if (message > start && isspace(message[-1]) && !isspace(message[1])) {
             pos = 0;
             do {
               pos++;
@@ -154,12 +156,49 @@ namespace tesseract {
     }
     // and now that we are done, we must undo our violation of `const char *message`:
     if (sentinel_backup) {
-      const_cast<char *>(start)[length - 1] = sentinel_backup;
+      const_cast<char *>(start)[length] = sentinel_backup;
     }
   }
 
-  static void add_encoded_as_html(std::ostringstream &dst, const char *style,
-                                  const char *message) {
+  // expected line format is for paramters report:
+  //
+  //    bidi_debug.................................................. (Global) .R [Integer] = 0
+  //
+  struct dots_marker {
+    const char *start;
+    const char *end;
+  };
+
+  static dots_marker find_start_of_leaderdots(const char *line) {
+    dots_marker nil{nullptr};
+    if (isalnum(*line) || *line == '_') {
+      const char *som;
+      line++;
+      while (isalnum(*line) || *line == '_')
+        line++;
+      const char *start = line;
+      if (*line++ != '.')
+        return nil;
+      if (*line++ != '.')
+        return nil;
+      if (*line++ != '.')
+        return nil;
+      while (*line == '.')
+        line++;
+      if (*line++ != ' ')
+        return nil;
+      if (*line != '(')
+        return nil;
+      return {.start = start, .end = line};
+    }
+    return nil;
+  }
+
+    
+  static void add_encoded_as_html(std::ostringstream &dst, const char *style, const char *message) {
+    if (*message == 0)
+      return;
+
     // when messages carry embedded TABs, they may well be tables and we should help the user a little by rendering them to HTML as such.
     if (strchr(message, '\t')) {
       // scan to see if this could serve as a (multiline?) table.
@@ -312,18 +351,115 @@ namespace tesseract {
       }
       // otherwise treat it as regular content. The TAB will be encoded then...
     }
-    int state = 0;  // -1 = blockquote; >= 1 = header; 0 = regular line of text --> treat as a paragraph
+
     if (0 == strncmp(message, "PROCESS: ", 9)) {
-      state = -1;
-      dst << "<blockquote>";
+      if (style)
+        dst << "<blockquote class=\"" << style << "\">\n";
+      else
+        dst << "<blockquote>\n";
       message += 9;
-    } else if (message[0] == '#') {
+
+      add_encoded_as_html(dst, style, message);
+
+      dst << "</blockquote>\n\n";
+      return;
+    } 
+
+    if (0 == strncmp(message, "ERROR: ", 7)) {
+      if (style)
+        dst << "<p class=\"error-message " << style << "\">";
+      else
+        dst << "<p class=\"error-message\">";
+
+      const char *pbreak = strstr(message, "\n\n");
+      if (pbreak) {
+        add_inline_particle_as_html(dst, message, pbreak - message);
+        dst << "</p>\n\n";
+        message = pbreak;
+        while (message[0] == '\n')
+          message++;
+        // deal with the remainder in this tail recursion call.
+        add_encoded_as_html(dst, style, message);
+      } else {
+        add_inline_particle_as_html(dst, message, UINT_MAX);
+        dst << "</p>\n\n";
+      }
+      return;
+    } 
+    if (0 == strncmp(message, "WARNING: ", 9)) {
+      if (style)
+        dst << "<p class=\"warning-message " << style << "\">";
+      else
+        dst << "<p class=\"warning-message\">";
+
+      const char *pbreak = strstr(message, "\n\n");
+      if (pbreak) {
+        add_inline_particle_as_html(dst, message, pbreak - message);
+        dst << "</p>\n\n";
+        message = pbreak;
+        while (message[0] == '\n')
+          message++;
+        // deal with the remainder in this tail recursion call.
+        add_encoded_as_html(dst, style, message);
+      } else {
+        add_inline_particle_as_html(dst, message, UINT_MAX);
+        dst << "</p>\n\n";
+      }
+      return;
+    } 
+
+    // skip leading newlines before we check a few more options for alternative content coming through here:
+    while (message[0] == '\n')
+      message++;
+
+    if (0 == strncmp(message, "* ", 2) && isalpha(message[2])) {
+      // see if this is a LIST instead of a paragraph:
+      const char *next = strchr(message + 3, '\n');
+      if (next && 0 == strncmp(next + 1, "* ", 2) && isalpha(next[3])) {
+        dots_marker dots = find_start_of_leaderdots(message + 3);
+        dots_marker dots_next = find_start_of_leaderdots(next + 4);
+        if (dots.start && dots.end && dots_next.start && dots_next.end) {
+          // Yes, we're looking at a list of at least two elements: deal with it now!
+          if (style)
+            dst << "<ul class=\"leaders " << style << "\">\n";
+          else
+            dst << "<ul class=\"leaders\">\n";
+          for (;;) {
+            message += 2;
+            dst << "<li class=\"paramreport_line\">\n<span class=\"paramreport_itemname\">";
+            add_inline_particle_as_html(dst, message, dots.start - message);
+            dst << "</span><span class=\"paramreport_itemspec\">";
+            add_inline_particle_as_html(dst, dots.end, next - dots.end);
+            dst << "</li\">\n";
+            message = next + 1;
+            if (0 != strncmp(message, "* ", 2) || !isalpha(message[2])) {
+              break;
+            }
+            dots = find_start_of_leaderdots(message + 3);
+            if (!dots.start) {
+              break;
+            }
+            next = strchr(dots.end, '\n');
+            if (!next) {
+              break;
+            }
+          }
+          dst << "</ul>\n\n";
+          while (message[0] == '\n')
+            message++;
+          // deal with the remainder in this tail recursion call.
+          add_encoded_as_html(dst, style, message);
+          return;
+        }
+      }
+    }
+    if (message[0] == '#') {
       int pos = 1;
       while (message[pos] == '#')
         pos++;
       // we tolerate a few more than the 6 Heading levels available in HTML.
       if (pos <= 8 && message[pos] == ' ') {
-        state = pos;
+        int state = pos;
         if (style)
           dst << "\n\n<h" << "12345666"[state] << " class=\"" << style << "\">";
         else
@@ -332,24 +468,78 @@ namespace tesseract {
         while (message[pos] == ' ')
           pos++;
         message += pos;
+
+        // heading is a single line, always, so we must check if there's stuff following!
+        const char *nlp = strchr(message, '\n');
+        if (nlp) {
+          add_inline_particle_as_html(dst, message, nlp - message);
+          dst << "</h" << "12345666"[state] << ">\n\n";
+          message = nlp;
+          while (message[0] == '\n')
+            message++;
+          // deal with the remainder in this tail recursion call.
+          add_encoded_as_html(dst, style, message);
+        } else {
+          add_inline_particle_as_html(dst, message, UINT_MAX);
+          dst << "</h" << "12345666"[state] << ">\n\n";
+        }
+        return;
       }
-    }
-    if (state <= 0) {
+
+      // more than 8 consecutive '#' is ... content?
+    } 
+
+    if (message[0] == '-') {
+      int pos = 1;
+      while (message[pos] == '-')
+        pos++;
+      if (pos > 8 && message[pos] == '\n') {
+        if (style)
+          dst << "\n\n<hr class=\"" << style << "\">\n\n";
+        else
+          dst << "\n\n<hr>\n\n";
+        pos++;
+        message += pos;
+        while (message[0] == '\n')
+          message++;
+        // deal with the remainder in this tail recursion call.
+        add_encoded_as_html(dst, style, message);
+        return;
+      }
+
+      // more than 8 consecutive '#' is ... content?
+    } 
+
+
+    // next: if content is split by double/triple newline somewhere in the middle, than we're talking multiple paragraphs of content.
+    const char *pbreak = strstr(message, "\n\n");
+    if (pbreak) {
       if (style)
         dst << "<p class=\"" << style << "\">";
       else
         dst << "<p>";
-    }
 
-    add_inline_particle_as_html(dst, message, strlen(message));
+      add_inline_particle_as_html(dst, message, pbreak - message);
 
-    if (state < 0) {
-      dst << "</p></blockquote>\n\n";
-    } else if (state > 0) {
-      dst << "</h" << "12345666"[state] << ">\n\n";
-    } else {
       dst << "</p>\n\n";
+      message = pbreak;
+      while (message[0] == '\n')
+        message++;
+      // deal with the remainder in this tail recursion call.
+      add_encoded_as_html(dst, style, message);
+      return;
     }
+
+    // nothing particular jumped at us, so now deal with this as a single block of content: 
+    // one paragraph with perhaps a couple of line breaks, but nothing more complex than that.
+    if (style)
+      dst << "<p class=\"" << style << "\">";
+    else
+      dst << "<p>";
+
+    add_inline_particle_as_html(dst, message, UINT_MAX);
+
+    dst << "</p>\n\n";
   }
 
   void DebugPixa::fz_error_cb_tess_tprintf(fz_context *ctx, void *user, const char *message)
@@ -1000,6 +1190,10 @@ namespace tesseract {
         languages << tesseract_->get_sub_lang(i)->lang << "</p>";
       }
 
+      // CSS styles for the generated HTML
+      // 
+      // - CSS UL list with classic leader dots: based on https://www.w3.org/Style/Examples/007/leaders.en.html
+      //
       fprintf(html, "<html>\n\
 <head>\n\
 	<meta charset=\"UTF-8\">\n\
@@ -1029,9 +1223,9 @@ namespace tesseract {
       font-size: 1.25em;\n\
     }\n\
     h2 {\n\
-          margin-top: 4em;\n\
-          border-top: 1px solid grey;\n\
-          padding-top: 1em;\n\
+      margin-top: 4em;\n\
+      border-top: 1px solid grey;\n\
+      padding-top: 1em;\n\
     }\n\
     img {\n\
       border: solid #b0cfff .5em;\n\
@@ -1088,6 +1282,31 @@ namespace tesseract {
       padding-left: 0.25em;\n\
       padding-right: 0.25em;\n\
       background-color: #daffdd;\n\
+    }\n\
+    ul.leaders {\n\
+      max-width: 40em;\n\
+      padding: 0;\n\
+      overflow-x: hidden;\n\
+      list-style: none;\n\
+    }\n\
+    ul.leaders li:before {\n\
+      float: left;\n\
+      width: 0;\n\
+      white-space: nowrap;\n\
+    content:\n\
+      \". . . . . . . . . . . . . . . . . . . . \"\n\
+      \". . . . . . . . . . . . . . . . . . . . \"\n\
+      \". . . . . . . . . . . . . . . . . . . . \"\n\
+      \". . . . . . . . . . . . . . . . . . . . \"\n\
+    }\n\
+    ul.leaders span:first-child {\n\
+      padding-right: 0.33em;\n\
+      background: white;\n\
+    }\n\
+    ul.leaders span + span {\n\
+      float: right;\n\
+      padding-left: 0.33em;\n\
+      background: white;\n\
     }\n\
   </style>\n\
 </head>\n\
