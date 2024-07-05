@@ -284,11 +284,11 @@ Image ImageFind::FindImages(Image pix) {
   Pixa *pixadb = textord_tabfind_show_images ? pixaCreate(0) : nullptr;
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {
-    Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
-    if (textord_tabfind_show_images) {
-      tesseract_->AddPixDebugPage(pixdb, "Find Images : Generated Halftone Mask");
+    if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
+      Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
+      tesseract_->AddPixDebugPage(pixdb, "Find Images -- image op: generated Halftone Mask");
+      pixdb.destroy();
     }
-    pixdb.destroy();
     pixaDestroy(&pixadb);
   }
   pixr.destroy();
