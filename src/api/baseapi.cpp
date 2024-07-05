@@ -2955,7 +2955,7 @@ void TessBaseAPI::FinalizeAndWriteDiagnosticsReport() {
     ASSERT_HOST_MSG(false,
                     "FinalizeAndWriteDiagnosticsReport was invoked without a "
                     "live tesseract instance: you may have a bug that looses a "
-                    "lot of tesseract diagnostics info + reporting for you.");
+                    "lot of tesseract diagnostics info + reporting for you.\n");
     return;
   };
   tesseract_->ReportDebugInfo();
