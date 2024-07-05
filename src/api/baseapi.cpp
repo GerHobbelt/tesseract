@@ -541,7 +541,8 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
   tesseract::ParamsVectorSet &vec = tesseract().params_collective();
   std::string fpath = tesseract::vars_report_file;
   ReportFile f(fpath);
-  ParamUtils::ReportParamsUsageStatistics(f, vec);
+    int section_level = tesseract_->GetPixDebugSectionLevel();
+    ParamUtils::ReportParamsUsageStatistics(f, vec, section_level);
 }
 
 /**
@@ -988,7 +989,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     tess.set_pix_binary(pix);
 
     if (tess.tessedit_dump_pageseg_images) {
-      tess.AddPixDebugPage(tess.pix_binary(), "Thresholded Image (because it wasn't thresholded yet)");
+      tess.AddPixDebugPage(tess.pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
@@ -2120,9 +2121,8 @@ char *TessBaseAPI::GetUTF8Text() {
         // Ignore images and lines for text output.
         continue;
       case PT_NOISE:
-        tprintError("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
-    break;
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+		break;
       default:
         break;
     }
@@ -3003,8 +3003,11 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     }
   }
   if (verbose_process) {
-    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract may attempt to *invert* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that the count of text pixels in a page must be less background pixels and very dark pages with white text are dealt with by *inverting* them so that the OCR will be fed word image snippets it trained to deal with: (dark) black text on (light) white plain background. Also note that tesseract is not geared towards recognizing and dealing nicely with other page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
-    tprintInfo("PROCESS: By removing all non-text image elements in the page image before you feed it to tesseract also will have a notable effect on the thresholding algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels. Remember: only *foreground* pixels that turn up as 'black' in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text: anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
+    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract *inverts* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that number of black text pixels (*foreground*) should be significantly *lower* than the number of white *background* pixels in a page.\n\n"
+      "With very dark pages that ratio of many background vs. few foreground pixels is the opposite of tesseract's assumption regarding black and white pixels so it will decide to *invert* the image, thus attempting to get back to a *black text over white background input image*. tesseract does this in its effort to feed the inner OCR engine image material that is as close as possible to what it has always been trained with and designed for: basic scanned books and academic publications: those all have: (dark) black text on (light) white plain background.\n\n"
+      "Also note that tesseract is not geared towards recognizing and dealing nicely with other (a.k.a. *non-text*) page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
+    tprintInfo("PROCESS: Removing all non-text image elements in the page image *before you feed it to tesseract* also will have a notable effect on the thresholding (a.k.a. binarization) algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels.\n\n"
+      "Remember: only *foreground* pixels that turn up as *black* in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text; anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -3055,7 +3058,7 @@ int TessBaseAPI::FindLines() {
   }
 
   if (tess.tessedit_dump_pageseg_images) {
-    tess.AddPixDebugPage(tess.pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image");
+    tess.AddPixDebugPage(tess.pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image for this activity");
   }
 
   if (verbose_process) {
@@ -3215,7 +3218,8 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
     }
     tess.set_pix_binary(pix);
 
-    tess.AddPixDebugPage(tess.pix_binary(), "DetectOS (Orientation and Script) : Thresholded Image");
+    if (tess.tessedit_write_images)
+	    tess.AddPixDebugPage(tess.pix_binary(), "DetectOS (Orientation And Script) : Thresholded Image");
   }
 
   return tess.orientation_and_script_detection(tess.input_file_path_.c_str(), osr) > 0;
@@ -3753,6 +3757,17 @@ continue_on_error:
     }
   }
   return rv;
+}
+
+void TessBaseAPI::FinalizeAndWriteDiagnosticsReport() {
+  if (tesseract_ == nullptr) {
+    ASSERT_HOST_MSG(false,
+                    "FinalizeAndWriteDiagnosticsReport was invoked without a "
+                    "live tesseract instance: you may have a bug that looses a "
+                    "lot of tesseract diagnostics info + reporting for you.\n");
+    return;
+  };
+  tesseract_->ReportDebugInfo();
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */

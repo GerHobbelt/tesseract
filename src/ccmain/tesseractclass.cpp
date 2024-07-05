@@ -391,7 +391,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", params())
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
-    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the internal processing engine. You can see how tesseract has processed the image: if the resulting `tessinput.tif` file looks problematic, try some of these image processing operations before passing the image to Tesseract.", params())
+    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the internal processing engine at various stages of progress (the generated image filenames will reflect this).", params())
     , BOOL_MEMBER(interactive_display_mode, false, "Run interactively? Turn OFF (false) to NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params()),
       STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
@@ -639,8 +639,9 @@ void Tesseract::PrepareForPageseg() {
   splitter_.set_orig_pix(pix_binary());
   splitter_.set_pageseg_split_strategy(max_pageseg_strategy);
   if (splitter_.Split(true)) {
-    ASSERT_HOST(splitter_.splitted_image());
-    set_pix_binary(splitter_.splitted_image().clone());
+    Image image = splitter_.splitted_image();
+    ASSERT_HOST_MSG(!!image, "splitted_image() must never fail.\n");
+    set_pix_binary(image.clone());
 
     if (tessedit_dump_pageseg_images) {
       ASSERT0(max_pageseg_strategy >= 0);
@@ -671,8 +672,9 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   // Run the splitter for OCR
   bool split_for_ocr = splitter_.Split(false);
   // Restore pix_binary to the binarized original pix for future reference.
-  ASSERT_HOST(splitter_.orig_pix());
-  set_pix_binary(splitter_.orig_pix().clone());
+  Image orig_source_image = splitter_.orig_pix();
+  ASSERT_HOST_MSG(orig_source_image, "orig_pix() should never fail to deliver a valid Image pix.\n");
+  set_pix_binary(orig_source_image.clone());
   // If the pageseg and ocr strategies are different, refresh the block list
   // (from the last SegmentImage call) with blobs from the real image to be used
   // for OCR.

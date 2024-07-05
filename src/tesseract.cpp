@@ -906,13 +906,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
   }
 }
 
-#if 0
-static void pause_key(void) {
-  (void)fgetc(stdin);
-}
-#endif
-
-  /**********************************************************************
+/**********************************************************************
  *  main()
  *
  **********************************************************************/
@@ -1387,7 +1381,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.ReportParamsUsageStatistics();
     }
 
-    // TODO? write/flush log output
+    supress_premature_log_reporting.stepdown();
     api.Clear();
   }
   // ^^^ end of scope for the Tesseract `api` instance

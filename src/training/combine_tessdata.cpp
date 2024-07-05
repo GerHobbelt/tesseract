@@ -48,7 +48,7 @@ static int list_network(TessdataManager &tm, const char *filename, int tess_debu
   }
   tesseract::TFile fp;
   if (tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
-    tesseract::LSTMRecognizer recognizer;
+    tesseract::LSTMRecognizer recognizer(nullptr);
     recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintError("Failed to deserialize LSTM in {}!\n", filename);

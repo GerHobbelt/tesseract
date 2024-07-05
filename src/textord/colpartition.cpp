@@ -367,7 +367,7 @@ void ColPartition::ReflectInYAxis() {
 bool ColPartition::IsLegal() {
   if (bounding_box_.left() > bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintError("Bounding box invalid\n");
+      tprintError("textord_debug_bugs: Bounding box invalid\n");
       Print();
     }
     return false; // Bounding box invalid.
@@ -375,14 +375,14 @@ bool ColPartition::IsLegal() {
   if (left_margin_ > bounding_box_.left() ||
       right_margin_ < bounding_box_.right()) {
     if (textord_debug_bugs) {
-      tprintError("Margins invalid\n");
+      tprintError("textord_debug_bugs: Margins invalid\n");
       Print();
     }
     return false; // Margins invalid.
   }
   if (left_key_ > BoxLeftKey() || right_key_ < BoxRightKey()) {
     if (textord_debug_bugs) {
-      tprintDebug("Key inside box: {} v {} or {} v {}\n", left_key_, BoxLeftKey(),
+      tprintDebug("textord_debug_bugs: Key inside box: {} v {} or {} v {}\n", left_key_, BoxLeftKey(),
               right_key_, BoxRightKey());
       Print();
     }
@@ -970,14 +970,14 @@ void ColPartition::ComputeLimits() {
   if (left_key_ > BoxLeftKey() && textord_debug_bugs) {
     // TODO(rays) investigate the causes of these error messages, to find
     // out if they are genuinely harmful, or just indicative of junk input.
-    tprintDebug("Computed left-illegal partition\n");
+    tprintDebug("textord_debug_bugs: Computed left-illegal partition\n");
     Print();
   }
   if (!right_key_tab_) {
     right_key_ = BoxRightKey();
   }
   if (right_key_ < BoxRightKey() && textord_debug_bugs) {
-    tprintDebug("Computed right-illegal partition\n");
+    tprintDebug("textord_debug_bugs: Computed right-illegal partition\n");
     Print();
   }
   if (it.empty()) {
@@ -1020,12 +1020,12 @@ void ColPartition::ComputeLimits() {
   }
 
   if (right_margin_ < bounding_box_.right() && textord_debug_bugs) {
-    tprintWarn("Made partition with bad right coords, {} < {}\n", right_margin_,
+    tprintWarn("textord_debug_bugs: Made partition with bad right coords, {} < {}\n", right_margin_,
             bounding_box_.right());
     Print();
   }
   if (left_margin_ > bounding_box_.left() && textord_debug_bugs) {
-    tprintWarn("Made partition with bad left coords, {} > {}\n", left_margin_,
+    tprintWarn("textord_debug_bugs: Made partition with bad left coords, {} > {}\n", left_margin_,
             bounding_box_.left());
     Print();
   }
@@ -1468,7 +1468,7 @@ void ColPartition::AddToWorkingSet(const ICOORD &bleft, const ICOORD &tright,
     return;
   }
   if (partner != nullptr && textord_debug_bugs) {
-    tprintDebug("Partition with partner has no working set!:");
+    tprintDebug("textord_debug_bugs: Partition with partner has no working set!:");
     Print();
     partner->Print();
   }
@@ -1485,7 +1485,7 @@ void ColPartition::AddToWorkingSet(const ICOORD &bleft, const ICOORD &tright,
     Print();
   }
   if (it.cycled_list() && textord_debug_bugs) {
-    tprintDebug("Target column={}, only had {}\n", first_column_, col_index);
+    tprintDebug("textord_debug_bugs: Target column={}, only had {}\n", first_column_, col_index);
   }
   ASSERT_HOST(!it.cycled_list());
   work_set = it.data();

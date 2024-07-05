@@ -104,7 +104,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // height == 1. If height == 0 then no scaling.
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
 /* static */
-void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* randomizer,
+void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Image pix, TRand *randomizer,
                             NetworkIO *input, const TBOX &line_box, float scale_factor) {
   bool color = shape.depth() == 3;
   Image var_pix = pix;
@@ -142,11 +142,10 @@ void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* ra
     normed_pix.destroy();
     normed_pix = scaled_pix;
   }
-#if 01
-  if (true /* debug */) {
-    tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, bbox:{})", height, target_height, scale_factor, line_box.print_to_str()));
+  if (tess != nullptr && (verbose_process || tess->tessedit_dump_pageseg_images))
+  {
+      tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
-#endif
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();
 }

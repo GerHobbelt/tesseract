@@ -826,6 +826,7 @@ void RecodeBeamSearch::DecodeSecondaryStep(
   } else {
     RecodeBeam *prev = secondary_beam_[t - 1];
     if (HasDebug()) {
+      TPrintGroupLinesTillEndOfScope push;
       int beam_index = BeamIndex(true, NC_ANYTHING, 0);
       for (int i = prev->beams_[beam_index].size() - 1; i >= 0; --i) {
         std::vector<const RecodeNode *> path;

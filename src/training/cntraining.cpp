@@ -138,8 +138,10 @@ extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
   for (const char* PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     tprintInfo("Reading {} ...\n", PageName);
     FILE* TrainingPage = fopen(PageName, "rb");
-    ASSERT_HOST(TrainingPage);
-    if (TrainingPage) {
+    if (!TrainingPage) {
+      tprintError("Could not open file '{}' for reading.\n", PageName);
+      return EXIT_FAILURE;
+    } else {
       ReadTrainingSamples(FeatureDefs, PROGRAM_FEATURE_TYPE, 100, nullptr, TrainingPage, &CharList);
       fclose(TrainingPage);
       // ++num_fonts;
@@ -226,7 +228,10 @@ static int WriteNormProtos(const char *Directory, LIST LabeledProtoList,
   Filename += "normproto";
   tprintInfo("\nWriting {} ...\n", Filename);
   File = fopen(Filename.c_str(), "wb");
-  ASSERT_HOST(File);
+  if (!File) {
+    tprintError("Cannot open file '{}' for writing.\n", Filename);
+    return -1;
+  }
   fprintf(File, "%0d\n", feature_desc->NumParams);
   WriteParamDesc(File, feature_desc->NumParams, feature_desc->ParamDesc);
   iterate(LabeledProtoList) {

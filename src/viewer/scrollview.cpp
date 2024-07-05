@@ -1945,10 +1945,11 @@ ScrollViewManager::~ScrollViewManager() {
 ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
   ScrollViewManager &mgr = GetScrollViewManager();
   mgr.SetActiveTesseractInstance(tess);
-  tess = mgr.GetActiveTesseractInstance();
+  tess = mgr.GetActiveTesseractInstance();    // TODO: only pick up the active one when the current one, i.e. the one we got passed, is NULL.  Though that may(??) be wrong when we add multi-instance running support and don't ditch interactive view --> interactive view cannot go together with multiple tesseract instances running in parallel.
 
   ScrollViewReference rv; 
 
+  ASSERT_HOST(tess != nullptr);
   if (scrollview_support) {
     if (tess->SupportsInteractiveScrollView()) {
       rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,

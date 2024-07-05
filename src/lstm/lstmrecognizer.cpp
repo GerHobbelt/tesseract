@@ -53,7 +53,7 @@ static const double kCertOffset = -0.085;
 //  ccutil_.language_data_path_prefix = language_data_path_prefix;
 //}
 
-LSTMRecognizer::LSTMRecognizer()
+LSTMRecognizer::LSTMRecognizer(Tesseract *tess)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -67,6 +67,7 @@ LSTMRecognizer::LSTMRecognizer()
 #if !GRAPHICS_DISABLED
     , debug_win_(nullptr)
 #endif
+    , tesseract_(tess)
 {}
 
 LSTMRecognizer::~LSTMRecognizer() {
@@ -364,7 +365,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
-  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
+  Input::PreparePixInput(tesseract_, network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
@@ -372,7 +373,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
     if (HasDebug()) {
       tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
-          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
+          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run the image clip again *inverted* and see if it is any better." : " --> OK, do *NOT* retry the same image clip as inverted image because the stats say it's above par (pos_mean >= invert_threshold)"));
     }
     if (pos_mean < invert_threshold) {
       // Run again inverted and see if it is any better.
@@ -381,13 +382,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       Image inv_pix = pixClone(pix);
       pixInvert(inv_pix, pix);
-      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
+      Input::PreparePixInput(tesseract_, network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (HasDebug() || 1) {
         tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
-            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
+            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs matches the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
       if (inv_mean > pos_mean) {

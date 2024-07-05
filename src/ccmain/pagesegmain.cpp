@@ -323,7 +323,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
   ASSERT_HOST(pix_binary_ != nullptr);
   if (tessedit_dump_pageseg_images) {
-    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
+    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput - the source image for this operation");
   }
   // Leptonica is used to find the rule/separator lines in the input.
   line_finder_.FindAndRemoveLines(source_resolution_, pix_binary_,
@@ -337,7 +337,8 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
       Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed; the black pixels what remain in this image will be treated as *text*");
+      tprintInfo("PROCESS: The black pixels what remain in the above image will be treated as *text pixels* by tesseract (after some denoising, column finding, etc. that follows next). Each area of black pixels will be collected as *bounding boxes* for the original source image pixel areas which will be clipped and fed into the OCR engine core for text recognition. See the '*Recognize (OCR)' section further below in thhe session log report.\n");
       pix_no_image_.destroy();
     }
   }

@@ -51,7 +51,9 @@ enum TrainingFlags {
 // Note that a sub-class, LSTMTrainer is used for training.
 class TESS_API LSTMRecognizer {
 public:
-  LSTMRecognizer();
+  // Takes an OPTIONAL instance reference for internal diagnostics use.
+  LSTMRecognizer(Tesseract *tess);
+  LSTMRecognizer() = delete;
   //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
@@ -338,6 +340,9 @@ protected:
   const char *DecodeSingleLabel(int label);
 
 protected:
+  // OPTIONAL reference to the active Tesseract instance where LSTM/Input
+  // internal diagnostics should be sent to.
+  Tesseract *tesseract_;
   // The network hierarchy.
   Network *network_;
   // The unicharset. Only the unicharset element is serialized.

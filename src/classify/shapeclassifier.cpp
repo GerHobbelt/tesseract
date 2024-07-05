@@ -60,7 +60,7 @@ int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, int deb
 // Default implementation aborts.
 int ShapeClassifier::ClassifySample(const TrainingSample &sample, int debug,
                                     int keep_this, std::vector<ShapeRating> *results) {
-  ASSERT_HOST(!"Must implement ClassifySample!");
+  ASSERT_HOST_MSG(false, "Must implement ClassifySample!\n");
   return 0;
 }
 

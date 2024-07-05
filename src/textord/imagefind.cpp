@@ -267,13 +267,16 @@ Image ImageFind::FindImages(Image pix) {
   // pixGenHalftoneMask(pixr, nullptr, ...) with width or height < 100
   // for the reduced image, so we want to bypass that, too.
   if (width / 2 < kMinImageFindSize || height / 2 < kMinImageFindSize) {
+    if (textord_tabfind_show_images || verbose_process) {
+      tprintDebug("FindImages: this part of the process (discovering non-text image segments in the input image) is *skipped* as the input image is deemed too small for this subprocess to be useful -- source image w:{},h:{}: one of these is less then our lower bound of {}px\n", width, height, 2 * kMinImageFindSize);
+    }
     return pixCreate(width, height, 1);
   }
 
   // Reduce by factor 2.
   Image pixr = pixReduceRankBinaryCascade(pix, 1, 0, 0, 0);
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixr, "Find Images : Cascade Reduced");
+    tesseract_->AddPixDebugPage(pixr, "Find Images -- image op: reduce rank, binary cascade");
   }
 
   // Get the halftone mask directly from Leptonica.
@@ -281,11 +284,11 @@ Image ImageFind::FindImages(Image pix) {
   Pixa *pixadb = textord_tabfind_show_images ? pixaCreate(0) : nullptr;
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {
-    Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
-    if (textord_tabfind_show_images) {
-      tesseract_->AddPixDebugPage(pixdb, "Find Images : Generated Halftone Mask");
+    if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
+      Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
+      tesseract_->AddPixDebugPage(pixdb, "Find Images -- image op: generated Halftone Mask");
+      pixdb.destroy();
     }
-    pixdb.destroy();
     pixaDestroy(&pixadb);
   }
   pixr.destroy();
@@ -299,7 +302,7 @@ Image ImageFind::FindImages(Image pix) {
   // Expand back up again.
   Image pixht = pixExpandReplicate(pixht2, 2);
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixht, "HalftoneReplicated");
+    tesseract_->AddPixDebugPage(pixht, "Find Images -- image op: expand replicate");
   }
   pixht2.destroy();
 
@@ -312,7 +315,7 @@ Image ImageFind::FindImages(Image pix) {
   Image pixfinemask = pixReduceRankBinaryCascade(pixht, 1, 1, 3, 3);
   pixDilateBrick(pixfinemask, pixfinemask, 5, 5);
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixfinemask, "FineMask");
+    tesseract_->AddPixDebugPage(pixfinemask, "Find Images : FineMask -- image op: reduce rank + dilate brick");
   }
   Image pixreduced = pixReduceRankBinaryCascade(pixht, 1, 1, 1, 1);
   Image pixreduced2 = pixReduceRankBinaryCascade(pixreduced, 3, 3, 3, 0);
@@ -321,7 +324,7 @@ Image ImageFind::FindImages(Image pix) {
   Image pixcoarsemask = pixExpandReplicate(pixreduced2, 8);
   pixreduced2.destroy();
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixcoarsemask, "CoarseMask");
+    tesseract_->AddPixDebugPage(pixcoarsemask, "Find Images : CoarseMask -- image op: 2x reduce rank + dilate brick + expand replicate");
   }
   // Combine the coarse and fine image masks.
   pixcoarsemask &= pixfinemask;
@@ -331,13 +334,13 @@ Image ImageFind::FindImages(Image pix) {
   Image pixmask = pixExpandReplicate(pixcoarsemask, 16);
   pixcoarsemask.destroy();
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixmask, "MaskDilated");
+    tesseract_->AddPixDebugPage(pixmask, "Find Images : MaskDilated -- image op: expand replicate");
   }
   // And the image mask with the line and bar remover.
   pixht &= pixmask;
   pixmask.destroy();
   if (textord_tabfind_show_images) {
-    tesseract_->AddPixDebugPage(pixht, "FinalMask");
+    tesseract_->AddPixDebugPage(pixht, "Find Images : FinalMask");
   }
   // Make the result image the same size as the input.
   Image result = pixCreate(width, height, 1);

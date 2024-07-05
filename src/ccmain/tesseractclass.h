@@ -1106,6 +1106,9 @@ public:
   int PushNextPixDebugSection(const std::string &title);
   int PushSubordinatePixDebugSection(const std::string &title);
   void PopPixDebugSection(int handle = -1);
+  int GetPixDebugSectionLevel() const {
+    return pixa_debug_.GetCurrentSectionLevel();
+  }
 
 public:
   // Find connected components in the page and process a subset until finished or

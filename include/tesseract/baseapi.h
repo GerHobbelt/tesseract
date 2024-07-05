@@ -29,7 +29,6 @@
 
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
-#include <tesseract/autosupressor.h>     // for AutoSupressDatum
 #include <tesseract/params.h>
 #include <tesseract/filepath.h>
 
@@ -62,7 +61,6 @@ class ResultIterator;
 class MutableIterator;
 class TessResultRenderer;
 class Tesseract;
-class AutoSupressDatum;
 
 // Function to read a std::vector<char> from a whole file.
 // Returns false on failure.
@@ -287,6 +285,11 @@ public:
    * Get value of named variable as a string, if it exists.
    */
   bool GetVariableAsString(const char *name, std::string *val) const;
+
+  /**
+   * Take all the internally gathered diagnostics data (including the tprintError/Warn/Info/Debug/Trace messages issued thus far, plus all collected image snapshots representing the intermediate state of the tesseract process at that time) and produce a HTML report from it for human consumption.
+   */
+  void FinalizeAndWriteDiagnosticsReport(); //  --> ReportDebugInfo()
 
   /**
    * Inspect the path_params list (which lists images and image-list files)

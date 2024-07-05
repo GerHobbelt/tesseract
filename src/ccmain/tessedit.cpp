@@ -210,7 +210,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED) {
 #endif // DISABLED_LEGACY_ENGINE
     if (mgr->IsComponentAvailable(TESSDATA_LSTM)) {
-      lstm_recognizer_ = new LSTMRecognizer();
+      lstm_recognizer_ = new LSTMRecognizer(this);
 
       ResyncVariablesInternally();
       // lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);

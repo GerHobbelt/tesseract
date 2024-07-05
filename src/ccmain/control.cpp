@@ -385,7 +385,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
 
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
-    std::string msg = fmt::format("RecogAllWordsPassN: pass {}: word bboxes:\n", pass_n);
+    std::string msg = fmt::format("pass {}: word bboxes:\n", pass_n);
     DebugWordSetBBoxCarrier carrier;
     GatherWordsBBboxInfo4DebugDisplay(carrier, words);
     carrier.pass_n = pass_n;
