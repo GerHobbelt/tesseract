@@ -271,7 +271,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+    search_->SetDebug(CurrentDebugLevel().Decremented());
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
@@ -361,13 +361,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
-  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
+  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor, CurrentDebugLevel());
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
     float pos_min, pos_mean, pos_sd;
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
-    if (HasDebug()) {
+    if (HasDebugOrVerboseProcess()) {
       tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
           pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run the image clip again *inverted* and see if it is any better." : " --> OK, do *NOT* retry the same image clip as inverted image because the stats say it's above par (pos_mean >= invert_threshold)"));
     }
@@ -378,11 +378,11 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       Image inv_pix = pixClone(pix);
       pixInvert(inv_pix, pix);
-      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
+      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor, CurrentDebugLevel());
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
-      if (HasDebug() || 1) {
+      if (HasDebugOrVerboseProcess()) {
         tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs matches the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
@@ -561,7 +561,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
                                        std::vector<int> *xcoords) {
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+	search_->SetDebug(CurrentDebugLevel() - 1);
   }
   search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2 /* 0 */);
   search_->ExtractBestPathAsLabels(labels, xcoords);

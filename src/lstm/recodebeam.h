@@ -428,15 +428,25 @@ private:
   int null_char_;
 
   // == Debugging parameters.==
-  int debug_ = 0;
+  NetworkDebugSettings debug_ = {0};
 
 public:
-	void SetDebug(int v) {
-		debug_ = std::max(0, v);
-	}
-	int HasDebug() const {
-		return debug_;
-	}
+  void SetDebug(int v, bool process, bool pageseg_images) {
+    debug_ = {
+      .level = unsigned int(std::max(0, v)),
+      .process_verbose = process,
+      .dump_pageseg_images = pageseg_images
+    };
+  }
+  bool HasDebug(int threshold) const {
+    return debug_.level >= threshold;
+  }
+  bool HasDebugOrVerboseProcess(int threshold) const {
+    return HasDebug(threshold) || debug_.process_verbose;
+  }
+  NetworkDebugSettings CurrentDebugLevel() {
+    return debug_;
+  }
 };
 
 } // namespace tesseract.

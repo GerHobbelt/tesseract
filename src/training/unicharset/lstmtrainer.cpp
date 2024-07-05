@@ -244,7 +244,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
   // NO-dict error.
   RecodeBeamSearch base_search(recoder_, null_char_, SimpleTextOutput(),
                                nullptr);
-  base_search.SetDebug(HasDebug() - 1);
+  base_search.SetDebug(CurrentDebugLevel().Decremented());
   base_search.Decode(fwd_outputs, 1.0, 0.0, RecodeBeamSearch::kMinCertainty,
                      nullptr, 0);
   base_search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
@@ -254,7 +254,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
   results += "0,0=" + std::to_string(baseline_error);
 
   RecodeBeamSearch search(recoder_, null_char_, SimpleTextOutput(), dict_);
-  search.SetDebug(HasDebug() - 1);
+  search.SetDebug(CurrentDebugLevel().Decremented());
   for (double r = min_dict_ratio; r < max_dict_ratio; r += dict_ratio_step) {
     for (double c = min_cert_offset; c < max_cert_offset;
          c += cert_offset_step) {
@@ -720,7 +720,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
       }
       // Make a copy of *this, so we can mess about without damaging anything.
       LSTMTrainer copy_trainer;
-	  copy_trainer.SetDebug(samples_trainer->HasDebug());
+	  copy_trainer.SetDebug(samples_trainer->CurrentDebugLevel());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
       copy_trainer.network_->Update(0.0, 0.0, 0.0, 0);
@@ -747,7 +747,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
           continue;
         }
         LSTMTrainer layer_trainer;
-		layer_trainer.SetDebug(samples_trainer->HasDebug());
+		layer_trainer.SetDebug(samples_trainer->CurrentDebugLevel());
 		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);
         // Update the weights in just the layer, using Adam if enabled.

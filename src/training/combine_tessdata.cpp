@@ -54,7 +54,7 @@ static int list_network(TessdataManager &tm, const char *filename, int tess_debu
   tesseract::TFile fp;
   if (tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
     tesseract::LSTMRecognizer recognizer;
-    recognizer.SetDebug(tess_debug_lstm);
+    recognizer.SetDebug(tess_debug_lstm, tess_debug_lstm > 0, tess_debug_lstm > 0);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintError("Failed to deserialize LSTM in {}!\n", filename);
       return EXIT_FAILURE;
@@ -222,7 +222,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       return EXIT_FAILURE;
     }
     tesseract::LSTMRecognizer recognizer;
-    recognizer.SetDebug(tess_debug_lstm);
+    recognizer.SetDebug(tess_debug_lstm, tess_debug_lstm > 0, tess_debug_lstm > 0);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintError("Failed to deserialize LSTM in {}!\n", argv[2]);
       return EXIT_FAILURE;

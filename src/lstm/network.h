@@ -91,6 +91,27 @@ enum NetworkFlags {
   NF_ADAM = 128,             // Weight-specific learning rate.
 };
 
+
+// Debug parameters; packs them in a single int for easy transport 
+// (not enforced, but all compilers do this)
+struct NetworkDebugSettings {
+  unsigned int level : 6;
+  unsigned int process_verbose : 1;
+  unsigned int dump_pageseg_images : 1;
+
+  // Produces a copy where the debug level has been decremented by the given amount.
+  // Meanwhile, it keeps the other debug settings as-is in the returned copy.
+  NetworkDebugSettings Decremented(unsigned int amount = 1) const {
+    NetworkDebugSettings rv = *this;
+    if (rv.level >= amount)
+      rv.level -= amount;
+    else
+      rv.level = 0;
+    return rv;
+  }
+};
+
+
 // State of training and desired state used in SetEnableTraining.
 enum TrainingState {
   // Valid states of training_.

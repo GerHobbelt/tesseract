@@ -92,7 +92,8 @@ public:
   // NOTE: It isn't safe for multiple threads to call this on the same pix.
   static void PreparePixInput(const StaticShape &shape, const Image pix,
                               TRand *randomizer, NetworkIO *input,
-                              const TBOX &line_box, float scale_factor);
+                              const TBOX &line_box, float scale_factor,
+                              bool debug);
 
 private:
   void DebugWeights() override {
