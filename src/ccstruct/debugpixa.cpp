@@ -167,12 +167,12 @@ namespace tesseract {
   struct dots_marker {
     const char *start;
     const char *end;
+    const char *eq_sep;
   };
 
   static dots_marker find_start_of_leaderdots(const char *line) {
     dots_marker nil{nullptr};
     if (isalnum(*line) || *line == '_') {
-      const char *som;
       line++;
       while (isalnum(*line) || *line == '_')
         line++;
@@ -187,9 +187,21 @@ namespace tesseract {
         line++;
       if (*line++ != ' ')
         return nil;
-      if (*line != '(')
+      const char *end = line;
+      if (*line++ != '(')
         return nil;
-      return {.start = start, .end = line};
+      line = strchr(line, ']');
+      if (!line)
+        return nil;
+      line++;
+      while (*line == ' ')
+        line++;
+      const char *eq = line;
+      if (*line++ != '=')
+        return nil;
+      if (*line != ' ')
+        return nil;
+      return {.start = start, .end = end, .eq_sep = eq};
     }
     return nil;
   }
@@ -418,19 +430,21 @@ namespace tesseract {
       if (next && 0 == strncmp(next + 1, "* ", 2) && isalpha(next[3])) {
         dots_marker dots = find_start_of_leaderdots(message + 3);
         dots_marker dots_next = find_start_of_leaderdots(next + 4);
-        if (dots.start && dots.end && dots_next.start && dots_next.end) {
+        if (dots.start && dots_next.start) {
           // Yes, we're looking at a list of at least two elements: deal with it now!
           if (style)
-            dst << "<ul class=\"leaders " << style << "\">\n";
+            dst << "<table class=\"leaders paramreport " << style << "\">\n";
           else
-            dst << "<ul class=\"leaders\">\n";
+            dst << "<table class=\"leaders paramreport\">\n";
           for (;;) {
             message += 2;
-            dst << "<li class=\"paramreport_line\">\n<span class=\"paramreport_itemname\">";
+            dst << "<tr class=\"paramreport_line\">\n<td class=\"paramreport_itemname\">";
             add_inline_particle_as_html(dst, message, dots.start - message);
-            dst << "</span><span class=\"paramreport_itemspec\">";
-            add_inline_particle_as_html(dst, dots.end, next - dots.end);
-            dst << "</li\">\n";
+            dst << "</td><td class=\"paramreport_itemspec\">";
+            add_inline_particle_as_html(dst, dots.end, dots.eq_sep - 1 - dots.end);
+            dst << "</td><td class=\"paramreport_itemvalue\">";
+            add_inline_particle_as_html(dst, dots.eq_sep + 2, next - 2 - dots.eq_sep);
+            dst << "</td></tr>\n";
             message = next + 1;
             if (0 != strncmp(message, "* ", 2) || !isalpha(message[2])) {
               break;
@@ -444,7 +458,7 @@ namespace tesseract {
               break;
             }
           }
-          dst << "</ul>\n\n";
+          dst << "</table>\n\n";
           while (message[0] == '\n')
             message++;
           // deal with the remainder in this tail recursion call.
@@ -1283,30 +1297,57 @@ namespace tesseract {
       padding-right: 0.25em;\n\
       background-color: #daffdd;\n\
     }\n\
-    ul.leaders {\n\
-      max-width: 40em;\n\
-      padding: 0;\n\
-      overflow-x: hidden;\n\
-      list-style: none;\n\
+    table.leaders {\n\
+      border: solid 2px #b5c8e6;\n\
+      text-align: left;\n\
+      border-collapse: collapse;\n\
+     	width: auto;\n\
+	    margin: .5em 0 .5em auto;\n\
+	    table-layout: fixed;\n\
     }\n\
-    ul.leaders li:before {\n\
-      float: left;\n\
-      width: 0;\n\
+    table.leaders th, table.leaders td {\n\
+      text-align: left;\n\
+      border: none;\n\
+      border-left: none;\n\
+      border-top: none;\n\
       white-space: nowrap;\n\
-    content:\n\
-      \". . . . . . . . . . . . . . . . . . . . \"\n\
-      \". . . . . . . . . . . . . . . . . . . . \"\n\
-      \". . . . . . . . . . . . . . . . . . . . \"\n\
-      \". . . . . . . . . . . . . . . . . . . . \"\n\
+      padding: .1em .5em;\n\
+      width: auto;\n\
+      vertical-align: bottom;\n\
     }\n\
-    ul.leaders span:first-child {\n\
-      padding-right: 0.33em;\n\
-      background: white;\n\
+    table.leaders tr:nth-child(odd) {\n\
+      background: #f8fcff;\n\
     }\n\
-    ul.leaders span + span {\n\
-      float: right;\n\
-      padding-left: 0.33em;\n\
-      background: white;\n\
+    table.leaders th:last-child, table.leaders  td:last-child {\n\
+      border-right: none;\n\
+      white-space: break-spaces;\n\
+      text-align  left;\n\
+      padding-left: .5em;\n\
+    }\n\
+    table.leaders th:nth-child(2), table.leaders  td:nth-child(2) {\n\
+      border-right: none;\n\
+      white-space: break-spaces;\n\
+      text-align  left;\n\
+      padding-left: .5em;\n\
+    }\n\
+    table.leaders  tr:last-child th, table.leaders  tr:last-child td {\n\
+      border-bottom: none;\n\
+      width: auto;\n\
+      max-width: 60%%;\n\
+    }\n\
+    table.leaders td:first-child {\n\
+      text-align: left;\n\
+      overflow: hidden;\n\
+      position: relative;\n\
+      padding-right: 2em;\n\
+    }\n\
+    table.leaders td:first-child::after {\n\
+      content: '';\n\
+      position: absolute;\n\
+      bottom: calc(.2em + 2px);\n\
+      width: 100%%;\n\
+      margin-left: .5em;\n\
+      border-bottom: 2px dotted grey;\n\
     }\n\
   </style>\n\
 </head>\n\
