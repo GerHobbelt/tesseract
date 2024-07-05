@@ -326,7 +326,7 @@ namespace tesseract {
     if (state < 0) {
       dst << "</p></blockquote>\n\n";
     } else if (state > 0) {
-      dst << "</h" << "123456"[state] << ">\n\n";
+      dst << "</h" << "12345666"[state] << ">\n\n";
     } else {
       dst << "</p>\n\n";
     }

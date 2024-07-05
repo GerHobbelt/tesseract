@@ -135,6 +135,8 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 {
   std::unique_ptr<ParamsReportWriter> writer;
 
+  TPrintGroupLinesTillEndOfScope push;
+
   if (f != nullptr) {
     writer.reset(new ParamsReportFileDuoWriter(f));
   } else {
@@ -150,8 +152,6 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
 void ParamUtils::ReportParamsUsageStatistics(ParamsReportWriter &writer, const ParamsVectors *member_params, int section_level, const char *section_title)
 {
   bool is_section_subreport = (section_title != nullptr);
-
-  TPrintGroupLinesTillEndOfScope push;
 
   writer.Write(fmt::format("\n\n"
                             "{}Tesseract Parameter Usage Statistics{}: which params have been relevant?\n"
