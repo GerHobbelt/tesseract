@@ -307,7 +307,7 @@ void EquationDetect::IdentifySpecialText() {
 
 
 void EquationDetect::IdentifyBlobsToSkip(ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
   BLOBNBOX_C_IT blob_it(part->boxes());
 
   for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
@@ -502,7 +502,7 @@ void EquationDetect::SearchByOverlap(ColPartition *seed,
 }
 
 void EquationDetect::InsertPartAfterAbsorb(ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
 
   // Before insert part back into part_grid_, we will need re-compute some
   // of its attributes such as first_column_, last_column_. However, we still
@@ -609,7 +609,7 @@ float EquationDetect::ComputeForegroundDensity(const TBOX &tbox) {
 }
 
 bool EquationDetect::CheckSeedFgDensity(const float density_th, ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
 
   // Split part horizontall, and check for each sub part.
   std::vector<TBOX> sub_boxes;
@@ -719,7 +719,7 @@ void EquationDetect::SplitCPHorLite(ColPartition *part, std::vector<TBOX> *split
 
 bool EquationDetect::CheckForSeed2(const std::vector<int> &indented_texts_left,
                                    const float foreground_density_th, ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
   const TBOX &box = part->bounding_box();
 
   // Check if it is aligned with any indented_texts_left.
@@ -970,7 +970,7 @@ bool EquationDetect::CheckSeedBlobsCount(ColPartition *part) {
 
 bool EquationDetect::CheckSeedDensity(const float math_density_high, const float math_density_low,
                                       const ColPartition *part) const {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
   float math_digit_density =
       part->SpecialBlobsDensity(BSTT_MATH) + part->SpecialBlobsDensity(BSTT_DIGIT);
   float italic_density = part->SpecialBlobsDensity(BSTT_ITALIC);
@@ -986,7 +986,7 @@ bool EquationDetect::CheckSeedDensity(const float math_density_high, const float
 }
 
 EquationDetect::IndentType EquationDetect::IsIndented(ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
 
   ColPartitionGridSearch search(part_grid_);
   ColPartition *neighbor = nullptr;
@@ -1241,7 +1241,7 @@ bool EquationDetect::IsNearSmallNeighbor(const TBOX &seed_box, const TBOX &part_
 }
 
 bool EquationDetect::CheckSeedNeighborDensity(const ColPartition *part) const {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
   if (part->boxes_count() < kSeedBlobsCountTh) {
     // Too few blobs, skip the check.
     return true;
@@ -1359,7 +1359,7 @@ bool EquationDetect::IsMathBlockSatellite(ColPartition *part,
 }
 
 ColPartition *EquationDetect::SearchNNVertical(const bool search_bottom, const ColPartition *part) {
-  ASSERT_HOST(part);
+  ASSERT_HOST(part != nullptr);
   ColPartition *nearest_neighbor = nullptr, *neighbor = nullptr;
   const int kYGapTh = static_cast<int>(std::round(resolution_ * 0.5f));
 
@@ -1401,7 +1401,7 @@ bool EquationDetect::IsNearMathNeighbor(const int y_gap, const ColPartition *nei
 }
 
 void EquationDetect::GetOutputTiffName(const char *name, std::string &image_name) const {
-  ASSERT_HOST(name);
+  ASSERT_HOST(name != nullptr);
   char page[50];
   snprintf(page, sizeof(page), "%04d", page_count_);
   // name: _spt, _bi, _seed, _merged

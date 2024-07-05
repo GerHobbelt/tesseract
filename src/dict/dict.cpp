@@ -721,7 +721,7 @@ void Dict::add_document_word(const WERD_CHOICE &best_choice) {
     FILE *doc_word_file = fopen(filename.c_str(), "a");
     if (doc_word_file == nullptr) {
       tprintError("Could not open file {}\n", filename);
-      ASSERT_HOST(doc_word_file);
+      ASSERT_HOST(doc_word_file != nullptr);
     }
     fprintf(doc_word_file, "%s\n", best_choice.debug_string().c_str());
     fclose(doc_word_file);
