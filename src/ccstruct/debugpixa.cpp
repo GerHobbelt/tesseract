@@ -1462,7 +1462,7 @@ namespace tesseract {
       ParamUtils::ReportParamsUsageStatistics(writer, vec, -1, nullptr);
       std::ostringstream html_report_dst;
       add_encoded_as_html(html_report_dst, "params-report", writer.to_string().c_str());
-      fputs(languages.str().c_str(), html);
+      fputs(html_report_dst.str().c_str(), html);
 
       fputs("\n</body>\n</html>\n", html);
 
