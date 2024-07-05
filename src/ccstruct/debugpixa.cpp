@@ -36,6 +36,128 @@ namespace tesseract {
     return false;
   }
 
+  static void add_inline_particle_as_html(std::ostringstream &dst, const char *message, size_t length) {
+    if (length == 0)
+      return;
+    const char *start = message;
+    // sneaky: we 'know' we will only need this for modifiable content that was sent to us, i.e. we're 
+    // trampling through a std::string internal buffer or similar. 
+    // (Like with the stuff that's coming out of do_transmit_logline().)
+    // 
+    // Ultimately we don't change anything, so we're legally safe, but it is assuming some things 
+    // (such as message not pointing at protected/ROM/non-modifiable data space) and this is
+    // therefor a nasty bit of code, that Just Works(tm) with minimal overhead and easier to read
+    // internals than when we were to do this 'clean' with a lot of 'are we there yet' checks vs.
+    // the NUL sentinel check we now permit ourselves to get away with!
+    char sentinel_backup = start[length - 1];
+    // hence, we only *temporarily* violate the higher expectations of `const char *message` when we 
+    // actually need to do the temporary 'plug in a NUL sentinel for now' work.
+    if (sentinel_backup) {
+      const_cast<char *>(start)[length - 1] = 0;
+    }
+    // now we can act as if the incoming message string is always neatly NUL-sentinelled like any good ol' C string.
+    while (*message) {
+      auto pos = strcspn(message, "\n<>&`*\t");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        dst << particle;
+        message += pos;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          dst << "&lt;";
+          message++;
+          continue;
+
+        case '>':
+          dst << "&gt;";
+          message++;
+          continue;
+
+        case '&':
+          dst << "&amp;";
+          message++;
+          continue;
+
+        case '\n':
+          dst << "\n<br>";
+          message++;
+          continue;
+
+        case '`':
+          // markdown-ish in-line code phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded by whitespace or punctuation and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:...
+          //
+          // Re the condition used below:
+          //     (isalnum(message[-1]) || message[+1] == message[-1])
+          // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
+          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n`");
+              pos += pos2;
+            } while (message[pos] == '`' && message[pos + 1] != 0 &&
+                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
+
+            if (message[pos] == '`') {
+              dst << "<code>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</code>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '`';
+          message++;
+          continue;
+
+        case '*':
+          // markdown-ish in-line emphasis phrase...
+          // which, in our case, cannot break across lines as we only use this for
+          // simple stuff.
+          //
+          // furthermore, we require it's preceded (and trailed) by whitespace:
+          if (message > start && isspace(message[-1])) {
+            pos = 0;
+            do {
+              pos++;
+              auto pos2 = strcspn(message + pos, "\n*");
+              pos += pos2;
+            } while (message[pos] == '*' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+
+            if (message[pos] == '*') {
+              dst << "<em>";
+              std::string_view particle(message + 1, pos - 1);
+              dst << particle;
+              dst << "</em>";
+              message += pos + 1;
+              continue;
+            }
+          }
+          dst << '*';
+          message++;
+          continue;
+
+        case '\t':
+          dst << "<code>TAB</code>";
+          message++;
+          continue;
+      }
+    }
+    // and now that we are done, we must undo our violation of `const char *message`:
+    if (sentinel_backup) {
+      const_cast<char *>(start)[length - 1] = sentinel_backup;
+    }
+  }
+
   static void add_encoded_as_html(std::ostringstream &dst, const char *style,
                                   const char *message) {
     // when messages carry embedded TABs, they may well be tables and we should help the user a little by rendering them to HTML as such.
@@ -133,9 +255,7 @@ namespace tesseract {
             } else {
               dst << end_plug;
             }
-            std::string_view particle(message + line_spos,
-                                      line_epos - line_spos);
-            dst << particle;
+            add_inline_particle_as_html(dst, message + line_spos, line_epos - line_spos);
             line++;
             line_spos = line_epos + 1;
             line_epos = LF_positions[line];
@@ -166,9 +286,7 @@ namespace tesseract {
             unsigned int colcount = active_TABs->size();
             while (tab < colcount - 1) {
               dst << "<" << td_elem << ">";
-              std::string_view particle(message + tab_spos,
-                                        tab_epos - tab_spos);
-              dst << particle;
+              add_inline_particle_as_html(dst, message + tab_spos, tab_epos - tab_spos);
               dst << "</" << td_elem << ">";
               tab++;
               tab_spos = tab_epos + 1;
@@ -178,9 +296,7 @@ namespace tesseract {
             {
               dst << "<" << td_elem << " colspan=\""
                   << (tab_count_per_line_max - tab) << "\">";
-              std::string_view particle(message + tab_spos,
-                                        tab_epos - tab_spos);
-              dst << particle;
+              add_inline_particle_as_html(dst, message + tab_spos, tab_epos - tab_spos);
               dst << "</" << td_elem << "></tr>\n";
             }
 
@@ -225,103 +341,7 @@ namespace tesseract {
         dst << "<p>";
     }
 
-    const char *start = message;
-    while (*message) {
-      auto pos = strcspn(message, "\n<>&`*\t");
-      if (pos > 0) {
-        std::string_view particle(message, pos);
-        dst << particle;
-        message += pos;
-      }
-      switch (*message) {
-        case 0:
-          break;
-
-        case '<':
-          dst << "&lt;";
-          message++;
-          continue;
-
-        case '>':
-          dst << "&gt;";
-          message++;
-          continue;
-
-        case '&':
-          dst << "&amp;";
-          message++;
-          continue;
-
-        case '\n':
-          dst << "\n<br>";
-          message++;
-          continue;
-
-        case '`':
-          // markdown-ish in-line code phrase...
-          // which, in our case, cannot break across lines as we only use this for
-          // simple stuff.
-          //
-          // furthermore, we require it's preceded by whitespace or punctuation and trailed by whitespace or punctuation, such as in `demo-with-colon-at-end`:...
-          //
-          // Re the condition used below:
-          //     (isalnum(message[-1]) || message[+1] == message[-1])
-          // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
-          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
-            pos = 0;
-            do {
-              pos++;
-              auto pos2 = strcspn(message + pos, "\n`");
-              pos += pos2;
-            } while (message[pos] == '`' && message[pos + 1] != 0 &&
-                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
-
-            if (message[pos] == '`') {
-              dst << "<code>";
-              std::string_view particle(message + 1, pos - 1);
-              dst << particle;
-              dst << "</code>";
-              message += pos + 1;
-              continue;
-            }
-          }
-          dst << '`';
-          message++;
-          continue;
-
-        case '*':
-          // markdown-ish in-line emphasis phrase...
-          // which, in our case, cannot break across lines as we only use this for
-          // simple stuff.
-          //
-          // furthermore, we require it's preceded (and trailed) by whitespace:
-          if (message > start && isspace(message[-1])) {
-            pos = 0;
-            do {
-              pos++;
-              auto pos2 = strcspn(message + pos, "\n*");
-              pos += pos2;
-            } while (message[pos] == '*' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
-
-            if (message[pos] == '*') {
-              dst << "<em>";
-              std::string_view particle(message + 1, pos - 1);
-              dst << particle;
-              dst << "</em>";
-              message += pos + 1;
-              continue;
-            }
-          }
-          dst << '*';
-          message++;
-          continue;
-
-        case '\t':
-          dst << "<code>TAB</code>";
-          message++;
-          continue;
-      }
-    }
+    add_inline_particle_as_html(dst, message, strlen(message));
 
     if (state < 0) {
       dst << "</p></blockquote>\n\n";
