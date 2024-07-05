@@ -501,7 +501,8 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
 	tesseract::ParamsVectors *vec = tesseract_->params();
     std::string fpath = tesseract::vars_report_file;
     FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
-    ParamUtils::ReportParamsUsageStatistics(f, vec, nullptr);
+    int section_level = tesseract_->GetPixDebugSectionLevel();
+    ParamUtils::ReportParamsUsageStatistics(f, vec, section_level, nullptr);
     if (f) {
       if (f != stdout && f != stderr) {
         fclose(f);

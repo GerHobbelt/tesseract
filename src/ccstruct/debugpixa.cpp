@@ -1123,12 +1123,21 @@ namespace tesseract {
       }
       //pixaClear(pixa_);
 
-      fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n<pre>\n", html);
+      fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n", html);
       
       tesseract::ParamsVectors *vec = tesseract_->params();
-      ParamUtils::ReportParamsUsageStatistics(html, vec, nullptr);
 
-      fputs("</pre>\n</body>\n</html>\n", html);
+      // produce a HTML-formatted parameter usage report by using the regular way to get such a report,
+      // then feed it through the NDtext-to-HTML transformer and only then write the final result in one fell swoop to file.
+      // 
+      // Takes a bit of regrettable extra string copying this way, but alas, we'll take one for code re-use.
+      ParamsReportStringWriter writer;
+      ParamUtils::ReportParamsUsageStatistics(writer, vec, -1, nullptr);
+      std::ostringstream html_report_dst;
+      add_encoded_as_html(html_report_dst, "params-report", writer.to_string().c_str());
+      fputs(languages.str().c_str(), html);
+
+      fputs("\n</body>\n</html>\n", html);
 
       fclose(html);
     }
@@ -1146,7 +1155,7 @@ namespace tesseract {
 
     if (level == 3 && verbose_process) {
       tesseract::ParamsVectors *vec = tesseract_->params();
-      ParamUtils::ReportParamsUsageStatistics(nullptr, vec, title);
+      ParamUtils::ReportParamsUsageStatistics(nullptr, vec, level, title);
     }
   }
 
