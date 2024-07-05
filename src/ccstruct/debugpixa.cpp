@@ -23,7 +23,17 @@
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
 #endif
 
+// Set to 0 for PNG, 1 for WEBP output as part of the HTML report.
+#define GENERATE_WEBP_IMAGES  1
+
 namespace tesseract {
+
+  static const char *IMAGE_EXTENSION =
+#if GENERATE_WEBP_IMAGES
+    ".webp";
+#else
+    ".png";
+#endif
 
 #if defined(HAVE_MUPDF)
 
@@ -1068,9 +1078,27 @@ namespace tesseract {
     })();
 
     Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
+#if !GENERATE_WEBP_IMAGES
+    /* With best zlib compression (9), get between 1 and 10% improvement
+      * over default (6), but the compression is 3 to 10 times slower.
+      * Use the zlib default (6) as our default compression unless
+      * pix->special falls in the range [10 ... 19]; then subtract 10
+      * to get the compression value.  */
+    pixSetSpecial(img, 10 + 1);
     pixWrite(img_filename, img, IFF_PNG);
-    img.destroy();
-
+#else
+    FILE *fp = fopen(img_filename, "wb+");
+    if (!fp) {
+      tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
+    } else {
+      auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
+      fclose(fp);
+      if (rv) {
+        tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+      }
+      img.destroy();
+    }
+#endif
     fprintf(html, "<section>\n\
   <h6>image #%02d: %s</h6>\n\
   <figure>\n\
@@ -1094,7 +1122,7 @@ namespace tesseract {
     std::string caption = captions[idx];
     SanitizeCaptionForFilenamePart(caption);
     const char *cprefix = (caption.empty() ? "" : ".");
-    std::string fn(partname + in + cprefix + caption + /* ext */ ".png");
+    std::string fn(partname + in + cprefix + caption + IMAGE_EXTENSION);
 
     Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
     if (pixs == nullptr) {
@@ -1117,7 +1145,7 @@ namespace tesseract {
     if (clip_area > 0 && false) {
       counter++;
       snprintf(in, 40, ".img%04d", counter);
-      fn = partname + in + cprefix + caption + /* ext */ ".png";
+      fn = partname + in + cprefix + caption + IMAGE_EXTENSION;
 
       write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
                            captions[idx].c_str(), 
@@ -1396,7 +1424,7 @@ namespace tesseract {
       );
 
       {
-        std::string fn(partname + ".img-original.png");
+        std::string fn(partname + ".img-original." + IMAGE_EXTENSION);
 
         write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
