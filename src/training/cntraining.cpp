@@ -122,8 +122,10 @@ int main(int argc, char *argv[]) {
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     printf("Reading %s ...\n", PageName);
     FILE *TrainingPage = fopen(PageName, "rb");
-    ASSERT_HOST(TrainingPage);
-    if (TrainingPage) {
+    if (!TrainingPage) {
+      tprintf("ERROR: Could not open file '%s' for reading.\n", PageName);
+      return EXIT_FAILURE;
+    } else {
       ReadTrainingSamples(FeatureDefs, PROGRAM_FEATURE_TYPE, 100, nullptr, TrainingPage, &CharList);
       fclose(TrainingPage);
 #if !defined(NDEBUG)
@@ -207,7 +209,10 @@ static void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
   Filename += "normproto";
   printf("\nWriting %s ...", Filename.c_str());
   File = fopen(Filename.c_str(), "wb");
-  ASSERT_HOST(File);
+  if (!File) {
+    tprintf("ERROR: Cannot open file '%s' for writing.\n", Filename);
+    exit(EXIT_FAILURE);
+  }
   fprintf(File, "%0d\n", feature_desc->NumParams);
   WriteParamDesc(File, feature_desc->NumParams, feature_desc->ParamDesc);
   iterate(LabeledProtoList) {
