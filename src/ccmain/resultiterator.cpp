@@ -560,7 +560,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
       return Next(RIL_TEXTLINE);
     }
   }
-  ASSERT_HOST(false); // shouldn't happen.
+  ASSERT_HOST_MSG(false, "Should never happen.\n");
   return false;
 }
 
@@ -604,7 +604,7 @@ bool ResultIterator::IsAtBeginningOf(PageIteratorLevel level) const {
     return at_para_start;
   }
 
-  ASSERT_HOST(false); // shouldn't happen.
+  ASSERT_HOST_MSG(false, "Should never happen.\n");
   return false;
 }
 

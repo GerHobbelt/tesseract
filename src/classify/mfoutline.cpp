@@ -257,7 +257,7 @@ void Classify::NormalizeOutlines(LIST Outlines, float *XScale, float *YScale) {
 
   switch (classify_norm_method) {
     case character:
-      ASSERT_HOST(!"How did NormalizeOutlines get called in character mode?");
+      ASSERT_HOST_MSG(false, "How did NormalizeOutlines get called in character mode?\n");
       break;
 
     case baseline:
