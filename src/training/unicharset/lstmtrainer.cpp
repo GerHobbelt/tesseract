@@ -75,16 +75,21 @@ const int kTargetYScale = 100;
 #endif // !GRAPHICS_DISABLED
 
 LSTMTrainer::LSTMTrainer()
-    : randomly_rotate_(false), training_data_(0), sub_trainer_(nullptr) {
+  : LSTMRecognizer(nullptr)
+  , randomly_rotate_(false)
+  , training_data_(0)
+  , sub_trainer_(nullptr) 
+{
   EmptyConstructor();
   debug_interval_ = 0;
 }
 
 LSTMTrainer::LSTMTrainer(const char *model_base, const char *checkpoint_name,
                          int debug_interval, int64_t max_memory)
-    : randomly_rotate_(false),
-      training_data_(max_memory),
-      sub_trainer_(nullptr) {
+  : LSTMRecognizer(nullptr)
+  , randomly_rotate_(false)
+  , training_data_(max_memory)
+  , sub_trainer_(nullptr) {
   EmptyConstructor();
   debug_interval_ = debug_interval;
   model_base_ = model_base;

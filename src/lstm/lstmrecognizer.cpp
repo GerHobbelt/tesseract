@@ -53,7 +53,7 @@ static const double kCertOffset = -0.085;
 //  ccutil_.language_data_path_prefix = language_data_path_prefix;
 //}
 
-LSTMRecognizer::LSTMRecognizer()
+LSTMRecognizer::LSTMRecognizer(Tesseract *tess)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -64,7 +64,9 @@ LSTMRecognizer::LSTMRecognizer()
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
-    , debug_win_(nullptr) {}
+    , debug_win_(nullptr)
+    , tesseract_(tess)
+{}
 
 LSTMRecognizer::~LSTMRecognizer() {
   if (network_ != nullptr) {
@@ -361,7 +363,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
-  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
+  Input::PreparePixInput(tesseract_, network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
@@ -378,7 +380,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       Image inv_pix = pixClone(pix);
       pixInvert(inv_pix, pix);
-      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
+      Input::PreparePixInput(tesseract_, network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);

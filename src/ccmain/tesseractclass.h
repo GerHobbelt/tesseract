@@ -1092,6 +1092,9 @@ public:
 
     pixa_debug_.PopSection(handle);
   }
+  int GetPixDebugSectionLevel() const {
+    return pixa_debug_.GetCurrentSectionLevel();
+  }
 
 public:
   // Find connected components in the page and process a subset until finished or

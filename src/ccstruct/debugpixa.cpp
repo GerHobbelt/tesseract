@@ -205,12 +205,13 @@ namespace tesseract {
       int pos = 1;
       while (message[pos] == '#')
         pos++;
-      if (pos <= 6 && message[pos] == ' ') {
+      // we tolerate a few more than the 6 Heading levels available in HTML.
+      if (pos <= 8 && message[pos] == ' ') {
         state = pos;
         if (style)
-          dst << "\n\n<h" << "123456"[state] << " class=\"" << style << "\">";
+          dst << "\n\n<h" << "12345666"[state] << " class=\"" << style << "\">";
         else
-          dst << "\n\n<h" << "123456"[state] << ">";
+          dst << "\n\n<h" << "12345666"[state] << ">";
         pos++;
         while (message[pos] == ' ')
           pos++;
@@ -566,6 +567,16 @@ namespace tesseract {
     }
     ASSERT0(!"Should never get here!");
     return;
+  }
+
+  int DebugPixa::GetCurrentSectionLevel() const {
+    int idx = active_step_index;
+    ASSERT0(steps.size() >= 1);
+    ASSERT0(active_step_index >= 0);
+    ASSERT0(active_step_index < steps.size());
+
+    auto &step = steps[idx];
+    return step.level;
   }
 
   static char* strnrpbrk(char* base, const char* breakset, size_t len)

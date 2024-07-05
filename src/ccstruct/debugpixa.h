@@ -48,6 +48,7 @@ namespace tesseract {
     int PushNextSection(const std::string &title);        // sibling; return handle for pop()
     int PushSubordinateSection(const std::string &title); // child; return handle for pop()
     void PopSection(int handle = -1);                     // pop active; return focus to parent; pop(0) pops all the way back up to the root.
+    int GetCurrentSectionLevel() const;
 
   protected:
     void AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption);
