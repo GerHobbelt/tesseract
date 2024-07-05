@@ -127,18 +127,35 @@ namespace tesseract {
           // simple stuff.
           //
           // furthermore, we require it's preceded (and trailed) by whitespace:
-          if (message > start && isspace(message[-1]) && !isspace(message[1])) {
+          if (message[1] == '*') {
+            if (message > start && !isalnum(message[-1]) && isalnum(message[2])) {
+              pos = 1;
+              do {
+                pos++;
+                auto pos2 = strcspn(message + pos, "\n*");
+                pos += pos2;
+              } while (message[pos] == '*' && message[pos + 1] != '*');
+
+              if (message[pos] == '*' && message[pos + 1] == '*') {
+                dst << "<strong>";
+                add_inline_particle_as_html(dst, message + 2, pos - 2);
+                dst << "</strong>";
+                message += pos + 1;
+                continue;
+              }
+            }
+          }
+          if (message > start && !isalnum(message[-1]) && isalnum(message[1])) {
             pos = 0;
             do {
               pos++;
               auto pos2 = strcspn(message + pos, "\n*");
               pos += pos2;
-            } while (message[pos] == '*' && !(message[pos + 1] == 0 || isspace(message[pos + 1])));
+            } while (message[pos] == '*' && message[pos + 1] != 0 && isalnum(message[pos + 1]));
 
             if (message[pos] == '*') {
               dst << "<em>";
-              std::string_view particle(message + 1, pos - 1);
-              dst << particle;
+              add_inline_particle_as_html(dst, message + 1, pos - 1);
               dst << "</em>";
               message += pos + 1;
               continue;
@@ -1302,7 +1319,8 @@ namespace tesseract {
       text-align: left;\n\
       border-collapse: collapse;\n\
      	width: auto;\n\
-	    margin: .5em 0 .5em auto;\n\
+      min-width: 64em;\n\
+	    margin: .5em auto .5em 0;\n\
 	    table-layout: fixed;\n\
     }\n\
     table.leaders th, table.leaders td {\n\
@@ -1329,6 +1347,7 @@ namespace tesseract {
       white-space: break-spaces;\n\
       text-align  left;\n\
       padding-left: .5em;\n\
+      width: 11.5em;\n\
     }\n\
     table.leaders  tr:last-child th, table.leaders  tr:last-child td {\n\
       border-bottom: none;\n\
