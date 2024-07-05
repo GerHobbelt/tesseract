@@ -256,7 +256,7 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
 
   if (dump_segmented_word_images) {
     Image dbg_pix = im_data->GetPix();
-    AddPixCompedOverOrigDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}", static_cast<double>(invert_threshold)));
+    AddPixCompedOverOrigDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}, position bbox:{}", double(invert_threshold), word_box.print_to_str()));
     dbg_pix.destroy();
   }
 

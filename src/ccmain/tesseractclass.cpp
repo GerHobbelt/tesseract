@@ -388,7 +388,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", params())
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
-    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", params())
+    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the internal processing engine at various stages of progress (the generated image filenames will reflect this).", params())
     , BOOL_MEMBER(interactive_display_mode, false, "Run interactively? Turn OFF (false) to NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params()),
       STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())

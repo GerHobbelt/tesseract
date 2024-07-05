@@ -369,7 +369,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
     if (HasDebug()) {
       tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
-          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
+          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run the image clip again *inverted* and see if it is any better." : " --> OK, do *NOT* retry the same image clip as inverted image because the stats say it's above par (pos_mean >= invert_threshold)"));
     }
     if (pos_mean < invert_threshold) {
       // Run again inverted and see if it is any better.
@@ -384,7 +384,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
       if (HasDebug() || 1) {
         tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
-            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
+            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs matches the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
       if (inv_mean > pos_mean) {

@@ -323,7 +323,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
   ASSERT_HOST(pix_binary_ != nullptr);
   if (tessedit_dump_pageseg_images) {
-    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
+    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput - the source image for this operation");
   }
   // Leptonica is used to find the rule/separator lines in the input.
   line_finder_.FindAndRemoveLines(source_resolution_, pix_binary_,
@@ -337,7 +337,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
       Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed");
       pix_no_image_.destroy();
     }
   }

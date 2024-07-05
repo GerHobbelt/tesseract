@@ -807,7 +807,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 	  tesseract_->set_pix_binary(pix);
 
     if (tesseract_->tessedit_dump_pageseg_images) {
-      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image (because it wasn't thresholded yet)");
+      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
@@ -2698,7 +2698,7 @@ int TessBaseAPI::FindLines() {
   }
 
   if (tesseract_->tessedit_dump_pageseg_images) {
-    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image");
+    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image for this activity");
   }
 
   if (verbose_process) {
@@ -2849,7 +2849,8 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 	  }
 	  tesseract_->set_pix_binary(pix);
 
-	  tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "DetectOS : Thresholded Image");
+    if (tesseract_->tessedit_write_images)
+	    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "DetectOS (Orientation And Script) : Thresholded Image");
   }
 
   return tesseract_->orientation_and_script_detection(tesseract_->input_file_path.c_str(), osr) > 0;
