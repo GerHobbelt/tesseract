@@ -128,7 +128,8 @@ FILE* ParamUtils::OpenReportFile(const char* path)
 class ParamsReportWriter {
 public:
   ParamsReportWriter(FILE *f)
-      : file_(f) {}
+      : file_(f) 
+  {}
   virtual ~ParamsReportWriter() = default;
 
   virtual void Write(const std::string message) = 0;
@@ -137,11 +138,11 @@ protected:
   FILE *file_;
 };
 
-class ParamsReportDefaultWriter : public ParamsReportWriter,
-                                  protected TPrintGroupLinesTillEndOfScope {
+class ParamsReportDefaultWriter : public ParamsReportWriter {
 public:
   ParamsReportDefaultWriter()
-      : ParamsReportWriter(nullptr), TPrintGroupLinesTillEndOfScope() {}
+      : ParamsReportWriter(nullptr) 
+  {}
   virtual ~ParamsReportDefaultWriter() = default;
 
   virtual void Write(const std::string message) {
@@ -151,8 +152,7 @@ public:
 protected:
 };
 
-class ParamsReportFileDuoWriter : public ParamsReportWriter,
-                                  protected TPrintGroupLinesTillEndOfScope {
+class ParamsReportFileDuoWriter : public ParamsReportWriter {
 public:
   ParamsReportFileDuoWriter(FILE *f) : ParamsReportWriter(f) {
     is_separate_file_ = (f != nullptr && f != stderr && f != stdout);
@@ -190,6 +190,8 @@ void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *membe
   } else {
     writer.reset(new ParamsReportDefaultWriter());
   }
+
+  TPrintGroupLinesTillEndOfScope push;
 
   writer->Write(fmt::format("\n\n"
                             "## Tesseract Parameter Usage Statistics{}: which params have been relevant?\n"
