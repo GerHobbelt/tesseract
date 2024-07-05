@@ -303,7 +303,7 @@ void WritePrototype(FILE *File, uint16_t N, PROTOTYPE *Proto) {
           default:
           case DISTRIBUTION_COUNT:
             ASSERT_HOST_MSG(false, "Distribution {} count not allowed!\n",
-                            Proto->Distrib[i]);
+                            int(Proto->Distrib[i]));
         }
       }
       fprintf(File, "\n\t");
