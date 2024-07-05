@@ -1041,7 +1041,7 @@ namespace tesseract {
       max-width: 66em;\n\
     }\n\
     em {\n\
-      background-color: #ebf3ff;\n\
+      background-color: #f7ffeb;\n\
     }\n\
     table {\n\
       border: solid 2px black;\n\
