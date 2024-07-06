@@ -212,6 +212,8 @@ void C_BLOB::ConstructBlobsFromOutlines(bool good_blob, C_OUTLINE_LIST *outline_
       bad_blobs_it->add_after_then_move(blob);
     } else {
       good_blobs_it->add_after_then_move(blob);
+    } else {
+      delete blob;
     }
   }
 }
