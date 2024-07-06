@@ -27,8 +27,8 @@
 #endif
 
 #include <cstdlib>
-#include <cstring> // for std::strrchr
-#include <filesystem>
+#include <cstring>    // for std::strrchrA
+#include <filesystem> // for std::filesystem
 
 
 namespace tesseract {
@@ -144,6 +144,12 @@ static bool determine_datadir(std::string &datadir, const std::string &argv0, co
   std::vector<std::string> attempts;
 
   const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+
+  // Ignore TESSDATA_PREFIX if there is no matching filesystem entry.
+  if (tessdata_prefix != nullptr && !std::filesystem::exists(tessdata_prefix)) {
+    tprintf("Warning: TESSDATA_PREFIX %s does not exist, ignore it\n", tessdata_prefix);
+    tessdata_prefix = nullptr;
+  }
 
   if (!primary.empty()) {
     /* Use specified primary directory override. */
