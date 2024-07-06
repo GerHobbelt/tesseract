@@ -26,7 +26,8 @@
 #endif
 
 #include <cstdlib>
-#include <cstring> // for std::strrchr
+#include <cstring>    // for std::strrchrA
+#include <filesystem> // for std::filesystem
 
 
 namespace tesseract {
@@ -63,6 +64,12 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   datadir.clear();
 
   const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+
+  // Ignore TESSDATA_PREFIX if there is no matching filesystem entry.
+  if (tessdata_prefix != nullptr && !std::filesystem::exists(tessdata_prefix)) {
+    tprintf("Warning: TESSDATA_PREFIX %s does not exist, ignore it\n", tessdata_prefix);
+    tessdata_prefix = nullptr;
+  }
 
   if (!argv0.empty()) {
     /* Use tessdata prefix from the command line. */
