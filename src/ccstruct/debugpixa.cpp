@@ -1580,9 +1580,13 @@ namespace tesseract {
       std::string section_timings_msg;
       for (int i = 0; i < steps.size(); i++) {
         auto &step = steps[i];
+        std::string indent;
+        for (int j = 0; j < step.level; j++) {
+          indent += "&ensp;";
+        }
         section_timings_msg += fmt::format(
             "<tr><td>{}</td><td>{}{}</td><td>{}</td><td>{}</td></tr>\n",
-            step.level, std::string("&ensp;", step.level), step.title,
+            step.level, indent, step.title,
             step.elapsed_ns, step.elapsed_ns_cummulative);
       }
 
