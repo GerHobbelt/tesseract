@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <ctime>
 
+#include <plf_nanotimer.hpp>
+
 namespace tesseract {
 
 // Difference in result rating to be thought of as an "equal" choice.
@@ -50,7 +52,8 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   ErrorCounter counter(classifier->GetUnicharset(), fontsize);
   std::vector<UnicharRating> results;
 
-  clock_t start = clock();
+  plf::nanotimer clock;
+  clock.start();
   unsigned total_samples = 0;
   double unscaled_error = 0.0;
   // Set a number of samples on which to run the classify debug mode.
@@ -85,7 +88,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     }
     ++total_samples;
   }
-  const double total_time = 1.0 * (clock() - start) / CLOCKS_PER_SEC;
+  const double total_time = clock.get_elapsed_sec();
   // Create the appropriate error report.
   unscaled_error = counter.ReportErrors(report_level, boosting_mode, fontinfo_table, *it,
                                         unichar_error, fonts_report);
@@ -94,7 +97,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   }
   if (report_level > 1 && total_samples > 0) {
     // It is useful to know the time in microseconds/char.
-    tprintDebug("Errors computed in {} at {} μs/char\n", total_time,
+    tprintDebug("Errors computed in {} sec at {} μs/char\n", total_time,
             1000000.0 * total_time / total_samples);
   }
   return unscaled_error;

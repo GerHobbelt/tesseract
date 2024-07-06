@@ -210,6 +210,33 @@ public:
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
 
+  /**
+   * Clear and free up everything inside, returning the instance to a state
+   * equivalent to having just being freshly constructed, with one important
+   * distinction:
+   *
+   * - WipeSqueakyCleanForReUse() will *not* destroy any diagnostics/trace data
+   *   cached in the running instance: the goal is to thus be able to produce
+   *   diagnostics reports which span multiple rounds of OCR activity, executed
+   *   in the single lifespan of the Tesseract instance.
+   *
+   * Once WipeSqueakyCleanForReUse() has been used, proceed just as when a
+   * Tesseract instance has been constructed just now: the same restrictions and
+   * conditions exist, once again.
+   */
+  void WipeSqueakyCleanForReUse(bool invoked_by_destructor = false);
+
+  /**
+   * Returns `true` when the current Tesseract instance has been initialized with 
+   * language-specific data, which must be wiped if we want to re-use this instance
+   * for an independent subsequent run.
+   * 
+   * Companion function of WipeSqueakyCleanForReUse(): together these allow u
+   * keep a long-running Tesseract active and collect diagnostics spanning multiple
+   * OCR sessions executed within the lifetime of the Tesseract instance.
+   */
+  bool RequiresWipeBeforeIndependentReUse() const;
+
   void ResyncVariablesInternally();
 
 #if !DISABLED_LEGACY_ENGINE
@@ -1231,6 +1258,8 @@ private:
   LSTMRecognizer *lstm_recognizer_;
   // Output "page" number (actually line number) using TrainLineRecognizer.
   int train_line_page_num_;
+  /// internal use to help the (re)initialization process after a previous run.
+  bool instance_has_been_initialized_; 
 };
 
 } // namespace tesseract

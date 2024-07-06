@@ -731,27 +731,30 @@ int TessBaseAPI::Init_Internal(const char *path,
   // actually used. They differ only if the requested language was nullptr, in
   // which case tesseract().lang is set to the Tesseract default ("eng").
   if (
+      tesseract_->RequiresWipeBeforeIndependentReUse() &&
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
        last_oem_requested_ != oem() || (language_ != buggered_languge && tesseract_->lang_ != buggered_languge))) {
-    // TODO: code a proper RESET operation instead of ditching and re-instatiating, which will nuke our `tess` reference.
+#if 0
     assert(0);
     delete tesseract_;
     tesseract_ = nullptr;
+#else
+    // try not to throw away tesseract instances. Clean them out rigorously, instead.
+    tesseract_->WipeSqueakyCleanForReUse();
+#endif
   }
-  bool reset_classifier = true;
   if (tesseract_ == nullptr) {
-    reset_classifier = false;
     tesseract_ = new Tesseract();
-    if (reader != nullptr) {
-      reader_ = reader;
-    }
-    TessdataManager mgr(reader_);
-    if (data_size != 0) {
+  }
+  if (reader != nullptr) {
+    reader_ = reader;
+  }
+  TessdataManager mgr(reader_);
+  if (data_size != 0) {
       mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
-    }
+  }
     if (tess.init_tesseract(datapath, output_file_, &mgr) != 0) {
-      return -1;
-    }
+    return -1;
   }
 
   // Update datapath and language requested for the last valid initialization.
@@ -765,9 +768,12 @@ int TessBaseAPI::Init_Internal(const char *path,
 
 #if !DISABLED_LEGACY_ENGINE
   // For same language and datapath, just reset the adaptive classifier.
-  if (reset_classifier) {
+  // 
+  // We are initializing: *always* reset the classifier here, because we
+  // can come through here after a previous failed/aborted/successful
+  // initialization and we still would need to set up the Tesseract
+  // instance to a definitely known state here anyway.
     tess.ResetAdaptiveClassifier();
-  }
 #endif // !DISABLED_LEGACY_ENGINE
 
   return 0;
@@ -2757,12 +2763,25 @@ void TessBaseAPI::Clear() {
 }
 
 /**
- * Close down tesseract and free up all memory. End() is equivalent to
- * destructing and reconstructing your TessBaseAPI.
- * Once End() has been used, none of the other API functions may be used
- * other than Init and anything declared above it in the class definition.
+ * Close down tesseract and free up (almost) all memory.
+ * WipeSqueakyCleanForReUse() is near equivalent to destructing and
+ * reconstructing your TessBaseAPI or calling End(), with two important
+ * distinctions:
+ *
+ * - WipeSqueakyCleanForReUse() will *not* destroy the internal Tesseract
+ *   class instance, but wipe it clean so it'll behave as if destructed and
+ *   then reconstructed afresh, with one caveat:
+ * - WipeSqueakyCleanForReUse() will not destroy any diagnostics/trace data
+ *   cached in the running instance: the goal is to thus be able to produce
+ *   diagnostics reports which span multiple rounds of OCR activity, executed
+ *   in the single lifespan of the TesseractAPI instance.
+ *
+ * Once WipeSqueakyCleanForReUse() has been used, none of the other API
+ * functions may be used other than Init and anything declared above it in the
+ * class definition: as with after calling End(), the internal state is
+ * equivalent to being freshly constructed.
  */
-void TessBaseAPI::End() {
+void TessBaseAPI::WipeSqueakyCleanForReUse() {
   ReportDebugInfo();
 
   Clear();
@@ -2783,20 +2802,36 @@ void TessBaseAPI::End() {
   if (osd_tesseract_ == tesseract_) {
     osd_tesseract_ = nullptr;
   }
+  // TODO: should we pick up diagnostics from this one?
   delete osd_tesseract_;
   osd_tesseract_ = nullptr;
   delete equ_detect_;
   equ_detect_ = nullptr;
 #endif // !DISABLED_LEGACY_ENGINE
 
-  delete tesseract_;
-  tesseract_ = nullptr;
+  if (tesseract_ != nullptr) {
+    tesseract_->WipeSqueakyCleanForReUse();
+  }
+
   pixDestroy(&pix_visible_image_);
   pix_visible_image_ = nullptr;
   visible_image_file_.clear();
   output_file_.clear();
   datapath_.clear();
   language_.clear();
+}
+
+/**
+ * Close down tesseract and free up all memory. End() is equivalent to
+ * destructing and reconstructing your TessBaseAPI.
+ * Once End() has been used, none of the other API functions may be used
+ * other than Init and anything declared above it in the class definition.
+ */
+void TessBaseAPI::End() {
+  WipeSqueakyCleanForReUse();
+
+  delete tesseract_;
+  tesseract_ = nullptr;
 }
 
 // Clear any library-level memory caches.

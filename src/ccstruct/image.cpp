@@ -41,6 +41,13 @@ bool Image::isZero() const {
   return r == 1;
 }
 
+void Image::replace(Pix *pix) {
+  if (pix_ != nullptr) {
+    pixDestroy(&pix_);
+  }
+  pix_ = pix;
+}
+
 Image& Image::operator =(Pix* pix) {
   if (pix_ != nullptr) {
     pixDestroy(&pix_);

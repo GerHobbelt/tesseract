@@ -404,6 +404,15 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       debug_output_path = textbase + "-debug";
   }
 
+  // We don't care if the initialization succeeds or fails: this flag is to help
+  // us make the correct 'must we clean or not?' decisions before we execute
+  // another OCR run. A failed previous initialization will be as costly
+  // (possibly even more) as a cleanup following a successfully completed
+  // init+run: in the former situation you are fundamentally starting with a
+  // pertially undetermined state and must clean rigorously to bring the
+  // instance back to a 100% known state once again.
+  instance_has_been_initialized_ = true;
+
   // Set the basename, compute the data directory.
   main_setup(arg0, textbase);
 

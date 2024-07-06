@@ -949,10 +949,36 @@ public:
   void Clear();
 
   /**
-   * Close down tesseract and free up all memory. `End()` is equivalent to
+   * Close down tesseract and free up (almost) all memory.
+   * WipeSqueakyCleanForReUse() is near equivalent to destructing and
+   * reconstructing your TessBaseAPI or calling End(), with two important
+   * distinctions:
+   *
+   * - WipeSqueakyCleanForReUse() will *not* destroy the internal Tesseract
+   *   class instance, but wipe it clean so it'll behave as if destructed and
+   *   then reconstructed afresh, with one caveat:
+   * - WipeSqueakyCleanForReUse() will not destroy any diagnostics/trace data
+   *   cached in the running instance: the goal is to thus be able to produce
+   *   diagnostics reports which span multiple rounds of OCR activity, executed 
+   *   in the single lifespan of the TesseractAPI instance.
+   *
+   * Once WipeSqueakyCleanForReUse() has been used, none of the other API
+   * functions may be used other than Init and anything declared above it in the
+   * class definition: as with after calling End(), the internal state is
+   * equivalent to being freshly constructed.
+   */
+  void WipeSqueakyCleanForReUse();
+
+  /**
+   * Close down tesseract and free up all memory. End() is equivalent to
    * destructing and reconstructing your TessBaseAPI.
-   * Once `End()` has been used, none of the other API functions may be used
-   * other than Init() and anything declared above it in the class definition.
+   * 
+   * The 'minor' difference with that delete+new approach is that we will
+   * keep stored diagnostics/trace data intact, i.e. we *keep* the debug
+   * trace data, so we can produce a series' report at the final end.
+   * 
+   * Once End() has been used, none of the other API functions may be used
+   * other than Init and anything declared above it in the class definition.
    */
   void End();
 

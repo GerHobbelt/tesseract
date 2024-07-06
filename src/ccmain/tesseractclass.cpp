@@ -496,7 +496,9 @@ Tesseract::Tesseract(Tesseract *parent)
     , equ_detect_(nullptr)
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
-    , train_line_page_num_(0) {
+    , train_line_page_num_(0)
+    , instance_has_been_initialized_(false)
+{
 #if !GRAPHICS_DISABLED
   ScrollViewManager::AddActiveTesseractInstance(this);
 #endif
@@ -507,11 +509,29 @@ Tesseract::~Tesseract() {
   ScrollViewManager::RemoveActiveTesseractInstance(this);
 #endif
 
+  WipeSqueakyCleanForReUse(true);
+}
+
+/**
+  * Clear and free up everything inside, returning the instance to a state
+  * equivalent to having just being freshly constructed, with one important
+  * distinction:
+  *
+  * - WipeSqueakyCleanForReUse() will *not* destroy any diagnostics/trace data
+  *   cached in the running instance: the goal is to thus be able to produce
+  *   diagnostics reports which span multiple rounds of OCR activity, executed
+  *   in the single lifespan of the Tesseract instance.
+  *
+  * Once WipeSqueakyCleanForReUse() has been used, proceed just as when a
+  * Tesseract instance has been constructed just now: the same restrictions and
+  * conditions exist, once again.
+  */
+void Tesseract::WipeSqueakyCleanForReUse(bool invoked_by_destructor) {
   if (lstm_recognizer_ != nullptr) {
     lstm_recognizer_->Clean();
   }
 
-  Clear(true);
+  Clear(invoked_by_destructor);
   end_tesseract();
   {
       std::vector<Tesseract *> langs = std::move(sub_langs_);
@@ -531,6 +551,12 @@ Tesseract::~Tesseract() {
 #endif // !DISABLED_LEGACY_ENGINE
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
+
+  instance_has_been_initialized_ = false;
+}
+
+bool Tesseract::RequiresWipeBeforeIndependentReUse() const {
+  return instance_has_been_initialized_;
 }
 
 Dict &Tesseract::getDict() {

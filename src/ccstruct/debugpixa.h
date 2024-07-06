@@ -9,6 +9,8 @@
 #include <vector>
 #include <sstream>
 
+#include <plf_nanotimer.hpp>
+
 #if defined(HAVE_MUPDF)
 #include "mupdf/fitz.h"
 #endif
@@ -72,6 +74,7 @@ namespace tesseract {
     void Clear(bool final_cleanup = false);
 
   protected:
+    double gather_cummulative_elapsed_times();
 
     struct DebugProcessInfoChunk {
       std::ostringstream information;    // collects the diagnostic information gathered while this section/chunk is the active one.
@@ -92,6 +95,10 @@ namespace tesseract {
       // array, as the latter *interleaves* the former.
 
       int level;                      // hierarchy depth. 0: root
+
+      plf::nanotimer clock;           // performance timer, per section
+      double elapsed_ns;
+      double elapsed_ns_cummulative;
 
       int first_info_chunk;           // index into info_chunks[] array
       int last_info_chunk { -1 };     // index into info_chunks[] array; necessary as we allow return-to-parent process steps hierarchy layout.
@@ -114,6 +121,9 @@ namespace tesseract {
     std::vector<DebugProcessInfoChunk> info_chunks;
     int active_step_index;
     bool content_has_been_written_to_file;
+
+    std::vector<double> image_series_elapsed_ns;
+    double total_images_production_cost;
 
 #if defined(HAVE_MUPDF)
     fz_context *fz_ctx; 
