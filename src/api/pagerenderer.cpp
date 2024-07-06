@@ -16,6 +16,7 @@
  **********************************************************************/
 
 #include <tesseract/debugheap.h>
+#include "helpers.h" // for copy_string
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 
@@ -1150,11 +1151,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-  // Allocate memory for result to hold text.length() characters plus a null
-  // terminator Safely copy the string into result, ensuring no overflow.
-  char* result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(text);
 }
 
 } // namespace tesseract
