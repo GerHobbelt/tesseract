@@ -1587,7 +1587,7 @@ namespace tesseract {
         section_timings_msg += fmt::format(
             "<tr><td>{}</td><td>{}{}</td><td>{}</td><td>{}</td></tr>\n",
             step.level, indent, step.title,
-            step.elapsed_ns, step.elapsed_ns_cummulative);
+            step.elapsed_ns / 1E9, step.elapsed_ns_cummulative / 1E9);
       }
 
       section_timings_msg = fmt::format(
