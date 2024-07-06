@@ -733,6 +733,7 @@ namespace tesseract {
     {
       auto& prev_step = steps[active_step_index];
       prev_level = prev_step.level;
+      prev_step.elapsed_ns += prev_step.clock.get_elapsed_ns();
     }
 
     // child
@@ -745,6 +746,8 @@ namespace tesseract {
     // sibling
     step_ref.level = level;
     step_ref.title = title;
+    step_ref.elapsed_ns = 0.0;
+    step_ref.clock.start();
     step_ref.first_info_chunk = info_chunks.size();
     //ASSERT0(!title.empty());
 
@@ -772,6 +775,8 @@ namespace tesseract {
     // return to parent
     auto& step = steps[idx];
     step.last_info_chunk = info_chunks.size() - 1;
+    step.elapsed_ns += step.clock.get_elapsed_ns();
+
     auto level = step.level - 1; // level we seek
     if (handle >= 0) {
       ASSERT0(handle < steps.size());
@@ -780,6 +785,7 @@ namespace tesseract {
 
       // bingo!
       active_step_index = handle;
+      parent.clock.start();
 
       // now all we need is a fresh info_chunk:
       auto &info_ref = info_chunks.emplace_back();
@@ -794,6 +800,7 @@ namespace tesseract {
       {
         // bingo!
         active_step_index = idx;
+        prev_step.clock.start();
 
         // now all we need is a fresh info_chunk:
         auto& info_ref = info_chunks.emplace_back();
@@ -809,6 +816,7 @@ namespace tesseract {
       if (prev_step.level == 0) {
         // bingo!
         active_step_index = idx;
+        prev_step.clock.start();
 
         // now all we need is a fresh info_chunk:
         auto &info_ref = info_chunks.emplace_back();
@@ -1116,6 +1124,9 @@ namespace tesseract {
   }
 
   void DebugPixa::WriteImageToHTML(int &counter, const std::string &partname, FILE *html, int idx) {
+    plf::nanotimer image_clock;
+    image_clock.start();
+
     counter++;
     char in[40];
     snprintf(in, 40, ".img%04d", counter);
@@ -1154,6 +1165,10 @@ namespace tesseract {
     }
 
     pixs.destroy();
+
+    double t = image_clock.get_elapsed_ns();
+    image_series_elapsed_ns.push_back(t);
+    total_images_production_cost += t;
   }
 
   int DebugPixa::WriteInfoSectionToHTML(int &counter, int &next_image_index, const std::string &partname, FILE *html, int current_section_index) {
@@ -1167,6 +1182,8 @@ namespace tesseract {
     if (h_level > 5)
       h_level = 5;
     fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
+
+    fprintf(html, "<p class=\"timing-info\">This section of the tesseract run took %f sec (cummulative, i.e. including all subsections: %f sec.</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
 
     int next_section_index = current_section_index + 1;
     DebugProcessStep &next_section_info = steps[next_section_index];
@@ -1203,10 +1220,68 @@ namespace tesseract {
     return next_section_index;
   }
 
+  class GrandTotalPerf {
+  public:
+    GrandTotalPerf() : clock() {
+      clock.start();
+    }
+    plf::nanotimer clock;
+  };
+  static GrandTotalPerf grand_clock;
+
+
+  double DebugPixa::gather_cummulative_elapsed_times() {
+    int step_count = steps.size();
+
+    // we can safely assume that parents are always *older* and thus *earlier* in the steps[] array,
+    // so we can easily traverse from end to start and update every parent as we travel along.
+    for (int i = 0; i < step_count; i++) {
+      auto &step = steps[i];
+      step.elapsed_ns_cummulative = 0.0;
+    }
+    double grand_total_time_ns = 0.0;
+    for (int i = step_count - 1; i >= 0; i--) {
+      auto &step = steps[i];
+      // add self to accumulus.
+      step.elapsed_ns_cummulative += step.elapsed_ns;
+      // now update the first parent with our time: as we travel
+      // (haphazardly) back in time, we only need to update our *parent*
+      // in order to end up with the grand total time at the end of the traversal
+      // of the steps tree.
+      //
+      // There's one caveat though: the way we coded steps[] and deal with it, there's
+      // no TRUE ROOT element in that tree; that would be a fictional step[-1], so
+      // the code deals with this by detecting all the 'root nodes' and accumulating
+      // them into our `grand_total_time_ns` value.
+      int level = step.level - 1;
+      int j = i - 1;
+      for (; j >= 0; j--) {
+        auto &parent = steps[j];
+        if (parent.level == level) {
+          // actual parent found.
+          parent.elapsed_ns_cummulative += step.elapsed_ns_cummulative;
+          break;
+        }
+      }
+      if (j < 0) {
+        // we are a 'root node'; deal with us accordingly.
+        grand_total_time_ns += step.elapsed_ns_cummulative;
+      }
+    }
+    return grand_total_time_ns;
+  }
+
   
   void DebugPixa::WriteHTML(const char* filename) {
     ASSERT0(tesseract_ != nullptr);
     if (HasContent()) {
+      double time_elapsed_until_report = grand_clock.clock.get_elapsed_ns();
+      plf::nanotimer report_clock;
+      double source_image_elapsed_ns;
+      total_images_production_cost = 0.0;
+
+      report_clock.start();
+
       const char *ext = strrchr(filename, '.');
       std::string partname(filename);
       partname = partname.substr(0, ext - filename);
@@ -1423,11 +1498,14 @@ namespace tesseract {
         check_unknown(tesseract_->directory).c_str()
       );
 
+      plf::nanotimer image_clock;
+      image_clock.start();
       {
         std::string fn(partname + ".img-original." + IMAGE_EXTENSION);
 
         write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
+      source_image_elapsed_ns = image_clock.get_elapsed_ns();
 
       // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
       // as we'll have valid slots at size+1:
@@ -1440,6 +1518,9 @@ namespace tesseract {
 
       int next_image_index = 0;
 
+      // calculate the cummulative elapsed time by traversing the section tree bottom-to-top
+      double total_time_elapsed_ns = gather_cummulative_elapsed_times();
+
       int current_section_index = 0; 
       while (current_section_index < section_count) {
         current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, current_section_index);
@@ -1449,6 +1530,78 @@ namespace tesseract {
         WriteImageToHTML(counter, partname, html, i);
       }
       //pixaClear(pixa_);
+
+      double report_span_time = report_clock.get_elapsed_ns();
+      double grand_total_time = grand_clock.clock.get_elapsed_ns();
+      fprintf(html, "\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took %f sec (including all application preparation / overhead: %f sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9); 
+
+      std::string img_timings_msg;
+      for (int i = 0; i < image_series_elapsed_ns.size(); i++) {
+        img_timings_msg += fmt::format("<li>Image #{}: {} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
+      }
+
+      std::string timing_report_msg = fmt::format(
+          "<p>\n"
+        "Re overhead costs: the above total time ({} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {} sec, alas). It took {} sec before tesseract was ready to report.\n"
+          "</p><p>\n"
+          "While producing this HTML diagnotics log report took {} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
+          "</p><ul>\n"
+          "<li> saving a <em>lossless</em> WEBP copy of the source image: {} sec </li>\n"
+              "<li> plus the other images @ {} sec total:\n"
+          "<br>\n"
+          "<ul>\n{}\n</ul></li>\n"
+          "{}"
+          "\n",
+          grand_total_time / 1E9, 
+        (grand_total_time - total_time_elapsed_ns) / 1E9,
+          time_elapsed_until_report / 1E9,
+        report_span_time / 1E9,
+          source_image_elapsed_ns / 1E9,
+          total_images_production_cost / 1E9,
+          img_timings_msg,
+          "<p>You can always reduce these overhead numbers by <em>turning off</em> the tesseract debug parameters which help produce these support images, e.g.:</p>"
+          "<ul>\n"
+        "<li><code>tessedit_dump_pageseg_images</code></li>\n"
+          "<li><code>debug_image_normalization</code></li>\n"
+          "<li><code>tessedit_write_images</code></li>\n"
+          "<li><code>verbose_process</code></li>\n"
+          "<li><code>dump_osdetect_process_images</code></li>\n"
+          "</ul>\n"
+          "<p>Tip: you also often can gain extra speed by <em>turning off</em> any other debug/diagnostics parameters that are currently active and in use. The latter can be easily observed by the per-section parameter usage reports that are part of this HTML diagnostics/log report: see the designated sections &amp; tables to see which sections took a major chunk of the total time and which parameters may habe been involved.</p>\n"
+          "<p>Thank you for using tesseract. Enjoy!</p>\n"
+        );
+
+      fputs(timing_report_msg.c_str(), html);
+
+      std::string timing_summary_msg = fmt::format(
+              "\n\n\n<div class=\"timing-summary\">\n"
+          "<h6>Timing summary</h6>\n"
+        "<pre>\n"
+        "Wall clock duration: {} sec.\n"
+        "Time until report: {} sec.\n"
+          "  - actual work: {} sec.\n"
+          "  - prep & misc. overhead: {} sec\n"
+          "Report production: {} sec.\n"
+          "\n"
+          "Cummulative work effort: {} sec\n"
+          "Overhead: {} sec\n"
+          "  - reported images production: {} sec\n"
+          "  - report text production: {} sec\n"
+          "  - misc.\n"
+          "</pre></div>\n",
+      grand_total_time / 1E9, 
+        time_elapsed_until_report / 1E9, 
+        total_time_elapsed_ns / 1E9, 
+        (time_elapsed_until_report - total_time_elapsed_ns) / 1E9,
+        report_span_time / 1E9,
+
+        time_elapsed_until_report / 1E9, 
+       (grand_total_time - time_elapsed_until_report) / 1E9,
+          (source_image_elapsed_ns + total_images_production_cost) / 1E9,
+          ((grand_total_time - time_elapsed_until_report) - (source_image_elapsed_ns + total_images_production_cost)) / 1E9
+        );
+
+      fputs(timing_summary_msg.c_str(), html);
 
       fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n", html);
       

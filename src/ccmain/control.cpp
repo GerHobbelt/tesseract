@@ -29,6 +29,8 @@
 #include <cstdio>  // for fclose, fopen, FILE
 #include <ctime>   // for clock
 
+#include <plf_nanotimer.hpp>
+
 #include "control.h"
 #if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h"
@@ -1516,7 +1518,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   PointerVector<WERD_RES> best_words;
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
-  clock_t start_t = clock();
+  plf::nanotimer clock;
+  clock.start();
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
     TBOX bbox = word->word->bounding_box();
@@ -1566,12 +1569,11 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   } else {
     tprintWarn("no best words!!\n");
   }
-  clock_t ocr_t = clock();
   if (tessedit_timing_debug) {
     tprintDebug("classify_word_and_language -> word best choice: \"{}\" (bbox: {}, OCR took {} sec)\n",
             word_data->word->best_choice->unichar_string(),
         word_data->word->word->bounding_box().print_to_str(),
-            static_cast<double>(ocr_t - start_t) / CLOCKS_PER_SEC);
+            clock.get_elapsed_sec());
   }
 }
 
