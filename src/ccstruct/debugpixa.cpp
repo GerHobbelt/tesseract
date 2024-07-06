@@ -1550,7 +1550,6 @@ namespace tesseract {
               "<li> plus the other images @ {} sec total:\n"
           "<br>\n"
           "<ul>\n{}\n</ul></li>\n"
-          "{}"
           "\n",
           grand_total_time / 1E9, 
         (grand_total_time - total_time_elapsed_ns) / 1E9,
@@ -1558,7 +1557,12 @@ namespace tesseract {
         report_span_time / 1E9,
           source_image_elapsed_ns / 1E9,
           total_images_production_cost / 1E9,
-          img_timings_msg,
+          img_timings_msg);
+      
+      std::string sectiontiming_summary_msg = fmt::format(
+          "\n\n\n<div class=\"timing-summary\">\n"
+          "<h6>Timing summary</h6>\n"
+          "<pre>\n",
           "<p>You can always reduce these overhead numbers by <em>turning off</em> the tesseract debug parameters which help produce these support images, e.g.:</p>"
           "<ul>\n"
         "<li><code>tessedit_dump_pageseg_images</code></li>\n"
@@ -1572,6 +1576,26 @@ namespace tesseract {
         );
 
       fputs(timing_report_msg.c_str(), html);
+
+      std::string section_timings_msg;
+      for (int i = 0; i < steps.size(); i++) {
+        auto &step = steps[i];
+        section_timings_msg += fmt::format(
+            "<tr><td>{}</td><td>{}{}</td><td>{}</td><td>{}</td></tr>\n",
+            step.level, std::string("&ensp;", step.level), step.title,
+            step.elapsed_ns, step.elapsed_ns_cummulative);
+      }
+
+      section_timings_msg = fmt::format(
+              "\n\n\n<div class=\"timing-details\">\n"
+          "<p>Timings per section, cumulatives for the entire work tree. All times in unit: <em>seconds</em>:</p>\n"
+          "<table><tbody>\n"
+          "<tr><th>Level</th><th>Section Name</th><th>Self</th><th>Self + Children</th></tr>\n"
+          "{}\n"
+          "</table>\n\n",
+          section_timings_msg);
+
+      fputs(section_timings_msg.c_str(), html);
 
       std::string timing_summary_msg = fmt::format(
               "\n\n\n<div class=\"timing-summary\">\n"
