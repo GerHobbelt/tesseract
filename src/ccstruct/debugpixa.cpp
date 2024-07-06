@@ -615,7 +615,9 @@ namespace tesseract {
 #endif
 
   DebugPixa::DebugPixa(Tesseract* tess)
-      : tesseract_(tess), content_has_been_written_to_file(false)
+    : tesseract_(tess)
+    , content_has_been_written_to_file(false)
+    , active_step_index(-1)
   {
     pixa_ = pixaCreate(100);
 
@@ -631,7 +633,6 @@ namespace tesseract {
 #endif
 
     // set up the root info section:
-    active_step_index = -1;
     PushNextSection("Start a tesseract run");
 
 #ifdef TESSERACT_DISABLE_DEBUG_FONTS
@@ -733,7 +734,6 @@ namespace tesseract {
     {
       auto& prev_step = steps[active_step_index];
       prev_level = prev_step.level;
-      prev_step.elapsed_ns += prev_step.clock.get_elapsed_ns();
     }
 
     // child
@@ -750,6 +750,12 @@ namespace tesseract {
     step_ref.clock.start();
     step_ref.first_info_chunk = info_chunks.size();
     //ASSERT0(!title.empty());
+
+    if (active_step_index >= 0) {
+      auto &prev_step = steps[active_step_index];
+      prev_step.elapsed_ns += prev_step.clock.get_elapsed_ns();
+      prev_step.clock.stop();
+    }
 
     int rv = active_step_index;
     if (rv < 0)
@@ -776,8 +782,8 @@ namespace tesseract {
     auto& step = steps[idx];
     step.last_info_chunk = info_chunks.size() - 1;
     step.elapsed_ns += step.clock.get_elapsed_ns();
+    step.clock.stop();
 
-    auto level = step.level - 1; // level we seek
     if (handle >= 0) {
       ASSERT0(handle < steps.size());
       auto &parent = steps[handle];
@@ -793,6 +799,15 @@ namespace tesseract {
       return;
     }
 
+    auto level = step.level - 1; // level we seek
+    if (handle < -1 || level < 0) {
+      // when we get here, we're aiming below root, so we reset to last
+      // root-entry level.
+      level = 0;
+      // Note: we also accept when the very last entry is the active entry and
+      // happens to be root: can't pop a root like that!  :-)
+      idx++;
+    }
     for (idx--; idx >= 0; idx--)
     {
       auto& prev_step = steps[idx];
@@ -809,22 +824,7 @@ namespace tesseract {
       }
     }
 
-    // when we get here, we're aiming below root, so we reset to last root-entry level:
-    idx = steps.size();
-    for (idx--; idx >= 0; idx--) {
-      auto &prev_step = steps[idx];
-      if (prev_step.level == 0) {
-        // bingo!
-        active_step_index = idx;
-        prev_step.clock.start();
-
-        // now all we need is a fresh info_chunk:
-        auto &info_ref = info_chunks.emplace_back();
-        info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
-        return;
-      }
-    }
-    ASSERT0(!"Should never get here!");
+    ASSERT_HOST_MSG(false, "Should never get here!\n");
     return;
   }
 
@@ -1104,9 +1104,9 @@ namespace tesseract {
       if (rv) {
         tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
       }
-      img.destroy();
     }
 #endif
+    img.destroy();
     fprintf(html, "<section>\n\
   <h6>image #%02d: %s</h6>\n\
   <figure>\n\
@@ -1172,7 +1172,7 @@ namespace tesseract {
   }
 
   int DebugPixa::WriteInfoSectionToHTML(int &counter, int &next_image_index, const std::string &partname, FILE *html, int current_section_index) {
-    DebugProcessStep &section_info = steps[current_section_index];
+    const DebugProcessStep &section_info = steps[current_section_index];
 
     auto title = section_info.title.c_str();
     if (!title || !*title)
@@ -1186,19 +1186,23 @@ namespace tesseract {
     fprintf(html, "<p class=\"timing-info\">This section of the tesseract run took %f sec (cummulative, i.e. including all subsections: %f sec.</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
 
     int next_section_index = current_section_index + 1;
-    DebugProcessStep &next_section_info = steps[next_section_index];
+    // special tweak for when we report (meta!) on our own report production:
+    // that's when `current_section_index + 1` will produce an out-of-bounds access!
+    if (next_section_index >= steps.size())
+      next_section_index = 0;
+    const DebugProcessStep *next_section_info = &steps[next_section_index];
 
     int start_info_chunk_index = section_info.first_info_chunk;
     int last_info_chunk_index = section_info.last_info_chunk;
     for (int chunk_idx = start_info_chunk_index; chunk_idx <= last_info_chunk_index; chunk_idx++) {
       // make sure we don't dump info chunks which belong to sub-sections:
-      if (chunk_idx == next_section_info.first_info_chunk) {
+      if (chunk_idx == next_section_info->first_info_chunk) {
         next_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, next_section_index);
-        chunk_idx = next_section_info.last_info_chunk;
-        next_section_info = steps[next_section_index];
+        chunk_idx = next_section_info->last_info_chunk;
+        next_section_info = &steps[next_section_index];
         continue;
       }
-      DebugProcessInfoChunk &info_chunk = info_chunks[chunk_idx];
+      const DebugProcessInfoChunk &info_chunk = info_chunks[chunk_idx];
       auto v = info_chunk.information.str();
       auto content = v.c_str();
       if (content && *content) {
@@ -1207,7 +1211,12 @@ namespace tesseract {
       }
 
       // does this chunk end with an image?
-      DebugProcessInfoChunk &next_info_chunk = info_chunks[chunk_idx + 1];
+      int next_chunk_idx = chunk_idx + 1;
+      // same hack as for next_section_index above: prevent out-of-bounds access.  >:-/
+      if (next_chunk_idx >= info_chunks.size()) {
+        break;
+      }
+      const DebugProcessInfoChunk &next_info_chunk = info_chunks[next_chunk_idx];
       if (info_chunk.appended_image_index != next_info_chunk.appended_image_index) {
         WriteImageToHTML(counter, partname, html, info_chunk.appended_image_index);
         if (next_image_index <= info_chunk.appended_image_index)
@@ -1233,26 +1242,31 @@ namespace tesseract {
   double DebugPixa::gather_cummulative_elapsed_times() {
     int step_count = steps.size();
 
-    // we can safely assume that parents are always *older* and thus *earlier* in the steps[] array,
-    // so we can easily traverse from end to start and update every parent as we travel along.
+    // we can safely assume that parents are always *older* and thus *earlier*
+    // in the steps[] array, so we can easily traverse from end to start and
+    // update every parent as we travel along.
+    //
+    // First we clear all previously gathered values as we must do that job from
+    // scratch to be safe & sure.
     for (int i = 0; i < step_count; i++) {
       auto &step = steps[i];
       step.elapsed_ns_cummulative = 0.0;
     }
+    // now traverse backwards, bottom-to-top, gathering the cummulative numbers
+    // along the way..
     double grand_total_time_ns = 0.0;
     for (int i = step_count - 1; i >= 0; i--) {
       auto &step = steps[i];
       // add self to accumulus.
       step.elapsed_ns_cummulative += step.elapsed_ns;
-      // now update the first parent with our time: as we travel
-      // (haphazardly) back in time, we only need to update our *parent*
-      // in order to end up with the grand total time at the end of the traversal
-      // of the steps tree.
+      // now update the first parent with our time: as we travel back in time,
+      // we only need to update our *parent* in order to end up with the
+      // grand total time at the end of the traversal of the steps[] tree.
       //
-      // There's one caveat though: the way we coded steps[] and deal with it, there's
-      // no TRUE ROOT element in that tree; that would be a fictional step[-1], so
-      // the code deals with this by detecting all the 'root nodes' and accumulating
-      // them into our `grand_total_time_ns` value.
+      // There's one caveat though: the way we coded steps[] and deal with it,
+      // there's no TRUE ROOT element in that tree; that would be a fictional
+      // step[-1], so the code deals with this by detecting all the 'root nodes'
+      // and accumulating them into our `grand_total_time_ns` value.
       int level = step.level - 1;
       int j = i - 1;
       for (; j >= 0; j--) {
@@ -1279,6 +1293,17 @@ namespace tesseract {
       plf::nanotimer report_clock;
       double source_image_elapsed_ns;
       total_images_production_cost = 0.0;
+
+      // pop all levels and push a couple of *sentinels* so our tree traversal
+      // logic can be made simpler with far fewer boundary checks as we'll have
+      // valid slots at size+1:
+      PopSection(-2);
+#if 0
+      // enforce a new root
+      active_step_index = -1;
+#endif
+      PushNextSection("diagnostics/log reporting (HTML)");
+      ASSERT_HOST(GetCurrentSectionLevel() == 1);
 
       report_clock.start();
 
@@ -1507,12 +1532,6 @@ namespace tesseract {
       }
       source_image_elapsed_ns = image_clock.get_elapsed_ns();
 
-      // pop all levels and push a couple of *sentinels* so our tree traversal logic can be made simpler with far fewer boundary checks
-      // as we'll have valid slots at size+1:
-      PopSection(-2);
-      active_step_index = -1;
-      PushNextSection("");
-
       int section_count = steps.size() - 1;          // adjust size due to sentinel which was pushed at the end just now.
       int pics_count = pixaGetCount(pixa_);
 
@@ -1530,6 +1549,32 @@ namespace tesseract {
         WriteImageToHTML(counter, partname, html, i);
       }
       //pixaClear(pixa_);
+
+      // now jiggle the report creation section, while we're in it. Yeah. It's crazy like that,
+      // but we want to report this part too, through regular channels as much as possible.
+      // So we do most of the work before this point in time, then pop the section and have its
+      // time two ways: via our own measurement an via the section tree mechanism.
+      //
+      // It's a bit convoluted, but this should give us some decent numbers to analyze.
+      // 
+      // Pop() but don't Pop(), that's what local scope below attempts to achieve. Just for
+      // gathering and a last WriteInfoSectionToHTML() just down below.
+      {
+        int idx = active_step_index;
+        auto &step = steps[idx];
+        step.last_info_chunk = info_chunks.size() - 1;
+        step.elapsed_ns += step.clock.get_elapsed_ns();
+        // !step.clock.stop();
+        // ^^^^^^^^^^^^^^^^^
+        // keep it running! we'll nuke the `elapsed_ns`
+        // after we're done with gathering it below!
+
+        // gather the time data again, now that we're near the end of our reporting section
+        // and wish to report on that one too!      Gosh darn, so *meta*!  8-P  
+        total_time_elapsed_ns = gather_cummulative_elapsed_times();
+
+      current_section_index = section_count;
+      (void)WriteInfoSectionToHTML(counter, next_image_index, partname, html, current_section_index);
 
       double report_span_time = report_clock.get_elapsed_ns();
       double grand_total_time = grand_clock.clock.get_elapsed_ns();
@@ -1632,6 +1677,11 @@ namespace tesseract {
       fputs(timing_summary_msg.c_str(), html);
 
       fputs("\n<hr>\n<h2>Tesseract parameters usage report</h2>\n\n", html);
+
+        // reset the elapsed_ns value so the regular way this is dealt with will
+        // produce correct numbers afterwards.
+        step.elapsed_ns = 0;
+      }
       
       tesseract::ParamsVectors *vec = tesseract_->params();
 
@@ -1654,7 +1704,7 @@ namespace tesseract {
 
   void DebugPixa::WriteSectionParamsUsageReport()
   {
-    DebugProcessStep &section_info = steps[active_step_index];
+    const DebugProcessStep &section_info = steps[active_step_index];
 
     auto title = section_info.title.c_str();
     if (!title || !*title)
@@ -1691,7 +1741,7 @@ namespace tesseract {
   void AutoPopDebugSectionLevel::pop() {
     if (section_handle_ >= 0) {
       tesseract_->PopPixDebugSection(section_handle_);
-      section_handle_ = INT_MIN / 2;
+      section_handle_ = INT_MIN;
     }
   }
 
