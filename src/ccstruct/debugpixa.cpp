@@ -905,7 +905,8 @@ namespace tesseract {
     return "<code>" + encode_as_html(s) + "</code>";
   }
 
-  static void SanitizeCaptionForFilenamePart(std::string& str) {
+  static std::string SanitizeFilenamePart(const std::string& srcstr) {
+    std::string str = srcstr;
     auto len = str.size();
     char* s = str.data();
     char* d = s;
@@ -914,11 +915,25 @@ namespace tesseract {
     for (int i = 0; i < len; i++, s++) {
       char c = *s;
 
-      if (isalnum(c) || c == '_' || c == '-') {
-        *d++ = *s;
+      if (isalnum(c)) {
+        *d++ = c;
+      } else if (c == '_' || c == '-' || c == '.') {
+        if (d > base) {
+          if (d[-1] != '.')
+            *d++ = c;
+        } else {
+          *d++ = c;
+        }
       } else {
-        if (d > base && d[-1] != '.')
+        if (d > base) {
+          if (strchr("-_.", d[-1])) {
+            d[-1] = '.';
+          } else {
+            *d++ = '.';
+          }
+        } else {
           *d++ = '.';
+        }
       }
     }
 
@@ -942,6 +957,7 @@ namespace tesseract {
     }
 
     str.resize(len);
+    return str;
   }
 
   static inline int FADE(int val, const int factor) {
@@ -1188,65 +1204,88 @@ namespace tesseract {
     return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const TBOX *cliprect = nullptr, const Pix* original_image = nullptr)
-  {
-    if (!!pix) {
-    const char* pixfname = fz_basename(img_filename);
-    int w, h, depth;
-    pixGetDimensions(pix, &w, &h, &depth);
-    const char* depth_str = ([depth]() {
-      switch (depth) {
-      default:
-        ASSERT0(!"Should never get here!");
-        return "unidentified color depth (probably color paletted)";
-      case 1:
-        return "monochrome (binary)";
-      case 32:
-        return "full color + alpha";
-      case 24:
-        return "full color";
-      case 8:
-        return "color palette (256 colors)";
-      case 4:
-        return "color palette (16 colors)";
-      }
-    })();
-
-    Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
-#if !GENERATE_WEBP_IMAGES
-    /* With best zlib compression (9), get between 1 and 10% improvement
-      * over default (6), but the compression is 3 to 10 times slower.
-      * Use the zlib default (6) as our default compression unless
-      * pix->special falls in the range [10 ... 19]; then subtract 10
-      * to get the compression value.  */
-    pixSetSpecial(img, 10 + 1);
-    pixWrite(img_filename, img, IFF_PNG);
-#else
-    FILE *fp = fopen(img_filename, "wb+");
-    if (!fp) {
-      tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
-    } else {
-      auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
-      fclose(fp);
-      if (rv) {
-        tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
-      }
+  static std::string TruncatedForTitle(const std::string &str) {
+    if (str.size() < 70)
+      return str;
+    const char *s = str.c_str();
+    auto len = str.size();
+    for (;;) {
+      const char *p = strnrpbrk(const_cast<char *>(s), ".[(: ", len);
+      if (!p)
+        break;
+      len = p - s;
+      if (len < 70)
+        break;
     }
+    // trim the tail, after the clipping above.
+    len--;
+    while (len >= 0 && strchr(".[(: ", s[len]))
+      len--;
+    len++;
+    std::string rv(s, len);
+    return rv + "\u2026";  // append ellipsis
+  }
+
+  static void write_one_pix_for_html(FILE *html, int counter, const std::string &img_filename, const Image &pix, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr, const Pix *original_image = nullptr) {
+    if (!!pix) {
+      const char *pixfname = fz_basename(img_filename.c_str());
+      int w, h, depth;
+      pixGetDimensions(pix, &w, &h, &depth);
+      const char *depth_str = ([depth]() {
+        switch (depth) {
+          default:
+            ASSERT0(!"Should never get here!");
+            return "unidentified color depth (probably color paletted)";
+          case 1:
+            return "monochrome (binary)";
+          case 32:
+            return "full color + alpha";
+          case 24:
+            return "full color";
+          case 8:
+            return "color palette (256 colors)";
+          case 4:
+            return "color palette (16 colors)";
+        }
+      })();
+
+      Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
+#if !GENERATE_WEBP_IMAGES
+      /* With best zlib compression (9), get between 1 and 10% improvement
+       * over default (6), but the compression is 3 to 10 times slower.
+       * Use the zlib default (6) as our default compression unless
+       * pix->special falls in the range [10 ... 19]; then subtract 10
+       * to get the compression value.  */
+      pixSetSpecial(img, 10 + 1);
+      pixWrite(img_filename, img, IFF_PNG);
+#else
+      FILE *fp = fopen(img_filename.c_str(), "wb+");
+      if (!fp) {
+        tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
+      } else {
+        auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
+        fclose(fp);
+        if (rv) {
+          tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+        }
+      }
 #endif
-    img.destroy();
-    fprintf(html, "<section>\n\
-  <h6>image #%02d: %s</h6>\n\
+      img.destroy();
+      fputs(
+        fmt::format("<section class=\"image-display\">\n\
+  <h6>image #{:02d}: {}</h6>\n\
   <figure>\n\
-    <img src=\"%s\" >\n\
-    <figcaption>size: %d x %d px; %s</figcaption>\n\
+    <img src=\"{}\" >\n\
+    <figcaption>size: {} x {} px; {}</figcaption>\n\
   </figure>\n\
-  <p>%s</p>\n\
+  <p>{}</p>\n\
 </section>\n",
-      counter, title,
-      pixfname,
-      (int) w, (int) h, depth_str,
-      description
-    );
+            counter, encode_as_html(title),
+            pixfname,
+            w, h, depth_str,
+            encode_as_html(description)
+        ).c_str(),
+        html);
     }
   }
 
@@ -1255,12 +1294,8 @@ namespace tesseract {
     image_clock.start();
 
     counter++;
-    char in[40];
-    snprintf(in, 40, ".img%04d", counter);
-    std::string caption = captions[idx];
-    SanitizeCaptionForFilenamePart(caption);
-    const char *cprefix = (caption.empty() ? "" : ".");
-    std::string fn(partname + in + cprefix + caption + IMAGE_EXTENSION);
+    const std::string caption = captions[idx];
+    std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION);
 
     Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
     if (pixs == nullptr) {
@@ -1278,15 +1313,14 @@ namespace tesseract {
       bgimg = tesseract_->pix_original();
     }
 
-    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[idx].c_str());
+    write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption), caption);
 
     if (clip_area > 0 && false) {
       counter++;
-      snprintf(in, 40, ".img%04d", counter);
-      fn = partname + in + cprefix + caption + IMAGE_EXTENSION;
+      fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION;
 
-      write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
-                           captions[idx].c_str(), 
+      write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption),
+                           caption, 
                            &cliprect,
                            bgimg);
     }
@@ -1308,7 +1342,7 @@ namespace tesseract {
     ASSERT0(h_level >= 1);
     if (h_level > 5)
       h_level = 5;
-    fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
+    fputs(fmt::format("\n\n<section>\n<h{0}>{1}</h{0}>\n\n", h_level, title).c_str(), html);
 
       std::string section_timings_intro_msg;
     if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
@@ -1441,8 +1475,9 @@ namespace tesseract {
       report_clock.start();
 
       const char *ext = strrchr(filename, '.');
-      std::string partname(filename);
-      partname = partname.substr(0, ext - filename);
+      if (!ext)
+        ext = filename + strlen(filename);
+      std::string partname(filename, ext - filename);
       int counter = 0;
       const char *label = NULL;
 
@@ -1457,7 +1492,7 @@ namespace tesseract {
       html = fopen(filename, "w");
 #endif
       if (!html) {
-        tprintError("cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
+        tprintError("cannot open diagnostics HTML output file {}: {}\n", filename, strerror(errno));
         return;
       }
 
@@ -1489,32 +1524,32 @@ namespace tesseract {
       //   <link rel="stylesheet" href="https://unpkg.com/normalize.css@8.0.1/normalize.css" >
       //   <link rel="stylesheet" href="https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css" >
       //   <link rel="stylesheet" href="diag-report.css" >
-      fprintf(html, "<html>\n\
+      fputs(fmt::format("<html>\n\
 <head>\n\
 	<meta charset=\"UTF-8\">\n\
   <title>Tesseract diagnostic image set</title>\n\
   <style>\n\
-  %s\n\
+  {}\n\
   </style>\n\
   <style>\n\
-  %s\n\
+  {}\n\
   </style>\n\
   <style>\n\
-  %s\n\
+  {}\n\
   </style>\n\
 </head>\n\
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract (version: %s) run @ %s</p>\n\
-<p>Input image file path: %s</p>\n\
-<p>Output base: %s</p>\n\
-<p>Input image path: %s</p>\n\
-<p>Primary Language: %s</p>\n\
-%s\
-<p>Language Data Path Prefix: %s</p>\n\
-<p>Data directory: %s</p>\n\
-<p>Main directory: %s</p>\n\
+<p>tesseract (version: {}) run @ {}</p>\n\
+<p>Input image file path: {}</p>\n\
+<p>Output base: {}</p>\n\
+<p>Input image path: {}</p>\n\
+<p>Primary Language: {}</p>\n\
+{}\
+<p>Language Data Path Prefix: {}</p>\n\
+<p>Data directory: {}</p>\n\
+<p>Main directory: {}</p>\n\
 ",
         html_styling(tesseract_->datadir, "normalize.css").c_str(),
         html_styling(tesseract_->datadir, "modern-normalize.css").c_str(),
@@ -1529,14 +1564,14 @@ namespace tesseract {
         check_unknown_and_encode(tesseract_->language_data_path_prefix).c_str(),
         check_unknown_and_encode(tesseract_->datadir).c_str(),
         check_unknown_and_encode(tesseract_->directory).c_str()
-      );
+      ).c_str(), html);
 
       plf::nanotimer image_clock;
       image_clock.start();
       {
-        std::string fn(partname + ".img-original." + IMAGE_EXTENSION);
+        std::string fn(partname + SanitizeFilenamePart(".img-original.") + IMAGE_EXTENSION);
 
-        write_one_pix_for_html(html, 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
+        write_one_pix_for_html(html, 0, fn, tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
       source_image_elapsed_ns = image_clock.get_elapsed_ns();
 

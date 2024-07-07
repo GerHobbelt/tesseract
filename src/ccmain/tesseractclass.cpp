@@ -561,12 +561,12 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
 
-    ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
+    ClearPixForDebugView();
   }
   else if (invoked_by_destructor) {
-    ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
+    ClearPixForDebugView();
   }
   pix_original_.destroy();
   pix_binary_.destroy();

@@ -1426,7 +1426,7 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {
-  Image pix = lang_tesseract_->GetPixForDebugView();
+  Image pix = lang_tesseract_->pix_binary();
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;

@@ -1656,7 +1656,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
       } else {
         p1 = GetInputImage();
       }
-      tesseract_->AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
+      tesseract_->AddPixDebugPage(p1, fmt::format("Greyscale normalized image to process @ graynorm_mode = {}", graynorm_mode));
     }
   }
 
@@ -2629,7 +2629,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         const char *sequence = "c1.1 + d3.3";
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} (just an example to showcase what leptonica can do for us!)", sequence));
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
         pix_post.destroy();
       }
 	  } else {
@@ -2719,7 +2719,7 @@ int TessBaseAPI::FindLines() {
   }
 
   if (tesseract_->tessedit_dump_pageseg_images) {
-    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -> this image is now set as the page Master Source Image for this activity");
+    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -- this image is now set as the page Master Source Image for this activity");
   }
 
   if (verbose_process) {

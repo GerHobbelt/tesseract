@@ -289,7 +289,14 @@ public:
     if (pix_for_debug_view_ != nullptr)
       return pix_for_debug_view_;
 
-    pix_for_debug_view_ = pixConvertTo32(pix_binary_);
+    Image pix; 
+    if (pix_grey_ != nullptr) {
+      pix = pix_grey_;
+    }
+    else {
+      pix = pix_binary_;
+    }
+    pix_for_debug_view_ = pixConvertTo32(pix);
     return pix_for_debug_view_;
   }
 

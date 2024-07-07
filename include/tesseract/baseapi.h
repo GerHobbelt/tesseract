@@ -216,7 +216,11 @@ public:
   bool GetVariableAsString(const char *name, std::string *val) const;
 
   /**
-   * Take all the internally gathered diagnostics data (including the tprintError/Warn/Info/Debug/Trace messages issued thus far, plus all collected image snapshots representing the intermediate state of the tesseract process at that time) and produce a HTML report from it for human consumption.
+   * Take all the internally gathered diagnostics data (including the
+   * tprintError/Warn/Info/Debug/Trace messages issued thus far, plus all
+   * collected image snapshots representing the intermediate state of the
+   * tesseract process at that time) and produce a HTML report from it
+   * for human consumption.
    */
   void FinalizeAndWriteDiagnosticsReport(); //  --> ReportDebugInfo()
 
