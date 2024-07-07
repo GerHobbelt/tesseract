@@ -125,16 +125,16 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         continue;
       }
       BLOB_CHOICE_IT b_it(rating);
-      tprintDebug("col={} row={} ", col, row);
+      tprintDebug("col={} row={}\t", col, row);
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-        tprintDebug("{} rat={} cert={} ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
+        tprintDebug("`{}` rat={} cert={}\t", unicharset.id_to_unichar(b_it.data()->unichar_id()),
                 b_it.data()->rating(), b_it.data()->certainty());
       }
       tprintDebug("\n");
     }
     tprintDebug("\n");
   }
-  tprintDebug("\n");
+  tprintDebug("\n\n");
   for (col = 0; col < dim; ++col) {
     tprintDebug("\t{}", col);
   }
@@ -153,7 +153,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         BLOB_CHOICE_IT b_it(rating);
         int counter = 0;
         for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-          tprintDebug("{} ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
+          tprintDebug("`{}` ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
           ++counter;
           if (counter == 3) {
             break;
@@ -166,6 +166,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
     }
     tprintDebug("\n");
   }
+  tprintDebug("\n");
 }
 
 } // namespace tesseract
