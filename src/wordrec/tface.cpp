@@ -73,7 +73,7 @@ int Wordrec::end_recog() {
  * This function holds any necessary post processing for the Wise Owl
  * program.
  */
-void Wordrec::program_editdown(int32_t elasped_time) {
+void Wordrec::program_editdown(int32_t elapsed_time) {
 #if !DISABLED_LEGACY_ENGINE
   EndAdaptiveClassifier();
 #endif // !DISABLED_LEGACY_ENGINE

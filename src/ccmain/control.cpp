@@ -683,8 +683,8 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
     std::vector<WERD_CHOICE *> overrides_word1;
     std::vector<WERD_CHOICE *> overrides_word2;
 
-    const auto orig_w1_str = w_prev->best_choice->unichar_string();
-    const auto orig_w2_str = w->best_choice->unichar_string();
+    const auto &orig_w1_str = w_prev->best_choice->unichar_string();
+    const auto &orig_w2_str = w->best_choice->unichar_string();
     WERD_CHOICE prev_best(w->uch_set);
     {
       int w1start, w1end;
@@ -758,8 +758,8 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
         }
         continue;
       }
-      const auto new_w1_str = overrides_word1[best_idx]->unichar_string();
-      const auto new_w2_str = overrides_word2[best_idx]->unichar_string();
+      const auto &new_w1_str = overrides_word1[best_idx]->unichar_string();
+      const auto &new_w2_str = overrides_word2[best_idx]->unichar_string();
       if (new_w1_str != orig_w1_str) {
         w_prev->ReplaceBestChoice(overrides_word1[best_idx]);
       }
@@ -1157,6 +1157,7 @@ bool Tesseract::ReassignDiacritics(int pass, PAGE_RES_IT *pr_it, bool *make_next
   }
   real_word->AddSelectedOutlines(wanted, wanted_blobs, wanted_outlines, nullptr);
   AssignDiacriticsToNewBlobs(outlines, pass, real_word, pr_it, &word_wanted, &target_blobs);
+  // TODO: check code.
   int non_overlapped = 0;
   int non_overlapped_used = 0;
   for (unsigned int i = 0; i < word_wanted.size(); ++i) {
@@ -1168,7 +1169,7 @@ bool Tesseract::ReassignDiacritics(int pass, PAGE_RES_IT *pr_it, bool *make_next
     }
   }
   if (debug_noise_removal) {
-    tprintDebug("Used {}/{} overlapped {}/{} non-overlaped diacritics on word:", num_overlapped_used,
+    tprintDebug("Used {}/{} overlapped {}/{} non-overlapped diacritics on word:", num_overlapped_used,
             num_overlapped, non_overlapped_used, non_overlapped);
     real_word->bounding_box().print();
   }
@@ -1329,9 +1330,9 @@ bool Tesseract::SelectGoodDiacriticOutlines(int pass, float certainty_threshold,
                                             C_BLOB *blob,
                                             const std::vector<C_OUTLINE *> &outlines,
                                             int num_outlines, std::vector<bool> *ok_outlines) {
-  std::string best_str;
   float target_cert = certainty_threshold;
   if (blob != nullptr) {
+    std::string best_str;
     float target_c2;
     target_cert = ClassifyBlobAsWord(pass, pr_it, blob, best_str, &target_c2);
     if (debug_noise_removal) {
@@ -2008,9 +2009,6 @@ not_a_word:
 }
 
 bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
-  bool show_map_detail = false;
-  int16_t i;
-
   if (!test_pt) {
     return false;
   }
@@ -2022,6 +2020,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     if (location < 0) {
       return true; // For breakpoint use
     }
+    bool show_map_detail = false;
     tessedit_rejection_debug.set_value(true);
     debug_x_ht_level.set_value(2);
     tprintDebug("\n\nTESTWD:: ");
@@ -2075,7 +2074,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
       tprintDebug("\n");
       if (show_map_detail) {
         tprintDebug("\"{}\"\n", word->best_choice->unichar_string());
-        for (i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
+        for (unsigned i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
           tprintDebug("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
           word->reject_map[i].full_print(debug_fp);
         }
@@ -2102,13 +2101,12 @@ static void find_modal_font( // good chars in word
     int16_t *font_out,       // output font
     int8_t *font_count       // output count
 ) {
-  int16_t font;  // font index
-  int32_t count; // pile count
-
   if (fonts->get_total() > 0) {
-    font = static_cast<int16_t>(fonts->mode());
+    // font index
+    int16_t font = static_cast<int16_t>(fonts->mode());
     *font_out = font;
-    count = fonts->pile_count(font);
+    // pile count
+    int32_t count = fonts->pile_count(font);
     *font_count = count < INT8_MAX ? count : INT8_MAX;
     fonts->add(font, -*font_count);
   } else {

@@ -690,8 +690,7 @@ void TableFinder::SetVerticalSpacing(ColPartition *part) {
 
   TBOX part_box = part->bounding_box();
   // Start a rect search
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> rectsearch(
-      &clean_part_grid_);
+  ColPartitionGridSearch rectsearch(&clean_part_grid_);
   rectsearch.StartRectSearch(box);
   ColPartition *neighbor;
   int min_space_above = kMaxVerticalSpacing;
@@ -854,8 +853,7 @@ void TableFinder::MarkTablePartitions() {
 //  4- Partitions with leaders before/after them.
 void TableFinder::MarkPartitionsUsingLocalInformation() {
   // Iterate the ColPartitions in the grid.
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(
-      &clean_part_grid_);
+  ColPartitionGridSearch gsearch(&clean_part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
   while ((part = gsearch.NextFullSearch()) != nullptr) {
@@ -897,8 +895,6 @@ bool TableFinder::HasWideOrNoInterWordGap(ColPartition *part) const {
   }
 
   // Variables used to compute inter-blob spacing.
-  int current_x0 = -1;
-  int current_x1 = -1;
   int previous_x1 = -1;
   // Stores the maximum gap detected.
   int largest_partition_gap_found = -1;
@@ -910,8 +906,8 @@ bool TableFinder::HasWideOrNoInterWordGap(ColPartition *part) const {
 
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
-    current_x0 = blob->bounding_box().left();
-    current_x1 = blob->bounding_box().right();
+    int current_x0 = blob->bounding_box().left();
+    int current_x1 = blob->bounding_box().right();
     if (previous_x1 != -1) {
       int gap = current_x0 - previous_x1;
 
@@ -1201,8 +1197,7 @@ void TableFinder::SetColumnsType(ColSegment_LIST *column_blocks) {
     TBOX box = seg->bounding_box();
     int num_table_cells = 0;
     int num_text_cells = 0;
-    GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> rsearch(
-        &clean_part_grid_);
+    ColPartitionGridSearch rsearch(&clean_part_grid_);
     rsearch.SetUniqueMode(true);
     rsearch.StartRectSearch(box);
     ColPartition *part = nullptr;
@@ -1331,8 +1326,7 @@ void TableFinder::GridMergeColumnBlocks() {
 void TableFinder::GetTableColumns(ColSegment_LIST *table_columns) {
   ColSegment_IT it(table_columns);
   // Iterate the ColPartitions in the grid.
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(
-      &clean_part_grid_);
+  ColPartitionGridSearch gsearch(&clean_part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part;
   while ((part = gsearch.NextFullSearch()) != nullptr) {
@@ -1346,8 +1340,7 @@ void TableFinder::GetTableColumns(ColSegment_LIST *table_columns) {
     // Start a search below the current cell to find bottom neighbours
     // Note: a full search will always process things above it first, so
     // this should be starting at the highest cell and working its way down.
-    GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> vsearch(
-        &clean_part_grid_);
+    ColPartitionGridSearch vsearch(&clean_part_grid_);
     vsearch.StartVerticalSearch(box.left(), box.right(), box.bottom());
     ColPartition *neighbor = nullptr;
     bool found_neighbours = false;
@@ -1514,8 +1507,7 @@ bool TableFinder::BelongToOneTable(const TBOX &box1, const TBOX &box2) {
   // Check for ColPartitions spanning both table regions
   TBOX bbox = box1.bounding_union(box2);
   // Start a rect search on bbox
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> rectsearch(
-      &clean_part_grid_);
+  ColPartitionGridSearch rectsearch(&clean_part_grid_);
   rectsearch.StartRectSearch(bbox);
   ColPartition *part = nullptr;
   while ((part = rectsearch.NextRectSearch()) != nullptr) {
@@ -1664,7 +1656,7 @@ void TableFinder::GrowTableToIncludeLines(const TBOX &table_box,
 }
 
 // Checks whether the horizontal line belong to the table by looking at the
-// side spacing of extra ColParitions that will be included in the table
+// side spacing of extra ColPartitions that will be included in the table
 // due to expansion
 bool TableFinder::HLineBelongsToTable(const ColPartition &part,
                                       const TBOX &table_box) {
@@ -1794,8 +1786,7 @@ void TableFinder::DeleteSingleColumnTables() {
       table_xprojection[i] = 0;
     }
     // Start a rect search on table_box
-    GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> rectsearch(
-        &clean_part_grid_);
+    ColPartitionGridSearch rectsearch(&clean_part_grid_);
     rectsearch.SetUniqueMode(true);
     rectsearch.StartRectSearch(table_box);
     ColPartition *part;
@@ -1983,7 +1974,7 @@ void TableFinder::DisplayColPartitions(ScrollViewReference &win, ColPartitionGri
                                        ScrollView::Color table_color) {
   ScrollView::Color color = default_color;
   // Iterate the ColPartitions in the grid.
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(grid);
+  ColPartitionGridSearch gsearch(grid);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
   while ((part = gsearch.NextFullSearch()) != nullptr) {
@@ -2013,7 +2004,7 @@ void TableFinder::DisplayColPartitionConnections(ScrollViewReference &win,
                                                  ColPartitionGrid *grid,
                                                  ScrollView::Color color) {
   // Iterate the ColPartitions in the grid.
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(grid);
+  ColPartitionGridSearch gsearch(grid);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
   while ((part = gsearch.NextFullSearch()) != nullptr) {
@@ -2078,7 +2069,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
 
   // Since we have table blocks already, remove table tags from all
   // colpartitions
-  GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> gsearch(grid);
+  ColPartitionGridSearch gsearch(grid);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;
 
@@ -2096,8 +2087,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
   while ((table = table_search.NextFullSearch()) != nullptr) {
     const TBOX &table_box = table->bounding_box();
     // Start a rect search on table_box
-    GridSearch<ColPartition, ColPartition_CLIST, ColPartition_C_IT> rectsearch(
-        grid);
+    ColPartitionGridSearch rectsearch(grid);
     rectsearch.StartRectSearch(table_box);
     ColPartition *part;
     ColPartition *table_partition = nullptr;

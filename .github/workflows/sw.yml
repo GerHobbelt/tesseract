@@ -22,13 +22,21 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, ubuntu-22.04, ubuntu-20.10, macos-12]
+        os: [windows-2022, macos-latest]
+        include:
+          - os: ubuntu-22.04
+            container: fedora:latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: packages
+      if: matrix.os == 'ubuntu-22.04'
+      run: sudo dnf -y install cmake gcc lld which flex bison clang clang-tools-extra git
+
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - uses: egorpugin/sw-action@master
@@ -59,7 +67,7 @@ jobs:
       shell: pwsh
 
     - name: test
-      if: github.event_name != 'pull_request' && (matrix.os != 'windows-2022')
+      if: github.event_name != 'pull_request' && (matrix.os != 'windows-2022' && matrix.os != 'macos-latest')
       run: ./sw -static -shared -config "d,r" test -Dwith-tests=1 "-Dskip-tests=lstm,lstm_recode"
       continue-on-error: true
     - name: test
@@ -68,26 +76,26 @@ jobs:
       continue-on-error: true
 
     - name: test-nightly
-      if: matrix.os != 'windows-2022' && matrix.os != 'macos-12' && github.event.schedule=='0 0 * * *'
+      if: matrix.os != 'windows-2022' && matrix.os != 'macos-latest' && github.event.schedule=='0 0 * * *'
       run: ./sw -static -shared -config "d,r" test -Dwith-tests=1
       continue-on-error: true
 
-    # windows and macos-12 tests hang here for some reason, investigate
+    # windows and macos-latest tests hang here for some reason, investigate
     #- name: test
-      #if: matrix.os == 'windows-2022' || matrix.os == 'macos-12'
+      #if: matrix.os == 'windows-2022' || matrix.os == 'macos-latest'
       #run: ./sw test -Dwith-tests=1 "-Dskip-tests=lstm,lstm_recode"
       #continue-on-error: true
 
     - name: Upload Unit Test Results
       if: always() && matrix.os != 'windows-2022'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Test Results (${{ matrix.os }})
         path: .sw/test/results.xml
 
     - name: Publish Test Report
       if: always() && matrix.os != 'windows-2022'
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v4
       with:
         check_name: test (${{ matrix.os }})
         report_paths: .sw/test/results.xml

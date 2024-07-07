@@ -143,10 +143,6 @@ void TessBaseAPIDelete(TessBaseAPI *handle) {
   delete handle;
 }
 
-size_t TessBaseAPIGetOpenCLDevice(TessBaseAPI * /*handle*/, void **device) {
-  return TessBaseAPI::getOpenCLDevice(device);
-}
-
 void TessBaseAPISetInputName(TessBaseAPI *handle, const char *name) {
   handle->SetInputName(name);
 }

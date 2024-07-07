@@ -25,7 +25,8 @@
 #endif
 
 #include <cstdlib>
-#include <cstring> // for std::strrchr
+#include <cstring>    // for std::strrchrA
+#include <filesystem> // for std::filesystem
 
 
 namespace tesseract {
@@ -62,6 +63,12 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
 
   const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
 
+  // Ignore TESSDATA_PREFIX if there is no matching filesystem entry.
+  if (tessdata_prefix != nullptr && !std::filesystem::exists(tessdata_prefix)) {
+    tprintf("Warning: TESSDATA_PREFIX %s does not exist, ignore it\n", tessdata_prefix);
+    tessdata_prefix = nullptr;
+  }
+
   if (!argv0.empty()) {
     /* Use tessdata prefix from the command line. */
     datadir = argv0;
@@ -92,7 +99,10 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
 #if defined(TESSDATA_PREFIX)
     // Use tessdata prefix which was compiled in.
-    datadir = TESSDATA_PREFIX "/tessdata";
+    datadir = TESSDATA_PREFIX "/tessdata/";
+    // Note that some software (for example conda) patches TESSDATA_PREFIX
+    // in the binary, so it might be shorter. Recalculate its length.
+    datadir.resize(std::strlen(datadir.c_str()));
 #else
     datadir = "./";
     std::string subdir = datadir;
@@ -104,10 +114,9 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   }
 
   // check for missing directory separator
-  const char *lastchar = datadir.c_str();
-  lastchar += datadir.length() - 1;
-  if ((strcmp(lastchar, "/") != 0) && (strcmp(lastchar, "\\") != 0)) {
-    datadir += "/";
+  const char lastchar = datadir.back();
+  if (lastchar != '/' && lastchar != '\\') {
+    datadir += '/';
   }
 }
 

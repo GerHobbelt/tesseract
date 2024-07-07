@@ -86,7 +86,6 @@ if VISIBILITY
 AM_CPPFLAGS += -DTESS_EXPORTS
 AM_CPPFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden -fPIC
 endif
-AM_CPPFLAGS += $(OPENCL_CPPFLAGS)
 
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
 
@@ -103,9 +102,6 @@ libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/classify
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/cutil
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/dict
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/lstm
-if OPENCL
-libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/opencl
-endif
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/textord
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/training/common
 libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/viewer
@@ -113,7 +109,7 @@ libtesseract_la_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 libtesseract_la_CPPFLAGS += $(libcurl_CFLAGS)
 
 lib_LTLIBRARIES = libtesseract.la
-libtesseract_la_LDFLAGS = $(LEPTONICA_LIBS) $(OPENCL_LDFLAGS)
+libtesseract_la_LDFLAGS = $(LEPTONICA_LIBS)
 libtesseract_la_LDFLAGS += $(libarchive_LIBS)
 libtesseract_la_LDFLAGS += $(libcurl_LIBS)
 libtesseract_la_LDFLAGS += $(TENSORFLOW_LIBS)
@@ -137,9 +133,6 @@ libtesseract_la_SOURCES += src/api/wordstrboxrenderer.cpp
 libtesseract_la_LIBADD = libtesseract_ccutil.la
 libtesseract_la_LIBADD += libtesseract_lstm.la
 libtesseract_la_LIBADD += libtesseract_native.la
-if OPENCL
-libtesseract_la_LIBADD += libtesseract_opencl.la
-endif
 
 # Rules for src/arch.
 
@@ -597,23 +590,6 @@ if TENSORFLOW
 libtesseract_lstm_la_SOURCES += src/lstm/tfnetwork.pb.cc
 endif
 
-# Rules for src/opencl.
-
-if OPENCL
-libtesseract_opencl_la_CPPFLAGS = $(AM_CPPFLAGS)
-libtesseract_opencl_la_CPPFLAGS += $(OPENCL_CFLAGS)
-libtesseract_opencl_la_CPPFLAGS += -I$(top_srcdir)/src/ccutil
-libtesseract_opencl_la_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
-libtesseract_opencl_la_CPPFLAGS += -I$(top_srcdir)/src/ccmain
-
-noinst_HEADERS += src/opencl/openclwrapper.h
-noinst_HEADERS += src/opencl/oclkernels.h
-
-noinst_LTLIBRARIES += libtesseract_opencl.la
-
-libtesseract_opencl_la_SOURCES = src/opencl/openclwrapper.cpp
-endif
-
 # Rules for src/textord.
 
 noinst_HEADERS += src/textord/alignedblob.h
@@ -713,9 +689,7 @@ libtesseract_la_SOURCES += src/viewer/svmnode.cpp
 libtesseract_la_SOURCES += src/viewer/svutil.cpp
 
 EXTRA_PROGRAMS += svpaint
-svpaint_CPPFLAGS =
-svpaint_CPPFLAGS += -I$(top_builddir)/include
-svpaint_CPPFLAGS += -I$(top_srcdir)/include
+svpaint_CPPFLAGS = $(AM_CPPFLAGS)
 svpaint_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
 svpaint_CPPFLAGS += -I$(top_srcdir)/src/viewer
 svpaint_SOURCES = src/svpaint.cpp
@@ -775,7 +749,7 @@ libtesseract_la_SOURCES += src/fmt/src/format.cc
 
 bin_PROGRAMS = tesseract
 tesseract_SOURCES = src/tesseract.cpp
-tesseract_CPPFLAGS =
+tesseract_CPPFLAGS = $(AM_CPPFLAGS)
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/arch
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/ccmain
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
@@ -786,17 +760,9 @@ tesseract_CPPFLAGS += -I$(top_srcdir)/src/dict
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/textord
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/viewer
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/wordrec
-if OPENCL
-tesseract_CPPFLAGS += -I$(top_srcdir)/src/opencl
-endif
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
-tesseract_CPPFLAGS += $(AM_CPPFLAGS)
-if VISIBILITY
-tesseract_CPPFLAGS += -DTESS_IMPORTS
-endif
 
-tesseract_LDFLAGS = $(OPENCL_LDFLAGS)
-tesseract_LDFLAGS += $(OPENMP_CXXFLAGS)
+tesseract_LDFLAGS = $(OPENMP_CXXFLAGS)
 
 tesseract_LDADD = libtesseract.la
 tesseract_LDADD += $(LEPTONICA_LIBS)
@@ -840,12 +806,11 @@ endif
 
 CLEANFILES += $(EXTRA_PROGRAMS)
 
-training_CPPFLAGS := -DPANGO_ENABLE_ENGINE
+training_CPPFLAGS = $(AM_CPPFLAGS)
+training_CPPFLAGS += -DPANGO_ENABLE_ENGINE
 training_CPPFLAGS += -DTESS_COMMON_TRAINING_API=
 training_CPPFLAGS += -DTESS_PANGO_TRAINING_API=
 training_CPPFLAGS += -DTESS_UNICHARSET_TRAINING_API=
-training_CPPFLAGS += -I$(top_builddir)/include
-training_CPPFLAGS += -I$(top_srcdir)/include
 training_CPPFLAGS += -I$(top_srcdir)/src/training
 training_CPPFLAGS += -I$(top_srcdir)/src/training/common
 training_CPPFLAGS += -I$(top_srcdir)/src/training/pango
@@ -972,7 +937,6 @@ EXTRA_PROGRAMS += $(trainingtools)
 extralib = libtesseract.la
 extralib += $(libarchive_LIBS)
 extralib += $(LEPTONICA_LIBS)
-extralib += $(OPENCL_LDFLAGS)
 extralib += $(TENSORFLOW_LIBS)
 if T_WIN
 extralib += -lws2_32
@@ -1184,7 +1148,7 @@ TESTDATA_DIR=$(shell cd $(top_srcdir) && pwd)/test/testdata
 # Suppress some memory leaks reported by LeakSanitizer.
 export LSAN_OPTIONS=suppressions=$(top_srcdir)/unittest/tesseract_leaksanitizer.supp
 
-unittest_CPPFLAGS =
+unittest_CPPFLAGS = $(AM_CPPFLAGS)
 unittest_CPPFLAGS += -DTESSBIN_DIR="\"$(abs_top_builddir)\""
 unittest_CPPFLAGS += -DLANGDATA_DIR="\"$(LANGDATA_DIR)\""
 unittest_CPPFLAGS += -DTESSDATA_DIR="\"$(TESSDATA_DIR)\""
@@ -1197,8 +1161,6 @@ endif # DISABLED_LEGACY_ENGINE
 unittest_CPPFLAGS += -DTESS_COMMON_TRAINING_API=
 unittest_CPPFLAGS += -DTESS_PANGO_TRAINING_API=
 unittest_CPPFLAGS += -DTESS_UNICHARSET_TRAINING_API=
-unittest_CPPFLAGS += -I$(top_builddir)/include
-unittest_CPPFLAGS += -I$(top_srcdir)/include
 unittest_CPPFLAGS += -I$(top_srcdir)/src/arch
 unittest_CPPFLAGS += -I$(top_srcdir)/src/ccmain
 unittest_CPPFLAGS += -I$(top_srcdir)/src/ccstruct
@@ -1362,7 +1324,7 @@ TESTS = $(check_PROGRAMS)
 
 apiexample_test_SOURCES = unittest/apiexample_test.cc
 apiexample_test_CPPFLAGS = $(unittest_CPPFLAGS)
-apiexample_test_LDFLAGS = $(OPENCL_LDFLAGS) $(LEPTONICA_LIBS)
+apiexample_test_LDFLAGS = $(LEPTONICA_LIBS)
 apiexample_test_LDADD = $(TESS_LIBS) $(LEPTONICA_LIBS)
 
 if !DISABLED_LEGACY_ENGINE
@@ -1562,7 +1524,7 @@ endif # !DISABLED_LEGACY_ENGINE
 
 progress_test_SOURCES = unittest/progress_test.cc
 progress_test_CPPFLAGS = $(unittest_CPPFLAGS)
-progress_test_LDFLAGS = $(OPENCL_LDFLAGS) $(LEPTONICA_LIBS)
+progress_test_LDFLAGS = $(LEPTONICA_LIBS)
 progress_test_LDADD = $(GTEST_LIBS) $(GMOCK_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 
 qrsequence_test_SOURCES = unittest/qrsequence_test.cc

@@ -89,15 +89,6 @@ public:
   static const char *Version();
 
   /**
-   * If compiled with OpenCL AND an available OpenCL
-   * device is deemed faster than serial code, then
-   * "device" is populated with the cl_device_id
-   * and returns sizeof(cl_device_id)
-   * otherwise *device=nullptr and returns 0.
-   */
-  static size_t getOpenCLDevice(void **device);
-
-  /**
    * Set the name of the input file. Needed for training and
    * reading a UNLV zone file, and for searchable PDF output.
    */
@@ -551,7 +542,7 @@ public:
    * timeout_millisec terminates processing if any single page
    * takes too long. Set to 0 for unlimited time.
    *
-   * renderer is responible for creating the output. For example,
+   * renderer is responsible for creating the output. For example,
    * use the TessTextRenderer if you want plaintext output, or
    * the TessPDFRender to produce searchable PDF.
    *
@@ -663,6 +654,18 @@ public:
    * data structures.
    */
   char *GetAltoText(int page_number);
+
+   /**
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   */
+  char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
+
+  /**
+   * Make an XML-formatted string with PAGE markup from the internal
+   * data structures.
+   */
+  char *GetPAGEText(int page_number);
 
   /**
    * Make an XML-formatted string with PAGE markup from the internal

@@ -32,7 +32,7 @@
 #include <leptonica/environ.h>    // for l_uint8
 #include "equationdetect.h" // for EquationDetect, destructor of equ_detect_
 #include "errcode.h" // for ASSERT_HOST
-#include "helpers.h" // for IntCastRounded, chomp_string
+#include "helpers.h" // for IntCastRounded, chomp_string, copy_string
 #include "host.h"    // for MAX_PATH
 #include <leptonica/imageio.h> // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #if !DISABLED_LEGACY_ENGINE
@@ -40,9 +40,6 @@
 #endif
 #include "mutableiterator.h" // for MutableIterator
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
-#if defined(USE_OPENCL)
-#  include "openclwrapper.h" // for OpenclDevice
-#endif
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
 #include "params.h"          // for BoolParam, IntParam, DoubleParam, Stri...
@@ -111,6 +108,7 @@ BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
+static STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
@@ -263,27 +261,6 @@ TessBaseAPI::~TessBaseAPI() {
  */
 const char *TessBaseAPI::Version() {
   return TESSERACT_VERSION_STR;
-}
-
-/**
- * If compiled with OpenCL AND an available OpenCL
- * device is deemed faster than serial code, then
- * "device" is populated with the cl_device_id
- * and returns sizeof(cl_device_id)
- * otherwise *device=nullptr and returns 0.
- */
-size_t TessBaseAPI::getOpenCLDevice(void **data) {
-#ifdef USE_OPENCL
-  ds_device device = OpenclDevice::getDeviceSelection();
-  if (device.type == DS_DEVICE_OPENCL_DEVICE) {
-    *data = new cl_device_id;
-    memcpy(*data, &device.oclDeviceID, sizeof(cl_device_id));
-    return sizeof(cl_device_id);
-  }
-#endif
-
-  *data = nullptr;
-  return 0;
 }
 
 /**
@@ -567,10 +544,6 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
     tesseract_->WipeSqueakyCleanForReUse();
 #endif
   }
-#ifdef USE_OPENCL
-  OpenclDevice od;
-  od.InitEnv();
-#endif
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract(nullptr);
   }
@@ -588,7 +561,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   }
 
   // Update datapath and language requested for the last valid initialization.
-  datapath_ = datapath;
+  datapath_ = std::move(datapath);
   if (datapath_.empty() && !tesseract_->datadir.empty()) {
     datapath_ = tesseract_->datadir;
   }
@@ -1469,6 +1442,10 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       if (curlcode != CURLE_OK) {
         return error("curl_easy_setopt");
       }
+      curlcode = curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+      if (curlcode != CURLE_OK) {
+        return error("curl_easy_setopt");
+      }
       // Follow HTTP, HTTPS, FTP and FTPS redirects.
       curlcode = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
       if (curlcode != CURLE_OK) {
@@ -1490,11 +1467,22 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
           return error("curl_easy_setopt");
         }
       }
+      std::string cookiefile = curl_cookiefile;
+      if (!cookiefile.empty()) {
+        curlcode = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookiefile.c_str());
+        if (curlcode != CURLE_OK) {
+          return error("curl_easy_setopt");
+        }
+      }
       curlcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
       if (curlcode != CURLE_OK) {
         return error("curl_easy_setopt");
       }
       curlcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+      if (curlcode != CURLE_OK) {
+        return error("curl_easy_setopt");
+      }
+      curlcode = curl_easy_setopt(curl, CURLOPT_USERAGENT, "Tesseract OCR");
       if (curlcode != CURLE_OK) {
         return error("curl_easy_setopt");
       }
@@ -1808,9 +1796,7 @@ char *TessBaseAPI::GetUTF8Text() {
     const std::unique_ptr<const char[]> para_text(it->GetUTF8Text(RIL_PARA));
     text += para_text.get();
   } while (it->Next(RIL_PARA));
-  char *result = new char[text.length() + 1];
-  strncpy(result, text.c_str(), text.length() + 1);
-  return result;
+  return copy_string(text);
 }
 
 size_t TessBaseAPI::GetNumberOfTables() const
@@ -2015,9 +2001,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     tsv_str += tsv_symbol_lines; // add the individual symbol rows right after the word row they are considered to a part of.
   }
 
-  char *ret = new char[tsv_str.length() + 1];
-  strcpy(ret, tsv_str.c_str());
-  return ret;
+  return copy_string(tsv_str);
 }
 
 /** The 5 numbers output for each box (the usual 4 and a page number.) */
@@ -2265,10 +2249,7 @@ char *TessBaseAPI::GetOsdText(int page_number) {
          << "Orientation confidence: " << orient_conf << "\n"
          << "Script: " << script_name << "\n"
          << "Script confidence: " << script_conf << "\n";
-  const std::string &text = stream.str();
-  char *result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(stream.str());
 }
 
 #endif // !DISABLED_LEGACY_ENGINE
@@ -2804,6 +2785,13 @@ int TessBaseAPI::FindLines() {
   tesseract_->PrepareForTessOCR(block_list_, &osr);
 
   return 0;
+}
+
+/**
+ * Return average gradient of lines on page.
+ */
+float TessBaseAPI::GetGradient() {
+  return tesseract_->gradient();
 }
 
 /**

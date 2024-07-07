@@ -1416,7 +1416,7 @@ void ParagraphModelSmearer::CalculateOpenModels(int row_start, int row_end) {
           push_back_new(still_open, m);
         }
       }
-      OpenModels(row + 1) = still_open;
+      OpenModels(row + 1) = std::move(still_open);
     }
   }
 }
@@ -2428,8 +2428,8 @@ static void InitializeTextAndBoxesPreRecognition(const MutableIterator &it, RowI
   // Set up text, lword_text, and rword_text (mostly for debug printing).
   std::string fake_text;
   PageIterator pit(static_cast<const PageIterator &>(it));
-  bool first_word = true;
   if (!pit.Empty(RIL_WORD)) {
+    bool first_word = true;
     do {
       fake_text += "x";
       if (first_word) {
@@ -2631,7 +2631,6 @@ void Tesseract::DetectParagraphs(bool after_text_recognition,
 
   // Run the paragraph detection algorithm.
   std::vector<PARA *> row_owners;
-  std::vector<PARA *> the_paragraphs;
   if (!is_image_block) {
     DetectParagraphs(&row_infos, &row_owners, block->para_list(), models);
   } else {
