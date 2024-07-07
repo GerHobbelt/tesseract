@@ -35,6 +35,7 @@
 #include <unordered_set>
 
 #include <leptonica/allheaders.h>
+#include <leptonica/array_internal.h>
 #include <leptonica/pix_internal.h>
 
 #include <tesseract/renderer.h>
@@ -716,26 +717,9 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
 
   int rcnt = 0, lcnt = 0, wcnt = 0;
 
-  if (input_file_.empty()) {
+  if (tesseract_->input_file_path.empty()) {
     SetInputName(nullptr);
   }
-
-#ifdef _WIN32
-  // convert input name from ANSI encoding to utf-8
-  int str16_len =
-      MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
-  wchar_t *uni16_str = new WCHAR[str16_len];
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str,
-                                  str16_len);
-  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr,
-                                     0, nullptr, nullptr);
-  char *utf8_str = new char[utf8_len];
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len,
-                      nullptr, nullptr);
-  input_file_ = utf8_str;
-  delete[] uni16_str;
-  delete[] utf8_str;
-#endif
 
   // Used variables
 
@@ -768,14 +752,12 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   Pta *line_baseline_ltr_pts = ptaCreate(0);
   Pta *line_baseline_pts = ptaCreate(0);
 
-  bool POLYGONFLAG;
-  GetBoolVariable("page_xml_polygon", &POLYGONFLAG);
-  int LEVELFLAG;
-  GetIntVariable("page_xml_level", &LEVELFLAG);
+  bool POLYGONFLAG = tesseract_->page_xml_polygon;
+  int LEVELFLAG = tesseract_->page_xml_level;
 
   if (LEVELFLAG != 0 && LEVELFLAG != 1) {
-    tprintf(
-        "For now, only line level and word level are available, and the level "
+    tprintWarn(
+        "page_xml_level: for now, only line level (0) and word level (1) are available, and the level "
         "is reset to line level.\n");
     LEVELFLAG = 0;
   }
@@ -822,8 +804,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintf("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
       default:
         break;
     }

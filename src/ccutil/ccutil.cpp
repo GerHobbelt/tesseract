@@ -65,7 +65,7 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
 
   // Ignore TESSDATA_PREFIX if there is no matching filesystem entry.
   if (tessdata_prefix != nullptr && !std::filesystem::exists(tessdata_prefix)) {
-    tprintf("Warning: TESSDATA_PREFIX %s does not exist, ignore it\n", tessdata_prefix);
+    tprintWarn("Environment variable TESSDATA_PREFIX's value '{}' is not a directory that exists in your filesystem; tesseract will ignore it.\n", tessdata_prefix);
     tessdata_prefix = nullptr;
   }
 

@@ -714,24 +714,13 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       }
     }
 
-    api.GetBoolVariable("tessedit_create_page", &b);
-    if (b) {
-      auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
-      if (renderer->happy()) {
-        renderers.push_back(std::move(renderer));
-      } else {
-        tprintError("Could not create ALTO output file: {}\n", strerror(errno));
-        error = true;
-      }
-    }
-
     api.GetBoolVariable("tessedit_create_page_xml", &b);
     if (b) {
       auto renderer = std::make_unique<tesseract::TessPAGERenderer>(outputbase);
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintf("Error, could not create PAGE output file: %s\n", strerror(errno));
+        tprintError("Could not create PAGE output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -849,7 +838,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
   return error;
 }
 
-static void SetupDebugAllPreset(TessBaseAPI &api)
+void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
 	api.SetVariable("verbose_process", "Y");
@@ -889,7 +878,7 @@ static void SetupDebugAllPreset(TessBaseAPI &api)
 
     api.SetVariable("tessedit_create_hocr", "Y");
     api.SetVariable("tessedit_create_alto", "Y");
-    api.SetVariable("tessedit_create_page", "Y");
+    api.SetVariable("tessedit_create_page_xml", "Y");
     api.SetVariable("tessedit_create_tsv", "Y");
     api.SetVariable("tessedit_create_pdf", "Y");
     api.SetVariable("textonly_pdf", "n");
@@ -1343,7 +1332,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
           // default: TXT + HOCR renderer
           api.tesseract()->tessedit_create_hocr.set_value(true);
           api.tesseract()->tessedit_create_alto.set_value(true);
-          api.tesseract()->tessedit_create_page.set_value(true);
+          api.tesseract()->tessedit_create_page_xml.set_value(true);
           api.tesseract()->tessedit_create_tsv.set_value(true);
           api.tesseract()->tessedit_create_pdf.set_value(true);
           api.tesseract()->textonly_pdf.set_value(true);
