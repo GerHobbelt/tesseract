@@ -1343,6 +1343,7 @@ namespace tesseract {
     if (h_level > 5)
       h_level = 5;
     fputs(fmt::format("\n\n<section>\n<h{0}>{1}</h{0}>\n\n", h_level, title).c_str(), html);
+    fflush(html);
 
       std::string section_timings_intro_msg;
     if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
@@ -1392,6 +1393,7 @@ namespace tesseract {
     }
 
     fputs("\n</section>\n\n", html);
+    fflush(html);
 
     return next_section_index;
   }
@@ -1761,6 +1763,7 @@ namespace tesseract {
       fputs(html_report_dst.str().c_str(), html);
 
       fputs("\n</body>\n</html>\n", html);
+      fflush(html);
 
       fclose(html);
     }
