@@ -20,6 +20,7 @@ namespace winutils {
 
 std::wstring Utf8ToUtf16(const char* utf8Str);
 std::string Utf16ToUtf8(const wchar_t* utf16Str);
+std::string AnsiToUtf8(const char *AnsiStr);
 
 } // namespace winutils
 } // namespace tesseract

@@ -767,7 +767,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
       if (renderer->happy()) {
         renderers.push_back(std::move(renderer));
       } else {
-        tprintError("Could not create PAGE output file: %s\n", strerror(errno));
+        tprintError("Could not create PAGE output file: {}\n", strerror(errno));
         error = true;
       }
     }
@@ -899,7 +899,7 @@ static inline auto format_as(WritingDirection d) {
 
 }
 
-static void SetupDebugAllPreset(TessBaseAPI &api)
+void SetupDebugAllPreset(TessBaseAPI &api)
 {
   if (debug_all) {
     api.SetupDebugAllPreset();
@@ -1067,7 +1067,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     // second: grab the output_base_path if we haven't already:
     if (!outputbasepath_is_specified) {
       if (path_params.size() < 2) {
-        tprintError("Error, missing outputbase command line argument\n");
+        tprintError("Missing outputbase command line argument\n");
         return EXIT_FAILURE;
       }
 

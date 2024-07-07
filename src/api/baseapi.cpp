@@ -3518,8 +3518,6 @@ void TessBaseAPI::SetupDebugAllPreset() {
   tess.debug_baseline_fit.set_value(1, SRC); // 0..3
   tess.debug_baseline_y_coord.set_value(-2000, SRC);
 
-  tess.showcase_threshold_methods.set_value((debug_all > 2), SRC);
-
   tess.debug_write_unlv.set_value(true, SRC);
   tess.debug_line_finding.set_value(true, SRC);
   tess.debug_image_normalization.set_value(true, SRC);

@@ -30,8 +30,8 @@
 #include <unordered_set>
 
 #include <leptonica/allheaders.h>
-#include <leptonica/pix_internal.h>
 #include <leptonica/array_internal.h>
+#include <leptonica/pix_internal.h>
 
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
@@ -722,19 +722,6 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     SetInputName(nullptr);
   }
 
-#if defined(_WIN32) && 0
-  // convert input name from ANSI encoding to utf-8
-  int str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
-  wchar_t *uni16_str = new WCHAR[str16_len];
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str, str16_len);
-  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr, 0, nullptr, nullptr);
-  char *utf8_str = new char[utf8_len];
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len, nullptr, nullptr);
-  input_file_ = utf8_str;
-  delete[] uni16_str;
-  delete[] utf8_str;
-#endif
-
   // Used variables
 
   std::stringstream reading_order_str;
@@ -771,7 +758,9 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   #define LEVELFLAG tesseract_->page_xml_level
   
   if (LEVELFLAG != 0 && LEVELFLAG != 1) {
-    tprintError("For now, only line level and word level are available, and the level is reset to line level.\n");
+    tprintWarn(
+        "page_xml_level: for now, only line level (0) and word level (1) are available, and the level "
+        "is reset to line level.\n");
     LEVELFLAG = 0;
   }
 

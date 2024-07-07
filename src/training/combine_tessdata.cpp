@@ -283,7 +283,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         tprintError("No LSTM Component found in {}!\n", argv[2]);
         return EXIT_FAILURE;
       }
-      tesseract::LSTMRecognizer recognizer;
+      tesseract::LSTMRecognizer recognizer(nullptr);
       recognizer.SetDebug(tess_debug_lstm);
       if (!recognizer.DeSerialize(&tm, &fp)) {
         tprintError("Failed to deserialize LSTM in {}!\n", argv[2]);

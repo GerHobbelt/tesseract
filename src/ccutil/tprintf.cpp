@@ -196,7 +196,7 @@ static loglevel_return_type ParseLogLevel(const char *loglevel) {
     std::transform(loglevel_string.begin(), loglevel_string.end(), loglevel_string.begin(), ::toupper);
     int loglevel = loglevels.at(loglevel_string);
     return loglevel;
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range &) {
     // TODO: Allow numeric argument?
     tprintError("Unsupported --loglevel {}\n", loglevel);
     return cpp::fail(false);
