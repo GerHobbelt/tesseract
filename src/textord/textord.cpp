@@ -180,7 +180,7 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
 void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
                           Image binary_pix, Image thresholds_pix, Image grey_pix, bool use_box_bottoms,
                           BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks,
-                          TO_BLOCK_LIST *to_blocks, float &gradient) {
+                          TO_BLOCK_LIST *to_blocks, float *gradient) {
   page_tr_.set_x(width);
   page_tr_.set_y(height);
   if (to_blocks->empty()) {

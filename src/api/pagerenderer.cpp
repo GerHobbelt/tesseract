@@ -16,6 +16,7 @@
  **********************************************************************/
 
 #include <tesseract/debugheap.h>
+#include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
@@ -577,16 +578,6 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
     // Delete outliers with IQR
     if (abs(y0 - x_coord) > 1.5 * delta_median_Q3 + delta_median && p != 0 && p != num_pts - 1) {
       // TODO: Why was this section added?
-#if 0
-      // If it's the starting or end point adjust the y value in the median
-      // delta range
-      if (p == 0 || p == num_pts-1) {
-        if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
-          if (y0 < x_coord) y0 = y0-delta_median;
-        } else if (y0 > x_coord) y0 = y0+delta_median;
-        ptaAddPt(baseline_recalc_pts, x0, y0);
-      }
-#endif	  
       continue;
     }
     if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
@@ -603,7 +594,8 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
       }
     }
   }
-  // Return recalculated baseline if this fails return the bottom line as baseline
+  // Return recalculated baseline if this fails return the bottom line as
+  // baseline
   ptaDestroy(&baseline_clipped_pts);
   if (ptaGetCount(baseline_recalc_pts) < 2) {
     ptaDestroy(&baseline_recalc_pts);

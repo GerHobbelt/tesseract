@@ -34,7 +34,6 @@
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm>    // for max, min
-#include <fstream>      // for std::ifstream
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
 
