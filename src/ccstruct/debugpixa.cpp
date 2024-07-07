@@ -122,14 +122,40 @@ namespace tesseract {
           // Re the condition used below:
           //     (isalnum(message[-1]) || message[+1] == message[-1])
           // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
-          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
+          if (message == start || !(isalnum(message[-1]) || (message[+1] == message[-1] && !isspace(message[+1])))) {
             pos = 0;
             do {
               pos++;
               auto pos2 = strcspn(message + pos, "\n`");
               pos += pos2;
-            } while (message[pos] == '`' && message[pos + 1] != 0 &&
-                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
+              // before we go, there's the scenario of "`.. ` ..`" to consider, i.e. message[pos] is a solitary backtick.
+              //
+              // The answer to that is usually relatively simple: when the number of backticks in both directions is equal, then
+              // it is. ('equal' as in either both odd or even count.) This is only a problem if the message[pos] backtick
+              // looks like a solitary one:
+              while (message[pos] == '`' && isspace(message[pos + 1]) && isspace(message[pos - 1])) {
+                int c1 = 0;
+                for (size_t i = pos + 1; message[i]; i++) {
+                  if (message[i] == '`')
+                    c1++;
+                }
+                int c2 = 1;
+                for (size_t i = 1; i < pos; i++) {
+                  if (message[i] == '`')
+                    c2++;
+                }
+                if (c1 % 2 == c2 % 2) {
+                  // solitary. move forward to skip over this one now.
+                  pos++;
+                  pos2 = strcspn(message + pos, "\n`");
+                  pos += pos2;
+                  continue;
+                }
+                break;
+              }
+            } while (message[pos] == '`' && message[pos + 1] != 0 && message[pos + 1] != '\n' &&
+                     (isalnum(message[pos + 1]) ||
+                       (message[pos + 1] == message[pos - 1] && !isspace(message[pos + 1]))));
 
             if (message[pos] == '`') {
               dst << "<code>";
