@@ -71,12 +71,12 @@ constexpr ERRCODE ASSERT_FAILED("Assert failed");
 #define DO_NOTHING static_cast<void>(0)
 
 #define ASSERT_HOST(x) \
-  (x) ? DO_NOTHING : ASSERT_FAILED.error(#x, ABORT, "in file %s, line %d @ %s()", __FILE__, __LINE__, __FUNCTION__)
+  (x) ? DO_NOTHING : ASSERT_FAILED.error(#x, ABORT, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__)
 
 #define ASSERT_HOST_MSG(x, ...)                                                \
   if (!(x)) {                                                                  \
     tprintError(__VA_ARGS__);                                                  \
-    ASSERT_FAILED.error(#x, ABORT, "in file %s, line %d @ %s()", __FILE__, __LINE__, __FUNCTION__); \
+    ASSERT_FAILED.error(#x, ABORT, "in file {}, line {} @ {}()", __FILE__, __LINE__, __FUNCTION__); \
   }
 
 } // namespace tesseract
