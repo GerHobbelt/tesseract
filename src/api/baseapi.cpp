@@ -1288,7 +1288,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-	SetVariable("applybox_page", page_number);
+    tesseract_->applybox_page.set_value(page_number);
 	bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
     bool two_pass = false;
@@ -1348,7 +1348,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
       break;
     }
     tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
-    SetVariable("applybox_page", page_number);
+    tesseract_->applybox_page.set_value(page_number);
     bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
     pixDestroy(&pix);
     if (!r) {
@@ -1552,7 +1552,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
   }
   else {
-	SetVariable("applybox_page", -1 /* all pages */);
+    tesseract_->applybox_page.set_value(-1 /* all pages */);
 	r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
 
