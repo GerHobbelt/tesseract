@@ -45,7 +45,7 @@ struct UnicharRating {
     tprintDebug(
         "Unichar-id={}, rating={}, adapted={}, config={}, misses={},"
         " {} fonts\n",
-        unichar_id, static_cast<double>(rating), adapted, config, feature_misses, fonts.size());
+        unichar_id, rating, adapted, config, feature_misses, fonts.size());
   }
 
   // Helper function to get the index of the first result with the required
