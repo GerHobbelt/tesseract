@@ -300,7 +300,10 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  ASSERT_HOST(static_cast<unsigned>(id) < this->size());
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size()).c_str();
+  }
   return unichars[id].representation;
 }
 
@@ -308,7 +311,10 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  ASSERT_HOST(static_cast<unsigned>(id) < this->size());
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size()).c_str();
+  }
   // Resolve from the kCustomLigatures table if this is a private encoding.
   if (get_isprivate(id)) {
     const char *ch = id_to_unichar(id);
@@ -325,23 +331,25 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
 // Return a string that reformats the utf8 str into the str followed
 // by its hex unicodes.
 std::string UNICHARSET::debug_utf8_str(const char *str) {
-  std::string result = str;
-  result += " [";
+  std::string result = fmt::format("`{}` [", str);
   int step = 1;
+  int i;
   // Chop into unicodes and code each as hex.
-  for (int i = 0; str[i] != '\0'; i += step) {
-    char hex[sizeof(int) * 2 + 1];
+  for (i = 0; str[i] != '\0'; i += step) {
+    char hex[sizeof(int) * 2 + 2];
     step = UNICHAR::utf8_step(str + i);
     if (step == 0) {
       step = 1;
-      snprintf(hex, sizeof(hex), "%x", str[i]);
+      snprintf(hex, sizeof(hex), "%02x ", str[i]);
     } else {
       UNICHAR ch(str + i, step);
-      snprintf(hex, sizeof(hex), "%x", ch.first_uni());
+      snprintf(hex, sizeof(hex), "%02x ", ch.first_uni());
     }
-	hex[sizeof(hex) - 1] = 0;
+	  hex[sizeof(hex) - 1] = 0;
     result += hex;
-    result += " ";
+  }
+  if (i > 0) {
+    result.pop_back();
   }
   result += "]";
   return result;
