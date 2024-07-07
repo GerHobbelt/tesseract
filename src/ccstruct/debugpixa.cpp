@@ -324,7 +324,7 @@ namespace tesseract {
       // We tolerate about 50% lines without any TAB as a rough heuristic.
       tab_count_avg *= 128;
       tab_count_avg /= line_count;
-      if (tab_count_avg >= 64) {
+      if (tab_count_avg >= 64 && line_count >= 2) {
         tab_count_per_line_max++; // turns the max TAB count in a max column count.
 
         // Do it as a table; total column count equals tab_count_per_line_max
