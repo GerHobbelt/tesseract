@@ -1,4 +1,4 @@
-// UTF-8: ö,ä,💩
+// UTF-8: ö,ä,💩,⏱️
 
 #include "debugpixa.h"
 #include "image.h"
@@ -14,6 +14,10 @@
 #include <sstream> // stringstream
 #include <iomanip> // put_time
 
+#include "out/HtmlResourceFileManager.h"
+#include "out/diag-report.h"
+#include "out/normalize.h"
+#include "out/modern-normalize.h"
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/fitz.h"
@@ -34,6 +38,15 @@ namespace tesseract {
 #else
     ".png";
 #endif
+
+  static bool is_nonnegligible_difference(double t1, double t2) {
+    auto d = t1; // do NOT use std::max(t1, t2) as we're focusing on T1 as the leading number in our caller!
+    auto delta = fabs(t2 - t1);
+    if (delta <= 1E-6)
+      return false;
+    auto diffperunage = delta / d;
+    return diffperunage > 1E-4;
+  }
 
 #if defined(HAVE_MUPDF)
 
@@ -847,10 +860,49 @@ namespace tesseract {
     return nullptr;
   }
 
-  static std::string check_unknown(const std::string& s, const char* default_value = "(unknown / nil)") {
+  static std::string encode_as_html(const std::string &str) {
+    std::string dst;
+    const char *start = str.c_str();
+    const char *message = start;
+    while (*message) {
+      auto pos = strcspn(message, "\n<>&");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        dst += particle;
+        message += pos;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          dst += "&lt;";
+          message++;
+          continue;
+
+        case '>':
+          dst += "&gt;";
+          message++;
+          continue;
+
+        case '&':
+          dst += "&amp;";
+          message++;
+          continue;
+
+        case '\n':
+          dst += "\n<br>";
+          message++;
+          continue;
+      }
+    }
+    return dst;
+  }
+
+  static std::string check_unknown_and_encode(const std::string& s, const char* default_value = "<em>(unknown / nil)</em>") {
     if (s.empty())
       return default_value;
-    return s;
+    return "<code>" + encode_as_html(s) + "</code>";
   }
 
   static void SanitizeCaptionForFilenamePart(std::string& str) {
@@ -898,6 +950,81 @@ namespace tesseract {
 
   static inline int MIX(int val1, int val2, const int factor) {
     return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
+  }
+
+
+  static std::string html_styling(const std::string &datadir, const std::string &filename) {
+    // first search if the HTML / CSS resource is available on your filesystem.
+    //
+    // When we cannot find it anywhere there, we take the built-in version as a fallback.
+    //
+    // Note that we ripped this chained-check approach from our Tesseract::read_config_file()
+    // so there's a refactor/dedup TODO lurking in here somewhere!   ;-)
+    std::string path = datadir;
+    path += "html-styling/";
+    path += filename;
+    tprintDebug("Read HTML Styling Partial: test if '{}' is a readable file: ", path);
+    FILE *fp;
+    if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+    } else {
+      path = datadir;
+      path += "tessconfigs/html-styling/";
+      path += filename;
+      tprintDebug(
+          "NO.\n"
+          "Read HTML Styling Partial: test if '{}' is a readable file: ",
+          path);
+      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+      } else {
+        path = filename;
+        tprintDebug(
+            "NO.\n"
+            "Read HTML Styling Partial: test if '{}' is a readable file: ",
+            path);
+        if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+        } else {
+          tprintDebug("NO.\n");
+          tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked. Picking up the built-in default content instead.\n", filename);
+
+          goto get_built_in;
+        }
+      }
+    }
+    tprintDebug("YES\n");
+
+    // shut up error C2362: initialization of 'XYZ' is skipped by 'goto fetch_err'
+    {
+      if (fseek(fp, 0, SEEK_END))
+        goto fetch_err;
+      auto size = ftell(fp);
+      if (fseek(fp, 0, SEEK_SET))
+        goto fetch_err;
+      auto data = new uint8_t[size];
+      auto rdlen = fread(data, 1, size, fp);
+      if (rdlen != size)
+        goto fetch_err;
+      std::string content(reinterpret_cast<const char *>(data), size);
+      fclose(fp);
+      return content;
+    }
+
+  fetch_err:
+    tprintError("An error occurred while fetching the HTML Styling Partial from file `{}`. Error: {}\n", path, errno != 0 ? strerror(errno) : "?unidentified error?");
+  get_built_in:
+    auto &mgr = bin2cpp::FileManager::getInstance();
+    // has this thing been initialized yet?   If not, do it now.
+    if (mgr.getFileCount() == 0) {
+      mgr.registerFile(bin2cpp::getNormalizeCssFile);
+      mgr.registerFile(bin2cpp::getModernnormalizeCssFile);
+      mgr.registerFile(bin2cpp::getDiagreportCssFile);
+    }
+    for (auto i = mgr.getFileCount() - 1; i >= 0; i--) {
+      const auto built_in = mgr.getFile(i);
+      if (filename == built_in->getFileName())
+        return built_in->getBuffer();
+    }
+    ASSERT_HOST_MSG(false, "should never get here\n");
+    return "b0rked!";
   }
 
   PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
@@ -1183,7 +1310,13 @@ namespace tesseract {
       h_level = 5;
     fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
 
-    fprintf(html, "<p class=\"timing-info\">This section of the tesseract run took %f sec (cummulative, i.e. including all subsections: %f sec.</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+      std::string section_timings_intro_msg;
+    if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
+        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec (cummulative, i.e. including all subsections: {:.6f} sec.)</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+    } else {
+      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec</p>\n\n", section_info.elapsed_ns / 1E9);
+    }
+    fputs(section_timings_intro_msg.c_str(), html);
 
     int next_section_index = current_section_index + 1;
     // special tweak for when we report (meta!) on our own report production:
@@ -1353,149 +1486,21 @@ namespace tesseract {
       // 
       // - CSS UL list with classic leader dots: based on https://www.w3.org/Style/Examples/007/leaders.en.html
       //
+      //   <link rel="stylesheet" href="https://unpkg.com/normalize.css@8.0.1/normalize.css" >
+      //   <link rel="stylesheet" href="https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css" >
+      //   <link rel="stylesheet" href="diag-report.css" >
       fprintf(html, "<html>\n\
 <head>\n\
 	<meta charset=\"UTF-8\">\n\
   <title>Tesseract diagnostic image set</title>\n\
-  <link rel=\"stylesheet\" href=\"https://unpkg.com/normalize.css@8.0.1/normalize.css\" >\n\
-  <link rel=\"stylesheet\" href=\"https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css\" >\n\
   <style>\n\
-    html {\n\
-      margin: 1em 2em;\n\
-    }\n\
-    h1 {\n\
-      font-size: 2.5em;\n\
-    }\n\
-    h2 {\n\
-      font-size: 2em;\n\
-    }\n\
-    h3 {\n\
-      font-size: 1.75em;\n\
-    }\n\
-    h4 {\n\
-      font-size: 1.5em;\n\
-    }\n\
-    h5 {\n\
-      font-size: 1.35em;\n\
-    }\n\
-    h6 {\n\
-      font-size: 1.25em;\n\
-    }\n\
-    h2 {\n\
-      margin-top: 4em;\n\
-      border-top: 1px solid grey;\n\
-      padding-top: 1em;\n\
-    }\n\
-    img {\n\
-      border: solid #b0cfff .5em;\n\
-      max-width: 70em;\n\
-      margin-left: auto;\n\
-      margin-right: auto;\n\
-      display: block;\n\
-    }\n\
-    figcaption {\n\
-      background-color: #325180;\n\
-      color: #fff;\n\
-      font-style: italic;\n\
-      padding: .2em;\n\
-      text-align: center;\n\
-    }\n\
-    figure {\n\
-      max-width: 70em;\n\
-      margin-left: 0;\n\
-      background-color: #c5d5ed;\n\
-    }\n\
-    blockquote {\n\
-      margin-left: 2em;\n\
-      margin-right: 2em;\n\
-      padding: 0.25em 4em;\n\
-      border: solid 4px #b0cfff;\n\
-      background-color: #ebf3ff;\n\
-      max-width: 66em;\n\
-    }\n\
-    em {\n\
-      background-color: #f7ffeb;\n\
-    }\n\
-    table {\n\
-      border: solid 2px black;\n\
-      text-align: left;\n\
-      border-collapse: collapse;\n\
-    }\n\
-    th, td {\n\
-      text-align: left;\n\
-      border: solid 1px grey;\n\
-      padding: 0.1em 0.5em;\n\
-      border-left: none;\n\
-      border-top: none;\n\
-    }\n\
-    table tr:nth-child(odd) {\n\
-      background: #eeeff0;\n\
-    }\n\
-    table th:last-child, table td:last-child {\n\
-      border-right: none;\n\
-    }\n\
-    table tr:last-child th, table tr:last-child td {\n\
-      border-bottom: none;\n\
-    }\n\
-    code {\n\
-      padding-left: 0.25em;\n\
-      padding-right: 0.25em;\n\
-      background-color: #daffdd;\n\
-    }\n\
-    table.leaders {\n\
-      border: solid 2px #b5c8e6;\n\
-      text-align: left;\n\
-      border-collapse: collapse;\n\
-     	width: auto;\n\
-      min-width: 64em;\n\
-	    margin: .5em auto .5em 0;\n\
-	    table-layout: fixed;\n\
-    }\n\
-    table.leaders th, table.leaders td {\n\
-      text-align: left;\n\
-      border: none;\n\
-      border-left: none;\n\
-      border-top: none;\n\
-      white-space: nowrap;\n\
-      padding: .1em .5em;\n\
-      width: auto;\n\
-      vertical-align: bottom;\n\
-    }\n\
-    table.leaders tr:nth-child(odd) {\n\
-      background: #f8fcff;\n\
-    }\n\
-    table.leaders th:last-child, table.leaders  td:last-child {\n\
-      border-right: none;\n\
-      white-space: break-spaces;\n\
-      text-align  left;\n\
-      padding-left: .5em;\n\
-    }\n\
-    table.leaders th:nth-child(2), table.leaders  td:nth-child(2) {\n\
-      border-right: none;\n\
-      white-space: break-spaces;\n\
-      text-align  left;\n\
-      padding-left: .5em;\n\
-      width: 11.5em;\n\
-    }\n\
-    table.leaders  tr:last-child th, table.leaders  tr:last-child td {\n\
-      border-bottom: none;\n\
-      width: auto;\n\
-      max-width: 60%%;\n\
-    }\n\
-    table.leaders td:first-child {\n\
-      text-align: left;\n\
-      overflow: hidden;\n\
-      position: relative;\n\
-      padding-right: 2em;\n\
-    }\n\
-    table.leaders td:first-child::after {\n\
-      content: '';\n\
-      position: absolute;\n\
-      bottom: calc(.2em + 2px);\n\
-      width: 100%%;\n\
-      margin-left: .5em;\n\
-      border-bottom: 2px dotted grey;\n\
-    }\n\
+  %s\n\
+  </style>\n\
+  <style>\n\
+  %s\n\
+  </style>\n\
+  <style>\n\
+  %s\n\
   </style>\n\
 </head>\n\
 <body>\n\
@@ -1511,16 +1516,19 @@ namespace tesseract {
 <p>Data directory: %s</p>\n\
 <p>Main directory: %s</p>\n\
 ",
+        html_styling(tesseract_->datadir, "normalize.css").c_str(),
+        html_styling(tesseract_->datadir, "modern-normalize.css").c_str(),
+        html_styling(tesseract_->datadir, "diag-report.css").c_str(),
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown(tesseract_->input_file_path).c_str(),
-        check_unknown(tesseract_->imagebasename).c_str(),
-        check_unknown(tesseract_->imagefile).c_str(),
+        check_unknown_and_encode(tesseract_->input_file_path).c_str(),
+        check_unknown_and_encode(tesseract_->imagebasename).c_str(),
+        check_unknown_and_encode(tesseract_->imagefile).c_str(),
         tesseract_->lang.c_str(),
         languages.str().c_str(),
-        check_unknown(tesseract_->language_data_path_prefix).c_str(),
-        check_unknown(tesseract_->datadir).c_str(),
-        check_unknown(tesseract_->directory).c_str()
+        check_unknown_and_encode(tesseract_->language_data_path_prefix).c_str(),
+        check_unknown_and_encode(tesseract_->datadir).c_str(),
+        check_unknown_and_encode(tesseract_->directory).c_str()
       );
 
       plf::nanotimer image_clock;
@@ -1578,21 +1586,28 @@ namespace tesseract {
 
       double report_span_time = report_clock.get_elapsed_ns();
       double grand_total_time = grand_clock.clock.get_elapsed_ns();
-      fprintf(html, "\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took %f sec (including all application preparation / overhead: %f sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9); 
+
+      std::string section_timings_intro_msg;
+      if (is_nonnegligible_difference(total_time_elapsed_ns, grand_total_time)) {
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec (including all application preparation / overhead: {:.6f} sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9);
+      } else {
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec.</p>\n\n", total_time_elapsed_ns / 1E9);
+      }
+      fputs(section_timings_intro_msg.c_str(), html);
 
       std::string img_timings_msg;
       for (int i = 0; i < image_series_elapsed_ns.size(); i++) {
-        img_timings_msg += fmt::format("<li>Image #{}: {} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
+        img_timings_msg += fmt::format("<li>Image #{}: {:.6f} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
       }
 
       std::string timing_report_msg = fmt::format(
           "<p>\n"
-        "Re overhead costs: the above total time ({} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {} sec, alas). It took {} sec before tesseract was ready to report.\n"
+        "Re overhead costs: the above total time ({:.6f} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {:.6f} sec, alas). It took {:.6f} sec before tesseract was ready to report.\n"
           "</p><p>\n"
-          "While producing this HTML diagnotics log report took {} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
+          "While producing this HTML diagnotics log report took {:.6f} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
           "</p><ul>\n"
-          "<li> saving a <em>lossless</em> WEBP copy of the source image: {} sec </li>\n"
-              "<li> plus the other images @ {} sec total:\n"
+          "<li> saving a <em>lossless</em> WEBP copy of the source image: {:.6f} sec </li>\n"
+              "<li> plus the other images @ {:.6f} sec total:\n"
           "<br>\n"
           "<ul>\n{}\n</ul></li>\n"
           "\n",
@@ -1604,10 +1619,7 @@ namespace tesseract {
           total_images_production_cost / 1E9,
           img_timings_msg);
       
-      std::string sectiontiming_summary_msg = fmt::format(
-          "\n\n\n<div class=\"timing-summary\">\n"
-          "<h6>Timing summary</h6>\n"
-          "<pre>\n",
+      std::string sectiontiming_summary_msg = 
           "<p>You can always reduce these overhead numbers by <em>turning off</em> the tesseract debug parameters which help produce these support images, e.g.:</p>"
           "<ul>\n"
         "<li><code>tessedit_dump_pageseg_images</code></li>\n"
@@ -1618,7 +1630,7 @@ namespace tesseract {
           "</ul>\n"
           "<p>Tip: you also often can gain extra speed by <em>turning off</em> any other debug/diagnostics parameters that are currently active and in use. The latter can be easily observed by the per-section parameter usage reports that are part of this HTML diagnostics/log report: see the designated sections &amp; tables to see which sections took a major chunk of the total time and which parameters may habe been involved.</p>\n"
           "<p>Thank you for using tesseract. Enjoy!</p>\n"
-        );
+        ;
 
       fputs(timing_report_msg.c_str(), html);
 
@@ -1630,7 +1642,7 @@ namespace tesseract {
           indent += "&ensp;";
         }
         section_timings_msg += fmt::format(
-            "<tr><td>{}</td><td>{}{}</td><td>{}</td><td>{}</td></tr>\n",
+            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{:.6f}</td><td class=\"timing-value\">{:.6f}</td></tr>\n",
             step.level, indent, step.title,
             step.elapsed_ns / 1E9, step.elapsed_ns_cummulative / 1E9);
       }
@@ -1646,32 +1658,50 @@ namespace tesseract {
 
       fputs(section_timings_msg.c_str(), html);
 
+      // get the cummulative for "Process Pages" subsection:
+      double proc_pages_time = time_elapsed_until_report;
+      for (const auto &step : steps) {
+        if (step.title == "Process pages") {
+          proc_pages_time = step.elapsed_ns_cummulative;
+          break;
+        }
+      }
+
       std::string timing_summary_msg = fmt::format(
               "\n\n\n<div class=\"timing-summary\">\n"
           "<h6>Timing summary</h6>\n"
         "<pre>\n"
-        "Wall clock duration: {} sec.\n"
-        "Time until report: {} sec.\n"
-          "  - actual work: {} sec.\n"
-          "  - prep & misc. overhead: {} sec\n"
-          "Report production: {} sec.\n"
-          "\n"
-          "Cummulative work effort: {} sec\n"
-          "Overhead: {} sec\n"
-          "  - reported images production: {} sec\n"
-          "  - report text production: {} sec\n"
-          "  - misc.\n"
-          "</pre></div>\n",
+        "Wall clock duration:...................... {:10.6f} sec.\n"
+        "Time until report:........................ {:10.6f} sec.\n"
+        "  - actual work:.......................... {:10.6f} sec.\n"
+        "  - prep & misc. overhead:................ {:10.6f} sec\n"
+        "  - gap:unaccounted for (~ unidentified overhead):\n"
+        "    ...................................... {:10.6f} sec / {:10.6f} sec\n"
+        "Report production:........................ {:10.6f} sec.\n"
+        "\n"
+        "Cummulative work effort:.................. {:10.6f} sec\n"
+        "Overhead:................................. {:10.6f} sec\n"
+        "  - reported images production:........... {:10.6f} sec\n"
+        "  - report text production + I/O:......... {:10.6f} sec\n"
+        "  - misc + I/O:........................... {:10.6f} sec\n"
+          "</pre>\n"
+        "{}"
+        "</div>\n",
       grand_total_time / 1E9, 
         time_elapsed_until_report / 1E9, 
-        total_time_elapsed_ns / 1E9, 
-        (time_elapsed_until_report - total_time_elapsed_ns) / 1E9,
-        report_span_time / 1E9,
+        proc_pages_time / 1E9, 
+        (time_elapsed_until_report - proc_pages_time) / 1E9,
+          (grand_total_time - total_time_elapsed_ns) / 1E9,
+          (grand_total_time - time_elapsed_until_report - report_span_time) / 1E9,
+          report_span_time / 1E9,
 
-        time_elapsed_until_report / 1E9, 
-       (grand_total_time - time_elapsed_until_report) / 1E9,
+        proc_pages_time / 1E9, 
+       (grand_total_time - proc_pages_time) / 1E9,
           (source_image_elapsed_ns + total_images_production_cost) / 1E9,
-          ((grand_total_time - time_elapsed_until_report) - (source_image_elapsed_ns + total_images_production_cost)) / 1E9
+          (report_span_time - (source_image_elapsed_ns + total_images_production_cost)) / 1E9,
+          (grand_total_time - proc_pages_time - report_span_time) / 1E9,
+
+        sectiontiming_summary_msg
         );
 
       fputs(timing_summary_msg.c_str(), html);
