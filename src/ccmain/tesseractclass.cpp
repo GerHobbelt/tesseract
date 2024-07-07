@@ -557,14 +557,8 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   for (auto &sub_lang : sub_langs_) {
     sub_lang->Clear(invoked_by_destructor);
   }
-  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
-    pixa_debug_.WriteHTML(file_path.c_str());
-
-    pixa_debug_.Clear(invoked_by_destructor);
-    ClearPixForDebugView();
-  }
-  else if (invoked_by_destructor) {
+  ReportDebugInfo();
+  if (invoked_by_destructor) {
     pixa_debug_.Clear(invoked_by_destructor);
     ClearPixForDebugView();
   }
@@ -874,15 +868,17 @@ void Tesseract::ResyncVariablesInternally() {
 }
 
 void Tesseract::ReportDebugInfo() {
-    if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-        AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
-
-        std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
-        pixa_debug_.WriteHTML(file_path.c_str());
-
-        ClearPixForDebugView();
-        pixa_debug_.Clear();
+  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+    if (GetPixForDebugView() != nullptr) {
+      AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
     }
+
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
+    pixa_debug_.WriteHTML(file_path.c_str());
+
+    ClearPixForDebugView();
+    pixa_debug_.Clear();
+  }
 }
 
 } // namespace tesseract
