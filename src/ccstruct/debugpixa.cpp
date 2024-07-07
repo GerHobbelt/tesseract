@@ -39,6 +39,32 @@ namespace tesseract {
     ".png";
 #endif
 
+  // enforce the use of our own basic char checks; MSVC RTL ones barf with
+  //    minkernel\crts\ucrt\src\appcrt\convert\isctype.cpp(36) : Assertion failed: c >= -1 && c <= 255
+  // thanks to char being signed and incoming UTF8 bytes. Plus I don't want to be Unicode/codepage sensitive
+  // in here by using iswalpha() et al.
+
+  static inline bool isalpha(int c) {
+    c &= 0x20;
+    return c >= 'A' && c <= 'Z';
+  }
+
+  static inline bool isdigit(int c) {
+    return c >= '0' && c <= '9';
+  }
+
+  static inline bool isalnum(int c) {
+    return isalpha(c) || isdigit(c);
+  }
+
+  static inline bool isspace(int c) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == 0;
+  }
+
+  static inline bool ispunct(int c) {
+    return strchr("!():;,.?", c) != nullptr;
+  }
+
   static bool is_nonnegligible_difference(double t1, double t2) {
     auto d = t1; // do NOT use std::max(t1, t2) as we're focusing on T1 as the leading number in our caller!
     auto delta = fabs(t2 - t1);
@@ -1275,6 +1301,7 @@ namespace tesseract {
         }
       })();
 
+#if 0
       Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
 #if !GENERATE_WEBP_IMAGES
       /* With best zlib compression (9), get between 1 and 10% improvement
@@ -1283,7 +1310,7 @@ namespace tesseract {
        * pix->special falls in the range [10 ... 19]; then subtract 10
        * to get the compression value.  */
       pixSetSpecial(img, 10 + 1);
-      pixWrite(img_filename, img, IFF_PNG);
+      pixWrite(img_filename.c_str(), img, IFF_PNG);
 #else
       FILE *fp = fopen(img_filename.c_str(), "wb+");
       if (!fp) {
@@ -1297,6 +1324,7 @@ namespace tesseract {
       }
 #endif
       img.destroy();
+#endif
       fputs(
         fmt::format("<section class=\"image-display\">\n\
   <h6>image #{:02d}: {}</h6>\n\
