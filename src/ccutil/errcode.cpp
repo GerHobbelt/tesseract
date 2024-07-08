@@ -22,6 +22,8 @@
 
 namespace tesseract {
 
+#pragma optimize("", off)
+
 constexpr ERRCODE BADERRACTION("Illegal error action");
 #define MAX_MSG 1024
 
