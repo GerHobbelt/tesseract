@@ -726,6 +726,8 @@ bool find_best_dropout_row( // find neighbours
   if ((distance < 0 && !row_it->at_last()) || (distance >= 0 && !row_it->at_first())) {
     row_offset = row_inc;
     do {
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+      ASSERT_HOST(row_offset < INT8_MAX && row_offset >= INT8_MIN);
       next_row = row_it->data_relative(row_offset);
       next_index = static_cast<int32_t>(std::floor(next_row->intercept()));
       if ((distance < 0 && next_index < line_index &&
