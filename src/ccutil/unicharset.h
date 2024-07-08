@@ -261,6 +261,9 @@ public:
   // Return a string that reformats the utf8 str into the str followed
   // by its hex unicodes.
   static std::string debug_utf8_str(const char *str);
+  static std::string debug_utf8_str(const std::string& str) {
+    return debug_utf8_str(str.c_str());
+  }
 
   // Removes/replaces content that belongs in rendered text, but not in the
   // unicharset.

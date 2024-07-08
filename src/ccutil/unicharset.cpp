@@ -302,7 +302,16 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
   }
   // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
   if (static_cast<unsigned>(id) >= this->size()) {
-    return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size()).c_str();
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      // nasty way of making this string storage "permanent enough" so that it can outlive this function call for a while.  *yech!*
+      // we get away with it because, until now, all occurrences of section being hit were for
+      //    id == this->size()
+      // which is now handled above; this is for those rarest of cases where we're looking at a completely b0rked system anyway.
+      static std::string oor = fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+      return oor.c_str();
+    }
   }
   return unichars[id].representation;
 }
@@ -313,7 +322,16 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
   }
   // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
   if (static_cast<unsigned>(id) >= this->size()) {
-    return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size()).c_str();
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      // nasty way of making this string storage "permanent enough" so that it can outlive this function call for a while.  *yech!*
+      // we get away with it because, until now, all occurrences of section being hit were for
+      //    id == this->size()
+      // which is now handled above; this is for those rarest of cases where we're looking at a completely b0rked system anyway.
+      static std::string oor = fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+      return oor.c_str();
+    }
   }
   // Resolve from the kCustomLigatures table if this is a private encoding.
   if (get_isprivate(id)) {
@@ -360,6 +378,14 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
 std::string UNICHARSET::debug_str(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return std::string(id_to_unichar(id));
+  }
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+    }
   }
   const CHAR_FRAGMENT *fragment = this->get_fragment(id);
   if (fragment) {
