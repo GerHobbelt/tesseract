@@ -717,7 +717,8 @@ private:
                           // for repeated blobs in this row yet
 };
 
-ELIST2IZEH(TO_ROW)
+// warning C4946: reinterpret_cast used between related classes: 'tesseract::ELIST2_LINK' and 'tesseract::TO_ROW'
+ELIST2IZEH(TO_ROW);
 class TESS_API TO_BLOCK : public ELIST_LINK {
 public:
   TO_BLOCK() : pitch_decision(PITCH_DUNNO) {

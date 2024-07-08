@@ -235,7 +235,7 @@ ELISTIZEH(BLOB_CHOICE);
 BLOB_CHOICE *FindMatchingChoice(UNICHAR_ID char_id, BLOB_CHOICE_LIST *bc_list);
 
 // Permuter codes used in WERD_CHOICEs.
-enum PermuterType {
+enum PermuterType : int {
   NO_PERM,           // 0
   PUNC_PERM,         // 1
   TOP_CHOICE_PERM,   // 2

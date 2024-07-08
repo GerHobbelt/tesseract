@@ -79,6 +79,9 @@ public:
 
   ~WERD() = default;
 
+  WERD(const WERD &source) noexcept = delete;
+  WERD(WERD &&source) noexcept = delete;
+
   // assignment
   WERD &operator=(const WERD &source);
 
@@ -200,7 +203,7 @@ private:
   C_BLOB_LIST rej_cblobs; // DUFF blobs
 };
 
-ELIST2IZEH(WERD)
+ELIST2IZEH(WERD);
 
 } // namespace tesseract
 

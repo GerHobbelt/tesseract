@@ -21,4 +21,8 @@ namespace tesseract {
 // instead of weak vtables in every compilation unit.
 MutableIterator::~MutableIterator() = default;
 
+MutableIterator &MutableIterator::operator = (const MutableIterator &source) = default;
+MutableIterator::MutableIterator(const MutableIterator &source) = default;
+MutableIterator::MutableIterator(MutableIterator &&source) noexcept = default;
+
 } // namespace tesseract.

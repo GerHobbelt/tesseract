@@ -194,6 +194,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         continue;
       case PT_NOISE:
         ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }

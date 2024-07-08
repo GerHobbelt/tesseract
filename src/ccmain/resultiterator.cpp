@@ -518,6 +518,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
       level = RIL_WORD; // we've fallen through to the next word.
     }
       // Fall through.
+      [[fallthrough]];
     case RIL_WORD: // explicit fall-through.
     {
       if (it_->word() == nullptr) {

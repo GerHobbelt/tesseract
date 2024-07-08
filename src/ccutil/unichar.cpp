@@ -115,16 +115,20 @@ int UNICHAR::first_uni() const {
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 3:
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 2:
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 1:
       uni += static_cast<unsigned char>(*src++);
+      break;
   }
   uni -= utf8_offsets[len];
   return uni;

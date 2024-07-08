@@ -2198,7 +2198,9 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
   rows[row].StrongHypotheses(&row_models);
 
   for (auto &row_model : row_models) {
-    bool all_starts = rows[row].GetLineType();
+    // TODO: GetLineType() produces one of {LT_UNKNOWN, LT_MULTIPLE, LT_START, LT_BODY} and hence `all_starts` is always `true` here.
+    auto lt = rows[row].GetLineType();
+    bool all_starts = (lt == LT_START);
     int run_length = 1;
     bool continues = true;
     for (int i = row - 1; i >= 0 && continues; i--) {
@@ -2216,6 +2218,7 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
         case LT_UNKNOWN: // explicit fall-through
         default:
           continues = false;
+          break;
       }
     }
     continues = true;
@@ -2234,6 +2237,7 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
         case LT_UNKNOWN: // explicit fall-through
         default:
           continues = false;
+          break;
       }
     }
     if (run_length > 2 || (!all_starts && run_length > 1)) {

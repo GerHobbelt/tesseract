@@ -706,6 +706,11 @@ struct MATRIX_COORD {
   MATRIX_COORD(int c, int r) : col(c), row(r) {}
   ~MATRIX_COORD() = default;
 
+  // warning C5267: definition of implicit assignment operator for 'tesseract::MATRIX_COORD' is deprecated because it has a user-provided destructor
+  MATRIX_COORD(const MATRIX_COORD &src) noexcept = default;
+  MATRIX_COORD(MATRIX_COORD &&src) noexcept = default;
+  MATRIX_COORD &operator=(const MATRIX_COORD &src) noexcept = default;
+
   bool Valid(const MATRIX &m) const {
     return 0 <= col && col < m.dimension() && col <= row && row < col + m.bandwidth() &&
            row < m.dimension();

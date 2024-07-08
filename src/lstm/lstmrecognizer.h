@@ -383,8 +383,12 @@ public:
   void SetDebug(int v) {
 	debug_ = std::max(0, v);
   }
-  int HasDebug() const {
-	  return debug_;
+  // because both the name and several spots where this is used suggest boolean behaviour.  warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+  bool HasDebug(int threshold = 0) const {
+	  return debug_ > threshold;
+  }
+  int GetDebugLevel() const {
+    return debug_;
   }
 
 protected:

@@ -447,7 +447,8 @@ protected:
   // Escapes each of the given characters with a \, so it can be processed by LUA.
   static std::string AddEscapeChars(const char *input, const char *chars_to_escape);
   static std::string AddEscapeChars(const std::string &input, const char *chars_to_escape) {
-    return std::move(AddEscapeChars(input.c_str(), chars_to_escape));
+    // warning C5263 : calling 'std::move' on a temporary object prevents copy elision
+    return AddEscapeChars(input.c_str(), chars_to_escape);
   }
 
 protected:
