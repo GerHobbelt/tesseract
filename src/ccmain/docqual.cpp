@@ -397,7 +397,8 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
       // Forget earlier potential crunches
       prev_potential_marked = false;
     } else {
-      ok_dict_word = safe_dict_word(word);
+      // warning C4800: Implicit conversion from 'int16_t' to bool. Possible information loss
+      ok_dict_word = (safe_dict_word(word) != 0);
       garbage_level = garbage_word(word, ok_dict_word);
 
       if ((garbage_level != G_NEVER_CRUNCH) && (terrible_word_crunch(word, garbage_level))) {
@@ -662,6 +663,7 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
         case FIRST_NUM:
           isolated_digits++;
           // Fall through.
+          [[fallthrough]];
         default:
           state = FIRST_UPPER;
           last_char = word->uch_set->unichar_to_id(str, *lengths);
@@ -692,6 +694,7 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
         case FIRST_NUM:
           isolated_digits++;
           // Fall through.
+          [[fallthrough]];
         default:
           state = FIRST_LOWER;
           last_char = word->uch_set->unichar_to_id(str, *lengths);
@@ -704,12 +707,14 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
       switch (state) {
         case FIRST_NUM:
           state = SUBSEQUENT_NUM;
+          break;
         case SUBSEQUENT_NUM:
           break;
         case FIRST_UPPER:
         case FIRST_LOWER:
           isolated_alphas++;
           // Fall through.
+          [[fallthrough]];
         default:
           state = FIRST_NUM;
           break;
@@ -727,6 +732,7 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
         case FIRST_UPPER:
         case FIRST_LOWER:
           isolated_alphas++;
+          break;
         default:
           break;
       }
@@ -741,6 +747,7 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
     case FIRST_UPPER:
     case FIRST_LOWER:
       isolated_alphas++;
+      break;
     default:
       break;
   }

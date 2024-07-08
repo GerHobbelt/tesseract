@@ -76,13 +76,13 @@ ELISTIZEH(WERD_RES)
  *************************************************************************/
 class PAGE_RES { // page result
 public:
-  int32_t char_count;
-  int32_t rej_count;
+  int32_t char_count = 0;
+  int32_t rej_count = 0;
   BLOCK_RES_LIST block_res_list;
-  bool rejected;
+  bool rejected = false;
   // Updated every time PAGE_RES_IT iterating on this PAGE_RES moves to
   // the next word. This pointer is not owned by PAGE_RES class.
-  WERD_CHOICE **prev_word_best_choice;
+  WERD_CHOICE **prev_word_best_choice = nullptr;
   // Sums of blame reasons computed by the blamer.
   std::vector<int> blame_reasons;
   // Debug information about all the misadaptions on this page.
@@ -117,13 +117,13 @@ public:
 
 class BLOCK_RES : public ELIST_LINK {
 public:
-  BLOCK *block;       // real block
-  int32_t char_count; // chars in block
-  int32_t rej_count;  // rejected chars
-  int16_t font_class; //
-  int16_t row_count;
-  float x_height;
-  bool font_assigned; // block already
+  BLOCK *block = nullptr;       // real block
+  int32_t char_count = 0; // chars in block
+  int32_t rej_count = 0;  // rejected chars
+  int16_t font_class = 0; //
+  int16_t row_count = 0;
+  float x_height = 0;
+  bool font_assigned = false; // block already
   //      processed
 
   ROW_RES_LIST row_res_list;
@@ -141,10 +141,10 @@ public:
 
 class ROW_RES : public ELIST_LINK {
 public:
-  ROW *row;                     // real row
-  int32_t char_count;           // chars in block
-  int32_t rej_count;            // rejected chars
-  int32_t whole_word_rej_count; // rejs in total rej wds
+  ROW *row = nullptr;               // real row
+  int32_t char_count = 0;           // chars in block
+  int32_t rej_count = 0;            // rejected chars
+  int32_t whole_word_rej_count = 0; // rejs in total rej wds
   WERD_RES_LIST word_res_list;
 
   ROW_RES() = default;

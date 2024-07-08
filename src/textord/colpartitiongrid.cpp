@@ -1091,7 +1091,7 @@ void ColPartitionGrid::FindFigureCaptions() {
           AlignedBlob::WithinTestRegion(2, part_box.left(), part_box.bottom());
       ColPartition *best_caption = nullptr;
       int best_dist = 0;  // Distance to best_caption.
-      int best_upper = 0; // Direction of best_caption.
+      bool best_upper = false; // Direction of best_caption.
       // Handle both lower and upper directions.
       for (int upper = 0; upper < 2; ++upper) {
         ColPartition_C_IT partner_it(upper ? part->upper_partners()
@@ -1127,7 +1127,7 @@ void ColPartitionGrid::FindFigureCaptions() {
             if (best_caption == nullptr || dist < best_dist) {
               best_dist = dist;
               best_caption = partner;
-              best_upper = upper;
+              best_upper = (upper != 0);
             }
           }
         }
@@ -1156,6 +1156,7 @@ void ColPartitionGrid::FindFigureCaptions() {
           }
           ++line_count;
           total_height += partner->bounding_box().height();
+          // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
           next_partner = partner->SingletonPartner(best_upper);
           if (next_partner != nullptr) {
             int gap =
@@ -1197,6 +1198,7 @@ void ColPartitionGrid::FindFigureCaptions() {
               tprintf("Set caption type for partition:");
               partner->bounding_box().print();
             }
+            // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
             next_partner = partner->SingletonPartner(best_upper);
           }
         }

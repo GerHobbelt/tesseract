@@ -30,8 +30,8 @@
 
 namespace tesseract {
 void Tesseract::tess_segment_pass_n(int pass_n, WERD_RES *word) {
-  int saved_enable_assoc = 0;
-  int saved_chop_enable = 0;
+  bool saved_enable_assoc = false;
+  bool saved_chop_enable = false;
 
   if (word->word->flag(W_DONT_CHOP)) {
     saved_enable_assoc = wordrec_enable_assoc;

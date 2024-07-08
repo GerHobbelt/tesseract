@@ -819,8 +819,8 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintf("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }
@@ -941,8 +941,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
 
     if (LEVELFLAG > 0 || (POLYGONFLAG && !skewed_flag)) {
       // Sort wordpolygons
-      word_top_pts = RecalcPolygonline(word_top_pts, 1 - ttb_flag);
-      word_bottom_pts = RecalcPolygonline(word_bottom_pts, 0 + ttb_flag);
+      // 
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+      word_top_pts = RecalcPolygonline(word_top_pts, !ttb_flag);
+      word_bottom_pts = RecalcPolygonline(word_bottom_pts, ttb_flag);
 
       // AppendLinePolygon
       AppendLinePolygon(line_top_ltr_pts, line_top_rtl_pts, word_top_pts,
@@ -1024,13 +1026,13 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       }
       if ((POLYGONFLAG && !skewed_flag) || LEVELFLAG > 0) {
         // Recalc Polygonlines
-        line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, 1 - ttb_flag);
+        line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, !ttb_flag);
         line_bottom_ltr_pts =
-            RecalcPolygonline(line_bottom_ltr_pts, 0 + ttb_flag);
+            RecalcPolygonline(line_bottom_ltr_pts, ttb_flag);
 
         // Smooth the polygonline
-        SimplifyLinePolygon(line_top_ltr_pts, 5, 1 - ttb_flag);
-        SimplifyLinePolygon(line_bottom_ltr_pts, 5, 0 + ttb_flag);
+        SimplifyLinePolygon(line_top_ltr_pts, 5, !ttb_flag);
+        SimplifyLinePolygon(line_bottom_ltr_pts, 5, ttb_flag);
 
         // Fit linepolygon matching the baselinepoints
         line_baseline_pts = SortBaseline(line_baseline_pts, writing_direction);

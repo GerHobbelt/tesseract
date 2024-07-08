@@ -47,8 +47,13 @@ public:
                   int rect_left, int rect_top, int rect_width, int rect_height)
       : ResultIterator(LTRResultIterator(page_res, tesseract, scale, scaled_yres, rect_left,
                                          rect_top, rect_width, rect_height)) {}
-  ~MutableIterator() override;
+  virtual ~MutableIterator() override;
 
+  // warning C5267: definition of implicit copy constructor for 'tesseract::MutableIterator' is deprecated because it has a user-provided destructor
+  MutableIterator &operator=(const MutableIterator &source);
+  MutableIterator(const MutableIterator &source);
+  MutableIterator(MutableIterator &&source) noexcept;
+  
   // See PageIterator and ResultIterator for most calls.
 
   // Return access to Tesseract internals.

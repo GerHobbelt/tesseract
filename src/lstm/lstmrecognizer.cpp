@@ -345,6 +345,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   inputs->set_int_mode(IsIntMode());
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {

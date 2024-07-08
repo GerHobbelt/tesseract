@@ -78,13 +78,15 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
       ASSERT_HOST(uch_id != INVALID_UNICHAR_ID);
       ++num_unigrams;
       word->append_unichar_id(uch_id, 1, 0.0, 0.0);
-      unigrams_ok = (this->*letter_is_okay_)(&unigram_dawg_args, *word->unicharset(),
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+      PermuterType lio = (this->*letter_is_okay_)(&unigram_dawg_args, *word->unicharset(),
                                              word->unichar_id(word_index + num_unigrams - 1),
                                              word_ending && i == encoding.size() - 1);
+      unigrams_ok = (lio != NO_PERM);
       (*unigram_dawg_args.active_dawgs) = *(unigram_dawg_args.updated_dawgs);
       if (dawg_debug_level) {
-        tprintf("unigram %s is %s\n", getUnicharset().debug_str(uch_id).c_str(),
-                unigrams_ok ? "OK" : "not OK");
+        tprintf("unigram %s is %s(%d)\n", getUnicharset().debug_str(uch_id).c_str(),
+                unigrams_ok ? "OK" : "not OK", int(lio));
       }
     }
     // Restore the word and copy the updated dawg state if needed.

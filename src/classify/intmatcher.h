@@ -17,6 +17,10 @@
 #ifndef INTMATCHER_H
 #define INTMATCHER_H
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #include "intproto.h"
 #include "params.h"
 

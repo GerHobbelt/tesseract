@@ -51,6 +51,13 @@ public:
   /// destructor
   ~ICOORD() = default;
 
+  // warning C5267: definition of implicit copy constructor for 'tesseract::ICOORD' is deprecated because it has a user-provided destructor
+  // warning C5267: definition of implicit assignment operator for 'tesseract::ICOORD' is deprecated because it has a user - provided destructor
+  ICOORD(ICOORD &src) noexcept = default;
+  ICOORD(const ICOORD &src) noexcept = default;
+  ICOORD(ICOORD &&src) noexcept = default;
+  ICOORD &operator =(const ICOORD &src) noexcept = default;
+
   bool DeSerialize(TFile *f);
   bool Serialize(TFile *f) const;
 
@@ -176,6 +183,11 @@ public:
     xcoord = xin;
     ycoord = yin;
   }
+  ~ICOORDELT() = default;
+
+  ICOORDELT &operator=(const ICOORDELT &source) = default;
+  ICOORDELT(const ICOORDELT &source) = default;
+  ICOORDELT(ICOORDELT &&source) = default;
 
   static ICOORDELT *deep_copy(const ICOORDELT *src) {
     auto *elt = new ICOORDELT;
@@ -202,6 +214,11 @@ public:
     xcoord = icoord.xcoord;
     ycoord = icoord.ycoord;
   }
+  ~FCOORD() = default;
+
+  FCOORD &operator=(const FCOORD &source) noexcept = default;
+  FCOORD(const FCOORD &source) noexcept = default;
+  FCOORD(FCOORD &&source) noexcept = default;
 
   float x() const { // get coords
     return xcoord;

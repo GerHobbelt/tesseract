@@ -44,6 +44,11 @@ public:
   SimpleStats() = default;
   ~SimpleStats() = default;
 
+  //  warning C5267: definition of implicit copy constructor for 'tesseract::SimpleStats' is deprecated because it has a user-provided destructor
+  SimpleStats &operator=(const SimpleStats &source) = default;
+  SimpleStats(const SimpleStats &source) = default;
+  SimpleStats(SimpleStats &&source) noexcept = default;
+
   void Clear() {
     values_.clear();
     finalized_ = false;
@@ -248,6 +253,7 @@ public:
   }
 
   bool delete_flag() const {
+    // warning C4800: Implicit conversion from 'const int' to bool. Possible information loss
     return delete_flag_;
   }
   void set_delete_flag(bool flag) {
@@ -279,7 +285,7 @@ private:
   // needs to be merged to the previous
   // character.
 
-  int delete_flag_; // True if this character is merged to another
+  bool delete_flag_; // True if this character is merged to another
                     // one and needs to be deleted.
 };
 
