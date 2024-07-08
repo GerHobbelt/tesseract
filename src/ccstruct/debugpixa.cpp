@@ -700,7 +700,8 @@ namespace tesseract {
     // set up the root info section:
     PushNextSection("Start a tesseract run");
 
-#ifdef TESSERACT_DISABLE_DEBUG_FONTS
+// warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
+#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
     fonts_ = NULL;
 #else
     fonts_ = bmfCreate(nullptr, 10);
@@ -739,7 +740,8 @@ namespace tesseract {
       int depth = pixGetDepth(pix);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-#ifdef TESSERACT_DISABLE_DEBUG_FONTS
+// warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
+#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
     int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
@@ -848,6 +850,7 @@ namespace tesseract {
     step.last_info_chunk = info_chunks.size() - 1;
     step.elapsed_ns += step.clock.get_elapsed_ns();
     step.clock.stop();
+    BANG();
 
     if (handle >= 0) {
       ASSERT0(handle < steps.size());
@@ -861,8 +864,10 @@ namespace tesseract {
       // now all we need is a fresh info_chunk:
       auto &info_ref = info_chunks.emplace_back();
       info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
+      BANG();
       return;
     }
+    BANG();
 
     auto level = step.level - 1; // level we seek
     if (handle < -1 || level < 0) {
@@ -873,6 +878,7 @@ namespace tesseract {
       // happens to be root: can't pop a root like that!  :-)
       idx++;
     }
+    BANG();
     for (idx--; idx >= 0; idx--)
     {
       auto& prev_step = steps[idx];
@@ -885,9 +891,11 @@ namespace tesseract {
         // now all we need is a fresh info_chunk:
         auto& info_ref = info_chunks.emplace_back();
         info_ref.appended_image_index = captions.size();     // neat way to get the number of images: every image comes with its own caption
+        BANG();
         return;
       }
     }
+    BANG();
 
     ASSERT_HOST_MSG(false, "Should never get here!\n");
     return;
@@ -1086,7 +1094,8 @@ namespace tesseract {
       mgr.registerFile(bin2cpp::getModernnormalizeCssFile);
       mgr.registerFile(bin2cpp::getDiagreportCssFile);
     }
-    for (auto i = mgr.getFileCount() - 1; i >= 0; i--) {
+    // warning C4296: '>=': expression is always true
+    for (int i = mgr.getFileCount() - 1; i >= 0; i--) {
       const auto built_in = mgr.getFile(i);
       if (filename == built_in->getFileName())
         return built_in->getBuffer();
@@ -1271,7 +1280,8 @@ namespace tesseract {
     }
     // trim the tail, after the clipping above.
     len--;
-    while (len >= 0 && strchr(".[(: ", s[len]))
+    // warning C4296: '>=': expression is always true
+    while (int(len) >= 0 && strchr(".[(: ", s[len]))
       len--;
     len++;
     std::string rv(s, len);
@@ -1509,7 +1519,9 @@ namespace tesseract {
   
   void DebugPixa::WriteHTML(const char* filename) {
     ASSERT0(tesseract_ != nullptr);
+    BANG();
     if (HasContent()) {
+      BANG();
       double time_elapsed_until_report = grand_clock.clock.get_elapsed_ns();
       plf::nanotimer report_clock;
       double source_image_elapsed_ns;
@@ -1816,8 +1828,10 @@ namespace tesseract {
 
       fputs("\n</body>\n</html>\n", html);
 
+  BANG();
       fclose(html);
     }
+    BANG();
   }
 
 
@@ -1854,6 +1868,7 @@ namespace tesseract {
   AutoPopDebugSectionLevel::~AutoPopDebugSectionLevel() {
     if (section_handle_ >= 0) {
       tesseract_->PopPixDebugSection(section_handle_);
+      BANG();
     }
   }
 
