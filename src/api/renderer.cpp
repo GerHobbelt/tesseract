@@ -119,7 +119,7 @@ void TessResultRenderer::AppendData(const char *s, int len) {
   if (!tesseract::Serialize(fout_, s, len)) {
     happy_ = false;
   }
-  fflush(fout_);
+  //fflush(fout_);  -- only slows down performance.
 }
 
 bool TessResultRenderer::BeginDocumentHandler() {
