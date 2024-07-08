@@ -315,4 +315,6 @@ bool Serialize(FILE *fp, const std::vector<T> &data) {
 
 } // namespace tesseract
 
+#define BANG() tprintError("Line: #{} : {} : {}\n", __LINE__, __FILE__, __FUNCTION__)
+
 #endif // TESSERACT_CCUTIL_HELPERS_H_

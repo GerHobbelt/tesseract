@@ -347,9 +347,9 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", params())
-    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", this->params())
-    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", this->params())
-    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", this->params())
+    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", params())
+    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", params())
+    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.", params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
@@ -868,17 +868,27 @@ void Tesseract::ResyncVariablesInternally() {
 }
 
 void Tesseract::ReportDebugInfo() {
+  BANG();
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+    BANG();
     if (GetPixForDebugView() != nullptr) {
       AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
     }
+    BANG();
 
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
+    BANG();
     pixa_debug_.WriteHTML(file_path.c_str());
 
+  BANG();
     ClearPixForDebugView();
-    pixa_debug_.Clear();
+  BANG();
+  pixa_debug_.Clear();
+  BANG();
   }
+  BANG();
+  BANG();
+  BANG();
 }
 
 } // namespace tesseract
