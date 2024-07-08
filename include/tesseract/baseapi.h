@@ -62,8 +62,12 @@ class Tesseract;
 // Returns false on failure.
 using FileReader = bool (*)(const char *filename, std::vector<char> *data);
 
-using DictFunc = int (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
+enum PermuterType : int;
+// function prototype:
+//   PermuterType Dict::letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id, bool word_end)
+using DictFunc = PermuterType (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
                                bool) const;
+
 using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
 
