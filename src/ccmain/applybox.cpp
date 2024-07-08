@@ -16,6 +16,10 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_TESSERACT_CONFIG_H
+#  include "config_auto.h"
+#endif
+
 #if !DISABLED_LEGACY_ENGINE
 #  include <leptonica/allheaders.h>
 #  include <cctype>
