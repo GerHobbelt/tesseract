@@ -26,6 +26,8 @@
 
 #include "svutil.h"
 
+#include <fmt/format.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -244,25 +246,18 @@ static const char *ScrollViewProg() {
 
 // The arguments to the program to invoke to start ScrollView
 static std::string ScrollViewCommand(const std::string &scrollview_path) {
+  std::string command;
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+  // warning C4774: 'snprintf' : format string expected in argument 3 is not a string literal
   // Quote our paths on Windows to deal with spaces
-#  ifdef _WIN32
-  const char cmd_template[] =
-      "-Djava.library.path=\"%s\" -jar \"%s/ScrollView.jar\"";
+  command = fmt::format("-Djava.library.path=\"{0}\" -jar \"{0}/ScrollView.jar\"", scrollview_path);
 #  else
-  const char cmd_template[] =
-      "-c \"trap 'kill %%1' 0 1 2 ; java "
-      "-Xms1024m -Xmx2048m -jar %s/ScrollView.jar"
-      " & wait\"";
+  command = fmt::format(
+      "-c \"trap 'kill %1' 0 1 2 ; java "
+      "-Xms1024m -Xmx2048m -jar {}/ScrollView.jar"
+      " & wait\"",
+      scrollview_path);
 #  endif
-  size_t cmdlen = sizeof(cmd_template) + 2 * scrollview_path.size() + 1;
-  std::vector<char> cmd(cmdlen);
-  const char *sv_path = scrollview_path.c_str();
-#  ifdef _WIN32
-  snprintf(&cmd[0], cmdlen, cmd_template, sv_path, sv_path);
-#  else
-  snprintf(&cmd[0], cmdlen, cmd_template, sv_path);
-#  endif
-  std::string command(&cmd[0]);
   return command;
 }
 
