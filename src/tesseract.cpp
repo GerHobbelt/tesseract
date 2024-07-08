@@ -56,6 +56,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include <fcntl.h>
 #  include <io.h>
+
 #  if defined(HAVE_TIFFIO_H)
 
 #    include <tiffio.h>
