@@ -862,6 +862,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       ClearBoxes(); // Get rid of them as they are garbage.
       const int kMaxTitleLength = 1024;
       char title[kMaxTitleLength];
+      // warning C4774: 'snprintf' : format string expected in argument 3 is not a string literal
       snprintf(title, kMaxTitleLength, kTitleTemplate, all_fonts[i].c_str(), ok_chars,
                100.0 * ok_chars / total_chars_, raw_score, 100.0 * raw_score / char_map_.size());
       tprintf("%s\n", title);
