@@ -112,7 +112,8 @@ public:
 // Definition of various parameter types.
 class Param {
 public:
-  ~Param() = default;
+  // warning C5204 : 'tesseract::Param' : class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
+  virtual ~Param() = default;
 
   const char *name_str() const {
     return name_;
@@ -154,7 +155,8 @@ public:
     params_vec_ = &(vec->int_params);
     vec->int_params.push_back(this);
   }
-  ~IntParam() {
+  // warning C4265 : 'tesseract::IntParam' : class has virtual functions, but its non-trivial destructor is not virtual; instances of this class may not be destructed correctly
+  virtual ~IntParam() {
     ParamUtils::RemoveParam<IntParam>(this, params_vec_);
   }
   operator int32_t() const {
@@ -196,7 +198,8 @@ public:
     params_vec_ = &(vec->bool_params);
     vec->bool_params.push_back(this);
   }
-  ~BoolParam() {
+  // warning C4265 : 'tesseract::BoolParam' : class has virtual functions, but its non - trivial destructor is not virtual; instances of this class may not be destructed correctly
+  virtual ~BoolParam() {
     ParamUtils::RemoveParam<BoolParam>(this, params_vec_);
   }
   operator bool() const {
@@ -239,7 +242,8 @@ public:
     params_vec_ = &(vec->string_params);
     vec->string_params.push_back(this);
   }
-  ~StringParam() {
+  // warning C4265 : 'tesseract::StringParam' : class has virtual functions, but its non - trivial destructor is not virtual; instances of this class may not be destructed correctly
+  virtual ~StringParam() {
     ParamUtils::RemoveParam<StringParam>(this, params_vec_);
   }
   operator std::string &() {
@@ -293,7 +297,8 @@ public:
     params_vec_ = &(vec->double_params);
     vec->double_params.push_back(this);
   }
-  ~DoubleParam() {
+  // warning C4265: 'tesseract::DoubleParam': class has virtual functions, but its non-trivial destructor is not virtual; instances of this class may not be destructed correctly
+  virtual ~DoubleParam() {
     ParamUtils::RemoveParam<DoubleParam>(this, params_vec_);
   }
   operator double() const {

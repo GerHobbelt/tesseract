@@ -164,7 +164,7 @@ void ParamContent::SetValue(const char *val) {
   if (param_type_ == VT_INTEGER) {
     iIt->set_value(atoi(val));
   } else if (param_type_ == VT_BOOLEAN) {
-    bIt->set_value(atoi(val));
+    bIt->set_value(atoi(val) != 0);
   } else if (param_type_ == VT_DOUBLE) {
     std::stringstream stream(val);
     // Use "C" locale for reading double value.
