@@ -70,6 +70,7 @@ DIR128::DIR128(     // from fcoord
       high = current;
     }
   } while (high - low > 1);
+  ASSERT_HOST(low == decltype(dir)(low));
   dir = low;
 }
 

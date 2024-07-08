@@ -72,6 +72,8 @@ float SORTED_FLOATS::operator[]( // get an entry
     int32_t index                // to list
 ) {
   it.move_to_first();
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+  ASSERT_HOST(index < INT8_MAX && index >= INT8_MIN);
   return it.data_relative(index)->entry;
 }
 

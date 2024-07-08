@@ -257,6 +257,10 @@ void *CLIST_ITERATOR::data_relative( // get data + or - ...
     ptr = prev;
   } else {
     for (ptr = current ? current : prev; offset-- > 0; ptr = ptr->next) {
+#ifndef NDEBUG
+      if (!ptr)
+        BAD_PARAMETER.error("CLIST_ITERATOR::data_relative", ABORT, "ptr == nullptr");
+#endif
       ;
     }
   }
