@@ -48,7 +48,11 @@ void Image::replace(Pix *pix) {
 
 Image& Image::operator =(Pix* pix) {
   if (pix_ != nullptr) {
-    pixDestroy(&pix_);
+  	// WARNING: fixing the heap corruptor by inadvertently triggering a double-free: while `Image` may LOOK like it's a class that *owns* the Pix pointer, it DOES NOT: it is merely a C++ wrapper around a leptonica pointer and currently little more than that.
+    //pixDestroy(&pix_);
+    _CrtCheckMemory();
+    int r = 1;
+    r++;
   }
   pix_ = pix;
   return *this;
