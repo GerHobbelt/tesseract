@@ -919,11 +919,11 @@ protected:
 
 protected:
   Image pix;
-  l_uint32 pen_color;
-  l_uint32 brush_color;
-  int x_offset;
-  int y_offset;
-  bool dirty;
+  l_uint32 pen_color = 0;
+  l_uint32 brush_color = 0;
+  int x_offset = 0;
+  int y_offset = 0;
+  bool dirty = false;
 
 #endif // !GRAPHICS_DISABLED
 };
