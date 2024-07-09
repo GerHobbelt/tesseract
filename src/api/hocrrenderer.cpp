@@ -17,7 +17,8 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
@@ -194,6 +195,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         continue;
       case PT_NOISE:
         ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }

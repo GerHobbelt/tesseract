@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "pithsync.h"
 
 #include "makerow.h"

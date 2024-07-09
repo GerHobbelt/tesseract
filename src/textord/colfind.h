@@ -304,16 +304,16 @@ private:
 private:
   // If true then the page language is cjk, so it is safe to perform
   // FixBrokenCJK.
-  bool cjk_script_;
+  bool cjk_script_ = false;
   // The minimum gutter width to apply for finding columns.
   // Modified when vertical text is detected to prevent detection of
   // vertical text lines as columns.
-  int min_gutter_width_;
+  int min_gutter_width_ = 0;
   // The mean gap between columns over the page.
-  int mean_column_gap_;
+  int mean_column_gap_ = 0;
   // Config param saved at construction time. Modifies min_gutter_width_ with
   // vertical text to prevent detection of vertical text as columns.
-  double tabfind_aligned_gap_fraction_;
+  double tabfind_aligned_gap_fraction_ = 0.0;
   // The rotation vector needed to convert original coords to deskewed.
   FCOORD deskew_;
   // The rotation vector needed to convert deskewed back to original coords.
@@ -329,9 +329,9 @@ private:
   PartSetVector column_sets_;
   // A simple array of pointers to the best assigned column division at
   // each grid y coordinate.
-  ColPartitionSet **best_columns_;
+  ColPartitionSet **best_columns_ = nullptr;
   // The grid used for creating initial partitions with strokewidth.
-  StrokeWidth *stroke_width_;
+  StrokeWidth *stroke_width_ = nullptr;
   // The grid used to hold ColPartitions after the columns have been determined.
   ColPartitionGrid part_grid_;
   // List of ColPartitions that are no longer needed after they have been
@@ -353,12 +353,12 @@ private:
   TextlineProjection projection_;
   // Sequence of DENORMS that indicate how to get back to the original image
   // coordinate space. The destructor must delete all the DENORMs in the chain.
-  DENORM *denorm_;
+  DENORM *denorm_ = nullptr;
 
   // The equation region detector pointer. Note: This pointer is passed in by
   // member function SetEquationDetect, and releasing it is NOT owned by this
   // class.
-  EquationDetectBase *equation_detect_;
+  EquationDetectBase *equation_detect_ = nullptr;
 
 #if !GRAPHICS_DISABLED
   // Various debug windows that automatically go away on completion.

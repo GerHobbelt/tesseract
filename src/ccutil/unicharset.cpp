@@ -16,11 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include <tesseract/debugheap.h>
 #include "unicharset.h"
 #include <tesseract/tprintf.h> // for tprintf
 
@@ -300,9 +297,18 @@ const char *UNICHARSET::id_to_unichar(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  if (id < 0 || static_cast<size_t>(id) >= this->size()) {
-	assert(0);
-    return OUTOFRANGE_UNICHAR;
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      // nasty way of making this string storage "permanent enough" so that it can outlive this function call for a while.  *yech!*
+      // we get away with it because, until now, all occurrences of section being hit were for
+      //    id == this->size()
+      // which is now handled above; this is for those rarest of cases where we're looking at a completely b0rked system anyway.
+      static std::string oor = fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+      return oor.c_str();
+    }
   }
   return unichars[id].representation;
 }
@@ -311,9 +317,18 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return INVALID_UNICHAR;
   }
-  if (id < 0 || static_cast<size_t>(id) >= this->size()) {
-	assert(0);
-    return OUTOFRANGE_UNICHAR;
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      // nasty way of making this string storage "permanent enough" so that it can outlive this function call for a while.  *yech!*
+      // we get away with it because, until now, all occurrences of section being hit were for
+      //    id == this->size()
+      // which is now handled above; this is for those rarest of cases where we're looking at a completely b0rked system anyway.
+      static std::string oor = fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+      return oor.c_str();
+    }
   }
   // Resolve from the kCustomLigatures table if this is a private encoding.
   if (get_isprivate(id)) {
@@ -331,24 +346,22 @@ const char *UNICHARSET::id_to_unichar_ext(UNICHAR_ID id) const {
 // Return a string that reformats the utf8 str into the string
 // followed by its set of hexadecimal unicode codepoints, within square brackets.
 std::string UNICHARSET::debug_utf8_str(const char *str) {
-  std::string result = str;
-  result += " [";
+  std::string result = fmt::format("`{}` [", str);
   int step = 1;
-  // Chop into unicodes and code each as hex.
   int i;
+  // Chop into unicodes and code each as hex.
   for (i = 0; str[i] != '\0'; i += step) {
-    char hex[sizeof(int) * 2 + 1];
+    char hex[sizeof(int) * 2 + 3];
     step = UNICHAR::utf8_step(str + i);
     if (step <= 1) {
       step = 1;
-      snprintf(hex, sizeof(hex), "$%02x", str[i]);
+      snprintf(hex, sizeof(hex), "$%02x ", str[i]);
     } else {
       UNICHAR ch(str + i, step);
-      snprintf(hex, sizeof(hex), "$%04x", ch.first_uni());
+      snprintf(hex, sizeof(hex), "$%02x ", ch.first_uni());
     }
-    hex[sizeof(hex) - 1] = 0;
+	hex[sizeof(hex) - 1] = 0;
     result += hex;
-    result += " ";
   }
   // drop the trailing space:
   if (i > 0) {
@@ -363,6 +376,14 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
 std::string UNICHARSET::debug_str(UNICHAR_ID id) const {
   if (id == INVALID_UNICHAR_ID) {
     return std::string(id_to_unichar(id));
+  }
+  // the next check will be hit by MATRIX::print() and possibly others; usually it happens where id == this->size()
+  if (static_cast<unsigned>(id) >= this->size()) {
+    if (static_cast<unsigned>(id) == this->size()) {
+      return "__END_OF_UNICHARSET__";
+    } else {
+      return fmt::format("__OUT_OF_RANGE_UNICHAR_{}/{}__", id, this->size());
+    }
   }
   const CHAR_FRAGMENT *fragment = this->get_fragment(id);
   if (fragment) {

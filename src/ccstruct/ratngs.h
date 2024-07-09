@@ -19,9 +19,7 @@
 #ifndef RATNGS_H
 #define RATNGS_H
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "clst.h"
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
@@ -241,7 +239,7 @@ ELISTIZEH(BLOB_CHOICE);
 BLOB_CHOICE *FindMatchingChoice(UNICHAR_ID char_id, BLOB_CHOICE_LIST *bc_list);
 
 // Permuter codes used in WERD_CHOICEs.
-enum PermuterType {
+enum PermuterType : int {
   NO_PERM,           // 0
   PUNC_PERM,         // 1
   TOP_CHOICE_PERM,   // 2

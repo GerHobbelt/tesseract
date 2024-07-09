@@ -17,9 +17,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file
-#ifdef HAVE_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "otsuthr.h"
 #include "thresholder.h"

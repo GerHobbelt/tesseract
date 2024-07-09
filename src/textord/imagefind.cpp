@@ -17,9 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "imagefind.h"
 
@@ -1193,7 +1191,7 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
     ColPartition_LIST part_list;
     DivideImageIntoParts(im_box, rotation, rerotation, pix, &rectsearch, &part_list);
     if (textord_tabfind_show_images) {
-      tesseract_->AddPixDebugPage(pix, "ImageComponent");
+      tesseract_->AddPixDebugPage(pix, "Find Image Partitions : ImageComponent");
       tprintDebug("Component has {} parts\n", part_list.length());
     }
     pix.destroy();

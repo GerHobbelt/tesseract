@@ -26,7 +26,7 @@ This is my basic code:
 #include <iostream>
 
 //tesseract includes
-#include "tesseract/baseapi.h"
+#include <tesseract/baseapi.h>
 
 //Leptonica includes
 #include <leptonica/allheaders.h>

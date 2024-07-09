@@ -17,9 +17,7 @@
 #ifndef TESSERACT_API_BASEAPI_H_
 #define TESSERACT_API_BASEAPI_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "export.h"
 #include "pageiterator.h"
@@ -66,8 +64,12 @@ class Tesseract;
 // Returns false on failure.
 using FileReader = bool (*)(const char *filename, std::vector<char> *data);
 
-using DictFunc = int (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
+enum PermuterType : int;
+// function prototype:
+//   PermuterType Dict::letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id, bool word_end)
+using DictFunc = PermuterType (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
                                bool) const;
+
 using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
 
@@ -287,7 +289,11 @@ public:
   bool GetVariableAsString(const char *name, std::string *val) const;
 
   /**
-   * Take all the internally gathered diagnostics data (including the tprintError/Warn/Info/Debug/Trace messages issued thus far, plus all collected image snapshots representing the intermediate state of the tesseract process at that time) and produce a HTML report from it for human consumption.
+   * Take all the internally gathered diagnostics data (including the
+   * tprintError/Warn/Info/Debug/Trace messages issued thus far, plus all
+   * collected image snapshots representing the intermediate state of the
+   * tesseract process at that time) and produce a HTML report from it
+   * for human consumption.
    */
   void FinalizeAndWriteDiagnosticsReport(); //  --> ReportDebugInfo()
 

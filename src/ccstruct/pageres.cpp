@@ -21,6 +21,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <leptonica/environ.h>
 #include <tesseract/assert.h>
 #include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY

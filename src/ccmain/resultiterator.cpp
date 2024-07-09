@@ -18,6 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/resultiterator.h>
 #include <tesseract/unichar.h>  // for U8 macro
 
@@ -512,6 +514,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
       }
     }
       // Fall through.
+      [[fallthrough]];
     case RIL_WORD: // explicit fall-through.
     {
       if (it_->word() == nullptr) {

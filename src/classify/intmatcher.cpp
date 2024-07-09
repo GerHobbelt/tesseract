@@ -15,9 +15,7 @@
  ******************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -1124,16 +1122,23 @@ void ScratchEvidence::NormalizeSums(INT_CLASS_STRUCT *ClassTemplate, int16_t Num
 int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const ScratchEvidence &tables,
                                   UnicharRating *result) {
   int best_match = 0;
+  bool debug = (*classify_debug_level_ > 2);
   result->config = 0;
   result->fonts.clear();
   result->fonts.reserve(class_template->NumConfigs);
 
   // Find best match.
   // ClassTemplate->NumConfigs can become larger than MAX_NUM_CONFIGS.
+  if (debug) {
+    for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
+      tprintDebug("Config {}    \t", c);
+    }
+    tprintDebug("Best match:\n  ");
+  }
   for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
     int rating = tables.sum_feature_evidence_[c];
-    if (*classify_debug_level_ > 2) {
-      tprintDebug("Config {}, rating={}\n", c, rating);
+    if (debug) {
+      tprintDebug("rating={}\t", rating);
     }
     if (rating > best_match) {
       result->config = c;
@@ -1144,6 +1149,10 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
 
   // Compute confidence on a Probability scale.
   result->rating = best_match / 65536.0f;
+
+  if (debug) {
+    tprintDebug("Config {}, best_match={}, rating={}\n", result->config, best_match, result->rating);
+  }
 
   return best_match;
 }

@@ -18,6 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "bitvector.h"
 #include <algorithm>
 #include <cstring>

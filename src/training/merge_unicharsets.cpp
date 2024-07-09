@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset.h"
 #include <tesseract/tprintf.h>

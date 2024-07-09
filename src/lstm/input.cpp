@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "input.h"
 
 #include <leptonica/allheaders.h>
@@ -144,7 +146,7 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
   }
   if (tess != nullptr && (verbose_process || tess->tessedit_dump_pageseg_images))
   {
-      tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
+      tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
   input->FromPix(shape, normed_pix, randomizer);
   normed_pix.destroy();

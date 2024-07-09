@@ -18,11 +18,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "colfind.h"
 
@@ -177,8 +173,9 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
   CCNonTextDetect nontext_detect(tesseract_, gridspacing, bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
+  // warning C4800: Implicit conversion from 'int32_t' to bool. Possible information loss
   nontext_map_ =
-      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
+      nontext_detect.ComputeNonTextMask(textord_debug_tabfind > 0, photo_mask_pix, input_block);
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();

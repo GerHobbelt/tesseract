@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h>    // compiler config, etc.
+
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  ifndef unlink
 #    include <io.h>
@@ -25,11 +27,6 @@
 #endif // _WIN32
 
 #include <cmath>
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 #include <leptonica/allheaders.h>
 #include "blobbox.h"
@@ -337,7 +334,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
       Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed; the black pixels what remain in this image will be treated as *text*");
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed; the black pixels what remain in this image will be treated as *text*.");
       tprintInfo("PROCESS: The black pixels what remain in the above image will be treated as *text pixels* by tesseract (after some denoising, column finding, etc. that follows next). Each area of black pixels will be collected as *bounding boxes* for the original source image pixel areas which will be clipped and fed into the OCR engine core for text recognition. See the '*Recognize (OCR)' section further below in thhe session log report.\n");
       pix_no_image_.destroy();
     }

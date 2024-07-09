@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "dict.h"
 
 #include <tesseract/tprintf.h>
@@ -431,7 +433,7 @@ void Dict::End() {
 // Returns true if in light of the current state unichar_id is allowed
 // according to at least one of the dawgs in the dawgs_ vector.
 // See more extensive comments in dict.h where this function is declared.
-int Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
+PermuterType Dict::def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset,
                              UNICHAR_ID unichar_id, bool word_end) const {
   auto *dawg_args = static_cast<DawgArgs *>(void_dawg_args);
 

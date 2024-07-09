@@ -15,9 +15,7 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cctype>
 #include <cmath>
@@ -58,6 +56,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
 
   bool no_dang_ambigs = !best_choice.dangerous_ambig_found();
   bool is_valid_word = valid_word_permuter(best_choice.permuter(), false);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   bool is_case_ok = case_ok(best_choice);
 
   if (stopper_debug_level >= 1) {

@@ -15,6 +15,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "validate_javanese.h"
 #include "errcode.h"
 #include <tesseract/tprintf.h>

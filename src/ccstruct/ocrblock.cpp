@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "ocrblock.h"
 
 #include "stepblob.h"

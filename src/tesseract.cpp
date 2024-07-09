@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cerrno> // for errno
 #if defined(__USE_GNU)
@@ -63,6 +61,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  include <fcntl.h>
 #  include <io.h>
+
 #  if defined(HAVE_TIFFIO_H)
 
 #    include <tiffio.h>
@@ -100,11 +99,9 @@ static void Win32WarningHandler(const char *module, const char *fmt, va_list ap)
 #endif // _WIN32
 
 static void PrintVersionInfo() {
-  const char *versionStrP;
-
   tprintInfo("tesseract {}\n", tesseract::TessBaseAPI::Version());
 
-  versionStrP = getLeptonicaVersion();
+  const char *versionStrP = getLeptonicaVersion();
   tprintInfo("  {}\n", versionStrP);
   stringDestroy(&versionStrP);
 
@@ -899,12 +896,6 @@ static inline auto format_as(WritingDirection d) {
 
 }
 
-void SetupDebugAllPreset(TessBaseAPI &api)
-{
-  if (debug_all) {
-    api.SetupDebugAllPreset();
-  }
-}
 
 /**********************************************************************
  *  main()
@@ -1089,22 +1080,6 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
       if (!SetVariablesFromCLArgs(api, args_muster)) {
         return EXIT_FAILURE;
-      }
-
-      // make sure the debug_all preset is set up BEFORE any command-line arguments
-      // direct tesseract to set some arbitrary parameters just below,
-      // for otherwise those `-c xyz=v` commands may be overruled by the
-      // debug_all preset!
-      if (debug_all) {
-        api.SetupDebugAllPreset();
-
-#if 0
-        // repeat the `-c var=val` load as debug_all MAY have overwritten some of
-        // these user-specified settings in the call above.
-        if (!SetVariablesFromCLArgs(api, vars_vec, vars_values)) {
-          return EXIT_FAILURE;
-        }
-#endif
       }
 
       Tesseract &tess = api.tesseract();

@@ -19,9 +19,7 @@
 #ifndef TESSERACT_WORDREC_WORDREC_H_
 #define TESSERACT_WORDREC_WORDREC_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if DISABLED_LEGACY_ENGINE
 

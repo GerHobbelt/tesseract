@@ -20,6 +20,8 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "dawg.h"
 
 #include "dict.h"

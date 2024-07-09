@@ -1,4 +1,6 @@
-// UTF-8: ö,ä,💩
+// UTF-8: ö,ä,💩,⏱️
+
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "debugpixa.h"
 #include "image.h"
@@ -15,6 +17,10 @@
 #include <sstream> // stringstream
 #include <iomanip> // put_time
 
+#include "out/HtmlResourceFileManager.h"
+#include "out/diag-report.h"
+#include "out/normalize.h"
+#include "out/modern-normalize.h"
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/fitz.h"
@@ -37,6 +43,41 @@ namespace tesseract {
 #else
     ".png";
 #endif
+
+  // enforce the use of our own basic char checks; MSVC RTL ones barf with
+  //    minkernel\crts\ucrt\src\appcrt\convert\isctype.cpp(36) : Assertion failed: c >= -1 && c <= 255
+  // thanks to char being signed and incoming UTF8 bytes. Plus I don't want to be Unicode/codepage sensitive
+  // in here by using iswalpha() et al.
+
+  static inline bool isalpha(int c) {
+    c &= 0x20;
+    return c >= 'A' && c <= 'Z';
+  }
+
+  static inline bool isdigit(int c) {
+    return c >= '0' && c <= '9';
+  }
+
+  static inline bool isalnum(int c) {
+    return isalpha(c) || isdigit(c);
+  }
+
+  static inline bool isspace(int c) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == 0;
+  }
+
+  static inline bool ispunct(int c) {
+    return strchr("!():;,.?", c) != nullptr;
+  }
+
+  static bool is_nonnegligible_difference(double t1, double t2) {
+    auto d = t1; // do NOT use std::max(t1, t2) as we're focusing on T1 as the leading number in our caller!
+    auto delta = fabs(t2 - t1);
+    if (delta <= 1E-6)
+      return false;
+    auto diffperunage = delta / d;
+    return diffperunage > 1E-4;
+  }
 
 #if defined(HAVE_MUPDF)
 
@@ -112,14 +153,40 @@ namespace tesseract {
           // Re the condition used below:
           //     (isalnum(message[-1]) || message[+1] == message[-1])
           // is to also catch when we're dealing with 'quoted' backquotes, such as in: '`', as then the quotes of any kind will both follow AND precede the backtick
-          if (message > start && !(isalnum(message[-1]) || message[+1] == message[-1])) {
+          if (message == start || !(isalnum(message[-1]) || (message[+1] == message[-1] && !isspace(message[+1])))) {
             pos = 0;
             do {
               pos++;
               auto pos2 = strcspn(message + pos, "\n`");
               pos += pos2;
-            } while (message[pos] == '`' && message[pos + 1] != 0 &&
-                     (isalnum(message[pos + 1]) || message[pos + 1] == message[pos - 1]));
+              // before we go, there's the scenario of "`.. ` ..`" to consider, i.e. message[pos] is a solitary backtick.
+              //
+              // The answer to that is usually relatively simple: when the number of backticks in both directions is equal, then
+              // it is. ('equal' as in either both odd or even count.) This is only a problem if the message[pos] backtick
+              // looks like a solitary one:
+              while (message[pos] == '`' && isspace(message[pos + 1]) && isspace(message[pos - 1])) {
+                int c1 = 0;
+                for (size_t i = pos + 1; message[i]; i++) {
+                  if (message[i] == '`')
+                    c1++;
+                }
+                int c2 = 1;
+                for (size_t i = 1; i < pos; i++) {
+                  if (message[i] == '`')
+                    c2++;
+                }
+                if (c1 % 2 == c2 % 2) {
+                  // solitary. move forward to skip over this one now.
+                  pos++;
+                  pos2 = strcspn(message + pos, "\n`");
+                  pos += pos2;
+                  continue;
+                }
+                break;
+              }
+            } while (message[pos] == '`' && message[pos + 1] != 0 && message[pos + 1] != '\n' &&
+                     (isalnum(message[pos + 1]) ||
+                       (message[pos + 1] == message[pos - 1] && !isspace(message[pos + 1]))));
 
             if (message[pos] == '`') {
               dst << "<code>";
@@ -314,7 +381,7 @@ namespace tesseract {
       // We tolerate about 50% lines without any TAB as a rough heuristic.
       tab_count_avg *= 128;
       tab_count_avg /= line_count;
-      if (tab_count_avg >= 64) {
+      if (tab_count_avg >= 64 && line_count >= 2) {
         tab_count_per_line_max++; // turns the max TAB count in a max column count.
 
         // Do it as a table; total column count equals tab_count_per_line_max
@@ -638,7 +705,8 @@ namespace tesseract {
     // set up the root info section:
     PushNextSection("Start a tesseract run");
 
-#ifdef TESSERACT_DISABLE_DEBUG_FONTS
+// warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
+#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
     fonts_ = NULL;
 #else
     fonts_ = bmfCreate(nullptr, 10);
@@ -677,7 +745,14 @@ namespace tesseract {
       int depth = pixGetDepth(pix);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-#ifdef TESSERACT_DISABLE_DEBUG_FONTS
+    {
+      int width = -1, height = -1, depth = -1;
+      int ok = pixGetDimensions(pix, &width, &height, &depth);
+      ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
+    }
+
+    // warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
+#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
     pixaAddPix(pixa_, pix, L_COPY);
 #else
     int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
@@ -850,13 +925,53 @@ namespace tesseract {
     return nullptr;
   }
 
-  static std::string check_unknown(const std::string& s, const char* default_value = "(unknown / nil)") {
-    if (s.empty())
-      return default_value;
-    return s;
+  static std::string encode_as_html(const std::string &str) {
+    std::string dst;
+    const char *start = str.c_str();
+    const char *message = start;
+    while (*message) {
+      auto pos = strcspn(message, "\n<>&");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        dst += particle;
+        message += pos;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          dst += "&lt;";
+          message++;
+          continue;
+
+        case '>':
+          dst += "&gt;";
+          message++;
+          continue;
+
+        case '&':
+          dst += "&amp;";
+          message++;
+          continue;
+
+        case '\n':
+          dst += "\n<br>";
+          message++;
+          continue;
+      }
+    }
+    return dst;
   }
 
-  static void SanitizeCaptionForFilenamePart(std::string& str) {
+  static std::string check_unknown_and_encode(const std::string& s, const char* default_value = "<em>(unknown / nil)</em>") {
+    if (s.empty())
+      return default_value;
+    return "<code>" + encode_as_html(s) + "</code>";
+  }
+
+  static std::string SanitizeFilenamePart(const std::string& srcstr) {
+    std::string str = srcstr;
     auto len = str.size();
     char* s = str.data();
     char* d = s;
@@ -865,11 +980,25 @@ namespace tesseract {
     for (int i = 0; i < len; i++, s++) {
       char c = *s;
 
-      if (isalnum(c) || c == '_' || c == '-') {
-        *d++ = *s;
+      if (isalnum(c)) {
+        *d++ = c;
+      } else if (c == '_' || c == '-' || c == '.') {
+        if (d > base) {
+          if (d[-1] != '.')
+            *d++ = c;
+        } else {
+          *d++ = c;
+        }
       } else {
-        if (d > base && d[-1] != '.')
+        if (d > base) {
+          if (strchr("-_.", d[-1])) {
+            d[-1] = '.';
+          } else {
+            *d++ = '.';
+          }
+        } else {
           *d++ = '.';
+        }
       }
     }
 
@@ -893,6 +1022,7 @@ namespace tesseract {
     }
 
     str.resize(len);
+    return str;
   }
 
   static inline int FADE(int val, const int factor) {
@@ -901,6 +1031,82 @@ namespace tesseract {
 
   static inline int MIX(int val1, int val2, const int factor) {
     return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
+  }
+
+
+  static std::string html_styling(const std::string &datadir, const std::string &filename) {
+    // first search if the HTML / CSS resource is available on your filesystem.
+    //
+    // When we cannot find it anywhere there, we take the built-in version as a fallback.
+    //
+    // Note that we ripped this chained-check approach from our Tesseract::read_config_file()
+    // so there's a refactor/dedup TODO lurking in here somewhere!   ;-)
+    std::string path = datadir;
+    path += "html-styling/";
+    path += filename;
+    tprintDebug("Read HTML Styling Partial: test if '{}' is a readable file: ", path);
+    FILE *fp;
+    if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+    } else {
+      path = datadir;
+      path += "tessconfigs/html-styling/";
+      path += filename;
+      tprintDebug(
+          "NO.\n"
+          "Read HTML Styling Partial: test if '{}' is a readable file: ",
+          path);
+      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+      } else {
+        path = filename;
+        tprintDebug(
+            "NO.\n"
+            "Read HTML Styling Partial: test if '{}' is a readable file: ",
+            path);
+        if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
+        } else {
+          tprintDebug("NO.\n");
+          tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked. Picking up the built-in default content instead.\n", filename);
+
+          goto get_built_in;
+        }
+      }
+    }
+    tprintDebug("YES\n");
+
+    // shut up error C2362: initialization of 'XYZ' is skipped by 'goto fetch_err'
+    {
+      if (fseek(fp, 0, SEEK_END))
+        goto fetch_err;
+      auto size = ftell(fp);
+      if (fseek(fp, 0, SEEK_SET))
+        goto fetch_err;
+      auto data = new uint8_t[size];
+      auto rdlen = fread(data, 1, size, fp);
+      if (rdlen != size)
+        goto fetch_err;
+      std::string content(reinterpret_cast<const char *>(data), size);
+      fclose(fp);
+      return content;
+    }
+
+  fetch_err:
+    tprintError("An error occurred while fetching the HTML Styling Partial from file `{}`. Error: {}\n", path, errno != 0 ? strerror(errno) : "?unidentified error?");
+  get_built_in:
+    auto &mgr = bin2cpp::FileManager::getInstance();
+    // has this thing been initialized yet?   If not, do it now.
+    if (mgr.getFileCount() == 0) {
+      mgr.registerFile(bin2cpp::getNormalizeCssFile);
+      mgr.registerFile(bin2cpp::getModernnormalizeCssFile);
+      mgr.registerFile(bin2cpp::getDiagreportCssFile);
+    }
+    // warning C4296: '>=': expression is always true
+    for (int i = mgr.getFileCount() - 1; i >= 0; i--) {
+      const auto built_in = mgr.getFile(i);
+      if (filename == built_in->getFileName())
+        return built_in->getBuffer();
+    }
+    ASSERT_HOST_MSG(false, "should never get here\n");
+    return "b0rked!";
   }
 
   PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
@@ -997,6 +1203,13 @@ namespace tesseract {
         }
       }
 
+      // constant fade factors:
+      const int red_factor = r_factor * 256;
+      const int green_factor = g_factor * 256;
+      const int blue_factor = b_factor * 256;
+      const int base_mix_factor = src_factor * 256;
+      const int bottom_mix_factor = background_factor * 256;
+
       auto datas = pixGetData(toplayer);
       auto datad = pixGetData(botlayer);
       auto wpls = pixGetWpl(toplayer);
@@ -1009,13 +1222,6 @@ namespace tesseract {
           // if top(SRC) is black, use that.
           // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use
           // that. if top(SRC) is white, and bot(DST) is white, use white.
-
-          // constant fade factors:
-          const int red_factor = r_factor * 256;
-          const int green_factor = g_factor * 256;
-          const int blue_factor = g_factor * 256;
-          const int base_mix_factor = src_factor * 256;
-          const int bottom_mix_factor = background_factor * 256;
 
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
@@ -1064,65 +1270,89 @@ namespace tesseract {
     return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
-  static void write_one_pix_for_html(FILE* html, int counter, const char* img_filename, const Image& pix, const char* title, const char* description, const TBOX *cliprect = nullptr, const Pix* original_image = nullptr)
-  {
-    if (!!pix) {
-    const char* pixfname = fz_basename(img_filename);
-    int w, h, depth;
-    pixGetDimensions(pix, &w, &h, &depth);
-    const char* depth_str = ([depth]() {
-      switch (depth) {
-      default:
-        ASSERT0(!"Should never get here!");
-        return "unidentified color depth (probably color paletted)";
-      case 1:
-        return "monochrome (binary)";
-      case 32:
-        return "full color + alpha";
-      case 24:
-        return "full color";
-      case 8:
-        return "color palette (256 colors)";
-      case 4:
-        return "color palette (16 colors)";
-      }
-    })();
-
-    Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
-#if !GENERATE_WEBP_IMAGES
-    /* With best zlib compression (9), get between 1 and 10% improvement
-      * over default (6), but the compression is 3 to 10 times slower.
-      * Use the zlib default (6) as our default compression unless
-      * pix->special falls in the range [10 ... 19]; then subtract 10
-      * to get the compression value.  */
-    pixSetSpecial(img, 10 + 1);
-    pixWrite(img_filename, img, IFF_PNG);
-#else
-    FILE *fp = fopen(img_filename, "wb+");
-    if (!fp) {
-      tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
-    } else {
-      auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
-      fclose(fp);
-      if (rv) {
-        tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
-      }
+  static std::string TruncatedForTitle(const std::string &str) {
+    if (str.size() < 70)
+      return str;
+    const char *s = str.c_str();
+    auto len = str.size();
+    for (;;) {
+      const char *p = strnrpbrk(const_cast<char *>(s), ".[(: ", len);
+      if (!p)
+        break;
+      len = p - s;
+      if (len < 70)
+        break;
     }
+    // trim the tail, after the clipping above.
+    len--;
+    // warning C4296: '>=': expression is always true
+    while (int(len) >= 0 && strchr(".[(: ", s[len]))
+      len--;
+    len++;
+    std::string rv(s, len);
+    return rv + "\u2026";  // append ellipsis
+  }
+
+  static void write_one_pix_for_html(FILE *html, int counter, const std::string &img_filename, const Image &pix, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr, const Pix *original_image = nullptr) {
+    if (!!pix) {
+      const char *pixfname = fz_basename(img_filename.c_str());
+      int w, h, depth;
+      pixGetDimensions(pix, &w, &h, &depth);
+      const char *depth_str = ([depth]() {
+        switch (depth) {
+          default:
+            ASSERT0(!"Should never get here!");
+            return "unidentified color depth (probably color paletted)";
+          case 1:
+            return "monochrome (binary)";
+          case 32:
+            return "full color + alpha";
+          case 24:
+            return "full color";
+          case 8:
+            return "color palette (256 colors)";
+          case 4:
+            return "color palette (16 colors)";
+        }
+      })();
+
+      Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
+#if !GENERATE_WEBP_IMAGES
+      /* With best zlib compression (9), get between 1 and 10% improvement
+       * over default (6), but the compression is 3 to 10 times slower.
+       * Use the zlib default (6) as our default compression unless
+       * pix->special falls in the range [10 ... 19]; then subtract 10
+       * to get the compression value.  */
+      pixSetSpecial(img, 10 + 1);
+      pixWrite(img_filename.c_str(), img, IFF_PNG);
+#else
+      FILE *fp = fopen(img_filename.c_str(), "wb+");
+      if (!fp) {
+        tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
+      } else {
+        auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
+        fclose(fp);
+        if (rv) {
+          tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+        }
+      }
 #endif
-    img.destroy();
-    fprintf(html, "<section>\n\
-  <h6>image #%02d: %s</h6>\n\
+      img.destroy();
+      fputs(
+        fmt::format("<section class=\"image-display\">\n\
+  <h6>image #{:02d}: {}</h6>\n\
   <figure>\n\
-    <img src=\"%s\" >\n\
-    <figcaption>size: %d x %d px; %s</figcaption>\n\
+    <img src=\"{}\" >\n\
+    <figcaption>size: {} x {} px; {}</figcaption>\n\
   </figure>\n\
-  <p>%s</p>\n\
+  <p>{}</p>\n\
 </section>\n",
-      counter, title,
-      pixfname,
-      (int) w, (int) h, depth_str,
-      description
-    );
+            counter, encode_as_html(title),
+            pixfname,
+            w, h, depth_str,
+            encode_as_html(description)
+        ).c_str(),
+        html);
     }
   }
 
@@ -1131,12 +1361,8 @@ namespace tesseract {
     image_clock.start();
 
     counter++;
-    char in[40];
-    snprintf(in, 40, ".img%04d", counter);
-    std::string caption = captions[idx];
-    SanitizeCaptionForFilenamePart(caption);
-    const char *cprefix = (caption.empty() ? "" : ".");
-    std::string fn(partname + in + cprefix + caption + IMAGE_EXTENSION);
+    const std::string caption = captions[idx];
+    std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION);
 
     Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
     if (pixs == nullptr) {
@@ -1154,15 +1380,14 @@ namespace tesseract {
       bgimg = tesseract_->pix_original();
     }
 
-    write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(), captions[idx].c_str());
+    write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption), caption);
 
     if (clip_area > 0 && false) {
       counter++;
-      snprintf(in, 40, ".img%04d", counter);
-      fn = partname + in + cprefix + caption + IMAGE_EXTENSION;
+      fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION;
 
-      write_one_pix_for_html(html, counter, fn.c_str(), pixs, caption.c_str(),
-                           captions[idx].c_str(), 
+      write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption),
+                           caption, 
                            &cliprect,
                            bgimg);
     }
@@ -1184,9 +1409,15 @@ namespace tesseract {
     ASSERT0(h_level >= 1);
     if (h_level > 5)
       h_level = 5;
-    fprintf(html, "\n\n<section>\n<h%d>%s</h%d>\n\n", h_level, title, h_level);
+    fputs(fmt::format("\n\n<section>\n<h{0}>{1}</h{0}>\n\n", h_level, title).c_str(), html);
 
-    fprintf(html, "<p class=\"timing-info\">This section of the tesseract run took %f sec (cummulative, i.e. including all subsections: %f sec.</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+      std::string section_timings_intro_msg;
+    if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
+        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec (cummulative, i.e. including all subsections: {:.6f} sec.)</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+    } else {
+      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec</p>\n\n", section_info.elapsed_ns / 1E9);
+    }
+    fputs(section_timings_intro_msg.c_str(), html);
 
     int next_section_index = current_section_index + 1;
     // special tweak for when we report (meta!) on our own report production:
@@ -1311,8 +1542,9 @@ namespace tesseract {
       report_clock.start();
 
       const char *ext = strrchr(filename, '.');
-      std::string partname(filename);
-      partname = partname.substr(0, ext - filename);
+      if (!ext)
+        ext = filename + strlen(filename);
+      std::string partname(filename, ext - filename);
       int counter = 0;
       const char *label = NULL;
 
@@ -1320,7 +1552,7 @@ namespace tesseract {
 
 	  ReportFile html(filename);
       if (!html) {
-        tprintError("cannot open diagnostics HTML output file %s: %s\n", filename, strerror(errno));
+        tprintError("cannot open diagnostics HTML output file {}: {}\n", filename, strerror(errno));
         return;
       }
 
@@ -1349,182 +1581,57 @@ namespace tesseract {
       // 
       // - CSS UL list with classic leader dots: based on https://www.w3.org/Style/Examples/007/leaders.en.html
       //
-      fprintf(html(), "<html>\n\
+      //   <link rel="stylesheet" href="https://unpkg.com/normalize.css@8.0.1/normalize.css" >
+      //   <link rel="stylesheet" href="https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css" >
+      //   <link rel="stylesheet" href="diag-report.css" >
+      fputs(fmt::format("<html>\n\
 <head>\n\
 	<meta charset=\"UTF-8\">\n\
   <title>Tesseract diagnostic image set</title>\n\
-  <link rel=\"stylesheet\" href=\"https://unpkg.com/normalize.css@8.0.1/normalize.css\" >\n\
-  <link rel=\"stylesheet\" href=\"https://unpkg.com/modern-normalize@1.1.0/modern-normalize.css\" >\n\
   <style>\n\
-    html {\n\
-      margin: 1em 2em;\n\
-    }\n\
-    h1 {\n\
-      font-size: 2.5em;\n\
-    }\n\
-    h2 {\n\
-      font-size: 2em;\n\
-    }\n\
-    h3 {\n\
-      font-size: 1.75em;\n\
-    }\n\
-    h4 {\n\
-      font-size: 1.5em;\n\
-    }\n\
-    h5 {\n\
-      font-size: 1.35em;\n\
-    }\n\
-    h6 {\n\
-      font-size: 1.25em;\n\
-    }\n\
-    h2 {\n\
-      margin-top: 4em;\n\
-      border-top: 1px solid grey;\n\
-      padding-top: 1em;\n\
-    }\n\
-    img {\n\
-      border: solid #b0cfff .5em;\n\
-      max-width: 70em;\n\
-      margin-left: auto;\n\
-      margin-right: auto;\n\
-      display: block;\n\
-    }\n\
-    figcaption {\n\
-      background-color: #325180;\n\
-      color: #fff;\n\
-      font-style: italic;\n\
-      padding: .2em;\n\
-      text-align: center;\n\
-    }\n\
-    figure {\n\
-      max-width: 70em;\n\
-      margin-left: 0;\n\
-      background-color: #c5d5ed;\n\
-    }\n\
-    blockquote {\n\
-      margin-left: 2em;\n\
-      margin-right: 2em;\n\
-      padding: 0.25em 4em;\n\
-      border: solid 4px #b0cfff;\n\
-      background-color: #ebf3ff;\n\
-      max-width: 66em;\n\
-    }\n\
-    em {\n\
-      background-color: #f7ffeb;\n\
-    }\n\
-    table {\n\
-      border: solid 2px black;\n\
-      text-align: left;\n\
-      border-collapse: collapse;\n\
-    }\n\
-    th, td {\n\
-      text-align: left;\n\
-      border: solid 1px grey;\n\
-      padding: 0.1em 0.5em;\n\
-      border-left: none;\n\
-      border-top: none;\n\
-    }\n\
-    table tr:nth-child(odd) {\n\
-      background: #eeeff0;\n\
-    }\n\
-    table th:last-child, table td:last-child {\n\
-      border-right: none;\n\
-    }\n\
-    table tr:last-child th, table tr:last-child td {\n\
-      border-bottom: none;\n\
-    }\n\
-    code {\n\
-      padding-left: 0.25em;\n\
-      padding-right: 0.25em;\n\
-      background-color: #daffdd;\n\
-    }\n\
-    table.leaders {\n\
-      border: solid 2px #b5c8e6;\n\
-      text-align: left;\n\
-      border-collapse: collapse;\n\
-     	width: auto;\n\
-      min-width: 64em;\n\
-	    margin: .5em auto .5em 0;\n\
-	    table-layout: fixed;\n\
-    }\n\
-    table.leaders th, table.leaders td {\n\
-      text-align: left;\n\
-      border: none;\n\
-      border-left: none;\n\
-      border-top: none;\n\
-      white-space: nowrap;\n\
-      padding: .1em .5em;\n\
-      width: auto;\n\
-      vertical-align: bottom;\n\
-    }\n\
-    table.leaders tr:nth-child(odd) {\n\
-      background: #f8fcff;\n\
-    }\n\
-    table.leaders th:last-child, table.leaders  td:last-child {\n\
-      border-right: none;\n\
-      white-space: break-spaces;\n\
-      text-align  left;\n\
-      padding-left: .5em;\n\
-    }\n\
-    table.leaders th:nth-child(2), table.leaders  td:nth-child(2) {\n\
-      border-right: none;\n\
-      white-space: break-spaces;\n\
-      text-align  left;\n\
-      padding-left: .5em;\n\
-      width: 11.5em;\n\
-    }\n\
-    table.leaders  tr:last-child th, table.leaders  tr:last-child td {\n\
-      border-bottom: none;\n\
-      width: auto;\n\
-      max-width: 60%%;\n\
-    }\n\
-    table.leaders td:first-child {\n\
-      text-align: left;\n\
-      overflow: hidden;\n\
-      position: relative;\n\
-      padding-right: 2em;\n\
-    }\n\
-    table.leaders td:first-child::after {\n\
-      content: '';\n\
-      position: absolute;\n\
-      bottom: calc(.2em + 2px);\n\
-      width: 100%%;\n\
-      margin-left: .5em;\n\
-      border-bottom: 2px dotted grey;\n\
-    }\n\
+  {}\n\
+  </style>\n\
+  <style>\n\
+  {}\n\
+  </style>\n\
+  <style>\n\
+  {}\n\
   </style>\n\
 </head>\n\
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract (version: %s) run @ %s</p>\n\
-<p>Input image file path: %s</p>\n\
-<p>Output base: %s</p>\n\
-<p>Input image path: %s</p>\n\
-<p>Primary Language: %s</p>\n\
-%s\
-<p>Language Data Path Prefix: %s</p>\n\
-<p>Data directory: %s</p>\n\
-<p>Main directory: %s</p>\n\
+<p>tesseract (version: {}) run @ {}</p>\n\
+<p>Input image file path: {}</p>\n\
+<p>Output base: {}</p>\n\
+<p>Input image path: {}</p>\n\
+<p>Primary Language: {}</p>\n\
+{}\
+<p>Language Data Path Prefix: {}</p>\n\
+<p>Data directory: {}</p>\n\
+<p>Main directory: {}</p>\n\
 ",
+        html_styling(tesseract_->datadir, "normalize.css").c_str(),
+        html_styling(tesseract_->datadir, "modern-normalize.css").c_str(),
+        html_styling(tesseract_->datadir, "diag-report.css").c_str(),
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown(tesseract_->input_file_path_).c_str(),
-        check_unknown(tesseract_->imagebasename_).c_str(),
-        check_unknown(tesseract_->imagefile_).c_str(),
+        check_unknown_and_encode(tesseract_->input_file_path).c_str(),
+        check_unknown_and_encode(tesseract_->imagebasename).c_str(),
+        check_unknown_and_encode(tesseract_->imagefile).c_str(),
         tesseract_->lang_.c_str(),
         languages.str().c_str(),
-        check_unknown(tesseract_->language_data_path_prefix_).c_str(),
-        check_unknown(tesseract_->datadir_).c_str(),
-        check_unknown(tesseract_->directory_).c_str()
-      );
+        check_unknown_and_encode(tesseract_->language_data_path_prefix).c_str(),
+        check_unknown_and_encode(tesseract_->datadir).c_str(),
+        check_unknown_and_encode(tesseract_->directory).c_str()
+      ).c_str(), html);
 
       plf::nanotimer image_clock;
       image_clock.start();
       {
-        std::string fn(partname + ".img-original." + IMAGE_EXTENSION);
+        std::string fn(partname + SanitizeFilenamePart(".img-original.") + IMAGE_EXTENSION);
 
-        write_one_pix_for_html(html(), 0, fn.c_str(), tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
+        write_one_pix_for_html(html, 0, fn, tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
       }
       source_image_elapsed_ns = image_clock.get_elapsed_ns();
 
@@ -1574,21 +1681,28 @@ namespace tesseract {
 
       double report_span_time = report_clock.get_elapsed_ns();
       double grand_total_time = grand_clock.clock.get_elapsed_ns();
-      fprintf(html, "\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took %f sec (including all application preparation / overhead: %f sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9); 
+
+      std::string section_timings_intro_msg;
+      if (is_nonnegligible_difference(total_time_elapsed_ns, grand_total_time)) {
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec (including all application preparation / overhead: {:.6f} sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9);
+      } else {
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec.</p>\n\n", total_time_elapsed_ns / 1E9);
+      }
+      fputs(section_timings_intro_msg.c_str(), html);
 
       std::string img_timings_msg;
       for (int i = 0; i < image_series_elapsed_ns.size(); i++) {
-        img_timings_msg += fmt::format("<li>Image #{}: {} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
+        img_timings_msg += fmt::format("<li>Image #{}: {:.6f} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
       }
 
       std::string timing_report_msg = fmt::format(
           "<p>\n"
-        "Re overhead costs: the above total time ({} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {} sec, alas). It took {} sec before tesseract was ready to report.\n"
+        "Re overhead costs: the above total time ({:.6f} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {:.6f} sec, alas). It took {:.6f} sec before tesseract was ready to report.\n"
           "</p><p>\n"
-          "While producing this HTML diagnotics log report took {} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
+          "While producing this HTML diagnotics log report took {:.6f} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
           "</p><ul>\n"
-          "<li> saving a <em>lossless</em> WEBP copy of the source image: {} sec </li>\n"
-              "<li> plus the other images @ {} sec total:\n"
+          "<li> saving a <em>lossless</em> WEBP copy of the source image: {:.6f} sec </li>\n"
+              "<li> plus the other images @ {:.6f} sec total:\n"
           "<br>\n"
           "<ul>\n{}\n</ul></li>\n"
           "\n",
@@ -1600,10 +1714,7 @@ namespace tesseract {
           total_images_production_cost / 1E9,
           img_timings_msg);
       
-      std::string sectiontiming_summary_msg = fmt::format(
-          "\n\n\n<div class=\"timing-summary\">\n"
-          "<h6>Timing summary</h6>\n"
-          "<pre>\n",
+      std::string sectiontiming_summary_msg = 
           "<p>You can always reduce these overhead numbers by <em>turning off</em> the tesseract debug parameters which help produce these support images, e.g.:</p>"
           "<ul>\n"
         "<li><code>tessedit_dump_pageseg_images</code></li>\n"
@@ -1614,7 +1725,7 @@ namespace tesseract {
           "</ul>\n"
           "<p>Tip: you also often can gain extra speed by <em>turning off</em> any other debug/diagnostics parameters that are currently active and in use. The latter can be easily observed by the per-section parameter usage reports that are part of this HTML diagnostics/log report: see the designated sections &amp; tables to see which sections took a major chunk of the total time and which parameters may habe been involved.</p>\n"
           "<p>Thank you for using tesseract. Enjoy!</p>\n"
-        );
+        ;
 
       fputs(timing_report_msg.c_str(), html);
 
@@ -1626,7 +1737,7 @@ namespace tesseract {
           indent += "&ensp;";
         }
         section_timings_msg += fmt::format(
-            "<tr><td>{}</td><td>{}{}</td><td>{}</td><td>{}</td></tr>\n",
+            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{:.6f}</td><td class=\"timing-value\">{:.6f}</td></tr>\n",
             step.level, indent, step.title,
             step.elapsed_ns / 1E9, step.elapsed_ns_cummulative / 1E9);
       }
@@ -1642,32 +1753,50 @@ namespace tesseract {
 
       fputs(section_timings_msg.c_str(), html);
 
+      // get the cummulative for "Process Pages" subsection:
+      double proc_pages_time = time_elapsed_until_report;
+      for (const auto &step : steps) {
+        if (step.title == "Process pages") {
+          proc_pages_time = step.elapsed_ns_cummulative;
+          break;
+        }
+      }
+
       std::string timing_summary_msg = fmt::format(
               "\n\n\n<div class=\"timing-summary\">\n"
           "<h6>Timing summary</h6>\n"
         "<pre>\n"
-        "Wall clock duration: {} sec.\n"
-        "Time until report: {} sec.\n"
-          "  - actual work: {} sec.\n"
-          "  - prep & misc. overhead: {} sec\n"
-          "Report production: {} sec.\n"
-          "\n"
-          "Cummulative work effort: {} sec\n"
-          "Overhead: {} sec\n"
-          "  - reported images production: {} sec\n"
-          "  - report text production: {} sec\n"
-          "  - misc.\n"
-          "</pre></div>\n",
+        "Wall clock duration:...................... {:10.6f} sec.\n"
+        "Time until report:........................ {:10.6f} sec.\n"
+        "  - actual work:.......................... {:10.6f} sec.\n"
+        "  - prep & misc. overhead:................ {:10.6f} sec\n"
+        "  - gap:unaccounted for (~ unidentified overhead):\n"
+        "    ...................................... {:10.6f} sec / {:10.6f} sec\n"
+        "Report production:........................ {:10.6f} sec.\n"
+        "\n"
+        "Cummulative work effort:.................. {:10.6f} sec\n"
+        "Overhead:................................. {:10.6f} sec\n"
+        "  - reported images production:........... {:10.6f} sec\n"
+        "  - report text production + I/O:......... {:10.6f} sec\n"
+        "  - misc + I/O:........................... {:10.6f} sec\n"
+          "</pre>\n"
+        "{}"
+        "</div>\n",
       grand_total_time / 1E9, 
         time_elapsed_until_report / 1E9, 
-        total_time_elapsed_ns / 1E9, 
-        (time_elapsed_until_report - total_time_elapsed_ns) / 1E9,
-        report_span_time / 1E9,
+        proc_pages_time / 1E9, 
+        (time_elapsed_until_report - proc_pages_time) / 1E9,
+          (grand_total_time - total_time_elapsed_ns) / 1E9,
+          (grand_total_time - time_elapsed_until_report - report_span_time) / 1E9,
+          report_span_time / 1E9,
 
-        time_elapsed_until_report / 1E9, 
-       (grand_total_time - time_elapsed_until_report) / 1E9,
+        proc_pages_time / 1E9, 
+       (grand_total_time - proc_pages_time) / 1E9,
           (source_image_elapsed_ns + total_images_production_cost) / 1E9,
-          ((grand_total_time - time_elapsed_until_report) - (source_image_elapsed_ns + total_images_production_cost)) / 1E9
+          (report_span_time - (source_image_elapsed_ns + total_images_production_cost)) / 1E9,
+          (grand_total_time - proc_pages_time - report_span_time) / 1E9,
+
+        sectiontiming_summary_msg
         );
 
       fputs(timing_summary_msg.c_str(), html);

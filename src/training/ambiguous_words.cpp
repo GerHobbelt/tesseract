@@ -20,6 +20,8 @@
 ///////////////////////////////////////////////////////////////////////
 //
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "dict.h"
 #include "tesseractclass.h"

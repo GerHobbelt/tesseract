@@ -261,6 +261,9 @@ public:
   // Return a string that reformats the utf8 str into the str followed
   // by its hex unicodes.
   static std::string debug_utf8_str(const char *str);
+  static std::string debug_utf8_str(const std::string& str) {
+    return debug_utf8_str(str.c_str());
+  }
 
   // Removes/replaces content that belongs in rendered text, but not in the
   // unicharset.
@@ -511,7 +514,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isalpha;
   }
 
@@ -520,7 +526,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.islower;
   }
 
@@ -529,7 +538,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isupper;
   }
 
@@ -538,7 +550,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isdigit;
   }
 
@@ -547,7 +562,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.ispunctuation;
   }
 
@@ -556,7 +574,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isngram;
   }
 
@@ -790,7 +811,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return nullptr;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return nullptr;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.fragment;
   }
 

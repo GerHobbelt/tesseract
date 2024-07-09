@@ -16,7 +16,8 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 #include "helpers.h"        // for copy_string

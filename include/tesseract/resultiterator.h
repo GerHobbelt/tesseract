@@ -37,7 +37,7 @@ public:
    * ResultIterator is copy constructible!
    * The default copy constructor works just fine for us.
    */
-  ~ResultIterator() override = default;
+  virtual ~ResultIterator() override = default;
 
   // ============= Moving around within the page ============.
   /**

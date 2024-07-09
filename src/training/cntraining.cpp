@@ -19,6 +19,8 @@
 /*----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/unichar.h>
 #include <cmath>
 #include <cstdio>

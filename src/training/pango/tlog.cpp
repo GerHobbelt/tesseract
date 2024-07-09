@@ -18,6 +18,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "tlog.h"
 
 using namespace tesseract;

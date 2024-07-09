@@ -16,12 +16,8 @@
  *
  **********************************************************************/
 
-#define _USE_MATH_DEFINES // for M_PI
-
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <tesseract/debugheap.h>
 #include "boxword.h"    // for BoxWord
@@ -264,23 +260,10 @@ TessBaseAPI::TessBaseAPI()
       rect_height_(0),
       image_width_(0),
       image_height_(0) {
-  // make sure the debug_all preset is set up BEFORE any command-line arguments
-  // direct tesseract to set some arbitrary parameters just below,
-  // for otherwise those `-c xyz=v` commands may be overruled by the
-  // debug_all preset!
-  debug_all.set_on_modify_handler([this](decltype(debug_all) &target,
-                                         const int32_t old_value,
-                                         int32_t &new_value,
-                                         const int32_t default_value,
-                                         ParamSetBySourceType source_type,
-                                         ParamPtr optional_setter) {
-    this->SetupDebugAllPreset();
-  });
 }
 
 TessBaseAPI::~TessBaseAPI() {
   End();
-  debug_all.set_on_modify_handler(0);
 }
 
 /**
@@ -1996,7 +1979,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
       } else {
         p1 = GetInputImage();
       }
-      tess.AddPixDebugPage(p1, fmt::format("(normalized) image to process @ graynorm_mode = {}", graynorm_mode));
+      tess.AddPixDebugPage(p1, fmt::format("Greyscale normalized image to process @ graynorm_mode = {}", graynorm_mode));
     }
   }
 
@@ -3004,7 +2987,17 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         const char *sequence = "c1.1 + d3.3";
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} (just an example to showcase what leptonica can do for us!)", sequence));
+        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
+
+        l_int32 w, h, d;
+        Image composite = tesseract_->pix_grey().copy();
+        pixGetDimensions(composite, &w, &h, &d);
+        Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
+        pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
+        tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", sequence));
+
+        mask.destroy();
+        composite.destroy();
         pix_post.destroy();
       }
 	  } else {

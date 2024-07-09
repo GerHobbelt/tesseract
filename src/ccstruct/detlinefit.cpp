@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "detlinefit.h"
 #include "helpers.h"    // for IntCastRounded
 #include "statistc.h"

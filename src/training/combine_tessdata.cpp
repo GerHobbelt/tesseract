@@ -18,9 +18,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "lstmrecognizer.h"

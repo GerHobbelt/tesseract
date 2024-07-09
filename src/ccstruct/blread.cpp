@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blread.h"
 
 #include "ocrblock.h"  // for BLOCK_IT, BLOCK, BLOCK_LIST (ptr only)

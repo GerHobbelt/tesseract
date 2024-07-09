@@ -16,9 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "lstmrecognizer.h"
 
@@ -275,7 +273,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+	search_->SetDebug(GetDebugLevel() - 1);
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
@@ -366,6 +364,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   SetRandomSeed();
   Input::PreparePixInput(tesseract_, network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
@@ -565,7 +564,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
                                        std::vector<int> *xcoords) {
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+	search_->SetDebug(GetDebugLevel() - 1);
   }
   search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2 /* 0 */);
   search_->ExtractBestPathAsLabels(labels, xcoords);

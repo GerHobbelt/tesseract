@@ -15,7 +15,7 @@
  ** limitations under the License.
  *****************************************************************************/
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "clusttool.h"
 

@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <leptonica/allheaders.h>
 #include <tesseract/pageiterator.h>
 #include "helpers.h"
@@ -299,6 +301,7 @@ bool PageIterator::BoundingBoxInternal(PageIteratorLevel level, int *left,
     case RIL_PARA:
       para = it_->row()->row->para();
       // Fall through.
+      [[fallthrough]];
     case RIL_TEXTLINE:
       box = it_->row()->row->restricted_bounding_box(include_upper_dots_,
                                                      include_lower_dots_);

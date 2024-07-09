@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "polyaprx.h"
 
 #include "blobs.h"   // for EDGEPT, TPOINT, VECTOR, TESSLINE

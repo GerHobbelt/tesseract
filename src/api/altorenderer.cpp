@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
 
@@ -189,6 +190,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
         continue;
       case PT_NOISE:
         ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }

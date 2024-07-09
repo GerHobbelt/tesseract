@@ -14,6 +14,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  ifndef unlink
 #    include <io.h>

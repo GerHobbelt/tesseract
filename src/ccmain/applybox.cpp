@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #if !DISABLED_LEGACY_ENGINE
 #  include <leptonica/allheaders.h>
 #  include <cctype>

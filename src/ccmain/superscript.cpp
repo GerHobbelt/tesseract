@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "normalis.h"
 #include "tesseractclass.h"
 #include "blobs.h"

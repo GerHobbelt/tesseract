@@ -38,18 +38,25 @@ class ICOORD {
 
 public:
   /// empty constructor
-  ICOORD() {
-    xcoord = ycoord = 0; // default zero
+  ICOORD()
+      : xcoord(0), ycoord(0) {
+    // default zero
   }
   /// constructor
   ///@param xin x value
   ///@param yin y value
-  ICOORD(TDimension xin, TDimension yin) {
-    xcoord = xin;
-    ycoord = yin;
+  ICOORD(TDimension xin, TDimension yin)
+      : xcoord(xin), ycoord(yin) {
   }
   /// destructor
   ~ICOORD() = default;
+
+  // warning C5267: definition of implicit copy constructor for 'tesseract::ICOORD' is deprecated because it has a user-provided destructor
+  // warning C5267: definition of implicit assignment operator for 'tesseract::ICOORD' is deprecated because it has a user - provided destructor
+  ICOORD(ICOORD &src) noexcept = default;
+  ICOORD(const ICOORD &src) noexcept = default;
+  ICOORD(ICOORD &&src) noexcept = default;
+  ICOORD &operator =(const ICOORD &src) noexcept = default;
 
   bool DeSerialize(TFile *f);
   bool Serialize(TFile *f) const;
@@ -176,6 +183,11 @@ public:
     xcoord = xin;
     ycoord = yin;
   }
+  ~ICOORDELT() = default;
+
+  ICOORDELT &operator=(const ICOORDELT &source) = default;
+  ICOORDELT(const ICOORDELT &source) = default;
+  ICOORDELT(ICOORDELT &&source) = default;
 
   static ICOORDELT *deep_copy(const ICOORDELT *src) {
     auto *elt = new ICOORDELT;
@@ -189,19 +201,26 @@ ELISTIZEH(ICOORDELT);
 class TESS_API FCOORD {
 public:
   /// empty constructor
-  FCOORD() = default;
+  FCOORD()
+      : xcoord(0.0), ycoord(0.0)
+  {}
   /// constructor
   ///@param xvalue x value
   ///@param yvalue y value
-  FCOORD(float xvalue, float yvalue) {
-    xcoord = xvalue; // set coords
-    ycoord = yvalue;
+  FCOORD(float xvalue, float yvalue)
+      : xcoord(xvalue), ycoord(yvalue) {
+    // set coords
   }
   FCOORD(              // make from ICOORD
       ICOORD icoord) { // coords to set
     xcoord = icoord.xcoord;
     ycoord = icoord.ycoord;
   }
+  ~FCOORD() = default;
+
+  FCOORD &operator=(const FCOORD &source) noexcept = default;
+  FCOORD(const FCOORD &source) noexcept = default;
+  FCOORD(FCOORD &&source) noexcept = default;
 
   float x() const { // get coords
     return xcoord;

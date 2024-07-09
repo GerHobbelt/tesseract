@@ -18,6 +18,8 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "seam.h"
 
 #include "blobs.h"

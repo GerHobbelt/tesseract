@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <tesseract/tprintf.h>
 
@@ -159,8 +157,31 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
 
   auto msg = fmt::vformat(format, args);
 
+  if (pending_grouping_count) {
+    if (msg_buffer.ends_with('\n')) {
+      // Fixup: every 'clustered' error/warning message MUST, individually, be prefixed with ERROR/WARNING
+      // for rapid unambiguous identification by the human final receiver.
+      switch (level) {
+        case T_LOG_ERROR:
+          if (!msg.starts_with("ERROR: ")) {
+            msg_buffer += "ERROR: ";
+          }
+          break;
+
+        case T_LOG_WARN:
+          if (!msg.starts_with("WARNING: ")) {
+            msg_buffer += "WARNING: ";
+          }
+          break;
+
+        default:
+          break;
+      }
+    }
+  }
   msg_buffer += msg;
-  if (pending_grouping_count || !msg_buffer.ends_with('\n')) {
+  // Can't/Won't do message clustering at the *error* level: those must get out there ASAP!
+  if ((level > T_LOG_ERROR && pending_grouping_count) || !msg_buffer.ends_with('\n')) {
     return;
   }
 

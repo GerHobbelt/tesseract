@@ -15,7 +15,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commontraining.h"
 #include "unicharset/lstmtester.h"

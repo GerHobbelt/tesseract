@@ -19,9 +19,7 @@
 #ifndef TESSERACT_DICT_DICT_H_
 #define TESSERACT_DICT_DICT_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 #  include "ambigs.h"
@@ -329,7 +327,7 @@ public:
   void SettupStopperPass2();
   /* context.cpp *************************************************************/
   /// Check a string to see if it matches a set of lexical rules.
-  int case_ok(const WERD_CHOICE &word) const;
+  bool case_ok(const WERD_CHOICE &word) const;
   /// Returns true if the word looks like an absolute garbage
   /// (e.g. image mistakenly recognized as text).
   bool absolute_garbage(const WERD_CHOICE &word, const UNICHARSET &unicharset);
@@ -398,13 +396,13 @@ public:
    */
 
   //
-  int def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id,
+  PermuterType def_letter_is_okay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id,
                          bool word_end) const;
 
-  int (Dict::*letter_is_okay_)(void *void_dawg_args, const UNICHARSET &unicharset,
+  PermuterType (Dict::*letter_is_okay_)(void *void_dawg_args, const UNICHARSET &unicharset,
                                UNICHAR_ID unichar_id, bool word_end) const;
   /// Calls letter_is_okay_ member function.
-  int LetterIsOkay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id,
+  PermuterType LetterIsOkay(void *void_dawg_args, const UNICHARSET &unicharset, UNICHAR_ID unichar_id,
                    bool word_end) const {
     return (this->*letter_is_okay_)(void_dawg_args, unicharset, unichar_id, word_end);
   }

@@ -18,6 +18,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fixspace.h"
 
 #include "blobs.h"          // for TWERD, TBLOB, TESSLINE

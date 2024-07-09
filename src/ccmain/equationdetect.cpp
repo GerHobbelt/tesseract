@@ -17,11 +17,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "equationdetect.h"
 
@@ -1426,7 +1422,7 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {
-  Image pix = lang_tesseract_->GetPixForDebugView();
+  Image pix = lang_tesseract_->pix_binary();
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition *part = nullptr;

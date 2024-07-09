@@ -15,10 +15,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // for HAVE_AVX, ...
-#endif
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix

@@ -34,9 +34,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "tesseractclass.h"
 
@@ -350,9 +348,9 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", params())
-    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", this->params())
-    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", this->params())
-    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", this->params())
+    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", params())
+    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", params())
+    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.", params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
@@ -576,8 +574,8 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   ReportDebugInfo();
 
   if (invoked_by_destructor) {
-    ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
+    ClearPixForDebugView();
   }
 
   pix_original_.destroy();
@@ -870,7 +868,13 @@ Image Tesseract::GetPixForDebugView() {
     return pix_for_debug_view_;
   }
 
-  pix_for_debug_view_ = pixConvertTo32(pix_binary_);
+  Image pix;
+  if (pix_grey_ != nullptr) {
+    pix = pix_grey_;
+  } else {
+    pix = pix_binary_;
+  }
+  pix_for_debug_view_ = pixConvertTo32(pix);
   return pix_for_debug_view_;
 }
 

@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/ltrresultiterator.h>
 
 #include "helpers.h"  // for copy_string
