@@ -135,21 +135,16 @@ FILE* ParamUtils::OpenReportFile(const char* path)
 // since the previous invocation of this reporting method (or when it hasn't been called before: the start of the application).
 void ParamUtils::ReportParamsUsageStatistics(FILE *f, const ParamsVectors *member_params, int section_level, const char *section_title)
 {
-  {
-    std::unique_ptr<ParamsReportWriter> writer;
+  std::unique_ptr<ParamsReportWriter> writer;
 
-    TPrintGroupLinesTillEndOfScope push;
+  TPrintGroupLinesTillEndOfScope push;
 
-    if (f != nullptr) {
-      writer.reset(new ParamsReportFileDuoWriter(f));
-    } else {
-      writer.reset(new ParamsReportDefaultWriter());
-    }
-    ReportParamsUsageStatistics(*writer, member_params, section_level, section_title);
-    BANG();
+  if (f != nullptr) {
+    writer.reset(new ParamsReportFileDuoWriter(f));
+  } else {
+    writer.reset(new ParamsReportDefaultWriter());
   }
-  BANG();
-  BANG();
+  ReportParamsUsageStatistics(*writer, member_params, section_level, section_title);
 }
 
 
@@ -263,8 +258,6 @@ void ParamUtils::ReportParamsUsageStatistics(ParamsReportWriter &writer, const P
       }
     }
 
-    BANG();
-
     if (report_all_variables)
     {
       writer.Write("\n\nUnused parameters:\n\n");
@@ -291,14 +284,12 @@ void ParamUtils::ReportParamsUsageStatistics(ParamsReportWriter &writer, const P
       }
     }
 
-    BANG();
     // reset the access counts for the next section:
     for (auto item : param_names) {
       Param* p = item.ref;
       p->reset_access_counts();
     }
   }
-  BANG();
 }
 
 bool ParamUtils::SetParam(const char *name, const char *value, SetParamConstraint constraint,

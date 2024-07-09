@@ -1120,12 +1120,9 @@ public:
     return pixa_debug_.PushSubordinateSection(title);
   }
   void PopPixDebugSection(int handle = -1) { // pop active; return focus to parent
-    BANG();
     pixa_debug_.WriteSectionParamsUsageReport();
-    BANG();
 
     pixa_debug_.PopSection(handle);
-    BANG();
   }
   int GetPixDebugSectionLevel() const {
     return pixa_debug_.GetCurrentSectionLevel();

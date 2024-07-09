@@ -1177,9 +1177,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         }
 #endif
 
-  BANG();
         succeed &= api.ProcessPages(image, nullptr, 0, renderers[0].get());
-  BANG();
 
         if (!succeed) {
           tprintError("Error during page processing. File: {}\n", image);
@@ -1188,29 +1186,17 @@ extern "C" int tesseract_main(int argc, const char** argv)
       }
     }
 
-  BANG();
     if (ret_val == EXIT_SUCCESS && verbose_process) {
       api.ReportParamsUsageStatistics();
-      BANG();
     }
-    BANG();
 
     api.FinalizeAndWriteDiagnosticsReport();  // write/flush log output
-    BANG();
     api.Clear();
-    BANG();
   }
   // ^^^ end of scope for the Tesseract `api` instance
   // --> cache occupancy is removed, so the next call will succeed without fail (due to internal sanity checks)
 
-  BANG();
   TessBaseAPI::ClearPersistentCache();
-  BANG();
-
-  fprintf(stderr, "\n\n -= Tesseract: The End =-\n\n");
-  fflush(stdout);
-  fflush(stderr);
-  BANG();
 
   return ret_val;
 }

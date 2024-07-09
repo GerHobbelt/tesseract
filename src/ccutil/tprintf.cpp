@@ -178,7 +178,7 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
   }
   msg_buffer += msg;
   // Can't/Won't do message clustering at the *error* level: those must get out there ASAP!
-  if (false && (level > T_LOG_ERROR && pending_grouping_count) || !msg_buffer.ends_with('\n')) {
+  if ((level > T_LOG_ERROR && pending_grouping_count) || !msg_buffer.ends_with('\n')) {
     return;
   }
 

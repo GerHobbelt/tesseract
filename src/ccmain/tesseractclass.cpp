@@ -866,27 +866,15 @@ void Tesseract::ResyncVariablesInternally() {
 }
 
 void Tesseract::ReportDebugInfo() {
-  BANG();
-  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
-    BANG();
-    if (GetPixForDebugView() != nullptr) {
-      AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+    if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+        AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+
+        std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
+        pixa_debug_.WriteHTML(file_path.c_str());
+
+        ClearPixForDebugView();
+        pixa_debug_.Clear();
     }
-    BANG();
-
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang.c_str(), "html");
-    BANG();
-    pixa_debug_.WriteHTML(file_path.c_str());
-
-  BANG();
-    ClearPixForDebugView();
-  BANG();
-  pixa_debug_.Clear();
-  BANG();
-  }
-  BANG();
-  BANG();
-  BANG();
 }
 
 } // namespace tesseract

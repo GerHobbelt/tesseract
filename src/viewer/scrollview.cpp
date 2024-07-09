@@ -975,9 +975,7 @@ void BackgroundScrollView::StartEventHandler() {
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
   ASSERT0(!dirty);
-  _CrtCheckMemory();
   pix.destroy();
-  _CrtCheckMemory();
 }
 
 #if !GRAPHICS_DISABLED
@@ -1453,11 +1451,6 @@ void BackgroundScrollView::UpdateWindow() {
   SendMsg("update()");
   SendPolygon();
   if (dirty) {
-    {
-      int width = -1, height = -1, depth = -1;
-      int ok = pixGetDimensions(pix, &width, &height, &depth);
-      ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
-    }
     tesseract_->AddPixCompedOverOrigDebugPage(pix, fmt::format("{}::update", GetName()));
     // DO NOT clear the canvas!
 

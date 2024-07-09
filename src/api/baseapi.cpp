@@ -475,19 +475,14 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
     std::string fpath = tesseract::vars_report_file;
     FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
     int section_level = tesseract_->GetPixDebugSectionLevel();
-    BANG();
     ParamUtils::ReportParamsUsageStatistics(f, vec, section_level, nullptr);
-    BANG();
     if (f) {
       if (f != stdout && f != stderr) {
-        BANG();
         fclose(f);
       } else {
-        BANG();
         fflush(f);
       }
     }
-    BANG();
 }
 
 /**
@@ -1015,22 +1010,17 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   if (tesseract_ == nullptr) {
     return -1;
   }
-  BANG();
   if (FindLines() != 0) {
-    BANG();
     return -1;
   }
-  BANG();
 
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize (OCR)"));
-  BANG();
 
   delete page_res_;
   if (block_list_->empty()) {
     page_res_ = new PAGE_RES(false, block_list_, &tesseract_->prev_word_best_choice_);
     return 0; // Empty page.
   }
-  BANG();
 
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
@@ -1050,7 +1040,6 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
       tprintInfo("PROCESS: Re-segment from LSTM / previous word best choice.\n");
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
   }
-  BANG();
 
   if (page_res_ == nullptr) {
     return -1;
@@ -1071,7 +1060,6 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     return 0;
   }
 #endif // !DISABLED_LEGACY_ENGINE
-  BANG();
 
   int result = 0;
   if (tesseract_->SupportsInteractiveScrollView()) {
@@ -1131,7 +1119,6 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
       result = -1;
     }
   }
-  BANG();
   return result;
 }
 
@@ -1379,9 +1366,7 @@ bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, i
                                TessResultRenderer *renderer) {
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Process pages"));
   
-  BANG();
   bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
-  BANG();
 #if !DISABLED_LEGACY_ENGINE
   if (result) {
     if (tesseract_->tessedit_train_from_boxes && !tesseract_->WriteTRFile(output_file_.c_str())) {
@@ -1389,9 +1374,7 @@ bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, i
       return false;
     }
   }
-  BANG();
 #endif // !DISABLED_LEGACY_ENGINE
-  BANG();
   return result;
 }
 
@@ -1559,7 +1542,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     pixDestroy(&pix);
     return false;
   }
-  BANG();
 
   // Produce output
   if (tiff) {
@@ -1569,17 +1551,14 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
     tesseract_->applybox_page.set_value(-1 /* all pages */);
 	r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
   }
-  BANG();
 
   // Clean up memory as needed
   pixDestroy(&pix);
-  BANG();
 
   // End the output
   if (!r || (renderer && !renderer->EndDocument())) {
     return false;
   }
-  BANG();
   return true;
 }
 
@@ -1690,30 +1669,22 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
     failed = (FindLines() != 0);
   } else if (timeout_millisec > 0) {
     // Running with a timeout.
-    BANG();
     ETEXT_DESC monitor;
     monitor.cancel = nullptr;
     monitor.cancel_this = nullptr;
     monitor.set_deadline_msecs(timeout_millisec);
-    BANG();
 
     // Now run the main recognition.
     failed = (Recognize(&monitor) < 0);
-    BANG();
   } else {
     // Normal layout and character recognition with no timeout.
-    BANG();
     failed = (Recognize(nullptr) < 0);
-    BANG();
   }
-  BANG();
 
   if (tesseract_->tessedit_write_images) {
     Pix *page_pix = GetThresholdedImage();
-    BANG();
     tesseract_->AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tesseract_->tessedit_page_number));
   }
-  BANG();
 
   if (failed && retry_config != nullptr && retry_config[0] != '\0') {
     // Save current config variables before switching modes.
@@ -1725,30 +1696,22 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
       fclose(fp);
     }
     // Switch to alternate mode for retry.
-    BANG();
     ReadConfigFile(retry_config);
-    BANG();
     SetImage(pix);
-    BANG();
     
     // Apply image preprocessing
     NormalizeImage(graynorm_mode);
-    BANG();
 
     //if (normalize_grayscale) thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
     Recognize(nullptr);
-    BANG();
     // Restore saved config variables.
     ReadConfigFile(kOldVarsFile);
-    BANG();
   }
 
-  BANG();
   if (renderer && !failed) {
     failed = !renderer->AddImage(this);
   }
-  BANG();
-  // pixDestroy(&pixs);
+  //pixDestroy(&pixs);
   return !failed;
 }
 
@@ -2415,21 +2378,13 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
-  BANG();
   if (thresholder_ != nullptr) {
-    BANG();
     thresholder_->Clear();
-    BANG();
   }
-  BANG();
   ClearResults();
-  BANG();
   if (tesseract_ != nullptr) {
-    BANG();
     SetInputImage(nullptr);
-    BANG();
   }
-  BANG();
 }
 
 /**
@@ -2725,9 +2680,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         "Corrected to {}.\n",
         thresholder_->GetScaledEstimatedResolution(), estimated_res);
   }
-  BANG();
   tesseract_->set_source_resolution(estimated_res);
-  BANG();
   return true;
 }
 
@@ -2753,33 +2706,26 @@ int TessBaseAPI::FindLines() {
 	if (verbose_process) {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
-        BANG();
 
 	Image pix = Image();
 	if (!Threshold(&pix.pix_)) {
 	  return -1;
 	}
-  BANG();
 	tesseract_->set_pix_binary(pix);
   }
 
-  BANG();
   if (tesseract_->tessedit_dump_pageseg_images) {
     tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "FindLines :: Thresholded Image -- this image is now set as the page Master Source Image for this activity");
   }
-  BANG();
 
   if (verbose_process) {
 	  tprintInfo("PROCESS: prepare the image for page segmentation, i.e. discovery of all text areas + bounding boxes & image/text orientation and script{} detection.\n",
 		  (tesseract_->textord_equation_detect ? " + equations" : ""));
   }
 
-  BANG();
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Prepare for Page Segmentation"));
 
-  BANG();
   tesseract_->PrepareForPageseg();
-  BANG();
 
 #if !DISABLED_LEGACY_ENGINE
   if (tesseract_->textord_equation_detect) {
@@ -2794,7 +2740,6 @@ int TessBaseAPI::FindLines() {
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
-  BANG();
 #if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tess = osd_tesseract_;
 #else
@@ -2826,17 +2771,14 @@ int TessBaseAPI::FindLines() {
     }
   }
 #endif // !DISABLED_LEGACY_ENGINE
-  BANG();
 
   if (tesseract_->SegmentPage(tesseract_->input_file_path.c_str(), block_list_, osd_tess, &osr) < 0) {
     return -1;
   }
-  BANG();
 
   // If Devanagari is being recognized, we use different images for page seg
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, &osr);
-  BANG();
 
   return 0;
 }
@@ -3026,18 +2968,14 @@ int TessBaseAPI::NumDawgs() const {
 }
 
 void TessBaseAPI::FinalizeAndWriteDiagnosticsReport() {
-  BANG();
   if (tesseract_ == nullptr) {
-    BANG();
     ASSERT_HOST_MSG(false,
                     "FinalizeAndWriteDiagnosticsReport was invoked without a "
                     "live tesseract instance: you may have a bug that looses a "
                     "lot of tesseract diagnostics info + reporting for you.\n");
     return;
   };
-  BANG();
   tesseract_->ReportDebugInfo();
-  BANG();
 }
 
 /** Escape a char string - replace <>&"' with HTML codes. */

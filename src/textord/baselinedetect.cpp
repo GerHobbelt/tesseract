@@ -96,14 +96,12 @@ void BaselineRow::SetupOldLineParameters(TO_ROW *row) const {
 
 // Outputs diagnostic information.
 void BaselineRow::Print() const {
-  BANG();
   tprintDebug("Baseline ({},{})->({},{}), angle={}, intercept={}\n",
           baseline_pt1_.x(), baseline_pt1_.y(), baseline_pt2_.x(),
           baseline_pt2_.y(), BaselineAngle(), StraightYAtX(0.0));
   tprintDebug("Quant factor={}, error={}, good={}, box:", disp_quant_factor_,
           baseline_error_, good_baseline_);
   bounding_box_.print();
-  BANG();
 }
 
 // Returns the skew angle (in radians) of the current baseline in [-pi,pi].
@@ -168,13 +166,11 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     const TBOX &box = blob->bounding_box();
     int x_middle = (box.left() + box.right()) / 2;
 
-    BANG();
-    if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(box) > 1) {
+	if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(box) > 1) {
       tprintDebug("Box bottom = {}, baseline pos={} for box at:", box.bottom(),
               blob->baseline_position());
       box.print();
     }
-        BANG();
 
 	fitter_.Add(ICOORD(x_middle, blob->baseline_position()), box.width() / 2);
     llsq.add(x_middle, blob->baseline_position());
@@ -329,7 +325,6 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
     double offset = direction * blob_pos;
     perp_blob_dists.push_back(offset);
 
-    BANG();
 	if (debug_baseline_detector_level > 0) {
       tprintDebug("Displacement {} for blob at:", offset);
       box.print();
@@ -383,14 +378,12 @@ void BaselineRow::FitConstrainedIfBetter(const FCOORD &direction,
   new_error -= cheat_allowance;
   double old_angle = BaselineAngle();
   double new_angle = direction.angle();
-  BANG();
   if (debug_baseline_detector_level > 1) {
     tprintDebug("Constrained error = {}, original = {}", new_error,
             baseline_error_);
     tprintDebug(" angles = {}, {}, delta={} vs threshold {}\n", old_angle,
             new_angle, new_angle - old_angle, kMaxSkewDeviation);
   }
-  BANG();
   bool new_good_baseline =
       new_error <= max_baseline_error_ &&
       (cheat_allowance > 0.0 || fitter_.SufficientPointsForIndependentFit());
@@ -412,7 +405,6 @@ void BaselineRow::FitConstrainedIfBetter(const FCOORD &direction,
   } else if (debug_baseline_detector_level > 1) {
     tprintDebug("Keeping old baseline.\n");
   }
-  BANG();
 }
 
 // Returns the perpendicular distance of the point from the straight
@@ -473,19 +465,16 @@ bool BaselineBlock::FitBaselinesAndFindSkew(bool use_box_bottoms) {
   if (non_text_block_) {
     return false;
   }
-  BANG();
   std::vector<double> angles;
   for (auto row : rows_) {
     if (row->FitBaseline(use_box_bottoms)) {
       double angle = row->BaselineAngle();
       angles.push_back(angle);
     }
-    BANG();
     if (debug_baseline_detector_level > 1) {
       row->Print();
     }
   }
-  BANG();
 
   if (!angles.empty()) {
     skew_angle_ = MedianOfCircularValues(M_PI, angles);
@@ -494,12 +483,10 @@ bool BaselineBlock::FitBaselinesAndFindSkew(bool use_box_bottoms) {
     skew_angle_ = 0.0f;
     good_skew_angle_ = false;
   }
-  BANG();
   if (debug_baseline_detector_level > 0) {
     tprintDebug("Initial block skew angle = {}, good = {}\n", skew_angle_,
             good_skew_angle_);
   }
-  BANG();
   return good_skew_angle_;
 }
 
@@ -604,7 +591,6 @@ void BaselineBlock::FitBaselineSplines(bool enable_splines,
   double gradient = tan(skew_angle_);
   FCOORD rotation(1.0f, 0.0f);
 
-    BANG();
   if (enable_splines) {
     textord->make_spline_rows(block_, gradient);
   } else {
@@ -612,7 +598,6 @@ void BaselineBlock::FitBaselineSplines(bool enable_splines,
     TBOX block_box = block_->block->pdblk.bounding_box();
     TO_ROW_IT row_it = block_->get_rows();
     for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
-      BANG();
       TO_ROW *row = row_it.data();
       int32_t xstarts[2] = {block_box.left(), block_box.right()};
       double coeffs[3] = {0.0, row->line_m(), row->line_c()};
@@ -621,13 +606,11 @@ void BaselineBlock::FitBaselineSplines(bool enable_splines,
                                    row->line_m(), block_->line_size);
     }
   }
-  BANG();
   textord->compute_block_xheight(block_, gradient);
   block_->block->set_xheight(block_->xheight);
   if (textord_restore_underlines) { // fix underlines
     restore_underlined_blobs(block_);
   }
-  BANG();
 }
 
 #if !GRAPHICS_DISABLED
@@ -693,13 +676,11 @@ bool BaselineBlock::ComputeLineSpacing() {
       }
     }
   }
-  BANG();
   if (debug_baseline_detector_level > 0) {
     tprintDebug("Spacing {}, in {} rows, {} gaps fitted out of {} non-trivial\n",
             line_spacing_, row_positions.size(), fitting_gaps,
             non_trivial_gaps);
   }
-  BANG();
   return fitting_gaps > non_trivial_gaps * kMinFittingLinespacings;
 }
 
@@ -760,7 +741,6 @@ void BaselineBlock::EstimateLineSpacing() {
     if (debug_baseline_detector_level > 1) {
       tprintDebug("Estimate of linespacing = {}\n", line_spacing_);
     }
-    BANG();
   }
 }
 
@@ -845,10 +825,8 @@ double BaselineBlock::FitLineSpacingModel(const std::vector<double> &positions,
     if (debug_baseline_detector_level > 2) {
       for (unsigned i = 0; i < offsets.size(); ++i) {
         tprintDebug("model index {}: offset {}\n", i, offsets[i]);
-        BANG();
       }
     }
-    BANG();
     *c_out = MedianOfCircularValues(*m_out, offsets);
   } else {
     *c_out = 0.0;
@@ -894,10 +872,8 @@ BaselineDetect::BaselineDetect(const FCOORD &page_skew,
 // block-wise and page-wise data to smooth small blocks/rows, and applies
 // smoothing based on block/page-level skew and block-level linespacing.
 void BaselineDetect::ComputeStraightBaselines(bool use_box_bottoms) {
-  BANG();
   std::vector<double> block_skew_angles;
   for (auto bl_block : blocks_) {
-    BANG();
     if (debug_baseline_detector_level > 0) {
       tprintDebug("Fitting initial baselines...\n");
     }
@@ -905,13 +881,11 @@ void BaselineDetect::ComputeStraightBaselines(bool use_box_bottoms) {
       block_skew_angles.push_back(bl_block->skew_angle());
     }
   }
-  BANG();
   // Compute a page-wide default skew for blocks with too little information.
   double default_block_skew = page_skew_.angle();
   if (!block_skew_angles.empty()) {
     default_block_skew = MedianOfCircularValues(M_PI, block_skew_angles);
   }
-  BANG();
   if (debug_baseline_detector_level > 0) {
     tprintDebug("Page skew angle = {}\n", default_block_skew);
   }
@@ -933,23 +907,17 @@ void BaselineDetect::ComputeBaselineSplinesAndXheights(const ICOORD &page_tr,
                                                        bool remove_noise,
                                                        bool show_final_rows,
                                                        Textord *textord) {
-  BANG();
   for (auto bl_block : blocks_) {
-    BANG();
     if (enable_splines) {
       bl_block->PrepareForSplineFitting(page_tr, remove_noise);
     }
-    BANG();
     bl_block->FitBaselineSplines(enable_splines, textord);
 #if !GRAPHICS_DISABLED
-    BANG();
     if (show_final_rows) {
       bl_block->DrawFinalRows(page_tr);
     }
 #endif
-    BANG();
   }
-  BANG();
 }
 
 } // namespace tesseract.
