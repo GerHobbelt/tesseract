@@ -38,15 +38,15 @@ class ICOORD {
 
 public:
   /// empty constructor
-  ICOORD() {
-    xcoord = ycoord = 0; // default zero
+  ICOORD()
+      : xcoord(0), ycoord(0) {
+    // default zero
   }
   /// constructor
   ///@param xin x value
   ///@param yin y value
-  ICOORD(TDimension xin, TDimension yin) {
-    xcoord = xin;
-    ycoord = yin;
+  ICOORD(TDimension xin, TDimension yin)
+      : xcoord(xin), ycoord(yin) {
   }
   /// destructor
   ~ICOORD() = default;
@@ -201,13 +201,15 @@ ELISTIZEH(ICOORDELT)
 class TESS_API FCOORD {
 public:
   /// empty constructor
-  FCOORD() = default;
+  FCOORD()
+      : xcoord(0.0), ycoord(0.0)
+  {}
   /// constructor
   ///@param xvalue x value
   ///@param yvalue y value
-  FCOORD(float xvalue, float yvalue) {
-    xcoord = xvalue; // set coords
-    ycoord = yvalue;
+  FCOORD(float xvalue, float yvalue)
+      : xcoord(xvalue), ycoord(yvalue) {
+    // set coords
   }
   FCOORD(              // make from ICOORD
       ICOORD icoord) { // coords to set
