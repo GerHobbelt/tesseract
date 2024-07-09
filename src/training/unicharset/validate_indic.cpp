@@ -1,3 +1,6 @@
+
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "validate_indic.h"
 #include "errcode.h"
 #include "tprintf.h"

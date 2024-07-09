@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // FileReader
 #include <cstdint>             
 #include <cstdlib>

@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h>    // compiler config, etc.
+
 #include "errcode.h"
 #include "tprintf.h"
 

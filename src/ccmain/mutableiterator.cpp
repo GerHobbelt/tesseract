@@ -12,6 +12,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "mutableiterator.h"
 
 namespace tesseract {

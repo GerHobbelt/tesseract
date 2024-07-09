@@ -20,6 +20,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "lm_pain_points.h"
 
 #include "associate.h"

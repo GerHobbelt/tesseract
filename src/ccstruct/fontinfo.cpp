@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fontinfo.h"
 #include "bitvector.h"
 #include "unicity_table.h"

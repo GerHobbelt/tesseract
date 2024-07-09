@@ -19,6 +19,8 @@
 // Given a file that contains a list of words (one word per line) this program
 // generates the corresponding squished DAWG file.
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "classify.h"
 #include "common/commontraining.h"     // CheckSharedLibraryVersion
 #include "dawg.h"

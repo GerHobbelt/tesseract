@@ -20,13 +20,9 @@
 // tesseract from the ui.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !GRAPHICS_DISABLED
-
-#include <tesseract/debugheap.h>
 
 #  include "params.h" // for ParamsVectors, StringParam, BoolParam
 #  include "paramsd.h"

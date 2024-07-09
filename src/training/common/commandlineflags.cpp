@@ -8,6 +8,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "commandlineflags.h"
 #include <tesseract/baseapi.h> // TessBaseAPI::Version
 #include <cmath>               // for std::isnan, NAN

@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <leptonica/allheaders.h>
 #include <tesseract/pageiterator.h>
 #include "helpers.h"

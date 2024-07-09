@@ -19,9 +19,7 @@
 #ifndef RATNGS_H
 #define RATNGS_H
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "clst.h"
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH

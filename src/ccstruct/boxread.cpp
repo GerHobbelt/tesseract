@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "boxread.h"
 
 #include "errcode.h" // for ERRCODE, TESSEXIT

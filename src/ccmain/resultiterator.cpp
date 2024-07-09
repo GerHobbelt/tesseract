@@ -18,6 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/resultiterator.h>
 #include <tesseract/unichar.h>  // for U8 macro
 

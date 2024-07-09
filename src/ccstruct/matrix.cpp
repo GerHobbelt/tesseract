@@ -19,6 +19,8 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "matrix.h"
 
 #include "ratngs.h"

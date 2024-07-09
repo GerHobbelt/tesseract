@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "paragraphs.h"
 
 #include "helpers.h"             // for UpdateRange, ClipToRange

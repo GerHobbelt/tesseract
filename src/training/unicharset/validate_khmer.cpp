@@ -1,3 +1,6 @@
+
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "validate_khmer.h"
 #include "errcode.h"
 #include "tprintf.h"

@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/osdetect.h>
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB
@@ -314,12 +316,14 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
   }
   QRSequenceGenerator sequence(number_of_blobs);
   int num_blobs_evaluated = 0;
+  _CrtCheckMemory();
   for (int i = 0; i < real_max; ++i) {
     if (os_detect_blob(blobs[sequence.GetVal()], &o, &s, osr) && i > minCharactersToTry) {
       break;
     }
     ++num_blobs_evaluated;
   }
+  _CrtCheckMemory();
   delete[] blobs;
 
   // Make sure the best_result is up-to-date

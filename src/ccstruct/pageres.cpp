@@ -21,6 +21,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "pageres.h"
 
 #include "blamer.h"   // for BlamerBundle

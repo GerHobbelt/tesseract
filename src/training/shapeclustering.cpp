@@ -16,11 +16,7 @@
 //            training data of whole, partial or multiple characters.
 //  Author:   Ray Smith
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"

@@ -15,11 +15,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "networkio.h"
+
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
 #include <leptonica/allheaders.h>
+
 #include "functions.h"
 #include "statistc.h"
 #include "recodebeam.h"

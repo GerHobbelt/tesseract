@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "float2int.h"
 #include "params.h"
 #include "tesseractclass.h"

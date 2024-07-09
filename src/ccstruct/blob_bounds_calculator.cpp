@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blob_bounds_calculator.h"
 #include <algorithm>
 #include <cassert>

@@ -13,6 +13,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "sampleiterator.h"
 
 #include "intfeaturemap.h"

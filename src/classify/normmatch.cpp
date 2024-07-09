@@ -18,13 +18,9 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
-
-#include <tesseract/debugheap.h>
 
 #include "normmatch.h"
 

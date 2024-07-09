@@ -19,6 +19,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "shapetable.h"
 
 #include "bitvector.h"

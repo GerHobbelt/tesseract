@@ -17,6 +17,8 @@
  *
  *****************************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "dict.h"
 #include "unicharset.h"
 

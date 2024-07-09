@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include <tesseract/debugheap.h>
 #include <tesseract/assert.h>
 
 #include "commontraining.h"

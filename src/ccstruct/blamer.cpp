@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blamer.h"
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB

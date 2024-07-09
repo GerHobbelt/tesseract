@@ -20,9 +20,7 @@
 // normalizes the text according to command-line options and generates
 // a unicharset.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cstdlib>
 #include <filesystem>

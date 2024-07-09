@@ -17,7 +17,7 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "tovars.h"
 #include "params.h"

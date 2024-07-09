@@ -19,13 +19,11 @@
 #ifndef TESSERACT_CCUTIL_CCUTIL_H_
 #define TESSERACT_CCUTIL_CCUTIL_H_
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #if !(defined(WIN32) || defined(_WIN32) || defined(_WIN64))
 #  include <pthread.h>
 #  include <semaphore.h>
-#endif
-
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
 #endif
 
 #if !DISABLED_LEGACY_ENGINE

@@ -15,7 +15,8 @@
 // limitations under the License.
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
 #ifdef _WIN32

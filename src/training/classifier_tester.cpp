@@ -16,7 +16,8 @@
 //            but doesn't have to be the same as the training data.
 //  Author:   Ray Smith
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h>
 #include <algorithm>
 #include <cstdio>
