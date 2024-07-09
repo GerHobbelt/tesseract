@@ -49,8 +49,8 @@ public:
 
 constexpr ERRCODE ASSERT_FAILED("Assert failed");
 
-#  if !defined(MSC_VER) && !defined(__FUNCTION__)
-#    define __FUNCTION__ __func__
+#if defined(_MSC_VER) && !defined(__FUNCTION__)
+#define __FUNCTION__ __func__
 #endif
 
 #define DO_NOTHING static_cast<void>(0)
