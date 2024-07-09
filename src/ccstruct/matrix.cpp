@@ -141,7 +141,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
   for (row = 0; row < dim; ++row) {
     for (col = 0; col <= row; ++col) {
       if (col == 0) {
-        tprintf("%d\t", row);
+        tprintf(" %d \t", row);
       }
       if (row >= col + band_width) {
         tprintf(" \t");

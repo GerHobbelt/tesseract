@@ -1121,6 +1121,7 @@ void ScratchEvidence::NormalizeSums(INT_CLASS_STRUCT *ClassTemplate, int16_t Num
 int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const ScratchEvidence &tables,
                                   UnicharRating *result) {
   int best_match = 0;
+  bool debug = (*classify_debug_level_ > 2);
   result->config = 0;
   result->fonts.clear();
   result->fonts.reserve(class_template->NumConfigs);
@@ -1129,8 +1130,8 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
   // ClassTemplate->NumConfigs can become larger than MAX_NUM_CONFIGS.
   for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
     int rating = tables.sum_feature_evidence_[c];
-    if (*classify_debug_level_ > 2) {
-      tprintf("Config %d, rating=%d\n", c, rating);
+    if (debug) {
+      tprintf("Config %d, rating=%d\t", c, rating);
     }
     if (rating > best_match) {
       result->config = c;
@@ -1141,6 +1142,10 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
 
   // Compute confidence on a Probability scale.
   result->rating = best_match / 65536.0f;
+
+  if (debug) {
+    tprintf("Best match: Config %d, best_match=%d, rating=%f\n", result->config, best_match, result->rating);
+  }
 
   return best_match;
 }
