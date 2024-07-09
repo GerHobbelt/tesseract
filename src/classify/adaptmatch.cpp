@@ -209,14 +209,10 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
 
   DoAdaptiveMatch(Blob, Results);
 
-  //_CrtCheckMemory();
   RemoveBadMatches(Results);
-  //_CrtCheckMemory();
   std::sort(Results->match.begin(), Results->match.end(), SortDescendingRating);
   RemoveExtraPuncs(Results);
-  //_CrtCheckMemory();
   Results->ComputeBest();
-  //_CrtCheckMemory();
   ConvertMatchesToChoices(Blob->denorm(), Blob->bounding_box(), Results, Choices);
 
   // TODO(rays) Move to before ConvertMatchesToChoices!

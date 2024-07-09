@@ -69,7 +69,6 @@ DENORM::DENORM(DENORM &&src) noexcept {
     final_xshift_ = src.final_xshift_;
     final_yshift_ = src.final_yshift_;
   }
-  //_CrtCheckMemory();
 }
 
 DENORM &DENORM::operator=(const DENORM &src) {
@@ -325,7 +324,6 @@ void DENORM::SetupNonLinear(const DENORM *predecessor, const TBOX &box, float ta
   for (int y = height - 1; y >= 0; --y) {
     (*y_map_)[y] = (*y_map_)[y + 1] - (*y_map_)[y] * target_height;
   }
-  //_CrtCheckMemory();
   x_origin_ = box.left();
   y_origin_ = box.bottom();
   final_xshift_ = final_xshift;
@@ -574,14 +572,12 @@ void DENORM::Print() const {
 
 // Free allocated memory and clear pointers.
 void DENORM::Clear() {
-  //_CrtCheckMemory();
-  delete rotation_;
-  rotation_ = nullptr;
   delete x_map_;
   x_map_ = nullptr;
   delete y_map_;
   y_map_ = nullptr;
-  //_CrtCheckMemory();
+  delete rotation_;
+  rotation_ = nullptr;
   Init();
 }
 
