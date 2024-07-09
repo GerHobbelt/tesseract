@@ -323,10 +323,10 @@ std::string DebugWordSetBBoxCarrier::print_to_str() {
   return str;
 }
 
-static void GatherWordsBBboxInfo4DebugDisplay(DebugWordSetBBoxCarrier &word_info_set, const std::vector<WordData> *words) {
-  static WERD_RES rdummy{};
-  static WERD wdummy{};
+static WERD_RES rdummy{};
+static WERD wdummy{};
 
+static void GatherWordsBBboxInfo4DebugDisplay(DebugWordSetBBoxCarrier &word_info_set, const std::vector<WordData> *words) {
   auto count = words->size();
   word_info_set.words.clear();
   word_info_set.words.resize(count);
@@ -376,17 +376,92 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
   pr_it->restart_page();
 
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
-  if (debug) {
+  if (classify_debug_level > 1 || multilang_debug_level > 1) {
     std::string msg = fmt::format("pass {}: word bboxes:\n", pass_n);
     DebugWordSetBBoxCarrier carrier;
     GatherWordsBBboxInfo4DebugDisplay(carrier, words);
     carrier.pass_n = pass_n;
-    msg += carrier.print_to_str(); 
+    msg += carrier.print_to_str();
     tprintDebug("RecogAllWordsPassN: {}\n", msg);
+  }
+  if (debug || tessedit_dump_pageseg_images || verbose_process) {
     // collect these BBOXes and render them all at once!
   	//
     // AddPixCompedOverOrigDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}; bounding box: {}", most_recently_used_->lang,
     // bbox.print_to_str()));
+
+    auto page_height = this->ImageHeight();
+
+    // construct a base page image based on the greyscale image, bumped up by the binary for emphasis. Purely done for visual results.
+    Image pix = pixConvertTo32(this->pix_grey());
+    Image pix2 = pixBlend(pix, this->pix_binary(), 0, 0, 0.33);
+    pix.destroy();
+
+    auto count = words->size();
+    BOXA *boxa = boxaCreate(count);
+    for (unsigned int w = 0; w < count; ++w) {
+      const WordData &data = (*words)[w];
+      const WERD_RES &werd = data.word != nullptr ? *data.word : rdummy;
+      const WERD &word = werd.word != nullptr ? *werd.word : wdummy;
+
+      //info.bounding_box = word.bounding_box();
+      //info.restricted_bounding_box = word.restricted_bounding_box(true, true);
+      auto bbox = word.true_bounding_box();
+
+      BOX *box = boxCreate(bbox.left(), page_height - bbox.top(), bbox.width(), bbox.height());
+      boxaAddBox(boxa, box, L_INSERT);
+      //info.tess_failed = werd.tess_failed;
+      //info.tess_accepted = werd.tess_accepted;
+      //info.done = werd.done;
+      //info.small_caps = werd.small_caps;
+      //info.odd_size = werd.odd_size;
+      //info.x_height = werd.x_height;
+      //info.caps_height = werd.caps_height;
+      //info.baseline_shift = werd.baseline_shift;
+      //info.space_certainty = werd.space_certainty;
+      //info.combination = werd.combination;
+      //info.part_of_combo = werd.part_of_combo;
+      //info.reject_spaces = werd.reject_spaces;
+    }
+
+    Image fg = pixCreateTemplate(pix2);
+    l_uint32 fg_basecolor;
+    // paint the `fg` canvas with a hard RED color.
+    composeRGBPixel(255, 0, 0, &fg_basecolor);
+    pixSetAllArbitrary(fg, fg_basecolor);
+
+    // ripped from leptonica: fast copy/blit of source image snippets (clipped by the boxa rectangles)
+    // into the `fg` canvas: thus we have hard red for all ignored pixels and the enhanced greyscale page image
+    // from above "peeping through the BOXA holes".
+    int n = boxaGetCount(boxa);
+    for (int i = 0; i < n; i++) {
+      l_int32 x, y, w, h;
+      boxaGetBoxGeometry(boxa, i, &x, &y, &w, &h);
+      pixRasterop(fg, x, y, w, h, PIX_SRC, pix2, x, y);
+    }
+
+    // And finally we drop *that* one onto a regular greyscale background with our own special blend sauce.
+    // Note that we don't use MixWithLightRedTintedBackground() here, but a tweaked version there-of.
+    Image composite = pixMixWithTintedBackground(fg, pix_grey(), 0.9, 0.9, 0.9, 0.95, 0.5, nullptr);
+
+    fg.destroy();
+    pix2.destroy();
+
+    // pixBlendBackgroundToColor();
+    // pixSetBlackOrWhiteBoxa(mask, boxa, L_SET_BLACK);
+    // pixBlendColorByChannel()
+    // pixPaintBoxa(pix2, boxa, l_uint32 val);
+
+    this->AddPixDebugPage(composite, fmt::format("RecogAllWordsPassN: pass {}: {} word boxes, language to try: {}", pass_n, count, most_recently_used_->lang));
+
+    tprintInfo("PROCESS: The composite image shows which bounding box areas in the original input image have been designated by tesseract as 'probably text words'. Anything obscured by the red overlay is *not considered for OCR*.\n\nThus this composite image is an important diagnostic tool, for it allows you to visually check the quality of tesseract's page analysis.\n\nRemedying any mistakes you observe is, unfortunately, a bit of an *art*, but suffice to say everything depends on a proper image preprocessing phase, where \"*proper*\" merely means: so you get the results that you want.");
+
+    // TODO: mention links to further tips and approaches, including tesseract documentation pages.
+
+    composite.destroy();
+
+    boxaClear(boxa);
+    boxaDestroy(&boxa);
   }
 
   for (unsigned int w = 0; w < words->size(); ++w) {
