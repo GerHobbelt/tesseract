@@ -218,6 +218,12 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
   *boxa = nullptr;
   *pixa = nullptr;
 
+  {
+    int width = -1, height = -1, depth = -1;
+    int ok = pixGetDimensions(pix, &width, &height, &depth);
+    ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
+  }
+
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pix, "Conn Comp Image");
   }

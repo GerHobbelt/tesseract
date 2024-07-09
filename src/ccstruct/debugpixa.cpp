@@ -733,6 +733,33 @@ namespace tesseract {
     AddPixInternal(pix, dummy, caption);
   }
 
+  static void CHECK(Pixa *pixa) {
+    if (!pixa)
+      return;
+
+    auto count = pixaGetCount(pixa);
+    ASSERT0(count >= 0);
+    if (count == 26 || count == 27) {
+      count++;
+      count--;
+    } 
+    for (int i = 0; i < count; i++) {
+      Image pix = pixaGetPix(pixa, i, L_CLONE);
+
+      ASSERT0(pix != nullptr);
+      {
+        int depth = pixGetDepth(pix);
+        ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+      }
+      {
+        int width = -1, height = -1, depth = -1;
+        int ok = pixGetDimensions(pix, &width, &height, &depth);
+        ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
+      }
+      pix.destroy();
+    }
+  }
+
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
@@ -740,18 +767,39 @@ namespace tesseract {
       int depth = pixGetDepth(pix);
       ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
     }
-// warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
-#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
-    pixaAddPix(pixa_, pix, L_COPY);
-#else
-    int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
-    Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+    {
+      int width = -1, height = -1, depth = -1;
+      int ok = pixGetDimensions(pix, &width, &height, &depth);
+      ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
+    }
+    if (pixaGetCount(pixa_) == 5) {
+      depth++;
+      depth--;
+    }
+    CHECK(pixa_);
 
-    pixaAddPix(pixa_, pix_debug, L_INSERT);
+      // warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
+#if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
+      pixaAddPix(pixa_, pix, L_COPY);
+#else
+      int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
+      Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+      {
+        int depth = pixGetDepth(pix_debug);
+        ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+      }
+      {
+        int width = -1, height = -1, depth = -1;
+        int ok = pixGetDimensions(pix_debug, &width, &height, &depth);
+        ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
+      }
+      pixaAddPix(pixa_, pix_debug, L_COPY);
 #endif
 
-    captions.push_back(caption);
-    cliprects.push_back(bbox);
+       CHECK(pixa_);
+
+      captions.push_back(caption);
+      cliprects.push_back(bbox);
 
     // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
     auto &info_ref = info_chunks.emplace_back();
@@ -771,7 +819,8 @@ namespace tesseract {
 
   // Return true when one or more images have been collected.
   bool DebugPixa::HasContent() const {
-    return (pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
+    CHECK(pixa_);
+    return (pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */);
   }
 
   int DebugPixa::PushNextSection(const std::string &title)
@@ -1361,35 +1410,44 @@ namespace tesseract {
     const std::string caption = captions[idx];
     std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION);
 
-    Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
-    if (pixs == nullptr) {
-      tprintError("{}: pixs[{}] not retrieved.\n", __func__, idx);
-      return;
-    }
+    CHECK(pixa_);
     {
-      int depth = pixGetDepth(pixs);
-      ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+      Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
+      if (pixs == nullptr) {
+        tprintError("{}: pixs[{}] not retrieved.\n", __func__, idx);
+        return;
+      }
+      {
+        int depth = pixGetDepth(pixs);
+        ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
+      }
+      TBOX cliprect = cliprects[idx];
+      auto clip_area = cliprect.area();
+      PIX *bgimg = nullptr;
+      if (clip_area > 0) {
+        bgimg = tesseract_->pix_original();
+      }
+
+      CHECK(pixa_);
+      write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption), caption);
+      CHECK(pixa_);
+
+      if (clip_area > 0 && false) {
+        counter++;
+        fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION;
+
+        CHECK(pixa_);
+        write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption),
+                               caption,
+                               &cliprect,
+                               bgimg);
+        CHECK(pixa_);
+      }
+
+      CHECK(pixa_);
+      pixs.destroy();
     }
-    TBOX cliprect = cliprects[idx];
-    auto clip_area = cliprect.area();
-    PIX *bgimg = nullptr;
-    if (clip_area > 0) {
-      bgimg = tesseract_->pix_original();
-    }
-
-    write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption), caption);
-
-    if (clip_area > 0 && false) {
-      counter++;
-      fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION;
-
-      write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption),
-                           caption, 
-                           &cliprect,
-                           bgimg);
-    }
-
-    pixs.destroy();
+    CHECK(pixa_);
 
     double t = image_clock.get_elapsed_ns();
     image_series_elapsed_ns.push_back(t);
@@ -1854,6 +1912,7 @@ namespace tesseract {
   void DebugPixa::Clear(bool final_cleanup)
   {
     final_cleanup |= content_has_been_written_to_file;
+    CHECK(pixa_);
     pixaClear(pixa_);
     captions.clear();
     // NOTE: we only clean the steps[] logging blocks when we've been ascertained that 
