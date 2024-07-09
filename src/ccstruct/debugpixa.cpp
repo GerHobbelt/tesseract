@@ -1200,6 +1200,13 @@ namespace tesseract {
         }
       }
 
+      // constant fade factors:
+      const int red_factor = r_factor * 256;
+      const int green_factor = g_factor * 256;
+      const int blue_factor = b_factor * 256;
+      const int base_mix_factor = src_factor * 256;
+      const int bottom_mix_factor = background_factor * 256;
+
       auto datas = pixGetData(toplayer);
       auto datad = pixGetData(botlayer);
       auto wpls = pixGetWpl(toplayer);
@@ -1212,13 +1219,6 @@ namespace tesseract {
           // if top(SRC) is black, use that.
           // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use
           // that. if top(SRC) is white, and bot(DST) is white, use white.
-
-          // constant fade factors:
-          const int red_factor = r_factor * 256;
-          const int green_factor = g_factor * 256;
-          const int blue_factor = g_factor * 256;
-          const int base_mix_factor = src_factor * 256;
-          const int bottom_mix_factor = background_factor * 256;
 
           int rvals, gvals, bvals;
           extractRGBValues(lines[j], &rvals, &gvals, &bvals);
