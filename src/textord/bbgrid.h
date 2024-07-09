@@ -89,10 +89,10 @@ public:
 
 protected:
   // TODO(rays) Make these private and migrate to the accessors in subclasses.
-  int gridsize_;  // Pixel size of each grid cell.
-  int gridwidth_; // Size of the grid in cells.
-  int gridheight_;
-  int gridbuckets_; // Total cells in grid.
+  int gridsize_ = 0;  // Pixel size of each grid cell.
+  int gridwidth_ = 0; // Size of the grid in cells.
+  int gridheight_ = 0;
+  int gridbuckets_ = 0; // Total cells in grid.
   ICOORD bleft_;    // Pixel coords of bottom-left of grid.
   ICOORD tright_;   // Pixel coords of top-right of grid.
 };
@@ -231,9 +231,9 @@ public:
   virtual void HandleClick(int x, int y);
 
 protected:
-  BBC_CLIST *grid_; // 2-d array of CLISTS of BBC elements.
+  BBC_CLIST *grid_ = nullptr; // 2-d array of CLISTS of BBC elements.
 
-  Tesseract* tesseract_; // reference to the active instance
+  Tesseract* tesseract_ = nullptr; // reference to the active instance
 };
 
 // The GridSearch class enables neighbourhood searching on a BBGrid.
