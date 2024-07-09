@@ -1,5 +1,7 @@
 // UTF-8: ö,ä,💩,⏱️
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "debugpixa.h"
 #include "image.h"
 #include "tprintf.h"
@@ -737,10 +739,20 @@ namespace tesseract {
     if (!pixa)
       return;
 
+  {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      //_CrtCheckMemory();
+    }
     auto count = pixaGetCount(pixa);
     ASSERT0(count >= 0);
-    if (count == 26 || count == 27) {
+    if (count >= 23 && count <= 28) {
       count++;
+      //_CrtCheckMemory();
       count--;
     } 
     for (int i = 0; i < count; i++) {
@@ -760,7 +772,20 @@ namespace tesseract {
     }
   }
 
+  std::mutex tasks_mutex = {};
+
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
+    const std::scoped_lock tasks_lock(tasks_mutex);
+
+  {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      //_CrtCheckMemory();
+    }
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
     {
@@ -1162,7 +1187,7 @@ namespace tesseract {
     ASSERT0(src != nullptr);
     pixGetDimensions(src, &w, &h, &depth);
 
-    if (background == nullptr) {
+    if (background == nullptr || true) {
       return pixConvertTo32(src);
     } else {
       int ow, oh, od;
@@ -1403,6 +1428,7 @@ namespace tesseract {
   }
 
   void DebugPixa::WriteImageToHTML(int &counter, const std::string &partname, FILE *html, int idx) {
+    const std::scoped_lock tasks_lock(tasks_mutex);
     plf::nanotimer image_clock;
     image_clock.start();
 

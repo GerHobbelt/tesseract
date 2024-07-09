@@ -18,11 +18,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "colfind.h"
 
@@ -109,6 +105,15 @@ ColumnFinder::ColumnFinder(Tesseract *tess, int gridsize, const ICOORD &bleft, c
 }
 
 ColumnFinder::~ColumnFinder() {
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF | /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   for (auto set : column_sets_) {
     delete set;
   }
@@ -117,7 +122,9 @@ ColumnFinder::~ColumnFinder() {
 #if !GRAPHICS_DISABLED
   input_blobs_win_ = nullptr;
 #endif
+  _CrtCheckMemory();
   nontext_map_.destroy();
+  _CrtCheckMemory();
   while (denorm_ != nullptr) {
     auto *predecessor = const_cast<DENORM *>(denorm_->predecessor());
     delete denorm_;
@@ -147,6 +154,16 @@ ColumnFinder::~ColumnFinder() {
   for (bb_it.mark_cycle_pt(); !bb_it.cycled_list(); bb_it.forward()) {
     BLOBNBOX *bblob = bb_it.data();
     delete bblob->cblob();
+  }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags &= ~(_CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_CHECK_EVERY_16_DF | _CRTDBG_CHECK_EVERY_1024_DF | 0);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
   }
 }
 

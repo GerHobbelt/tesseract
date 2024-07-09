@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h>    // compiler config, etc.
+
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  ifndef unlink
 #    include <io.h>
@@ -25,11 +27,6 @@
 #endif // _WIN32
 
 #include <cmath>
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 #include <leptonica/allheaders.h>
 #include "blobbox.h"
@@ -103,6 +100,16 @@ static Image RemoveEnclosingCircle(Image pixs) {
 int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess,
                            OSResults *osr) {
   ASSERT_HOST(pix_binary_ != nullptr);
+
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   int width = pixGetWidth(pix_binary_);
   int height = pixGetHeight(pix_binary_);
   // Get page segmentation mode.
@@ -116,6 +123,15 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode) && !name.empty()) {
     read_unlv_file(name, width, height, blocks);
+  }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
   }
   if (blocks->empty()) {
     // No UNLV file present. Work according to the PageSegMode.
@@ -137,17 +153,45 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   BLOBNBOX_LIST diacritic_blobs;
   int auto_page_seg_ret_val = 0;
   TO_BLOCK_LIST to_blocks;
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
+
   if (PSM_OSD_ENABLED(pageseg_mode) || PSM_BLOCK_FIND_ENABLED(pageseg_mode) ||
       PSM_SPARSE(pageseg_mode)) {
     auto_page_seg_ret_val =
         AutoPageSeg(pageseg_mode, blocks, &to_blocks,
                     enable_noise_removal ? &diacritic_blobs : nullptr, osd_tess, osr);
+    {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
     if (pageseg_mode == PSM_OSD_ONLY) {
       if (blocks->empty()) {
         if (textord_debug_tabfind > 0) {
           tprintWarn("Empty page\n");
         }
         return 0; // AutoPageSeg found an empty page.
+      }
+      {
+        const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+        // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+        // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+        int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+        flags |= desired_flags;
+        _CrtSetDbgFlag(flags);
+        _CrtCheckMemory();
       }
       if (debug_write_unlv && !name.empty()) {
         write_unlv_file(name + ".post-AutoPageSeg", width, height, blocks);
@@ -157,6 +201,15 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     // To create blobs from the image region bounds uncomment this line:
     //  to_blocks.clear();  // Uncomment to go back to the old mode.
   } else {
+    {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
     deskew_ = FCOORD(1.0f, 0.0f);
     reskew_ = FCOORD(1.0f, 0.0f);
     if (pageseg_mode == PSM_CIRCLE_WORD) {
@@ -166,6 +219,15 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
         pix_binary_ = pixcleaned;
       }
     }
+  }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
   }
 
   if (auto_page_seg_ret_val < 0) {
@@ -180,6 +242,17 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   }
   bool splitting = pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT;
   bool cjk_mode = textord_use_cjk_fp_model;
+
+  // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
 
   if (debug_write_unlv && !name.empty()) {
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), 1 + tessedit_page_number, "pre-TextordPage", "uzn");
@@ -246,6 +319,16 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
   ColumnFinder *finder = SetupPageSegAndDetectOrientation(
       pageseg_mode, blocks, osd_tess, osr, &temp_blocks, &photomask_pix,
       pageseg_apply_music_mask ? &musicmask_pix : nullptr);
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
+
   int result = 0;
   if (finder != nullptr) {
     TO_BLOCK_IT to_block_it(&temp_blocks);
@@ -263,6 +346,15 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
                                 photomask_pix, pix_thresholds_, pix_grey_, 
                                 &found_blocks, diacritic_blobs, to_blocks);
+    {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
     if (result >= 0) {
       finder->GetDeskewVectors(&deskew_, &reskew_);
     }
@@ -322,6 +414,15 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
   ICOORD bleft(0, 0);
 
   ASSERT_HOST(pix_binary_ != nullptr);
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   if (tessedit_dump_pageseg_images) {
     AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput - the source image for this operation");
   }
@@ -342,12 +443,30 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       pix_no_image_.destroy();
     }
   }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) {
     v_lines.clear();
   }
 
   // The rest of the algorithm uses the usual connected components.
   textord_.find_components(pix_binary_, blocks, to_blocks);
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
 
   TO_BLOCK_IT to_block_it(to_blocks);
   // There must be exactly one input block.
@@ -365,14 +484,42 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       tprintInfo("Estimating resolution as {} dpi (pixels / inch)\n", estimated_resolution);
     }
   }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
 
   if (to_block->line_size >= 2) {
     finder = new ColumnFinder(this, static_cast<int>(to_block->line_size), blkbox.botleft(),
                               blkbox.topright(), estimated_resolution, textord_use_cjk_fp_model,
                               textord_tabfind_aligned_gap_fraction, &v_lines, &h_lines, vertical_x,
                               vertical_y);
+    {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
 
     finder->SetupAndFilterNoise(pageseg_mode, *photo_mask_pix, to_block);
+
+  {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -393,6 +540,16 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     if (!vertical_text && textord_tabfind_vertical_text && PSM_ORIENTATION_ENABLED(pageseg_mode)) {
       vertical_text = finder->IsVerticallyAlignedText(textord_tabfind_vertical_text_ratio, to_block,
                                                       &osd_blobs);
+    }
+
+  {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
     }
 
 #if !DISABLED_LEGACY_ENGINE
@@ -449,6 +606,16 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     }
 
 #endif // !DISABLED_LEGACY_ENGINE
+
+  {
+      const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+      int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+      flags |= desired_flags;
+      _CrtSetDbgFlag(flags);
+      _CrtCheckMemory();
+    }
 
     osd_blobs.shallow_clear();
     finder->CorrectOrientation(to_block, vertical_text, osd_orientation);

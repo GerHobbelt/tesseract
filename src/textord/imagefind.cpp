@@ -17,9 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "imagefind.h"
 
@@ -227,11 +225,29 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pix, "Conn Comp Image");
   }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   // Find the individual image regions in the mask image.
   *boxa = pixConnComp(pix, pixa, 8);
   // Rectangularize the individual images. If a sharp edge in vertical and/or
   // horizontal occupancy can be found, it indicates a probably rectangular
   // image with unwanted bits merged on, so clip to the approximate rectangle.
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
+  }
   int npixes = 0;
   if (*boxa != nullptr && *pixa != nullptr) {
     npixes = pixaGetCount(*pixa);
@@ -257,6 +273,15 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
       boxaReplaceBox(*boxa, i, simple_box);
     }
     img_pix.destroy();
+  }
+  {
+    const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF | /* _CRTDBG_CHECK_ALWAYS_DF | */ /* _CRTDBG_CHECK_EVERY_16_DF | */ /* _CRTDBG_CHECK_EVERY_1024_DF | */ 0);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // const int desired_flags = (_CRTDBG_ALLOC_MEM_DF);
+    int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+    flags |= desired_flags;
+    _CrtSetDbgFlag(flags);
+    _CrtCheckMemory();
   }
 }
 

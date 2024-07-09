@@ -15,18 +15,13 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
  /*-----------------------------------------------------------------------------
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 #include "adaptive.h"        // for ADAPT_CLASS
 #include "ambigs.h"          // for UnicharIdVector, UnicharAmbigs
@@ -214,10 +209,14 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
 
   DoAdaptiveMatch(Blob, Results);
 
+  //_CrtCheckMemory();
   RemoveBadMatches(Results);
+  //_CrtCheckMemory();
   std::sort(Results->match.begin(), Results->match.end(), SortDescendingRating);
   RemoveExtraPuncs(Results);
+  //_CrtCheckMemory();
   Results->ComputeBest();
+  //_CrtCheckMemory();
   ConvertMatchesToChoices(Blob->denorm(), Blob->bounding_box(), Results, Choices);
 
   // TODO(rays) Move to before ConvertMatchesToChoices!
