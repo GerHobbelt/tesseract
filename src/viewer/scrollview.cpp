@@ -975,6 +975,9 @@ void BackgroundScrollView::StartEventHandler() {
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
   ASSERT0(!dirty);
+  _CrtCheckMemory();
+  pix.destroy();
+  _CrtCheckMemory();
 }
 
 #if !GRAPHICS_DISABLED

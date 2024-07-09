@@ -818,7 +818,7 @@ namespace tesseract {
         int ok = pixGetDimensions(pix_debug, &width, &height, &depth);
         ASSERT0(ok == 0 && width >= 1 && width < 16000 && height >= 1 && height < 16000 && depth >= 1 && depth <= 32);
       }
-      pixaAddPix(pixa_, pix_debug, L_COPY);
+      pixaAddPix(pixa_, pix_debug, L_INSERT);
 #endif
 
        CHECK(pixa_);
