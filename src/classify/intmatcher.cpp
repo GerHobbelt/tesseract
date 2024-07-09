@@ -1128,10 +1128,16 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
 
   // Find best match.
   // ClassTemplate->NumConfigs can become larger than MAX_NUM_CONFIGS.
+  if (debug) {
+    for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
+      tprintf("Config %d     \t", c);
+    }
+    tprintf("Best match:\n  ");
+  }
   for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
     int rating = tables.sum_feature_evidence_[c];
     if (debug) {
-      tprintf("Config %d, rating=%d\t", c, rating);
+      tprintf("rating=%d\t", c, rating);
     }
     if (rating > best_match) {
       result->config = c;
@@ -1144,7 +1150,7 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
   result->rating = best_match / 65536.0f;
 
   if (debug) {
-    tprintf("Best match: Config %d, best_match=%d, rating=%f\n", result->config, best_match, result->rating);
+    tprintf("Config %d, best_match=%d, rating=%f\n", result->config, best_match, result->rating);
   }
 
   return best_match;
