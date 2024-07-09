@@ -2626,6 +2626,16 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         const int dispsep = 0;
         Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
         tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
+
+        l_int32 w, h, d;
+        Image composite = tesseract_->pix_grey().copy();
+        pixGetDimensions(composite, &w, &h, &d);
+        Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
+        pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
+        tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", sequence));
+
+        mask.destroy();
+        composite.destroy();
         pix_post.destroy();
       }
 	  } else {
