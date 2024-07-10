@@ -77,7 +77,7 @@ namespace tesseract {
     // re-use the assignment operator for this:
     *this = source;
   }
-  FontInfo::FontInfo(FontInfo&& source) noexcept {
+  FontInfo::FontInfo(FontInfo &&source) noexcept {
     if (&source != this) {
       name = source.name;
       source.name = nullptr;
@@ -88,6 +88,19 @@ namespace tesseract {
       spacing_vec = source.spacing_vec;
       source.spacing_vec = nullptr;
     }
+  }
+  FontInfo& FontInfo::operator =(FontInfo &&source) noexcept {
+    if (&source != this) {
+      name = source.name;
+      source.name = nullptr;
+      properties = source.properties;
+      source.properties = 0;
+      universal_id = source.universal_id;
+      source.universal_id = 0;
+      spacing_vec = source.spacing_vec;
+      source.spacing_vec = nullptr;
+    }
+    return *this;
   }
 
 // Writes to the given file. Returns false in case of error.
