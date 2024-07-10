@@ -57,6 +57,7 @@ public:
   ICOORD(const ICOORD &src) noexcept = default;
   ICOORD(ICOORD &&src) noexcept = default;
   ICOORD &operator =(const ICOORD &src) noexcept = default;
+  ICOORD &operator=(ICOORD &&src) noexcept = default;
 
   bool DeSerialize(TFile *f);
   bool Serialize(TFile *f) const;

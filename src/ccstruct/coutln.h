@@ -265,6 +265,8 @@ public:
 #endif // !GRAPHICS_DISABLED
 
   C_OUTLINE &operator=(const C_OUTLINE &source);
+  C_OUTLINE(const C_OUTLINE &source) = delete;
+  C_OUTLINE(C_OUTLINE &&source) noexcept = delete;
 
   static C_OUTLINE *deep_copy(const C_OUTLINE *src) {
     auto *outline = new C_OUTLINE;

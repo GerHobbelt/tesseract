@@ -114,10 +114,12 @@ public:
   // Operator= steals the pointer from src and nulls it in src, thereby
   // moving the (single) ownership of the data.
   void operator=(const KDPtrPair &src) {
-    delete this->data_;
-    this->data_ = src.data_;
-    ((KDPtrPair &)src).data_ = nullptr;
-    this->key_ = src.key_;
+    if (this != &src) {
+      delete this->data_;
+      this->data_ = src.data_;
+      ((KDPtrPair &)src).data_ = nullptr;
+      this->key_ = src.key_;
+    }
   }
 
   int operator==(const KDPtrPair<Key, Data> &other) const {

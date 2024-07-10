@@ -71,6 +71,30 @@ DENORM::DENORM(DENORM &&src) noexcept {
   }
 }
 
+DENORM &DENORM::operator=(DENORM &&src) noexcept {
+  if (this != &src) {
+    inverse_ = src.inverse_;
+    src.inverse_ = false;
+    block_ = src.block_;
+    src.block_ = nullptr;
+    rotation_ = src.rotation_;
+    src.rotation_ = nullptr;
+    predecessor_ = src.predecessor_;
+    src.predecessor_ = nullptr;
+    x_map_ = src.x_map_;
+    src.x_map_ = nullptr;
+    y_map_ = src.y_map_;
+    src.y_map_ = nullptr;
+    x_origin_ = src.x_origin_;
+    y_origin_ = src.y_origin_;
+    x_scale_ = src.x_scale_;
+    y_scale_ = src.y_scale_;
+    final_xshift_ = src.final_xshift_;
+    final_yshift_ = src.final_yshift_;
+  }
+  return *this;
+}
+
 DENORM &DENORM::operator=(const DENORM &src) {
   if (this != &src) {
     Clear();

@@ -105,6 +105,8 @@ public:
   /// assignment
   ///@param source from this
   PDBLK &operator=(const PDBLK &source);
+  PDBLK(const PDBLK &source) = delete;
+  PDBLK(PDBLK &&source) = delete;
 
 protected:
   POLY_BLOCK *hand_poly;    ///< weird as well
