@@ -1116,21 +1116,23 @@ void C_OUTLINE::plot_normed(const DENORM &denorm, ScrollView::Color colour,
  */
 
 C_OUTLINE &C_OUTLINE::operator=(const C_OUTLINE &source) {
-  box = source.box;
-  start = source.start;
-  if (!children.empty()) {
-    children.clear();
-  }
-  children.deep_copy(&source.children, &deep_copy);
-  delete[] offsets;
-  offsets = nullptr;
-  stepcount = source.stepcount;
-  if (stepcount > 0) {
-    steps.resize(step_mem());
-    memmove(&steps[0], &source.steps[0], step_mem());
-    if (source.offsets != nullptr) {
-      offsets = new EdgeOffset[stepcount];
-      memcpy(offsets, source.offsets, stepcount * sizeof(*offsets));
+  if (this != &source) {
+    box = source.box;
+    start = source.start;
+    if (!children.empty()) {
+      children.clear();
+    }
+    children.deep_copy(&source.children, &deep_copy);
+    delete[] offsets;
+    offsets = nullptr;
+    stepcount = source.stepcount;
+    if (stepcount > 0) {
+      steps.resize(step_mem());
+      memmove(&steps[0], &source.steps[0], step_mem());
+      if (source.offsets != nullptr) {
+        offsets = new EdgeOffset[stepcount];
+        memcpy(offsets, source.offsets, stepcount * sizeof(*offsets));
+      }
     }
   }
   return *this;
