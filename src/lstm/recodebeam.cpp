@@ -948,10 +948,12 @@ void RecodeBeamSearch::ContinueContext(
       }
       float cert = NetworkIO::ProbToCertainty(outputs[code]) + cert_offset;
       if (cert < kMinCertainty && code != null_char_) {
-		full_code.Set(length, code);
-		int unichar_id = recoder_.DecodeUnichar(full_code);
-		const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
-		tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+        if (verbose_process || debug_misc || HasDebug()) {
+			full_code.Set(length, code);
+			int unichar_id = recoder_.DecodeUnichar(full_code);
+			const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
+			tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
+		}
   	    continue;
       }
       full_code.Set(length, code);
@@ -1183,7 +1185,7 @@ void RecodeBeamSearch::PushDupOrNoDawgIfBetter(
                        prev ? prev->permuter : TOP_CHOICE_PERM, false, false,
                        false, dup, cert, prev, nullptr, &step->beams_[index]);
     }
-	else if (verbose_process || debug_misc) {
+	else if (verbose_process || debug_misc || HasDebug()) {
       const char *wrdstr = (charset != nullptr ? charset->id_to_unichar(unichar_id) : nullptr);
 	  tprintDebug("ignoring non-dictionary word char code {} ({}) at certainty {}\n", code, wrdstr, cert);
 	}
