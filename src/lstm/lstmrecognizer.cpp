@@ -42,9 +42,9 @@
 namespace tesseract {
 
 // Default ratio between dict and non-dict words.
-static const double kDictRatio = 1.25;
+const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
-static const double kCertOffset = -0.085;
+const double kCertOffset = -0.085;
 
 //LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
 //    : LSTMRecognizer::LSTMRecognizer() {
@@ -383,7 +383,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
-      if (HasDebug() || 1) {
+      if (HasDebug()) {
         tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
             (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs matches the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
@@ -564,7 +564,7 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
 	search_->SetDebug(GetDebugLevel() - 1);
   }
-  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2 /* 0 */);
+  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2);
   search_->ExtractBestPathAsLabels(labels, xcoords);
 }
 
