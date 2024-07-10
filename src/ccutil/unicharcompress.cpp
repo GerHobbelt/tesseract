@@ -23,7 +23,7 @@
 #include "unicharcompress.h"
 #include <algorithm>
 #include <memory>
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #undef min
 #undef max

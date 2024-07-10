@@ -22,7 +22,7 @@
 #define PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
-#include "tprintf.h"          // for printf (when debugging this code)
+#include <tesseract/tprintf.h> // for printf (when debugging this code)
 
 #include <cstdint>
 #include <cstdio>

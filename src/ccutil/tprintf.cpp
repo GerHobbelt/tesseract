@@ -19,7 +19,7 @@
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
 
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "params.h"
 

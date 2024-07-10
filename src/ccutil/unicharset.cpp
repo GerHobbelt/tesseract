@@ -19,7 +19,7 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include "unicharset.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h>
 
 #include "params.h"
 

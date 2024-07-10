@@ -25,7 +25,7 @@
 #include "dawg.h"
 #include "params.h"
 #include "stopper.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 #include <cctype>

@@ -79,7 +79,7 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "params.h"
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
 
 #if defined(HAVE_MUPDF)

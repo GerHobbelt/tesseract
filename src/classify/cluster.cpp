@@ -22,7 +22,7 @@
 #include "genericheap.h"
 #include "kdpair.h"
 #include "matrix.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "helpers.h"
 

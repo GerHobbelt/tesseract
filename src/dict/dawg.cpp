@@ -26,7 +26,7 @@
 
 #include "dict.h"
 #include "helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <memory>
 

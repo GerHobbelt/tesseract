@@ -19,7 +19,7 @@
 #include <tesseract/preparation.h>    // compiler config, etc.
 
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 
 namespace tesseract {

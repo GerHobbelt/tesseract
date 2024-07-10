@@ -22,7 +22,7 @@
 #ifdef _WIN32
 #  include "host.h" // windows.h for MultiByteToWideChar, ...
 #endif
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>

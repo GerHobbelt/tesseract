@@ -38,7 +38,7 @@
 #include "helpers.h"
 #include "params.h"
 #include "serialis.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
