@@ -34,7 +34,7 @@
 #include "pageres.h"                 // for WERD_RES
 #include "params.h"                  // for IntParam, BoolParam, DoubleParam
 #include "params_training_featdef.h" // for ParamsTrainingHypothesis, PTRAI...
-#include "tprintf.h"                 // for tprintf
+#include <tesseract/tprintf.h>                 // for tprintf
 #include "unicharset.h"              // for UNICHARSET
 #include "unicity_table.h"           // for UnicityTable
 #include "fontinfo.h"                

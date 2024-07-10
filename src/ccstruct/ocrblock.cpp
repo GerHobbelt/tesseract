@@ -21,7 +21,7 @@
 #include "ocrblock.h"
 
 #include "stepblob.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cstdlib>
 #include <memory> // std::unique_ptr

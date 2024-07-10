@@ -219,7 +219,7 @@ public:
 
   // Display the bounding boxes of the BLOBNBOXes in this grid.
   // Use of this function requires an additional member of the BBC class:
-  // ScrollView::Color BBC::BoxColor() const.
+  // Diagnostics::Color BBC::BoxColor() const.
   void DisplayBoxes(ScrollViewReference &window);
 
 #endif // !GRAPHICS_DISABLED

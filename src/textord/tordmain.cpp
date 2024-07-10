@@ -42,7 +42,7 @@
 #include "statistc.h"    // for STATS
 #include "stepblob.h"    // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "textord.h"     // for Textord, WordWithBox, WordGrid, WordS...
-#include "tprintf.h"     // for tprintf
+#include <tesseract/tprintf.h>     // for tprintf
 #include "werd.h"        // for WERD_IT, WERD, WERD_LIST, W_DONT_CHOP
 #include "diagnostics_io.h"
 #include "tesseractclass.h"

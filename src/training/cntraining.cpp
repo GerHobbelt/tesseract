@@ -118,7 +118,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   // Set the global Config parameters before parsing the command line.
   Config = CNConfig;
 
-  int rv = EXIT_SUCCESS;
+  int rv;
   LIST CharList = NIL_LIST;
   CLUSTERER *Clusterer = nullptr;
   LIST ProtoList = NIL_LIST;
@@ -128,7 +128,12 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   FEATURE_DEFS_STRUCT FeatureDefs;
   InitFeatureDefs(&FeatureDefs);
 
-  ParseArguments(&argc, &argv);
+  rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
+  rv = EXIT_SUCCESS;
+
   // int num_fonts = 0;
   for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     tprintDebug("Reading {} ...\n", PageName);

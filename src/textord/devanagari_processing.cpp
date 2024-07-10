@@ -27,9 +27,7 @@
 #include "tordmain.h"
 
 #include <leptonica/allheaders.h>
-#if LIBLEPT_MINOR_VERSION > 82
 #include <leptonica/pix_internal.h>
-#endif
 
 namespace tesseract {
 

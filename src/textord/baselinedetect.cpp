@@ -31,7 +31,7 @@
 #include "linlsq.h"
 #include "makerow.h"
 #include "textord.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "underlin.h"
 
 namespace tesseract {

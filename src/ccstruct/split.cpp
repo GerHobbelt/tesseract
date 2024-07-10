@@ -22,7 +22,7 @@
 #include "split.h"
 
 #include "coutln.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 

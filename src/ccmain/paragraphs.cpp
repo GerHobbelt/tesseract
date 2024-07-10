@@ -33,7 +33,7 @@
 #include "ratngs.h"              // for WERD_CHOICE
 #include "rect.h"                // for TBOX
 #include "statistc.h"            // for STATS
-#include "tprintf.h"             // for tprintf
+#include <tesseract/tprintf.h>             // for tprintf
 #include "unicharset.h"          // for UNICHARSET
 #include "werd.h"                // for WERD, W_REP_CHAR
 #include "tesseractclass.h"

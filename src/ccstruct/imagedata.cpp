@@ -24,7 +24,7 @@
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, ScrollView::CYAN, ScrollView::NONE
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile

@@ -33,7 +33,7 @@
 #include "stepblob.h"       // for C_BLOB_IT, C_BLOB_LIST, C_BLOB
 #include "tesseractclass.h" // for Tesseract, TesseractStats, WordData
 #include "tessvars.h"       // for debug_fp
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "unicharset.h"     // for UNICHARSET
 #include "werd.h"           // for WERD, W_EOL, W_FUZZY_NON, W_FUZZY_SP
 
@@ -838,7 +838,7 @@ void fixspace_dbg(WERD_RES *word) {
     }
   }
 
-  tprintDebug("Tess Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
+  tprintDebug("Word Accepted: {}\n", word->tess_accepted ? "TRUE" : "FALSE");
   tprintDebug("Done flag: {}\n\n", word->done ? "TRUE" : "FALSE");
 }
 

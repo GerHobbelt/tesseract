@@ -33,7 +33,7 @@
 #include "recodebeam.h"
 #include "scrollview.h"
 #include "statistc.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "tlog.h"
 
 #include <unordered_set>

@@ -18,7 +18,7 @@
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
 
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 #include "tesseractclass.h"  // for Tesseract
 
 #include <tesseract/baseapi.h>

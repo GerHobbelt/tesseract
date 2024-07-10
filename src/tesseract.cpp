@@ -37,7 +37,7 @@
 #include <tesseract/renderer.h>
 #include "simddetect.h"
 #include "tesseractclass.h" // for AnyTessLang
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 #include "tlog.h"
 
 #ifdef _OPENMP

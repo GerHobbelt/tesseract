@@ -48,6 +48,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <ctime>
 
 #include "tesseract/capi_training_tools.h"
 

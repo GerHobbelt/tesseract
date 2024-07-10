@@ -21,7 +21,7 @@
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset/lang_model_helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 #include "tesseract/capi_training_tools.h"
@@ -60,7 +60,9 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
   // The output unicharset and charset_size files are just for
   // human readability.
   tesseract::CheckSharedLibraryVersion();
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  if (rv >= 0)
+	  return rv;
 
   // If these reads fail, we get a warning message and an empty list of words.
   std::vector<std::string> words = split(tesseract::ReadFile(FLAGS_words.c_str()), '\n');

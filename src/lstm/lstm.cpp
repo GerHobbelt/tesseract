@@ -35,7 +35,7 @@
 #include "fullyconnected.h"
 #include "functions.h"
 #include "networkscratch.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 // Macros for openmp code if it is available, otherwise empty macros.
 #if defined(_OPENMP) && 0

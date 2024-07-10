@@ -34,7 +34,7 @@
 #include "textord.h"
 #include "tordmain.h"
 #include "tovars.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "underlin.h"
 
 #include <algorithm>

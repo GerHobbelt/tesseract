@@ -25,7 +25,7 @@
 #include "lstmrecognizer.h"
 #include "pageres.h"
 #include "recodebeam.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 

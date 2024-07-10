@@ -70,7 +70,7 @@ DECLARE_STRING_PARAM_FLAG(test_ch);
 // { "program", "--foo=4", "--bar=true", "file1", "file2" } with *argc = 5, the
 // output *argv is { "program", "file1", "file2" } with *argc = 3
 TESS_COMMON_TRAINING_API
-void ParseCommandLineFlags(const char *usage, int *argc, const char ***argv, const bool remove_flags);
+int ParseCommandLineFlags(const char *usage, int *argc, const char ***argv, const bool remove_flags);
 
 } // namespace tesseract
 

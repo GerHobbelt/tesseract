@@ -116,7 +116,10 @@ extern "C" int tesseract_classifier_tester_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
   std::string file_prefix;
   auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
   tesseract::TessBaseAPI *api;

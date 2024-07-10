@@ -20,7 +20,7 @@
 #if DISABLED_LEGACY_ENGINE
 
 #  include "params.h"
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 
 namespace tesseract {
 
@@ -133,7 +133,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-void ParseArguments(int *argc, const char ***argv) {
+int ParseArguments(int *argc, const char ***argv) {
 	if (!ccutil)
 		ccutil = new CCUtil();
 
@@ -144,7 +144,10 @@ void ParseArguments(int *argc, const char ***argv) {
     usage += (*argv)[0];
   }
   usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  if (rv >= 0)
+	  return rv;
+
   // Set some global values based on the flags.
   Config.MinSamples =
       std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
@@ -157,6 +160,7 @@ void ParseArguments(int *argc, const char ***argv) {
     tesseract::ParamUtils::ReadParamsFile(
         FLAGS_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
   }
+  return rv;
 }
 
 // Helper loads shape table from the given file.

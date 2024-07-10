@@ -30,7 +30,7 @@
 #include "pageres.h"        // for WERD_RES
 #include "params.h"         // for BoolParam, IntParam, DoubleParam
 #include "ratngs.h"         // for BLOB_CHOICE_LIST, BLOB_CHOICE_IT
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "wordrec.h"        // for Wordrec, SegSearchPending (ptr only)
 
 namespace tesseract {
@@ -49,8 +49,9 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
     if (chop_enable && word_res->chopped_word != nullptr) {
       improve_by_chopping(rating_cert_scale, word_res, best_choice_bundle, blamer_bundle,
                           &pain_points, &pending);
+      InitialSegSearch(word_res, &pain_points, &pending, best_choice_bundle, blamer_bundle);
     }
-    if (chop_debug) {
+    if (chop_debug > 0) {
       SEAM::PrintSeams("Final seam list:", word_res->seam_array);
     }
 
@@ -109,6 +110,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
       InitBlamerForSegSearch(word_res, &pain_points, blamer_bundle, blamer_debug);
     }
   } // end while loop exploring alternative paths
+
   if (blamer_bundle != nullptr) {
     blamer_bundle->FinishSegSearch(word_res->best_choice, wordrec_debug_blamer, blamer_debug);
   }

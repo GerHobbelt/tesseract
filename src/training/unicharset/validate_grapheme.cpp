@@ -2,7 +2,7 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include "validate_grapheme.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #if defined(HAS_LIBICU)
 

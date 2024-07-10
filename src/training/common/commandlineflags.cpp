@@ -17,7 +17,7 @@
 #include <sstream>             // for std::stringstream
 #include <vector>              // for std::vector
 #include "errcode.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 static bool IntFlagExists(const char *flag_name, int32_t *value) {
@@ -167,16 +167,16 @@ static void PrintCommandLineFlags() {
   }
 }
 
-void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, const bool remove_flags) {
+int ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, const bool remove_flags) {
   if (*argc == 1) {
     tprintDebug("USAGE: {}\n", usage);
     PrintCommandLineFlags();
-    exit(0);
+    return 0;
   }
 
   if (*argc > 1 && (!strcmp((*argv)[1], "-v") || !strcmp((*argv)[1], "--version"))) {
     tprintDebug("{}\n", TessBaseAPI::Version());
-    exit(0);
+    return 0;
   }
 
   int i;
@@ -196,7 +196,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     if (!strcmp(current_arg, "help")) {
       tprintDebug("Usage:\n  {} [OPTION ...]\n\n", usage);
       PrintCommandLineFlags();
-      exit(0);
+      return 0;
     }
     // Find the starting position of the value if it was specified in this
     // string.
@@ -214,7 +214,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
     }
     if (!lhs.length()) {
       tprintError("Bad argument: {}\n", (*argv)[i]);
-      exit(1);
+      return 1;
     }
 
     // Find the flag name in the list of global flags.
@@ -225,22 +225,22 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
         if (!strlen(rhs)) {
           // Bad input of the format --int_flag=
           tprintError("Bad argument: {}\n", (*argv)[i]);
-          exit(1);
+          return 1;
         }
         if (!SafeAtoi(rhs, &int_val)) {
           tprintError("Could not parse int from {} in flag {}\n", rhs, (*argv)[i]);
-          exit(1);
+          return 1;
         }
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
           tprintError("Could not find value argument for flag {}\n", lhs.c_str());
-          exit(1);
+          return 1;
         } else {
           ++i;
           if (!SafeAtoi((*argv)[i], &int_val)) {
             tprintError("Could not parse int32_t from {}\n", (*argv)[i]);
-            exit(1);
+            return 1;
           }
         }
       }
@@ -255,22 +255,22 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
         if (!strlen(rhs)) {
           // Bad input of the format --double_flag=
           tprintError("Bad argument: {}\n", (*argv)[i]);
-          exit(1);
+          return 1;
         }
         if (!SafeAtod(rhs, &double_val)) {
           tprintError("Could not parse double from {} in flag {}\n", rhs, (*argv)[i]);
-          exit(1);
+          return 1;
         }
       } else {
         // We need to parse the next argument
         if (i + 1 >= *argc) {
           tprintError("Could not find value argument for flag {}\n", lhs.c_str());
-          exit(1);
+          return 1;
         } else {
           ++i;
           if (!SafeAtod((*argv)[i], &double_val)) {
             tprintError("Could not parse double from {}\n", (*argv)[i]);
-            exit(1);
+            return 1;
           }
         }
       }
@@ -289,7 +289,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
         if (!strlen(rhs)) {
           // Bad input of the format --bool_flag=
           tprintError("Bad argument: {}\n", (*argv)[i]);
-          exit(1);
+          return 1;
         }
         if (!strcmp(rhs, "false") || !strcmp(rhs, "0")) {
           bool_val = false;
@@ -297,7 +297,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
           bool_val = true;
         } else {
           tprintError("Could not parse bool from flag {}\n", (*argv)[i]);
-          exit(1);
+          return 1;
         }
       }
       SetBoolFlagValue(lhs.c_str(), bool_val);
@@ -313,7 +313,7 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
         // Pick the next argument
         if (i + 1 >= *argc) {
           tprintError("Could not find string value for flag {}\n", lhs.c_str());
-          exit(1);
+          return 1;
         } else {
           string_val = (*argv)[++i];
         }
@@ -324,13 +324,14 @@ void ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, con
 
     // Flag was not found. Exit with an error message.
     tprintError("Non-existent flag {}\n", (*argv)[i]);
-    exit(1);
+    return 1;
   } // for each argv
   if (remove_flags) {
     (*argv)[i - 1] = (*argv)[0];
     (*argv) += (i - 1);
     (*argc) -= (i - 1);
   }
+  return -1;		// continue executing the application
 }
 
 } // namespace tesseract

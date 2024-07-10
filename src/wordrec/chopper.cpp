@@ -36,7 +36,7 @@
 #include "seam.h"           // for SEAM
 #include "split.h"          // for remove_edgept
 #include "stopper.h"        // for DANGERR
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "wordrec.h"        // for Wordrec, SegSearchPending (ptr only)
 
 namespace tesseract {
@@ -183,7 +183,7 @@ static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB 
       delete seam;
       seam = nullptr;
 #if !GRAPHICS_DISABLED
-      if (debug_level) {
+      if (debug_level > 0) {
         if (debug_level > 2) {
           display_blob(blob, ScrollView::RED);
         }
@@ -223,7 +223,7 @@ SEAM *Wordrec::attempt_blob_chop(TWERD *word, TBLOB *blob, int32_t blob_number, 
   if (seam == nullptr) {
     seam = pick_good_seam(blob);
   }
-  if (chop_debug) {
+  if (chop_debug > 0) {
     if (seam != nullptr) {
       seam->Print("Good seam picked=");
     } else {
@@ -324,7 +324,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
   SEAM *seam = nullptr;
   do {
     auto blob = select_blob_to_split_from_fixpt(fixpt);
-    if (chop_debug) {
+    if (chop_debug > 0) {
       tprintDebug("blob_number from fixpt = {}\n", blob);
     }
     bool split_point_from_dict = (blob != -1);
@@ -333,7 +333,7 @@ SEAM *Wordrec::improve_one_blob(const std::vector<BLOB_CHOICE *> &blob_choices, 
     } else {
       blob = select_blob_to_split(blob_choices, rating_ceiling, split_next_to_fragment);
     }
-    if (chop_debug) {
+    if (chop_debug > 0) {
       tprintDebug("blob_number = {}\n", blob);
     }
     *blob_number = blob;
@@ -527,7 +527,7 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
   int worst_index_near_fragment = -1;
   std::vector<const CHAR_FRAGMENT *> fragments;
 
-  if (chop_debug) {
+  if (chop_debug > 0) {
     if (rating_ceiling < FLT_MAX) {
       tprintDebug("rating_ceiling = {}\n", rating_ceiling);
     } else {
@@ -576,7 +576,7 @@ int Wordrec::select_blob_to_split(const std::vector<BLOB_CHOICE *> &blob_choices
               blob_choice->rating() > worst_near_fragment) {
             worst_index_near_fragment = x;
             worst_near_fragment = blob_choice->rating();
-            if (chop_debug) {
+            if (chop_debug > 0) {
               tprintDebug(
                   "worst_index_near_fragment={}"
                   " expand_following_fragment={}"

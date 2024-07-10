@@ -4,7 +4,7 @@
 
 #include "debugpixa.h"
 #include "image.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "tesseractclass.h"
 
 #include <leptonica/allheaders.h>

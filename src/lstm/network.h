@@ -24,7 +24,7 @@
 #include "serialis.h"
 #include "static_shape.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cmath>
 #include <cstdio>

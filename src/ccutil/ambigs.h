@@ -26,7 +26,7 @@
 
 #  include <tesseract/unichar.h>
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 #  include "unicharset.h"
 
 #  define MAX_AMBIG_SIZE 10

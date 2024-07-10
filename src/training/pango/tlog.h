@@ -26,7 +26,7 @@
 
 #include "../common/commandlineflags.h"
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 TESS_API
 extern INT_VAR_H(tlog_level);

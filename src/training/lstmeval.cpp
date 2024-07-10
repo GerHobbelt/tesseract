@@ -19,7 +19,7 @@
 
 #include "common/commontraining.h"
 #include "unicharset/lstmtester.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 using namespace tesseract;
 
@@ -43,7 +43,10 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
   if (FLAGS_model.empty()) {
     tprintError("Must provide a --model!\n");
     return EXIT_FAILURE;

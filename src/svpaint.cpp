@@ -23,12 +23,13 @@
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#  include <cstdlib>
+#  include <iostream>
+#include "mupdf/fitz/string-util.h"
+
 #if !GRAPHICS_DISABLED
 #  include "scrollview.h"
 #  include "svmnode.h"
-
-#  include <cstdlib>
-#  include <iostream>
 
 namespace tesseract {
 

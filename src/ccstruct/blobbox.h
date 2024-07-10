@@ -31,7 +31,7 @@
 #include "scrollview.h" // for ScrollView, ScrollView::Color
 #include "statistc.h"   // for STATS
 #include "stepblob.h"   // for C_BLOB
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
 #include "werd.h"       // for WERD_LIST
 
 #include <cinttypes> // for PRId32

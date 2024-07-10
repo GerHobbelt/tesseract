@@ -26,7 +26,7 @@
 #include "params_training_featdef.h" // for ParamsTrainingBundle, ParamsTra...
 #include "ratngs.h"                    // for BLOB_CHOICE_LIST (ptr only)
 #include "rect.h"                      // for TBOX
-#include "tprintf.h"                   // for tprintf
+#include <tesseract/tprintf.h>                   // for tprintf
 
 #include <tesseract/unichar.h> // for UNICHAR_ID
 

@@ -32,9 +32,9 @@ namespace tesseract {
 
 BOOL_VAR(textord_show_fixed_cuts, false, "Draw fixed pitch cell boundaries");
 
-ScrollViewReference to_win;
-
 #if !GRAPHICS_DISABLED
+
+ScrollViewReference to_win;
 
 /**********************************************************************
  * create_to_win

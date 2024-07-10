@@ -42,7 +42,7 @@
 #include "oldlist.h"
 #include "protos.h"
 #include "shapetable.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicity_table.h"
 
 #include "tesseract/capi_training_tools.h"
@@ -201,7 +201,10 @@ extern "C" int tesseract_mf_training_main(int argc, const char** argv)
 {
   tesseract::CheckSharedLibraryVersion();
 
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
 
   ShapeTable *shape_table = nullptr;
   std::string file_prefix;

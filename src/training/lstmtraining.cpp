@@ -29,7 +29,7 @@
 #include "unicharset/lstmtester.h"
 #include "unicharset/lstmtrainer.h"
 #include "params.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 using namespace tesseract;
@@ -100,7 +100,10 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  ParseArguments(&argc, &argv);
+  int rv = ParseArguments(&argc, &argv);
+  if (rv >= 0) {
+    return rv;
+  }
 #if defined(__USE_GNU)
   if (FLAGS_debug_float) {
     // Raise SIGFPE for unwanted floating point calculations.

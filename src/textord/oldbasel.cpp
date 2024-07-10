@@ -28,7 +28,7 @@
 #include "quadlsq.h"
 #include "statistc.h"
 #include "textord.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cmath>
 #include <vector> // for std::vector

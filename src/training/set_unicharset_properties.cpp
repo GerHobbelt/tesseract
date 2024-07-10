@@ -16,7 +16,7 @@
 
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 #include "tesseract/capi_training_tools.h"

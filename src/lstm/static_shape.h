@@ -2,7 +2,6 @@
 // File:        static_shape.h
 // Description: Defines the size of the 4-d tensor input/output from a network.
 // Author:      Ray Smith
-// Created:     Fri Oct 14 09:07:31 PST 2016
 //
 // (C) Copyright 2016, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +21,7 @@
 #include <tesseract/fmt-support.h>
 
 #include "serialis.h" // for TFile
-#include "tprintf.h"  // for tprintf
+#include <tesseract/tprintf.h>  // for tprintf
 
 namespace tesseract {
 

@@ -3,7 +3,7 @@
 
 #include "validate_indic.h"
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

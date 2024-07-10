@@ -22,7 +22,7 @@
 #include "otsuthr.h"
 #include "thresholder.h"
 #include "tesseractclass.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h> // for api->GetIntVariable()

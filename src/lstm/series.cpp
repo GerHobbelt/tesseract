@@ -22,7 +22,7 @@
 #include "fullyconnected.h"
 #include "networkscratch.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

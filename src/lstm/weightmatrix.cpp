@@ -23,7 +23,7 @@
 #include "intsimdmatrix.h"
 #include "simddetect.h" // for DotProduct
 #include "statistc.h"
-#include "tprintf.h"    // forTFloat
+#include <tesseract/tprintf.h>    // forTFloat
 #include "tesstypes.h"
 
 namespace tesseract {

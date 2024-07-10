@@ -22,7 +22,7 @@
 #include "points.h"     // for ICOORD, FCOORD
 #include "scrollview.h" // for ScrollView, ScrollView::Color
 #include "tesstypes.h"  // for TDimension
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
 
 #include <tesseract/export.h> // for TESS_API, DLLSYM
 

@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include "helpers.h" // For TRand.
 #include "rect.h"
+#include <iostream> 
 
 namespace tesseract {
 
