@@ -129,9 +129,11 @@ struct RecodeNode {
     ASSERT_HOST(src.dawgs == nullptr);
   }
   RecodeNode &operator=(const RecodeNode &src) {
-    delete dawgs;
-    memcpy(this, &src, sizeof(src));
-    src.dawgs = nullptr;
+    if (this != &src) {
+      delete dawgs;
+      memcpy(this, &src, sizeof(src));
+      src.dawgs = nullptr;
+    }
     return *this;
   }
   ~RecodeNode() {

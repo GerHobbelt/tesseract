@@ -1289,12 +1289,12 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
 
     bool two_pass = false;
 
-    if (two_pass) {
+    if (two_pass || 1) {
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
 
       // pixWrite("/tmp/out.png", pix, IFF_PNG);
       // Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_WHITE);
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);

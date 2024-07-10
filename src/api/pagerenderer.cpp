@@ -344,7 +344,7 @@ static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss,
   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl) != 0) {
       ptaJoin(pts_ltr, pts_rtl, 0, -1);
-      DestroyAndCreatePta(pts_rtl);
+      ptaDestroy(&pts_rtl);
     }
     ptaJoin(pts_ltr, ptss, 0, -1);
   } else {
@@ -984,9 +984,9 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         writing_direction < 2 && writing_direction_before < 2 &&
         res_it->WordDirection()) {
       if (writing_direction_before == WRITING_DIRECTION_LEFT_TO_RIGHT) {
-        // line_content << "‏" << word_content.str();
+        // line_content << "\u200F" << word_content.str();
       } else {
-        // line_content << "‎" << word_content.str();
+        // line_content << "\u200E‎" << word_content.str();
       }
     } else {
       // line_content << word_content.str();

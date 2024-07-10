@@ -94,13 +94,13 @@ namespace tesseract {
       // Thus, when this step itself is popped (inactivated), the size of the info_chunks[] array should be one longer than the sublevel_items[]
       // array, as the latter *interleaves* the former.
 
-      int level;                      // hierarchy depth. 0: root
+      int level = 0;                      // hierarchy depth. 0: root
 
       plf::nanotimer clock;           // performance timer, per section
-      double elapsed_ns;
-      double elapsed_ns_cummulative;
+      double elapsed_ns = 0.0;
+      double elapsed_ns_cummulative = 0.0;
 
-      int first_info_chunk;           // index into info_chunks[] array
+      int first_info_chunk { -1 }; // index into info_chunks[] array
       int last_info_chunk { -1 };     // index into info_chunks[] array; necessary as we allow return-to-parent process steps hierarchy layout.
     };
 
