@@ -983,7 +983,7 @@ BackgroundScrollView::~BackgroundScrollView() {
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
   auto message = fmt::vformat(format, args);
-  tprintDebug("DEBUG-DRAW: {}\n", message);
+  //tprintDebug("DEBUG-DRAW: {}\n", message);
 }
 
 /// Add an Event Listener to this ScrollView Window
