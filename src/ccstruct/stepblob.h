@@ -113,11 +113,21 @@ public:
 #endif // !GRAPHICS_DISABLED
 
   C_BLOB &operator=(const C_BLOB &source) {
-    if (!outlines.empty()) {
-      outlines.clear();
+    if (this != &source) {
+      if (!outlines.empty()) {
+        outlines.clear();
+      }
+      outlines.deep_copy(&source.outlines, &C_OUTLINE::deep_copy);
     }
-    outlines.deep_copy(&source.outlines, &C_OUTLINE::deep_copy);
     return *this;
+  }
+  C_BLOB(const C_BLOB& src) {
+    if (this != &src) {
+      if (!outlines.empty()) {
+        outlines.clear();
+      }
+      outlines.deep_copy(&src.outlines, &C_OUTLINE::deep_copy);
+    }
   }
 
   static C_BLOB *deep_copy(const C_BLOB *src) {
