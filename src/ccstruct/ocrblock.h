@@ -182,6 +182,8 @@ public:
   void print(FILE *fp, bool dump);
 
   BLOCK &operator=(const BLOCK &source);
+  BLOCK(const BLOCK &source);
+
   PDBLK pdblk; ///< Page Description Block
 
 private:

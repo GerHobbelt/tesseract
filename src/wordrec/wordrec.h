@@ -238,8 +238,8 @@ public:
   // Calls fill_lattice_ member function
   // (assumes that fill_lattice_ is not nullptr).
   void CallFillLattice(const MATRIX &ratings, const WERD_CHOICE_LIST &best_choices,
-                       const UNICHARSET &unicharset, BlamerBundle *blamer_bundle) {
-    (this->*fill_lattice_)(ratings, best_choices, unicharset, blamer_bundle);
+                       const UNICHARSET &unichars, BlamerBundle *blamer_bundle) {
+    (this->*fill_lattice_)(ratings, best_choices, unichars, blamer_bundle);
   }
 
   // tface.cpp
