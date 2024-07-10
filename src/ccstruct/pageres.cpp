@@ -191,66 +191,68 @@ ROW_RES::ROW_RES(bool merge_similar_words, ROW *the_row) {
 }
 
 WERD_RES &WERD_RES::operator=(const WERD_RES &source) {
-  this->ELIST_LINK::operator=(source);
-  Clear();
-  if (source.combination) {
-    word = new WERD;
-    *word = *(source.word); // deep copy
-  } else {
-    word = source.word; // pt to same word
-  }
-  if (source.bln_boxes != nullptr) {
-    bln_boxes = new tesseract::BoxWord(*source.bln_boxes);
-  }
-  if (source.chopped_word != nullptr) {
-    chopped_word = new TWERD(*source.chopped_word);
-  }
-  if (source.rebuild_word != nullptr) {
-    rebuild_word = new TWERD(*source.rebuild_word);
-  }
-  // TODO(rays) Do we ever need to copy the seam_array?
-  blob_row = source.blob_row;
-  denorm = source.denorm;
-  if (source.box_word != nullptr) {
-    box_word = new tesseract::BoxWord(*source.box_word);
-  }
-  best_state = source.best_state;
-  correct_text = source.correct_text;
-  blob_widths = source.blob_widths;
-  blob_gaps = source.blob_gaps;
-  // None of the uses of operator= require the ratings matrix to be copied,
-  // so don't as it would be really slow.
+  if (this != &source) {
+    this->ELIST_LINK::operator=(source);
+    Clear();
+    if (source.combination) {
+      word = new WERD;
+      *word = *(source.word); // deep copy
+    } else {
+      word = source.word; // pt to same word
+    }
+    if (source.bln_boxes != nullptr) {
+      bln_boxes = new tesseract::BoxWord(*source.bln_boxes);
+    }
+    if (source.chopped_word != nullptr) {
+      chopped_word = new TWERD(*source.chopped_word);
+    }
+    if (source.rebuild_word != nullptr) {
+      rebuild_word = new TWERD(*source.rebuild_word);
+    }
+    // TODO(rays) Do we ever need to copy the seam_array?
+    blob_row = source.blob_row;
+    denorm = source.denorm;
+    if (source.box_word != nullptr) {
+      box_word = new tesseract::BoxWord(*source.box_word);
+    }
+    best_state = source.best_state;
+    correct_text = source.correct_text;
+    blob_widths = source.blob_widths;
+    blob_gaps = source.blob_gaps;
+    // None of the uses of operator= require the ratings matrix to be copied,
+    // so don't as it would be really slow.
 
-  // Copy the cooked choices.
-  WERD_CHOICE_IT wc_it(const_cast<WERD_CHOICE_LIST *>(&source.best_choices));
-  WERD_CHOICE_IT wc_dest_it(&best_choices);
-  for (wc_it.mark_cycle_pt(); !wc_it.cycled_list(); wc_it.forward()) {
-    const WERD_CHOICE *choice = wc_it.data();
-    wc_dest_it.add_after_then_move(new WERD_CHOICE(*choice));
-  }
-  if (!wc_dest_it.empty()) {
-    wc_dest_it.move_to_first();
-    best_choice = wc_dest_it.data();
-  } else {
-    best_choice = nullptr;
-  }
+    // Copy the cooked choices.
+    WERD_CHOICE_IT wc_it(const_cast<WERD_CHOICE_LIST *>(&source.best_choices));
+    WERD_CHOICE_IT wc_dest_it(&best_choices);
+    for (wc_it.mark_cycle_pt(); !wc_it.cycled_list(); wc_it.forward()) {
+      const WERD_CHOICE *choice = wc_it.data();
+      wc_dest_it.add_after_then_move(new WERD_CHOICE(*choice));
+    }
+    if (!wc_dest_it.empty()) {
+      wc_dest_it.move_to_first();
+      best_choice = wc_dest_it.data();
+    } else {
+      best_choice = nullptr;
+    }
 
-  if (source.raw_choice != nullptr) {
-    raw_choice = new WERD_CHOICE(*source.raw_choice);
-  } else {
-    raw_choice = nullptr;
-  }
-  if (source.ep_choice != nullptr) {
-    ep_choice = new WERD_CHOICE(*source.ep_choice);
-  } else {
-    ep_choice = nullptr;
-  }
-  reject_map = source.reject_map;
-  combination = source.combination;
-  part_of_combo = source.part_of_combo;
-  CopySimpleFields(source);
-  if (source.blamer_bundle != nullptr) {
-    blamer_bundle = new BlamerBundle(*(source.blamer_bundle));
+    if (source.raw_choice != nullptr) {
+      raw_choice = new WERD_CHOICE(*source.raw_choice);
+    } else {
+      raw_choice = nullptr;
+    }
+    if (source.ep_choice != nullptr) {
+      ep_choice = new WERD_CHOICE(*source.ep_choice);
+    } else {
+      ep_choice = nullptr;
+    }
+    reject_map = source.reject_map;
+    combination = source.combination;
+    part_of_combo = source.part_of_combo;
+    CopySimpleFields(source);
+    if (source.blamer_bundle != nullptr) {
+      blamer_bundle = new BlamerBundle(*(source.blamer_bundle));
+    }
   }
   return *this;
 }
