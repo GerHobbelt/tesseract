@@ -41,10 +41,32 @@ DENORM::DENORM() {
 }
 
 DENORM::DENORM(const DENORM &src) {
-  rotation_ = nullptr;
-  x_map_ = nullptr;
-  y_map_ = nullptr;
-  *this = src;
+  if (this != &src) {
+    *this = src;
+  }
+}
+
+DENORM::DENORM(DENORM &&src) noexcept {
+  if (this != &src) {
+    inverse_ = src.inverse_;
+    src.inverse_ = false;
+    block_ = src.block_;
+    src.block_ = nullptr;
+    rotation_ = src.rotation_;
+    src.rotation_ = nullptr;
+    predecessor_ = src.predecessor_;
+    src.predecessor_ = nullptr;
+    x_map_ = src.x_map_;
+    src.x_map_ = nullptr;
+    y_map_ = src.y_map_;
+    src.y_map_ = nullptr;
+    x_origin_ = src.x_origin_;
+    y_origin_ = src.y_origin_;
+    x_scale_ = src.x_scale_;
+    y_scale_ = src.y_scale_;
+    final_xshift_ = src.final_xshift_;
+    final_yshift_ = src.final_yshift_;
+  }
 }
 
 DENORM &DENORM::operator=(DENORM &&src) noexcept {
@@ -72,22 +94,24 @@ DENORM &DENORM::operator=(DENORM &&src) noexcept {
 }
 
 DENORM &DENORM::operator=(const DENORM &src) {
-  Clear();
-  inverse_ = src.inverse_;
-  predecessor_ = src.predecessor_;
-  pix_ = src.pix_;
-  block_ = src.block_;
-  if (src.rotation_ == nullptr) {
-    rotation_ = nullptr;
-  } else {
-    rotation_ = new FCOORD(*src.rotation_);
+  if (this != &src) {
+	  Clear();
+	  inverse_ = src.inverse_;
+	  predecessor_ = src.predecessor_;
+	  pix_ = src.pix_;
+	  block_ = src.block_;
+	  if (src.rotation_ == nullptr) {
+	    rotation_ = nullptr;
+	  } else {
+	    rotation_ = new FCOORD(*src.rotation_);
+	  }
+	  x_origin_ = src.x_origin_;
+	  y_origin_ = src.y_origin_;
+	  x_scale_ = src.x_scale_;
+	  y_scale_ = src.y_scale_;
+	  final_xshift_ = src.final_xshift_;
+	  final_yshift_ = src.final_yshift_;
   }
-  x_origin_ = src.x_origin_;
-  y_origin_ = src.y_origin_;
-  x_scale_ = src.x_scale_;
-  y_scale_ = src.y_scale_;
-  final_xshift_ = src.final_xshift_;
-  final_yshift_ = src.final_yshift_;
   return *this;
 }
 
@@ -581,6 +605,7 @@ void DENORM::Clear() {
   y_map_ = nullptr;
   delete rotation_;
   rotation_ = nullptr;
+  Init();
 }
 
 // Setup default values.
