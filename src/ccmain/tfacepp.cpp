@@ -47,6 +47,7 @@ void Tesseract::recog_word(WERD_RES *word) {
   ASSERT_HOST(!word->chopped_word->blobs.empty());
   recog_word_recursive(word);
   word->SetupBoxWord();
+  ASSERT_HOST(word->best_choice != nullptr);
   ASSERT_HOST(static_cast<unsigned>(word->best_choice->length()) == word->box_word->length());
   // Check that the ratings matrix size matches the sum of all the
   // segmentation states.

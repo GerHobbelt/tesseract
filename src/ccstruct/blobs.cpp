@@ -379,7 +379,9 @@ void TBLOB::CopyFrom(const TBLOB &src) {
     if (outlines == nullptr) {
       outlines = new_outline;
     } else {
-      prev_outline->next = new_outline;
+      if (prev_outline != nullptr) {
+        prev_outline->next = new_outline;
+      }
     }
     prev_outline = new_outline;
   }

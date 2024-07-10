@@ -1000,7 +1000,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       if (writing_direction_before == WRITING_DIRECTION_LEFT_TO_RIGHT) {
         // line_content << "\u200F" << word_content.str();
       } else {
-        // line_content << "\u200E‎" << word_content.str();
+        // line_content << "\u200E" << word_content.str();
       }
     } else {
       // line_content << word_content.str();

@@ -78,19 +78,21 @@ PageIterator::PageIterator(const PageIterator &src)
 }
 
 const PageIterator &PageIterator::operator=(const PageIterator &src) {
-  page_res_ = src.page_res_;
-  tesseract_ = src.tesseract_;
-  include_upper_dots_ = src.include_upper_dots_;
-  include_lower_dots_ = src.include_lower_dots_;
-  scale_ = src.scale_;
-  scaled_yres_ = src.scaled_yres_;
-  rect_left_ = src.rect_left_;
-  rect_top_ = src.rect_top_;
-  rect_width_ = src.rect_width_;
-  rect_height_ = src.rect_height_;
-  delete it_;
-  it_ = new PAGE_RES_IT(*src.it_);
-  BeginWord(src.blob_index_);
+  if (this != &src) {
+    page_res_ = src.page_res_;
+    tesseract_ = src.tesseract_;
+    include_upper_dots_ = src.include_upper_dots_;
+    include_lower_dots_ = src.include_lower_dots_;
+    scale_ = src.scale_;
+    scaled_yres_ = src.scaled_yres_;
+    rect_left_ = src.rect_left_;
+    rect_top_ = src.rect_top_;
+    rect_width_ = src.rect_width_;
+    rect_height_ = src.rect_height_;
+    delete it_;
+    it_ = new PAGE_RES_IT(*src.it_);
+    BeginWord(src.blob_index_);
+  }
   return *this;
 }
 
