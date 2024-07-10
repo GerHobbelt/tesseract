@@ -761,7 +761,7 @@ namespace tesseract {
     captions.push_back(caption);
     cliprects.push_back(bbox);
 
-    // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
+    // make sure follow-up log messages end up AFTER the image in the output by dumping them in a subsequent info_chunk:
     auto &info_ref = info_chunks.emplace_back();
     info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
   }
