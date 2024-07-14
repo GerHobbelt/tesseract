@@ -741,7 +741,8 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
   if (InternalResetImage()) {
     if (pixGetSpp(pix) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
-      Pix *p1 = pixRemoveAlpha(pix);
+      Pix *p1 = pixAlphaBlendUniform(pix, 0xFFFFFF00);
+      //Pix *p1 = pixRemoveAlpha(pix);
       pixSetSpp(p1, 3);
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
