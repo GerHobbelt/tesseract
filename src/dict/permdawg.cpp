@@ -176,7 +176,7 @@ WERD_CHOICE *Dict::dawg_permute_and_select(const BLOB_CHOICE_LIST_VECTOR &char_c
   float certainties[MAX_WERD_LENGTH];
   this->go_deeper_fxn_ = &tesseract::Dict::go_deeper_dawg_fxn;
   int attempts_left = max_permuter_attempts;
-  permute_choices((dawg_debug_level > 0) ? "permute_dawg_debug" : nullptr, char_choices, 0, nullptr,
+  permute_choices((dawg_debug_level > 0) ? "dawg_permute_and_select" : nullptr, char_choices, 0, nullptr,
                   &word, certainties, &rating_limit, best_choice, &attempts_left, &dawg_args);
   delete[] active_dawgs;
   return best_choice;
@@ -194,8 +194,8 @@ void Dict::permute_choices(const char *debug, const BLOB_CHOICE_LIST_VECTOR &cha
                            WERD_CHOICE *best_choice, int *attempts_left, void *more_args) {
   if (debug) {
     tprintDebug(
-        "{} permute_choices: char_choice_index={}"
-        " limit={} rating={}, certainty={} word={}\n",
+        "{} permute_choices: char_choice_index={},"
+        " limit={}, rating={}, certainty={}, word={}\n",
         debug, char_choice_index, *limit, word->rating(), word->certainty(),
         word->debug_string());
   }

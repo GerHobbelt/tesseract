@@ -60,12 +60,12 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   // Get the boxes for this page, if there are any.
   if (!ReadAllBoxes(applybox_page, false, input_imagename, &boxes, &texts, nullptr, nullptr) ||
       boxes.empty()) {
-    tprintError("Failed to read boxes from {}\n", input_imagename);
+    tprintError("Failed to read boxes for {}\n", input_imagename);
     return false;
   }
   TrainFromBoxes(boxes, texts, block_list, &images);
   if (images.PagesSize() == 0) {
-    tprintError("Failed to read pages from {}\n", input_imagename);
+    tprintError("Failed to read pages for {}\n", input_imagename);
     return false;
   }
   images.Shuffle();

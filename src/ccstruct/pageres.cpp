@@ -715,11 +715,11 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
   }
   if (debug) {
     if (inserted) {
-      tprintDebug("New {} Word Choice", best_choice == word_choice ? "Best" : "Secondary");
+      tprintDebug("New {} Word Choice: ", best_choice == word_choice ? "Best" : "Secondary");
     } else {
-      tprintDebug("Poor Word Choice");
+      tprintDebug("Poor Word Choice: ");
     }
-    word_choice->print(" Word Choice");
+    word_choice->print("Word Choice");
   }
   if (!inserted) {
     delete word_choice;

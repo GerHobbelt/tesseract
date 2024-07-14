@@ -271,6 +271,10 @@ public:
     }
   }
   Image pix_original() const {
+    if (1) {
+      volatile int r = 1;
+      r++;
+    }
     return pix_original_;
   }
   // Takes ownership of the given original_pix.
@@ -1094,39 +1098,18 @@ public:
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:
-  void AddPixDebugPage(const Image &pix, const char *title) {
-	  if (pix == nullptr)
-		  return;
-
-    pixa_debug_.AddPix(pix, title);
-  }
-  void AddPixDebugPage(const Image &pix, const std::string& title) {
-    AddPixDebugPage(pix, title.c_str());
-  }
+  void AddPixDebugPage(const Image &pix, const char *title);
+  void AddPixDebugPage(const Image &pix, const std::string &title);
 
   void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX& bbox, const char *title);
-  void AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
-    AddPixCompedOverOrigDebugPage(pix, bbox, title.c_str());
-  }
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX &bbox, const std::string &title);
   void AddPixCompedOverOrigDebugPage(const Image &pix, const char *title);
-  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title) {
-    AddPixCompedOverOrigDebugPage(pix, title.c_str());
-  }
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title);
 
-  int PushNextPixDebugSection(const std::string &title) { // sibling
-    return pixa_debug_.PushNextSection(title);
-  }
-  int PushSubordinatePixDebugSection(const std::string &title) { // child
-    return pixa_debug_.PushSubordinateSection(title);
-  }
-  void PopPixDebugSection(int handle = -1) { // pop active; return focus to parent
-    pixa_debug_.WriteSectionParamsUsageReport();
-
-    pixa_debug_.PopSection(handle);
-  }
-  int GetPixDebugSectionLevel() const {
-    return pixa_debug_.GetCurrentSectionLevel();
-  }
+  int PushNextPixDebugSection(const std::string &title); // sibling
+  int PushSubordinatePixDebugSection(const std::string &title); // child
+  void PopPixDebugSection(int handle = -1); // pop active; return focus to parent
+  int GetPixDebugSectionLevel() const;
 
 public:
   // Find connected components in the page and process a subset until finished or
