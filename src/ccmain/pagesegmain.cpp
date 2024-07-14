@@ -175,7 +175,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     }
     return 0; // AutoPageSeg found an empty page.
   }
-  bool splitting = pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT;
+  bool splitting = (pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT);
   bool cjk_mode = textord_use_cjk_fp_model;
 
   if (debug_write_unlv && !name.empty()) {

@@ -55,6 +55,7 @@ public:
   DENORM(const DENORM &src);
   DENORM(DENORM &&src) noexcept;
   DENORM &operator=(const DENORM &src);
+  DENORM &operator=(DENORM &&src) noexcept;
   ~DENORM();
 
   // Setup the normalization transformation parameters.

@@ -2519,7 +2519,6 @@ static void InitializeRowInfo(bool after_recognition, const MutableIterator &it,
   info->rword_likely_starts_idea = false;
   info->rword_likely_ends_idea = false;
   info->has_leaders = false;
-  info->ltr = true;
 
   if (!after_recognition) {
     InitializeTextAndBoxesPreRecognition(it, info);

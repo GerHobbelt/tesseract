@@ -97,7 +97,7 @@ ColPartition::ColPartition(Tesseract* tess, BlobRegionType blob_type, const ICOO
       median_right_(-INT32_MAX),
       blob_type_(blob_type),
       vertical_(vertical) {
-  assert(tess != nullptr);
+  ASSERT0(tess != nullptr);
   memset(special_blobs_densities_, 0, sizeof(special_blobs_densities_));
 }
 

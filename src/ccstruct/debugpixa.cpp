@@ -50,7 +50,7 @@ namespace tesseract {
   // in here by using iswalpha() et al.
 
   static inline bool isalpha(int c) {
-    c &= 0x20;
+    c &= ~0x20;
     return c >= 'A' && c <= 'Z';
   }
 
@@ -389,7 +389,7 @@ namespace tesseract {
 
         active_TABs = &TAB_positions[line];
         unsigned int line_spos = 0;
-        unsigned int line_epos = line_epos = LF_positions[line];
+        unsigned int line_epos = LF_positions[line];
         while (active_TABs->size() > 0) {
           const char *end_plug = nullptr;
 
@@ -764,7 +764,7 @@ namespace tesseract {
     captions.push_back(caption);
     cliprects.push_back(bbox);
 
-    // make sure follow-up log messages end up AFTER the imge in the output by dumping them in a subsequent info_chunk:
+    // make sure follow-up log messages end up AFTER the image in the output by dumping them in a subsequent info_chunk:
     auto &info_ref = info_chunks.emplace_back();
     info_ref.appended_image_index = captions.size(); // neat way to get the number of images: every image comes with its own caption
   }
@@ -1403,7 +1403,7 @@ namespace tesseract {
     const DebugProcessStep &section_info = steps[current_section_index];
 
     auto title = section_info.title.c_str();
-    if (!title || !*title)
+    if (!*title)
       title = "(null)";
     auto h_level = section_info.level + 1;
     ASSERT0(h_level >= 1);
@@ -1439,7 +1439,7 @@ namespace tesseract {
       const DebugProcessInfoChunk &info_chunk = info_chunks[chunk_idx];
       auto v = info_chunk.information.str();
       auto content = v.c_str();
-      if (content && *content) {
+      if (*content) {
         fputs(content, html);
         fputs("\n\n", html);
       }
@@ -1832,7 +1832,7 @@ namespace tesseract {
     const DebugProcessStep &section_info = steps[active_step_index];
 
     auto title = section_info.title.c_str();
-    if (!title || !*title)
+    if (!*title)
       title = "(null)";
     auto level = section_info.level;
 

@@ -376,7 +376,7 @@ WordChoiceIterator::WordChoiceIterator(const LTRResultIterator& result_it) {
   ASSERT_HOST(result_it.it_->word() != NULL);
   word_res_ = result_it.it_->word();
   WERD_CHOICE_LIST* choices = &word_res_->best_choices;
-  if (choices != NULL && !choices->empty()) {
+  if (/* choices != NULL && */ !choices->empty()) {
     choice_it_ = new WERD_CHOICE_IT(choices);
     choice_it_->mark_cycle_pt();
   } else {

@@ -137,12 +137,12 @@ Tesseract::Tesseract(Tesseract *parent)
                     "List of chars to override tessedit_char_blacklist.", params())
     , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.", params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
-                 "Whether to use the top-line splitting process for Devanagari "
-                 "documents while performing page-segmentation.",
+                 "Which top-line splitting process to use for Devanagari "
+                 "documents while performing page-segmentation. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
                  params())
     , INT_MEMBER(ocr_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
-                 "Whether to use the top-line splitting process for Devanagari "
-                 "documents while performing ocr.",
+                 "Which top-line splitting process to use for Devanagari "
+                 "documents while performing ocr. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
                  params())
     , STRING_MEMBER(tessedit_write_params_to_file, "", "Write all parameters to the given file.",
                     params())
@@ -963,6 +963,18 @@ void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
   pixa_debug_.AddPix(pix, title);
 }
 
+void Tesseract::AddPixDebugPage(const Image &pix, const std::string &title) {
+  AddPixDebugPage(pix, title.c_str());
+}
+
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX &bbox, const std::string &title) {
+  AddPixCompedOverOrigDebugPage(pix, bbox, title.c_str());
+}
+
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title) {
+  AddPixCompedOverOrigDebugPage(pix, title.c_str());
+}
+
 int Tesseract::PushNextPixDebugSection(const std::string &title) { // sibling
   return pixa_debug_.PushNextSection(title);
 }
@@ -975,6 +987,10 @@ void Tesseract::PopPixDebugSection(int handle) { // pop active; return focus to 
   pixa_debug_.WriteSectionParamsUsageReport();
 
   pixa_debug_.PopSection(handle);
+}
+
+int Tesseract::GetPixDebugSectionLevel() const {
+  return pixa_debug_.GetCurrentSectionLevel();
 }
 
 void Tesseract::ResyncVariablesInternally() {

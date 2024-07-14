@@ -907,7 +907,8 @@ void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle, bool upscale) 
   if (InternalResetImage()) {
     if (pixGetSpp(pix) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
-      Pix *p1 = pixRemoveAlpha(pix);
+      Pix *p1 = pixAlphaBlendUniform(pix, 0xFFFFFF00);
+      //Pix *p1 = pixRemoveAlpha(pix);
       pixSetSpp(p1, 3);
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
@@ -1609,12 +1610,12 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
     tess.applybox_page.set_value(page_number, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
 
-    if (two_pass) {
+    if (two_pass || 1) {
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
 
       // pixWrite("/tmp/out.png", pix, IFF_PNG);
       // Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_BLACK);
+      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_WHITE);
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);

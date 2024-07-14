@@ -1115,25 +1115,17 @@ public:
 
   // debug PDF output helper methods:
   void AddPixDebugPage(const Image &pix, const char *title);
-  void AddPixDebugPage(const Image &pix, const std::string& title) {
-    AddPixDebugPage(pix, title.c_str());
-  }
+  void AddPixDebugPage(const Image &pix, const std::string &title);
 
   void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX& bbox, const char *title);
-  void AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
-    AddPixCompedOverOrigDebugPage(pix, bbox, title.c_str());
-  }
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX &bbox, const std::string &title);
   void AddPixCompedOverOrigDebugPage(const Image &pix, const char *title);
-  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title) {
-    AddPixCompedOverOrigDebugPage(pix, title.c_str());
-  }
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title);
 
-  int PushNextPixDebugSection(const std::string &title);
-  int PushSubordinatePixDebugSection(const std::string &title);
-  void PopPixDebugSection(int handle = -1);
-  int GetPixDebugSectionLevel() const {
-    return pixa_debug_.GetCurrentSectionLevel();
-  }
+  int PushNextPixDebugSection(const std::string &title); // sibling
+  int PushSubordinatePixDebugSection(const std::string &title); // child
+  void PopPixDebugSection(int handle = -1); // pop active; return focus to parent
+  int GetPixDebugSectionLevel() const;
 
 public:
   // Find connected components in the page and process a subset until finished or

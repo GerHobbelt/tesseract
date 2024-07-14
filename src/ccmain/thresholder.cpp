@@ -390,7 +390,7 @@ ImageThresholder::pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval,int *pbgval)
   if (fgval<0)
     fgval = 0;
   pixAddConstantGray(pixg, -1*fgval);
-  factor = 255/(bgval-fgval);
+  factor = 255.0 / l_float32(bgval-fgval);
   pixMultConstantGray(pixg, factor);
   pixd = pixGammaTRC(NULL, pixg, 1.0, 0, bgval-((bgval-thresh)*0.5));
   pixDestroy(&pixg);

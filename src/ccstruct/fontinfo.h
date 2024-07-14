@@ -70,6 +70,7 @@ protected:
 
 public:
   FontInfo &operator=(const FontInfo &source);
+  FontInfo &operator=(FontInfo &&source) noexcept;
   FontInfo(const FontInfo &source);
   FontInfo(FontInfo &&source) noexcept;
 
