@@ -1,9 +1,13 @@
-# tesseract-ocr with --visible-pdf-image
+# tesseract-ocr with various patches and enhanced diagnostics output
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: (tested with leptonica 1.82.0)
+* leptonica: (tested with leptonica 1.83+: master branch)
+
+## Modifications / enhancements
+
+**TODO**
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that is used in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with this fork is to give us the best of both worlds. This is very useful for digitizing documents.
 
@@ -31,12 +35,12 @@ Here's the original feature request upstream: https://github.com/tesseract-ocr/t
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
 
 
-# tesseract-ocr with visible_pdf_image
+# tesseract-ocr
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+* leptonica: latest release / master branch.
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
 
@@ -91,6 +95,7 @@ It also needs [traineddata](https://tesseract-ocr.github.io/tessdoc/Data-Files.h
 * Tesseract **can be trained to recognize other languages**.
   See [Tesseract Training](https://tesseract-ocr.github.io/tessdoc/Training-Tesseract.html) for more information.
 
+
 ## Brief history
 
 Tesseract was originally developed at Hewlett-Packard Laboratories Bristol UK and at Hewlett-Packard Co, Greeley Colorado USA between 1985 and 1994, with some more changes made in 1996 to port to Windows, and some C++izing in 1998. In 2005 Tesseract was open sourced by HP. From 2006 until November 2018 it was developed by Google.
@@ -113,6 +118,23 @@ or [build it from source](https://tesseract-ocr.github.io/tessdoc/Compiling.html
 
 Before building Tesseract from source, please check that your system has a compiler which is one of the [supported compilers](https://tesseract-ocr.github.io/tessdoc/supported-compilers.html).
 
+## Windows Installation clarification
+
+For Windows user, once you download the Tesseract OCR 4, follow the pop-up instructions, 
+choose which components of the software you would like to install (if storage is limited).
+Make sure to remember where you saved the file, you will need it to add your environment variables.
+You will notice that if you try to use tesseract right after the installation it will not be 
+available on the command line (at least not yet). To remedy this, we need to add it the path where 
+the application was saved by taking the following steps:
+*	Open system environment properties from your settings menu and select environment variable.
+*	Open file explorer and go the Tesseract folder (should be in C drive by default)
+*	Once you find the executable (tesserac.exe) fill, copy the path to it.
+*	Get back to the environment variable window, click path then edit then new path variable and past 
+the path, and save.
+*	After this, you are good to open a new command line, to make sure it is there, type tesseract,
+ this should open the help page with all the command you can use.
+
+
 ## Running Tesseract
 
 Basic **[command line usage](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html)**:
@@ -122,6 +144,15 @@ Basic **[command line usage](https://tesseract-ocr.github.io/tessdoc/Command-Lin
 For more information about the various command line options use `tesseract --help` or `man tesseract`.
 
 Examples can be found in the [documentation](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html#simplest-invocation-to-ocr-an-image).
+
+## Tips and Tricks
+
+1-	For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
+image with the word oriented in a way that makes the words horizontal. This helps prevent errors
+sometimes. 
+2-	If you are running an image with just one line and it is not recognized, try running again with different psm mode setting, it should
+output the right words.
+3- Do not run an image with no words on it as it will sometimes stall the system.
 
 ## For developers
 
@@ -139,7 +170,8 @@ For support, first read the [documentation](https://tesseract-ocr.github.io/tess
 particularly the [FAQ](https://tesseract-ocr.github.io/tessdoc/FAQ.html) to see if your problem is addressed there.
 If not, search the [Tesseract user forum](https://groups.google.com/g/tesseract-ocr), the [Tesseract developer forum](https://groups.google.com/g/tesseract-dev) and [past issues](https://github.com/tesseract-ocr/tesseract/issues), and if you still can't find what you need, ask for support in the mailing-lists.
 
-Mailing-lists:
+
+### Mailing-lists:
 
 * [tesseract-ocr](https://groups.google.com/g/tesseract-ocr) - For tesseract users.
 * [tesseract-dev](https://groups.google.com/g/tesseract-dev) - For tesseract developers.
@@ -168,7 +200,7 @@ uses a [BSD 2-clause license](http://leptonica.com/about-the-license.html).
 ## Dependencies
 
 Tesseract uses [Leptonica library](https://github.com/DanBloomberg/leptonica)
-for opening input images (e.g. not documents like pdf).
+for opening input images (hence not documents like pdf).
 It is suggested to use leptonica with built-in support for [zlib](https://zlib.net),
 [png](https://sourceforge.net/projects/libpng) and
 [tiff](http://www.simplesystems.org/libtiff) (for multipage tiff).
