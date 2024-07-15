@@ -120,7 +120,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
 
   int rv;
   LIST CharList = NIL_LIST;
-  CLUSTERER *Clusterer = nullptr;
+  CLUSTERER* Clusterer = nullptr;
   LIST ProtoList = NIL_LIST;
   LIST NormProtoList = NIL_LIST;
   LIST pCharList;
@@ -135,9 +135,9 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
   rv = EXIT_SUCCESS;
 
   // int num_fonts = 0;
-  for (const char *PageName = *++argv; PageName != nullptr; PageName = *++argv) {
-    tprintDebug("Reading {} ...\n", PageName);
-    FILE *TrainingPage = fopen(PageName, "rb");
+  for (const char* PageName = *++argv; PageName != nullptr; PageName = *++argv) {
+    tprintInfo("Reading {} ...\n", PageName);
+    FILE* TrainingPage = fopen(PageName, "rb");
     if (!TrainingPage) {
       tprintError("Could not open file '{}' for reading.\n", PageName);
       return EXIT_FAILURE;
@@ -147,7 +147,7 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
       // ++num_fonts;
     }
   }
-  tprintDebug("Clustering ...\n");
+  tprintInfo("Clustering ...\n");
   // To allow an individual font to form a separate cluster,
   // reduce the min samples:
   // Config.MinSamples = 0.5 / num_fonts;
@@ -162,38 +162,39 @@ extern "C" int tesseract_cn_training_main(int argc, const char** argv)
     if (Clusterer == nullptr) { // To avoid a SIGSEGV
       tprintError("nullptr clusterer! SetUpForClustering failed!\n");
       rv = EXIT_FAILURE;
-	  break;
+      break;
     }
-	else {
-    float SavedMinSamples = Config.MinSamples;
-    // To disable the tendency to produce a single cluster for all fonts,
-    // make MagicSamples an impossible to achieve number:
-    // Config.MagicSamples = CharSample->SampleCount * 10;
-    Config.MagicSamples = CharSample->SampleCount;
-    while (Config.MinSamples > 0.001) {
-      ProtoList = ClusterSamples(Clusterer, &Config);
-      if (NumberOfProtos(ProtoList, true, false) > 0) {
-        break;
-      } else {
-        Config.MinSamples *= 0.95;
-        tprintInfo(
-            "0 significant protos for {}"
-            " Retrying clustering with MinSamples = {}%\n",
-            CharSample->Label, Config.MinSamples);
+    else {
+      float SavedMinSamples = Config.MinSamples;
+      // To disable the tendency to produce a single cluster for all fonts,
+      // make MagicSamples an impossible to achieve number:
+      // Config.MagicSamples = CharSample->SampleCount * 10;
+      Config.MagicSamples = CharSample->SampleCount;
+      while (Config.MinSamples > 0.001) {
+        ProtoList = ClusterSamples(Clusterer, &Config);
+        if (NumberOfProtos(ProtoList, true, false) > 0) {
+          break;
+        }
+        else {
+          Config.MinSamples *= 0.95;
+          tprintInfo(
+              "0 significant protos for {}"
+              " Retrying clustering with MinSamples = {}%\n",
+              CharSample->Label, Config.MinSamples);
+        }
       }
+      Config.MinSamples = SavedMinSamples;
+      AddToNormProtosList(&NormProtoList, ProtoList, CharSample->Label);
+      freeable_protos.push_back(ProtoList);
+      FreeClusterer(Clusterer);
     }
-    Config.MinSamples = SavedMinSamples;
-    AddToNormProtosList(&NormProtoList, ProtoList, CharSample->Label);
-    freeable_protos.push_back(ProtoList);
-    FreeClusterer(Clusterer);
-	}
   }
   FreeTrainingSamples(CharList);
   int desc_index = ShortNameToFeatureType(FeatureDefs, PROGRAM_FEATURE_TYPE);
   if (WriteNormProtos(FLAGS_D.c_str(), NormProtoList, FeatureDefs.FeatureDesc[desc_index]))
-	rv = EXIT_FAILURE;
+    rv = EXIT_FAILURE;
   FreeNormProtoList(NormProtoList);
-  for (auto &freeable_proto : freeable_protos) {
+  for (auto& freeable_proto : freeable_protos) {
     FreeProtoList(&freeable_proto);
   }
   tprintInfo("\n");
@@ -225,7 +226,7 @@ static int WriteNormProtos(const char *Directory, LIST LabeledProtoList,
     Filename += "/";
   }
   Filename += "normproto";
-  tprintDebug("\nWriting {} ...\n", Filename);
+  tprintInfo("\nWriting {} ...\n", Filename);
   File = fopen(Filename.c_str(), "wb");
   if (!File) {
     tprintError("Cannot open file '{}' for writing.\n", Filename);
@@ -252,7 +253,7 @@ static int WriteNormProtos(const char *Directory, LIST LabeledProtoList,
   }
   fprintf(File, "\n");
   fclose(File);
-  tprintDebug("\nWriting {} completed.\n", Filename);
+  tprintInfo("\nWriting {} completed.\n", Filename);
   return 0;
 } // WriteNormProtos
 

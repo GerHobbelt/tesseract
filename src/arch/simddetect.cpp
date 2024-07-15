@@ -19,7 +19,7 @@
 #include <numeric> // for std::inner_product
 #include "dotproduct.h"
 #include "intsimdmatrix.h" // for IntSimdMatrix
-#include "params.h"        // for STRING_VAR
+#include <tesseract/params.h>        // for STRING_VAR
 #include "simddetect.h"
 #include <tesseract/tprintf.h> // for tprintf
 #include "tesstypes.h"

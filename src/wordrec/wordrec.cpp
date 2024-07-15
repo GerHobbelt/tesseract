@@ -24,7 +24,7 @@
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
+#  include <tesseract/params.h>
 
 namespace tesseract {
 Wordrec::Wordrec()
@@ -42,7 +42,7 @@ Wordrec::Wordrec()
 #else // DISABLED_LEGACY_ENGINE not defined
 
 #  include "language_model.h"
-#  include "params.h"
+#  include <tesseract/params.h>
 
 namespace tesseract {
 Wordrec::Wordrec()

@@ -28,7 +28,7 @@
 #include "unicharset/fileio.h"             // for LoadFileLinesToStrings
 #include "unicharset/lstmtester.h"
 #include "unicharset/lstmtrainer.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 

@@ -20,7 +20,7 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include "tovars.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 
 namespace tesseract {

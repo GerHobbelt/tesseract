@@ -24,7 +24,7 @@
 
 #if !GRAPHICS_DISABLED
 
-#  include "params.h" // for ParamsVectors, StringParam, BoolParam
+#  include <tesseract/params.h> // for ParamsVectorSet, StringParam, BoolParam
 #  include "paramsd.h"
 #  include "scrollview.h"     // for SVEvent, ScrollView, SVET_POPUP
 #  include "svmnode.h"        // for SVMenuNode

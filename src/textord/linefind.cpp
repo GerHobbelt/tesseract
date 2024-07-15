@@ -486,27 +486,27 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
         closing_brick, open_brick, h_v_line_brick_size);
   }
 
-    if (tesseract_->debug_line_finding || verbose_process) {
+  if (tesseract_->debug_line_finding || verbose_process) {
       tprintInfo("PROCESS:"
-      " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
-      " in thickened text (as it will become more solid) and also smoothing over"
-      " some line breaks and nicks in the edges of the lines.\n",
-      closing_brick);
-    }
-  pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
-    if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
+    " Close up small holes (size <= {}px) in the image, making it less likely that false alarms are found"
+    " in thickened text (as it will become more solid) and also smoothing over"
+    " some line breaks and nicks in the edges of the lines.\n",
+    closing_brick);
   }
-    if (tesseract_->debug_line_finding || verbose_process) {
+  pix_closed = pixCloseBrick(nullptr, src_pix, closing_brick, closing_brick);
+  if (tesseract_->debug_line_finding) {
+    tesseract_->AddPixDebugPage(pix_closed, fmt::format("get line masks : closed brick : closing up small holes (size <= {}px)", closing_brick));
+  }
+  if (tesseract_->debug_line_finding || verbose_process) {
       tprintInfo("PROCESS:"
-        " Open up the image with a big box to detect solid areas, which can then be"
-        " subtracted. This is very generous and will leave in even quite wide"
-        " lines. (max_line_width = {})\n",
-        max_line_width);
-    }
-    Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
-    if (tesseract_->debug_line_finding) {
-      tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
+      " Open up the image with a big box to detect solid areas, which can then be"
+      " subtracted. This is very generous and will leave in even quite wide"
+      " lines. (max_line_width = {})\n",
+      max_line_width);
+  }
+  Image pix_solid = pixOpenBrick(nullptr, pix_closed, open_brick, open_brick);
+  if (tesseract_->debug_line_finding) {
+    tesseract_->AddPixDebugPage(pix_solid, fmt::format("get line masks : open brick : opening up with a big box to detect solid areas (open_brick size = {})", open_brick));
   }
   pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
@@ -520,11 +520,11 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
 	}
 	if (tesseract_->debug_line_finding) {
       tesseract_->AddPixDebugPage(pix_hollow, "get line masks : subtract -> hollow (pre)");
-  }
+    }
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);
     *pix_hline = pixOpenBrick(nullptr, pix_hollow, h_v_line_brick_size, 1);
 
-  pix_hollow.destroy();
+    pix_hollow.destroy();
 
   // Lines are sufficiently rare, that it is worth checking for a zero image.
   bool v_empty = pix_vline->isZero();
@@ -730,6 +730,7 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
       pix_hline.destroy();
     }
   }
+
   FindAndRemoveHLines(pix_intersections, *vertical_x, *vertical_y, &pix_hline,
                       pix_non_hline, pix, h_lines);
   if (tesseract_->debug_line_finding) {

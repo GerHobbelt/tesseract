@@ -147,7 +147,7 @@ namespace Diagnostics {
 
   // Color enum for pens and brushes.
   //
-  // Note: the type formerly known as Diagnostics::Color.
+  // Note: the type formerly known as ScrollView::Color.
   enum Color {
     NONE,
     BLACK,

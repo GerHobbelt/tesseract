@@ -19,9 +19,9 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include "unicharset.h"
-#include <tesseract/tprintf.h>
+#include <tesseract/tprintf.h> // for tprintf
 
-#include "params.h"
+#include <tesseract/params.h>
 
 #include <tesseract/unichar.h>
 #include "serialis.h"

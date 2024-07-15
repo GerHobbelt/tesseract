@@ -25,6 +25,7 @@
 
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #  include "scrollview.h" // for ScrollView (ptr only), SVEvent (ptr only)
+#  include <tesseract/params.h>     // for ParamType
 
 namespace tesseract {
 

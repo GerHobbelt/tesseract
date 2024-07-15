@@ -31,7 +31,7 @@
 #include "makerow.h"     // for textord_test_x, textord_test_y, texto...
 #include "ocrblock.h"    // for BLOCK_IT, BLOCK, BLOCK_LIST (ptr only)
 #include "ocrrow.h"      // for ROW, ROW_IT, ROW_LIST, tweak_row_base...
-#include "params.h"      // for DoubleParam, BoolParam, IntParam
+#include <tesseract/params.h>      // for DoubleParam, BoolParam, IntParam
 #include "pdblock.h"     // for PDBLK
 #include "points.h"      // for FCOORD, ICOORD
 #include "polyblk.h"     // for POLY_BLOCK

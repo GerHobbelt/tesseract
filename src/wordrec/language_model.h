@@ -26,7 +26,7 @@
 #include "dict.h"           // for DawgArgs, Dict
 #include "lm_consistency.h" // for LMConsistencyInfo
 #include "lm_state.h"       // for ViterbiStateEntry, LanguageModelFlagsType
-#include "params.h"         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
+#include <tesseract/params.h>         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
 #include "params_model.h"   // for ParamsModel
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST...
 #include "stopper.h"        // for DANGERR
@@ -134,16 +134,13 @@ protected:
   inline float ComputeConsistencyAdjustment(const LanguageModelDawgInfo *dawg_info,
                                             const LMConsistencyInfo &consistency_info) {
     if (dawg_info != nullptr) {
-      return ComputeAdjustment(consistency_info.NumInconsistentCase(),
-                               language_model_penalty_case) +
+      return ComputeAdjustment(consistency_info.NumInconsistentCase(), language_model_penalty_case) +
              (consistency_info.inconsistent_script ? language_model_penalty_script : 0.0f);
     }
     return (ComputeAdjustment(consistency_info.NumInconsistentPunc(), language_model_penalty_punc) +
             ComputeAdjustment(consistency_info.NumInconsistentCase(), language_model_penalty_case) +
-            ComputeAdjustment(consistency_info.NumInconsistentChartype(),
-                              language_model_penalty_chartype) +
-            ComputeAdjustment(consistency_info.NumInconsistentSpaces(),
-                              language_model_penalty_spacing) +
+            ComputeAdjustment(consistency_info.NumInconsistentChartype(), language_model_penalty_chartype) +
+            ComputeAdjustment(consistency_info.NumInconsistentSpaces(), language_model_penalty_spacing) +
             (consistency_info.inconsistent_script ? language_model_penalty_script : 0.0f) +
             (consistency_info.inconsistent_font ? language_model_penalty_font : 0.0f));
   }
@@ -324,6 +321,7 @@ protected:
   // Temporary DawgArgs struct that is re-used across different words to
   // avoid dynamic memory re-allocation (should be cleared before each use).
   DawgArgs dawg_args_;
+
   // Scaling for recovering blob outline length from rating and certainty.
   float rating_cert_scale_ = 0.0f;
 
@@ -358,7 +356,7 @@ protected:
   DawgPositionVector beginning_active_dawgs_;
   // Set to true if acceptable choice was discovered.
   // Note: it would be nice to use this to terminate the search once an
-  // acceptable choices is found. However we do not do that and once an
+  // acceptable choice is found. However we do not do that and once an
   // acceptable choice is found we finish looking for alternative choices
   // in the current segmentation graph and then exit the search (no more
   // classifications are done after an acceptable choice is found).
@@ -368,6 +366,7 @@ protected:
   // ambiguous (i.e. there are best choices in the best choice list that have
   // ratings close to the very best one) and will be less likely to mis-adapt.
   bool acceptable_choice_found_ = false;
+
   // Set to true if a choice representing correct segmentation was explored.
   bool correct_segmentation_explored_ = false;
 

@@ -29,7 +29,7 @@
 #include "matrix.h"         // for MATRIX
 #include "normalis.h"       // for DENORM
 #include "pageres.h"        // for WERD_RES
-#include "params.h"         // for IntParam, BoolParam
+#include <tesseract/params.h>         // for IntParam, BoolParam
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST (ptr ...
 #include "rect.h"           // for TBOX
 #include "render.h"         // for display_blob
@@ -170,7 +170,7 @@ static int16_t total_containment(TBLOB *blob1, TBLOB *blob2) {
 
 // Helper runs all the checks on a seam to make sure it is valid.
 // Returns the seam if OK, otherwise deletes the seam and returns nullptr.
-static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB *blob,
+static SEAM *CheckSeam(int chop_debug, int32_t blob_number, TWERD *word, TBLOB *blob,
                        TBLOB *other_blob, const std::vector<SEAM *> &seams, SEAM *seam) {
   if (seam == nullptr || blob->outlines == nullptr || other_blob->outlines == nullptr ||
       total_containment(blob, other_blob) || check_blob(other_blob) ||
@@ -183,8 +183,8 @@ static SEAM *CheckSeam(int debug_level, int32_t blob_number, TWERD *word, TBLOB 
       delete seam;
       seam = nullptr;
 #if !GRAPHICS_DISABLED
-      if (debug_level > 0) {
-        if (debug_level > 2) {
+      if (chop_debug > 0) {
+        if (chop_debug > 2) {
           display_blob(blob, Diagnostics::RED);
         }
         tprintDebug("\n** seam being removed ** \n");

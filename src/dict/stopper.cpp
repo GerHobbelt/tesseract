@@ -32,7 +32,7 @@
 #include "helpers.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 /*----------------------------------------------------------------------------

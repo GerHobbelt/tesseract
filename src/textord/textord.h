@@ -27,6 +27,7 @@
 #include "gap_map.h"
 #include "clst.h"       // for CLIST_ITERATOR, CLISTIZEH
 
+#include <tesseract/assert.h>
 #include <tesseract/publictypes.h> // For PageSegMode.
 
 namespace tesseract {

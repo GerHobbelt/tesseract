@@ -20,7 +20,7 @@
 
 #include "matchdefs.h"
 #include "ocrfeatures.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

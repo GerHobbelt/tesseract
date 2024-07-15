@@ -109,6 +109,7 @@ bool Tesseract::recog_interactive(PAGE_RES_IT *pr_it) {
 //   return true.
 // else
 //   If the word_box and target_word_box overlap or pass <= 1, return true.
+// 
 // Note that this function uses a fixed temporary file for storing the previous
 // configs, so it is neither thread-safe, nor process-safe, but the assumption
 // is that it will only be used for one debug window at a time.

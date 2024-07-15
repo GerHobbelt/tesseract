@@ -172,8 +172,7 @@ static void PrintHelpForPSM() {
       "  8    Treat the image as a single word.\n"
       "  9    Treat the image as a single word in a circle.\n"
       " 10    Treat the image as a single character.\n"
-      " 11    Sparse text. Find as much text as possible in no"
-      " particular order.\n"
+      " 11    Sparse text. Find as much text as possible in no particular order.\n"
       " 12    Sparse text with OSD.\n"
       " 13    Raw line. Treat the image as a single text line,\n"
       "       bypassing hacks that are Tesseract-specific.\n";

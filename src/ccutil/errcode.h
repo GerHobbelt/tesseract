@@ -20,7 +20,7 @@
 #define ERRCODE_H
 
 #include <fmt/printf.h> 
-#include <fmt/core.h> 
+#include <fmt/base.h> 
 #include <fmt/format.h>       // for fmt
 #include <tesseract/export.h> // for TESS_API
 

@@ -33,10 +33,9 @@
 #include <locale>    // for std::locale::classic
 #include <memory>    // std::unique_ptr
 #include <sstream>   // for std::stringstream
+#include <string_view>
 
 #include "tesseractclass.h"
-
-#include <string_view>
 
 using namespace std::literals;
 

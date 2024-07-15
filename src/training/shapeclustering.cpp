@@ -20,7 +20,7 @@
 
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 #include "tesseract/capi_training_tools.h"
 

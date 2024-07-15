@@ -288,7 +288,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO &input,
     }
   }
 #else // _OPENMP
-  const unsigned thread_id = 0;
+  const unsigned int thread_id = 0;
   TFloat *temp_line = temp_lines[thread_id];
   for (int t = 0; t < width; ++t) {
     if (input.int_mode()) {

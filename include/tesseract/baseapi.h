@@ -27,6 +27,7 @@
 
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
+#include <tesseract/params.h>
 
 #include <cstdio>
 #include <tuple>  // for std::tuple

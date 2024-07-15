@@ -44,7 +44,7 @@
 #include "oldlist.h"         // for push, delete_d
 #include "outfeat.h"         // for OutlineFeatDir, OutlineFeatLength
 #include "pageres.h"         // for WERD_RES
-#include "params.h"          // for IntParam, BoolParam, DoubleParam, Str...
+#include <tesseract/params.h>          // for IntParam, BoolParam, DoubleParam, Str...
 #include "picofeat.h"        // for PicoFeatDir, PicoFeatX, PicoFeatY
 #include "protos.h"          // for PROTO_STRUCT, FillABC
 #include "ratngs.h"          // for BLOB_CHOICE_IT, BLOB_CHOICE_LIST, BLO...
@@ -55,7 +55,7 @@
 #include "shapetable.h"      // for UnicharRating, ShapeTable, Shape, Uni...
 #include "tessclassifier.h"  // for TessClassifier
 #include "tessdatamanager.h" // for TessdataManager, TESSDATA_INTTEMP
-#include <tesseract/tprintf.h> // for tprintf
+#include <tesseract/tprintf.h>         // for tprintf
 #include "trainingsample.h"  // for TrainingSample
 #include "unicharset.h"      // for UNICHARSET, CHAR_FRAGMENT, UNICHAR_SPACE
 #include "unicity_table.h"   // for UnicityTable
@@ -73,10 +73,12 @@
 
 namespace tesseract {
 
+#if 0
 // TODO: The parameter classify_enable_adaptive_matcher can cause
 // a segmentation fault if it is set to false (issue #256),
 // so override it here.
 #define classify_enable_adaptive_matcher true
+#endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
 

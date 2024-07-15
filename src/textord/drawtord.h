@@ -20,7 +20,7 @@
 #define DRAWTORD_H
 
 #include "blobbox.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "pitsync1.h"
 #include "scrollview.h"
 

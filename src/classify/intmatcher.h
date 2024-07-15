@@ -22,7 +22,7 @@
 #if !DISABLED_LEGACY_ENGINE
 
 #include "intproto.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

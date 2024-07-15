@@ -17,6 +17,10 @@ namespace tesseract {
 
 /**
  * fopen that accepts path and mode in UTF-8.
+ * 
+ * When `mode` is a write mode, any not-yet-exisiting directories
+ * in the `path` will be created on the spot, hence this function
+ * acts very similar to UNIX's `mkdir -p dirname $FPATH; open $FPATH`.
  */
 FILE* fopenUtf8(const char* path, const char* mode);
 

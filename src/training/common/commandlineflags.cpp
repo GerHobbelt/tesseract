@@ -17,6 +17,7 @@
 #include <sstream>             // for std::stringstream
 #include <vector>              // for std::vector
 #include "errcode.h"
+#include "helpers.h"
 #include <tesseract/tprintf.h>
 
 namespace tesseract {

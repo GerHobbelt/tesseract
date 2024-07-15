@@ -19,7 +19,7 @@
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
+#  include <tesseract/params.h>
 #  include <tesseract/tprintf.h>
 
 namespace tesseract {
@@ -76,7 +76,8 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "mastertrainer.h"
 #  include "mf.h"
 #  include "oldlist.h"
-#  include "params.h"
+#  include "commandlineflags.h"
+#  include <tesseract/params.h>
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
 #  include <tesseract/tprintf.h>
@@ -85,7 +86,6 @@ void ParseArguments(int* argc, const char ***argv) {
 #if defined(HAVE_MUPDF)
 #include "mupdf/assertions.h"     // for ASSERT
 #endif
-
 
 namespace tesseract {
 

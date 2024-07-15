@@ -13,7 +13,7 @@
 #define BS_THREAD_POOL_VERSION "v3.3.0 (2022-08-03)"
 
 #if defined(HAVE_MUPDF)
-#include <tesseract/tprintf.h>
+#include <tesseract/tprintf.h>          // for tprintf
 #endif
 
 #include <atomic>             // std::atomic

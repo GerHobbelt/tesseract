@@ -1063,6 +1063,7 @@ void TabFind::MakeColumnWidths(int col_widths_size, STATS *col_widths) {
       col_count += new_count;
       col_widths->add(right, -new_count);
     }
+
     if (col_count > kMinLinesInColumn &&
         col_count > kMinFractionalLinesInColumn * total_col_count) {
       auto *w = new ICOORDELT(0, width);

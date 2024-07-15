@@ -38,7 +38,7 @@
 #include "normalis.h"        // for kBlnBaselineOffset, kBlnXHeight
 #include "pageres.h"         // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"      // for DetectParagraphs
-#include "params.h"          // for BoolParam, IntParam, DoubleParam, Stri...
+#include "global_params.h"
 #include "pdblock.h"         // for PDBLK
 #include "points.h"          // for FCOORD
 #include "polyblk.h"         // for POLY_BLOCK
@@ -57,6 +57,8 @@
 #include <tesseract/osdetect.h>       // for OSResults, OSBestResult, OrientationId...
 #include <tesseract/renderer.h>       // for TessResultRenderer
 #include <tesseract/resultiterator.h> // for ResultIterator
+#include <tesseract/params.h>    // for Param, ..., ParamVectorSet class definitions
+#include <tesseract/assert.h>
 
 #include <cmath>    // for round, M_PI
 #include <cstdint>  // for int32_t

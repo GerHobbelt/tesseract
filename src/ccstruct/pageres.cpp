@@ -23,6 +23,10 @@
 
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#include <leptonica/environ.h>
+#include <tesseract/assert.h>
+#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
+
 #include "pageres.h"
 
 #include "blamer.h"   // for BlamerBundle
@@ -36,11 +40,8 @@
 #include "polyblk.h"  // for POLY_BLOCK
 #include "seam.h"     // for SEAM, start_seam_list
 #include "stepblob.h" // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
-#include <tesseract/tprintf.h> // for tprintf
+#include <tesseract/tprintf.h>  // for tprintf
 
-#include <tesseract/publictypes.h> // for OcrEngineMode, OEM_LSTM_ONLY
-
-#include <cassert> // for assert
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
 
@@ -1568,7 +1569,7 @@ void PAGE_RES_IT::DeleteCurrentWord() {
         break;
       }
     }
-    ASSERT_HOST(!w_it.cycled_list());
+    ASSERT_HOST(!w_it.cycled_list()); //-- #4148 fix
     delete w_it.extract();
   }
   // Remove the WERD_RES for the new_word.

@@ -143,7 +143,7 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
     , BOOL_MEMBER(textord_show_blobs, false, "Display unsorted blobs", ccstruct_->params())
     , BOOL_MEMBER(textord_show_boxes, false, "Display unsorted blobs", ccstruct_->params())
     , INT_MEMBER(textord_max_noise_size, 7, "Pixel size of noise", ccstruct_->params())
-    , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level", ccstruct_->params())
+    , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level; used as an increment (offset) for `debug_baseline_detector_level` for while making the textlines and words inside each block.", ccstruct_->params())
     , DOUBLE_MEMBER(textord_noise_area_ratio, 0.7, "Fraction of bounding box for noise",
                     ccstruct_->params())
     , DOUBLE_MEMBER(textord_initialx_ile, 0.75, "Ile of sizes for xheight guess",
@@ -229,8 +229,9 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   } else {
     *gradient = 0.0f;
   }
-  int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
-  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+  const int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
+  int old_level = debug_baseline_detector_level;
+  debug_baseline_detector_level = old_level + debug_level_offset;
   BaselineDetect baseline_detector(reskew, to_blocks);
   baseline_detector.ComputeStraightBaselines(use_box_bottoms);
   baseline_detector.ComputeBaselineSplinesAndXheights(
@@ -256,7 +257,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level = old_level;
 #if !GRAPHICS_DISABLED
   close_to_win();
 #endif

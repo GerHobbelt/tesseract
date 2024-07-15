@@ -20,7 +20,7 @@
 #define WERD_H
 
 #include "elst2.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "stepblob.h"
 
 #include <bitset>

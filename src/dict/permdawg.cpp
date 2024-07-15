@@ -23,7 +23,7 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include "dawg.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "stopper.h"
 #include <tesseract/tprintf.h>
 
