@@ -360,6 +360,8 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
                 corrected_word_certainty, word->best_choice->certainty(), stopper_dict->AcceptableResult(word));
         word->best_choice->print();
       }
+      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
+      word->best_choice->set_certainty(corrected_word_certainty);
 #else	  
       float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       float corrected_word_certainty = word_certainty * kCertaintyScale;
@@ -368,6 +370,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
                 word->best_choice->certainty(), word->space_certainty,
                 word_certainty, corrected_word_certainty, corrected_word_certainty);
       }
+      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
       word->best_choice->set_certainty(corrected_word_certainty);
       if (getDict().stopper_debug_level >= 1) {
         tprintDebug("accepted={}\n  ",

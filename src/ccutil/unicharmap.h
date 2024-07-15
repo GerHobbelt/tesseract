@@ -46,7 +46,7 @@ public:
   // Return true if the given unichar representation is already present in the
   // UNICHARMAP. The first length characters (maximum) from unichar_repr are
   // used. The length MUST be non-zero.
-  bool contains(const char *const unichar_repr, int length) const;
+  bool contains(const char *const unichar_repr, int length = UNICHAR_LEN) const;
 
   // Return the minimum number of characters that must be used from this string
   // to obtain a match in the UNICHARMAP.
