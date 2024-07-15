@@ -103,6 +103,9 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
       tprintf("read line %s\n", buffer);
     }
     ++line_num;
+    // empty line? skip.
+    if (!*buffer)
+      continue;
     if (!ParseAmbiguityLine(line_num, version, debug_level, encoder_set, buffer,
                             &test_ambig_part_size, test_unichar_ids, &replacement_ambig_part_size,
                             replacement_string, &type)) {
