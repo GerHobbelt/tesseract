@@ -828,7 +828,7 @@ private:
                            ICOORD *end);
 
 private:
-  Tesseract* tesseract_;    // reference to the active instance
+  Tesseract* tesseract_ = nullptr;    // reference to the active instance
 
   // The margins are determined by the position of the nearest vertically
   // overlapping neighbour to the side. They indicate the maximum extent

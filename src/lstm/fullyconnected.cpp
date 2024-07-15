@@ -15,9 +15,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if defined(HAVE_MUPDF) || defined(BUILD_MONOLITHIC)
 #include "mupdf/fitz.h"

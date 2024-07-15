@@ -16,9 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "lstmrecognizer.h"
 
@@ -35,7 +33,7 @@
 #include "recodebeam.h"
 #include "scrollview.h"
 #include "statistc.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "tlog.h"
 
 #include <unordered_set>
@@ -44,16 +42,16 @@
 namespace tesseract {
 
 // Default ratio between dict and non-dict words.
-static const double kDictRatio = 1.25;
+const double kDictRatio = 2.25;
 // Default certainty offset to give the dictionary a chance.
-static const double kCertOffset = -0.085;
+const double kCertOffset = -0.085;
 
 //LSTMRecognizer::LSTMRecognizer(const std::string &language_data_path_prefix)
 //    : LSTMRecognizer::LSTMRecognizer() {
 //  ccutil_.language_data_path_prefix = language_data_path_prefix;
 //}
 
-LSTMRecognizer::LSTMRecognizer()
+LSTMRecognizer::LSTMRecognizer(Tesseract *tess)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -67,6 +65,7 @@ LSTMRecognizer::LSTMRecognizer()
 #if !GRAPHICS_DISABLED
     , debug_win_(nullptr)
 #endif
+    , tesseract_(tess)
 {}
 
 LSTMRecognizer::~LSTMRecognizer() {
@@ -157,7 +156,7 @@ bool LSTMRecognizer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   }
   bool include_charsets = mgr == nullptr || !mgr->IsComponentAvailable(TESSDATA_LSTM_RECODER) ||
                           !mgr->IsComponentAvailable(TESSDATA_LSTM_UNICHARSET);
-  if (include_charsets && !ccutil_.unicharset.load_from_file(fp, false)) {
+  if (include_charsets && !ccutil_.unicharset_.load_from_file(fp, false)) {
     return false;
   }
   if (!fp->DeSerialize(network_str_)) {
@@ -201,7 +200,7 @@ bool LSTMRecognizer::LoadCharsets(const TessdataManager *mgr) {
   if (!mgr->GetComponent(TESSDATA_LSTM_UNICHARSET, &fp)) {
     return false;
   }
-  if (!ccutil_.unicharset.load_from_file(&fp, false)) {
+  if (!ccutil_.unicharset_.load_from_file(&fp, false)) {
     return false;
   }
   if (!mgr->GetComponent(TESSDATA_LSTM_RECODER, &fp)) {
@@ -244,10 +243,10 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::st
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&ccutil_);
-  dict_->user_words_file.ResetFrom(params);
-  dict_->user_words_suffix.ResetFrom(params);
-  dict_->user_patterns_file.ResetFrom(params);
-  dict_->user_patterns_suffix.ResetFrom(params);
+  dict_->user_words_file.ResetToDefault(params);
+  dict_->user_words_suffix.ResetToDefault(params);
+  dict_->user_patterns_file.ResetToDefault(params);
+  dict_->user_patterns_suffix.ResetToDefault(params);
   dict_->SetupForLoad(Dict::GlobalDawgCache());
   dict_->LoadLSTM(lang, mgr);
   if (dict_->FinishLoad()) {
@@ -274,7 +273,7 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+	search_->SetDebug(GetDebugLevel() - 1);
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
@@ -364,7 +363,8 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         *scale_factor, upside_down, invert_threshold, inputs->int_mode());
   }
   SetRandomSeed();
-  Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
+  Input::PreparePixInput(tesseract_, network_->InputShape(), pix, &randomizer_, inputs, line_box, *scale_factor);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
   // Check for auto inversion.
   if (invert_threshold > 0.0f) {
@@ -372,7 +372,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
     OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
     if (HasDebug()) {
       tprintDebug("OutputStats: pos_min:{}, pos_mean:{}, pos_sd:{}, invert_threshold:{}{}\n",
-          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run again inverted and see if it is any better." : " --> OK"));
+          pos_min, pos_mean, pos_sd, invert_threshold, (pos_mean < invert_threshold ? " --> Run the image clip again *inverted* and see if it is any better." : " --> OK, do *NOT* retry the same image clip as inverted image because the stats say it's above par (pos_mean >= invert_threshold)"));
     }
     if (pos_mean < invert_threshold) {
       // Run again inverted and see if it is any better.
@@ -381,13 +381,13 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
       SetRandomSeed();
       Image inv_pix = pixClone(pix);
       pixInvert(inv_pix, pix);
-      Input::PreparePixInput(network_->InputShape(), inv_pix, &randomizer_, &inv_inputs);
+      Input::PreparePixInput(tesseract_, network_->InputShape(), inv_pix, &randomizer_, &inv_inputs, line_box, *scale_factor);
       network_->Forward(HasDebug(), inv_inputs, nullptr, &scratch_space_, &inv_outputs);
       float inv_min, inv_mean, inv_sd;
       OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
-      if (HasDebug() || 1) {
+      if (HasDebug()) {
         tprintDebug("Inverting image OutputStats: {} :: old min={}, old mean={}, old sd={}, inv min={}, inv mean={}, inv sd={}\n",
-            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs match the best forward result"),
+            (inv_mean > pos_mean ? "Inverted did better. Use inverted data" : "Inverting was not an improvement, so undo and run again, so the outputs matches the best forward result"),
             pos_min, pos_mean, pos_sd, inv_min, inv_mean, inv_sd);
       }
       if (inv_mean > pos_mean) {
@@ -564,9 +564,9 @@ void LSTMRecognizer::LabelsViaReEncode(const NetworkIO &output, std::vector<int>
                                        std::vector<int> *xcoords) {
   if (search_ == nullptr) {
     search_ = new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
-	search_->SetDebug(HasDebug() - 1);
+	search_->SetDebug(GetDebugLevel() - 1);
   }
-  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2 /* 0 */);
+  search_->Decode(output, 1.0, 0.0, RecodeBeamSearch::kMinCertainty, nullptr /* unicharset */, 2);
   search_->ExtractBestPathAsLabels(labels, xcoords);
 }
 
@@ -664,13 +664,13 @@ const char *LSTMRecognizer::DecodeSingleLabel(int label) {
 
 
 void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_prefix) {
-  ccutil_.language_data_path_prefix = language_data_path_prefix;
+  ccutil_.language_data_path_prefix_ = language_data_path_prefix;
 }
 
 void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
   if (src != nullptr && &ccutil_ != src) {
-      ccutil_.ambigs_debug_level = (int)src->ambigs_debug_level;
-      ccutil_.use_ambigs_for_adaption = (bool)src->use_ambigs_for_adaption;
+    ccutil_.ambigs_debug_level = src->ambigs_debug_level.value();
+    ccutil_.use_ambigs_for_adaption = src->use_ambigs_for_adaption.value();
   }
 
   if (dict_ != nullptr && dict_ != dict_src) {

@@ -183,7 +183,7 @@ public:
   // Finds the sample for each font, class pair that has least maximum
   // distance to all the other samples of the same font, class.
   // OrganizeByFontAndClass must have been already called.
-  void ComputeCanonicalSamples(const IntFeatureMap &map, bool debug);
+  void ComputeCanonicalSamples(const IntFeatureMap &map);
 
   // Replicates the samples to a minimum frequency defined by
   // 2 * kSampleRandomSize, or for larger counts duplicates all samples.

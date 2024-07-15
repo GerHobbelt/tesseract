@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 // File:        lm_consistency.cpp
-// Description: Struct for recording consistency of the paths  representing
+// Description: Struct for recording consistency of the paths representing
 //              OCR hypotheses.
 // Author:      Rika Antonova
 // Created:     Mon Jun 20 11:26:43 PST 2012
@@ -17,6 +17,8 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////
+
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "lm_consistency.h"
 

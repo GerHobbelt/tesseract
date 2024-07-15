@@ -32,7 +32,7 @@
 #include <tesseract/fmt-support.h>
 
 #include "elst.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 #ifndef __GNUC__

@@ -172,10 +172,10 @@ protected:
   // if load_from_tmp, then reloads a master trainer that was saved by a
   // previous call in which it was false.
   void LoadMasterTrainer() {
-    FLAGS_output_trainer = TmpNameToPath("tmp_trainer").c_str();
-    FLAGS_F = file::JoinPath(LANGDATA_DIR, "font_properties").c_str();
-    FLAGS_X = TestDataNameToPath("eng.xheights").c_str();
-    FLAGS_U = TestDataNameToPath("eng.unicharset").c_str();
+    trainer_output_trainer = TmpNameToPath("tmp_trainer");
+    trainer_font_properties = file::JoinPath(LANGDATA_DIR, "font_properties");
+    trainer_xheights = TestDataNameToPath("eng.xheights");
+    trainer_input_unicharset_file = TestDataNameToPath("eng.unicharset");
     std::string tr_file_name(TestDataNameToPath("eng.Arial.exp0.tr"));
     const char *filelist[] = {tr_file_name.c_str(), nullptr};
     std::string file_prefix;

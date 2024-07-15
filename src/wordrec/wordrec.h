@@ -19,15 +19,13 @@
 #ifndef TESSERACT_WORDREC_WORDREC_H_
 #define TESSERACT_WORDREC_WORDREC_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if DISABLED_LEGACY_ENGINE
 
 #  include <cstdint>    // for int16_t, int32_t
 #  include "classify.h" // for Classify
-#  include "params.h"   // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
+#  include <tesseract/params.h>   // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
 #  include "ratngs.h"   // for WERD_CHOICE
 
 namespace tesseract {
@@ -74,7 +72,7 @@ public:
 #  include "language_model.h"
 #  include "matrix.h"
 #  include "oldlist.h" // for LIST
-#  include "params.h"  // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
+#  include <tesseract/params.h>  // for INT_VAR_H, IntParam, BOOL_VAR_H, BoolP...
 #  include "points.h"  // for ICOORD
 #  include "ratngs.h"  // for BLOB_CHOICE_LIST (ptr only), BLOB_CHOI...
 #  include "seam.h"    // for SEAM (ptr only), PRIORITY
@@ -239,8 +237,8 @@ public:
   // Calls fill_lattice_ member function
   // (assumes that fill_lattice_ is not nullptr).
   void CallFillLattice(const MATRIX &ratings, const WERD_CHOICE_LIST &best_choices,
-                       const UNICHARSET &unicharset, BlamerBundle *blamer_bundle) {
-    (this->*fill_lattice_)(ratings, best_choices, unicharset, blamer_bundle);
+                       const UNICHARSET &unichars, BlamerBundle *blamer_bundle) {
+    (this->*fill_lattice_)(ratings, best_choices, unichars, blamer_bundle);
   }
 
   // tface.cpp
@@ -378,22 +376,30 @@ public:
                                            int16_t end, const char *description, TWERD *word,
                                            BlamerBundle *blamer_bundle);
 
+  LanguageModelSettings& getLanguageModelSettings() {
+    return language_model_;
+  }
+
+protected:
   // Member variables.
 
-  std::unique_ptr<LanguageModel> language_model_;
-  PRIORITY pass2_ok_split;
+  LanguageModel language_model_;
+  PRIORITY pass2_ok_split_;
+
+public:
   // Stores the best choice for the previous word in the paragraph.
   // This variable is modified by PAGE_RES_IT when iterating over
   // words to OCR on the page.
   WERD_CHOICE *prev_word_best_choice_;
 
+protected:
   // Function used to fill char choice lattices.
   void (Wordrec::*fill_lattice_)(const MATRIX &ratings, const WERD_CHOICE_LIST &best_choices,
                                  const UNICHARSET &unicharset, BlamerBundle *blamer_bundle);
 
 protected:
   inline bool SegSearchDone(int num_futile_classifications) {
-    return (language_model_->AcceptableChoiceFound() ||
+    return (language_model_.AcceptableChoiceFound() ||
             num_futile_classifications >= segsearch_max_futile_classifications);
   }
 

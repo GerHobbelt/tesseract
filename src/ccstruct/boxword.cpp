@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "boxword.h"
 #include "blobs.h"
 #include "host.h" // for NearlyEqual

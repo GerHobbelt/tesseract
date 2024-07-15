@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "normalis.h"
 #include "tesseractclass.h"
 #include "blobs.h"
@@ -434,7 +436,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
     classify_cp_dq_bad_height.set_value(false);
-    unicharset.set_enable_punctuation(false);
+    unicharset_.set_enable_punctuation(false);
 
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing last {} chopped blobs\n", num_chopped_trailing);
@@ -448,7 +450,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
     classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
-    unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+    unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                      tessedit_char_whitelist.c_str(),
                                      tessedit_char_unblacklist.c_str());
   }

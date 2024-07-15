@@ -261,6 +261,9 @@ public:
   // Return a string that reformats the utf8 str into the str followed
   // by its hex unicodes.
   static std::string debug_utf8_str(const char *str);
+  static std::string debug_utf8_str(const std::string& str) {
+    return debug_utf8_str(str.c_str());
+  }
 
   // Removes/replaces content that belongs in rendered text, but not in the
   // unicharset.
@@ -275,6 +278,10 @@ public:
   std::string debug_str(const char *unichar_repr) const {
     return debug_str(unichar_to_id(unichar_repr));
   }
+
+  // Return a string containing the entire unichar set in human-readable
+  // form, for use in debug log/output.
+  std::string debug_full_set_as_string() const;
 
   // Adds a unichar representation to the set. If old_style is true, then
   // TATWEEL characters are kept and n-grams are allowed. Otherwise TATWEEL
@@ -390,7 +397,7 @@ public:
   // Opens the file indicated by filename and loads the UNICHARSET
   // from the given file. The previous data is lost.
   // Returns true if the operation is successful.
-  bool load_from_file(const char *const filename, bool skip_fragments) {
+  bool load_from_file(const char *const filename, bool skip_fragments = false) {
     FILE *file = fopen(filename, "rb");
     if (file == nullptr) {
       return false;
@@ -399,18 +406,11 @@ public:
     fclose(file);
     return result;
   }
-  // returns true if the operation is successful.
-  bool load_from_file(const char *const filename) {
-    return load_from_file(filename, false);
-  }
 
   // Loads the UNICHARSET from the given file. The previous data is lost.
   // Returns true if the operation is successful.
-  bool load_from_file(FILE *file, bool skip_fragments);
-  bool load_from_file(FILE *file) {
-    return load_from_file(file, false);
-  }
-  bool load_from_file(tesseract::TFile *file, bool skip_fragments);
+  bool load_from_file(FILE *file, bool skip_fragments = false);
+  bool load_from_file(tesseract::TFile *file, bool skip_fragments = false);
 
   // Sets up internal data after loading the file, based on the char
   // properties. Called from load_from_file, but also needs to be run
@@ -514,7 +514,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isalpha;
   }
 
@@ -523,7 +526,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.islower;
   }
 
@@ -532,7 +538,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isupper;
   }
 
@@ -541,7 +550,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isdigit;
   }
 
@@ -550,7 +562,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.ispunctuation;
   }
 
@@ -559,7 +574,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return false;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return false;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.isngram;
   }
 
@@ -793,7 +811,10 @@ public:
     if (INVALID_UNICHAR_ID == unichar_id) {
       return nullptr;
     }
-    ASSERT_HOST(contains_unichar_id(unichar_id));
+    if (!contains_unichar_id(unichar_id)) {
+      return nullptr;
+    }
+    //ASSERT_HOST(contains_unichar_id(unichar_id));
     return unichars[unichar_id].properties.fragment;
   }
 
@@ -843,7 +864,7 @@ public:
   // unichar representation represents a character fragment.
   const CHAR_FRAGMENT *get_fragment(const char *const unichar_repr) const {
     if (unichar_repr == nullptr || unichar_repr[0] == '\0' ||
-        !ids.contains(unichar_repr, false)) {
+        !ids.contains(unichar_repr)) {
       return nullptr;
     }
     return get_fragment(unichar_to_id(unichar_repr));

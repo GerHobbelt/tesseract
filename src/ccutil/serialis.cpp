@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "serialis.h"
 
 #include "errcode.h"
@@ -194,18 +196,28 @@ bool TFile::Open(FILE *fp, int64_t end_offset) {
   return fread(&(*data_)[0], 1, size, fp) == size;
 }
 
+std::vector<char> TFile::ReadAllRemainingContent() {
+  ASSERT_HOST(!is_writing_);
+  if (offset_ >= data_->size()) {
+    return {};
+  }
+  const char *p = data_->data();
+  std::vector<char> s(p + offset_, p + data_->size());
+  return s;
+}
+
 char *TFile::FGets(char *buffer, int buffer_size) {
   ASSERT_HOST(!is_writing_);
   int size = 0;
-  while (size + 1 < buffer_size && offset_ < data_->size()) {
+  while (size + 2 < buffer_size && offset_ < data_->size()) {
     buffer[size++] = (*data_)[offset_++];
     if ((*data_)[offset_ - 1] == '\n') {
       break;
     }
   }
-  if (size < buffer_size) {
-    buffer[size] = '\0';
-  }
+  assert(size < buffer_size);
+  buffer[size] = '\0';
+
   return size > 0 ? buffer : nullptr;
 }
 

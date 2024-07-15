@@ -25,16 +25,11 @@
 
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #  include "scrollview.h" // for ScrollView (ptr only), SVEvent (ptr only)
-#  include "params.h"     // for ParamType
+#  include <tesseract/params.h>     // for ParamType
 
 namespace tesseract {
 
 class SVMenuNode;
-
-class BoolParam;
-class DoubleParam;
-class IntParam;
-class StringParam;
 class Tesseract;
 
 // A rather hackish helper structure which can take any kind of parameter input

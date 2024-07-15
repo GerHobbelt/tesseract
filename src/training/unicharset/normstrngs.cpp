@@ -17,9 +17,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "normstrngs.h"
 
@@ -241,7 +239,8 @@ bool IsValidCodepoint(const char32 ch) {
 
 bool IsWhitespace(const char32 ch) {
   ASSERT_HOST_MSG(IsValidCodepoint(ch), "Invalid Unicode codepoint: {}\n", ch);
-  return u_isUWhiteSpace(static_cast<UChar32>(ch));
+  // warning C4800: Implicit conversion from 'UBool' to bool. Possible information loss
+  return !!u_isUWhiteSpace(static_cast<UChar32>(ch));
 }
 
 bool IsUTF8Whitespace(const char *text) {

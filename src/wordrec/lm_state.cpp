@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "lm_state.h"
 
 namespace tesseract {

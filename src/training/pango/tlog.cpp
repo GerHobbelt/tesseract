@@ -18,8 +18,10 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "tlog.h"
 
 using namespace tesseract;
 
-INT_PARAM_FLAG(tlog_level, 29, "Minimum logging level. -1 = absolute quiet; 0 = fatal errors only, ..9 = fatal error + their elaboration, 10 = all errors, ..19 = all errors + their elaboration, 20 = all errors and warnings, ..29 = <ditto> + their elaboration, 30..39 = infos, warnings, errors, 40..49 = hints(40)/diag(41)/debug(42)/traces(43+), infos, warnings, errors, all you could possibly get with the debug flags set they are!");
+INT_VAR(tlog_level, 29, "Minimum logging level. -1 = absolute quiet; 0 = fatal errors only, ..9 = fatal error + their elaboration, 10 = all errors, ..19 = all errors + their elaboration, 20 = all errors and warnings, ..29 = <ditto> + their elaboration, 30..39 = infos, warnings, errors, 40..49 = hints(40)/diag(41)/debug(42)/traces(43+), infos, warnings, errors, all you could possibly get with the debug flags set they are!");

@@ -118,11 +118,11 @@ struct ViterbiStateEntry : public ELIST_LINK {
       adapted += pe->adapted;
       length += pe->length;
       outline_length += pe->outline_length;
-      if (debug_str != nullptr && debug_uch != nullptr) {
+      if (debug_str != nullptr) {
         *debug_str += *(pe->debug_str);
       }
     }
-    if (debug_str != nullptr && debug_uch != nullptr) {
+    if (debug_str != nullptr) {
       *debug_str += debug_uch;
     }
   }

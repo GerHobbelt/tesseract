@@ -15,7 +15,7 @@
  ** limitations under the License.
  *****************************************************************************/
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "clusttool.h"
 
@@ -300,8 +300,10 @@ void WritePrototype(FILE *File, uint16_t N, PROTOTYPE *Proto) {
           case D_random:
             fprintf(File, " %9s", "random");
             break;
+          default:
           case DISTRIBUTION_COUNT:
-            ASSERT_HOST(!"Distribution count not allowed!");
+            ASSERT_HOST_MSG(false, "Distribution {} count not allowed!\n",
+                            int(Proto->Distrib[i]));
         }
       }
       fprintf(File, "\n\t");
