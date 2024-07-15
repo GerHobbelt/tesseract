@@ -1065,6 +1065,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       // Add word information if word level output is active
       line_str << word_str.str();
       word_str.str("");
+
       // Write Line TextEquiv
       line_str << "\t\t\t\t<TextEquiv index=\"1\" conf=\""
                << std::setprecision(4) << line_conf << "\">\n"

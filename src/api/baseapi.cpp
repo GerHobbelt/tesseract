@@ -1940,11 +1940,12 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
 
 /**
  * Make a TSV-formatted string from the internal data structures.
+ * Allows additional column with detected language.
  * page_number is 0-based but will appear in the output as 1-based.
  *
  * Returned string must be freed with the delete [] operator.
  */
-char *TessBaseAPI::GetTSVText(int page_number) {
+char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
   if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(nullptr) < 0)) {
     return nullptr;
   }
@@ -1957,6 +1958,7 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   int line_num = 0;
   int word_num = 0;
   int symbol_num = 0;
+  std::string lang;
 
   std::string tsv_str;
   tsv_str += "1\t" + std::to_string(page_num); // level 1 - page
@@ -1969,7 +1971,11 @@ char *TessBaseAPI::GetTSVText(int page_number) {
   tsv_str += "\t" + std::to_string(rect_top_);
   tsv_str += "\t" + std::to_string(rect_width_);
   tsv_str += "\t" + std::to_string(rect_height_);
-  tsv_str += "\t-1\t\n";
+  tsv_str += "\t-1";
+  if (lang_info) {
+    tsv_str += "\t" + lang;
+  }
+  tsv_str += "\t\n";
 
   const std::unique_ptr</*non-const*/ ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
@@ -1993,9 +1999,15 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_BLOCK, tsv_str);
       tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_BLOCK)); // end of row for block
-      tsv_str += "\t\n";
+      if (lang_info) {
+        tsv_str += "\t";
+      }
+      tsv_str += "\t\n"; // end of row for block
     }
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
+      if (lang_info) {
+        lang = res_it->WordRecognitionLanguage();
+      }
       par_num++;
       line_num = 0;
       word_num = 0;
@@ -2008,7 +2020,10 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_PARA, tsv_str);
       tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_PARA)); // end of row for block
-      tsv_str += "\t\n";
+      if (lang_info) {
+        tsv_str += "\t" + lang;
+      }
+      tsv_str += "\t\n"; // end of row for para
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       line_num++;
@@ -2022,7 +2037,10 @@ char *TessBaseAPI::GetTSVText(int page_number) {
       tsv_str += "\t" + std::to_string(symbol_num);
       AddBoxToTSV(res_it.get(), RIL_TEXTLINE, tsv_str);
       tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_TEXTLINE)); // end of row for block
-      tsv_str += "\t\n";
+      if (lang_info) {
+        tsv_str += "\t";
+      }
+      tsv_str += "\t\n"; // end of row for line
     }
 
     // Now, process the word...
@@ -2041,6 +2059,15 @@ char *TessBaseAPI::GetTSVText(int page_number) {
     tsv_str += "\t" + std::to_string(right - left);
     tsv_str += "\t" + std::to_string(bottom - top);
     tsv_str += "\t" + std::to_string(res_it->Confidence(RIL_WORD));
+
+    if (lang_info) {
+      const char *word_lang = res_it->WordRecognitionLanguage();
+      tsv_str += "\t";
+      if (word_lang) {
+        tsv_str += word_lang;
+      }
+    }
+
     tsv_str += "\t";
 
     std::string tsv_symbol_lines;
@@ -2389,7 +2416,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
 
-  tesseract_->classify_enable_learning = 0;
+  tesseract_->classify_enable_learning = false;
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
   if (tesseract_->applybox_debug) {
