@@ -30,6 +30,7 @@
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for IntCastRounded, chomp_string, copy_string
 #include "host.h"    // for MAX_PATH
+#include "imagedata.h" // for ImageData, DocumentData
 #include <leptonica/imageio.h> // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #if !DISABLED_LEGACY_ENGINE
 #  include "intfx.h" // for INT_FX_RESULT_STRUCT
@@ -63,6 +64,7 @@
 #include <cmath>    // for round, M_PI
 #include <cstdint>  // for int32_t
 #include <cstring>  // for strcmp, strcpy
+#include <filesystem> // for path
 #include <fstream>  // for size_t
 #include <iostream> // for std::cin
 #include <locale>   // for std::locale::classic
@@ -106,14 +108,14 @@ BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin.");
 STRING_VAR(document_title, "", "Title of output document (used for hOCR and PDF output).");
 #ifdef HAVE_LIBCURL
 INT_VAR(curl_timeout, 0, "Timeout for curl in seconds.");
-static STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
+STRING_VAR(curl_cookiefile, "", "File with cookie data for curl");
 #endif
 INT_VAR(debug_all, 0, "Turn on all the debugging features. Set to '2' or higher for extreme verbose debug diagnostics output.");
 BOOL_VAR(debug_misc, false, "Turn on miscellaneous debugging features.");
 BOOL_VAR(scrollview_support, false, "Turn ScrollView support on/off. When turned OFF, the OCR process executes a little faster but almost all graphical feedback/diagnostics features will have been disabled.");
 BOOL_VAR(verbose_process, false, "Print descriptive messages reporting which steps are taken during the OCR process. This may help non-expert users to better grasp what is happening under the hood and which stages of the OCR process take up time.");
 STRING_VAR(vars_report_file, "+", "Filename/path to write the 'Which -c variables were used' report. File may be 'stdout', '1' or '-' to be output to stdout. File may be 'stderr', '2' or '+' to be output to stderr. Empty means no report will be produced.");
-BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all available variables.");
+BOOL_VAR(report_all_variables, true, "When reporting the variables used (via 'vars_report_file') also report all *unused* variables, hence the report will always list *all* available variables.");
 DOUBLE_VAR(allowed_image_memory_capacity, ImageCostEstimate::get_max_system_allowance(), "Set maximum memory allowance for image data: this will be used as part of a sanity check for oversized input images.");
 
 
@@ -765,6 +767,12 @@ void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
   if (thresholder_ == nullptr) {
     return;
   }
+  // TODO: this ClearResults prematurely nukes the page image and pushes for the diagnostics log to be written to output file,
+  // while this SetRectangle() very well may be meant to OCR a *second* rectangle in the existing page image, which will fail
+  // today as the page image will be lost, thanks to ClearResults.
+  //
+  // Hm, maybe have two Clear methods: ClearPageResults + ClearPageSource, so we can differentiate? And only push the diagnostics log
+  // as late as possible, i.e. when the SourceImage is being discarded then in ClearPageSource().
   ClearResults();
   thresholder_->SetRectangle(left, top, width, height);
 }
@@ -965,6 +973,79 @@ Boxa *TessBaseAPI::GetComponentImages(PageIteratorLevel level, bool text_only, b
   return boxa;
 }
 
+/**
+ * Stores lstmf based on in-memory data for one line with pix and text
+ * This function is (atm) not used in the current processing,
+ * but can be used via CAPI e.g. tesserocr
+ */
+bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
+                                     Pix *pix, const char *truth_text,
+                                     bool vertical) {
+  // Check if path exists
+  std::ifstream test(path);
+  if (!test) {
+    tprintError("The path {} doesn't exist.\n", path);
+    return false;
+  }
+  // Check if truth_text exists
+  if ((truth_text != NULL) && (truth_text[0] == '\0') ||
+      (truth_text[0] == '\n')) {
+    tprintError("Ground truth text is empty or starts with newline.\n");
+    return false;
+  }
+  // Check if pix exists
+  if (!pix) {
+    tprintError("No image provided.\n");
+    return false;
+  }
+  // Variables for ImageData for just one line
+  std::vector<TBOX> boxes;
+  std::vector<std::string> line_texts;
+  std::string current_char, last_char, textline_str;
+  unsigned text_index = 0;
+  std::string truth_text_str = std::string(truth_text);
+  TBOX bounding_box = TBOX(0, 0, pixGetWidth(pix), pixGetHeight(pix));
+  // Take only the first line from the truth_text, replace tabs with whitespaces
+  // and reduce multiple whitespaces to just one
+  while (text_index < truth_text_str.size() &&
+         truth_text_str[text_index] != '\n') {
+    current_char = truth_text_str[text_index];
+    if (current_char == "\t") {
+      current_char = " ";
+    }
+    if (last_char != " " || current_char != " ") {
+      textline_str.append(current_char);
+      last_char = current_char;
+    }
+    text_index++;
+  }
+  if (textline_str.empty() || textline_str != " ") {
+    tprintError("There is no first line information.\n");
+    return false;
+  } else {
+    boxes.push_back(bounding_box);
+    line_texts.push_back(textline_str);
+  }
+
+  std::vector<int> page_numbers(boxes.size(), 1);
+
+  // Init ImageData
+  auto *image_data = new ImageData(vertical, pix);
+  image_data->set_page_number(1);
+  image_data->AddBoxes(boxes, line_texts, page_numbers);
+
+  // Write it to a lstmf-file
+  std::filesystem::path filename = path;
+  filename /= std::string(name) + std::string(".lstmf");
+  DocumentData doc_data(filename.string());
+  doc_data.AddPageToDocument(image_data);
+  if (!doc_data.SaveDocument(filename.string().c_str(), nullptr)) {
+    tprintError("Failed to write training data to {}!\n", filename.string());
+    return false;
+  }
+  return true;
+}
+
 int TessBaseAPI::GetThresholdedImageScaleFactor() const {
   if (thresholder_ == nullptr) {
     return 0;
@@ -987,10 +1068,6 @@ int TessBaseAPI::GetThresholdedImageScaleFactor() const {
  * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
-PageIterator *TessBaseAPI::AnalyseLayout() {
-  return AnalyseLayout(false);
-}
-
 PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
   if (FindLines() == 0) {
     AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Analyse Layout"));
@@ -1331,6 +1408,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
   return true;
 }
 
+// If `tessedit_page_number` is non-negative, will only process that
+// single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
                                             const char *retry_config, int timeout_millisec,
                                             TessResultRenderer *renderer) {
@@ -1872,6 +1951,7 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
 /**
  * Make a TSV-formatted string from the internal data structures.
  * page_number is 0-based but will appear in the output as 1-based.
+ *
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetTSVText(int page_number) {
@@ -2323,7 +2403,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
   if (tesseract_->applybox_debug) {
-	tprintDebug("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
+    tprintDebug("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
   }
   if (text != nullptr) {
     PAGE_RES_IT it(page_res_);
@@ -2383,6 +2463,8 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
+  // TODO? write/flush log output / ReportDebugInfo() ?
+
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
   }
@@ -2556,7 +2638,7 @@ bool TessBaseAPI::InternalResetImage() {
     return false;
   }
   if (thresholder_ != nullptr) {
-	  thresholder_->Clear();
+    thresholder_->Clear();
   }
   if (thresholder_ == nullptr) {
     thresholder_ = new ImageThresholder(tesseract_);

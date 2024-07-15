@@ -449,6 +449,11 @@ public:
   void SetRectangle(int left, int top, int width, int height);
 
   /**
+   * Stores lstmf based on in-memory data for one line with pix and text
+   */
+  bool WriteLSTMFLineData(const char *name, const char *path, Pix *pix, const char *truth_text, bool vertical);
+
+  /**
    * Get a copy of the internal thresholded image from Tesseract.
    * Caller takes ownership of the Pix and must pixDestroy it.
    * May be called any time after SetImage, or after TesseractRect.
@@ -559,8 +564,7 @@ public:
    * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
    * DetectOS, or anything else that changes the internal PAGE_RES.
    */
-  PageIterator *AnalyseLayout();
-  PageIterator *AnalyseLayout(bool merge_similar_words);
+  PageIterator *AnalyseLayout(bool merge_similar_words = false);
 
   /**
    * Recognize the image from SetAndThresholdImage, generating Tesseract
