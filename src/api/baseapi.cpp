@@ -786,40 +786,22 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     return nullptr;
   }
   if (tesseract_->pix_binary() == nullptr) {
-	if (verbose_process) {
+    if (verbose_process) {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
-	}
+    }
 
     Image pix = Image();
-	  if (!Threshold(&pix.pix_)) {
-		  return nullptr;
-	  }
-	  tesseract_->set_pix_binary(pix);
+    if (!Threshold(&pix.pix_)) {
+      return nullptr;
+    }
+    tesseract_->set_pix_binary(pix);
 
     if (tesseract_->tessedit_dump_pageseg_images) {
       tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
-  const char *debug_output_path = tesseract_->debug_output_path.c_str();
-
-  //Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
-  // if (scribe_save_binary_rotated_image) {
-  //   Pix *p1 = tesseract_->pix_binary();
-  //   pixWrite("/binary_image.png", p1, IFF_PNG);
-  // }
-  if (tesseract_->scribe_save_grey_rotated_image) {
-    Pix *p1 = tesseract_->pix_grey();
-    tesseract_->AddPixDebugPage(p1, "greyscale image");
-  }
-  if (tesseract_->scribe_save_binary_rotated_image) {
-    Pix *p1 = tesseract_->pix_binary();
-    tesseract_->AddPixDebugPage(p1, "binary (black & white) image");
-  }
-  if (tesseract_->scribe_save_original_rotated_image) {
-    Pix *p1 = tesseract_->pix_original();
-    tesseract_->AddPixDebugPage(p1, "original image");
-  }
+  // Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
   return tesseract_->pix_binary().clone();
 }

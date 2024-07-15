@@ -1095,9 +1095,6 @@ public:
   DOUBLE_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
   DOUBLE_VAR_H(max_page_gradient_recognize);
-  BOOL_VAR_H(scribe_save_binary_rotated_image);
-  BOOL_VAR_H(scribe_save_grey_rotated_image);
-  BOOL_VAR_H(scribe_save_original_rotated_image);
   STRING_VAR_H(debug_output_path);
   INT_VAR_H(debug_baseline_fit);
   INT_VAR_H(debug_baseline_y_coord);
