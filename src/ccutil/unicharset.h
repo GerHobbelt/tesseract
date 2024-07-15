@@ -864,7 +864,7 @@ public:
   // unichar representation represents a character fragment.
   const CHAR_FRAGMENT *get_fragment(const char *const unichar_repr) const {
     if (unichar_repr == nullptr || unichar_repr[0] == '\0' ||
-        !ids.contains(unichar_repr, false)) {
+        !ids.contains(unichar_repr)) {
       return nullptr;
     }
     return get_fragment(unichar_to_id(unichar_repr));
