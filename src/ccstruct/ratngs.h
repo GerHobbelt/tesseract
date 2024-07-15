@@ -177,11 +177,13 @@ public:
             static_cast<double>(max_xheight_),
             unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_).c_str());
   }
+
   void print_full() const {
     print(nullptr);
     tprintf(" script=%d, font1=%d, font2=%d, yshift=%g, classifier=%d\n", script_id_, fontinfo_id_,
             fontinfo_id2_, static_cast<double>(yshift_), classifier_);
   }
+
   // Sort function for sorting BLOB_CHOICEs in increasing order of rating.
   static int SortByRating(const void *p1, const void *p2) {
     const BLOB_CHOICE *bc1 = *static_cast<const BLOB_CHOICE *const *>(p1);
@@ -577,6 +579,7 @@ public:
 private:
   const UNICHARSET *unicharset_;
   // TODO(rays) Perhaps replace the multiple arrays with an array of structs?
+  // 
   // unichar_ids_ is an array of classifier "results" that make up a word.
   // For each unichar_ids_[i], script_pos_[i] has the sub/super/normal position
   // of each unichar_id.
@@ -584,6 +587,7 @@ private:
   // were put together to make the classification results in the ith position
   // in unichar_ids_, and certainties_[i] is the certainty of the choice that
   // was used in this word.
+  // 
   // == Change from before ==
   // Previously there was fragment_lengths_ that allowed a word to be
   // artificially composed of multiple fragment results. Since the new

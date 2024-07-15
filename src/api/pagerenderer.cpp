@@ -128,7 +128,7 @@ Pta *DestroyAndCreatePta(Pta *pts) {
 }
 
 ///
-/// Recalculate linepolygon
+/// Recalculate line polygon
 /// Create a hull for overlapping areas
 ///
 Pta *RecalcPolygonline(Pta *pts, bool upper) {
@@ -851,7 +851,6 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     }
 
     // Writing direction changes at a per-word granularity
-    // tesseract::WritingDirection writing_direction_before;
     auto writing_direction = writing_direction_block;
     if (writing_direction_block != WRITING_DIRECTION_TOP_TO_BOTTOM) {
       switch (res_it->WordDirection()) {
