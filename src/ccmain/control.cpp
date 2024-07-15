@@ -2128,7 +2128,8 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     tprintDebug("\n\nTESTWD:: ");
     switch (location) {
       default:
-        ASSERT0(!"Should never get here!");
+        ASSERT_HOST_MSG(false, "Should never get here!");
+		break;
       case 0:
         tprintDebug("classify_word_pass1 start\n");
         word->word->print();

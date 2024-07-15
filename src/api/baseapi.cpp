@@ -827,7 +827,10 @@ void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
 
 /** Return the current page segmentation mode. */
 PageSegMode TessBaseAPI::GetPageSegMode() const {
-  return static_cast<PageSegMode>(tesseract().tessedit_pageseg_mode.value());
+  if (tesseract_ == nullptr) {
+    return PSM_SINGLE_BLOCK;
+  }
+  return static_cast<PageSegMode>(tesseract_->tessedit_pageseg_mode.value());
 }
 
 /**
@@ -971,9 +974,9 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 
   Tesseract& tess = tesseract();
   if (tess.pix_binary() == nullptr) {
-  if (verbose_process) {
+	if (verbose_process) {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
-  }
+	}
 
     Image pix = Image();
     if (!Threshold(&pix.pix_)) {
@@ -986,25 +989,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
     }
   }
 
-  const char *debug_output_path = tess.debug_output_path.c_str();
-
-  //Pix *p1 = pixRotate(tess.pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
-  // if (scribe_save_binary_rotated_image) {
-  //   Pix *p1 = tess.pix_binary();
-  //   pixWrite("/binary_image.png", p1, IFF_PNG);
-  // }
-  if (tess.scribe_save_grey_rotated_image) {
-    Pix *p1 = tess.pix_grey();
-    tess.AddPixDebugPage(p1, "greyscale image");
-  }
-  if (tess.scribe_save_binary_rotated_image) {
-    Pix *p1 = tess.pix_binary();
-    tess.AddPixDebugPage(p1, "binary (black & white) image");
-  }
-  if (tess.scribe_save_original_rotated_image) {
-    Pix *p1 = tess.pix_original();
-    tess.AddPixDebugPage(p1, "original image");
-  }
+  // Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
   return tess.pix_binary().clone();
 }

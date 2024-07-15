@@ -111,6 +111,9 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
       tprintDebug("read line {}\n", buffer);
     }
     ++line_num;
+    // empty line? skip.
+    if (!*buffer)
+      continue;
     if (!ParseAmbiguityLine(line_num, version, ambigs_debug_level, encoder_set, buffer,
                             &test_ambig_part_size, test_unichar_ids, &replacement_ambig_part_size,
                             replacement_string, &type)) {
@@ -226,9 +229,11 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
 }
 
 std::string UnicharAmbigs::debug_print_for_unicharset_stmt(const UNICHARSET &unicharset) {
-  if (last_unicharset_for_diagnostics_printed_ != &unicharset)
+  // when we reported the unicode set already before, don't report it again as it would clutter the output:
+  if (last_unicharset_for_diagnostics_printed_ == &unicharset)
     return "";
 
+  last_unicharset_for_diagnostics_printed_ = &unicharset;
   return fmt::format(" for unicode set: {}", unicharset.debug_full_set_as_string());
 }
 

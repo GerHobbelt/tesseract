@@ -458,9 +458,6 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Detect music staff and remove intersecting components.", params())
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
-    , BOOL_MEMBER(scribe_save_binary_rotated_image, false, "Saves binary image to file.", params())
-    , BOOL_MEMBER(scribe_save_grey_rotated_image, false, "Saves grey image to file.", params())
-    , BOOL_MEMBER(scribe_save_original_rotated_image, false, "Saves color image to file.", params())
     , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", params())
     , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
@@ -864,6 +861,16 @@ void Tesseract::set_pix_original(Image original_pix) {
   }
 }
 
+  Image Tesseract::pix_binary() const {
+    return pix_binary_;
+  }
+  Image Tesseract::pix_grey() const {
+    return pix_grey_;
+  }
+  Image Tesseract::pix_original() const {
+    return pix_original_;
+  }
+
 Image Tesseract::GetPixForDebugView() {
   if (pix_for_debug_view_ != nullptr) {
     return pix_for_debug_view_;
@@ -929,6 +936,38 @@ void Tesseract::SetScaledColor(int factor, Image color) {
 Tesseract * Tesseract::get_sub_lang(int index) const {
   return sub_langs_[index];
 }
+
+  Image Tesseract::pix_thresholds() {
+	  return pix_thresholds_;
+  }
+
+  int Tesseract::source_resolution() const {
+    return source_resolution_;
+  }
+
+  Image Tesseract::scaled_color() const {
+    return scaled_color_;
+  }
+
+  int Tesseract::scaled_factor() const {
+    return scaled_factor_;
+  }
+
+  const Textord &Tesseract::textord() const {
+    return textord_;
+  }
+
+  Textord *Tesseract::mutable_textord() {
+    return &textord_;
+  }
+
+  bool Tesseract::right_to_left() const {
+    return right_to_left_;
+  }
+
+  int Tesseract::num_sub_langs() const {
+    return sub_langs_.size();
+  }
 
 // Returns true if any language uses Tesseract (as opposed to LSTM).
 bool Tesseract::AnyTessLang() const {

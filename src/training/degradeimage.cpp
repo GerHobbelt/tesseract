@@ -90,7 +90,7 @@ const int kMinRampSize = 1000;
 // Finally a greyscale ramp provides a continuum of effects between exposure
 // levels.
 Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation) {
-  printf("degrade image:");
+  tprintDebug("Degrade image:\n");
   Image pix = pixConvertTo8(input, false);
   input.destroy();
   input = pix;
@@ -189,22 +189,22 @@ Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool w
   if ((white_noise || smooth_noise) /*&& randomizer->SignedRand(1.0) > 0.0*/) {
     // TODO(rays) Cook noise in a more thread-safe manner than rand().
     // Attempt to make the sequences reproducible.
-    printf("add noise");
+    tprintDebug("add noise\n");
     srand(randomizer->IntRand());
-    Image pixn = pixAddGaussianNoise(distorted, my_noise);
+    Image pixn = pixAddGaussianNoise(distorted, my_noise);   // 8.0
     distorted.destroy();
     if (smooth_noise) {
-      distorted = pixBlockconv(pixn, my_smooth, my_smooth);
+      distorted = pixBlockconv(pixn, my_smooth, my_smooth);   // 1
       pixn.destroy();
-      printf("smoothen");
+      tprintDebug("smoothen\n");
     } else {
-      printf("noise added");
+      tprintDebug("noise added\n");
       distorted = pixn;
     }
   }
   if (blur /*&& randomizer->SignedRand(1.0) > 0.0*/) {
-    printf("blur");
-    Image blurred = pixBlockconv(distorted, my_blur, my_blur);
+    tprintDebug("blur\n");
+    Image blurred = pixBlockconv(distorted, my_blur, my_blur);  // 1
     distorted.destroy();
     distorted = blurred;
   }

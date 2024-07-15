@@ -253,16 +253,11 @@ public:
 
   // Destroy any existing pix and return a pointer to the pointer.
   void set_pix_binary(Image pix);
-  Image pix_binary() const {
-    return pix_binary_;
-  }
-  Image pix_grey() const {
-    return pix_grey_;
-  }
+  Image pix_binary() const;
+
+  Image pix_grey() const;
   void set_pix_grey(Image grey_pix);
-  Image pix_original() const {
-    return pix_original_;
-  }
+  Image pix_original() const;
   // Takes ownership of the given original_pix.
   void set_pix_original(Image original_pix);
 
@@ -305,35 +300,23 @@ public:
   Image BestPix() const;
 
   void set_pix_thresholds(Image thresholds);
-  Image pix_thresholds() {
-	  return pix_thresholds_;
-  }
-  int source_resolution() const {
-    return source_resolution_;
-  }
+  Image pix_thresholds();
+
+  int source_resolution() const;
   void set_source_resolution(int ppi);
+
   int ImageWidth() const;
   int ImageHeight() const;
-  Image scaled_color() const {
-    return scaled_color_;
-  }
-  int scaled_factor() const {
-    return scaled_factor_;
-  }
-  void SetScaledColor(int factor, Image color);
-  const Textord &textord() const {
-    return textord_;
-  }
-  Textord *mutable_textord() {
-    return &textord_;
-  }
+  Image scaled_color() const;
+  int scaled_factor() const;
 
-  bool right_to_left() const {
-    return right_to_left_;
-  }
-  int num_sub_langs() const {
-    return sub_langs_.size();
-  }
+  void SetScaledColor(int factor, Image color);
+  const Textord &textord() const;
+  Textord *mutable_textord();
+
+  bool right_to_left() const;
+
+  int num_sub_langs() const;
   Tesseract *get_sub_lang(int index) const;
 
   // Returns true if any language uses Tesseract (as opposed to LSTM).
@@ -1092,9 +1075,6 @@ public:
   DOUBLE_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
   DOUBLE_VAR_H(max_page_gradient_recognize);
-  BOOL_VAR_H(scribe_save_binary_rotated_image);
-  BOOL_VAR_H(scribe_save_grey_rotated_image);
-  BOOL_VAR_H(scribe_save_original_rotated_image);
   STRING_VAR_H(debug_output_path);
   INT_VAR_H(debug_baseline_fit);
   INT_VAR_H(debug_baseline_y_coord);

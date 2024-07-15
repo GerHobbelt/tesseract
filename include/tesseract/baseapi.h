@@ -568,7 +568,7 @@ public:
 
   /**
    * Stores lstmf based on in-memory data for one line with pix and text
-  */
+   */
   bool WriteLSTMFLineData(const char *name, const char *path, Pix *pix, const char *truth_text, bool vertical);
 
   /**
