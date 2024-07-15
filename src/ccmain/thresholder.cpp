@@ -180,6 +180,7 @@ void ImageThresholder::SetImage(const Image pix, const float angle) {
   } else {
     pix_ = src.copy();
   }
+  src.destroy();
   depth = pixGetDepth(pix_);
   pix_channels_ = depth / 8;
   pix_wpl_ = pixGetWpl(pix_);

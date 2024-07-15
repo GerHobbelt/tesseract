@@ -746,8 +746,11 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
       pixSetSpp(p1, 3);
       (void)pixCopy(pix, p1);
       pixDestroy(&p1);
+    } else {
+      pix = pixClone(pix);
     }
     thresholder_->SetImage(pix, angle);
+    pixDestroy(&pix);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -2667,6 +2670,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
         pix_post.destroy();
       }
+
+      //pix_thresholds.destroy();
+      //pix_grey.destroy();
     }
   }
   if (verbose_process) {
