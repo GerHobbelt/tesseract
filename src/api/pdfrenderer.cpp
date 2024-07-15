@@ -16,14 +16,10 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "pdf_ttf.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "helpers.h" // for Swap, copy_string
 
 #include <leptonica/allheaders.h>
@@ -927,7 +923,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    int jpg_quality = api->tesseract()->jpg_quality;
+    int jpg_quality = api->tesseract().jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
     if (destroy_pix)
     {

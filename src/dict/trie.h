@@ -59,7 +59,7 @@ public:
   };
 
   // Minimum number of concrete characters at the beginning of user patterns.
-  static const int kSaneNumConcreteChars = 0;
+  static const unsigned int kSaneNumConcreteChars = 0;
   // Various unicode whitespace characters are used to denote unichar patterns,
   // (character classifier would never produce these whitespace characters as a
   // valid classification).

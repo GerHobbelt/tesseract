@@ -15,7 +15,8 @@
 ** limitations under the License.
 ******************************************************************************/
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <algorithm>
 #include <cfloat> // for FLT_MAX
 #include <cmath>  // for M_PI
@@ -29,7 +30,7 @@
 #include "mergenf.h"
 #include "ocrfeatures.h"
 #include "oldlist.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "protos.h"
 
 #undef min
@@ -237,15 +238,9 @@ float SubfeatureEvidence(FEATURE Feature, PROTO_STRUCT *Proto) {
  *       1 / (1 + (sim / midpoint) ^ curl)
  */
 double EvidenceOf(double Similarity) {
-  Similarity /= training_similarity_midpoint;
+  Similarity /= training_similarity_midpoint.value();
 
-  if (training_similarity_curl == 3) {
-    Similarity = Similarity * Similarity * Similarity;
-  } else if (training_similarity_curl == 2) {
-    Similarity = Similarity * Similarity;
-  } else {
-    Similarity = pow(Similarity, training_similarity_curl);
-  }
+  Similarity = std::pow(Similarity, training_similarity_curl.value());
 
   return (1.0 / (1.0 + Similarity));
 }

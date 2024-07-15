@@ -25,15 +25,13 @@
  *
  **********************************************************************/
 
+// Include automatically generated configuration file if running autoconf.
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "drawtord.h"
 #include "statistc.h"
 #include "textord.h"
 #include "tovars.h"
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 #include <algorithm>
 #include <cmath>

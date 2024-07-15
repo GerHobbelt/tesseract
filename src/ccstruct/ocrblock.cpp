@@ -16,10 +16,12 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "ocrblock.h"
 
 #include "stepblob.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cstdlib>
 #include <memory> // std::unique_ptr
@@ -189,6 +191,7 @@ void BLOCK::print( // print list of sides
     FILE *,        ///< file to print on
     bool dump      ///< print full detail
 ) {
+  TPrintGroupLinesTillEndOfScope push;
   ICOORDELT_IT it = &pdblk.leftside; // iterator
 
   pdblk.box.print();
@@ -218,23 +221,47 @@ void BLOCK::print( // print list of sides
  *
  * Assignment - duplicate the block structure, but with an EMPTY row list.
  */
-
 BLOCK &BLOCK::operator=( // assignment
     const BLOCK &source  // from this
 ) {
-  this->ELIST_LINK::operator=(source);
-  pdblk = source.pdblk;
-  proportional = source.proportional;
-  kerning = source.kerning;
-  spacing = source.spacing;
-  filename = source.filename; // STRINGs assign ok
-  if (!rows.empty()) {
-    rows.clear();
+  if (this != &source) {
+    this->ELIST_LINK::operator=(source);
+    pdblk = source.pdblk;
+    proportional = source.proportional;
+    kerning = source.kerning;
+    spacing = source.spacing;
+    filename = source.filename; // STRINGs assign ok
+    if (!rows.empty()) {
+      rows.clear();
+    }
+    re_rotation_ = source.re_rotation_;
+    classify_rotation_ = source.classify_rotation_;
+    skew_ = source.skew_;
   }
-  re_rotation_ = source.re_rotation_;
-  classify_rotation_ = source.classify_rotation_;
-  skew_ = source.skew_;
   return *this;
+}
+
+/**
+ * BLOCK::BLOCK(const BLOCK &src) copy constructor
+ *
+ * duplicate the block structure, but with an EMPTY row list.
+ */
+BLOCK::BLOCK(const BLOCK &source) {
+  // same implementation as assignment operator.
+  if (this != &source) {
+    this->ELIST_LINK::operator=(source);
+    pdblk = source.pdblk;
+    proportional = source.proportional;
+    kerning = source.kerning;
+    spacing = source.spacing;
+    filename = source.filename; // STRINGs assign ok
+    if (!rows.empty()) {
+      rows.clear();
+    }
+    re_rotation_ = source.re_rotation_;
+    classify_rotation_ = source.classify_rotation_;
+    skew_ = source.skew_;
+  }
 }
 
 // This function is for finding the approximate (horizontal) distance from

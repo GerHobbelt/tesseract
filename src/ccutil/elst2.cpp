@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "elst2.h"
 
 #include <cstdlib>
@@ -264,10 +266,18 @@ ELIST2_LINK *ELIST2_ITERATOR::data_relative( // get data + or - ..
 
   if (offset < 0) {
     for (ptr = current ? current : next; offset++ < 0; ptr = ptr->prev) {
+#ifndef NDEBUG
+      if (!ptr)
+        BAD_PARAMETER.error("ELIST2_ITERATOR::data_relative", ABORT, "ptr == nullptr");
+#endif
       ;
     }
   } else {
     for (ptr = current ? current : prev; offset-- > 0; ptr = ptr->next) {
+#ifndef NDEBUG
+      if (!ptr)
+        BAD_PARAMETER.error("ELIST2_ITERATOR::data_relative", ABORT, "ptr == nullptr");
+#endif
       ;
     }
   }

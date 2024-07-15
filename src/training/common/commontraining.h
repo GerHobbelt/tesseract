@@ -14,14 +14,12 @@
 #ifndef TESSERACT_TRAINING_COMMONTRAINING_H_
 #define TESSERACT_TRAINING_COMMONTRAINING_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <tesseract/export.h>
 #include "commandlineflags.h"
 #include "export.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <tesseract/baseapi.h>
 
@@ -116,7 +114,7 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
 //   Loads xheights from -X option.
 //   Loads samples from .tr files in remaining command-line args.
 //   Deletes outliers and computes canonical samples.
-//   If FLAGS_output_trainer is set, saves the trainer for future use.
+//   If trainer_output_trainer is set, saves the trainer for future use.
 // Computes canonical and cloud features.
 // If shape_table is not nullptr, but failed to load, make a fake flat one,
 // as shape clustering was not run.

@@ -17,6 +17,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "degradeimage.h"
 
 #include <leptonica/allheaders.h> // from leptonica
@@ -110,10 +112,6 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
   // A small random rotation helps to make the edges jaggy in a realistic way.
   if (rotation != nullptr) {
     float radians_clockwise = 0.0f;
-    //float my_rotation;
-    //printf("define a rotation:");
-    //std::cout << "define a rotation:";
-    //std::cin >> my_rotation;
     if (*rotation) {
       radians_clockwise = *rotation;
     } else if (randomizer != nullptr) {

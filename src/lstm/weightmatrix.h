@@ -23,7 +23,7 @@
 #include "intsimdmatrix.h"
 #include "matrix.h"
 #include "tesstypes.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

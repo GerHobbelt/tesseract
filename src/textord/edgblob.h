@@ -22,10 +22,24 @@
 #include "coutln.h"   // for C_OUTLINE
 #include "ocrblock.h" // for BLOCK
 #include "points.h"   // for ICOORD
+#include <tesseract/params.h>
 
 #include <vector>
 
 namespace tesseract {
+
+extern BOOL_VAR_H(edges_use_new_outline_complexity);
+extern INT_VAR_H(edges_max_children_per_outline);
+extern INT_VAR_H(edges_max_children_layers);
+extern BOOL_VAR_H(edges_debug);
+
+extern INT_VAR_H(edges_children_per_grandchild);
+extern INT_VAR_H(edges_children_count_limit);
+extern BOOL_VAR_H(edges_children_fix);
+extern INT_VAR_H(edges_min_nonhole);
+extern INT_VAR_H(edges_patharea_ratio);
+extern DOUBLE_VAR_H(edges_childarea);
+extern DOUBLE_VAR_H(edges_boxarea);
 
 class OL_BUCKETS {
 public:
