@@ -16,12 +16,14 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "boxread.h"
 
 #include "errcode.h" // for ERRCODE, TESSEXIT
 #include "fileerr.h" // for CANTOPENFILE
 #include "rect.h"    // for TBOX
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <tesseract/unichar.h> // for UNICHAR
 #include "helpers.h"           // for chomp_string

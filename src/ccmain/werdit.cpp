@@ -17,6 +17,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "werdit.h"
 
 #include "errcode.h"  // for ASSERT_HOST

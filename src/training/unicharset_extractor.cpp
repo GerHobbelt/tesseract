@@ -20,9 +20,7 @@
 // normalizes the text according to command-line options and generates
 // a unicharset.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cstdlib>
 #include <filesystem>
@@ -41,8 +39,8 @@
 
 using namespace tesseract;
 
-STRING_PARAM_FLAG(output_unicharset, "unicharset", "Output file path");
-INT_PARAM_FLAG(norm_mode, 1,
+STRING_VAR(extractor_output_unicharset, "unicharset", "Output file path");
+INT_VAR(extractor_norm_mode, 1,
                       "Normalization mode: 1=Combine graphemes, "
                       "2=Split graphemes, 3=Pure unicode");
 
@@ -94,14 +92,14 @@ static int Main(int argc, const char** argv) {
       texts.clear();
       texts = split(file_data, '\n');
     }
-    AddStringsToUnicharset(texts, FLAGS_norm_mode, &unicharset);
+    AddStringsToUnicharset(texts, extractor_norm_mode, &unicharset);
   }
   SetupBasicProperties(/*report_errors*/ true, /*decompose*/ false, &unicharset);
   // Write unicharset file.
-  if (unicharset.save_to_file(FLAGS_output_unicharset.c_str())) {
-    tprintDebug("Wrote unicharset file {}\n", FLAGS_output_unicharset.value());
+  if (unicharset.save_to_file(extractor_output_unicharset.c_str())) {
+    tprintDebug("Wrote unicharset file {}\n", extractor_output_unicharset.value());
   } else {
-    tprintError("Cannot save unicharset file {}\n", FLAGS_output_unicharset.value());
+    tprintError("Cannot save unicharset file {}\n", extractor_output_unicharset.value());
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

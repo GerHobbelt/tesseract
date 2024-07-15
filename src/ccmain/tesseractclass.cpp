@@ -34,9 +34,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "tesseractclass.h"
 
@@ -64,13 +62,20 @@ Tesseract::Tesseract(Tesseract *parent)
                   "Break input into lines and remap boxes if present", params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
                   "Dump intermediate images made during page segmentation", params())
+    , STRING_MEMBER(raw_input_image_path, "", "Path where the raw input page image will be loaded from. Empty when the source image will be fed to teseract through other means / API calls.", params())
+    , STRING_MEMBER(segmentation_mask_input_image_path, "", "Path where the optional segmentation mask page image will be loaded from. Empty when the source image will be fed to teseract through other means. RED channel identifies text segments; BLUE channel identifies graphics (non-text) segments; GREEN channel is reserved for specials. All segments are processed in order of decreasing tint intensity per channel.", params())
+    , STRING_MEMBER(visible_output_source_image_path, "", "Path where the visible page image overlay will be loaded from; this is relevant for PDF output which may produce a page layout using the visible_output_image for page display, while embedding the OCR text output as an invisble overlay suitable for text extraction and copy&paste selection by the user afterwards.", params())
+    , STRING_MEMBER(debug_output_base_path, "", "Path template where the various debug/log files and supporting raw / processed image stages will be saved as part of the debug/diagnostics output.", params())
+    , STRING_MEMBER(debug_output_modes, "html", "A colon-separated set of debug/diagnostics output modes you wish to see output alongside the OCR result. These formats are supported: html, text.", params())
+    , STRING_MEMBER(output_base_path, "", "Path template where the OCR output files will be saved.", params())
+    , STRING_MEMBER(output_base_filename, "", "Filename template: the OCR output files will be named based on this template.", params())
     , DOUBLE_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
                     params())
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
-    INT_MEMBER(tessedit_pageseg_mode, PSM_SINGLE_BLOCK,
+    INT_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
                "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, "
                "4=column, "
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
@@ -90,9 +95,6 @@ Tesseract::Tesseract(Tesseract *parent)
                  "adaptive normalized background, 4 = Masking and Otsu on "
                  "adaptive normalized background, 5 = Nlbin.",
                  params())
-    , BOOL_MEMBER(showcase_threshold_methods, false,
-                  "Showcase the available threshold methods as part of the thresholding process.",
-                  params())
     , BOOL_MEMBER(thresholding_debug, false,
                   "Debug the thresholding process.",
                   params())
@@ -123,7 +125,7 @@ Tesseract::Tesseract(Tesseract *parent)
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
                     params())
-    , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
+    , INT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
                       "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
                       "Defaults to loading and running the most accurate "
                       "available.",
@@ -133,15 +135,14 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", params())
     , STRING_MEMBER(tessedit_char_unblacklist, "",
                     "List of chars to override tessedit_char_blacklist.", params())
-    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.",
-                  params())
+    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.", params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
-                 "Whether to use the top-line splitting process for Devanagari "
-                 "documents while performing page-segmentation.",
+                 "Which top-line splitting process to use for Devanagari "
+                 "documents while performing page-segmentation. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
                  params())
     , INT_MEMBER(ocr_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
-                 "Whether to use the top-line splitting process for Devanagari "
-                 "documents while performing ocr.",
+                 "Which top-line splitting process to use for Devanagari "
+                 "documents while performing ocr. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
                  params())
     , STRING_MEMBER(tessedit_write_params_to_file, "", "Write all parameters to the given file.",
                     params())
@@ -191,8 +192,7 @@ Tesseract::Tesseract(Tesseract *parent)
                   "confuse layout analysis, determining diacritics vs noise.",
                   params())
     , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", params())
-    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.",
-                    params())
+    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
@@ -218,8 +218,7 @@ Tesseract::Tesseract(Tesseract *parent)
     , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
     , DOUBLE_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
     , DOUBLE_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
-    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
-                    params())
+    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.", params())
     , DOUBLE_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
@@ -227,8 +226,7 @@ Tesseract::Tesseract(Tesseract *parent)
                  "bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, "
                  "bit 5 = CHECK_AMBIG_WERD)",
                  params())
-    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.",
-                  params())
+    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.", params())
     , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
     , BOOL_MEMBER(test_pt, false, "Test for point.", params())
     , DOUBLE_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
@@ -350,9 +348,9 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(tessedit_create_txt, false, "Write .txt output file.", params())
     , BOOL_MEMBER(tessedit_create_hocr, false, "Write .html hOCR output file.", params())
     , BOOL_MEMBER(tessedit_create_alto, false, "Write .xml ALTO file.", params())
-    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", this->params())
-    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", this->params())
-    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", this->params())
+    , BOOL_MEMBER(tessedit_create_page_xml, false, "Write .page.xml PAGE file", params())
+    , BOOL_MEMBER(page_xml_polygon, true, "Create the PAGE file with polygons instead of box values", params())
+    , INT_MEMBER(page_xml_level, 0, "Create the PAGE file on 0=line or 1=word level.", params())
     , BOOL_MEMBER(tessedit_create_lstmbox, false, "Write .box file for LSTM training.", params())
     , BOOL_MEMBER(tessedit_create_tsv, false, "Write .tsv output file.", params())
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
@@ -391,11 +389,13 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(min_sane_x_ht_pixels, 8, "Reject any x-ht lt or eq than this.", params())
     , BOOL_MEMBER(tessedit_create_boxfile, false, "Output text with boxes.", params())
     , INT_MEMBER(tessedit_page_number, -1, "-1 -> All pages, else specific page to process.", params())
-    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the IPE.", params())
-    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively?", params())
-    , STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
+    , BOOL_MEMBER(tessedit_write_images, false, "Capture the image from the internal processing engine at various stages of progress (the generated image filenames will reflect this).", params())
+    , BOOL_MEMBER(interactive_display_mode, false, "Run interactively? Turn OFF (false) to NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params()),
+      STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+    , STRING_MEMBER(languages_to_try, "", "List of languages to try when OCRing the next pages.", params())
+    , STRING_MEMBER(reactangles_to_process, "", "List of rectangle areas in the page image to process. When none are specified, the entire page is processed.", params())
 #if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
@@ -405,12 +405,12 @@ Tesseract::Tesseract(Tesseract *parent)
     , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
     // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())                      --> debug_line_finding
-    // , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())      --> debug_line_finding + !debug_do_not_use_scrollview_app
+    // , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())      --> debug_line_finding + !interactive_display_mode
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())
-    , BOOL_INIT_MEMBER(tessedit_init_config_only, false,
+    , BOOL_MEMBER(tessedit_init_config_only, false,
                        "Only initialize with the config file. Useful if the "
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",
@@ -427,8 +427,8 @@ Tesseract::Tesseract(Tesseract *parent)
                     params())
     , DOUBLE_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
                     "Fraction of height used as a minimum gap for aligned blobs.", params())
-    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params())
-    , BOOL_MEMBER(preserve_interword_spaces, false, "Preserve multiple interword spaces.",
+    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params()),
+      BOOL_MEMBER(preserve_interword_spaces, false, "When `true`: preserve multiple inter-word spaces as-is, or when `false`: compress multiple inter-word spaces to a single space character.",
                   params())
     , STRING_MEMBER(page_separator, "\f", "Page separator (default is form feed control character)",
                     params())
@@ -465,10 +465,11 @@ Tesseract::Tesseract(Tesseract *parent)
     , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
-    , BOOL_MEMBER(debug_do_not_use_scrollview_app, false, "Do NOT use the external ScrollView process. Instead, where available, image data is appended to debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())
     , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", params())
-    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params())
+    , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params()) 
+    , BOOL_MEMBER(dump_segmented_word_images, false, "Display intermediate individual bbox/word images about to be fed into the OCR engine in debug_pixa.", params()) 
+    , BOOL_MEMBER(dump_osdetect_process_images, false, "Display intermediate OS (Orientation & Skew) image stages in debug_pixa.", params()) 
 
     , pixa_debug_(this)
     , splitter_(this)
@@ -493,7 +494,9 @@ Tesseract::Tesseract(Tesseract *parent)
     , equ_detect_(nullptr)
 #endif // !DISABLED_LEGACY_ENGINE
     , lstm_recognizer_(nullptr)
-    , train_line_page_num_(0) {
+    , train_line_page_num_(0)
+    , instance_has_been_initialized_(false)
+{
 #if !GRAPHICS_DISABLED
   ScrollViewManager::AddActiveTesseractInstance(this);
 #endif
@@ -504,11 +507,29 @@ Tesseract::~Tesseract() {
   ScrollViewManager::RemoveActiveTesseractInstance(this);
 #endif
 
+  WipeSqueakyCleanForReUse(true);
+}
+
+/**
+  * Clear and free up everything inside, returning the instance to a state
+  * equivalent to having just being freshly constructed, with one important
+  * distinction:
+  *
+  * - WipeSqueakyCleanForReUse() will *not* destroy any diagnostics/trace data
+  *   cached in the running instance: the goal is to thus be able to produce
+  *   diagnostics reports which span multiple rounds of OCR activity, executed
+  *   in the single lifespan of the Tesseract instance.
+  *
+  * Once WipeSqueakyCleanForReUse() has been used, proceed just as when a
+  * Tesseract instance has been constructed just now: the same restrictions and
+  * conditions exist, once again.
+  */
+void Tesseract::WipeSqueakyCleanForReUse(bool invoked_by_destructor) {
   if (lstm_recognizer_ != nullptr) {
     lstm_recognizer_->Clean();
   }
 
-  Clear(true);
+  Clear(invoked_by_destructor);
   end_tesseract();
   {
       std::vector<Tesseract *> langs = std::move(sub_langs_);
@@ -528,6 +549,12 @@ Tesseract::~Tesseract() {
 #endif // !DISABLED_LEGACY_ENGINE
   delete lstm_recognizer_;
   lstm_recognizer_ = nullptr;
+
+  instance_has_been_initialized_ = false;
+}
+
+bool Tesseract::RequiresWipeBeforeIndependentReUse() const {
+  return instance_has_been_initialized_;
 }
 
 Dict &Tesseract::getDict() {
@@ -547,8 +574,8 @@ void Tesseract::Clear(bool invoked_by_destructor) {
   ReportDebugInfo();
 
   if (invoked_by_destructor) {
-    ClearPixForDebugView();
     pixa_debug_.Clear(invoked_by_destructor);
+    ClearPixForDebugView();
   }
 
   pix_original_.destroy();
@@ -591,7 +618,7 @@ void Tesseract::ResetDocumentDictionary() {
 
 void Tesseract::SetBlackAndWhitelist() {
   // Set the white and blacklists (if any)
-  unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+  unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                      tessedit_char_whitelist.c_str(),
                                      tessedit_char_unblacklist.c_str());
   if (lstm_recognizer_) {
@@ -602,7 +629,7 @@ void Tesseract::SetBlackAndWhitelist() {
   }
   // Black and white lists should apply to all loaded classifiers.
   for (auto &sub_lang : sub_langs_) {
-    sub_lang->unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+    sub_lang->unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                                  tessedit_char_whitelist.c_str(),
                                                  tessedit_char_unblacklist.c_str());
     if (sub_lang->lstm_recognizer_) {
@@ -636,8 +663,9 @@ void Tesseract::PrepareForPageseg() {
   splitter_.set_orig_pix(pix_binary());
   splitter_.set_pageseg_split_strategy(max_pageseg_strategy);
   if (splitter_.Split(true)) {
-    ASSERT_HOST(splitter_.splitted_image());
-    set_pix_binary(splitter_.splitted_image().clone());
+    Image image = splitter_.splitted_image();
+    ASSERT_HOST_MSG(!!image, "splitted_image() must never fail.\n");
+    set_pix_binary(image.clone());
 
     if (tessedit_dump_pageseg_images) {
       ASSERT0(max_pageseg_strategy >= 0);
@@ -668,8 +696,9 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   // Run the splitter for OCR
   bool split_for_ocr = splitter_.Split(false);
   // Restore pix_binary to the binarized original pix for future reference.
-  ASSERT_HOST(splitter_.orig_pix());
-  set_pix_binary(splitter_.orig_pix().clone());
+  Image orig_source_image = splitter_.orig_pix();
+  ASSERT_HOST_MSG(orig_source_image, "orig_pix() should never fail to deliver a valid Image pix.\n");
+  set_pix_binary(orig_source_image.clone());
   // If the pageseg and ocr strategies are different, refresh the block list
   // (from the last SegmentImage call) with blobs from the real image to be used
   // for OCR.
@@ -732,8 +761,8 @@ bool Tesseract::CheckAndReportIfImageTooLarge(int width, int height) const {
   return false;
 }
 
-void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
-  // extract part from the source image pix and fade the srroundings,
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox, const char* title) {
+  // extract part from the source image pix and fade the surroundings,
   // so a human can easily spot which bbox is the current focus but also
   // quickly spot where the extracted part originated within the large source image.
   int iw = pixGetWidth(pix);
@@ -796,13 +825,13 @@ void Tesseract::AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const
   boxDestroy(&b);
   pixDestroy(&ppix);
   ASSERT0(bbox.area() > 0);
-  pixa_debug_.AddClippedPix(ppix32, bbox, title);
+  pixa_debug_.AddPixWithBBox(ppix32, bbox, title);
 
   pixDestroy(&ppix32);
 }
 
-void Tesseract::AddClippedPixDebugPage(const Image &pix, const char *title) {
-  pixa_debug_.AddClippedPix(pix, title);
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *title) {
+  pixa_debug_.AddPixWithBBox(pix, title);
 }
 
 // Destroy any existing pix and return a pointer to the pointer.
@@ -839,7 +868,13 @@ Image Tesseract::GetPixForDebugView() {
     return pix_for_debug_view_;
   }
 
-  pix_for_debug_view_ = pixConvertTo32(pix_binary_);
+  Image pix;
+  if (pix_grey_ != nullptr) {
+    pix = pix_grey_;
+  } else {
+    pix = pix_binary_;
+  }
+  pix_for_debug_view_ = pixConvertTo32(pix);
   return pix_for_debug_view_;
 }
 
@@ -920,19 +955,24 @@ bool Tesseract::AnyLSTMLang() const {
   return false;
 }
 
-int Tesseract::init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
-  TessdataManager mgr;
-  std::vector<std::string> nil;
-
-  return init_tesseract(datapath, {}, language, oem, nil, nil, nil, false, &mgr);
-}
-
 // debug PDF output helper methods:
 void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
   if (pix == nullptr)
     return;
 
   pixa_debug_.AddPix(pix, title);
+}
+
+void Tesseract::AddPixDebugPage(const Image &pix, const std::string &title) {
+  AddPixDebugPage(pix, title.c_str());
+}
+
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX &bbox, const std::string &title) {
+  AddPixCompedOverOrigDebugPage(pix, bbox, title.c_str());
+}
+
+void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title) {
+  AddPixCompedOverOrigDebugPage(pix, title.c_str());
 }
 
 int Tesseract::PushNextPixDebugSection(const std::string &title) { // sibling
@@ -949,16 +989,19 @@ void Tesseract::PopPixDebugSection(int handle) { // pop active; return focus to 
   pixa_debug_.PopSection(handle);
 }
 
+int Tesseract::GetPixDebugSectionLevel() const {
+  return pixa_debug_.GetCurrentSectionLevel();
+}
+
 void Tesseract::ResyncVariablesInternally() {
   if (lstm_recognizer_ != nullptr) {
-    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
+    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix_);
     lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
     lstm_recognizer_->SetDebug(tess_debug_lstm);
   }
 
 #if !DISABLED_LEGACY_ENGINE
-  if (language_model_ != nullptr) {
-    int lvl = language_model_->language_model_debug_level;
+  int lvl = language_model_.language_model_debug_level;
 
 #if 0
   language_model_->CopyDebugParameters(this, &Classify::getDict());
@@ -988,7 +1031,6 @@ void Tesseract::ResyncVariablesInternally() {
   INT_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
-  }
 #endif
 
   // init sub-languages:
@@ -1004,7 +1046,7 @@ void Tesseract::ReportDebugInfo() {
   if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
     AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, tessedit_page_number, lang.c_str(), "html");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
 
     ClearPixForDebugView();

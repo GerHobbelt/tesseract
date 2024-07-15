@@ -17,15 +17,13 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "statistc.h"
 
 #include "errcode.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "helpers.h"
 
@@ -167,38 +165,40 @@ double STATS::sd() const { // standard deviation
  * STATS::ile
  *
  * Returns the fractile value such that frac fraction (in [0,1]) of samples
- * has a value less than the return value.
+ * has a value less or equal than the return value.
  **********************************************************************/
 double STATS::ile(double frac) const {
   if (buckets_ == nullptr || total_count_ == 0) {
     return static_cast<double>(rangemin_);
   }
-#if 01
-  // TODO(rays) The existing code doesn't seem to be doing the right thing
-  // with target a double but this substitute crashes the code that uses it.
-  // Investigate and fix properly.
   int target = IntCastRounded(frac * total_count_);
-  target = ClipToRange(target, 1, total_count_);
-#else
-  double target = frac * total_count_;
-  target = ClipToRange(target, 1.0, static_cast<double>(total_count_));
-#endif
+  // ile(0) should deliver the same result as min_bucket(), which is where the distribution starts.
+  // likewise, ile(1) ~ max_bucket()
+  auto lowest = min_bucket() - rangemin_;
+  auto highest = max_bucket() - rangemin_;
+  target = ClipToRange(target, 0, total_count_); // inclusive bounds
   int sum = 0;
-  int index = 0;
-  for (index = 0; index <= rangemax_ - rangemin_ && sum < target; sum += buckets_[index++]) {
+  int index;
+  for (index = lowest; index < highest && sum < target; sum += buckets_[index++]) {
     ;
   }
-  if (index > 0) {
-	int v_delta = buckets_[index - 1];
-	int s_delta = sum - target;
-	ASSERT_HOST(s_delta >= 0);
-	ASSERT_HOST(v_delta > 0);
-	if (s_delta > 0)
-	  return rangemin_ + index - static_cast<double>(s_delta) / v_delta;
-	else
-      return rangemin_ + index;
+  if (index > lowest && sum > target) {
+    // aim between slots; first find preceding non-zero bucket
+    int index_1;
+    for (index_1 = index - 1; index_1 > lowest && 0 == buckets_[index_1]; index_1--) {
+      ;
+    }
+    // target delta and step delta: how far from the [index_1] bucket away are we? (linear interpolation)
+    double v_delta = buckets_[index_1];
+	  double s_delta = sum - target;
+    return rangemin_ + index - s_delta / v_delta;
   } else {
-    return static_cast<double>(rangemin_);
+    // all boundary + on-the-mark scenarios lead here:
+    // 1. ile(0) --> no loop; index = lowest
+    // 2. ile(1) --> loop until index = highest; sum < target
+    // 3. ile(0.99...) --> ditto as (2) as long as target falls in last (highest) bucket
+    // 4. ile(x) where sum == target --> index points at the bucket which completed the sum
+    return static_cast<double>(rangemin_ + index);
   }
 }
 
@@ -554,6 +554,7 @@ void STATS::print() const {
   if (buckets_ == nullptr) {
     return;
   }
+  TPrintGroupLinesTillEndOfScope push;
   int32_t min = min_bucket() - rangemin_;
   int32_t max = max_bucket() - rangemin_;
 
@@ -579,6 +580,7 @@ void STATS::print_summary() const {
   if (buckets_ == nullptr) {
     return;
   }
+  TPrintGroupLinesTillEndOfScope push;
   int32_t min = min_bucket();
   int32_t max = max_bucket();
   tprintDebug("Total count={}\n", total_count_);

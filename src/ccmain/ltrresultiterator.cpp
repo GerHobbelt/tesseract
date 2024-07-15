@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/ltrresultiterator.h>
 
 #include "helpers.h"  // for copy_string
@@ -204,7 +206,7 @@ const char *LTRResultIterator::WordRecognitionLanguage() const {
   if (it_->word() == nullptr || it_->word()->tesseract == nullptr) {
     return nullptr;
   }
-  return it_->word()->tesseract->lang.c_str();
+  return it_->word()->tesseract->lang_.c_str();
 }
 
 // Return the overall directionality of this word.
@@ -374,7 +376,7 @@ WordChoiceIterator::WordChoiceIterator(const LTRResultIterator& result_it) {
   ASSERT_HOST(result_it.it_->word() != NULL);
   word_res_ = result_it.it_->word();
   WERD_CHOICE_LIST* choices = &word_res_->best_choices;
-  if (choices != NULL && !choices->empty()) {
+  if (/* choices != NULL && */ !choices->empty()) {
     choice_it_ = new WERD_CHOICE_IT(choices);
     choice_it_->mark_cycle_pt();
   } else {

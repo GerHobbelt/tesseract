@@ -20,6 +20,8 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/unichar.h>  // for U8 macro
 
 #include "trie.h"
@@ -178,7 +180,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
   bool marker_flag = false;
   EDGE_INDEX edge_index;
   int32_t still_finding_chars = true;
-  int32_t word_end = false;
+  bool word_end = false;
   bool add_failed = false;
   bool found;
 
@@ -195,6 +197,7 @@ bool Trie::add_word_to_dawg(const WERD_CHOICE &word, const std::vector<bool> *re
       tprintDebug("Adding letter {}\n", unichar_id);
     }
     if (still_finding_chars) {
+      // warning C4800: Implicit conversion from 'int32_t' to bool. Possible information loss
       found = edge_char_of(last_node, NO_EDGE, FORWARD_EDGE, word_end, unichar_id, &edge_ptr,
                            &edge_index);
       if (found && debug_level_ > 1) {
@@ -419,6 +422,7 @@ bool Trie::read_pattern_list(const char *filename, const UNICHARSET &unicharset)
         if (*str_ptr == '\\') { // regular '\' unichar that was escaped
           curr_unichar_id = unicharset.unichar_to_id(str_ptr, step);
         } else {
+          // warning C4296: '<': expression is always false  (kSaneNumConcreteChars = 0)
           if (kSaneNumConcreteChars > 0 && word.length() < kSaneNumConcreteChars) {
             tprintError("Please provide at least {} concrete characters at the"
                 " beginning of the pattern.\n",
@@ -572,8 +576,9 @@ bool Trie::eliminate_redundant_edges(NODE_REF node, const EDGE_RECORD &edge1,
     const EDGE_RECORD &bkw_edge = next_node2_ptr->backward_edges[i];
     NODE_REF curr_next_node = next_node_from_edge_rec(bkw_edge);
     UNICHAR_ID curr_unichar_id = unichar_id_from_edge_rec(bkw_edge);
-    int curr_word_end = end_of_word_from_edge_rec(bkw_edge);
+    bool curr_word_end = end_of_word_from_edge_rec(bkw_edge);
     bool marker_flag = marker_flag_from_edge_rec(bkw_edge);
+    // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
     add_edge_linkage(next_node1, curr_next_node, marker_flag, BACKWARD_EDGE, curr_word_end,
                      curr_unichar_id);
     // Relocate the corresponding forward edge in curr_next_node

@@ -15,24 +15,24 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commontraining.h"
 #include "unicharset/lstmtester.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 using namespace tesseract;
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-STRING_PARAM_FLAG(model, "", "Name of model file (training or recognition)");
+STRING_VAR(lstmeval_model, "", "Name of model file (training or recognition)");
 // v--- the next few flags are also referenced in lstmtraining.cpp et al
-STRING_PARAM_FLAG(traineddata, "",
+STRING_VAR(lstmeval_traineddata, "",
                          "If model is a training checkpoint, then traineddata must "
                          "be the traineddata file that was given to the trainer");
-STRING_PARAM_FLAG(eval_listfile, "", "File listing sample files in lstmf training format.");
-INT_PARAM_FLAG(max_image_MB, 2000, "Max memory to use for images.");
-INT_PARAM_FLAG(verbosity, 1, "Amount of diagnosting information to output (0-2).");
+STRING_VAR(lstmeval_eval_listfile, "", "File listing sample files in lstmf training format.");
+INT_VAR(lstmeval_max_image_MB, 2000, "Max memory to use for images.");
+INT_VAR(lstmeval_verbosity, 1, "Amount of diagnosting information to output (0-2).");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
@@ -49,43 +49,43 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
   if (rv >= 0) {
     return rv;
   }
-  if (FLAGS_model.empty()) {
+  if (lstmeval_model.empty()) {
     tprintError("Must provide a --model!\n");
     return EXIT_FAILURE;
   }
-  if (FLAGS_eval_listfile.empty()) {
+  if (lstmeval_eval_listfile.empty()) {
     tprintError("Must provide a --eval_listfile!\n");
     return EXIT_FAILURE;
   }
   tesseract::TessdataManager mgr;
-  if (!mgr.Init(FLAGS_model.c_str())) {
-    if (FLAGS_traineddata.empty()) {
+  if (!mgr.Init(lstmeval_model.c_str())) {
+    if (lstmeval_traineddata.empty()) {
       tprintError("Must supply --traineddata to eval a training checkpoint!\n");
       return EXIT_FAILURE;
     }
-    tprintWarn("{} is not a recognition model, trying training checkpoint...\n", FLAGS_model.c_str());
-    if (!mgr.Init(FLAGS_traineddata.c_str())) {
-      tprintError("Failed to load language model from {}!\n", FLAGS_traineddata.c_str());
+    tprintWarn("{} is not a recognition model, trying training checkpoint...\n", lstmeval_model.c_str());
+    if (!mgr.Init(lstmeval_traineddata.c_str())) {
+      tprintError("Failed to load language model from {}!\n", lstmeval_traineddata.c_str());
       return EXIT_FAILURE;
     }
     std::vector<char> model_data;
-    if (!tesseract::LoadDataFromFile(FLAGS_model.c_str(), &model_data)) {
-      tprintError("Failed to load model from: {}\n", FLAGS_model.c_str());
+    if (!tesseract::LoadDataFromFile(lstmeval_model.c_str(), &model_data)) {
+      tprintError("Failed to load model from: {}\n", lstmeval_model.c_str());
       return EXIT_FAILURE;
     }
     mgr.OverwriteEntry(tesseract::TESSDATA_LSTM, &model_data[0], model_data.size());
   }
-  tesseract::LSTMTester tester(static_cast<int64_t>(FLAGS_max_image_MB) * 1048576);
+  tesseract::LSTMTester tester(static_cast<int64_t>(lstmeval_max_image_MB) * 1048576);
 #ifndef NDEBUG
   tester.SetDebug(1);
 #endif
-  if (!tester.LoadAllEvalData(FLAGS_eval_listfile.c_str())) {
-    tprintError("Failed to load eval data from: {}\n", FLAGS_eval_listfile.c_str());
+  if (!tester.LoadAllEvalData(lstmeval_eval_listfile.c_str())) {
+    tprintError("Failed to load eval data from: {}\n", lstmeval_eval_listfile.c_str());
     return EXIT_FAILURE;
   }
   double errs = 0.0;
   std::string result = tester.RunEvalSync(0, &errs, mgr,
-                                          /*training_stage (irrelevant)*/ 0, FLAGS_verbosity);
+                                          /*training_stage (irrelevant)*/ 0, lstmeval_verbosity);
   tprintInfo("{}\n", result);
   return EXIT_SUCCESS;
 } /* main */

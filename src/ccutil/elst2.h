@@ -827,7 +827,7 @@ inline void ELIST2_ITERATOR::add_to_end( // element to add
     CLASSNAME *backward() {                                                    \
       return reinterpret_cast<CLASSNAME *>(ELIST2_ITERATOR::backward());       \
     }                                                                          \
-  };
+  }
 
 } // namespace tesseract
 

@@ -1,10 +1,8 @@
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "validate_grapheme.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #if defined(HAS_LIBICU)
 

@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "blobbox.h"
 #include "ocrrow.h"
@@ -167,6 +165,7 @@ void ROW::move(      // reposition row
 void ROW::print( // print
     FILE *fp     // file to print on
 ) const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Kerning= {}\n", kerning);
   tprintDebug("Spacing= {}\n", spacing);
   bound_box.print();

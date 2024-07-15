@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "pitsync1.h"
 
 #include <cfloat> // for FLT_MAX

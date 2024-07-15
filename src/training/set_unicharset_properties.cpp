@@ -12,13 +12,11 @@
 // object, fills it with properties about the unichars it contains and writes
 // the result back to a file.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 #include "tesseract/capi_training_tools.h"
@@ -29,11 +27,7 @@
 using namespace tesseract;
 
 // The directory that is searched for universal script unicharsets.
-#if !defined(BUILD_MONOLITHIC)
-STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets/xheights");
-#else
-DECLARE_STRING_PARAM_FLAG(script_dir);        // already declared in combine_lang_model.cpp
-#endif
+STRING_VAR(unicharsets_script_dir, "", "Directory name for input script unicharsets/xheights");
 
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
@@ -49,17 +43,17 @@ extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const
 	  return rv;
 
   // Check validity of input flags.
-  if (FLAGS_U.empty() || FLAGS_O.empty()) {
+  if (trainer_input_unicharset_file.empty() || trainer_output_unicharset_file.empty()) {
     tprintError("Specify both input and output unicharsets!\n");
     return EXIT_FAILURE;
   }
-  if (FLAGS_script_dir.empty()) {
+  if (unicharsets_script_dir.empty()) {
     tprintError("Must specify a script_dir!\n");
     return EXIT_FAILURE;
   }
 
-  tesseract::SetPropertiesForInputFile(FLAGS_script_dir.c_str(), FLAGS_U.c_str(), FLAGS_O.c_str(),
-                                       FLAGS_X.c_str());
+  tesseract::SetPropertiesForInputFile(unicharsets_script_dir.c_str(), trainer_input_unicharset_file.c_str(), trainer_output_unicharset_file.c_str(),
+                                       trainer_xheights.c_str());
   return EXIT_SUCCESS;
 }
 

@@ -17,16 +17,14 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "imagedata.h"
 
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
@@ -34,7 +32,6 @@
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm>    // for max, min
-#include <fstream>      // for std::ifstream
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
 

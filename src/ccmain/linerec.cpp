@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "tesseractclass.h"
 
 #include <leptonica/allheaders.h>
@@ -23,22 +25,22 @@
 #include "lstmrecognizer.h"
 #include "pageres.h"
 #include "recodebeam.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 
 namespace tesseract {
 
 // Obsoleted; see `rescale_certainty_from_LSTM_to_tesseract_value()` comment further below.
-#if 0
+#if 01
 // Scale factor to make certainty more comparable to Tesseract.
-static const float kCertaintyScale = 2.0f;
+static const float kCertaintyScale = 7.0f;
 #endif
 
 // Worst acceptable certainty for a dictionary word.
-static const float kWorstDictCertainty = -25.0f /* / kCertaintyScale */ ;
+const float kWorstDictCertainty = -25.0f / 7.0f;
 
-// Generates training data for training a line recognizer, eg LSTM.
+// Generates training data for training a line recognizer, e.g. LSTM.
 // Breaks the page into lines, according to the boxes, and writes them to a
 // serialized DocumentData based on output_basename.
 // Return true if successful, false if an error occurred.
@@ -58,12 +60,12 @@ bool Tesseract::TrainLineRecognizer(const char *input_imagename, const std::stri
   // Get the boxes for this page, if there are any.
   if (!ReadAllBoxes(applybox_page, false, input_imagename, &boxes, &texts, nullptr, nullptr) ||
       boxes.empty()) {
-    tprintError("Failed to read boxes from {}\n", input_imagename);
+    tprintError("Failed to read boxes for {}\n", input_imagename);
     return false;
   }
   TrainFromBoxes(boxes, texts, block_list, &images);
   if (images.PagesSize() == 0) {
-    tprintError("Failed to read pages from {}\n", input_imagename);
+    tprintError("Failed to read pages for {}\n", input_imagename);
     return false;
   }
   images.Shuffle();
@@ -254,15 +256,15 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
     return;
   }
 
-  {
+  if (dump_segmented_word_images) {
     Image dbg_pix = im_data->GetPix();
-    AddClippedPixDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}", static_cast<double>(invert_threshold)));
+    AddPixCompedOverOrigDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}, position bbox:{}", double(invert_threshold), word_box.print_to_str()));
     dbg_pix.destroy();
   }
 
   lstm_recognizer_->SetDebug(classify_debug_level > 0 ? tess_debug_lstm : 0);
   lstm_recognizer_->RecognizeLine(*im_data, invert_threshold, 
-                                  kWorstDictCertainty /* / kCertaintyScale */, word_box, words,
+                                  kWorstDictCertainty, word_box, words,
                                   lstm_choice_mode, lstm_choice_iterations);
   delete im_data;
   SearchWords(words);
@@ -345,14 +347,37 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       word->tess_would_adapt = false;
       word->done = true;
       word->tesseract = this;
+#if 0
+      if (getDict().stopper_debug_level >= 1) {
+        tprintDebug("Best choice certainty={}, space={}, raw={}, ",
+                word->best_choice->certainty(), word->space_certainty,
+                word_certainty);
+	  }
       rescale_word_certainty_from_LSTM_to_tesseract_values(word);
       float corrected_word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
       if (getDict().stopper_debug_level >= 1) {
-        tprintDebug("Best choice certainty={}, space={}, corrected={}, final={}\n",
-                word->best_choice->certainty(), word->space_certainty,
-                corrected_word_certainty, corrected_word_certainty);
+        tprintDebug("corrected={}, final={}, accepted={}\n  ",
+                corrected_word_certainty, word->best_choice->certainty(), stopper_dict->AcceptableResult(word));
         word->best_choice->print();
       }
+      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
+      word->best_choice->set_certainty(corrected_word_certainty);
+#else	  
+      float word_certainty = std::min(word->space_certainty, word->best_choice->certainty());
+      float corrected_word_certainty = word_certainty * kCertaintyScale;
+      if (getDict().stopper_debug_level >= 1) {
+        tprintDebug("Best choice certainty={}, space={}, raw={}, scaled={}, final={}, ",
+                word->best_choice->certainty(), word->space_certainty,
+                word_certainty, corrected_word_certainty, corrected_word_certainty);
+      }
+      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
+      word->best_choice->set_certainty(corrected_word_certainty);
+      if (getDict().stopper_debug_level >= 1) {
+        tprintDebug("accepted={}\n  ",
+                stopper_dict->AcceptableResult(word));
+        word->best_choice->print();
+      }
+#endif
 
       // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
       word->best_choice->set_certainty(corrected_word_certainty);
