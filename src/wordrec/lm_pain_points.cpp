@@ -20,6 +20,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "lm_pain_points.h"
 
 #include "associate.h"
@@ -153,8 +155,9 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
   }
   // Compute associate stats.
   AssociateStats associate_stats;
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   AssociateUtils::ComputeStats(col, row, nullptr, 0, fixed_pitch_, max_char_wh_ratio, word_res,
-                               debug_level_, &associate_stats);
+                               debug_level_ > 0, &associate_stats);
   // For fixed-pitch fonts/languages: if the current combined blob overlaps
   // the next blob on the right and it is ok to extend the blob, try extending
   // the blob until there is no overlap with the next blob on the right or
@@ -162,8 +165,9 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
   if (ok_to_extend) {
     while (associate_stats.bad_fixed_pitch_right_gap && row + 1 < word_res->ratings->dimension() &&
            !associate_stats.bad_fixed_pitch_wh_ratio) {
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
       AssociateUtils::ComputeStats(col, ++row, nullptr, 0, fixed_pitch_, max_char_wh_ratio,
-                                   word_res, debug_level_, &associate_stats);
+                                   word_res, debug_level_ > 0, &associate_stats);
     }
   }
   if (associate_stats.bad_shape) {
@@ -184,12 +188,12 @@ bool LMPainPoints::GeneratePainPoint(int col, int row, LMPainPointsType pp_type,
     }
     MatrixCoordPair pain_point(priority, MATRIX_COORD(col, row));
     pain_points_heaps_[pp_type].Push(&pain_point);
-    if (debug_level_) {
+    if (debug_level_ > 0) {
       tprintDebug("Added pain point with priority {}\n", priority);
     }
     return true;
   } else {
-    if (debug_level_) {
+    if (debug_level_ > 0) {
       tprintDebug("Pain points heap is full\n");
     }
     return false;

@@ -17,6 +17,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "pageres.h"
 #include "tesseractclass.h"
 

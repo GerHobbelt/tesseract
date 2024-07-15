@@ -42,8 +42,8 @@ public:
       if (it.count > 0) {
         tprintDebug(
             "ObjectCache({})::~ObjectCache(): WARNING! LEAK! object {} "
-            "still has count {} (id {})\n",
-            static_cast<void *>(this), static_cast<void *>(it.object), it.count, it.id.c_str());
+            "still has count {} (id: {})\n",
+            static_cast<void *>(this), static_cast<void *>(it.object), it.count, it.id);
       } else {
         delete it.object;
         it.object = nullptr;

@@ -17,11 +17,9 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include <tesseract/debugheap.h>
+#include <parameters/parameters.h>
 
 #include <cctype>
 #include <cmath>
@@ -29,6 +27,9 @@
 #include <cstdio>  // for fclose, fopen, FILE
 #include <ctime>   // for clock
 #include <map> 
+
+#include <plf_nanotimer.hpp>
+
 #include "control.h"
 #if !DISABLED_LEGACY_ENGINE
 #  include "docqual.h"
@@ -124,18 +125,22 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
     if (word_box.major_overlap(target_word_box)) {
       if (backup_config_file_ == nullptr) {
         backup_config_file_ = kBackUpConfigFile;
-        FILE *config_fp = fopen(backup_config_file_, "wb");
-        if (config_fp == nullptr) {
-          tprintError("Failed to open file \"{}\"\n", backup_config_file_);
-        } else {
-          ParamUtils::PrintParams(config_fp, params_collective(), false);
-          fclose(config_fp);
+        {
+          StdioReportWriter reporter(backup_config_file_, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
+          ParamUtils::PrintParams(reporter, params_collective());
         }
-        ParamUtils::ReadParamsFile(word_config, params_collective());
+        // making sure the reporter is out-of-scope, and therefore the file *closed*, before we read the next config.
+        // Not important unless someone adversarial makes word_config point to the same file as kBackUpConfigFile
+        // in a nutty attempt to down the bugger.
+        {
+          StdioConfigReader reader(word_config);
+          ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+        }
       }
     } else {
       if (backup_config_file_ != nullptr) {
-        ParamUtils::ReadParamsFile(backup_config_file_, params_collective());
+        StdioConfigReader reader(backup_config_file_);
+        ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
         backup_config_file_ = nullptr;
       }
     }
@@ -169,7 +174,7 @@ void Tesseract::SetupAllWordsPassN(int pass_n, const TBOX *target_word_box, cons
 void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
   if (pass_n == 1 || !word->word->done) {
     if (pass_n == 1) {
-      word->word->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode,
+      word->word->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode,
                                       nullptr, classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                       poly_allow_detailed_fx, word->row, word->block);
     } else if (pass_n == 2) {
@@ -189,13 +194,184 @@ void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
       // LSTM doesn't get setup for pass2.
       if (pass_n == 1 || lang_t->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
         word_res->SetupForRecognition(
-            lang_t->unicharset, lang_t, lang_t->tessedit_ocr_engine_mode, nullptr,
+            lang_t->unicharset_, lang_t, lang_t->tessedit_ocr_engine_mode, nullptr,
             lang_t->classify_bln_numeric_mode, lang_t->textord_use_cjk_fp_model,
             lang_t->poly_allow_detailed_fx, word->row, word->block);
       }
     }
   }
 }
+
+struct DebugWordBBoxCarrier {
+  TBOX bounding_box;            // the WERD bounding box including all the dots.
+  TBOX restricted_bounding_box; // the WERD bounding box including the
+                                // desired combination of upper and
+                                // lower noise/diacritic elements.
+  TBOX true_bounding_box;       // the WERD bounding box of only the good
+                                // blobs.
+
+  // --------------OUTPUT FROM
+  // RECOGNITION-------------------------------
+  // --------------Not all fields are necessarily
+  // set.-------------------
+
+  // The rebuild_word is also in BLN space, but represents the final
+  // best segmentation of the word. Its length is therefore the same as
+  // box_word.
+  TBOX rebuild_word; // BLN best segmented word.
+  // The box_word is in the original image coordinate space. It is the
+  // bounding boxes of the rebuild_word, after denormalization.
+  // The length of box_word matches rebuild_word, best_state (if set)
+  // and correct_text (if set), as well as best_choice and represents
+  // the number of classified units in the output.
+  TBOX box_word; // Denormalized output boxes.
+  bool tess_failed = false;
+  /*
+  If tess_failed is true, one of the following tests failed when Tess
+  returned:
+  - The outword blob list was not the same length as the best_choice
+  string;
+  - The best_choice string contained ALL blanks;
+  - The best_choice string was zero length
+  */
+  bool tess_accepted = false;  // Tess thinks its ok?
+  bool done = false;           // ready for output?
+  bool small_caps = false;     // word appears to be small caps
+  bool odd_size = false;       // word is bigger than line or leader dots.
+  float x_height = 0.0f;       // post match estimate
+  float caps_height = 0.0f;    // post match estimate
+  float baseline_shift = 0.0f; // post match estimate.
+  // Certainty score for the spaces either side of this word (LSTM
+  // mode). MIN this value with the actual word certainty.
+  float space_certainty = 0.0f;
+
+  /*
+  To deal with fuzzy spaces we need to be able to combine "words" to
+  form combinations when we suspect that the gap is a non-space. The
+  (new) text ord code generates separate words for EVERY fuzzy gap -
+  flags in the word indicate whether the gap is below the threshold
+  (fuzzy kern) and is thus NOT a real word break by default, or above
+  the threshold (fuzzy space) and this is a real word break by default.
+
+  The WERD_RES list contains all these words PLUS "combination" words
+  built out of (copies of) the words split by fuzzy kerns. The separate
+  parts have their "part_of_combo" flag set true and should be IGNORED
+  on a default reading of the list.
+
+  Combination words are FOLLOWED by the sequence of part_of_combo words
+  which they combine.
+  */
+  bool combination = false;   // of two fuzzy gap wds
+  bool part_of_combo = false; // part of a combo
+  bool reject_spaces = false; // Reject spacing?
+};
+
+struct DebugWordSetBBoxCarrier {
+  std::vector<DebugWordBBoxCarrier> words;
+  int pass_n;
+
+  std::string print_to_str();
+};
+
+std::string DebugWordSetBBoxCarrier::print_to_str() {
+  std::string str;
+  str.reserve(8196);
+  auto count = words.size();
+  str = fmt::format(
+    "  pass: {}\n"
+    "  # of word BBOXes: {}", 
+    pass_n, count);
+  if (count)
+    str += "\n  [";
+
+  for (int w = 0; w < count; w++) {
+    const auto &elem = words[w];
+
+    str += fmt::format(
+      "{}\n"
+      "    bounding_box: {}\n"
+      "    restricted_bounding_box: {}\n"
+      "    true_bounding_box: {}\n"
+      "    rebuild_word: {}\n"
+      "    box_word: {}\n"
+      "    tess_failed: {}\n"
+      "    tess_accepted: {}\n"
+      "    done: {}\n"
+      "    small_caps: {}\n"
+      "    odd_size: {}\n"
+      "    x_height: {}\n"
+      "    caps_height: {}\n"
+      "    baseline_shift: {}\n"
+      "    space_certainty: {}\n"
+      "    combination: {}\n"
+      "    part_of_combo: {}\n"
+      "    reject_spaces: {}\n"
+      "   {}",
+      '{',
+      elem.bounding_box.print_to_str(),
+      elem.restricted_bounding_box.print_to_str(),
+      elem.true_bounding_box.print_to_str(),
+      elem.rebuild_word.print_to_str(),
+      elem.box_word.print_to_str(),
+      elem.tess_failed,
+      elem.tess_accepted,
+      elem.done,
+      elem.small_caps,
+      elem.odd_size,
+      elem.x_height,
+      elem.caps_height,
+      elem.baseline_shift,
+      elem.space_certainty,
+      elem.combination,
+      elem.part_of_combo,
+      elem.reject_spaces, 
+      (w + 1 == count ? "}]" : "},\n   {")
+    );
+  }
+  return str;
+}
+
+static WERD_RES rdummy{};
+static WERD wdummy{};
+
+static void GatherWordsBBboxInfo4DebugDisplay(DebugWordSetBBoxCarrier &word_info_set, const std::vector<WordData> *words) {
+  auto count = words->size();
+  word_info_set.words.clear();
+  word_info_set.words.resize(count);
+
+  for (unsigned int w = 0; w < count; ++w) {
+    const WordData &data = (*words)[w];
+    const WERD_RES &werd = data.word != nullptr ? *data.word : rdummy;
+    const WERD &word = werd.word != nullptr ? *werd.word : wdummy;
+    DebugWordBBoxCarrier &info = word_info_set.words[w];
+
+    info.bounding_box = word.bounding_box();
+    info.restricted_bounding_box = word.restricted_bounding_box(true, true);
+    info.true_bounding_box = word.true_bounding_box();
+
+    auto *reword = werd.rebuild_word;
+    if (reword) {
+      info.rebuild_word = reword->bounding_box();
+    }
+    auto *boxword = werd.box_word;
+    if (boxword) {
+      info.box_word = boxword->bounding_box();
+    }
+    info.tess_failed = werd.tess_failed;
+    info.tess_accepted = werd.tess_accepted;
+    info.done = werd.done;
+    info.small_caps = werd.small_caps;
+    info.odd_size = werd.odd_size;
+    info.x_height = werd.x_height;
+    info.caps_height = werd.caps_height;
+    info.baseline_shift = werd.baseline_shift;
+    info.space_certainty = werd.space_certainty;
+    info.combination = werd.combination;
+    info.part_of_combo = werd.part_of_combo;
+    info.reject_spaces = werd.reject_spaces;
+  }
+}
+
 
 // Runs word recognition on all the words.
 bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT *pr_it,
@@ -206,10 +382,104 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
   // added. The results will be significantly different with adaption on, and
   // deterioration will need investigation.
   pr_it->restart_page();
+
+  const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
+  if (classify_debug_level > 1 || multilang_debug_level > 1) {
+    std::string msg = fmt::format("pass {}: word bboxes:\n", pass_n);
+    DebugWordSetBBoxCarrier carrier;
+    GatherWordsBBboxInfo4DebugDisplay(carrier, words);
+    carrier.pass_n = pass_n;
+    msg += carrier.print_to_str();
+    tprintDebug("RecogAllWordsPassN: {}\n", msg);
+  }
+  if (debug || tessedit_dump_pageseg_images || verbose_process) {
+    // collect these BBOXes and render them all at once!
+  	//
+    // AddPixCompedOverOrigDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}; bounding box: {}", most_recently_used_->lang,
+    // bbox.print_to_str()));
+
+    auto page_height = this->ImageHeight();
+
+    // construct a base page image based on the greyscale image, bumped up by the binary for emphasis. Purely done for visual results.
+    Image pix = pixConvertTo32(this->pix_grey());
+    Image pix2 = pixBlend(pix, this->pix_binary(), 0, 0, 0.33);
+    pix.destroy();
+
+    auto count = words->size();
+    BOXA *boxa = boxaCreate(count);
+    for (unsigned int w = 0; w < count; ++w) {
+      const WordData &data = (*words)[w];
+      const WERD_RES &werd = data.word != nullptr ? *data.word : rdummy;
+      const WERD &word = werd.word != nullptr ? *werd.word : wdummy;
+
+      //info.bounding_box = word.bounding_box();
+      //info.restricted_bounding_box = word.restricted_bounding_box(true, true);
+      auto bbox = word.true_bounding_box();
+
+      BOX *box = boxCreate(bbox.left(), page_height - bbox.top(), bbox.width(), bbox.height());
+      boxaAddBox(boxa, box, L_INSERT);
+      //info.tess_failed = werd.tess_failed;
+      //info.tess_accepted = werd.tess_accepted;
+      //info.done = werd.done;
+      //info.small_caps = werd.small_caps;
+      //info.odd_size = werd.odd_size;
+      //info.x_height = werd.x_height;
+      //info.caps_height = werd.caps_height;
+      //info.baseline_shift = werd.baseline_shift;
+      //info.space_certainty = werd.space_certainty;
+      //info.combination = werd.combination;
+      //info.part_of_combo = werd.part_of_combo;
+      //info.reject_spaces = werd.reject_spaces;
+    }
+
+    Image fg = pixCreateTemplate(pix2);
+    l_uint32 fg_basecolor;
+    // paint the `fg` canvas with a hard RED color.
+    composeRGBPixel(255, 0, 0, &fg_basecolor);
+    pixSetAllArbitrary(fg, fg_basecolor);
+
+    // ripped from leptonica: fast copy/blit of source image snippets (clipped by the boxa rectangles)
+    // into the `fg` canvas: thus we have hard red for all ignored pixels and the enhanced greyscale page image
+    // from above "peeping through the BOXA holes".
+    int n = boxaGetCount(boxa);
+    for (int i = 0; i < n; i++) {
+      l_int32 x, y, w, h;
+      boxaGetBoxGeometry(boxa, i, &x, &y, &w, &h);
+      pixRasterop(fg, x, y, w, h, PIX_SRC, pix2, x, y);
+    }
+
+    // And finally we drop *that* one onto a regular greyscale background with our own special blend sauce.
+    // Note that we don't use MixWithLightRedTintedBackground() here, but a tweaked version there-of.
+    Image composite = pixMixWithTintedBackground(fg, pix_grey(), 0.9, 0.9, 0.9, 0.95, 0.5, nullptr);
+
+    fg.destroy();
+    pix2.destroy();
+
+    // pixBlendBackgroundToColor();
+    // pixSetBlackOrWhiteBoxa(mask, boxa, L_SET_BLACK);
+    // pixBlendColorByChannel()
+    // pixPaintBoxa(pix2, boxa, l_uint32 val);
+
+    this->AddPixDebugPage(composite, fmt::format("RecogAllWordsPassN: pass {}: {} word boxes, language to try: {}", pass_n, count, most_recently_used_->lang_));
+
+    tprintInfo("PROCESS: The composite image shows which bounding box areas in the original input image have been designated by tesseract as 'probably text words'. Anything obscured by the red overlay is *not considered for OCR*.\n\nThus this composite image is an important diagnostic tool, for it allows you to visually check the quality of tesseract's page analysis.\n\nRemedying any mistakes you observe is, unfortunately, a bit of an *art*, but suffice to say everything depends on a proper image preprocessing phase, where \"*proper*\" merely means: so you get the results that you want.");
+
+    // TODO: mention links to further tips and approaches, including tesseract documentation pages.
+
+    composite.destroy();
+
+    boxaClear(boxa);
+    boxaDestroy(&boxa);
+  }
+
   for (unsigned int w = 0; w < words->size(); ++w) {
     WordData *word = &(*words)[w];
     if (w > 0) {
       word->prev_word = &(*words)[w - 1];
+    }
+    if (debug) {
+      tprintDebug("Pass{}: chunk #{}: now going to OCR content at bbox:{}\n",
+          pass_n, w + 1, word->word->word->bounding_box().print_to_str());
     }
     if (monitor != nullptr) {
       monitor->ocr_alive = true;
@@ -227,7 +497,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
             (monitor->cancel)(monitor->cancel_this, words->size()))) {
         // Timeout. Fake out the rest of the words.
         for (; w < words->size(); ++w) {
-          (*words)[w].word->SetupFake(unicharset);
+          (*words)[w].word->SetupFake(unicharset_);
         }
         return false;
       }
@@ -256,8 +526,13 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
 
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
-      tprintDebug("Pass{}: word: \"{}\" [{}]\n", pass_n, word->word->best_choice->unichar_string(),
-              word->word->best_choice->debug_string());
+      tprintDebug("Pass{}: word at {} --> best choice: \"{}\" [{}] (rating: {} / certainty: {})\n",
+          pass_n, 
+          word->word->word->bounding_box().print_to_str(),
+          word->word->best_choice->unichar_string(),
+          word->word->best_choice->debug_string(),
+          word->word->best_choice->rating(),
+          word->word->best_choice->certainty());
     }
     pr_it->forward();
     if (make_next_word_fuzzy && pr_it->word() != nullptr) {
@@ -815,7 +1090,7 @@ int Tesseract::SelectBestWords(double rating_ratio, double certainty_margin,
       TDimension next_n_left = TDIMENSION_MAX;
       WordGap(*new_words, n, &n_right, &next_n_left);
       if (std::max(b_right, n_right) < std::min(next_b_left, next_n_left)) {
-        // The word breaks overlap. [start_b,b] and [start_n, n] match.
+        // The word breaks overlap. [start_b, b] and [start_n, n] match.
         break;
       }
       // Keep searching for the matching word break.
@@ -860,10 +1135,16 @@ int Tesseract::SelectBestWords(double rating_ratio, double certainty_margin,
     }
     if (debug) {
       tprintDebug(
-          "{} new words {} than {} old words: r: {} v {} c: {} v {}"
-          " valid dict: {} v {}\n",
+          "{} new words {} than {} old words: rating: new {} vs. old {}; certainty: {} vs. {};"
+          " valid dict: {} vs. {}\n",
           end_n - start_n, new_better ? "better" : "worse", end_b - start_b, n_rating, b_rating,
           n_certainty, b_certainty, n_valid_permuter, b_valid_permuter);
+
+      tprintDebug("The new {} *best* words produced: [", out_words.size());
+      for (int ow = 0; ow < out_words.size(); ow++) {
+        tprintDebug("`{}` ", out_words[ow]->best_choice->unichar_string());
+      }
+      tprintDebug("]\n");
     }
     // Move on to the next group.
     b = end_b;
@@ -884,7 +1165,7 @@ int Tesseract::RetryWithLanguage(const WordData &word_data, WordRecognizer recog
                                  WERD_RES **in_word, PointerVector<WERD_RES> *best_words) {
   const bool debug = ((classify_debug_level > 0 || multilang_debug_level > 0));
   if (debug) {
-    tprintDebug("Trying word using lang {}, oem {}\n", lang,
+    tprintDebug("Trying word using lang {}, oem {}\n", lang_,
             tessedit_ocr_engine_mode.value());
   }
   // Run the recognizer on the word.
@@ -897,6 +1178,7 @@ int Tesseract::RetryWithLanguage(const WordData &word_data, WordRecognizer recog
     *in_word = nullptr;
   }
   if (debug) {
+    TPrintGroupLinesTillEndOfScope push;
     for (unsigned int i = 0; i < new_words.size(); ++i) {
       new_words[i]->DebugTopChoice("Lang result");
     }
@@ -1324,14 +1606,14 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   PointerVector<WERD_RES> best_words;
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
-  clock_t start_t = clock();
+  plf::nanotimer clock;
+  clock.start();
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
-    tprintDebug("{} word with lang {} at:", word->done ? "Already done" : "Processing",
-            most_recently_used_->lang);
-    auto bbox = word->word->bounding_box();
-    bbox.print();
-    AddClippedPixDebugPage(this->pix_binary(), bbox, fmt::format("word for lang {}", most_recently_used_->lang));
+    TBOX bbox = word->word->bounding_box();
+    tprintDebug("pass: {} :: {} word with lang {} at: {}\n", pass_n,
+                (word->done ? "Already done" : "Processing"),
+                most_recently_used_->lang_, bbox.print_to_str());
   }
   if (word->done) {
     // If done on pass1, leave it as-is.
@@ -1376,11 +1658,11 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   } else {
     tprintWarn("no best words!!\n");
   }
-  clock_t ocr_t = clock();
   if (tessedit_timing_debug) {
-    tprintDebug("classify_word_and_language -> word best choice: \"{}\" (ocr took {} sec)\n",
+    tprintDebug("classify_word_and_language -> word best choice: \"{}\" (bbox: {}, OCR took {} sec)\n",
             word_data->word->best_choice->unichar_string(),
-            static_cast<double>(ocr_t - start_t) / CLOCKS_PER_SEC);
+        word_data->word->word->bounding_box().print_to_str(),
+            clock.get_elapsed_sec());
   }
 }
 
@@ -1416,7 +1698,7 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 
 #if !DISABLED_LEGACY_ENGINE
     // Fall back to tesseract for failed words or odd words.
-    (*in_word)->SetupForRecognition(unicharset, this, OEM_TESSERACT_ONLY, nullptr,
+    (*in_word)->SetupForRecognition(unicharset_, this, OEM_TESSERACT_ONLY, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
 #endif // !DISABLED_LEGACY_ENGINE
@@ -1511,7 +1793,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
   new_x_ht_word.x_height = new_x_ht;
   new_x_ht_word.baseline_shift = baseline_shift;
   new_x_ht_word.caps_height = 0.0;
-  new_x_ht_word.SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+  new_x_ht_word.SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
   match_word_pass_n(2, &new_x_ht_word, row, block);
@@ -1573,7 +1855,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
   SubAndSuperscriptFix(word);
 
   if (!word->tess_failed && !word->word->flag(W_REP_CHAR)) {
-    if (unicharset.top_bottom_useful() && unicharset.script_has_xheight() &&
+    if (unicharset_.top_bottom_useful() && unicharset_.script_has_xheight() &&
         block->classify_rotation().y() == 0.0f) {
       // Use the tops and bottoms since they are available.
       const FontInfo *fontinfo1_orig = word->fontinfo;

@@ -22,7 +22,7 @@
 #include "blobbox.h"
 #include "blobs.h"
 #include "ocrblock.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "statistc.h"
 
 namespace tesseract {
@@ -83,7 +83,17 @@ extern INT_VAR_H(textord_lms_line_trials);
 extern BOOL_VAR_H(textord_new_initial_xheight);
 extern BOOL_VAR_H(textord_debug_blob);
 
-inline void get_min_max_xheight(int block_linesize, int *min_height, int *max_height) {
+extern BOOL_VAR_H(textord_biased_skewcalc);
+extern BOOL_VAR_H(textord_interpolating_skew);
+extern INT_VAR_H(textord_skewsmooth_offset);
+extern INT_VAR_H(textord_skewsmooth_offset2);
+extern INT_VAR_H(textord_max_blob_overlaps);
+extern DOUBLE_VAR_H(textord_expansion_factor);
+extern DOUBLE_VAR_H(textord_overlap_x);
+extern DOUBLE_VAR_H(textord_descheight_mode_fraction);
+
+
+static inline void get_min_max_xheight(int block_linesize, int *min_height, int *max_height) {
   *min_height = static_cast<int32_t>(floor(block_linesize * textord_minxh));
   if (*min_height < textord_min_xheight) {
     *min_height = textord_min_xheight;
@@ -91,7 +101,7 @@ inline void get_min_max_xheight(int block_linesize, int *min_height, int *max_he
   *max_height = static_cast<int32_t>(ceil(block_linesize * 3.0));
 }
 
-inline ROW_CATEGORY get_row_category(const TO_ROW *row) {
+static inline ROW_CATEGORY get_row_category(const TO_ROW *row) {
   if (row->xheight <= 0) {
     return ROW_INVALID;
   }
@@ -99,7 +109,7 @@ inline ROW_CATEGORY get_row_category(const TO_ROW *row) {
                             : (row->descdrop != 0) ? ROW_DESCENDERS_FOUND : ROW_UNKNOWN;
 }
 
-inline bool within_error_margin(float test, float num, float margin) {
+static inline bool within_error_margin(float test, float num, float margin) {
   return (test >= num * (1 - margin) && test <= num * (1 + margin));
 }
 

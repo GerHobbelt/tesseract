@@ -16,13 +16,15 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "wordrec.h"
 
 #include <memory>
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
+#  include <tesseract/params.h>
 
 namespace tesseract {
 Wordrec::Wordrec()
@@ -40,7 +42,7 @@ Wordrec::Wordrec()
 #else // DISABLED_LEGACY_ENGINE not defined
 
 #  include "language_model.h"
-#  include "params.h"
+#  include <tesseract/params.h>
 
 namespace tesseract {
 Wordrec::Wordrec()
@@ -99,9 +101,10 @@ Wordrec::Wordrec()
                   "Save alternative paths found during chopping"
                   " and segmentation search",
                   params())
-    , pass2_ok_split(0.0f) {
+    , pass2_ok_split_(0.0f)
+    , language_model_(this, &get_fontinfo_table(), &getDict())
+{
   prev_word_best_choice_ = nullptr;
-  language_model_ = std::make_unique<LanguageModel>(&get_fontinfo_table(), &(getDict()));
   fill_lattice_ = nullptr;
 }
 

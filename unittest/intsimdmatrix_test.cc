@@ -22,7 +22,7 @@
 #include "include_gunit.h"
 #include "matrix.h"
 #include "simddetect.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "tesstypes.h"
 
 namespace tesseract {

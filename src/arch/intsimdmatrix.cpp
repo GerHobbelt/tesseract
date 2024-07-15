@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "intsimdmatrix.h"
 #include "matrix.h"     // for GENERIC_2D_ARRAY
 #include "simddetect.h" // for SIMDDetect

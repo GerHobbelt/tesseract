@@ -15,7 +15,7 @@
 #include "include_gunit.h"
 #include "params_model.h"
 #include "serialis.h" // TFile
-#include "tprintf.h"  // tprintf
+#include <tesseract/tprintf.h>  // tprintf
 
 #include "testdata.h"
 

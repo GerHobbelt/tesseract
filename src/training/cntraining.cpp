@@ -19,6 +19,8 @@
 /*----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/unichar.h>
 #include <cmath>
 #include <cstdio>
@@ -138,8 +140,10 @@ extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
   for (const char* PageName = *++argv; PageName != nullptr; PageName = *++argv) {
     tprintInfo("Reading {} ...\n", PageName);
     FILE* TrainingPage = fopen(PageName, "rb");
-    ASSERT_HOST(TrainingPage);
-    if (TrainingPage) {
+    if (!TrainingPage) {
+      tprintError("Could not open file '{}' for reading.\n", PageName);
+      return EXIT_FAILURE;
+    } else {
       ReadTrainingSamples(FeatureDefs, PROGRAM_FEATURE_TYPE, 100, nullptr, TrainingPage, &CharList);
       fclose(TrainingPage);
       // ++num_fonts;
@@ -189,7 +193,7 @@ extern "C" TESS_API int tesseract_cn_training_main(int argc, const char** argv)
   }
   FreeTrainingSamples(CharList);
   int desc_index = ShortNameToFeatureType(FeatureDefs, PROGRAM_FEATURE_TYPE);
-  if (WriteNormProtos(FLAGS_D.c_str(), NormProtoList, FeatureDefs.FeatureDesc[desc_index]))
+  if (WriteNormProtos(trainer_directory.c_str(), NormProtoList, FeatureDefs.FeatureDesc[desc_index]))
     rv = EXIT_FAILURE;
   FreeNormProtoList(NormProtoList);
   for (auto& freeable_proto : freeable_protos) {
@@ -226,7 +230,10 @@ static int WriteNormProtos(const char *Directory, LIST LabeledProtoList,
   Filename += "normproto";
   tprintInfo("\nWriting {} ...\n", Filename);
   File = fopen(Filename.c_str(), "wb");
-  ASSERT_HOST(File);
+  if (!File) {
+    tprintError("Cannot open file '{}' for writing.\n", Filename);
+    return -1;
+  }
   fprintf(File, "%0d\n", feature_desc->NumParams);
   WriteParamDesc(File, feature_desc->NumParams, feature_desc->ParamDesc);
   iterate(LabeledProtoList) {

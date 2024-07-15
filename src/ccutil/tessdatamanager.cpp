@@ -16,9 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "tessdatamanager.h"
 
@@ -38,9 +36,9 @@
 #include <tesseract/version.h>
 #include "errcode.h"
 #include "helpers.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "serialis.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
@@ -246,7 +244,7 @@ void TessdataManager::Clear() {
 
 // Prints a directory of contents.
 void TessdataManager::Directory() const {
-  tprintInfo("Version:{}\n", VersionString().c_str());
+  tprintInfo("Version:{}\n", VersionString());
   auto offset = TESSDATA_NUM_ENTRIES * sizeof(int64_t);
   for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
     if (!entries_[i].empty()) {

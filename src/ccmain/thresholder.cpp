@@ -17,14 +17,12 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file
-#ifdef HAVE_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "otsuthr.h"
 #include "thresholder.h"
 #include "tesseractclass.h"
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h> // for api->GetIntVariable()
@@ -392,7 +390,7 @@ ImageThresholder::pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval,int *pbgval)
   if (fgval<0)
     fgval = 0;
   pixAddConstantGray(pixg, -1*fgval);
-  factor = 255/(bgval-fgval);
+  factor = 255.0 / l_float32(bgval-fgval);
   pixMultConstantGray(pixg, factor);
   pixd = pixGammaTRC(NULL, pixg, 1.0, 0, bgval-((bgval-thresh)*0.5));
   pixDestroy(&pixg);
@@ -471,6 +469,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   int r = 0;
   l_int32 threshold_val = 0;
 
+  // TODO: code/history review why we don't use pix_grey here; 
+  // initial check points the finger at myself when I merged in the NlBin threshold algo, 
+  // which likes to also do its own to-greyscale conversion, which should really be done before, 
+  // in a previous stage in tesseract proper, rather than *specifically for NlBin only*. 
+  // Code/flow review required.
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
@@ -503,8 +506,9 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
+	// TODO: make sure every thresholding method reports a log line like this.
     if (tesseract_->thresholding_debug) {
-      tprintDebug("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
+      tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
@@ -677,6 +681,9 @@ Image ImageThresholder::GetPixRectGrey() {
   auto pix = GetPixRect(); // May have to be reduced to grey.
   int depth = pixGetDepth(pix);
   if (depth != 8 || pixGetColormap(pix)) {
+    if (verbose_process) {
+      tprintInfo("PROCESS: the source image is not a greyscale image, hence we apply a simple conversion to 8 bit greyscale now. The greyscale image is required by any of the binarization a.k.a. thresholding algorithms tesseract employs to produce an image content mask and to analyze the image content, to decide which parts of your input image will be extracted and sent to the OCR core engine after.\n");
+    }
     if (depth == 24) {
       auto tmp = pixConvert24To32(pix);
       pix.destroy();
