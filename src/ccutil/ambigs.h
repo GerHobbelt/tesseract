@@ -220,9 +220,10 @@ private:
                        const char *replacement_string, int type, AmbigSpec *ambig_spec,
                        UNICHARSET *unicharset);
 
-  std::string debug_print_for_unicharset_stmt(const UNICHARSET &unicharset);
+  const std::string &debug_print_for_unicharset_stmt(const UNICHARSET &unicharset);
 
-  void *last_unicharset_for_diagnostics_printed_{nullptr};
+  const UNICHARSET *last_unicharset_for_diagnostics_printed_{nullptr};
+  std::string last_unicharset_for_diagnostics_stmt_str_;
 
   UnicharAmbigsVector dang_ambigs_;
   UnicharAmbigsVector replace_ambigs_;
