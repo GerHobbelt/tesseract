@@ -400,6 +400,7 @@ void InteractiveScrollView::StartEventHandler() {
     // The thread should run as long as its associated window is alive.
   }
 }
+
 #endif // !GRAPHICS_DISABLED
 
 ScrollView::~ScrollView() {

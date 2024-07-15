@@ -263,7 +263,7 @@ TBOX TESSLINE::bounding_box() const {
 }
 
 #if !GRAPHICS_DISABLED
-void TESSLINE::plot(ScrollViewReference &window, ScrollView::Color color, ScrollView::Color child_color) {
+void TESSLINE::plot(ScrollViewReference &window, Diagnostics::Color color, Diagnostics::Color child_color) {
   if (is_hole) {
     window->Pen(child_color);
   } else {
@@ -505,7 +505,7 @@ void TBLOB::CorrectBlobOrder(TBLOB *next) {
 }
 
 #if !GRAPHICS_DISABLED
-void TBLOB::plot(ScrollViewReference &window, ScrollView::Color color, ScrollView::Color child_color) {
+void TBLOB::plot(ScrollViewReference &window, Diagnostics::Color color, Diagnostics::Color child_color) {
   for (TESSLINE *outline = outlines; outline != nullptr; outline = outline->next) {
     outline->plot(window, color, child_color);
   }
@@ -907,9 +907,9 @@ void TWERD::MergeBlobs(unsigned start, unsigned end) {
 
 #if !GRAPHICS_DISABLED
 void TWERD::plot(ScrollViewReference &window) {
-  ScrollView::Color color = WERD::NextColor(ScrollView::BLACK);
+  Diagnostics::Color color = WERD::NextColor(Diagnostics::BLACK);
   for (auto &blob : blobs) {
-    blob->plot(window, color, ScrollView::BROWN);
+    blob->plot(window, color, Diagnostics::BROWN);
     color = WERD::NextColor(color);
   }
 }

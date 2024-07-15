@@ -284,8 +284,8 @@ void ImageData::Display(Tesseract *tesseract_) const {
   win->Draw(pix, 0, win->TranslateYCoordinate(0), "ImageData::Display");
   pix.destroy();
   // Draw the boxes.
-  win->Pen(ScrollView::RED);
-  win->Brush(ScrollView::NONE);
+  win->Pen(Diagnostics::RED);
+  win->Brush(Diagnostics::NONE);
   int text_size = kTextSize;
   if (!boxes_.empty() && boxes_[0].height() * 2 < text_size) {
     text_size = boxes_[0].height() * 2;
@@ -298,7 +298,7 @@ void ImageData::Display(Tesseract *tesseract_) const {
     }
   } else {
     // The full transcription.
-    win->Pen(ScrollView::CYAN);
+    win->Pen(Diagnostics::CYAN);
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
   win->UpdateWindow();

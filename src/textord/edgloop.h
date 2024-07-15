@@ -31,7 +31,7 @@ namespace tesseract {
 
 void complete_edge(CRACKEDGE *start, // start of loop
                    C_OUTLINE_IT *outline_it);
-ScrollView::Color check_path_legal( // certify outline
+Diagnostics::Color check_path_legal( // certify outline
     CRACKEDGE *start                // start of loop
 );
 int16_t loop_bounding_box( // get bounding box

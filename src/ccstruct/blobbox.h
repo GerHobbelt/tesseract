@@ -28,7 +28,7 @@
 #include "points.h"     // for FCOORD, ICOORD, ICOORDELT_LIST
 #include "quspline.h"   // for QSPLINE
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::Color
+#include "scrollview.h" // for ScrollView, Diagnostics::Color
 #include "statistc.h"   // for STATS
 #include "stepblob.h"   // for C_BLOB
 #include <tesseract/tprintf.h>    // for tprintf
@@ -473,13 +473,13 @@ public:
 #if !GRAPHICS_DISABLED
   // Helper to draw all the blobs on the list in the given body_colour,
   // with child outlines in the child_colour.
-  static void PlotBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                        ScrollView::Color child_colour, ScrollViewReference &win);
+  static void PlotBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                        Diagnostics::Color child_colour, ScrollViewReference &win);
   // Helper to draw only DeletableNoise blobs (unowned, BRT_NOISE) on the
   // given list in the given body_colour, with child outlines in the
   // child_colour.
-  static void PlotNoiseBlobs(BLOBNBOX_LIST *list, ScrollView::Color body_colour,
-                             ScrollView::Color child_colour, ScrollViewReference &win);
+  static void PlotNoiseBlobs(BLOBNBOX_LIST *list, Diagnostics::Color body_colour,
+                             Diagnostics::Color child_colour, ScrollViewReference &win);
 #endif
 
   // Helper to draw all the blobs on the list in the given body_colour,
@@ -487,14 +487,14 @@ public:
   static void PlotBlobs(BLOBNBOX_LIST* list, Image &pix, std::vector<uint32_t>& cmap, int cmap_offset);
 
 #if !GRAPHICS_DISABLED
-  static ScrollView::Color TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type);
+  static Diagnostics::Color TextlineColor(BlobRegionType region_type, BlobTextFlowType flow_type);
 
   // Keep in sync with BlobRegionType.
-  ScrollView::Color BoxColor() const;
+  Diagnostics::Color BoxColor() const;
 
   void plot(ScrollViewReference &window,              // window to draw in
-            ScrollView::Color blob_colour,   // for outer bits
-            ScrollView::Color child_colour); // for holes
+            Diagnostics::Color blob_colour,   // for outer bits
+            Diagnostics::Color child_colour); // for holes
 #endif
 
   void plot(Image& pix, std::vector<uint32_t>& cmap, int &cmap_offset, bool noise);
@@ -874,8 +874,8 @@ void vertical_coutline_projection( // project outlines
 #if !GRAPHICS_DISABLED
 void plot_blob_list(ScrollViewReference &win,                 // window to draw in
                     BLOBNBOX_LIST *list,             // blob list
-                    ScrollView::Color body_colour,   // colour to draw
-                    ScrollView::Color child_colour); // colour of child
+                    Diagnostics::Color body_colour,   // colour to draw
+                    Diagnostics::Color child_colour); // colour of child
 #endif                                               // !GRAPHICS_DISABLED
 
 } // namespace tesseract

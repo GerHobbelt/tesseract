@@ -648,7 +648,7 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
     auto *handler = new TabEventHandler<BBGrid<BBC, BBC_CLIST, BBC_C_IT>>(this);
     tab_win->AddEventHandler(handler);
   }
-  tab_win->Pen(DebugView::GREY);
+  tab_win->Pen(Diagnostics::GREY);
   tab_win->Rectangle(0, 0, tright_.x() - bleft_.x(), tright_.y() - bleft_.y());
   return tab_win;
 }
@@ -656,11 +656,11 @@ ScrollViewReference BBGrid<BBC, BBC_CLIST, BBC_C_IT>::MakeWindow(Tesseract *tess
 // Create a window at (x,y) and display the bounding boxes of the
 // BLOBNBOXes in this grid.
 // Use of this function requires an additional member of the BBC class:
-// ScrollView::Color BBC::BoxColor() const.
+// Diagnostics::Color BBC::BoxColor() const.
 template <class BBC, class BBC_CLIST, class BBC_C_IT>
 void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win) {
-  tab_win->Pen(DebugView::BLUE);
-  tab_win->Brush(DebugView::NONE);
+  tab_win->Pen(Diagnostics::BLUE);
+  tab_win->Brush(Diagnostics::NONE);
 
   // For every bbox in the grid, display it.
   GridSearch<BBC, BBC_CLIST, BBC_C_IT> gsearch(this);
@@ -672,7 +672,7 @@ void BBGrid<BBC, BBC_CLIST, BBC_C_IT>::DisplayBoxes(ScrollViewReference &tab_win
     int right_x = box.right();
     int top_y = box.top();
     int bottom_y = box.bottom();
-    ScrollView::Color box_color = bbox->BoxColor();
+    Diagnostics::Color box_color = bbox->BoxColor();
     tab_win->Pen(box_color);
     tab_win->Rectangle(left_x, bottom_y, right_x, top_y);
   }

@@ -126,7 +126,7 @@ public:
             float yorigin,                   // gram
             float xscale,                    // size of one unit
             float yscale,                    // size of one uint
-            ScrollView::Color colour) const; // colour to draw in
+            Diagnostics::Color colour) const; // colour to draw in
 
   // Draws a line graph of the histogram.
   void plotline(ScrollViewReference &window,              // window to draw in
@@ -134,7 +134,7 @@ public:
                 float yorigin,                   // gram
                 float xscale,                    // size of one unit
                 float yscale,                    // size of one uint
-                ScrollView::Color colour) const; // colour to draw in
+                Diagnostics::Color colour) const; // colour to draw in
 #endif                                           // !GRAPHICS_DISABLED
 
 private:

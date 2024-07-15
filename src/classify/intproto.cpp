@@ -122,7 +122,7 @@ void FillPPLinearBits(uint32_t ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR], 
 
 void GetCPPadsForLevel(int Level, float *EndPad, float *SidePad, float *AnglePad);
 
-ScrollView::Color GetMatchColorFor(float Evidence);
+Diagnostics::Color GetMatchColorFor(float Evidence);
 
 void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill);
 
@@ -131,9 +131,9 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
 
 #if !GRAPHICS_DISABLED
 void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
-                      ScrollView::Color color);
+                      Diagnostics::Color color);
 
-void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, ScrollView::Color color);
+void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, Diagnostics::Color color);
 #endif // !GRAPHICS_DISABLED
 
 /*-----------------------------------------------------------------------------
@@ -554,7 +554,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
  * @param Evidence  best evidence for this feature (0-1)
  */
 void DisplayIntFeature(const INT_FEATURE_STRUCT *Feature, float Evidence) {
-  ScrollView::Color color = GetMatchColorFor(Evidence);
+  Diagnostics::Color color = GetMatchColorFor(Evidence);
   RenderIntFeature(IntMatchWindow, Feature, color);
   if (FeatureDisplayWindow) {
     RenderIntFeature(FeatureDisplayWindow, Feature, color);
@@ -572,7 +572,7 @@ void DisplayIntFeature(const INT_FEATURE_STRUCT *Feature, float Evidence) {
  * @param Evidence  total evidence for proto (0-1)
  */
 void DisplayIntProto(INT_CLASS_STRUCT *Class, PROTO_ID ProtoId, float Evidence) {
-  ScrollView::Color color = GetMatchColorFor(Evidence);
+  Diagnostics::Color color = GetMatchColorFor(Evidence);
   RenderIntProto(IntMatchWindow, Class, ProtoId, color);
   if (ProtoDisplayWindow) {
     RenderIntProto(ProtoDisplayWindow, Class, ProtoId, color);
@@ -916,7 +916,7 @@ void Classify::ShowMatchDisplay() {
 void ClearFeatureSpaceWindow(NORM_METHOD norm_method, ScrollViewReference &window) {
   window->Clear();
 
-  window->Pen(DebugView::GREY);
+  window->Pen(Diagnostics::GREY);
   // Draw the feature space limit rectangle.
   window->Rectangle(0, 0, INT_MAX_X, INT_MAX_Y);
   if (norm_method == baseline) {
@@ -1312,18 +1312,18 @@ void GetCPPadsForLevel(int Level, float *EndPad, float *SidePad, float *AnglePad
  * @return Color which corresponds to specified Evidence value.
  * @note Globals: none
  */
-ScrollView::Color GetMatchColorFor(float Evidence) {
+Diagnostics::Color GetMatchColorFor(float Evidence) {
   assert(Evidence >= 0.0);
   assert(Evidence <= 1.0);
 
   if (Evidence >= 0.90) {
-    return ScrollView::WHITE;
+    return Diagnostics::WHITE;
   } else if (Evidence >= 0.75) {
-    return ScrollView::GREEN;
+    return Diagnostics::GREEN;
   } else if (Evidence >= 0.50) {
-    return ScrollView::RED;
+    return Diagnostics::RED;
   } else {
-    return ScrollView::BLUE;
+    return Diagnostics::BLUE;
   }
 } /* GetMatchColorFor */
 
@@ -1541,7 +1541,7 @@ void InitTableFiller(float EndPad, float SidePad, float AnglePad, PROTO_STRUCT *
  * @note Globals: none
  */
 void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Feature,
-                      ScrollView::Color color) {
+                      Diagnostics::Color color) {
   float X, Y, Dx, Dy, Length;
 
   window->Pen(color);
@@ -1575,7 +1575,7 @@ void RenderIntFeature(ScrollViewReference &window, const INT_FEATURE_STRUCT *Fea
  * @return New shape list with a rendering of one proto added.
  */
 void RenderIntProto(ScrollViewReference &window, INT_CLASS_STRUCT *Class, PROTO_ID ProtoId,
-                    ScrollView::Color color) {
+                    Diagnostics::Color color) {
   INT_PROTO_STRUCT *Proto;
   int ProtoSetIndex;
   int ProtoWordIndex;
