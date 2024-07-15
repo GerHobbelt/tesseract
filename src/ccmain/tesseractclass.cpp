@@ -817,6 +817,169 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *titl
   pixa_debug_.AddPixWithBBox(pix, title);
 }
 
+// Destroy any existing pix and return a pointer to the pointer.
+void Tesseract::set_pix_binary(Image pix) {
+  pix_binary_.destroy();
+  pix_binary_ = pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
+  }
+}
+
+void Tesseract::set_pix_grey(Image grey_pix) {
+  pix_grey_.destroy();
+  pix_grey_ = grey_pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
+  }
+}
+
+// Takes ownership of the given original_pix.
+void Tesseract::set_pix_original(Image original_pix) {
+  pix_original_.destroy();
+  pix_original_ = original_pix;
+  // Clone to sublangs as well.
+  for (auto &lang_ref : sub_langs_) {
+    lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
+  }
+}
+
+  Image Tesseract::pix_binary() const {
+    return pix_binary_;
+  }
+  Image Tesseract::pix_grey() const {
+    return pix_grey_;
+  }
+  Image Tesseract::pix_original() const {
+    return pix_original_;
+  }
+
+Image Tesseract::GetPixForDebugView() {
+  if (pix_for_debug_view_ != nullptr) {
+    return pix_for_debug_view_;
+  }
+
+  Image pix;
+  if (pix_grey_ != nullptr) {
+    pix = pix_grey_;
+  } else {
+    pix = pix_binary_;
+  }
+  pix_for_debug_view_ = pixConvertTo32(pix);
+  return pix_for_debug_view_;
+}
+
+void Tesseract::ClearPixForDebugView() {
+  if (pix_for_debug_view_ != nullptr) {
+    pix_for_debug_view_.destroy();
+    pix_for_debug_view_ = nullptr;
+  }
+}
+
+// Returns a pointer to a Pix representing the best available resolution image
+// of the page, with best available bit depth as second priority. Result can
+// be of any bit depth, but never color-mapped, as that has always been
+// removed. Note that in grey and color, 0 is black and 255 is
+// white. If the input was binary, then black is 1 and white is 0.
+// To tell the difference pixGetDepth() will return 32, 8 or 1.
+// In any case, the return value is a borrowed Pix, and should not be
+// deleted or pixDestroyed.
+Image Tesseract::BestPix() const {
+  if (pix_original_ != nullptr && pixGetWidth(pix_original_) == ImageWidth()) {
+    return pix_original_;
+  } else if (pix_grey_ != nullptr) {
+    return pix_grey_;
+  } else {
+    return pix_binary_;
+  }
+}
+
+void Tesseract::set_pix_thresholds(Image thresholds) {
+  pix_thresholds_.destroy();
+  pix_thresholds_ = thresholds;
+}
+
+void Tesseract::set_source_resolution(int ppi) {
+  source_resolution_ = ppi;
+}
+
+int Tesseract::ImageWidth() const {
+  return pixGetWidth(pix_binary_);
+}
+
+int Tesseract::ImageHeight() const {
+  return pixGetHeight(pix_binary_);
+}
+
+void Tesseract::SetScaledColor(int factor, Image color) {
+  scaled_factor_ = factor;
+  scaled_color_ = color;
+}
+
+Tesseract * Tesseract::get_sub_lang(int index) const {
+  return sub_langs_[index];
+}
+
+  Image Tesseract::pix_thresholds() {
+	  return pix_thresholds_;
+  }
+
+  int Tesseract::source_resolution() const {
+    return source_resolution_;
+  }
+
+  Image Tesseract::scaled_color() const {
+    return scaled_color_;
+  }
+
+  int Tesseract::scaled_factor() const {
+    return scaled_factor_;
+  }
+
+  const Textord &Tesseract::textord() const {
+    return textord_;
+  }
+
+  Textord *Tesseract::mutable_textord() {
+    return &textord_;
+  }
+
+  bool Tesseract::right_to_left() const {
+    return right_to_left_;
+  }
+
+  int Tesseract::num_sub_langs() const {
+    return sub_langs_.size();
+  }
+
+// Returns true if any language uses Tesseract (as opposed to LSTM).
+bool Tesseract::AnyTessLang() const {
+  if (tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
+    return true;
+  }
+  for (auto &lang_ref : sub_langs_) {
+    if (lang_ref->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Returns true if any language uses the LSTM.
+bool Tesseract::AnyLSTMLang() const {
+  if (tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
+    return true;
+  }
+  for (auto &lang_ref : sub_langs_) {
+    if (lang_ref->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // debug PDF output helper methods:
 void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
   if (pix == nullptr)

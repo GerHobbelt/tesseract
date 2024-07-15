@@ -446,7 +446,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     tprintDebug("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
-  if (method == ThresholdMethod::Sauvola) {
+  switch (method) {
+  case ThresholdMethod::Sauvola: {
     int window_size;
     window_size = tesseract_->thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
@@ -470,22 +471,29 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
+	// TODO: make sure every thresholding method reports a log line like this.
     if (tesseract_->thresholding_debug) {
-      tprintDebug("window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
+      tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
                                (PIX**)pix_thresholds,
                                 (PIX**)pix_binary);
-  } else if (method == ThresholdMethod::OtsuOnNormalizedBackground) {
+  } break;
+
+  case ThresholdMethod::OtsuOnNormalizedBackground: {
     pix_binary = pixOtsuThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15, 100,
                                                50, 255, 2, 2, 0.1f,
                                                &threshold_val);
-  } else if (method == ThresholdMethod::MaskingAndOtsuOnNormalizedBackground) {
+  } break;
+
+  case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground: {
     pix_binary = pixMaskedThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15,
                                                  100, 50, 2, 2, 0.1f,
                                                  &threshold_val);
-  } else if (method == ThresholdMethod::LeptonicaOtsu) {
+  } break;
+
+  case ThresholdMethod::LeptonicaOtsu: {
     int tile_size;
     double tile_size_factor = tesseract_->thresholding_tile_size;
     tile_size = tile_size_factor * yres_;
@@ -508,13 +516,29 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
                                  score_fraction,
                                  (PIX **)pix_thresholds,
                                  (PIX **)pix_binary);
-  } else if (method == ThresholdMethod::Nlbin) {
+  } break;
+
+  case ThresholdMethod::Nlbin: {
     auto pix = GetPixRect();
     pix_binary = pixNLBin(pix, false);
-    r = 0;
-  } else {
+  } break;
+
+  case ThresholdMethod::Otsu: {
+    if (!ThresholdToPix(&pix_binary)) {
+      r = 1;
+    }
+    else {
+      if (!IsBinary()) {
+        pix_thresholds = GetPixRectThresholds();
+        //pix_grey = GetPixRectGrey();
+      }
+    }
+  } break;
+
+  default:
     // Unsupported threshold method.
     r = 1;
+    break;
   }
 
   bool ok = (r == 0) && pix_binary;

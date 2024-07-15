@@ -250,72 +250,31 @@ public:
   }
 
   // Destroy any existing pix and return a pointer to the pointer.
-  void set_pix_binary(Image pix) {
-    pix_binary_.destroy();
-    pix_binary_ = pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
-    }
-  }
-  Image pix_binary() const {
-    return pix_binary_;
-  }
-  Image pix_grey() const {
-    return pix_grey_;
-  }
-  void set_pix_grey(Image grey_pix) {
-    pix_grey_.destroy();
-    pix_grey_ = grey_pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
-    }
-  }
-  Image pix_original() const {
-    if (1) {
-      volatile int r = 1;
-      r++;
-    }
-    return pix_original_;
-  }
+  void set_pix_binary(Image pix);
+  Image pix_binary() const;
+
+  Image pix_grey() const;
+  void set_pix_grey(Image grey_pix);
+
+  Image pix_original() const;
   // Takes ownership of the given original_pix.
-  void set_pix_original(Image original_pix) {
-    pix_original_.destroy();
-    pix_original_ = original_pix;
-    // Clone to sublangs as well.
-    for (auto &lang_ref : sub_langs_) {
-      lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
-    }
-  }
+  void set_pix_original(Image original_pix);
 
-  Image GetPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr)
-      return pix_for_debug_view_;
+  Image GetPixForDebugView();
 
-    Image pix; 
-    if (pix_grey_ != nullptr) {
-      pix = pix_grey_;
-    }
-    else {
-      pix = pix_binary_;
-    }
-    pix_for_debug_view_ = pixConvertTo32(pix);
-    return pix_for_debug_view_;
-  }
-
-  void ClearPixForDebugView() {
-    if (pix_for_debug_view_ != nullptr) {
-      pix_for_debug_view_.destroy();
-      pix_for_debug_view_ = nullptr;
-    }
-  }
+  void ClearPixForDebugView();
 
   void ReportDebugInfo();
 
-  bool SupportsInteractiveScrollView() {
+#if !GRAPHICS_DISABLED
+  bool SupportsInteractiveScrollView() const {
     return interactive_display_mode;
   }
+#else
+  constexpr bool SupportsInteractiveScrollView() const {
+    return false;
+  }
+#endif
 
   // Return a memory capacity cost estimate for the given image / current original image.
   //
@@ -337,85 +296,34 @@ public:
   // To tell the difference pixGetDepth() will return 32, 8 or 1.
   // In any case, the return value is a borrowed Pix, and should not be
   // deleted or pixDestroyed.
-  Image BestPix() const {
-    if (pix_original_ != nullptr && pixGetWidth(pix_original_) == ImageWidth()) {
-      return pix_original_;
-    } else if (pix_grey_ != nullptr) {
-      return pix_grey_;
-    } else {
-      return pix_binary_;
-    }
-  }
+  Image BestPix() const;
 
-  void set_pix_thresholds(Image thresholds) {
-    pix_thresholds_.destroy();
-    pix_thresholds_ = thresholds;
-  }
-  Image pix_thresholds() {
-	  return pix_thresholds_;
-  }
-  int source_resolution() const {
-    return source_resolution_;
-  }
-  void set_source_resolution(int ppi) {
-    source_resolution_ = ppi;
-  }
-  int ImageWidth() const {
-    return pixGetWidth(pix_binary_);
-  }
-  int ImageHeight() const {
-    return pixGetHeight(pix_binary_);
-  }
-  Image scaled_color() const {
-    return scaled_color_;
-  }
-  int scaled_factor() const {
-    return scaled_factor_;
-  }
-  void SetScaledColor(int factor, Image color) {
-    scaled_factor_ = factor;
-    scaled_color_ = color;
-  }
-  const Textord &textord() const {
-    return textord_;
-  }
-  Textord *mutable_textord() {
-    return &textord_;
-  }
+  void set_pix_thresholds(Image thresholds);
+  Image pix_thresholds();
 
-  bool right_to_left() const {
-    return right_to_left_;
-  }
-  int num_sub_langs() const {
-    return sub_langs_.size();
-  }
-  Tesseract *get_sub_lang(int index) const {
-    return sub_langs_[index];
-  }
+  int source_resolution() const;
+  void set_source_resolution(int ppi);
+
+  int ImageWidth() const;
+  int ImageHeight() const;
+
+  Image scaled_color() const;
+  int scaled_factor() const;
+
+  void SetScaledColor(int factor, Image color);
+
+  const Textord &textord() const;
+  Textord *mutable_textord();
+
+  bool right_to_left() const;
+
+  int num_sub_langs() const;
+  Tesseract *get_sub_lang(int index) const;
+
   // Returns true if any language uses Tesseract (as opposed to LSTM).
-  bool AnyTessLang() const {
-    if (tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
-      return true;
-    }
-    for (auto &lang_ref : sub_langs_) {
-      if (lang_ref->tessedit_ocr_engine_mode != OEM_LSTM_ONLY) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool AnyTessLang() const;
   // Returns true if any language uses the LSTM.
-  bool AnyLSTMLang() const {
-    if (tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
-      return true;
-    }
-    for (auto &lang_ref : sub_langs_) {
-      if (lang_ref->tessedit_ocr_engine_mode != OEM_TESSERACT_ONLY) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool AnyLSTMLang() const;
 
   void SetBlackAndWhitelist();
 
@@ -501,8 +409,28 @@ public:
   // Helper to recognize the word using the given (language-specific) tesseract.
   // Returns positive if this recognizer found more new best words than the
   // number kept from best_words.
-  int RetryWithLanguage(const WordData &word_data, WordRecognizer recognizer, bool debug,
+  int RetryWithLanguage(const WordData &word_data, WordRecognizer recognizer,
                         WERD_RES **in_word, PointerVector<WERD_RES> *best_words);
+
+protected:
+  // Helper chooses the best combination of words, transferring good ones from
+  // new_words to best_words. To win, a new word must have (better rating and
+  // certainty) or (better permuter status and rating within rating ratio and
+  // certainty within certainty margin) than current best.
+  // All the new_words are consumed (moved to best_words or deleted.)
+  // The return value is the number of new_words used minus the number of
+  // best_words that remain in the output.
+  int SelectBestWords(double rating_ratio, double certainty_margin,
+                             PointerVector<WERD_RES>* new_words,
+                             PointerVector<WERD_RES>* best_words);
+  // Factored helper computes the rating, certainty, badness and validity of
+  // the permuter of the words in [first_index, end_index).
+  void EvaluateWordSpan(const PointerVector<WERD_RES>& words, unsigned int first_index, unsigned int end_index,
+                               float* rating, float* certainty, bool* bad, bool* valid_permuter);
+  // Helper finds the gap between the index word and the next.
+  void WordGap(const PointerVector<WERD_RES>& words, unsigned int index, TDimension* right, TDimension* next_left);
+
+public:
   // Moves good-looking "noise"/diacritics from the reject list to the main
   // blob list on the current word. Returns true if anything was done, and
   // sets make_next_word_fuzzy if blob(s) were added to the end of the word.

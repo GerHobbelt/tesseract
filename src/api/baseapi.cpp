@@ -52,6 +52,13 @@
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
 #include "winutils.h"
+#include "colfind.h"         // for param globals
+#include "oldbasel.h"        // for param globals
+#include "tovars.h"          // for param globals
+#include "makerow.h"         // for param globals
+#include "topitch.h"         // for param globals
+#include "polyaprx.h"        // for param globals
+#include "edgblob.h"         // for param globals
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>       // for ETEXT_DESC
@@ -176,8 +183,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
   const auto kTrainedDataSuffixUtf16 = winutils::Utf8ToUtf16(kTrainedDataSuffix);
 
   WIN32_FIND_DATAW data;
-  HANDLE handle = FindFirstFileW(
-    winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
+  HANDLE handle = FindFirstFileW(winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
   if (handle != INVALID_HANDLE_VALUE) {
     BOOL result = TRUE;
     for (; result;) {
@@ -189,7 +195,7 @@ static void addAvailableLanguages(const std::string &datadir, const std::string 
         } else {
           size_t len = wcslen(name);
           if (len > extlen && name[len - extlen] == '.' &&
-              &name[len - extlen + 1] == kTrainedDataSuffixUtf16) {
+              wcscmp(&name[len - extlen + 1], kTrainedDataSuffixUtf16.c_str()) == 0) {
             name[len - extlen] = '\0';
             langs->push_back(base2 + winutils::Utf16ToUtf8(name));
           }
@@ -663,7 +669,7 @@ PageSegMode TessBaseAPI::GetPageSegMode() const {
   if (tesseract_ == nullptr) {
     return PSM_SINGLE_BLOCK;
   }
-  return static_cast<PageSegMode>(static_cast<int>(tesseract_->tessedit_pageseg_mode));
+  return static_cast<PageSegMode>(tesseract_->tessedit_pageseg_mode.value());
 }
 
 /**
@@ -1362,6 +1368,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);
+      // Set thresholding method to 0 for second pass regardless
+      tesseract_->thresholding_method = (int)ThresholdMethod::Otsu;
       // SetPageSegMode(PSM_SPARSE_TEXT);
 
       SetImage(newpix);
@@ -3124,12 +3132,12 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
     f += ".";
     f += label;
   }
-	if (*ns)
-	{
-		f += ns;
-	}
-	f += ".";
-	f += filename_extension;
+  if (*ns)
+  {
+    f += ns;
+  }
+  f += ".";
+  f += filename_extension;
 
   // sanitize generated filename part:
   char* str = f.data();
