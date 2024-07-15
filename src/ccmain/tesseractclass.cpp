@@ -117,9 +117,9 @@ Tesseract::Tesseract()
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended",
                     this->params())
     , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
-                      "Which OCR engine(s) to run (Tesseract, LSTM, both)."
-                      " Defaults to loading and running the most accurate"
-                      " available.",
+                      "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
+                      "Defaults to loading and running the most accurate "
+                      "available.",
                       this->params())
     , STRING_MEMBER(tessedit_char_blacklist, "", "Blacklist of chars not to recognize",
                     this->params())
