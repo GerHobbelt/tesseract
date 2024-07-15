@@ -52,8 +52,10 @@ public:
   DENORM();
 
   // Copying a DENORM is allowed.
-  DENORM(const DENORM &);
-  DENORM &operator=(const DENORM &);
+  DENORM(const DENORM &src);
+  DENORM(DENORM &&src) noexcept;
+  DENORM &operator=(const DENORM &src);
+  DENORM &operator=(DENORM &&src) noexcept;
   ~DENORM();
 
   // Setup the normalization transformation parameters.
@@ -268,31 +270,31 @@ private:
   void Init();
 
   // True if the source image is white-on-black.
-  bool inverse_;
+  bool inverse_= false;
   // Block the word came from. If not null, block->re_rotation() takes the
   // "untransformed" coordinates even further back to the original image.
   // Used only on the first DENORM in a chain.
-  const BLOCK *block_;
+  const BLOCK *block_ = nullptr;
   // Rotation to apply between translation to the origin and scaling.
-  const FCOORD *rotation_;
+  const FCOORD *rotation_ = nullptr;
   // Previous transformation in a chain.
-  const DENORM *predecessor_;
+  const DENORM *predecessor_ = nullptr;
   // Non-linear transformation maps directly from each integer offset from the
   // origin to the corresponding x-coord. Owned by the DENORM.
-  std::vector<float> *x_map_;
+  std::vector<float> *x_map_ = nullptr;
   // Non-linear transformation maps directly from each integer offset from the
   // origin to the corresponding y-coord. Owned by the DENORM.
-  std::vector<float> *y_map_;
+  std::vector<float> *y_map_ = nullptr;
   // x-coordinate to be mapped to final_xshift_ in the result.
-  float x_origin_;
+  float x_origin_ = 0.0;
   // y-coordinate to be mapped to final_yshift_ in the result.
-  float y_origin_;
+  float y_origin_ = 0.0;
   // Scale factors for x and y coords. Applied to pre-rotation system.
-  float x_scale_;
-  float y_scale_;
+  float x_scale_ = 0.0;
+  float y_scale_ = 0.0;
   // Destination coords of the x_origin_ and y_origin_.
-  float final_xshift_;
-  float final_yshift_;
+  float final_xshift_ = 0.0;
+  float final_yshift_ = 0.0;
 };
 
 } // namespace tesseract

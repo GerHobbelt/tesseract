@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "params_model.h"
 
 #include <cctype>
@@ -25,7 +27,7 @@
 #include "bitvector.h"
 #include "helpers.h"   // for ClipToRange
 #include "serialis.h"  // for TFile
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

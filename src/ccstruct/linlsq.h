@@ -123,14 +123,14 @@ T MedianOfCircularValues(T modulus, std::vector<T> &v) {
   }
   bool offset_needed = stats.y_variance() < stats.x_variance();
   if (offset_needed) {
-    for (auto i : v) {
+    for (auto &i : v) {
       i += halfrange;
     }
   }
   auto median_index = num_elements / 2;
   std::nth_element(v.begin(), v.begin() + median_index, v.end());
   if (offset_needed) {
-    for (auto i : v) {
+    for (auto &i : v) {
       i -= halfrange;
     }
   }

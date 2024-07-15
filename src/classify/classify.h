@@ -20,9 +20,7 @@
 #define TESSERACT_CLASSIFY_CLASSIFY_H_
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if DISABLED_LEGACY_ENGINE
 
@@ -98,6 +96,11 @@ public:
   virtual ~Classify() override;
 
   virtual Dict &getDict() {
+    return dict_;
+  }
+
+  // Return initial dictionary component that is always present in the tesseract instance.
+  Dict &getInitialDict() {
     return dict_;
   }
 

@@ -23,5 +23,9 @@ namespace fs {
 #endif
   }
 
+  static inline bool exists(const std::string &filename) {
+    return exists(filename.c_str());
+  }
+
   } // namespace fs
 } // namespace tesseract

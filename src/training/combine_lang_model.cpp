@@ -16,14 +16,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset/lang_model_helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 
 #include "tesseract/capi_training_tools.h"
@@ -33,17 +31,17 @@
 
 using namespace tesseract;
 
-STRING_PARAM_FLAG(input_unicharset, "",
+STRING_VAR(model_input_unicharset, "",
                          "Filename with unicharset to complete and use in encoding");
-STRING_PARAM_FLAG(script_dir, "", "Directory name for input script unicharsets");
-STRING_PARAM_FLAG(words, "", "File listing words to use for the system dictionary");
-STRING_PARAM_FLAG(puncs, "", "File listing punctuation patterns");
-STRING_PARAM_FLAG(numbers, "", "File listing number patterns");
-STRING_PARAM_FLAG(output_dir, "", "Root directory for output files");
-STRING_PARAM_FLAG(version_str, "", "Version string to add to traineddata file");
-STRING_PARAM_FLAG(lang, "", "Name of language being processed");
-BOOL_PARAM_FLAG(lang_is_rtl, false, "True if lang being processed is written right-to-left");
-BOOL_PARAM_FLAG(pass_through_recoder, false,
+STRING_VAR(model_script_dir, "", "Directory name for input script unicharsets");
+STRING_VAR(model_words, "", "File listing words to use for the system dictionary");
+STRING_VAR(model_puncs, "", "File listing punctuation patterns");
+STRING_VAR(model_numbers, "", "File listing number patterns");
+STRING_VAR(model_output_dir, "", "Root directory for output files");
+STRING_VAR(model_version_str, "", "Version string to add to traineddata file");
+STRING_VAR(model_lang, "", "Name of language being processed");
+BOOL_VAR(model_lang_is_rtl, false, "True if lang being processed is written right-to-left");
+BOOL_VAR(model_pass_through_recoder, false,
                        "If true, the recoder is a simple pass-through of the "
                        "unicharset. Otherwise, potentially a compression of it");
 
@@ -69,29 +67,29 @@ extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char**
 	  return rv;
 
   // If these reads fail, we get a warning message and an empty list of words.
-  std::vector<std::string> words = split(tesseract::ReadFile(FLAGS_words.c_str()), '\n');
-  std::vector<std::string> puncs = split(tesseract::ReadFile(FLAGS_puncs.c_str()), '\n');
-  std::vector<std::string> numbers = split(tesseract::ReadFile(FLAGS_numbers.c_str()), '\n');
+  std::vector<std::string> words = split(tesseract::ReadFile(model_words), '\n');
+  std::vector<std::string> puncs = split(tesseract::ReadFile(model_puncs), '\n');
+  std::vector<std::string> numbers = split(tesseract::ReadFile(model_numbers), '\n');
   // Load the input unicharset
   UNICHARSET unicharset;
-  if (!unicharset.load_from_file(FLAGS_input_unicharset.c_str(), false)) {
-    tprintError("Failed to load unicharset from {}\n", FLAGS_input_unicharset.c_str());
+  if (!unicharset.load_from_file(model_input_unicharset.c_str(), false)) {
+    tprintError("Failed to load unicharset from {}\n", model_input_unicharset.c_str());
     return EXIT_FAILURE;
   }
   tprintDebug("Loaded unicharset of size {} from file {}\n", unicharset.size(),
-          FLAGS_input_unicharset.c_str());
+          model_input_unicharset.c_str());
 
   // Set unichar properties
   tprintDebug("Setting unichar properties\n");
   tesseract::SetupBasicProperties(/*report_errors*/ true,
                                   /*decompose (NFD)*/ false, &unicharset);
   tprintDebug("Setting script properties\n");
-  tesseract::SetScriptProperties(FLAGS_script_dir.c_str(), &unicharset);
+  tesseract::SetScriptProperties(model_script_dir, &unicharset);
   // Combine everything into a traineddata file.
-  return tesseract::CombineLangModel(unicharset, FLAGS_script_dir.c_str(),
-                                     FLAGS_version_str.c_str(), FLAGS_output_dir.c_str(),
-                                     FLAGS_lang.c_str(), FLAGS_pass_through_recoder, words, puncs,
-                                     numbers, FLAGS_lang_is_rtl, /*reader*/ nullptr,
+  return tesseract::CombineLangModel(unicharset, model_script_dir,
+                                     model_version_str, model_output_dir,
+                                     model_lang, model_pass_through_recoder, words, puncs,
+                                     numbers, model_lang_is_rtl, /*reader*/ nullptr,
                                      /*writer*/ nullptr);
 }
 

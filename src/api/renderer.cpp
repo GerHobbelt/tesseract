@@ -15,10 +15,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
 #include <cstring>
@@ -136,7 +133,7 @@ void TessResultRenderer::AppendData(const char *s, int len) {
   if (!tesseract::Serialize(fout_, s, len)) {
     happy_ = false;
   }
-  fflush(fout_);
+  //fflush(fout_);  -- only slows down performance.
 }
 
 bool TessResultRenderer::BeginDocumentHandler() {

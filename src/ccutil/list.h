@@ -22,6 +22,7 @@ template <typename ITERATOR, typename CLASSNAME>
 class X_ITER : public ITERATOR {
 public:
   X_ITER() = default;
+
   template <typename U>
   X_ITER(U *list) : ITERATOR(list) {}
 

@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "output.h"
 
 #include "control.h"
@@ -397,7 +399,7 @@ bool Tesseract::acceptable_number_string(const char *s, const char *lengths) {
   }
 
   for (; *s != '\0'; s += *(lengths++)) {
-    if (unicharset.get_isdigit(s, *lengths)) {
+    if (unicharset_.get_isdigit(s, *lengths)) {
       prev_digit = true;
     } else if (prev_digit && (*lengths == 1 && ((*s == '.') || (*s == ',') || (*s == '-')))) {
       prev_digit = false;

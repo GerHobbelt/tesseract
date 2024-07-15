@@ -22,7 +22,7 @@
 #include "detlinefit.h"
 #include "points.h"
 #include "rect.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 struct Pix;
 

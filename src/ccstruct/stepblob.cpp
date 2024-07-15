@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "stepblob.h"
 
@@ -235,6 +233,8 @@ void C_BLOB::ConstructBlobsFromOutlines(bool good_blob, C_OUTLINE_LIST *outline_
     // Put on appropriate list.
     if (!(!blob_is_good && bad_blobs_it != nullptr)) {
       good_blobs_it->add_after_then_move(blob);
+    } else {
+      delete blob;
     }
   }
 }

@@ -16,11 +16,94 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fontinfo.h"
 #include "bitvector.h"
 #include "unicity_table.h"
 
 namespace tesseract {
+
+  void FontInfo::Clear() {
+    delete[] name;
+    name = nullptr;
+
+    properties = 0;
+    universal_id = 0;
+
+    if (spacing_vec) {
+      for (FontSpacingInfo *fsi : *spacing_vec) {
+        delete fsi;
+      }
+      delete spacing_vec;
+    }
+    spacing_vec = nullptr;
+  }
+
+  FontInfo::~FontInfo() {
+    Clear();
+  }
+
+  FontInfo &FontInfo::operator=(const FontInfo &source) {
+    if (&source != this) {
+      // Before we deep-copy source, we need to get rid of our own previous state:
+      Clear();
+
+      if (source.name) {
+        auto len = strlen(source.name);
+        name = new char[len + 1];
+        strcpy(name, source.name);
+      }
+
+      properties = source.properties;
+      universal_id = source.universal_id;
+
+      if (source.spacing_vec) {
+        auto len = source.spacing_vec->size();
+        spacing_vec = new std::vector<FontSpacingInfo *>(len);
+        // deep copy
+        for (FontSpacingInfo *src_fsi : *source.spacing_vec) {
+          if (src_fsi) {
+            FontSpacingInfo *fsi = new FontSpacingInfo(*src_fsi);
+            spacing_vec->push_back(fsi);
+          }
+          else {
+            spacing_vec->push_back(nullptr);
+          }
+        }
+      }
+    }
+    return *this;
+  }
+  FontInfo::FontInfo(const FontInfo& source) {
+    // re-use the assignment operator for this:
+    *this = source;
+  }
+  FontInfo::FontInfo(FontInfo &&source) noexcept {
+    if (&source != this) {
+      name = source.name;
+      source.name = nullptr;
+      properties = source.properties;
+      source.properties = 0;
+      universal_id = source.universal_id;
+      source.universal_id = 0;
+      spacing_vec = source.spacing_vec;
+      source.spacing_vec = nullptr;
+    }
+  }
+  FontInfo& FontInfo::operator =(FontInfo &&source) noexcept {
+    if (&source != this) {
+      name = source.name;
+      source.name = nullptr;
+      properties = source.properties;
+      source.properties = 0;
+      universal_id = source.universal_id;
+      source.universal_id = 0;
+      spacing_vec = source.spacing_vec;
+      source.spacing_vec = nullptr;
+    }
+    return *this;
+  }
 
 // Writes to the given file. Returns false in case of error.
 bool FontInfo::Serialize(FILE *fp) const {

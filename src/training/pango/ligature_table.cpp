@@ -18,9 +18,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "ligature_table.h"
 
@@ -169,7 +167,7 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
         std::string lig_cand = str.substr(i, liglen);
         auto it = norm_to_lig_table_.find(lig_cand);
         if (it != norm_to_lig_table_.end()) {
-          tlog(3, "Considering {} -> {}\n", lig_cand, it->second);
+          tprintInfo("Considering {} -> {}\n", lig_cand, it->second);
           if (font) {
             // Test for renderability.
             if (!font->CanRenderString(it->second.data(), it->second.length())) {
@@ -179,7 +177,7 @@ std::string LigatureTable::AddLigatures(const std::string &str, const PangoFontI
           // Found a match so convert it.
           step = liglen;
           result += it->second;
-          tlog(2, "Substituted {} -> {}\n", lig_cand, it->second);
+          tprintInfo("Substituted {} -> {}\n", lig_cand, it->second);
           break;
         }
       }

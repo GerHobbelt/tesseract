@@ -11,9 +11,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "image.h"
 
@@ -41,9 +39,32 @@ bool Image::isZero() const {
   return r == 1;
 }
 
-Image& Image::operator =(Pix* pix) {
+void Image::replace(Pix *pix) {
   if (pix_ != nullptr) {
     pixDestroy(&pix_);
+  }
+  pix_ = pix;
+}
+
+Image& Image::operator =(Pix* pix) {
+  if (pix_ != nullptr) {
+  	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	//
+	// DO NOT invoke pixDestroy on the existing pix_ member pointer! While this would be
+	// the obvious thing to do when `Image` were an *owning* class for the leptonica Pix 
+	// pointer, IT IS NOT.    Doing this cost me dearly, as it only showed up later
+	// when running tesseract bulk tests and then as a *random* Segmentation fault,
+	// which happened due to double-free (this pixDestroy() would not know about the
+	// outside pixDestroy() later on), combined with Windows radom address relocation
+	// (which serves to help protect against fixed-address/offset assuming hacking tools / trojans / viruses)
+	// this resulted in a rather random occurring Segfault (random occurrence while running
+	// the *exact* same test over and over again...)   That was > 7 days lost.
+	// -------------------------------------------------------------------------------------
+	//
+	// this inadvertently triggering a double-free: while `Image` may LOOK like it's a class 
+	// that *owns* the Pix pointer, it DOES NOT: it is merely a C++ wrapper around a leptonica 
+	// pointer and currently little more than that.
+    //pixDestroy(&pix_);
   }
   pix_ = pix;
   return *this;

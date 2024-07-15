@@ -16,7 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "intfeaturespace.h"
 #include <cmath> // for M_PI
 #include "intfx.h"

@@ -21,14 +21,12 @@
 ----------------------------------------------------------------------*/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
 #include "blamer.h"  // for blamer_bundle
-#include "params.h"  // for BoolParam
+#include <tesseract/params.h>  // for BoolParam
 #include "render.h"  // for display_blob, blob_window, wordrec_blob_pause
 #include "wordrec.h" // for Wordrec
 
