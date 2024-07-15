@@ -33,6 +33,7 @@
 #include "tesseractclass.h"
 #include "tordmain.h"
 #include "werdit.h"
+#include "global_params.h"
 
 #include <cctype>
 #include <cmath>

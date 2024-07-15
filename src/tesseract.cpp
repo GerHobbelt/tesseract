@@ -39,6 +39,7 @@
 #include "tesseractclass.h" // for AnyTessLang
 #include <tesseract/tprintf.h> // for tprintf
 #include "tlog.h"
+#include "global_params.h"
 
 #ifdef _OPENMP
 #  include <omp.h>

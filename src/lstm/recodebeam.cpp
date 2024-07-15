@@ -24,6 +24,7 @@
 #include "networkio.h"
 #include "pageres.h"
 #include "unicharcompress.h"
+#include "global_params.h"
 
 #include <algorithm> // for std::reverse
 

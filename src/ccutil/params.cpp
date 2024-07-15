@@ -23,6 +23,7 @@
 #include "helpers.h"  // for chomp_string, mupdf imports, etc.: see also the header collision comment in there (MSVC-specific).
 #include "host.h"     // tesseract/export.h, windows.h for MAX_PATH
 #include "serialis.h" // for TFile
+#include "global_params.h"
 #include <tesseract/tprintf.h>
 
 #include <fmt/core.h>

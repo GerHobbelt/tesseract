@@ -45,6 +45,7 @@
 #endif
 #include "lstmrecognizer.h"
 #include "thresholder.h" // for ThresholdMethod
+#include "global_params.h"
 
 namespace tesseract {
 

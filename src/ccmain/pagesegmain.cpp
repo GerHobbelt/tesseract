@@ -46,6 +46,7 @@
 #include "textord.h"
 #include "tordmain.h"
 #include "wordseg.h"
+#include "global_params.h"
 
 namespace tesseract {
 

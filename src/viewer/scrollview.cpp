@@ -23,6 +23,7 @@
 #include "scrollview.h"
 #include "bbgrid.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include "svutil.h" // for SVNetwork
 

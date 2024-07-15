@@ -22,6 +22,7 @@
 #include "otsuthr.h"
 #include "thresholder.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 #include <tesseract/tprintf.h> // for tprintf
 
 #include <leptonica/allheaders.h>

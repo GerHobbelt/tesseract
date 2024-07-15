@@ -26,6 +26,7 @@
 #include <tesseract/params.h>
 #include "statistc.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include <leptonica/allheaders.h>
 

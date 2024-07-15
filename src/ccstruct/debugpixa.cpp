@@ -6,6 +6,7 @@
 #include "image.h"
 #include <tesseract/tprintf.h>
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include <leptonica/allheaders.h>
 

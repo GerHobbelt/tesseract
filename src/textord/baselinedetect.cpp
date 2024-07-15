@@ -33,6 +33,7 @@
 #include "textord.h"
 #include <tesseract/tprintf.h>
 #include "underlin.h"
+#include "global_params.h"
 
 namespace tesseract {
 

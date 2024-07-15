@@ -24,6 +24,7 @@
 #include "pageres.h"
 #include "scrollview.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 namespace tesseract {
 

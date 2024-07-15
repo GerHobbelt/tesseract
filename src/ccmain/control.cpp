@@ -44,6 +44,7 @@
 #include "tesseractclass.h"
 #include "tessvars.h"
 #include "werdit.h"
+#include "global_params.h"
 
 const char *const kBackUpConfigFile = "tempconfigdata.config";
 #if !DISABLED_LEGACY_ENGINE
