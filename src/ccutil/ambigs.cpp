@@ -81,7 +81,7 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
                                       int ambigs_debug_level, bool use_ambigs_for_adaption,
                                       UNICHARSET *unicharset) {
   UnicharIdVector *adaption_ambigs_entry;
-  if (ambigs_debug_level) {
+  if (ambigs_debug_level > 0) {
     tprintDebug("Reading ambiguities\n");
   }
 

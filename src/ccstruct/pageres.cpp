@@ -1575,7 +1575,7 @@ void PAGE_RES_IT::DeleteCurrentWord() {
         break;
       }
     }
-    // ASSERT_HOST(!w_it.cycled_list()); -- #4148 fix
+    // ASSERT_HOST(!w_it.cycled_list()); //-- #4148 fix
     delete w_it.extract();
   }
   // Remove the WERD_RES for the new_word.

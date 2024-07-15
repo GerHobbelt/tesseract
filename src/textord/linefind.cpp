@@ -26,7 +26,7 @@
 #include "linefind.h"
 #include "tabvector.h"
 #include "tesseractclass.h"
-
+#include "global_params.h"
 
 #include <algorithm>
 

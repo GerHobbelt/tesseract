@@ -46,6 +46,7 @@
 #include "textord.h"
 #include "tordmain.h"
 #include "wordseg.h"
+#include "global_params.h"
 
 namespace tesseract {
 
@@ -383,7 +384,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     // osd_orientation is the number of 90 degree rotations to make the
     // characters upright. (See tesseract/osdetect.h for precise definition.)
     // We want the text lines horizontal, (vertical text indicates vertical
-    // textlines) which may conflict (eg vertically written CJK).
+    // textlines) which may conflict (e.g. vertically written CJK).
     int osd_orientation = 0;
     bool vertical_text =
         textord_tabfind_force_vertical_text || pageseg_mode == PSM_SINGLE_BLOCK_VERT_TEXT;
@@ -432,15 +433,15 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         if (!cjk && !vertical_text && osd_orientation == 2) {
           // upside down latin text is improbable with such a weak margin.
           tprintInfo(
-              "OSD: Weak margin ({}), horiz textlines, not CJK: "
+              "OSD: Weak margin ({} < {}), horiz textlines, not CJK: "
               "Don't rotate.\n",
-              osd_margin);
+              osd_margin, min_orientation_margin.value());
           osd_orientation = 0;
         } else {
           tprintInfo(
-              "OSD: Weak margin ({}) for {} blob text block, "
+              "OSD: Weak margin ({} < {}) for {} blob text blocks, "
               "but using orientation anyway: {}\n",
-              osd_margin, osd_blobs.length(), osd_orientation);
+              osd_margin, min_orientation_margin.value(), osd_blobs.length(), osd_orientation);
         }
       }
     }

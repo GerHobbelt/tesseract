@@ -44,6 +44,7 @@
 #include "tesseractclass.h" // for AnyTessLang
 #include <tesseract/tprintf.h> // for tprintf
 #include "tlog.h"
+#include "global_params.h"
 #include "pathutils.h"
 #include "imagedata.h" // DocumentData
 
@@ -1139,6 +1140,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
     if (hlpcmds & LIST_LANGUAGES) {
       PrintLangsList(api);
+        api.End();
     }
 
     if (hlpcmds & PRINT_PARAMETERS) {

@@ -477,7 +477,7 @@ public:
   /**
    * Set the current page segmentation mode. Defaults to PSM_SINGLE_BLOCK.
    * The mode is stored as an IntParam so it can also be modified by
-   * ReadConfigFile or SetVariable("tessedit_pageseg_mode").
+   * ReadConfigFile() or SetVariable("tessedit_pageseg_mode").
    */
   void SetPageSegMode(PageSegMode mode);
 
@@ -1111,7 +1111,7 @@ protected:
   }
 
 protected:
-  mutable Tesseract *tesseract_;     ///< The underlying data object.
+  Tesseract *tesseract_;             ///< The underlying data object.
 #if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tesseract_;         ///< For orientation & script detection.
   EquationDetect *equ_detect_;       ///< The equation detector.

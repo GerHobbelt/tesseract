@@ -133,12 +133,15 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
   MarkAndDeleteNonTextBlobs(&blob_block->small_blobs, -1, win, Diagnostics::GOLDENROD, pix);
   MarkAndDeleteNonTextBlobs(&blob_block->blobs, -1, win, Diagnostics::AQUAMARINE, pix);
   if (debug) {
-    tesseract_->AddPixDebugPage(pix, "ComputeNonTextMask : nontext.junk.ComputeNonTextMask.photomask - a mask with the same resolution as the original in which '1'(=black) pixels represent likely non-text (photo, line drawing) areas of the page.");
-
 #if !GRAPHICS_DISABLED
     if (win) {
       win->UpdateWindow();
     }
+#endif // !GRAPHICS_DISABLED
+
+    tesseract_->AddPixDebugPage(pix, "ComputeNonTextMask : nontext.junk.ComputeNonTextMask.photomask - a mask with the same resolution as the original in which '1'(=black) pixels represent likely non-text (photo, line drawing) areas of the page.");
+
+#if !GRAPHICS_DISABLED
     if (win && win->HasInteractiveFeature()) {
       win->AwaitEvent(SVET_DESTROY);
       win = nullptr;

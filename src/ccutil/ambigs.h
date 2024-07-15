@@ -221,6 +221,7 @@ private:
                        UNICHARSET *unicharset);
 
   std::string debug_print_for_unicharset_stmt(const UNICHARSET &unicharset);
+
   void *last_unicharset_for_diagnostics_printed_{nullptr};
 
   UnicharAmbigsVector dang_ambigs_;
