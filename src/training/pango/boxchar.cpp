@@ -19,15 +19,13 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "boxchar.h"
 
 #include "../unicharset/fileio.h"
 #include "../unicharset/normstrngs.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset.h"
 
 #if defined(PANGO_ENABLE_ENGINE) && defined(HAS_LIBICU)

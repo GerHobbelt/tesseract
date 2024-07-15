@@ -22,7 +22,7 @@
 #ifndef TESSERACT_CLASSIFY_SHAPETABLE_H_
 #define TESSERACT_CLASSIFY_SHAPETABLE_H_
 
-#include "tprintf.h"         // for tprintf
+#include <tesseract/tprintf.h>         // for tprintf
 #include "bitvector.h"
 #include "fontinfo.h"
 #include "genericheap.h"
@@ -45,7 +45,7 @@ struct UnicharRating {
     tprintDebug(
         "Unichar-id={}, rating={}, adapted={}, config={}, misses={},"
         " {} fonts\n",
-        unichar_id, static_cast<double>(rating), adapted, config, feature_misses, fonts.size());
+        unichar_id, rating, adapted, config, feature_misses, fonts.size());
   }
 
   // Helper function to get the index of the first result with the required
@@ -240,6 +240,11 @@ public:
     }
   }
 
+  // warning C5267: definition of implicit assignment operator for 'tesseract::ShapeTable' is deprecated because it has a user-provided destructor
+  ShapeTable &operator=(const ShapeTable &source);
+  ShapeTable(const ShapeTable &source);
+  ShapeTable(ShapeTable &&source) noexcept;
+  
   // Writes to the given file. Returns false in case of error.
   bool Serialize(FILE *fp) const;
   // Reads from the given file. Returns false in case of error.
@@ -362,12 +367,12 @@ private:
                           std::vector<UnicharRating> *results) const;
 
   // Pointer to a provided unicharset used only by the Debugstr member.
-  const UNICHARSET *unicharset_;
+  const UNICHARSET *unicharset_ = nullptr;
   // Vector of pointers to the Shapes in this ShapeTable.
   std::vector<Shape *> shape_table_;
 
   // Cached data calculated on demand.
-  mutable int num_fonts_;
+  mutable int num_fonts_ = 0;
 };
 
 } // namespace tesseract.

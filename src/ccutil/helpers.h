@@ -72,6 +72,20 @@
 
 namespace tesseract {
 
+// Return `true` when string in NULL or empty.
+static inline bool strempty(const char *s) {
+  return s == nullptr || *s == 0;
+}
+
+// convert all path separators from native to '/'.
+static inline void unixify_path(std::string &s) {
+  std::string::size_type n = 0;
+  while ((n = s.find('\\', n)) != std::string::npos) {
+    s[n] = '/';
+    n++;
+  }
+}
+
 // Copy a std::string to a newly allocated char *.
 // TODO: Remove this function once the related code has been converted
 // to use std::string.

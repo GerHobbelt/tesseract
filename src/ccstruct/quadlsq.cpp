@@ -16,9 +16,11 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "quadlsq.h"
 
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cmath>
 #include <cstdio>

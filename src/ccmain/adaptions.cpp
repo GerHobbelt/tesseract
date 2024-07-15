@@ -17,6 +17,9 @@
  *
  **********************************************************************/
 
+// Include automatically generated configuration file if running autoconf.
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <cctype>
 #include <cstring>
 #include "control.h"
@@ -24,11 +27,6 @@
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 namespace tesseract {
 bool Tesseract::word_adaptable( // should we adapt?

@@ -20,15 +20,13 @@
 #ifndef TESSERACT_CCUTIL_AMBIGS_H_
 #define TESSERACT_CCUTIL_AMBIGS_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
 #  include <tesseract/unichar.h>
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 #  include "unicharset.h"
 
 #  define MAX_AMBIG_SIZE 10
@@ -166,7 +164,7 @@ public:
   void InitUnicharAmbigs(const UNICHARSET &unicharset, bool use_ambigs_for_adaption);
 
   // Loads the universal ambigs that are useful for any language.
-  void LoadUniversal(const UNICHARSET &encoder_set, UNICHARSET *unicharset);
+  void LoadUniversal(const UNICHARSET &encoder_set, int universal_ambigs_debug_level, UNICHARSET *unicharset);
 
   // Fills in two ambiguity tables (replaceable and dangerous) with information
   // read from the ambigs file. An ambiguity table is an array of lists.
@@ -180,7 +178,7 @@ public:
   // unichar ids that are ambiguous to it.
   // encoder_set is used to encode the ambiguity strings, undisturbed by new
   // unichar_ids that may be created by adding the ambigs.
-  void LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambigs_file, int debug_level,
+  void LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambigs_file, int ambigs_debug_level,
                          bool use_ambigs_for_adaption, UNICHARSET *unicharset);
 
   // Returns definite 1-1 ambigs for the given unichar id.
@@ -221,6 +219,9 @@ private:
                        UNICHAR_ID *test_unichar_ids, int replacement_ambig_part_size,
                        const char *replacement_string, int type, AmbigSpec *ambig_spec,
                        UNICHARSET *unicharset);
+
+  std::string debug_print_for_unicharset_stmt(const UNICHARSET &unicharset);
+  void *last_unicharset_for_diagnostics_printed_{nullptr};
 
   UnicharAmbigsVector dang_ambigs_;
   UnicharAmbigsVector replace_ambigs_;

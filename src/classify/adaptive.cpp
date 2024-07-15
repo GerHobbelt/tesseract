@@ -15,9 +15,7 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -170,7 +168,7 @@ void Classify::PrintAdaptedTemplates(FILE *File, ADAPT_TEMPLATES_STRUCT *Templat
     IClass = Templates->Templates->Class[i];
     AClass = Templates->Class[i];
     if (!IsEmptyAdaptedClass(AClass)) {
-      fprintf(File, "%5u  %s %3d %3d %3d %3zd\n", i, unicharset.id_to_unichar(i), IClass->NumConfigs,
+      fprintf(File, "%5u  %s %3d %3d %3d %3zd\n", i, unicharset_.id_to_unichar(i), IClass->NumConfigs,
               AClass->NumPermConfigs, IClass->NumProtos,
               IClass->NumProtos - AClass->TempProtos->size());
     }
@@ -353,7 +351,7 @@ void Classify::WriteAdaptedTemplates(FILE *File, ADAPT_TEMPLATES_STRUCT *Templat
   fwrite(Templates, sizeof(ADAPT_TEMPLATES_STRUCT), 1, File);
 
   /* then write out the basic integer templates */
-  WriteIntTemplates(File, Templates->Templates, unicharset);
+  WriteIntTemplates(File, Templates->Templates, unicharset_);
 
   /* then write out the adaptive info for each class */
   for (unsigned i = 0; i < (Templates->Templates)->NumClasses; i++) {

@@ -15,13 +15,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "weightmatrix.h"
 
 #include <cassert> // for assert
 #include "intsimdmatrix.h"
 #include "simddetect.h" // for DotProduct
 #include "statistc.h"
-#include "tprintf.h"    // forTFloat
+#include <tesseract/tprintf.h>    // forTFloat
 #include "tesstypes.h"
 
 namespace tesseract {

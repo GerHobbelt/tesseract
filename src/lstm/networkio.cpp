@@ -15,21 +15,25 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "networkio.h"
+
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
 #include <leptonica/allheaders.h>
+
 #include "functions.h"
 #include "statistc.h"
 #include "recodebeam.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
 #if 0
 // Minimum value to output for certainty.
-static const float kMinCertainty = -25.0f;
+static const float kMinCertainty = -20.0f;
 // Probability corresponding to kMinCertainty.
 static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
 #endif
@@ -585,7 +589,7 @@ void NetworkIO::EnsureBestLabel(int t, int label) {
 /* static */
 float NetworkIO::ProbToCertainty(float prob) {
 	// Probability corresponding to kMinCertainty.
-#if 0
+#if 01
 	static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
 	return prob > kMinProb ? std::log(prob) : RecodeBeamSearch::kMinCertainty;
 #else

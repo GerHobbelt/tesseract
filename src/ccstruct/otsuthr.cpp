@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "otsuthr.h"
 
 #include <leptonica/allheaders.h>

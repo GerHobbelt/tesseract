@@ -16,11 +16,13 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "detlinefit.h"
 #include "helpers.h"    // for IntCastRounded
 #include "statistc.h"
 #include "baselinedetect.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 #include <cfloat> // for FLT_MAX

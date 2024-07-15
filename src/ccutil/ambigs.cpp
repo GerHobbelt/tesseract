@@ -17,9 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -27,6 +25,7 @@
 
 #include "helpers.h"
 #include "universalambigs.h"
+#include "ccutil.h"
 
 #include <cstdio>
 
@@ -67,19 +66,22 @@ void UnicharAmbigs::InitUnicharAmbigs(const UNICHARSET &unicharset, bool use_amb
 }
 
 // Loads the universal ambigs that are useful for any language.
-void UnicharAmbigs::LoadUniversal(const UNICHARSET &encoder_set, UNICHARSET *unicharset) {
+void UnicharAmbigs::LoadUniversal(const UNICHARSET &encoder_set, int universal_ambigs_debug_level, UNICHARSET *unicharset) {
   TFile file;
   if (!file.Open(kUniversalAmbigsFile, ksizeofUniversalAmbigsFile)) {
     return;
   }
-  LoadUnicharAmbigs(encoder_set, &file, 0, false, unicharset);
+  if (universal_ambigs_debug_level) {
+    tprintDebug("Reading universal ambiguities:\n");
+  }
+  LoadUnicharAmbigs(encoder_set, &file, universal_ambigs_debug_level, false, unicharset);
 }
 
 void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambig_file,
-                                      int debug_level, bool use_ambigs_for_adaption,
+                                      int ambigs_debug_level, bool use_ambigs_for_adaption,
                                       UNICHARSET *unicharset) {
   UnicharIdVector *adaption_ambigs_entry;
-  if (debug_level) {
+  if (ambigs_debug_level) {
     tprintDebug("Reading ambiguities\n");
   }
 
@@ -105,11 +107,11 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   }
   while (ambig_file->FGets(buffer, kBufferSize) != nullptr) {
     chomp_string(buffer);
-    if (debug_level > 2) {
+    if (ambigs_debug_level > 2) {
       tprintDebug("read line {}\n", buffer);
     }
     ++line_num;
-    if (!ParseAmbiguityLine(line_num, version, debug_level, encoder_set, buffer,
+    if (!ParseAmbiguityLine(line_num, version, ambigs_debug_level, encoder_set, buffer,
                             &test_ambig_part_size, test_unichar_ids, &replacement_ambig_part_size,
                             replacement_string, &type)) {
       continue;
@@ -181,7 +183,7 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   }
 
   // Print what was read from the input file.
-  if (debug_level > 1) {
+  if (ambigs_debug_level > 1) {
     for (int tbl = 0; tbl < 2; ++tbl) {
       const UnicharAmbigsVector &print_table = (tbl == 0) ? replace_ambigs_ : dang_ambigs_;
       for (size_t i = 0; i < print_table.size(); ++i) {
@@ -223,18 +225,25 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   }
 }
 
-bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_level,
+std::string UnicharAmbigs::debug_print_for_unicharset_stmt(const UNICHARSET &unicharset) {
+  if (last_unicharset_for_diagnostics_printed_ != &unicharset)
+    return "";
+
+  return fmt::format(" for unicode set: {}", unicharset.debug_full_set_as_string());
+}
+
+bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int ambigs_debug_level,
                                        const UNICHARSET &unicharset, char *buffer,
                                        int *test_ambig_part_size, UNICHAR_ID *test_unichar_ids,
                                        int *replacement_ambig_part_size, char *replacement_string,
                                        int *type) {
+  std::string input(buffer);
   if (version > 1) {
     // Simpler format is just wrong-string correct-string type\n.
-    std::string input(buffer);
     std::vector<std::string> fields = split(input, ' ');
     if (fields.size() != 3) {
-      if (debug_level) {
-        tprintError("Illegal ambiguity specification on line {}\n", line_num);
+      if (ambigs_debug_level) {
+        tprintError("Illegal ambiguity specification on line {}: expected 3 fields but got {}; line: {}\n", line_num, fields.size(), UNICHARSET::debug_utf8_str(input));
       }
       return false;
     }
@@ -245,8 +254,8 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     }
     *test_ambig_part_size = unichars.size();
     if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
-      if (debug_level) {
-        tprintError("Too many unichars in ambiguity on line {}\n", line_num);
+      if (ambigs_debug_level) {
+        tprintError("Too many unichars in ambiguity on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
       }
       return false;
     }
@@ -261,14 +270,14 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     }
     *replacement_ambig_part_size = unichars.size();
     if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
-      if (debug_level) {
-        tprintError("Too many unichars in ambiguity on line {}\n", line_num);
+      if (ambigs_debug_level) {
+        tprintError("Too many unichars in ambiguity on line {}; line : {}\n", line_num, UNICHARSET::debug_utf8_str(input));
       }
       return false;
     }
     if (sscanf(fields[2].c_str(), "%d", type) != 1) {
-      if (debug_level) {
-        tprintError("Illegal ambiguity specification on line {}\n", line_num);
+      if (ambigs_debug_level) {
+        tprintError("Illegal ambiguity specification on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
       }
       return false;
     }
@@ -280,14 +289,14 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   char *token = strtok_r(buffer, kAmbigDelimiters, &next_token);
   if (!token || sscanf(token, "%d", test_ambig_part_size) != 1 ||
       *test_ambig_part_size <= 0) {
-    if (debug_level) {
-      tprintError("Illegal ambiguity specification on line {}\n", line_num);
+    if (ambigs_debug_level) {
+      tprintError("Illegal ambiguity specification on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
     }
     return false;
   }
   if (*test_ambig_part_size > MAX_AMBIG_SIZE) {
-    if (debug_level) {
-      tprintError("Too many unichars in ambiguity on line {}\n", line_num);
+    if (ambigs_debug_level) {
+      tprintError("Too many unichars in ambiguity on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
     }
     return false;
   }
@@ -296,8 +305,8 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
       break;
     }
     if (!unicharset.contains_unichar(token)) {
-      if (debug_level) {
-        tprintError("Illegal unichar {} in ambiguity specification\n", token);
+      if (ambigs_debug_level > 0) {
+        tprintError("Illegal unichar `{}` [{}] in ambiguity specification{}\n", token, UNICHARSET::debug_utf8_str(token), debug_print_for_unicharset_stmt(unicharset));
       }
       break;
     }
@@ -308,14 +317,14 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
   if (i != *test_ambig_part_size || !(token = strtok_r(nullptr, kAmbigDelimiters, &next_token)) ||
       sscanf(token, "%d", replacement_ambig_part_size) != 1 ||
       *replacement_ambig_part_size <= 0) {
-    if (debug_level) {
-      tprintError("Illegal ambiguity specification on line {}\n", line_num);
+    if (ambigs_debug_level > 0) {
+      tprintError("Illegal ambiguity specification on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
     }
     return false;
   }
   if (*replacement_ambig_part_size > MAX_AMBIG_SIZE) {
-    if (debug_level) {
-      tprintError("Too many unichars in ambiguity on line {}\n", line_num);
+    if (ambigs_debug_level) {
+      tprintError("Too many unichars in ambiguity on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
     }
     return false;
   }
@@ -326,15 +335,15 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     }
     strcat(replacement_string, token);
     if (!unicharset.contains_unichar(token)) {
-      if (debug_level) {
-        tprintError("Illegal unichar {} in ambiguity specification\n", token);
+      if (ambigs_debug_level) {
+        tprintError("Illegal unichar `{}` [{}] in ambiguity specification{}\n", token, UNICHARSET::debug_utf8_str(token), debug_print_for_unicharset_stmt(unicharset));
       }
       break;
     }
   }
   if (i != *replacement_ambig_part_size) {
-    if (debug_level) {
-      tprintError("Illegal ambiguity specification on line {}\n", line_num);
+    if (ambigs_debug_level) {
+      tprintError("Illegal ambiguity specification on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
     }
     return false;
   }
@@ -350,8 +359,8 @@ bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int debug_leve
     // has limited support for ngram unichar (e.g. dawg permuter).
     token = strtok_r(nullptr, kAmbigDelimiters, &next_token);
     if (!token || sscanf(token, "%d", type) != 1) {
-      if (debug_level) {
-        tprintError("Illegal ambiguity specification on line {}\n", line_num);
+      if (ambigs_debug_level) {
+        tprintError("Illegal ambiguity specification on line {}; line: {}\n", line_num, UNICHARSET::debug_utf8_str(input));
       }
       return false;
     }

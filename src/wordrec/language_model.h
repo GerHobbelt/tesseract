@@ -26,7 +26,7 @@
 #include "dict.h"           // for DawgArgs, Dict
 #include "lm_consistency.h" // for LMConsistencyInfo
 #include "lm_state.h"       // for ViterbiStateEntry, LanguageModelFlagsType
-#include "params.h"         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
+#include <tesseract/params.h>         // for DoubleParam, DOUBLE_VAR_H, IntParam, Boo...
 #include "params_model.h"   // for ParamsModel
 #include "ratngs.h"         // for BLOB_CHOICE (ptr only), BLOB_CHOICE_LIST...
 #include "stopper.h"        // for DANGERR
@@ -46,9 +46,8 @@ class UnicityTable;
 class LMPainPoints;
 struct FontInfo;
 
-// This class that contains the data structures and functions necessary
-// to represent and use the knowledge about the language.
-class LanguageModel {
+// The LanguageModel base class which carries all parameterizable settings.
+class LanguageModelSettings {
 public:
   // Masks for keeping track of top choices that should not be pruned out.
   static const LanguageModelFlagsType kSmallestRatingFlag = 0x1;
@@ -59,9 +58,46 @@ public:
 
   // Denominator for normalizing per-letter ngram cost when deriving
   // penalty adjustments.
-  static const float kMaxAvgNgramCost;
+  //static const float kMaxAvgNgramCost;                                 (obsoleted) (unused)
 
-  LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict *dict);
+  LanguageModelSettings() = delete;
+  LanguageModelSettings(CCUtil *owner);
+  ~LanguageModelSettings() = default;
+
+public:
+  // Parameters.
+  INT_VAR_H(language_model_debug_level);
+  BOOL_VAR_H(language_model_ngram_on);
+  INT_VAR_H(language_model_ngram_order);
+  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
+  INT_VAR_H(language_model_viterbi_list_max_size);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
+  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
+  BOOL_VAR_H(language_model_ngram_space_delimited_language);
+  INT_VAR_H(language_model_min_compound_length);
+  // Penalties used for adjusting path costs and final word rating.
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
+  INT_VAR_H(wordrec_display_segmentations);
+  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
+};
+
+// This class that contains the data structures and functions necessary
+// to represent and use the knowledge about the language.
+class LanguageModel : public LanguageModelSettings {
+public:
+  LanguageModel() = delete;
+  LanguageModel(CCUtil *owner, const UnicityTable<FontInfo> *fontinfo_table, Dict *dict);
   ~LanguageModel();
 
   // Fills the given floats array with features extracted from path represented
@@ -304,39 +340,13 @@ protected:
             (vse.ngram_info != nullptr && !vse.ngram_info->pruned));
   }
 
-public:
-  // Parameters.
-  INT_VAR_H(language_model_debug_level);
-  BOOL_VAR_H(language_model_ngram_on);
-  INT_VAR_H(language_model_ngram_order);
-  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
-  INT_VAR_H(language_model_viterbi_list_max_size);
-  DOUBLE_VAR_H(language_model_ngram_small_prob);
-  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
-  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-  DOUBLE_VAR_H(language_model_ngram_scale_factor);
-  DOUBLE_VAR_H(language_model_ngram_rating_factor);
-  BOOL_VAR_H(language_model_ngram_space_delimited_language);
-  INT_VAR_H(language_model_min_compound_length);
-  // Penalties used for adjusting path costs and final word rating.
-  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
-  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
-  DOUBLE_VAR_H(language_model_penalty_punc);
-  DOUBLE_VAR_H(language_model_penalty_case);
-  DOUBLE_VAR_H(language_model_penalty_script);
-  DOUBLE_VAR_H(language_model_penalty_chartype);
-  DOUBLE_VAR_H(language_model_penalty_font);
-  DOUBLE_VAR_H(language_model_penalty_spacing);
-  DOUBLE_VAR_H(language_model_penalty_increment);
-  INT_VAR_H(wordrec_display_segmentations);
-  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
-
 protected:
   // Member Variables.
 
   // Temporary DawgArgs struct that is re-used across different words to
   // avoid dynamic memory re-allocation (should be cleared before each use).
   DawgArgs dawg_args_;
+
   // Scaling for recovering blob outline length from rating and certainty.
   float rating_cert_scale_ = 0.0f;
 
@@ -381,8 +391,9 @@ protected:
   // ambiguous (i.e. there are best choices in the best choice list that have
   // ratings close to the very best one) and will be less likely to mis-adapt.
   bool acceptable_choice_found_ = false;
+
   // Set to true if a choice representing correct segmentation was explored.
-  bool correct_segmentation_explored_ = false;
+  //bool correct_segmentation_explored_ = false;                       (obsoleted, unused)
 
   // Params models containing weights for computing ViterbiStateEntry costs.
   ParamsModel params_model_;

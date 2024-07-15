@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // FileReader
 #include <cstdint>             
 #include <cstdlib>
@@ -78,12 +80,14 @@ namespace tesseract {
   }
 
   std::string ImageCostEstimate::to_string() const {
-    return std::move(ImageCostEstimate::capacity_to_string(cost));
+    // warning C5263: calling 'std::move' on a temporary object prevents copy elision
+    return ImageCostEstimate::capacity_to_string(cost);
   }
 
   // implicit conversion
   ImageCostEstimate:: operator std::string() const {
-    return std::move(to_string());
+    // warning C5263: calling 'std::move' on a temporary object prevents copy elision
+    return to_string();
   }
 
 } // namespace tesseract.

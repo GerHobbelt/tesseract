@@ -16,9 +16,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -54,6 +52,7 @@ void Tesseract::recog_word(WERD_RES *word) {
   ASSERT_HOST(!word->chopped_word->blobs.empty());
   recog_word_recursive(word);
   word->SetupBoxWord();
+  ASSERT_HOST(word->best_choice != nullptr);
   ASSERT_HOST(static_cast<unsigned>(word->best_choice->length()) == word->box_word->length());
   // Check that the ratings matrix size matches the sum of all the
   // segmentation states.
@@ -117,7 +116,7 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
     word->word->bounding_box().print();
   }
   if (word->best_choice->length() < word_length) {
-    UNICHAR_ID space_id = unicharset.unichar_to_id(" ");
+    UNICHAR_ID space_id = unicharset_.unichar_to_id(" ");
     while (word->best_choice->length() < word_length) {
       word->best_choice->append_unichar_id(space_id, 1, 0.0, word->best_choice->certainty());
     }

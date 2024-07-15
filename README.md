@@ -1,9 +1,13 @@
-# tesseract-ocr with --visible-pdf-image
+# tesseract-ocr with various patches and enhanced diagnostics output
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: (tested with leptonica 1.82.0)
+* leptonica: (tested with leptonica 1.83+: master branch)
+
+## Modifications / enhancements
+
+**TODO**
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that is used in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with this fork is to give us the best of both worlds. This is very useful for digitizing documents.
 
@@ -31,12 +35,12 @@ Here's the original feature request upstream: https://github.com/tesseract-ocr/t
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
 
 
-# tesseract-ocr with visible_pdf_image
+# tesseract-ocr
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+* leptonica: latest release / master branch.
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
 
@@ -144,11 +148,11 @@ Examples can be found in the [documentation](https://tesseract-ocr.github.io/tes
 ## Tips and Tricks
 
 1-	For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
-image with the word oriented in way that make the words horizontal. This help prevent out errors
-sometime. 
-2-	If running an image with just one line and it is not recognized, try running again, it should
+image with the word oriented in a way that makes the words horizontal. This helps prevent errors
+sometimes. 
+2-	If you are running an image with just one line and it is not recognized, try running again with different psm mode setting, it should
 output the right words.
-3- Do not run an image with no words on it as it will sometime stall the system.
+3- Do not run an image with no words on it as it will sometimes stall the system.
 
 ## For developers
 
@@ -196,7 +200,7 @@ uses a [BSD 2-clause license](http://leptonica.com/about-the-license.html).
 ## Dependencies
 
 Tesseract uses [Leptonica library](https://github.com/DanBloomberg/leptonica)
-for opening input images (e.g. not documents like pdf).
+for opening input images (hence not documents like pdf).
 It is suggested to use leptonica with built-in support for [zlib](https://zlib.net),
 [png](https://sourceforge.net/projects/libpng) and
 [tiff](http://www.simplesystems.org/libtiff) (for multipage tiff).

@@ -35,7 +35,7 @@
 #include "intfeaturespace.h"
 #include "intfx.h"
 #include "intmatcher.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "shapetable.h"
 #include "trainingsample.h"
 #include "trainingsampleset.h"
@@ -66,8 +66,7 @@ struct ShapeDist {
 // by outlier elimination, replication with perturbation, and serialization.
 class TESS_COMMON_TRAINING_API MasterTrainer {
 public:
-  MasterTrainer(NormalizationMode norm_mode, bool shape_analysis, bool replicate_samples,
-                int debug_level);
+  MasterTrainer(NormalizationMode norm_mode, bool shape_analysis, bool replicate_samples);
   ~MasterTrainer();
 
   // Writes to the given file. Returns false in case of error.
@@ -286,8 +285,6 @@ private:
   int *fragments_;
   // Classid of previous correctly segmented sample that was added.
   int prev_unichar_id_;
-  // Debug output control.
-  int debug_level_;
   // Feature map used to construct reduced feature spaces for compact
   // classifiers.
   IntFeatureMap feature_map_;

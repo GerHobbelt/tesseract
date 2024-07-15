@@ -89,7 +89,7 @@ private:
   void ComputeBoundingBox();
 
   TBOX bbox_;
-  unsigned length_;
+  unsigned length_ = 0;
   std::vector<TBOX> boxes_;
 };
 

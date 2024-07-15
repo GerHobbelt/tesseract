@@ -19,10 +19,15 @@
 #ifndef POLYAPRX_H
 #define POLYAPRX_H
 
+#include <tesseract/params.h>
+
 namespace tesseract {
 
 class C_OUTLINE;
 struct TESSLINE;
+
+extern BOOL_VAR_H(poly_debug);
+extern BOOL_VAR_H(poly_wide_objects_better);
 
 // convert a chain-coded input to the old OUTLINE approximation
 TESSLINE *ApproximateOutline(bool allow_detailed_fx, C_OUTLINE *c_outline);

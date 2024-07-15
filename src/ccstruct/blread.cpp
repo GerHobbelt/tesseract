@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blread.h"
 
 #include "ocrblock.h"  // for BLOCK_IT, BLOCK, BLOCK_LIST (ptr only)
@@ -121,9 +123,9 @@ bool write_unlv_file(   // print list of sides
         height = box.height();
 
         std::string s = fmt::format("{} {} {} {}\n", x, y, width, height);
-        auto len = s.length();
-        int l = fwrite(s.c_str(), 1, len, pdfp);
-        if (l != len) { 
+        auto wrlen = s.length();
+        int l = fwrite(s.c_str(), 1, wrlen, pdfp);
+        if (l != wrlen) { 
           tprintError("Write error while producing UZN file {}.\n", name);
           fclose(pdfp);
           return false; // didn't write one

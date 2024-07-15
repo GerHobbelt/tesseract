@@ -62,8 +62,17 @@ struct FontSpacingInfo {
  * serif, fraktur
  */
 struct FontInfo {
-  FontInfo() : name(nullptr), properties(0), universal_id(0), spacing_vec(nullptr) {}
-  ~FontInfo() = default;
+  FontInfo() = default;
+  ~FontInfo();
+
+protected:
+  void Clear();
+
+public:
+  FontInfo &operator=(const FontInfo &source);
+  FontInfo &operator=(FontInfo &&source) noexcept;
+  FontInfo(const FontInfo &source);
+  FontInfo(FontInfo &&source) noexcept;
 
   bool operator==(const FontInfo &rhs) const {
     return strcmp(name, rhs.name) == 0;
@@ -131,15 +140,15 @@ struct FontInfo {
     return (properties & 16) != 0;
   }
 
-  char *name;
-  uint32_t properties;
+  char *name = nullptr;
+  uint32_t properties = 0;
   // The universal_id is a field reserved for the initialization process
   // to assign a unique id number to all fonts loaded for the current
   // combination of languages. This id will then be returned by
   // ResultIterator::WordFontAttributes.
-  int32_t universal_id;
+  int32_t universal_id = 0;
   // Horizontal spacing between characters (indexed by UNICHAR_ID).
-  std::vector<FontSpacingInfo *> *spacing_vec;
+  std::vector<FontSpacingInfo *> *spacing_vec = nullptr;
 };
 
 // Every class (character) owns a FontSet that represents all the fonts that can
