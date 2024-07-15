@@ -214,7 +214,7 @@ void TessdataManager::Clear() {
 
 // Prints a directory of contents.
 void TessdataManager::Directory() const {
-  tprintInfo("Version:{}\n", VersionString().c_str());
+  tprintInfo("Version:{}\n", VersionString());
   auto offset = TESSDATA_NUM_ENTRIES * sizeof(int64_t);
   for (unsigned i = 0; i < TESSDATA_NUM_ENTRIES; ++i) {
     if (!entries_[i].empty()) {

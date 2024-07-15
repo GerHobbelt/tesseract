@@ -419,28 +419,26 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
   const int fontinfo_size = tesseract_->get_fontinfo_table().size();
   for (int font_index = 1; font_index < fontinfo_size; ++font_index) {
     FontInfo font = tesseract_->get_fontinfo_table().at(font_index);
-#ifdef HAVE_MUPDF
-	if (print_info)
-	{
-		tprintDebug("ID=%3d: {} is_italic={} is_bold={}"
-				" is_fixed_pitch={} is_serif={} is_fraktur={}\n",
-					font_index, font.name,
-					font.is_italic() ? "true" : "false",
-					font.is_bold() ? "true" : "false",
-					font.is_fixed_pitch() ? "true" : "false",
-					font.is_serif() ? "true" : "false",
-					font.is_fraktur() ? "true" : "false");
-		continue;
-	}
-#endif
-    fprintf(fp, "ID=%3d: %s is_italic=%s is_bold=%s"
-                " is_fixed_pitch=%s is_serif=%s is_fraktur=%s\n",
-                font_index, font.name,
-                font.is_italic() ? "true" : "false",
-                font.is_bold() ? "true" : "false",
-                font.is_fixed_pitch() ? "true" : "false",
-                font.is_serif() ? "true" : "false",
-                font.is_fraktur() ? "true" : "false");
+    if (print_info) {
+      tprintInfo(
+          "ID={}: {} is_italic={} is_bold={} is_fixed_pitch={} is_serif={} is_fraktur={}\n",
+          font_index, font.name,
+          font.is_italic(),
+          font.is_bold(),
+          font.is_fixed_pitch(),
+          font.is_serif(),
+          font.is_fraktur());
+    } else {
+      std::string msg = fmt::format(
+          "ID={}: {} is_italic={} is_bold={} is_fixed_pitch={} is_serif={} is_fraktur={}\n",
+          font_index, font.name,
+          font.is_italic(),
+          font.is_bold(),
+          font.is_fixed_pitch(),
+          font.is_serif(),
+          font.is_fraktur());
+      fputs(msg.c_str(), fp);
+    }
   }
 }
 

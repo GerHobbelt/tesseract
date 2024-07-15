@@ -23,7 +23,7 @@
 
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
-#include "scrollview.h" // for ScrollView, ScrollView::CYAN, ScrollView::NONE
+#include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
 #include <tesseract/tprintf.h>    // for tprintf
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
@@ -31,7 +31,7 @@
 
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
-#include <algorithm> // for max, min
+#include <algorithm>    // for max, min
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
 
@@ -570,7 +570,7 @@ bool DocumentData::ReCachePages() {
     set_total_pages(loaded_pages);
     set_memory_used(memory_used() + image_data->MemoryUsed());
 #if 0
-    tprintf("Loaded %zu/%d lines (%d-%zu) of document %s\n", pages_.size(),
+      tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
             loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
             document_name_.c_str());
 #endif

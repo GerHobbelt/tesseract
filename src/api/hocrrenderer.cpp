@@ -248,6 +248,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
           break;
         default:
           hocr_str << "ocr_line";
+      break;
       }
       hocr_str << "' id='"
                << "line_" << page_id << "_" << lcnt << "'";

@@ -68,9 +68,9 @@ static void error_action(TessErrorLogCode action) {
 void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   if (caller != nullptr) {
     // name of caller
-    tprintError("{}\n", fmt::format("{}:{}", caller, message).c_str());
+    tprintError("{}:{}\n", caller, message);
   } else {
-    tprintError("{}\n", fmt::format("{}", message).c_str());
+    tprintError("{}\n", message);
   }
   error_action(action);
 }

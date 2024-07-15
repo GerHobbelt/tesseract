@@ -25,16 +25,14 @@ namespace winutils {
 // with CharT(), which is allowed by the C++ standard.
 
 std::wstring Utf8ToUtf16(const char* utf8Str) {
-  const auto sizeWithNull = MultiByteToWideChar(
-    CP_UTF8, 0, utf8Str, -1, nullptr, 0);
+  const auto sizeWithNull = MultiByteToWideChar(CP_UTF8, 0, utf8Str, -1, nullptr, 0);
   if (sizeWithNull <= 0) {
     return {};
   }
 
   std::wstring result(sizeWithNull - 1, 0);
 
-  if (!MultiByteToWideChar(
-      CP_UTF8, 0, utf8Str, -1, &result[0], sizeWithNull)) {
+  if (!MultiByteToWideChar(CP_UTF8, 0, utf8Str, -1, &result[0], sizeWithNull)) {
     return {};
   }
 
@@ -42,17 +40,14 @@ std::wstring Utf8ToUtf16(const char* utf8Str) {
 }
 
 std::string Utf16ToUtf8(const wchar_t* utf16Str) {
-  const auto sizeWithNull = WideCharToMultiByte(
-    CP_UTF8, 0, utf16Str, -1, nullptr, 0, nullptr, nullptr);
+  const auto sizeWithNull = WideCharToMultiByte(CP_UTF8, 0, utf16Str, -1, nullptr, 0, nullptr, nullptr);
   if (sizeWithNull <= 0) {
     return {};
   }
 
   std::string result(sizeWithNull - 1, 0);
 
-  if (!WideCharToMultiByte(
-      CP_UTF8, 0, utf16Str, -1, &result[0], sizeWithNull,
-      nullptr, nullptr)) {
+  if (!WideCharToMultiByte(CP_UTF8, 0, utf16Str, -1, &result[0], sizeWithNull, nullptr, nullptr)) {
     return {};
   }
 

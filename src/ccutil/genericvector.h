@@ -140,7 +140,7 @@ public:
   // Delete objects pointed to by data_[i]
   void delete_data_pointers();
 
-  // This method clears the current object, then, does a shallow copy of
+  // This method clears the current object, then does a shallow copy of
   // its argument, and finally invalidates its argument.
   // Callbacks are moved to the current object;
   void move(GenericVector<T> *from);
@@ -156,6 +156,7 @@ public:
   bool read(TFile *f, const std::function<bool(TFile *, T *)> &cb);
   // Writes a vector of simple types to the given file. Assumes that bitwise
   // read/write of T will work. Returns false in case of error.
+  // 
   // TODO(rays) Change all callers to use TFile and remove deprecated methods.
   bool Serialize(FILE *fp) const;
   bool Serialize(TFile *fp) const;

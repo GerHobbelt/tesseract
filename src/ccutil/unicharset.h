@@ -279,6 +279,10 @@ public:
     return debug_str(unichar_to_id(unichar_repr));
   }
 
+  // Return a string containing the entire unichar set in human-readable
+  // form, for use in debug log/output.
+  std::string debug_full_set_as_string() const;
+
   // Adds a unichar representation to the set. If old_style is true, then
   // TATWEEL characters are kept and n-grams are allowed. Otherwise TATWEEL
   // characters are ignored/skipped as if they don't exist and n-grams that
@@ -393,7 +397,7 @@ public:
   // Opens the file indicated by filename and loads the UNICHARSET
   // from the given file. The previous data is lost.
   // Returns true if the operation is successful.
-  bool load_from_file(const char *const filename, bool skip_fragments) {
+  bool load_from_file(const char *const filename, bool skip_fragments = false) {
     FILE *file = fopen(filename, "rb");
     if (file == nullptr) {
       return false;
@@ -402,18 +406,11 @@ public:
     fclose(file);
     return result;
   }
-  // returns true if the operation is successful.
-  bool load_from_file(const char *const filename) {
-    return load_from_file(filename, false);
-  }
 
   // Loads the UNICHARSET from the given file. The previous data is lost.
   // Returns true if the operation is successful.
-  bool load_from_file(FILE *file, bool skip_fragments);
-  bool load_from_file(FILE *file) {
-    return load_from_file(file, false);
-  }
-  bool load_from_file(tesseract::TFile *file, bool skip_fragments);
+  bool load_from_file(FILE *file, bool skip_fragments = false);
+  bool load_from_file(tesseract::TFile *file, bool skip_fragments = false);
 
   // Sets up internal data after loading the file, based on the char
   // properties. Called from load_from_file, but also needs to be run

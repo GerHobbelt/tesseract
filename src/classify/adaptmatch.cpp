@@ -464,18 +464,14 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
  * - #classify_enable_adaptive_matcher true if adaptive matcher is enabled
  */
 void Classify::EndAdaptiveClassifier() {
-  std::string Filename;
-  FILE *File;
-
-  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher &&
-      classify_save_adapted_templates) {
-    Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
-    File = fopen(Filename.c_str(), "wb");
+  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
+    std::string Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
+    FILE *File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
       tprintError("Unable to save adapted templates to file {}!\n", Filename);
     } else {
       tprintDebug("\nSaving adapted templates to file {} ...", Filename);
-      fflush(stdout);
+      //fflush(stdout);
       WriteAdaptedTemplates(File, AdaptedTemplates);
       tprintDebug("\n");
       fclose(File);
@@ -530,6 +526,9 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
   if (!classify_enable_adaptive_matcher) {
     return;
   }
+
+  // TODO: make sure we don't initialize this one twice or more as the Tesseract instantiation order has subtly changed, depending on which APIs the userland code invokes first. [GHo]
+
   if (AllProtosOn != nullptr) {
     EndAdaptiveClassifier(); // Don't leak with multiple inits.
   }
@@ -646,12 +645,12 @@ void Classify::StartBackupAdaptiveClassifier() {
  * - #EnableLearning
  * set to true by this routine
  */
-void Classify::SettupPass1() {
+void Classify::SetupPass1() {
   EnableLearning = classify_enable_learning;
   UseLearning = false;
   getDict().SettupStopperPass1();
 
-} /* SettupPass1 */
+} /* SetupPass1 */
 
 /*---------------------------------------------------------------------------*/
 /**
@@ -662,12 +661,12 @@ void Classify::SettupPass1() {
  * Globals:
  * - #EnableLearning set to false by this routine
  */
-void Classify::SettupPass2() {
+void Classify::SetupPass2() {
   EnableLearning = false;
   UseLearning = true;
   getDict().SettupStopperPass2();
 
-} /* SettupPass2 */
+} /* SetupPass2 */
 
 /*---------------------------------------------------------------------------*/
 /**
@@ -1090,7 +1089,7 @@ void Classify::MasterMatcher(INT_TEMPLATES_STRUCT *templates, int16_t num_featur
     int_result.unichar_id = class_id;
     im_.Match(ClassForClassId(templates, class_id), protos, configs, num_features, features,
               &int_result, classify_adapt_feature_threshold, debug, matcher_debug_separate_windows);
-    bool is_debug = matcher_debug_level >= 2 || classify_debug_level > 1;
+    bool is_debug = (matcher_debug_level >= 2 || classify_debug_level > 1);
     ExpandShapesAndApplyCorrections(classes, is_debug, class_id, bottom, top, result.Rating,
                                     final_results->BlobLength, matcher_multiplier, norm_factors,
                                     &int_result, final_results);
