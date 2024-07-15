@@ -360,7 +360,7 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
       UNICHAR ch(str + i, step);
       snprintf(hex, sizeof(hex), "%02x ", ch.first_uni());
     }
-	  hex[sizeof(hex) - 1] = 0;
+    hex[sizeof(hex) - 1] = 0;
     result += hex;
   }
   if (i > 0) {
