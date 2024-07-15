@@ -50,7 +50,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_shape_clustering_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
@@ -82,10 +82,14 @@ extern "C" int tesseract_shape_clustering_main(int argc, const char** argv)
 
 #else
 
-TESS_API int tesseract_shape_clustering_main(int argc, const char** argv)
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** argv)
+#endif
 {
-	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
-	return 1;
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+	return EXIT_FAILURE;
 }
 
 #endif

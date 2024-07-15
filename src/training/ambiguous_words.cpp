@@ -42,6 +42,7 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   // Parse input arguments.
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
@@ -96,10 +97,14 @@ extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** ar
 
 #else
 
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
 extern "C" TESS_API int tesseract_ambiguous_words_main(int argc, const char** argv)
+#endif
 {
-	tesseract::tprintError("the {} tool is not supported in this build.\n", argv[0]);
-    return EXIT_FAILURE;
+	tesseract::tprintError("the {} tool is not supported in this build.\n", fz_basename(argv[0]));
+  return EXIT_FAILURE;
 }
 
 #endif

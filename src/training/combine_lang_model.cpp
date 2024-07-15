@@ -48,7 +48,7 @@ BOOL_VAR(model_pass_through_recoder, false,
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char** argv)
 #endif
 {
   // Sets properties on the input unicharset file, and writes:
@@ -60,6 +60,8 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
   // The output unicharset and charset_size files are just for
   // human readability.
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
+
   int rv = tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
   if (rv >= 0)
 	  return rv;
@@ -96,7 +98,7 @@ extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_combine_lang_model_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr,

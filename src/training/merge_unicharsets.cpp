@@ -30,6 +30,7 @@ extern "C" int main(int argc, const char** argv)
 extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
 #endif
 {
+  const char* appname = fz_basename(argv[0]);
   CheckSharedLibraryVersion();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
@@ -40,7 +41,7 @@ extern "C" int tesseract_merge_unicharsets_main(int argc, const char** argv)
     tprintInfo(
         "Usage: {} -v | --version |\n"
         "       {} unicharset-in-1 ... unicharset-in-n unicharset-out\n",
-        argv[0], argv[0]);
+        appname, appname);
     return EXIT_FAILURE;
   }
 

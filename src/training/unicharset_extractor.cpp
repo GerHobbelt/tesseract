@@ -110,10 +110,12 @@ static int Main(int argc, const char** argv) {
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
+
   if (argc > 1) {
     tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
   }
@@ -137,7 +139,7 @@ extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_unicharset_extractor_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "unicharset_extractor tool not supported in this non-ICU / Unicode build.\n");

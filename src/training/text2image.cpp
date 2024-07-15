@@ -561,7 +561,7 @@ static int Main() {
     render.set_gravity_hint_strong(true);
     render.set_render_fullwidth_latin(true);
   } else {
-    tprintError("Invalid writing mode: {}\n", writing_mode);
+    tprintError("Invalid writing mode: {}\n", writing_mode.c_str());
     return EXIT_FAILURE;
   }
 
@@ -799,6 +799,8 @@ extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
         backend);
   }
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
+
   if (argc > 1) {
     if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
       FontUtils::PangoFontTypeInfo();

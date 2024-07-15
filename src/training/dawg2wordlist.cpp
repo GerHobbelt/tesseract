@@ -77,6 +77,7 @@ extern "C" int tesseract_dawg2wordlist_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
     tprintDebug("{}\n", tesseract::TessBaseAPI::Version());

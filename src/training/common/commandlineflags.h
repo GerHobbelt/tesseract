@@ -88,6 +88,9 @@ extern DOUBLE_VAR_H(clusterconfig_confidence);
 TESS_COMMON_TRAINING_API
 int ParseCommandLineFlags(const char *usage, int *argc, const char ***argv, const bool remove_flags);
 
+TESS_COMMON_TRAINING_API
+bool SetConsoleModeToUTF8(void);
+
 } // namespace tesseract
 
 #endif // TESSERACT_TRAINING_COMMANDLINEFLAGS_H_
