@@ -995,48 +995,6 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 }
 
 /**
- * Function added by Tesseract.js.
- * Saves a .png image of the type specified by `type` to "/image.png"
- * ONLY available after SetImage if you have Leptonica installed.
- */
-void TessBaseAPI::WriteImage(const int type) {
-  if (tesseract_ == nullptr || thresholder_ == nullptr) {
-    return;
-  }
-
-  Tesseract& tess = tesseract();
-  if (type == 0) {
-    if (tess.pix_original() == nullptr) {
-      return;
-    }
-    Pix *p1 = tess.pix_original();
-    pixWrite("/image.png", p1, IFF_PNG);
-
-  } else if (type == 1) {
-    if (tess.pix_grey() == nullptr && !Threshold(static_cast<Pix **>(tess.pix_binary()))) {
-      return;
-    }
-    // When the user uploads a black and white image, there will be no pix_grey.
-    // Therefore, we return pix_binary instead in this case. 
-    if (tess.pix_grey() == nullptr) {
-      Pix *p1 = tess.pix_binary();
-      pixWrite("/image.png", p1, IFF_PNG);
-    } else {
-      Pix *p1 = tess.pix_grey();
-      pixWrite("/image.png", p1, IFF_PNG);
-    }
-  } else if (type == 2) {
-    if (tess.pix_binary() == nullptr && !Threshold(static_cast<Pix**>(tess.pix_binary()))) {
-      return;
-    }
-    Pix *p1 = tess.pix_binary();
-    pixWrite("/image.png", p1, IFF_PNG);
-  }
-
-  return;
-}
-
-/**
  * Get the result of page layout analysis as a leptonica-style
  * Boxa, Pixa pair, in reading order.
  * Can be called before or after Recognize.

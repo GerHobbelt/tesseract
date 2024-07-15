@@ -579,14 +579,6 @@ public:
   Pix *GetThresholdedImage();
 
   /**
-   * Saves a .png image of the type specified by `type` to the file `filename`.
-   *
-   * Type 0 is the original image, type 1 is the greyscale (derivative) image
-   * and type 2 is the binary (thresholded) derivative image.
-   */
-  void WriteImage(const int type);
-
-  /**
    * Return average gradient of lines on page.
    */
   float GetGradient();
