@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <cstring>
 
 #include "params_training_featdef.h"

@@ -25,9 +25,7 @@
 #ifndef TESSERACT_CCMAIN_TESSERACTCLASS_H_
 #define TESSERACT_CCMAIN_TESSERACTCLASS_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "control.h"               // for ACCEPTABLE_WERD_TYPE
 #include "debugpixa.h"             // for DebugPixa
@@ -37,7 +35,7 @@
 #endif
 #include "genericvector.h"   // for PointerVector
 #include "pageres.h"         // for WERD_RES (ptr only), PAGE_RES (pt...
-#include "params.h"          // for BOOL_VAR_H, BoolParam, DoubleParam
+#include <tesseract/params.h>          // for BOOL_VAR_H, BoolParam, DoubleParam
 #include "points.h"          // for FCOORD
 #include "ratngs.h"          // for ScriptPos, WERD_CHOICE (ptr only)
 #include "tessdatamanager.h" // for TessdataManager
@@ -200,7 +198,7 @@ public:
   virtual ~Tesseract() override;
 
   // Return appropriate dictionary
-  Dict &getDict() override;
+  virtual Dict &getDict() override;
 
   // Clear as much used memory as possible without resetting the adaptive
   // classifier or losing any other classifier data.
@@ -209,6 +207,33 @@ public:
   void ResetAdaptiveClassifier();
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
+
+  /**
+   * Clear and free up everything inside, returning the instance to a state
+   * equivalent to having just being freshly constructed, with one important
+   * distinction:
+   *
+   * - WipeSqueakyCleanForReUse() will *not* destroy any diagnostics/trace data
+   *   cached in the running instance: the goal is to thus be able to produce
+   *   diagnostics reports which span multiple rounds of OCR activity, executed
+   *   in the single lifespan of the Tesseract instance.
+   *
+   * Once WipeSqueakyCleanForReUse() has been used, proceed just as when a
+   * Tesseract instance has been constructed just now: the same restrictions and
+   * conditions exist, once again.
+   */
+  void WipeSqueakyCleanForReUse(bool invoked_by_destructor = false);
+
+  /**
+   * Returns `true` when the current Tesseract instance has been initialized with 
+   * language-specific data, which must be wiped if we want to re-use this instance
+   * for an independent subsequent run.
+   * 
+   * Companion function of WipeSqueakyCleanForReUse(): together these allow u
+   * keep a long-running Tesseract active and collect diagnostics spanning multiple
+   * OCR sessions executed within the lifetime of the Tesseract instance.
+   */
+  bool RequiresWipeBeforeIndependentReUse() const;
 
   void ResyncVariablesInternally();
 
@@ -249,7 +274,7 @@ public:
 
 #if !GRAPHICS_DISABLED
   bool SupportsInteractiveScrollView() const {
-    return (interactive_display_mode && !debug_do_not_use_scrollview_app);
+    return interactive_display_mode;
   }
 #else
   constexpr bool SupportsInteractiveScrollView() const {
@@ -525,7 +550,46 @@ public:
   int16_t count_alphanums(const WERD_CHOICE &word);
   int16_t count_alphas(const WERD_CHOICE &word);
 
+  // Read a configuration file carrying a set of tesseract parameters.
+  // Any parameter (listed in the config file) which has not been set yet, will
+  // be set, while already set-up parameters are silently skipped.
+  // Thus we can establish an easy order of precendence, where
+  // first-come-first-serve i.e. the first occurrence of a parameter
+  // determines its value.
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
   void read_config_file(const char *filename);
+
+  // Set each to the specified parameters to the given value, iff the parameter
+  // has not been set yet.
+  // Invoking this call before invoking read_config_file() will override
+  // the setting in the config file for each of the listed variables.
+  //
+  // Return false when unknown parameters are listed in the vector;
+  // otherwise return true (already set parameters will have been skipped
+  // silently).
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
+  bool InitParameters(const std::vector<std::string> &vars_vec,
+                       const std::vector<std::string> &vars_values);
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values will not be altered by this call; use this
+  // method if you want to keep the currently active parameter values as a kind
+  // of 'good initial setup' for any subsequent teseract action.
+  void ReadyParametersForReinitialization();
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values are reset to their factory defaults by this call.
+  void ResetParametersToFactoryDefault();
 
   // Initialize for potentially a set of languages defined by the language
   // string and recursively any additional languages required by any language
@@ -533,13 +597,11 @@ public:
   // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem, 
-				     const std::vector<std::string> &configs,
-				     const std::vector<std::string> &vars_vec,
-				     const std::vector<std::string> &vars_values,
-                     bool set_only_non_debug_params,
+                     const std::vector<std::string> &configs,
                      TessdataManager *mgr);
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr);
   int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
+  int init_tesseract(const std::string &datapath, TessdataManager *mgr);
 
   // Common initialization for a single language.
   // 
@@ -561,15 +623,10 @@ public:
   // 
   // vars_values is an optional corresponding vector of values for the variables
   // in vars_vec.
-  // 
-  // If set_only_non_debug_params is true, only params that do not contain
-  // "debug" in the name will be set.
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
                               const std::string &language, OcrEngineMode oem, 
-						      const std::vector<std::string> &configs,
-						      const std::vector<std::string> &vars_vec,
-						      const std::vector<std::string> &vars_values,
-                              bool set_only_non_debug_params, TessdataManager *mgr);
+						                  const std::vector<std::string> &configs,
+                              TessdataManager *mgr);
 
 #if !DISABLED_LEGACY_ENGINE
   // Set the universal_id member of each font to be unique among all
@@ -582,10 +639,8 @@ public:
 
   bool init_tesseract_lang_data(const std::string &arg0,
                                 const std::string &language, OcrEngineMode oem, 
-							    const std::vector<std::string> &configs,
-							    const std::vector<std::string> &vars_vec,
-							    const std::vector<std::string> &vars_values,
-                                bool set_only_non_debug_params, TessdataManager *mgr);
+							                  const std::vector<std::string> &configs,
+                                TessdataManager *mgr);
 
   void ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,
                            std::vector<std::string> *not_to_load);
@@ -807,6 +862,13 @@ public:
   float ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_shift);
   //// Data members ///////////////////////////////////////////////////////
   // TODO(ocr-team): Find and remove obsolete parameters.
+  STRING_VAR_H(raw_input_image_path);
+  STRING_VAR_H(segmentation_mask_input_image_path);
+  STRING_VAR_H(visible_output_source_image_path);
+  STRING_VAR_H(debug_output_base_path);
+  STRING_VAR_H(debug_output_modes);
+  STRING_VAR_H(output_base_path);
+  STRING_VAR_H(output_base_filename);
   BOOL_VAR_H(tessedit_resegment_from_boxes);
   BOOL_VAR_H(tessedit_resegment_from_line_boxes);
   BOOL_VAR_H(tessedit_train_from_boxes);
@@ -817,7 +879,6 @@ public:
   INT_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(preprocess_graynorm_mode);
   INT_VAR_H(thresholding_method);
-  BOOL_VAR_H(showcase_threshold_methods);
   BOOL_VAR_H(thresholding_debug);
   DOUBLE_VAR_H(thresholding_window_size);
   DOUBLE_VAR_H(thresholding_kfactor);
@@ -1003,6 +1064,8 @@ public:
   STRING_VAR_H(file_type);
   BOOL_VAR_H(tessedit_override_permuter);
   STRING_VAR_H(tessedit_load_sublangs);
+  STRING_VAR_H(languages_to_try);
+  STRING_VAR_H(reactangles_to_process);
 #if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(tessedit_use_primary_params_model);
 #endif
@@ -1038,10 +1101,11 @@ public:
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
-  BOOL_VAR_H(debug_do_not_use_scrollview_app);
   BOOL_VAR_H(debug_display_page);
   BOOL_VAR_H(debug_display_page_blocks);
   BOOL_VAR_H(debug_display_page_baselines);
+  BOOL_VAR_H(dump_segmented_word_images);
+  BOOL_VAR_H(dump_osdetect_process_images);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
@@ -1051,22 +1115,17 @@ public:
 
   // debug PDF output helper methods:
   void AddPixDebugPage(const Image &pix, const char *title);
-  void AddPixDebugPage(const Image &pix, const std::string& title) {
-    AddPixDebugPage(pix, title.c_str());
-  }
+  void AddPixDebugPage(const Image &pix, const std::string &title);
 
-  void AddClippedPixDebugPage(const Image &pix, const TBOX& bbox, const char *title);
-  void AddClippedPixDebugPage(const Image& pix, const TBOX& bbox, const std::string& title) {
-    AddClippedPixDebugPage(pix, bbox, title.c_str());
-  }
-  void AddClippedPixDebugPage(const Image &pix, const char *title);
-  void AddClippedPixDebugPage(const Image &pix, const std::string &title) {
-    AddClippedPixDebugPage(pix, title.c_str());
-  }
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX& bbox, const char *title);
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const TBOX &bbox, const std::string &title);
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const char *title);
+  void AddPixCompedOverOrigDebugPage(const Image &pix, const std::string &title);
 
-  int PushNextPixDebugSection(const std::string &title);
-  int PushSubordinatePixDebugSection(const std::string &title);
-  void PopPixDebugSection(int handle = -1);
+  int PushNextPixDebugSection(const std::string &title); // sibling
+  int PushSubordinatePixDebugSection(const std::string &title); // child
+  void PopPixDebugSection(int handle = -1); // pop active; return focus to parent
+  int GetPixDebugSectionLevel() const;
 
 public:
   // Find connected components in the page and process a subset until finished or
@@ -1189,6 +1248,8 @@ private:
   LSTMRecognizer *lstm_recognizer_;
   // Output "page" number (actually line number) using TrainLineRecognizer.
   int train_line_page_num_;
+  /// internal use to help the (re)initialization process after a previous run.
+  bool instance_has_been_initialized_; 
 };
 
 } // namespace tesseract

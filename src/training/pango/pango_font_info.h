@@ -592,7 +592,7 @@ public:
 
   // If not already initialized, initializes FontConfig by setting its
   // environment variable and creating a fonts.conf file that points to the
-  // FLAGS_fonts_dir and the cache to FLAGS_fontconfig_tmpdir.
+  // trainer_fonts_dir and the cache to trainer_fontconfig_tmpdir.
   static void SoftInitFontConfig();
   // Re-initializes font config, whether or not already initialized.
   // If already initialized, any existing cache is deleted, just to be sure.
@@ -708,6 +708,7 @@ public:
 private:
   static std::vector<std::string> available_fonts_; // cache list
 };
+
 } // namespace tesseract
 
 #endif

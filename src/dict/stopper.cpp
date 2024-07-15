@@ -15,9 +15,7 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cctype>
 #include <cmath>
@@ -34,7 +32,7 @@
 #include "helpers.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 /*----------------------------------------------------------------------------
@@ -58,6 +56,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
 
   bool no_dang_ambigs = !best_choice.dangerous_ambig_found();
   bool is_valid_word = valid_word_permuter(best_choice.permuter(), false);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   bool is_case_ok = case_ok(best_choice);
 
   if (stopper_debug_level >= 1) {
@@ -227,11 +226,12 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
         wrong_ngram[wrong_ngram_index + 1] = INVALID_UNICHAR_ID;
         int compare = UnicharIdArrayUtils::compare(wrong_ngram, ambig_spec->wrong_ngram);
         if (stopper_debug_level > 2) {
+          TPrintGroupLinesTillEndOfScope push;
           tprintDebug("Candidate ngram: ");
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintDebug("Current ngram from spec: ");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, getUnicharset());
-          tprintDebug("Comparison result: {}\n", compare);
+          tprintDebug("Ambiguity comparison result: {}{}\n", compare, (compare == 0 ? " (we found an ambiguity)" : ""));
         }
         if (compare == 0) {
           // Record the place where we found an ambiguity.

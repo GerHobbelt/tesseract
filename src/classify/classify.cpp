@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "classify.h"
 
 #if DISABLED_LEGACY_ENGINE
@@ -25,16 +27,16 @@
 namespace tesseract {
 
 Classify::Classify()
-    : INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
-    , INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", this->params())
+    : INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", params())
+    , INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", params())
 
-    , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", this->params())
+    , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].", params())
 
     , DOUBLE_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
-                  this->params())
+                  params())
 
     , DOUBLE_MEMBER(classify_max_certainty_margin, 5.5,
-                  "Veto difference between classifier certainties", this->params())
+                  "Veto difference between classifier certainties", params())
 
     , dict_(this) {}
 
@@ -55,88 +57,88 @@ Classify::~Classify() {}
 
 namespace tesseract {
 Classify::Classify()
-    : BOOL_MEMBER(allow_blob_division, true, "Use divisible blobs chopping", this->params())
+    : BOOL_MEMBER(allow_blob_division, true, "Use divisible blobs chopping", params())
     , BOOL_MEMBER(prioritize_division, false, "Prioritize blob division over chopping",
-                  this->params())
-    , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", this->params())
-    , INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", this->params())
-	, INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", this->params())
-	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", this->params())
+                  params())
+    , BOOL_MEMBER(classify_enable_learning, true, "Enable adaptive classifier", params())
+    , INT_MEMBER(classify_debug_level, 0, "Classify debug level (0..3)", params())
+	, INT_MEMBER(tess_debug_lstm, 0, "Debug LSTM internals (0..2)", params())
+	, INT_MEMBER(classify_norm_method, character, "Normalization Method   ...", params())
     , DOUBLE_MEMBER(classify_char_norm_range, 0.2, "Character Normalization Range ...",
-                    this->params())
+                    params())
     , DOUBLE_MEMBER(classify_max_rating_ratio, 1.5, "Veto ratio between classifier ratings",
-                    this->params())
+                    params())
     , DOUBLE_MEMBER(classify_max_certainty_margin, 5.5,
-                    "Veto difference between classifier certainties", this->params())
-    , BOOL_MEMBER(tess_cn_matching, 0, "Character Normalized Matching", this->params())
-    , BOOL_MEMBER(tess_bn_matching, 0, "Baseline Normalized Matching", this->params())
-    , BOOL_MEMBER(classify_enable_adaptive_matcher, 1, "Enable adaptive classifier", this->params())
+                    "Veto difference between classifier certainties", params())
+    , BOOL_MEMBER(tess_cn_matching, 0, "Character Normalized Matching", params())
+    , BOOL_MEMBER(tess_bn_matching, 0, "Baseline Normalized Matching", params())
+    , BOOL_MEMBER(classify_enable_adaptive_matcher, 1, "Enable adaptive classifier", params())
     , BOOL_MEMBER(classify_use_pre_adapted_templates, 0, "Use pre-adapted classifier templates",
-                  this->params())
+                  params())
     , BOOL_MEMBER(classify_save_adapted_templates, 0, "Save adapted templates to a file",
-                  this->params())
-    , BOOL_MEMBER(classify_enable_adaptive_debugger, 0, "Enable match debugger", this->params())
+                  params())
+    , BOOL_MEMBER(classify_enable_adaptive_debugger, 0, "Enable match debugger", params())
     , BOOL_MEMBER(classify_nonlinear_norm, 0, "Non-linear stroke-density normalization",
-                  this->params())
-    , INT_MEMBER(matcher_debug_level, 0, "Matcher Debug Level (0..3)", this->params())
-    , INT_MEMBER(matcher_debug_flags, 0, "Matcher Debug Flags", this->params())
-    , INT_MEMBER(classify_learning_debug_level, 0, "Learning Debug Level (0..4)", this->params())
-    , DOUBLE_MEMBER(matcher_good_threshold, 0.125, "Good Match (0-1)", this->params())
-    , DOUBLE_MEMBER(matcher_reliable_adaptive_result, 0.0, "Great Match (0-1)", this->params())
-    , DOUBLE_MEMBER(matcher_perfect_threshold, 0.02, "Perfect Match (0-1)", this->params())
-    , DOUBLE_MEMBER(matcher_bad_match_pad, 0.15, "Bad Match Pad (0-1)", this->params())
-    , DOUBLE_MEMBER(matcher_rating_margin, 0.1, "New template margin (0-1)", this->params())
-    , DOUBLE_MEMBER(matcher_avg_noise_size, 12.0, "Avg. noise blob length", this->params())
-    , INT_MEMBER(matcher_permanent_classes_min, 1, "Min # of permanent classes", this->params())
+                  params())
+    , INT_MEMBER(matcher_debug_level, 0, "Matcher Debug Level (0..3)", params())
+    , INT_MEMBER(matcher_debug_flags, 0, "Matcher Debug Flags", params())
+    , INT_MEMBER(classify_learning_debug_level, 0, "Learning Debug Level (0..4)", params())
+    , DOUBLE_MEMBER(matcher_good_threshold, 0.125, "Good Match (0-1)", params())
+    , DOUBLE_MEMBER(matcher_reliable_adaptive_result, 0.0, "Great Match (0-1)", params())
+    , DOUBLE_MEMBER(matcher_perfect_threshold, 0.02, "Perfect Match (0-1)", params())
+    , DOUBLE_MEMBER(matcher_bad_match_pad, 0.15, "Bad Match Pad (0-1)", params())
+    , DOUBLE_MEMBER(matcher_rating_margin, 0.1, "New template margin (0-1)", params())
+    , DOUBLE_MEMBER(matcher_avg_noise_size, 12.0, "Avg. noise blob length", params())
+    , INT_MEMBER(matcher_permanent_classes_min, 1, "Min # of permanent classes", params())
     , INT_MEMBER(matcher_min_examples_for_prototyping, 3, "Reliable Config Threshold",
-                 this->params())
+                 params())
     , INT_MEMBER(matcher_sufficient_examples_for_prototyping, 5,
-                 "Enable adaption even if the ambiguities have not been seen", this->params())
+                 "Enable adaption even if the ambiguities have not been seen", params())
     , DOUBLE_MEMBER(matcher_clustering_max_angle_delta, 0.015,
-                    "Maximum angle delta for prototype clustering", this->params())
+                    "Maximum angle delta for prototype clustering", params())
     , DOUBLE_MEMBER(classify_misfit_junk_penalty, 0.0,
                     "Penalty to apply when a non-alnum is vertically out of "
                     "its expected textline position",
-                    this->params())
-    , DOUBLE_MEMBER(rating_scale, 1.5, "Rating scaling factor", this->params())
+                    params())
+    , DOUBLE_MEMBER(rating_scale, 1.5, "Rating scaling factor", params())
     , DOUBLE_MEMBER(tessedit_class_miss_scale, 0.00390625, "Scale factor for features not used",
-                    this->params())
+                    params())
     , DOUBLE_MEMBER(classify_adapted_pruning_factor, 2.5,
-                    "Prune poor adapted results this much worse than best result", this->params())
+                    "Prune poor adapted results this much worse than best result", params())
     , DOUBLE_MEMBER(classify_adapted_pruning_threshold, -1.0,
-                    "Threshold at which classify_adapted_pruning_factor starts", this->params())
+                    "Threshold at which classify_adapted_pruning_factor starts", params())
     , INT_MEMBER(classify_adapt_proto_threshold, 230,
-                 "Threshold for good protos during adaptive 0-255", this->params())
+                 "Threshold for good protos during adaptive 0-255", params())
     , INT_MEMBER(classify_adapt_feature_threshold, 230,
-                 "Threshold for good features during adaptive 0-255", this->params())
+                 "Threshold for good features during adaptive 0-255", params())
     , BOOL_MEMBER(disable_character_fragments, true,
                   "Do not include character fragments in the"
                   " results of the classifier",
-                  this->params())
+                  params())
     , DOUBLE_MEMBER(classify_character_fragments_garbage_certainty_threshold, -3.0,
                     "Exclude fragments that do not look like whole"
                     " characters from training and adaption",
-                    this->params())
+                    params())
     , BOOL_MEMBER(classify_debug_character_fragments, false,
-                  "Bring up graphical debugging windows for fragments training", this->params())
+                  "Bring up graphical debugging windows for fragments training", params())
     , BOOL_MEMBER(matcher_debug_separate_windows, false,
                   "Use two different windows for debugging the matching: "
                   "One for the protos and one for the features.",
-                  this->params())
-    , STRING_MEMBER(classify_learn_debug_str, "", "Class str to debug learning", this->params())
+                  params())
+    , STRING_MEMBER(classify_learn_debug_str, "", "Class str to debug learning", params())
     , INT_MEMBER(classify_class_pruner_threshold, 229, "Class Pruner Threshold 0-255",
-                 this->params())
+                 params())
     , INT_MEMBER(classify_class_pruner_multiplier, 15,
-                 "Class Pruner Multiplier 0-255:       ", this->params())
+                 "Class Pruner Multiplier 0-255:       ", params())
     , INT_MEMBER(classify_cp_cutoff_strength, 7,
-                 "Class Pruner CutoffStrength:         ", this->params())
+                 "Class Pruner CutoffStrength:         ", params())
     , INT_MEMBER(classify_integer_matcher_multiplier, 10,
-                 "Integer Matcher Multiplier  0-255:   ", this->params())
+                 "Integer Matcher Multiplier  0-255:   ", params())
     , BOOL_MEMBER(classify_bln_numeric_mode, 0, "Assume the input is numbers [0-9].",
-                  this->params())
-    , DOUBLE_MEMBER(speckle_large_max_size, 0.30, "Max large speckle size", this->params())
+                  params())
+    , DOUBLE_MEMBER(speckle_large_max_size, 0.30, "Max large speckle size", params())
     , DOUBLE_MEMBER(speckle_rating_penalty, 10.0, "Penalty to add to worst rating for noise",
-                    this->params())
+                    params())
     , im_(&classify_debug_level)
     , dict_(this) {
   using namespace std::placeholders; // for _1, _2

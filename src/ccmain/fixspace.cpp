@@ -18,6 +18,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fixspace.h"
 
 #include "blobs.h"          // for TWERD, TBLOB, TESSLINE
@@ -25,13 +27,13 @@
 #include "errcode.h"        // for ASSERT_HOST
 #include "normalis.h"       // for kBlnXHeight, kBlnBaselineOffset
 #include "pageres.h"        // for WERD_RES_IT, WERD_RES, WERD_RES_LIST
-#include "params.h"         // for IntParam, StringParam, BoolParam, DoubleParam, ...
+#include <tesseract/params.h>         // for IntParam, StringParam, BoolParam, DoubleParam, ...
 #include "ratngs.h"         // for WERD_CHOICE, FREQ_DAWG_PERM, NUMBER_PERM
 #include "rect.h"           // for TBOX
 #include "stepblob.h"       // for C_BLOB_IT, C_BLOB_LIST, C_BLOB
 #include "tesseractclass.h" // for Tesseract, TesseractStats, WordData
 #include "tessvars.h"       // for debug_fp
-#include "tprintf.h"        // for tprintf
+#include <tesseract/tprintf.h>        // for tprintf
 #include "unicharset.h"     // for UNICHARSET
 #include "werd.h"           // for WERD, W_EOL, W_FUZZY_NON, W_FUZZY_SP
 

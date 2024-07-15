@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h>    // compiler config, etc.
+
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 #  ifndef unlink
 #    include <io.h>
@@ -25,11 +27,6 @@
 #endif // _WIN32
 
 #include <cmath>
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
 
 #include <leptonica/allheaders.h>
 #include "blobbox.h"
@@ -178,16 +175,16 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     }
     return 0; // AutoPageSeg found an empty page.
   }
-  bool splitting = pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT;
+  bool splitting = (pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT);
   bool cjk_mode = textord_use_cjk_fp_model;
 
   if (debug_write_unlv && !name.empty()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), tessedit_page_number, "pre-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), 1 + tessedit_page_number, "pre-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_, pix_thresholds_,
-                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, gradient_);
+                       pix_grey_, splitting || cjk_mode, &diacritic_blobs, blocks, &to_blocks, &gradient_);
   
   if (verbose_process) {
     tprintInfo("Page Gradient OSR estimate: {}\n", osr->gradient);
@@ -198,13 +195,13 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     osr->gradient = gradient_;
   }
   
-  if ( max_page_gradient_recognize != 100 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
+  if ( max_page_gradient_recognize != 100.0 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
     tprintInfo("Returning early due to high page gradient.\n");
     return -1; 
   }
 
   if (debug_write_unlv && !name.empty()) {
-    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), tessedit_page_number, "post-TextordPage", "uzn");
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.c_str(), 1 + tessedit_page_number, "post-TextordPage", "uzn");
     write_unlv_file(file_path, width, height, blocks);
   }
 
@@ -323,7 +320,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
 
   ASSERT_HOST(pix_binary_ != nullptr);
   if (tessedit_dump_pageseg_images) {
-    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput");
+    AddPixDebugPage(pix_binary_, "Setup Page Seg And Detect Orientation : PageSegInput - the source image for this operation");
   }
   // Leptonica is used to find the rule/separator lines in the input.
   line_finder_.FindAndRemoveLines(source_resolution_, pix_binary_,
@@ -337,7 +334,8 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     if (*photo_mask_pix != nullptr) {
       AddPixDebugPage(*photo_mask_pix, "Setup Page Seg And Detect Orientation : Photo Regions (to be removed)");
       Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
-      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : photo regions removed from the input");
+      AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed; the black pixels what remain in this image will be treated as *text*.");
+      tprintInfo("PROCESS: The black pixels what remain in the above image will be treated as *text pixels* by tesseract (after some denoising, column finding, etc. that follows next). Each area of black pixels will be collected as *bounding boxes* for the original source image pixel areas which will be clipped and fed into the OCR engine core for text recognition. See the '*Recognize (OCR)' section further below in thhe session log report.\n");
       pix_no_image_.destroy();
     }
   }
@@ -361,7 +359,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
     if (res > estimated_resolution && res < kMaxCredibleResolution) {
       estimated_resolution = res;
-      tprintInfo("Estimating resolution as {}\n", estimated_resolution);
+      tprintInfo("Estimating resolution as {} dpi (pixels / inch)\n", estimated_resolution);
     }
   }
 
@@ -401,9 +399,9 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       if (osd_tess != this) {
         // We are running osd as part of layout analysis, so constrain the
         // scripts to those allowed by *this.
-        AddAllScriptsConverted(unicharset, osd_tess->unicharset, &osd_scripts);
+        AddAllScriptsConverted(unicharset_, osd_tess->unicharset_, &osd_scripts);
         for (auto &lang : sub_langs_) {
-          AddAllScriptsConverted(lang->unicharset, osd_tess->unicharset, &osd_scripts);
+          AddAllScriptsConverted(lang->unicharset_, osd_tess->unicharset_, &osd_scripts);
         }
       }
       osd_tess->os_detect_blobs(&osd_scripts, &osd_blobs, osr);
@@ -420,10 +418,10 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         }
       }
       int best_script_id = osr->best_result.script_id;
-      const char *best_script_str = osd_tess->unicharset.get_script_from_script_id(best_script_id);
-      bool cjk = best_script_id == osd_tess->unicharset.han_sid() ||
-                 best_script_id == osd_tess->unicharset.hiragana_sid() ||
-                 best_script_id == osd_tess->unicharset.katakana_sid() ||
+      const char *best_script_str = osd_tess->unicharset_.get_script_from_script_id(best_script_id);
+      bool cjk = best_script_id == osd_tess->unicharset_.han_sid() ||
+                 best_script_id == osd_tess->unicharset_.hiragana_sid() ||
+                 best_script_id == osd_tess->unicharset_.katakana_sid() ||
                  strcmp("Japanese", best_script_str) == 0 ||
                  strcmp("Korean", best_script_str) == 0 || strcmp("Hangul", best_script_str) == 0;
       if (cjk) {

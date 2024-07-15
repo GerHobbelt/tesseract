@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "reject.h"
 
@@ -159,8 +157,7 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
       /* Ambig word rejection was here once !!*/
     }
   } else {
-    tprintError("BAD tessedit_reject_mode\n");
-    ASSERT_HOST(!"Fatal error encountered!");
+    ASSERT_HOST_MSG(false, "BAD tessedit_reject_mode. Fatal error encountered!\n");
   }
 
   if (tessedit_image_border > -1) {
@@ -457,8 +454,8 @@ int16_t Tesseract::first_alphanum_index(const char *word, const char *word_lengt
   int16_t offset;
 
   for (i = 0, offset = 0; word[offset] != '\0'; offset += word_lengths[i++]) {
-    if (unicharset.get_isalpha(word + offset, word_lengths[i]) ||
-        unicharset.get_isdigit(word + offset, word_lengths[i])) {
+    if (unicharset_.get_isalpha(word + offset, word_lengths[i]) ||
+        unicharset_.get_isdigit(word + offset, word_lengths[i])) {
       return i;
     }
   }
@@ -470,8 +467,8 @@ int16_t Tesseract::first_alphanum_offset(const char *word, const char *word_leng
   int16_t offset;
 
   for (i = 0, offset = 0; word[offset] != '\0'; offset += word_lengths[i++]) {
-    if (unicharset.get_isalpha(word + offset, word_lengths[i]) ||
-        unicharset.get_isdigit(word + offset, word_lengths[i])) {
+    if (unicharset_.get_isalpha(word + offset, word_lengths[i]) ||
+        unicharset_.get_isdigit(word + offset, word_lengths[i])) {
       return offset;
     }
   }
@@ -484,7 +481,7 @@ int16_t Tesseract::alpha_count(const char *word, const char *word_lengths) {
   int16_t count = 0;
 
   for (i = 0, offset = 0; word[offset] != '\0'; offset += word_lengths[i++]) {
-    if (unicharset.get_isalpha(word + offset, word_lengths[i])) {
+    if (unicharset_.get_isalpha(word + offset, word_lengths[i])) {
       count++;
     }
   }
@@ -496,7 +493,7 @@ bool Tesseract::word_contains_non_1_digit(const char *word, const char *word_len
   int16_t offset;
 
   for (i = 0, offset = 0; word[offset] != '\0'; offset += word_lengths[i++]) {
-    if (unicharset.get_isdigit(word + offset, word_lengths[i]) &&
+    if (unicharset_.get_isdigit(word + offset, word_lengths[i]) &&
         (word_lengths[i] != 1 || word[offset] != '1')) {
       return true;
     }

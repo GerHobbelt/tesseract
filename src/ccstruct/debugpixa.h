@@ -9,6 +9,8 @@
 #include <vector>
 #include <sstream>
 
+#include <plf_nanotimer.hpp>
+
 #if defined(HAVE_MUPDF)
 #include "mupdf/fitz.h"
 #endif
@@ -34,8 +36,8 @@ namespace tesseract {
     // Adds the given pix to the set of pages in the PDF file, with the given
     // caption added to the top.
     void AddPix(const Image& pix, const char* caption);
-    void AddClippedPix(const Image &pix, const TBOX &bbox, const char *caption);
-    void AddClippedPix(const Image &pix, const char *caption);
+    void AddPixWithBBox(const Image &pix, const TBOX &bbox, const char *caption);
+    void AddPixWithBBox(const Image &pix, const char *caption);
 
     // Return reference to info stream, where you can collect the diagnostic information gathered.
     //
@@ -48,6 +50,7 @@ namespace tesseract {
     int PushNextSection(const std::string &title);        // sibling; return handle for pop()
     int PushSubordinateSection(const std::string &title); // child; return handle for pop()
     void PopSection(int handle = -1);                     // pop active; return focus to parent; pop(0) pops all the way back up to the root.
+    int GetCurrentSectionLevel() const;
 
   protected:
     void AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption);
@@ -71,6 +74,7 @@ namespace tesseract {
     void Clear(bool final_cleanup = false);
 
   protected:
+    double gather_cummulative_elapsed_times();
 
     struct DebugProcessInfoChunk {
       std::ostringstream information;    // collects the diagnostic information gathered while this section/chunk is the active one.
@@ -90,9 +94,13 @@ namespace tesseract {
       // Thus, when this step itself is popped (inactivated), the size of the info_chunks[] array should be one longer than the sublevel_items[]
       // array, as the latter *interleaves* the former.
 
-      int level;                      // hierarchy depth. 0: root
+      int level = 0;                      // hierarchy depth. 0: root
 
-      int first_info_chunk;           // index into info_chunks[] array
+      plf::nanotimer clock;           // performance timer, per section
+      double elapsed_ns = 0.0;
+      double elapsed_ns_cummulative = 0.0;
+
+      int first_info_chunk { -1 }; // index into info_chunks[] array
       int last_info_chunk { -1 };     // index into info_chunks[] array; necessary as we allow return-to-parent process steps hierarchy layout.
     };
 
@@ -114,6 +122,9 @@ namespace tesseract {
     int active_step_index;
     bool content_has_been_written_to_file;
 
+    std::vector<double> image_series_elapsed_ns;
+    double total_images_production_cost;
+
 #if defined(HAVE_MUPDF)
     fz_context *fz_ctx; 
     fz_error_print_callback *fz_cbs[3];
@@ -125,11 +136,12 @@ namespace tesseract {
 #endif
   };
 
-  PIX *pixMixWithTintedBackground(PIX *src, PIX *background,
+  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
                                   float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor);
+                                  float src_factor, float background_factor,
+                                  const TBOX *cliprect);
 
-  Image MixWithLightRedTintedBackground(const Image &pix, PIX *original_image);
+  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect);
 
   typedef int AutoExecOnScopeExitFunction_f(void);
 

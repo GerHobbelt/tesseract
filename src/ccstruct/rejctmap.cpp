@@ -16,11 +16,13 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "rejctmap.h"
 
 #include <memory>
 
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

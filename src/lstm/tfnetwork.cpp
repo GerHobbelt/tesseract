@@ -15,6 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
+
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #ifdef INCLUDE_TENSORFLOW
 
 #  include "tfnetwork.h"

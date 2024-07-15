@@ -17,7 +17,8 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
@@ -143,7 +144,7 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   bool para_is_ltr = true;       // Default direction is LTR
   const char *paragraph_lang = nullptr;
 
-  if (tesseract_->input_file_path.empty()) {
+  if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
 
@@ -156,8 +157,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
            << " id='"
            << "page_" << page_id << "'"
            << " title='image \"";
-  if (!tesseract_->input_file_path.empty()) {
-    hocr_str << HOcrEscape(tesseract_->input_file_path.c_str());
+  if (!tesseract_->input_file_path_.empty()) {
+    hocr_str << HOcrEscape(tesseract_->input_file_path_.c_str());
   } else {
     hocr_str << "unknown";
   }
@@ -193,8 +194,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintError("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }

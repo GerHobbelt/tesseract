@@ -58,9 +58,9 @@ class file : public tesseract::File {
 public:
   static void MakeTmpdir() {
 #if defined(_WIN32)
-    _mkdir(FLAGS_test_tmpdir);
+    _mkdir(test_tmpdir);
 #else
-    mkdir(FLAGS_test_tmpdir, S_IRWXU | S_IRWXG);
+    mkdir(test_tmpdir, S_IRWXU | S_IRWXG);
 #endif
   }
 

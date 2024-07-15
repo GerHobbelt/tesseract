@@ -23,7 +23,7 @@
 #include "matrix.h"
 #include "network.h"
 #include "networkscratch.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "recodebeam.h"
 #include "series.h"
 #include "unicharcompress.h"
@@ -51,7 +51,9 @@ enum TrainingFlags {
 // Note that a sub-class, LSTMTrainer is used for training.
 class TESS_API LSTMRecognizer {
 public:
-  LSTMRecognizer();
+  // Takes an OPTIONAL instance reference for internal diagnostics use.
+  LSTMRecognizer(Tesseract *tess);
+  LSTMRecognizer() = delete;
   //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
 
@@ -190,10 +192,10 @@ public:
 
   // Provides access to the UNICHARSET that this classifier works with.
   const UNICHARSET &GetUnicharset() const {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   UNICHARSET &GetUnicharset() {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   // Provides access to the UnicharCompress that this classifier works with.
   const UnicharCompress &GetRecoder() const {
@@ -338,6 +340,9 @@ protected:
   const char *DecodeSingleLabel(int label);
 
 protected:
+  // OPTIONAL reference to the active Tesseract instance where LSTM/Input
+  // internal diagnostics should be sent to.
+  Tesseract *tesseract_;
   // The network hierarchy.
   Network *network_;
   // The unicharset. Only the unicharset element is serialized.
@@ -375,14 +380,18 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
-  int debug_ = 0;
+  int debug___ = 0;
 
 public:
   void SetDebug(int v) {
-	debug_ = std::max(0, v);
+	debug___ = std::max(0, v);
   }
-  int HasDebug() const {
-	  return debug_;
+  // because both the name and several spots where this is used suggest boolean behaviour.  warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+  bool HasDebug(int threshold = 0) const {
+	  return debug___ > threshold;
+  }
+  int GetDebugLevel() const {
+	  return debug___;
   }
 
 protected:

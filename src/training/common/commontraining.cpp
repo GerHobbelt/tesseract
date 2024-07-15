@@ -11,34 +11,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include <tesseract/debugheap.h>
 #include <tesseract/assert.h>
+#include <parameters/parameters.h>
 
 #include "commontraining.h"
 
 #if DISABLED_LEGACY_ENGINE
 
-#  include "params.h"
-#  include "tprintf.h"
+#  include <tesseract/params.h>
+#  include <tesseract/tprintf.h>
 
 namespace tesseract {
 
-INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
-INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
-STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
-STRING_PARAM_FLAG(D, "", "Directory to write output files to");
-STRING_PARAM_FLAG(F, "font_properties", "File listing font properties");
-STRING_PARAM_FLAG(X, "", "File listing font xheights");
-STRING_PARAM_FLAG(U, "unicharset", "File to load unicharset from");
-STRING_PARAM_FLAG(O, "", "File to write unicharset to");
-STRING_PARAM_FLAG(output_trainer, "", "File to write trainer to");
-STRING_PARAM_FLAG(test_ch, "", "UTF8 test character string");
-STRING_PARAM_FLAG(fonts_dir, "",
+INT_VAR(debug_level, 0, "Level of Trainer debugging");
+INT_VAR(load_images, 0, "Load images with tr files");
+STRING_VAR(configfile, "", "File to load more configs from");
+STRING_VAR(D, "", "Directory to write output files to");
+STRING_VAR(F, "font_properties", "File listing font properties");
+STRING_VAR(X, "", "File listing font xheights");
+STRING_VAR(U, "unicharset", "File to load unicharset from");
+STRING_VAR(O, "", "File to write unicharset to");
+STRING_VAR(output_trainer, "", "File to write trainer to");
+STRING_VAR(test_ch, "", "UTF8 test character string");
+STRING_VAR(fonts_dir, "",
                   "If empty it uses system default. Otherwise it overrides "
                   "system default font location");
-STRING_PARAM_FLAG(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default temporary dir");
+STRING_VAR(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default temporary dir");
 
 /**
  * This routine parses the command line arguments that were
@@ -70,10 +70,11 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include "mastertrainer.h"
 #  include "mf.h"
 #  include "oldlist.h"
-#  include "params.h"
+#  include "commandlineflags.h"
+#  include <tesseract/params.h>
 #  include "shapetable.h"
 #  include "tessdatamanager.h"
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
 
 
@@ -87,28 +88,29 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 // -M 0.625   -B 0.05   -I 1.0   -C 1e-6.
 CLUSTERCONFIG Config = {elliptical, 0.625, 0.05, 1.0, 1e-6, 0};
 FEATURE_DEFS_STRUCT feature_defs;
+
 static CCUtil *ccutil = nullptr;
 
-INT_PARAM_FLAG(debug_level, 0, "Level of Trainer debugging");
-INT_PARAM_FLAG(load_images, 0, "Load images with tr files");
-STRING_PARAM_FLAG(configfile, "", "File to load more configs from");
-STRING_PARAM_FLAG(D, "", "Directory to write output files to");
-STRING_PARAM_FLAG(F, "font_properties", "File listing font properties");
-STRING_PARAM_FLAG(X, "", "File listing font xheights");
-STRING_PARAM_FLAG(U, "unicharset", "File to load unicharset from");
-STRING_PARAM_FLAG(O, "", "File to write unicharset to");
-STRING_PARAM_FLAG(output_trainer, "", "File to write trainer to");
-STRING_PARAM_FLAG(test_ch, "", "UTF8 test character string");
-STRING_PARAM_FLAG(fonts_dir, "", "");
-STRING_PARAM_FLAG(fontconfig_tmpdir, "", "");
-DOUBLE_PARAM_FLAG(clusterconfig_min_samples_fraction, Config.MinSamples,
+INT_VAR(trainer_debug_level, 0, "Level of Trainer debugging");
+INT_VAR(trainer_load_images, 0, "Load images with tr files");
+STRING_VAR(trainer_configfile, "", "File to load more configs from");
+STRING_VAR(trainer_directory, "", "Directory to write output files to");                  // D
+STRING_VAR(trainer_font_properties, "font_properties", "File listing font properties");   // F
+STRING_VAR(trainer_xheights, "", "File listing font xheights");                           // X
+STRING_VAR(trainer_input_unicharset_file, "unicharset", "File to load unicharset from");  // U
+STRING_VAR(trainer_output_unicharset_file, "", "File to write unicharset to");            // O
+STRING_VAR(trainer_output_trainer, "", "File to write trainer to");
+STRING_VAR(trainer_test_ch, "", "UTF8 test character string");
+STRING_VAR(trainer_fonts_dir, "", "The fonts directory which the trainer will direct FontConfig to use through its environment variable and a bespoke fonts.conf file.");
+STRING_VAR(trainer_fontconfig_tmpdir, "", "The fonts cache directory which the trainer will direct FontConfig to use through its environment variable and a bespoke fonts.conf file.");
+DOUBLE_VAR(clusterconfig_min_samples_fraction, Config.MinSamples,
                          "Min number of samples per proto as % of total");
-DOUBLE_PARAM_FLAG(clusterconfig_max_illegal, Config.MaxIllegal,
+DOUBLE_VAR(clusterconfig_max_illegal, Config.MaxIllegal,
                          "Max percentage of samples in a cluster which have more"
                          " than 1 feature in that cluster");
-DOUBLE_PARAM_FLAG(clusterconfig_independence, Config.Independence,
+DOUBLE_VAR(clusterconfig_independence, Config.Independence,
                          "Desired independence between dimensions");
-DOUBLE_PARAM_FLAG(clusterconfig_confidence, Config.Confidence,
+DOUBLE_VAR(clusterconfig_confidence, Config.Confidence,
                          "Desired confidence in prototypes created");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
@@ -132,14 +134,14 @@ int ParseArguments(int *argc, const char ***argv) {
 	  return rv;
 
   // Set some global values based on the flags.
-  Config.MinSamples = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_min_samples_fraction)));
-  Config.MaxIllegal = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_max_illegal)));
-  Config.Independence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_independence)));
-  Config.Confidence = std::max(0.0, std::min(1.0, double(FLAGS_clusterconfig_confidence)));
+  Config.MinSamples = std::max(0.0, std::min(1.0, double(clusterconfig_min_samples_fraction)));
+  Config.MaxIllegal = std::max(0.0, std::min(1.0, double(clusterconfig_max_illegal)));
+  Config.Independence = std::max(0.0, std::min(1.0, double(clusterconfig_independence)));
+  Config.Confidence = std::max(0.0, std::min(1.0, double(clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
-  if (!FLAGS_configfile.empty()) {
+  if (!trainer_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(FLAGS_configfile, ccutil->params_collective());
+    ParamUtils::ReadParamsFile(trainer_configfile, ccutil->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
   return rv;
 }
@@ -191,7 +193,7 @@ void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_tab
  *  - Loads xheights from -X option.
  *  - Loads samples from .tr files in remaining command-line args.
  *  - Deletes outliers and computes canonical samples.
- *  - If FLAGS_output_trainer is set, saves the trainer for future use.
+ *  - If trainer_output_trainer is set, saves the trainer for future use.
  *    TODO: Who uses that? There is currently no code which reads it.
  * Computes canonical and cloud features.
  * If shape_table is not nullptr, but failed to load, make a fake flat one,
@@ -202,8 +204,8 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   InitFeatureDefs(&feature_defs);
   InitIntegerFX();
   file_prefix = "";
-  if (!FLAGS_D.empty()) {
-    file_prefix += FLAGS_D.c_str();
+  if (!trainer_directory.empty()) {
+    file_prefix += trainer_directory.c_str();
     file_prefix += "/";
   }
   // If we are shape clustering (nullptr shape_table) or we successfully load
@@ -219,19 +221,18 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   } else {
     shape_analysis = true;
   }
-  auto trainer = std::make_unique<MasterTrainer>(NM_CHAR_ANISOTROPIC, shape_analysis, replication,
-                                                 FLAGS_debug_level);
+  auto trainer = std::make_unique<MasterTrainer>(NM_CHAR_ANISOTROPIC, shape_analysis, replication);
   IntFeatureSpace fs;
   fs.Init(kBoostXYBuckets, kBoostXYBuckets, kBoostDirBuckets);
-  trainer->LoadUnicharset(FLAGS_U.c_str());
+  trainer->LoadUnicharset(trainer_input_unicharset_file.c_str());
   // Get basic font information from font_properties.
-  if (!FLAGS_F.empty()) {
-    if (!trainer->LoadFontInfo(FLAGS_F.c_str())) {
+  if (!trainer_font_properties.empty()) {
+    if (!trainer->LoadFontInfo(trainer_font_properties.c_str())) {
       return {};
     }
   }
-  if (!FLAGS_X.empty()) {
-    if (!trainer->LoadXHeights(FLAGS_X.c_str())) {
+  if (!trainer_xheights.empty()) {
+    if (!trainer->LoadXHeights(trainer_xheights.c_str())) {
       return {};
     }
   }
@@ -251,7 +252,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     delete[] fontinfo_file_name;
 
     // Load the images into memory if required by the classifier.
-    if (FLAGS_load_images) {
+    if (trainer_load_images) {
       std::string image_name = page_name;
       // Chop off the tr and replace with tif. Extension must be tif!
       image_name.resize(image_name.length() - 2);
@@ -261,8 +262,8 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   }
   trainer->PostLoadCleanup();
   // Write the master trainer if required.
-  if (!FLAGS_output_trainer.empty()) {
-    FILE *fp = fopen(FLAGS_output_trainer.c_str(), "wb");
+  if (!trainer_output_trainer.empty()) {
+    FILE *fp = fopen(trainer_output_trainer.c_str(), "wb");
     if (fp == nullptr) {
       tprintError("Can't create saved trainer data!\n");
     } else {
@@ -271,8 +272,8 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     }
   }
   trainer->PreTrainingSetup();
-  if (!FLAGS_O.empty() && !trainer->unicharset().save_to_file(FLAGS_O.c_str())) {
-    tprintError("Failed to save unicharset to file {}\n", FLAGS_O.c_str());
+  if (!trainer_output_unicharset_file.empty() && !trainer->unicharset().save_to_file(trainer_output_unicharset_file.c_str())) {
+    tprintError("Failed to save unicharset to file {}\n", trainer_output_unicharset_file.c_str());
     return {};
   }
 
@@ -465,7 +466,7 @@ CLUSTERER *SetUpForClustering(const FEATURE_DEFS_STRUCT &FeatureDefs, LABELEDLIS
 void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clusterer,
                               CLUSTERCONFIG *clusterconfig) {
   PROTOTYPE *Prototype;
-  bool debug = strcmp(FLAGS_test_ch.c_str(), label) == 0;
+  bool debug = strcmp(trainer_test_ch.c_str(), label) == 0;
 
   LIST pProtoList = ProtoList;
   iterate(pProtoList) {

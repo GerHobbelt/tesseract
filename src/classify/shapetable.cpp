@@ -19,6 +19,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "shapetable.h"
 
 #include "bitvector.h"
@@ -245,6 +247,37 @@ void Shape::SortUnichars() {
 
 ShapeTable::ShapeTable() : unicharset_(nullptr), num_fonts_(0) {}
 ShapeTable::ShapeTable(const UNICHARSET &unicharset) : unicharset_(&unicharset), num_fonts_(0) {}
+
+ShapeTable& ShapeTable::operator=(const ShapeTable& source) {
+  // clear our own previous before copying source
+  for (auto data : shape_table_) {
+    delete data;
+  }
+
+  // now copy...
+  num_fonts_ = source.num_fonts_;
+  // unicharset pointer is not owned by us, nor by us, so a simple ref-copy is okay.
+  unicharset_ = source.unicharset_;
+  // we need to deep-copy the shape table or there'll be trouble as that one *is* owned by source.
+  for (Shape *src_el : source.shape_table_) {
+    Shape *el = new Shape(*src_el);
+    shape_table_.push_back(el);
+  }
+  return *this;
+}
+ShapeTable::ShapeTable(const ShapeTable& source) {
+  // re-use the assignment operator for this one
+  *this = source;
+}
+ShapeTable::ShapeTable(ShapeTable&& source) noexcept {
+  if (this != &source) {
+    unicharset_ = source.unicharset_;
+    source.unicharset_ = nullptr;
+    shape_table_ = std::move(source.shape_table_);
+    num_fonts_ = source.num_fonts_;
+    source.num_fonts_ = 0;
+  }
+}
 
 // Writes to the given file. Returns false in case of error.
 bool ShapeTable::Serialize(FILE *fp) const {

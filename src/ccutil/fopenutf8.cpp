@@ -8,6 +8,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fopenutf8.h"
 
 #include "winutils.h"

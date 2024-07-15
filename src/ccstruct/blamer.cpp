@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blamer.h"
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB
@@ -182,9 +184,9 @@ void BlamerBundle::SplitBundle(int word1_right, int word2_left, bool debug, Blam
     debug_str += " begin2_x " + std::to_string(word2_left);
     debug_str += "\nnorm_truth_word boxes:\n";
     if (norm_truth_word_.length() > 1) {
-      norm_truth_word_.BlobBox(0).print_to_str(debug_str);
+      debug_str += norm_truth_word_.BlobBox(0).print_to_str();
       for (unsigned b = 1; b < norm_truth_word_.length(); ++b) {
-        norm_truth_word_.BlobBox(b).print_to_str(debug_str);
+        debug_str += norm_truth_word_.BlobBox(b).print_to_str();
         if ((abs(word1_right - norm_truth_word_.BlobBox(b - 1).right()) < norm_box_tolerance_) &&
             (abs(word2_left - norm_truth_word_.BlobBox(b).left()) < norm_box_tolerance_)) {
           begin2_truth_index = b;
@@ -334,7 +336,7 @@ void BlamerBundle::SetChopperBlame(const WERD_RES *word, bool debug) {
       debug_str += "Detected missing chop (tolerance=" + std::to_string(norm_box_tolerance_);
       debug_str += ") at Bounding Box=";
       TBLOB *curr_blob = word->chopped_word->blobs[blob_index];
-      curr_blob->bounding_box().print_to_str(debug_str);
+      debug_str += curr_blob->bounding_box().print_to_str();
       debug_str += "\nNo chop for truth at x=" + std::to_string(truth_x);
     } else {
       debug_str += "Missing chops for last " + std::to_string(norm_truth_word_.length() - box_index);
@@ -343,12 +345,12 @@ void BlamerBundle::SetChopperBlame(const WERD_RES *word, bool debug) {
     debug_str += "\nMaximally chopped word boxes:\n";
     for (blob_index = 0; blob_index < num_blobs; ++blob_index) {
       TBLOB *curr_blob = word->chopped_word->blobs[blob_index];
-      curr_blob->bounding_box().print_to_str(debug_str);
+      debug_str += curr_blob->bounding_box().print_to_str();
       debug_str += '\n';
     }
     debug_str += "Truth  bounding  boxes:\n";
     for (box_index = 0; box_index < norm_truth_word_.length(); ++box_index) {
-      norm_truth_word_.BlobBox(box_index).print_to_str(debug_str);
+      debug_str += norm_truth_word_.BlobBox(box_index).print_to_str();
       debug_str += '\n';
     }
     SetBlame(IRR_CHOPPER, debug_str, word->best_choice, debug);

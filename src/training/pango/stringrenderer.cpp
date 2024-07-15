@@ -17,9 +17,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "stringrenderer.h"
 
@@ -88,7 +86,7 @@ static bool RandBool(const double prob, TRand *rand) {
 /* static */
 static Image CairoARGB32ToPixFormat(cairo_surface_t *surface) {
   if (cairo_image_surface_get_format(surface) != CAIRO_FORMAT_ARGB32) {
-    tprintError("Unexpected surface format {}\n", (int)cairo_image_surface_get_format(surface));
+    tprintError("Unexpected surface format {}\n", int(cairo_image_surface_get_format(surface)));
     return nullptr;
   }
   const int width = cairo_image_surface_get_width(surface);
@@ -194,7 +192,7 @@ void StringRenderer::SetLayoutProperties() {
 
   int max_width = page_width_ - 2 * h_margin_;
   int max_height = page_height_ - 2 * v_margin_;
-  tlog(3, "max_width = {}, max_height = {}\n", max_width, max_height);
+  tprintDebug("max_width = {}, max_height = {}\n", max_width, max_height);
   if (vertical_text_) {
     using std::swap;
     swap(max_width, max_height);
@@ -306,7 +304,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char *text, int text_length) 
     ;
   }
   int buf_length = it.utf8_data() - text;
-  tlog(1, "len = {}  buf_len = {}\n", text_length, buf_length);
+  tprintInfo("len = {}  buf_len = {}\n", text_length, buf_length);
   pango_layout_set_text(layout_, text, buf_length);
 
   PangoLayoutIter *line_iter = nullptr;
@@ -330,7 +328,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char *text, int text_length) 
     int line_bottom = line_ink_rect.y + line_ink_rect.height;
     if (line_bottom - page_top > max_layout_height) {
       offset = line->start_index;
-      tlog(1, "Found offset = {}\n", offset);
+      tprintInfo("Found offset = {}\n", offset);
       break;
     }
   } while (pango_layout_iter_next_line(line_iter));
@@ -390,7 +388,7 @@ bool StringRenderer::GetClusterStrings(std::vector<std::string> *cluster_text) {
     PangoLayoutRun *run = pango_layout_iter_get_run_readonly(run_iter);
     if (!run) {
       // End of line nullptr run marker
-      tlog(2, "Found end of line marker\n");
+      tprintInfo("Found end of line marker\n");
       continue;
     }
     PangoGlyphItemIter cluster_iter;
@@ -402,10 +400,10 @@ bool StringRenderer::GetClusterStrings(std::vector<std::string> *cluster_text) {
       std::string text =
           std::string(full_text + start_byte_index, end_byte_index - start_byte_index);
       if (IsUTF8Whitespace(text.c_str())) {
-        tlog(2, "Found whitespace\n");
+        tprintInfo("Found whitespace\n");
         text = " ";
       }
-      tlog(2, "start_byte={} end_byte={} : '{}'\n", start_byte_index, end_byte_index, text);
+      tprintInfo("start_byte={} end_byte={} : '{}'\n", start_byte_index, end_byte_index, text);
       if (add_ligatures_) {
         // Make sure the output box files have ligatured text in case the font
         // decided to use an unmapped glyph.
@@ -631,7 +629,7 @@ static void MergeBoxCharsToWords(std::vector<BoxChar *> *boxchars) {
       // size of the merged bounding box in relation to those of the individual
       // characters seen so far.
       if (right - left > last_box_w + 5 * box_w) {
-        tlog(1, "Found line break after '{}'", last_boxchar->ch());
+        tprintInfo("Found line break after '{}'", last_boxchar->ch());
         // Insert a fake interword space and start a new word with the current
         // boxchar.
         result.push_back(new BoxChar(" ", 1));
@@ -657,11 +655,11 @@ void StringRenderer::ComputeClusterBoxes() {
   std::vector<int> cluster_start_indices;
   do {
     cluster_start_indices.push_back(pango_layout_iter_get_index(cluster_iter));
-    tlog(3, "Added {}\n", cluster_start_indices.back());
+    tprintDebug("Added {}\n", cluster_start_indices.back());
   } while (pango_layout_iter_next_cluster(cluster_iter));
   pango_layout_iter_free(cluster_iter);
   cluster_start_indices.push_back(strlen(text));
-  tlog(3, "Added last index {}\n", cluster_start_indices.back());
+  tprintDebug("Added last index {}\n", cluster_start_indices.back());
   // Sort the indices and create a map from start to end indices.
   std::sort(cluster_start_indices.begin(), cluster_start_indices.end());
   std::map<int, int> cluster_start_to_end_index;
@@ -753,11 +751,11 @@ void StringRenderer::ComputeClusterBoxes() {
     std::string cluster_text =
         std::string(text + start_byte_index, end_byte_index - start_byte_index);
     if (!cluster_text.empty() && cluster_text[0] == '\n') {
-      tlog(2, "Skipping newlines at start of text.\n");
+      tprintInfo("Skipping newlines at start of text.\n");
       continue;
     }
     if (!cluster_rect.width || !cluster_rect.height || IsUTF8Whitespace(cluster_text.c_str())) {
-      tlog(2, "Skipping whitespace with boxdim ({},{}) '{}'\n", cluster_rect.width,
+      tprintInfo("Skipping whitespace with boxdim ({},{}) '{}'\n", cluster_rect.width,
            cluster_rect.height, cluster_text);
       auto *boxchar = new BoxChar(" ", 1);
       boxchar->set_page(page_);
@@ -765,7 +763,7 @@ void StringRenderer::ComputeClusterBoxes() {
       continue;
     }
     // Prepare a boxchar for addition at this byte position.
-    tlog(2, "[{} {}], {}, {} : start_byte={} end_byte={} : '{}'\n", cluster_rect.x, cluster_rect.y,
+    tprintDebug("[{} {}], {}, {} : start_byte={} end_byte={} : '{}'\n", cluster_rect.x, cluster_rect.y,
          cluster_rect.width, cluster_rect.height, start_byte_index, end_byte_index,
          cluster_text);
     ASSERT_HOST_MSG(cluster_rect.width, "cluster_text:{}  start_byte_index:{}\n",
@@ -1011,7 +1009,7 @@ int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix)
     // Rotate the layout
     double rotation = -pango_gravity_to_rotation(
         pango_context_get_base_gravity(pango_layout_get_context(layout_)));
-    tlog(2, "Rotating by {} radians\n", rotation);
+    tprintInfo("Rotating by {} radians\n", rotation);
     cairo_rotate(cr_, rotation);
     pango_cairo_update_layout(cr_, layout_);
   }
@@ -1096,7 +1094,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
     title_font = "Arial";
   }
   title_font += " 8";
-  tlog(1, "Selected title font: {}\n", title_font);
+  tprintInfo("Selected title font: {}\n", title_font);
   if (font_used) {
     font_used->clear();
   }
@@ -1124,6 +1122,7 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       ClearBoxes(); // Get rid of them as they are garbage.
       const int kMaxTitleLength = 1024;
       char title[kMaxTitleLength];
+      // warning C4774: 'snprintf' : format string expected in argument 3 is not a string literal
       snprintf(title, kMaxTitleLength, kTitleTemplate, all_fonts[i].c_str(), ok_chars,
                100.0 * ok_chars / total_chars_, raw_score, 100.0 * raw_score / char_map_.size());
       tprintDebug("{}\n", title);

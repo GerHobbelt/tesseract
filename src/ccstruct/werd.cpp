@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "werd.h"
 
@@ -260,6 +258,7 @@ void WERD::copy_on(WERD *other) {
  */
 
 void WERD::print() const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Blanks= {}\n", blanks);
   bounding_box().print();
   tprintDebug("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());
