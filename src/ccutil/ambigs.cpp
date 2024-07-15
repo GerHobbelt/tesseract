@@ -228,13 +228,13 @@ void UnicharAmbigs::LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambi
   }
 }
 
-const std::string &UnicharAmbigs::debug_print_for_unicharset_stmt(const UNICHARSET &unicharset) {
+std::string UnicharAmbigs::debug_print_for_unicharset_stmt(const UNICHARSET &unicharset) {
+  // when we reported the unicode set already before, don't report it again as it would clutter the output:
   if (last_unicharset_for_diagnostics_printed_ == &unicharset)
-    return last_unicharset_for_diagnostics_stmt_str_;
+    return "";
 
   last_unicharset_for_diagnostics_printed_ = &unicharset;
-  last_unicharset_for_diagnostics_stmt_str_ = fmt::format(" for unicode set: {}", unicharset.debug_full_set_as_string());
-  return last_unicharset_for_diagnostics_stmt_str_;
+  return fmt::format(" for unicode set: {}", unicharset.debug_full_set_as_string());
 }
 
 bool UnicharAmbigs::ParseAmbiguityLine(int line_num, int version, int ambigs_debug_level,
