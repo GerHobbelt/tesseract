@@ -1576,9 +1576,11 @@ float Tesseract::ClassifyBlobAsWord(int pass_n, PAGE_RES_IT *pr_it, C_BLOB *blob
 // word_data holds the word to be recognized, and its block and row, and
 // pr_it points to the word as well, in case we are running LSTM and it wants
 // to output multiple words.
-// Recognizes in the current language, and if successful that is all.
+// Recognizes in the current language, and if successful (a.k.a. accepted) that is all.
 // If recognition was not successful, tries all available languages until
-// it gets a successful result or runs out of languages. Keeps the best result.
+// it gets a successful result or runs out of languages. Keeps the best result,
+// where "best" is defined as: the first language that producs an *acceptable* result
+// (as determined by Dict::AcceptableResult() et al).
 void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordData *word_data) {
 #if DISABLED_LEGACY_ENGINE
   WordRecognizer recognizer = &Tesseract::classify_word_pass1;
@@ -2153,7 +2155,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     } else {
       tprintDebug("(null best choice)\n");
     }
-    tprintDebug("Tess Accepted: {}\n", word->tess_accepted);
+    tprintDebug("Word Accepted: {}\n", word->tess_accepted);
     tprintDebug("Done flag: {}\n\n", word->done);
     return true;
   } else {

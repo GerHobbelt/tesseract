@@ -481,6 +481,10 @@ TessHOcrRenderer::TessHOcrRenderer(const char *outputbase, bool font_info)
 }
 
 bool TessHOcrRenderer::BeginDocumentHandler() {
+  // This code ensures that Tesseract's hOCR output conforms to XHTML standards.
+  // It includes text direction and baseline information to facilitate correct rendering in Chrome.
+  //SetContentType("application/xhtml+xml");
+
   AppendString(
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"

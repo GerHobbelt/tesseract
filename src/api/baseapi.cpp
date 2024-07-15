@@ -491,6 +491,7 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  * The language is (usually) an ISO 639-3 string or nullptr will default to eng.
  * If numeric_mode is true, then only digits and Roman numerals will
  * be returned.
+ * 
  * @return: 0 on success and -1 on initialization failure.
  */
 int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
@@ -1224,15 +1225,15 @@ int TessBaseAPI::GetSourceYResolution() {
   return thresholder_->GetSourceYResolution();
 }
 
-// If flist exists, get data from there. Otherwise get data from buf.
+// If `flist` exists, get data from there. Otherwise get data from `buf`.
 // Seems convoluted, but is the easiest way I know of to meet multiple
 // goals. Support streaming from stdin, and also work on platforms
 // lacking fmemopen.
 // 
 // TODO: check different logic for flist/buf and simplify.
 //
-// If tessedit_page_number is non-negative, will only process that
-// single page. Works for multi-page tiff file, or filelist.
+// If `tessedit_page_number` is non-negative, will only process that
+// single page. Works for multi-page tiff file as well as or filelist.
 bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char *retry_config,
                                        int timeout_millisec, TessResultRenderer *renderer) {
   if (!flist && !buf) {

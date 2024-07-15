@@ -417,17 +417,23 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 }
 
 // Common initialization for a single language.
+//
 // arg0 is the datapath for the tessdata directory, which could be the
 // path of the tessdata directory with no trailing /, or (if tessdata
 // lives in the same directory as the executable, the path of the executable,
 // hence the name arg0.
+//
 // textbase is an optional output file basename (used only for training)
+//
 // language is the language code to load.
+//
 // oem controls which engine(s) will operate on the image
+//
 // configs (argv) is an array of config filenames to load variables from.
 // May be nullptr.
 // configs_size (argc) is the number of elements in configs.
 // vars_vec is an optional vector of variables to set.
+//
 // vars_values is an optional corresponding vector of values for the variables
 // in vars_vec.
 // If set_only_non_debug_params is true, only params that do not contain

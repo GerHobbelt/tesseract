@@ -407,7 +407,7 @@ ImageThresholder::pixNLBin(PIX *pixs, bool adaptive)
     /* whsize needs to be this small to use it also for lineimages for tesseract */
     pixSauvolaBinarizeTiled(pixb, 16, 0.5, nx, ny, NULL, &pixb);
   } else {
-    pixb =pixDitherToBinarySpec(pixb, bgval-((bgval-thresh)*0.75), fgval+((thresh-fgval)*0.25));
+    pixb = pixDitherToBinarySpec(pixb, bgval-((bgval-thresh)*0.75), fgval+((thresh-fgval)*0.25));
     //pixb = pixThresholdToBinary(pixb, fgval+((thresh-fgval)*.1));  /* for bg and light fg */
   }
 
@@ -433,6 +433,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   int r = 0;
   l_int32 threshold_val = 0;
 
+  // TODO: code/history review why we don't use pix_grey here; 
+  // initial check points the finger at myself when I merged in the NlBin threshold algo, 
+  // which likes to also do its own to-greyscale conversion, which should really be done before, 
+  // in a previous stage in tesseract proper, rather than *specifically for NlBin only*. 
+  // Code/flow review required.
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 

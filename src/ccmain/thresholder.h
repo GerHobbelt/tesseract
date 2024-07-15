@@ -57,13 +57,15 @@ static inline const char* ThresholdMethodName(ThresholdMethod method)
   case ThresholdMethod::Sauvola:
     return "Sauvola (Leptonica)";
   case ThresholdMethod::OtsuOnNormalizedBackground:
-    return "OtsuOnNormalizedBackground";
+    return "Otsu (on Normalized Background)";
   case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground:
-    return "MaskingAndOtsuOnNormalizedBackground";
+    return "Masking.And.Otsu (on Normalized Background)";
   case ThresholdMethod::Nlbin:
-    return "Nlbin";
+    return "NLbin";
+  case ThresholdMethod::Max:
+    return "Threshold::MaxOfList";
   default:
-    return "Unknown::NonOtsu";
+    return "Threshold::Unknown";
   }
 }
 

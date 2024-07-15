@@ -196,7 +196,7 @@ public:
   virtual ~Tesseract() override;
 
   // Return appropriate dictionary
-  Dict &getDict() override;
+  virtual Dict &getDict() override;
 
   // Clear as much used memory as possible without resetting the adaptive
   // classifier or losing any other classifier data.
@@ -244,9 +244,11 @@ public:
   const FCOORD &reskew() const {
     return reskew_;
   }
+
   float gradient() const {
     return gradient_;
   }
+
   // Destroy any existing pix and return a pointer to the pointer.
   void set_pix_binary(Image pix) {
     pix_binary_.destroy();
@@ -536,6 +538,16 @@ public:
   // best raw choice, and undoing all the work done to fake out the word.
   float ClassifyBlobAsWord(int pass_n, PAGE_RES_IT *pr_it, C_BLOB *blob, std::string &best_str,
                            float *c2);
+  // Generic function for classifying a word. Can be used either for pass1 or
+  // pass2 according to the function passed to recognizer.
+  // word_data holds the word to be recognized, and its block and row, and
+  // pr_it points to the word as well, in case we are running LSTM and it wants
+  // to output multiple words.
+  // Recognizes in the current language, and if successful (a.k.a. accepted) that is all.
+  // If recognition was not successful, tries all available languages until
+  // it gets a successful result or runs out of languages. Keeps the best result,
+  // where "best" is defined as: the first language that producs an *acceptable* result
+  // (as determined by Dict::AcceptableResult() et al).
   void classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordData *word_data);
   void classify_word_pass1(const WordData &word_data, WERD_RES **in_word,
                            PointerVector<WERD_RES> *out_words);
@@ -606,18 +618,25 @@ public:
     TessdataManager mgr;
     return init_tesseract(datapath, {}, language, oem, nullptr, 0, nullptr, nullptr, false, &mgr);
   }
+
   // Common initialization for a single language.
+  // 
   // arg0 is the datapath for the tessdata directory, which could be the
   // path of the tessdata directory with no trailing /, or (if tessdata
   // lives in the same directory as the executable, the path of the executable,
   // hence the name arg0.
+  // 
   // textbase is an optional output file basename (used only for training)
+  // 
   // language is the language code to load.
+  // 
   // oem controls which engine(s) will operate on the image
+  // 
   // configs (argv) is an array of config filenames to load variables from.
   // May be nullptr.
   // configs_size (argc) is the number of elements in configs.
   // vars_vec is an optional vector of variables to set.
+  // 
   // vars_values is an optional corresponding vector of values for the variables
   // in vars_vec.
   // If set_only_non_debug_params is true, only params that do not contain
