@@ -780,7 +780,7 @@ static int Main() {
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_text2image_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
 #endif
 {
   // Respect environment variable. could be:
@@ -802,7 +802,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
   if (argc > 1) {
     if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
       FontUtils::PangoFontTypeInfo();
-      tprintDebug("Pango version: {}\n", pango_version_string());
+      tprintInfo("Pango version: {}\n", pango_version_string());
     }
   }
   tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
@@ -814,7 +814,7 @@ extern "C" int tesseract_text2image_main(int argc, const char** argv)
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_text2image_main(int argc, const char** argv)
+extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
 #endif
 {
   fprintf(stderr, "text2image tool not supported in this non-PANGO build.\n");

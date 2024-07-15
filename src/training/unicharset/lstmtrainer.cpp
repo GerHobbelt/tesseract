@@ -857,9 +857,10 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   tprintError("Encoding of string failed!\n");
   tprintError("  Failure bytes:");
   while (err_index < cleaned.size()) {
-    tprintError(" {}", cleaned[err_index++] & 0xff);
+    tprintError(" {}", static_cast<unsigned int>(cleaned[err_index++] & 0xff));
   }
   tprintError("\n");
+  tprintError("  Source string fed to encoder: {}\n", unicharset.debug_utf8_str(str.c_str()));
   return false;
 }
 

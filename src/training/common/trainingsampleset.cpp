@@ -29,6 +29,7 @@
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
+#include "commandlineflags.h"
 
 namespace tesseract {
 

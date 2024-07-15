@@ -90,6 +90,7 @@ const int kMinRampSize = 1000;
 // Finally a greyscale ramp provides a continuum of effects between exposure
 // levels.
 Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation) {
+  tprintDebug("Degrade image:\n");
   Image pix = pixConvertTo8(input, false);
   input.destroy();
   input = pix;
@@ -181,24 +182,28 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
 // Returns nullptr on error. The returned Pix must be pixDestroyed.
 Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool white_noise,
                          bool smooth_noise, bool blur, int box_reduction, TRand *randomizer,
-                         std::vector<TBOX> *boxes) {
+                         std::vector<TBOX> *boxes, int my_blur, int my_noise, int my_smooth) {
   Image distorted = pix.copy();
   // Things to do to synthetic training data.
-  if ((white_noise || smooth_noise) && randomizer->SignedRand(1.0) > 0.0) {
+  if ((white_noise || smooth_noise) /*&& randomizer->SignedRand(1.0) > 0.0*/) {
     // TODO(rays) Cook noise in a more thread-safe manner than rand().
     // Attempt to make the sequences reproducible.
+    tprintDebug("add noise\n");
     srand(randomizer->IntRand());
-    Image pixn = pixAddGaussianNoise(distorted, 8.0);
+    Image pixn = pixAddGaussianNoise(distorted, my_noise);   // 8.0
     distorted.destroy();
     if (smooth_noise) {
-      distorted = pixBlockconv(pixn, 1, 1);
+      distorted = pixBlockconv(pixn, my_smooth, my_smooth);   // 1
       pixn.destroy();
+      tprintDebug("smoothen\n");
     } else {
+      tprintDebug("noise added\n");
       distorted = pixn;
     }
   }
-  if (blur && randomizer->SignedRand(1.0) > 0.0) {
-    Image blurred = pixBlockconv(distorted, 1, 1);
+  if (blur /*&& randomizer->SignedRand(1.0) > 0.0*/) {
+    tprintDebug("blur\n");
+    Image blurred = pixBlockconv(distorted, my_blur, my_blur);  // 1
     distorted.destroy();
     distorted = blurred;
   }
@@ -213,7 +218,7 @@ Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool w
       }
     }
   }
-  if (invert && randomizer->SignedRand(1.0) < -0) {
+  if (invert /*&& randomizer->SignedRand(1.0) < -0*/) {
     pixInvert(distorted, distorted);
   }
   return distorted;
