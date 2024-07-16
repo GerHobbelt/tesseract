@@ -618,7 +618,7 @@ public:
                       int *min_top, int *max_top) const {
     if (INVALID_UNICHAR_ID == unichar_id) {
       *min_bottom = *min_top = 0;
-      *max_bottom = *max_top = 256; // kBlnCellHeight
+      *max_bottom = *max_top = UINT8_MAX; // kBlnCellHeight
       return;
     }
     ASSERT_HOST(contains_unichar_id(unichar_id));
@@ -953,6 +953,12 @@ public:
   // then the returned pointer will be the same.
   // The script parameter is copied and thus can be a temporary.
   int add_script(const char *script);
+
+    // Set the enabled property of the given unichar to the given value.
+  void set_enabled(UNICHAR_ID unichar_id, bool value) {
+    ASSERT_HOST(contains_unichar_id(unichar_id));
+    unichars[unichar_id].properties.enabled = value;
+  }
 
   // Return the enabled property of the given unichar.
   bool get_enabled(UNICHAR_ID unichar_id) const {
