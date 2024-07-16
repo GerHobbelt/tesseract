@@ -351,9 +351,11 @@ protected:
   // only the last language_model_ngram_order of the word are stored).
   std::string prev_word_str_;
   int prev_word_unichar_step_len_ = 0;
+
   // Active dawg vector.
   DawgPositionVector very_beginning_active_dawgs_; // includes continuation
   DawgPositionVector beginning_active_dawgs_;
+
   // Set to true if acceptable choice was discovered.
   // Note: it would be nice to use this to terminate the search once an
   // acceptable choice is found. However we do not do that and once an
@@ -366,9 +368,6 @@ protected:
   // ambiguous (i.e. there are best choices in the best choice list that have
   // ratings close to the very best one) and will be less likely to mis-adapt.
   bool acceptable_choice_found_ = false;
-
-  // Set to true if a choice representing correct segmentation was explored.
-  bool correct_segmentation_explored_ = false;
 
   // Params models containing weights for computing ViterbiStateEntry costs.
   ParamsModel params_model_;
