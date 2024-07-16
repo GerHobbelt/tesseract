@@ -509,8 +509,19 @@ int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineM
               set_only_non_debug_params, nullptr);
 }
 
+int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
+                          int configs_size, const std::vector<std::string> *vars_vec,
+                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader) {
+  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+                            set_only_non_debug_params, reader);
+}
+
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
   return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
+}
+
+int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader) {
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false, reader);
 }
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
