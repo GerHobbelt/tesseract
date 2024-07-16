@@ -45,6 +45,7 @@ static const int ISDIGIT_MASK = 0x8;
 static const int ISPUNCTUATION_MASK = 0x10;
 
 // Y coordinate threshold for determining cap-height vs x-height.
+// 
 // TODO(rays) Bring the global definition down to the ccutil library level,
 // so this constant is relative to some other constants.
 static const int kMeanlineThreshold = 220;
@@ -901,7 +902,7 @@ bool UNICHARSET::load_via_fgets(
     this->set_ispunctuation(id, properties & ISPUNCTUATION_MASK);
     this->set_isngram(id, false);
     this->set_script(id, script);
-    this->unichars[id].properties.enabled = true;
+    this->set_enabled(id, true);
     this->set_top_bottom(id, min_bottom, max_bottom, min_top, max_top);
     this->set_width_stats(id, width, width_sd);
     this->set_bearing_stats(id, bearing, bearing_sd);
@@ -1013,7 +1014,7 @@ bool UNICHARSET::major_right_to_left() const {
 void UNICHARSET::set_black_and_whitelist(const char *blacklist,
                                          const char *whitelist,
                                          const char *unblacklist) {
-  bool def_enabled = whitelist == nullptr || whitelist[0] == '\0';
+  bool def_enabled = (whitelist == nullptr || whitelist[0] == '\0');
   // Set everything to default
   for (auto &uc : unichars) {
     uc.properties.enabled = def_enabled;
