@@ -37,7 +37,7 @@ namespace tesseract {
 // 2. All xheight lines, such as summer. Here the initial estimate will have
 // guessed that the blob tops are caps and will have placed the xheight too low.
 // 3. Noise/logos beside words, or changes in font size on a line. Such
-// things can blow the statistics and cause an incorrect estimate.
+// things can blow up the statistics and cause an incorrect estimate.
 // 4. Incorrect baseline. Can happen when 2 columns are incorrectly merged.
 // In this case the x-height is often still correct.
 //
@@ -76,10 +76,13 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
     TBLOB *blob = word_res->rebuild_word->blobs[blob_id];
     UNICHAR_ID class_id = word_res->best_choice->unichar_id(blob_id);
     if (unicharset.get_isalpha(class_id) || unicharset.get_isdigit(class_id)) {
-      int top = blob->bounding_box().top();
+      TBOX bbox = blob->bounding_box();
+      auto top = bbox.top();
+#if 0
       if (top >= INT_FEAT_RANGE) {
         top = INT_FEAT_RANGE - 1;
       }
+#endif
       int min_bottom, max_bottom, min_top, max_top;
       unicharset.get_top_bottom(class_id, &min_bottom, &max_bottom, &min_top, &max_top);
       if (max_top - min_top > kMaxCharTopRange) {
@@ -91,9 +94,9 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
         ++bad_blobs;
       }
       if (debug_x_ht_level >= 1) {
-        tprintf("Class %s is %s with top %d vs limits of %d->%d, +/-%d\n",
+        tprintf("Class %s is %s with top %d vs limits of %d->%d, +/-%d (bbox: %s)\n",
                 unicharset.id_to_unichar(class_id), bad ? "Misfit" : "OK", top, min_top, max_top,
-                static_cast<int>(x_ht_acceptance_tolerance));
+                    static_cast<int>(x_ht_acceptance_tolerance), bbox.print_to_str().c_str());
       }
     }
   }
