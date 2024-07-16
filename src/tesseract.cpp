@@ -838,7 +838,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_main(int argc, const char** argv)
+extern "C" int tesseract_main(int argc, const char **argv)
 #endif
 {
 #if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
@@ -862,7 +862,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
   bool rectangle_mode = false;
-  const char* rectangle_str = NULL;
+  const char *rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
@@ -883,7 +883,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
     // Disable debugging and informational messages from Leptonica.
     setMsgSeverity(L_SEVERITY_ERROR);
 #else
-	// Allow Leptonica to yak in debug builds.
+    // Allow Leptonica to yak in debug builds.
     setMsgSeverity(DEFAULT_SEVERITY);
 #endif
   }
@@ -898,8 +898,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
                  &pagesegmode, &enginemode,
-                 &rectangle_mode, &rectangle_str
-  )) {
+                 &rectangle_mode, &rectangle_str)) {
     return EXIT_FAILURE;
   }
 
@@ -922,188 +921,185 @@ extern "C" int tesseract_main(int argc, const char** argv)
 #endif
 
   {
-      TessBaseAPI api;
+    TessBaseAPI api;
 
-      api.SetOutputName(outputbase);
+    api.SetOutputName(outputbase);
 
-      if (!SetVariablesFromCLArgs(api, argc, argv)) {
+    if (!SetVariablesFromCLArgs(api, argc, argv)) {
+      return EXIT_FAILURE;
+    }
+
+    int config_count = argc - arg_i;
+    const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values, false);
+
+    // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above.
+    if (!SetVariablesFromCLArgs(api, argc, argv)) {
+      return EXIT_FAILURE;
+    }
+
+    // SIMD settings might be overridden by config variable.
+    tesseract::SIMDDetect::Update();
+
+    if (list_langs) {
+      PrintLangsList(api);
+      api.End();
+      return EXIT_SUCCESS;
+    }
+
+    if (init_failed) {
+      tprintError("Could not initialize tesseract.\n");
+      return EXIT_FAILURE;
+    }
+
+    if (print_parameters) {
+      tprintInfo("Tesseract parameters:\n");
+      api.PrintVariables();
+      api.End();
+      return EXIT_SUCCESS;
+    }
+
+    if (rectangle_mode) {
+      Pix *pixs = pixRead(image);
+      if (!pixs) {
+        tprintError("Cannot open input file: {}\n", image);
         return EXIT_FAILURE;
       }
 
-      int config_count = argc - arg_i;
-      const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values, false);
+      api.SetImage(pixs);
 
-      // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above. 
-      if (!SetVariablesFromCLArgs(api, argc, argv)) {
+      std::string outfile = std::string(outputbase) + std::string(".txt");
+      FILE *fout = NULL;
+
+      if (strcmp(outputbase, "stdout") != 0) {
+        fout = fopen(outfile.c_str(), "wb");
+      } else {
+        fout = stdout;
+      }
+
+      if (fout == NULL) {
+        tprintError("Cannot open output file: {}\n", outfile);
+        pixDestroy(&pixs);
         return EXIT_FAILURE;
       }
 
-      // SIMD settings might be overridden by config variable.
-      tesseract::SIMDDetect::Update();
+      // for each rectangle
+      const char *delim = "+";
+      char *token;
+      char *specstr = strdup(rectangle_str);
 
-      if (list_langs) {
-        PrintLangsList(api);
-        api.End();
-        return EXIT_SUCCESS;
+      token = strtok(specstr, delim);
+
+      while (token != NULL) {
+        int left = 0;
+        int top = 0;
+        int width = 0;
+        int height = 0;
+        char *utf8 = NULL;
+
+        // syntax = x30y60w50h100
+        int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
+        if (params == 4) {
+          // clamp this rectangle
+          if (left < 0) {
+            left = 0;
+          }
+
+          if (top < 0) {
+            top = 0;
+          }
+
+          if (width <= 0) {
+            width = 1;
+          }
+
+          if (height <= 0) {
+            height = 1;
+          }
+
+          if (left + width > pixs->w) {
+            width = pixs->w - left;
+          }
+
+          if (top + height > pixs->h) {
+            height = pixs->h - top;
+          }
+
+          api.SetRectangle(left, top, width, height);
+          utf8 = api.GetUTF8Text();
+          if (utf8) {
+            fwrite(utf8, 1, strlen(utf8), fout);
+            delete[] utf8;
+            utf8 = NULL;
+          }
+        } else {
+          tprintError("incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
+          fclose(fout);
+          pixDestroy(&pixs);
+          return EXIT_FAILURE;
+        }
+        token = strtok(NULL, delim);
       }
 
-      if (init_failed) {
-        tprintError("Could not initialize tesseract.\n");
-        return EXIT_FAILURE;
-      }
-
-      if (print_parameters) {
-        tprintInfo("Tesseract parameters:\n");
-        api.PrintVariables();
-        api.End();
-        return EXIT_SUCCESS;
-      }
-
-	if (rectangle_mode) {
-		Pix* pixs = pixRead(image);
-		if (!pixs) {
-			tprintError("Cannot open input file: {}\n", image);
-            return EXIT_FAILURE;
-		}
-
-		api.SetImage(pixs);
-
-		std::string outfile = std::string(outputbase) + std::string(".txt");
-		FILE* fout = NULL;
-		
-		if (strcmp(outputbase, "stdout") != 0) {
-			fout = fopen(outfile.c_str(), "wb");
-		}
-		else {
-			fout = stdout;
-		}
-
-		if (fout == NULL) {
-			tprintError("Cannot open output file: {}\n", outfile);
-			pixDestroy(&pixs);
-            return EXIT_FAILURE;
-		}
-
-		// for each rectangle
-		const char *delim = "+";
-		char *token;
-		char *specstr = strdup(rectangle_str);
-
-		token = strtok(specstr, delim);
-		
-		while (token != NULL) {
-			int left = 0;
-			int top = 0;
-			int width = 0;
-			int height = 0;
-			char *utf8 = NULL;
-
-			// syntax = x30y60w50h100
-			int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
-			if (params == 4) {
-				// clamp this rectangle
-				if (left < 0) {
-					left = 0;
-				}
-				
-				if (top < 0) {
-					top = 0;
-				}
-				
-				if (width <= 0) {
-					width = 1;
-				}
-				
-				if (height <= 0) {
-					height = 1;
-				}
-
-				if (left + width > pixs->w) {
-					width = pixs->w - left;
-				}
-
-				if (top + height > pixs->h) {
-					height = pixs->h - top;
-				}
-
-				api.SetRectangle(left, top, width, height);
-				utf8 = api.GetUTF8Text();
-				if (utf8) {
-					fwrite(utf8, 1, strlen(utf8), fout);
-					delete[] utf8;
-					utf8 = NULL;
-				}
-			}
-			else {
-				tprintError("incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
-				fclose(fout);
-				pixDestroy(&pixs);
-                return EXIT_FAILURE;
-			}
-			token = strtok(NULL, delim);
-		}
-
-		fclose(fout);
-		pixDestroy(&pixs);
-        free(specstr);
-        return EXIT_SUCCESS;
+      fclose(fout);
+      pixDestroy(&pixs);
+      free(specstr);
+      return EXIT_SUCCESS;
     }
 
 #if !DISABLED_LEGACY_ENGINE
-      if (print_fonts_table) {
-        tprintDebug("Tesseract fonts table:\n");
-        api.PrintFontsTable();
-        api.End();
-        return EXIT_SUCCESS;
+    if (print_fonts_table) {
+      tprintDebug("Tesseract fonts table:\n");
+      api.PrintFontsTable();
+      api.End();
+      return EXIT_SUCCESS;
+    }
+#endif // !DISABLED_LEGACY_ENGINE
+
+    // record the currently active input image path as soon as possible:
+    // this path is also used to construct the destination path for
+    // various debug output files.
+    api.SetInputName(image);
+
+    FixPageSegMode(api, pagesegmode);
+
+    if (dpi) {
+      auto dpi_string = std::to_string(dpi);
+      api.SetVariable("user_defined_dpi", dpi_string.c_str());
+    }
+
+    if (visible_pdf_image_file) {
+      api.SetVisibleImageFilename(visible_pdf_image_file);
+    }
+
+    if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
+      Pix *pixs = pixRead(image);
+      if (!pixs) {
+        tprintError("Leptonica can't process input file: {}\n", image);
+        return 2;
       }
-#endif  // !DISABLED_LEGACY_ENGINE
 
-      // record the currently active input image path as soon as possible:
-      // this path is also used to construct the destination path for 
-      // various debug output files.
-      api.SetInputName(image);
+      api.SetImage(pixs);
 
-      FixPageSegMode(api, pagesegmode);
+      tesseract::Orientation orientation;
+      tesseract::WritingDirection direction;
+      tesseract::TextlineOrder order;
+      float deskew_angle;
 
-      if (dpi) {
-        auto dpi_string = std::to_string(dpi);
-        api.SetVariable("user_defined_dpi", dpi_string.c_str());
+      const std::unique_ptr<const tesseract::PageIterator> it(api.AnalyseLayout());
+      if (it) {
+        // TODO: Implement output of page segmentation, see documentation
+        // ("Automatic page segmentation, but no OSD, or OCR").
+        it->Orientation(&orientation, &direction, &order, &deskew_angle);
+        tprintDebug(
+            "Orientation: {}\nWritingDirection: {}\nTextlineOrder: {}\n"
+            "Deskew angle: {}\n",
+            orientation, direction, order, deskew_angle);
+      } else {
+        ret_val = EXIT_FAILURE;
       }
 
-      if (visible_pdf_image_file) {
-        api.SetVisibleImageFilename(visible_pdf_image_file);
-      }
-
-      if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
-        Pix *pixs = pixRead(image);
-        if (!pixs) {
-          tprintError("Leptonica can't process input file: {}\n", image);
-          return 2;
-        }
-
-        api.SetImage(pixs);
-
-        tesseract::Orientation orientation;
-        tesseract::WritingDirection direction;
-        tesseract::TextlineOrder order;
-        float deskew_angle;
-
-        const std::unique_ptr<const tesseract::PageIterator> it(api.AnalyseLayout());
-        if (it) {
-          // TODO: Implement output of page segmentation, see documentation
-          // ("Automatic page segmentation, but no OSD, or OCR").
-          it->Orientation(&orientation, &direction, &order, &deskew_angle);
-          tprintDebug(
-              "Orientation: {}\nWritingDirection: {}\nTextlineOrder: {}\n"
-              "Deskew angle: {}\n",
-              orientation, direction, order, deskew_angle);
-        } else {
-          ret_val = EXIT_FAILURE;
-        }
-
-        pixDestroy(&pixs);
-      }
-      else {
+      pixDestroy(&pixs);
+    } else {
       // Set in_training_mode to true when using one of these configs:
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
@@ -1127,7 +1123,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
         const char *disabled_osd_msg =
             "\nERROR: The page segmentation mode 0 (OSD Only) is currently "
             "disabled.\n\n";
-        tprintDebug("{}",  disabled_osd_msg);
+        tprintDebug("{}", disabled_osd_msg);
         return EXIT_FAILURE;
       } else if (cur_psm == tesseract::PSM_AUTO_OSD) {
         api.SetPageSegMode(tesseract::PSM_AUTO);
