@@ -218,29 +218,19 @@ void TBOX::plot(                  // use current settings
   ptaDestroy(&pta);
 }
 
+void TBOX::print() const { // print
+  tprintDebug("Bounding box={}\n", print_to_str());
+}
+
 // Appends the bounding box as ({},{})->({},{}) to a string.
 std::string TBOX::print_to_str() const {
   // "({},{})->({},{})", left(), bottom(), right(), top()
   if (!null_box()) {
-    std::string str;
-    str = "(" + std::to_string(left());
-    str += "," + std::to_string(bottom());
-    str += ")->(" + std::to_string(right());
-    str += "," + std::to_string(top());
-    str += ")[=>w:" + std::to_string(width());
-    str += ",h:" + std::to_string(height());
-    str += ']';
-    return str;
+    return fmt::format("(l:{},b:{}->r:{},t:{})[=>width:{},height:{}]", left(), bottom(), right(), top(), width(), height());
   } else {
     // if we still got a kind of sane corner coordinate, don't hesitate to report it:
     if (right() >= 0 && top() >= 0) {
-      std::string str;
-      str = "(" + std::to_string(left());
-      str += "," + std::to_string(bottom());
-      str += ")->(" + std::to_string(right());
-      str += "," + std::to_string(top());
-      str += ")[=>zero area]";
-      return str;
+      return fmt::format("<null_box>:(l:{},b:{}->r:{},t:{})[=>zero area]", left(), bottom(), right(), top());
     } else {
       return "<null_box>";
     }
