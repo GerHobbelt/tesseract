@@ -363,9 +363,7 @@ public:
    * Note: only non-init params will be set (init params are set by Init()).
    */
   void ReadConfigFile(const char *filename);
-  /** Same as above, but only set debug params from the given config file. */
-  void ReadDebugConfigFile(const char *filename);
-
+  
   /**
    * Set the current page segmentation mode. Defaults to PSM_SINGLE_BLOCK.
    * The mode is stored as an IntParam so it can also be modified by

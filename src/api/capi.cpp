@@ -299,10 +299,6 @@ void TessBaseAPIReadConfigFile(TessBaseAPI *handle, const char *filename) {
   handle->ReadConfigFile(filename);
 }
 
-void TessBaseAPIReadDebugConfigFile(TessBaseAPI *handle, const char *filename) {
-  handle->ReadDebugConfigFile(filename);
-}
-
 void TessBaseAPISetPageSegMode(TessBaseAPI *handle, TessPageSegMode mode) {
   handle->SetPageSegMode(mode);
 }

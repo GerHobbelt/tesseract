@@ -264,8 +264,6 @@ TESS_API void TessBaseAPIInitForAnalysePage(TessBaseAPI *handle);
 
 TESS_API void TessBaseAPIReadConfigFile(TessBaseAPI *handle,
                                         const char *filename);
-TESS_API void TessBaseAPIReadDebugConfigFile(TessBaseAPI *handle,
-                                             const char *filename);
 
 TESS_API void TessBaseAPISetPageSegMode(TessBaseAPI *handle,
                                         TessPageSegMode mode);

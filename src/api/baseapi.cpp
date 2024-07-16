@@ -658,11 +658,6 @@ void TessBaseAPI::ReadConfigFile(const char *filename) {
   tesseract_->read_config_file(filename, SET_PARAM_CONSTRAINT_NON_INIT_ONLY);
 }
 
-/** Same as above, but only set debug params from the given config file. */
-void TessBaseAPI::ReadDebugConfigFile(const char *filename) {
-  tesseract_->read_config_file(filename, SET_PARAM_CONSTRAINT_DEBUG_ONLY);
-}
-
 /**
  * Set the current page segmentation mode. Defaults to PSM_AUTO.
  * The mode is stored as an IntParam so it can also be modified by
