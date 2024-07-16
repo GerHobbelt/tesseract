@@ -2491,12 +2491,11 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
-  // TODO? write/flush log output / ReportDebugInfo() ?
-
+  // write/flush diagnostics log output via ReportDebugInfo() is done inside ClearResults() before we clear the instance.
+  ClearResults();
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
   }
-  ClearResults();
   if (tesseract_ != nullptr) {
     SetInputImage(nullptr);
   }
