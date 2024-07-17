@@ -89,16 +89,72 @@ struct DawgArgs {
   bool valid_end;
 };
 
-class TESS_API Dict {
+// The Dict base class which carries all parameterizable settings.
+class DictSettings {
 public:
-  Dict(CCUtil *image_ptr);
-  ~Dict();
+  DictSettings() = delete;
+  DictSettings(CCUtil *owner);
+  ~DictSettings() = default;
+
   const CCUtil *getCCUtil() const {
     return ccutil_;
   }
   CCUtil *getCCUtil() {
     return ccutil_;
   }
+
+protected:
+  /** Protected member variables. */
+  CCUtil *ccutil_;
+
+public:
+  /// Variable members.
+  /// These have to be declared and initialized after image_ptr_, which contains
+  /// the pointer to the params vector - the member of its base CCUtil class.
+  STRING_VAR_H(user_words_file);
+  STRING_VAR_H(user_words_suffix);
+  STRING_VAR_H(user_patterns_file);
+  STRING_VAR_H(user_patterns_suffix);
+  BOOL_VAR_H(load_system_dawg);
+  BOOL_VAR_H(load_freq_dawg);
+  BOOL_VAR_H(load_unambig_dawg);
+  BOOL_VAR_H(load_punc_dawg);
+  BOOL_VAR_H(load_number_dawg);
+  BOOL_VAR_H(load_bigram_dawg);
+  DOUBLE_VAR_H(xheight_penalty_subscripts);
+  DOUBLE_VAR_H(xheight_penalty_inconsistent);
+  DOUBLE_VAR_H(segment_penalty_dict_frequent_word);
+  DOUBLE_VAR_H(segment_penalty_dict_case_ok);
+  DOUBLE_VAR_H(segment_penalty_dict_case_bad);
+  DOUBLE_VAR_H(segment_penalty_dict_nonword);
+  DOUBLE_VAR_H(segment_penalty_garbage);
+  STRING_VAR_H(output_ambig_words_file);
+  INT_VAR_H(dawg_debug_level);
+  INT_VAR_H(hyphen_debug_level);
+  BOOL_VAR_H(use_only_first_uft8_step);
+  DOUBLE_VAR_H(certainty_scale);
+  DOUBLE_VAR_H(stopper_nondict_certainty_base);
+  DOUBLE_VAR_H(stopper_phase2_certainty_rejection_offset);
+  INT_VAR_H(stopper_smallword_size);
+  DOUBLE_VAR_H(stopper_certainty_per_char);
+  DOUBLE_VAR_H(stopper_allowable_character_badness);
+  INT_VAR_H(stopper_debug_level);
+  BOOL_VAR_H(stopper_no_acceptable_choices);
+  INT_VAR_H(tessedit_truncate_wordchoice_log);
+  STRING_VAR_H(word_to_debug);
+  BOOL_VAR_H(segment_nonalphabetic_script);
+  BOOL_VAR_H(save_doc_words);
+  DOUBLE_VAR_H(doc_dict_pending_threshold);
+  DOUBLE_VAR_H(doc_dict_certainty_threshold);
+  INT_VAR_H(max_permuter_attempts);
+};
+
+class TESS_API Dict : public DictSettings {
+public:
+  Dict() = delete;
+  Dict(CCUtil *owner);
+  ~Dict();
+
   const UNICHARSET &getUnicharset() const {
     return getCCUtil()->unicharset_;
   }
@@ -475,7 +531,7 @@ public:
 
 private:
   /** Private member variables. */
-  CCUtil *ccutil_;
+
   /**
    * Table that stores ambiguities computed during training
    * (loaded when NoDangerousAmbigs() is called for the first time).
@@ -532,47 +588,6 @@ private:
   FILE *output_ambig_words_file_;
 
   // TODO: also add `FILE *` to save new words added due to `tessedit_enable_doc_dict` / `WERD_RES::IsAmbiguous()` heuristic process.
-
-public:
-  /// Variable members.
-  /// These have to be declared and initialized after image_ptr_, which contains
-  /// the pointer to the params vector - the member of its base CCUtil class.
-  STRING_VAR_H(user_words_file);
-  STRING_VAR_H(user_words_suffix);
-  STRING_VAR_H(user_patterns_file);
-  STRING_VAR_H(user_patterns_suffix);
-  BOOL_VAR_H(load_system_dawg);
-  BOOL_VAR_H(load_freq_dawg);
-  BOOL_VAR_H(load_unambig_dawg);
-  BOOL_VAR_H(load_punc_dawg);
-  BOOL_VAR_H(load_number_dawg);
-  BOOL_VAR_H(load_bigram_dawg);
-  DOUBLE_VAR_H(xheight_penalty_subscripts);
-  DOUBLE_VAR_H(xheight_penalty_inconsistent);
-  DOUBLE_VAR_H(segment_penalty_dict_frequent_word);
-  DOUBLE_VAR_H(segment_penalty_dict_case_ok);
-  DOUBLE_VAR_H(segment_penalty_dict_case_bad);
-  DOUBLE_VAR_H(segment_penalty_dict_nonword);
-  DOUBLE_VAR_H(segment_penalty_garbage);
-  STRING_VAR_H(output_ambig_words_file);
-  INT_VAR_H(dawg_debug_level);
-  INT_VAR_H(hyphen_debug_level);
-  BOOL_VAR_H(use_only_first_uft8_step);
-  DOUBLE_VAR_H(certainty_scale);
-  DOUBLE_VAR_H(stopper_nondict_certainty_base);
-  DOUBLE_VAR_H(stopper_phase2_certainty_rejection_offset);
-  INT_VAR_H(stopper_smallword_size);
-  DOUBLE_VAR_H(stopper_certainty_per_char);
-  DOUBLE_VAR_H(stopper_allowable_character_badness);
-  INT_VAR_H(stopper_debug_level);
-  BOOL_VAR_H(stopper_no_acceptable_choices);
-  INT_VAR_H(tessedit_truncate_wordchoice_log);
-  STRING_VAR_H(word_to_debug);
-  BOOL_VAR_H(segment_nonalphabetic_script);
-  BOOL_VAR_H(save_doc_words);
-  DOUBLE_VAR_H(doc_dict_pending_threshold);
-  DOUBLE_VAR_H(doc_dict_certainty_threshold);
-  INT_VAR_H(max_permuter_attempts);
 };
 
 } // namespace tesseract

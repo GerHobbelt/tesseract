@@ -28,125 +28,131 @@ namespace tesseract {
 
 class Image;
 
-Dict::Dict(CCUtil *ccutil)
-    : letter_is_okay_(&tesseract::Dict::def_letter_is_okay)
-    , probability_in_context_(&tesseract::Dict::def_probability_in_context)
-    , ccutil_(ccutil)
-    , wildcard_unichar_id_(INVALID_UNICHAR_ID)
-    , apostrophe_unichar_id_(INVALID_UNICHAR_ID)
-    , question_unichar_id_(INVALID_UNICHAR_ID)
-    , slash_unichar_id_(INVALID_UNICHAR_ID)
-    , hyphen_unichar_id_(INVALID_UNICHAR_ID)
+DictSettings::DictSettings(CCUtil *owner)
+    : ccutil_(owner)
     , STRING_MEMBER(user_words_file, "", "A filename of user-provided words.",
-                    getCCUtil()->params())
-    , STRING_INIT_MEMBER(user_words_suffix, "",
+                    owner->params())
+    , STRING_MEMBER(user_words_suffix, "",
                          "A suffix of user-provided words located in tessdata.",
-                         getCCUtil()->params())
+                         owner->params())
     , STRING_MEMBER(user_patterns_file, "", "A filename of user-provided patterns.",
-                    getCCUtil()->params())
-    , STRING_INIT_MEMBER(user_patterns_suffix, "",
+                    owner->params())
+    , STRING_MEMBER(user_patterns_suffix, "",
                          "A suffix of user-provided patterns located in "
                          "tessdata.",
-                         getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_system_dawg, true, "Load system word dawg.", getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_freq_dawg, true, "Load frequent word dawg.", getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_unambig_dawg, true, "Load unambiguous word dawg.",
-                       getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_punc_dawg, true,
+                         owner->params())
+    , BOOL_MEMBER(load_system_dawg, true, "Load system word dawg.", owner->params())
+    , BOOL_MEMBER(load_freq_dawg, true, "Load frequent word dawg.", owner->params())
+    , BOOL_MEMBER(load_unambig_dawg, true, "Load unambiguous word dawg.",
+                       owner->params())
+    , BOOL_MEMBER(load_punc_dawg, true,
                        "Load dawg with punctuation"
                        " patterns.",
-                       getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_number_dawg, true,
+                       owner->params())
+    , BOOL_MEMBER(load_number_dawg, true,
                        "Load dawg with number"
                        " patterns.",
-                       getCCUtil()->params())
-    , BOOL_INIT_MEMBER(load_bigram_dawg, true,
+                       owner->params())
+    , BOOL_MEMBER(load_bigram_dawg, true,
                        "Load dawg with special word "
                        "bigrams.",
-                       getCCUtil()->params())
+                       owner->params())
     , DOUBLE_MEMBER(xheight_penalty_subscripts, 0.125,
                     "Score penalty (0.1 = 10%) added if there are subscripts "
                     "or superscripts in a word, but it is otherwise OK.",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(xheight_penalty_inconsistent, 0.25,
                     "Score penalty (0.1 = 10%) added if an xheight is "
                     "inconsistent.",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(segment_penalty_dict_frequent_word, 1.0,
                     "Score multiplier for word matches which have good case and"
                     " are frequent in the given language (lower is better).",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(segment_penalty_dict_case_ok, 1.1,
                     "Score multiplier for word matches that have good case "
                     "(lower is better).",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(segment_penalty_dict_case_bad, 1.3125,
                     "Default score multiplier for word matches, which may have "
                     "case issues (lower is better).",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(segment_penalty_dict_nonword, 1.25,
                     "Score multiplier for glyph fragment segmentations which "
                     "do not match a dictionary word (lower is better).",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(segment_penalty_garbage, 1.50,
                     "Score multiplier for poorly cased strings that are not in"
                     " the dictionary and generally look like garbage (lower is"
                     " better).",
-                    getCCUtil()->params())
+                    owner->params())
     , STRING_MEMBER(output_ambig_words_file, "",
-                    "Output file for ambiguities found in the dictionary.", getCCUtil()->params())
+                    "Output file for ambiguities found in the dictionary.", owner->params())
     , INT_MEMBER(dawg_debug_level, 0,
                  "Set to 1 for general debug info"
                  ", to 2 for more details, to 3 to see all the debug messages.",
-                 getCCUtil()->params())
-    , INT_MEMBER(hyphen_debug_level, 0, "Debug level for hyphenated words.", getCCUtil()->params())
+                 owner->params())
+    , INT_MEMBER(hyphen_debug_level, 0, "Debug level for hyphenated words.", owner->params())
     , BOOL_MEMBER(use_only_first_uft8_step, false,
                   "Use only the first UTF8 step of the given string"
                   " when computing log probabilities.",
-                  getCCUtil()->params())
-    , DOUBLE_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", getCCUtil()->params())
+                  owner->params())
+    , DOUBLE_MEMBER(certainty_scale, 20.0, "Certainty scaling factor", owner->params())
     , DOUBLE_MEMBER(stopper_nondict_certainty_base, -2.50, "Certainty threshold for non-dict words.",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(stopper_phase2_certainty_rejection_offset, 1.0, "Reject certainty offset.",
-                    getCCUtil()->params())
+                    owner->params())
     , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word.",
-                 getCCUtil()->params())
+                 owner->params())
     , DOUBLE_MEMBER(stopper_certainty_per_char, -0.50,
                     "Certainty to add"
                     " for each dict char above small word size.",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(stopper_allowable_character_badness, 3.0,
-                    "Max certainty variation allowed in a word (in sigma).", getCCUtil()->params())
-    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level. (0..3)", getCCUtil()->params())
+                    "Max certainty variation allowed in a word (in sigma).", owner->params())
+    , INT_MEMBER(stopper_debug_level, 0, "Stopper debug level. (0..3)", owner->params())
     , BOOL_MEMBER(stopper_no_acceptable_choices, false,
                   "Make AcceptableChoice() always return false. Useful"
                   " when there is a need to explore all segmentations.",
-                  getCCUtil()->params())
+                  owner->params())
     , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list.",
-                 getCCUtil()->params())
+                 owner->params())
     , STRING_MEMBER(word_to_debug, "",
                     "Word for which stopper debug"
                     " information should be printed to stdout.",
-                    getCCUtil()->params())
+                    owner->params())
     , BOOL_MEMBER(segment_nonalphabetic_script, false,
                   "Don't use any alphabetic-specific tricks."
                   " Set to true in the traineddata config file for"
                   " scripts that are cursive or inherently fixed-pitch.",
-                  getCCUtil()->params())
-    , BOOL_MEMBER(save_doc_words, 0, "Save Document Words", getCCUtil()->params())
+                  owner->params())
+    , BOOL_MEMBER(save_doc_words, 0, "Save Document Words", owner->params())
     , DOUBLE_MEMBER(doc_dict_pending_threshold, 0.0, "Worst certainty for using pending dictionary.",
-                    getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(doc_dict_certainty_threshold, -2.25,
                     "Worst certainty for words that can be inserted into the"
                     " document dictionary.",
-                    getCCUtil()->params())
+                    owner->params())
     , INT_MEMBER(max_permuter_attempts, 10000,
                  "Maximum number of different"
                  " character choices to consider during permutation."
                  " This limit is especially useful when user patterns"
                  " are specified, since overly generic patterns can result in"
                  " dawg search exploring an overly large number of options.",
-                 getCCUtil()->params()) {
+                 owner->params()) {
+}
+
+
+Dict::Dict(CCUtil *ccutil)
+    : letter_is_okay_(&tesseract::Dict::def_letter_is_okay)
+    , probability_in_context_(&tesseract::Dict::def_probability_in_context)
+    , DictSettings(ccutil)
+    , wildcard_unichar_id_(INVALID_UNICHAR_ID)
+    , apostrophe_unichar_id_(INVALID_UNICHAR_ID)
+    , question_unichar_id_(INVALID_UNICHAR_ID)
+    , slash_unichar_id_(INVALID_UNICHAR_ID)
+    , hyphen_unichar_id_(INVALID_UNICHAR_ID)
+{
   reject_offset_ = 0.0;
   go_deeper_fxn_ = nullptr;
   hyphen_word_ = nullptr;
