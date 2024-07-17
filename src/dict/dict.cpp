@@ -262,7 +262,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
     if (!user_words_file.empty()) {
       name = user_words_file;
     } else {
-      name = getCCUtil()->language_data_path_prefix;
+      name = getCCUtil()->language_data_path_prefix_;
       name += user_words_suffix;
     }
     if (!trie_ptr->read_and_add_word_list(name.c_str(), getUnicharset(),
@@ -280,7 +280,7 @@ void Dict::Load(const std::string &lang, TessdataManager *data_file) {
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
     } else {
-      name = getCCUtil()->language_data_path_prefix;
+      name = getCCUtil()->language_data_path_prefix_;
       name += user_patterns_suffix;
     }
     if (!trie_ptr->read_pattern_list(name.c_str(), getUnicharset())) {
@@ -334,7 +334,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
     if (!user_words_file.empty()) {
       name = user_words_file;
     } else {
-      name = getCCUtil()->language_data_path_prefix;
+      name = getCCUtil()->language_data_path_prefix_;
       name += user_words_suffix;
     }
     if (!trie_ptr->read_and_add_word_list(name.c_str(), getUnicharset(),
@@ -352,7 +352,7 @@ void Dict::LoadLSTM(const std::string &lang, TessdataManager *data_file) {
     if (!user_patterns_file.empty()) {
       name = user_patterns_file;
     } else {
-      name = getCCUtil()->language_data_path_prefix;
+      name = getCCUtil()->language_data_path_prefix_;
       name += user_patterns_suffix;
     }
     if (!trie_ptr->read_pattern_list(name.c_str(), getUnicharset())) {
@@ -718,7 +718,7 @@ void Dict::add_document_word(const WERD_CHOICE &best_choice) {
   }
 
   if (save_doc_words) {
-    std::string filename(getCCUtil()->imagefile);
+    std::string filename(getCCUtil()->imagefile_);
     filename += ".doc";
     FILE *doc_word_file = fopen(filename.c_str(), "a");
     if (doc_word_file == nullptr) {

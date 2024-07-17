@@ -379,7 +379,7 @@ public:
   // Member variables.
 
   std::unique_ptr<LanguageModel> language_model_;
-  PRIORITY pass2_ok_split;
+  PRIORITY pass2_ok_split_;
   // Stores the best choice for the previous word in the paragraph.
   // This variable is modified by PAGE_RES_IT when iterating over
   // words to OCR on the page.

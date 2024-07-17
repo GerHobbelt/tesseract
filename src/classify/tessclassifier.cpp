@@ -59,7 +59,7 @@ const ShapeTable *TessClassifier::GetShapeTable() const {
 // Provides access to the UNICHARSET that this classifier works with.
 // Only needs to be overridden if GetShapeTable() can return nullptr.
 const UNICHARSET &TessClassifier::GetUnicharset() const {
-  return classify_->unicharset;
+  return classify_->unicharset_;
 }
 
 // Displays classification as the given shape_id. Creates as many windows

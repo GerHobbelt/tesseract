@@ -149,7 +149,7 @@ void Tesseract::recog_training_segmented(const char *filename, PAGE_RES *page_re
   for (page_res_it.restart_page(); page_res_it.block() != nullptr; page_res_it.forward()) {
     if (page_res_it.word()) {
       if (page_res_it.word()->uch_set == nullptr) {
-        page_res_it.word()->SetupFake(unicharset);
+        page_res_it.word()->SetupFake(unicharset_);
       }
       total_words++;
     }
@@ -216,7 +216,7 @@ void Tesseract::ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it
 
   // Compute the number of unichars in the label.
   std::vector<UNICHAR_ID> encoding;
-  if (!unicharset.encode_string(label, true, &encoding, nullptr, nullptr)) {
+  if (!unicharset_.encode_string(label, true, &encoding, nullptr, nullptr)) {
     tprintError("Not outputting illegal unichar {}\n", label);
     return;
   }
@@ -224,7 +224,7 @@ void Tesseract::ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it
   // Dump all paths through the ratings matrix (which is normally small).
   int dim = werd_res->ratings->dimension();
   const auto **blob_choices = new const BLOB_CHOICE *[dim];
-  PrintMatrixPaths(0, dim, *werd_res->ratings, 0, blob_choices, unicharset, label, output_file);
+  PrintMatrixPaths(0, dim, *werd_res->ratings, 0, blob_choices, unicharset_, label, output_file);
   delete[] blob_choices;
 }
 

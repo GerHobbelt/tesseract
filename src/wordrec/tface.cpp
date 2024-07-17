@@ -42,19 +42,19 @@ void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_
                              TessdataManager *init_dict) {
   if (!textbase.empty()) {
     if (textbase == "-" /* stdout */)
-      imagefile = "tesseract-stdio-session";
+      imagefile_ = "tesseract-stdio-session";
     else
-      imagefile = textbase;
+      imagefile_ = textbase;
   }
 #if !DISABLED_LEGACY_ENGINE
   InitFeatureDefs(&feature_defs_);
   InitAdaptiveClassifier(init_classifier);
   if (init_dict) {
     getDict().SetupForLoad(Dict::GlobalDawgCache());
-    getDict().Load(lang, init_dict);
+    getDict().Load(lang_, init_dict);
     getDict().FinishLoad();
   }
-  pass2_ok_split = chop_ok_split;
+  pass2_ok_split_ = chop_ok_split;
 #endif // !DISABLED_LEGACY_ENGINE
 }
 
@@ -111,7 +111,7 @@ void Wordrec::set_pass1() {
  * Get ready to do some pass 2 stuff.
  */
 void Wordrec::set_pass2() {
-  chop_ok_split.set_value(pass2_ok_split);
+  chop_ok_split.set_value(pass2_ok_split_);
   language_model_->getParamsModel().SetPass(ParamsModel::PTRAIN_PASS2);
   SetupPass2();
 }

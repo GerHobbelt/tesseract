@@ -1228,8 +1228,8 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           tprintWarn("No shape table loaded!\n");
         }
       } else {
-        if (unicharset.contains_unichar(ev->parameter)) {
-          unichar_id = unicharset.unichar_to_id(ev->parameter);
+        if (unicharset_.contains_unichar(ev->parameter)) {
+          unichar_id = unicharset_.unichar_to_id(ev->parameter);
           if (ev->command_id == IDA_ADAPTIVE) {
             *adaptive_on = true;
             *pretrained_on = false;

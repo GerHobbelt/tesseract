@@ -436,11 +436,11 @@ int Classify::PruneClasses(const INT_TEMPLATES_STRUCT *int_templates, int num_fe
   pruner.AdjustForExpectedNumFeatures(expected_num_features, classify_cp_cutoff_strength);
   // Apply disabled classes in unicharset - only works without a shape_table.
   if (shape_table_ == nullptr) {
-    pruner.DisableDisabledClasses(unicharset);
+    pruner.DisableDisabledClasses(unicharset_);
   }
   // If fragments are disabled, remove them, also only without a shape table.
   if (disable_character_fragments && shape_table_ == nullptr) {
-    pruner.DisableFragments(unicharset);
+    pruner.DisableFragments(unicharset_);
   }
 
   // If we have good x-heights, apply the given normalization factors.
@@ -451,7 +451,7 @@ int Classify::PruneClasses(const INT_TEMPLATES_STRUCT *int_templates, int num_fe
   }
   // Do the actual pruning and sort the short-list.
   pruner.PruneAndSort(classify_class_pruner_threshold, keep_this, shape_table_ == nullptr,
-                      unicharset);
+                      unicharset_);
 
   if (classify_debug_level > 2) {
     pruner.DebugMatch(*this, int_templates, features);

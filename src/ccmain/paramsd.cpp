@@ -301,7 +301,7 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference &sv) 
     SVMenuNode *svMenuRoot = BuildListOfAllLeaves(tess);
 
     std::string paramfile;
-    paramfile = tess->datadir;
+    paramfile = tess->datadir_;
     paramfile += VARDIR;   // parameters dir
     paramfile += "edited"; // actual name
 

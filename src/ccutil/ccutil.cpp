@@ -51,11 +51,11 @@ CCUtil::~CCUtil() = default;
  */
 void CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
   if (output_image_basename == "-" /* stdout */)
-    imagebasename = "tesseract-stdio-session";
+    imagebasename_ = "tesseract-stdio-session";
   else
-    imagebasename = output_image_basename; /**< name of output/debug image(s) */
+    imagebasename_ = output_image_basename; /**< name of output/debug image(s) */
   
-  datadir.clear();
+  datadir_.clear();
 
   const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
 
@@ -67,13 +67,13 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
 
   if (!argv0.empty()) {
     /* Use tessdata prefix from the command line. */
-    datadir = argv0;
+    datadir_ = argv0;
   } else if (tessdata_prefix) {
     /* Use tessdata prefix from the environment. */
-    datadir = tessdata_prefix;
+    datadir_ = tessdata_prefix;
 #if defined(_WIN32)
   } 
-  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  if (datadir_.empty() || _access(datadir_.c_str(), 0) != 0) {
     /* Look for tessdata in directory of executable. */
     wchar_t path[_MAX_PATH];
     DWORD length = GetModuleFileNameW(nullptr, path, _MAX_PATH);
@@ -84,7 +84,7 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
         std::string subdir = winutils::Utf16ToUtf8(path);
         subdir += "/tessdata";
         if (_access(subdir.c_str(), 0) == 0) {
-          datadir = subdir;
+          datadir_ = subdir;
         }
       }
     }
@@ -92,7 +92,7 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
   }
 
   // datadir may still be empty:
-  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  if (datadir_.empty() || _access(datadir_.c_str(), 0) != 0) {
 #if defined(TESSDATA_PREFIX)
     // Use tessdata prefix which was compiled in.
     datadir = TESSDATA_PREFIX "/tessdata/";
@@ -100,19 +100,19 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &output_imag
     // in the binary, so it might be shorter. Recalculate its length.
     datadir.resize(std::strlen(datadir.c_str()));
 #else
-    datadir = "./";
-    std::string subdir = datadir;
+    datadir_ = "./";
+    std::string subdir = datadir_;
     subdir += "/tessdata";
     if (_access(subdir.c_str(), 0) == 0) {
-      datadir = subdir;
+      datadir_ = subdir;
     }
 #endif /* TESSDATA_PREFIX */
   }
 
   // check for missing directory separator
-  const char lastchar = datadir.back();
+  const char lastchar = datadir_.back();
   if (lastchar != '/' && lastchar != '\\') {
-    datadir += '/';
+    datadir_ += '/';
   }
 }
 

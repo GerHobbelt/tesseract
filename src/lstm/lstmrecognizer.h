@@ -192,10 +192,10 @@ public:
 
   // Provides access to the UNICHARSET that this classifier works with.
   const UNICHARSET &GetUnicharset() const {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   UNICHARSET &GetUnicharset() {
-    return ccutil_.unicharset;
+    return ccutil_.unicharset_;
   }
   // Provides access to the UnicharCompress that this classifier works with.
   const UnicharCompress &GetRecoder() const {
@@ -377,18 +377,18 @@ protected:
   RecodeBeamSearch *search_;
 
   // == Debugging parameters.==
-  int debug_ = 0;
+  int debug___ = 0;
 
 public:
   void SetDebug(int v) {
-	debug_ = std::max(0, v);
+	debug___ = std::max(0, v);
   }
   // because both the name and several spots where this is used suggest boolean behaviour.  warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   bool HasDebug(int threshold = 0) const {
-	  return debug_ > threshold;
+	  return debug___ > threshold;
   }
   int GetDebugLevel() const {
-    return debug_;
+	  return debug___;
   }
 
 protected:

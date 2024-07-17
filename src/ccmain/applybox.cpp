@@ -231,7 +231,7 @@ PAGE_RES *Tesseract::SetupApplyBoxes(const std::vector<TBOX> &boxes, BLOCK_LIST 
 /// box_word and best_state for the maximally chopped word.
 void Tesseract::MaximallyChopWord(const std::vector<TBOX> &boxes, BLOCK *block, ROW *row,
                                   WERD_RES *word_res) {
-  if (!word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+  if (!word_res->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                      classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                      poly_allow_detailed_fx, row, block)) {
     word_res->CloneChoppedToRebuild();
@@ -525,7 +525,7 @@ bool Tesseract::ConvertStringToUnichars(const char *utf8, std::vector<UNICHAR_ID
       next_space = utf8 + strlen(utf8);
     }
     step = next_space - utf8;
-    UNICHAR_ID class_id = unicharset.unichar_to_id(utf8, step);
+    UNICHAR_ID class_id = unicharset_.unichar_to_id(utf8, step);
     if (class_id == INVALID_UNICHAR_ID) {
       return false;
     }
@@ -554,7 +554,7 @@ bool Tesseract::FindSegmentation(const std::vector<UNICHAR_ID> &target_text, WER
                          word_res->blamer_bundle);
       if (applybox_debug > 2) {
         tprintDebug("{}+{}:", i, j);
-        print_ratings_list("Segment:", match_result, unicharset);
+        print_ratings_list("Segment:", match_result, unicharset_);
       }
       choices[i].push_back(match_result);
     }
@@ -594,7 +594,7 @@ bool Tesseract::FindSegmentation(const std::vector<UNICHAR_ID> &target_text, WER
   }
   word_res->correct_text.clear();
   for (auto &text : target_text) {
-    word_res->correct_text.emplace_back(unicharset.id_to_unichar(text));
+    word_res->correct_text.emplace_back(unicharset_.id_to_unichar(text));
   }
   return true;
 }
@@ -664,7 +664,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
     } else if (choices_pos + length < choices_length && text_index + 1 < target_text.size()) {
       if (applybox_debug > 3) {
         tprintDebug("Match found for {}={}:{}, at {}+{}, recursing...\n", target_text[text_index],
-                unicharset.id_to_unichar(target_text[text_index]),
+                unicharset_.id_to_unichar(target_text[text_index]),
                 choice_it.data()->unichar_id() == target_text[text_index] ? "Match" : "Ambig",
                 choices_pos, length);
       }
@@ -672,7 +672,7 @@ void Tesseract::SearchForText(const std::vector<BLOB_CHOICE_LIST *> *choices, in
                     rating + choice_rating, segmentation, best_rating, best_segmentation);
       if (applybox_debug > 3) {
         tprintDebug("End recursion for {}={}\n", target_text[text_index],
-                unicharset.id_to_unichar(target_text[text_index]));
+                unicharset_.id_to_unichar(target_text[text_index]));
       }
     }
     segmentation->resize(segmentation->size() - 1);
@@ -771,7 +771,7 @@ void Tesseract::CorrectClassifyWords(PAGE_RES *page_res) {
       // The part before the first space is the real ground truth, and the
       // rest is the bounding box location and page number.
       std::vector<std::string> tokens = split(correct_text, ' ');
-      UNICHAR_ID char_id = unicharset.unichar_to_id(tokens[0].c_str());
+      UNICHAR_ID char_id = unicharset_.unichar_to_id(tokens[0].c_str());
       choice->append_unichar_id_space_allocated(char_id, word_res->best_state[&correct_text - &word_res->correct_text[0]], 0.0f, 0.0f);
     }
     word_res->ClearWordChoices();

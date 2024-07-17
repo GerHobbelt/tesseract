@@ -428,11 +428,11 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
     INT_FX_RESULT_STRUCT fx_info;
     SetupBLCNDenorms(*rotated_blob, classify_nonlinear_norm, &bl_denorm, &cn_denorm, &fx_info);
     LearnBlob(fontname, rotated_blob, cn_denorm, fx_info, correct_text);
-  } else if (unicharset.contains_unichar(correct_text)) {
-    UNICHAR_ID class_id = unicharset.unichar_to_id(correct_text);
+  } else if (unicharset_.contains_unichar(correct_text)) {
+    UNICHAR_ID class_id = unicharset_.unichar_to_id(correct_text);
     int font_id = word->fontinfo != nullptr ? fontinfo_table_.get_index(*word->fontinfo) : 0;
     if (classify_learning_debug_level >= 1) {
-      tprintDebug("Adapting to char = '{}', threshold = {} font_id = {}\n", unicharset.id_to_unichar(class_id),
+      tprintDebug("Adapting to char = '{}', threshold = {} font_id = {}\n", unicharset_.id_to_unichar(class_id),
               threshold, font_id);
     }
     // If filename is not nullptr we are doing recognition
@@ -467,7 +467,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
  */
 void Classify::EndAdaptiveClassifier() {
   if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
-    std::string Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
+    std::string Filename = imagefile_ + ADAPT_TEMPLATE_SUFFIX;
     FILE *File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
       tprintError("Unable to save adapted templates to file {}!\n", Filename);
@@ -537,13 +537,13 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
 
   // If there is no language_data_path_prefix, the classifier will be
   // adaptive only.
-  if (language_data_path_prefix.length() > 0 && mgr != nullptr) {
+  if (language_data_path_prefix_.length() > 0 && mgr != nullptr) {
     TFile fp;
     ASSERT_HOST(mgr->GetComponent(TESSDATA_INTTEMP, &fp));
     PreTrainedTemplates = ReadIntTemplates(&fp);
 
     if (mgr->GetComponent(TESSDATA_SHAPE_TABLE, &fp)) {
-      shape_table_ = new ShapeTable(unicharset);
+      shape_table_ = new ShapeTable(unicharset_);
       if (!shape_table_->DeSerialize(&fp)) {
         tprintError("Error loading shape table!\n");
         delete shape_table_;
@@ -575,10 +575,10 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
 
   if (classify_use_pre_adapted_templates) {
     TFile fp;
-    std::string Filename = imagefile;
+    std::string Filename = imagefile_;
     Filename += ADAPT_TEMPLATE_SUFFIX;
     if (!fp.Open(Filename.c_str(), nullptr)) {
-      AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
+      AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
     } else {
       tprintDebug("\nReading pre-adapted templates from file {} ...\n", Filename);
       fflush(stdout);
@@ -592,7 +592,7 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
     }
   } else {
     delete AdaptedTemplates;
-    AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
+    AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
   }
 } /* InitAdaptiveClassifier */
 
@@ -601,7 +601,7 @@ void Classify::ResetAdaptiveClassifierInternal() {
     tprintDebug("Resetting adaptive classifier (NumAdaptationsFailed={})\n", NumAdaptationsFailed);
   }
   delete AdaptedTemplates;
-  AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
+  AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
   delete BackupAdaptedTemplates;
   BackupAdaptedTemplates = nullptr;
   NumAdaptationsFailed = 0;
@@ -627,7 +627,7 @@ void Classify::SwitchAdaptiveClassifier() {
 // Resets the backup adaptive classifier to empty.
 void Classify::StartBackupAdaptiveClassifier() {
   delete BackupAdaptedTemplates;
-  BackupAdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset);
+  BackupAdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -747,7 +747,7 @@ void Classify::InitAdaptedClass(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, A
 
   if (classify_learning_debug_level >= 1) {
     tprintDebug("Added new class '{}' with class id {} and {} protos.\n",
-            unicharset.id_to_unichar(ClassId), ClassId, NumFeatures);
+            unicharset_.id_to_unichar(ClassId), ClassId, NumFeatures);
 #if !GRAPHICS_DISABLED
     if (classify_learning_debug_level > 1) {
       DisplayAdaptedChar(Blob, IClass);
@@ -996,7 +996,7 @@ void Classify::AddNewResult(const UnicharRating &new_result, ADAPT_RESULTS *resu
     return; // New one not good enough.
   }
 
-  if (!unicharset.get_fragment(new_result.unichar_id)) {
+  if (!unicharset_.get_fragment(new_result.unichar_id)) {
     results->HasNonfragment = true;
   }
 
@@ -1012,7 +1012,7 @@ void Classify::AddNewResult(const UnicharRating &new_result, ADAPT_RESULTS *resu
       // always present in the results.
       // TODO(daria): verify that this helps accuracy and does not
       // hurt performance.
-      !unicharset.get_fragment(new_result.unichar_id)) {
+      !unicharset_.get_fragment(new_result.unichar_id)) {
     results->best_match_index = old_match;
     results->best_rating = new_result.rating;
     results->best_unichar_id = new_result.unichar_id;
@@ -1045,7 +1045,7 @@ void Classify::AmbigClassifier(const std::vector<INT_FEATURE_STRUCT> &int_featur
   if (int_features.empty()) {
     return;
   }
-  auto *CharNormArray = new uint8_t[unicharset.size()];
+  auto *CharNormArray = new uint8_t[unicharset_.size()];
   UnicharRating int_result;
 
   results->BlobLength = GetCharNormFeature(fx_info, templates, nullptr, CharNormArray);
@@ -1134,7 +1134,7 @@ void Classify::ExpandShapesAndApplyCorrections(ADAPT_CLASS_STRUCT **classes, boo
         const Shape &shape = shape_table_->GetShape(shape_id);
         for (int c = 0; c < shape.size(); ++c) {
           int unichar_id = shape[c].unichar_id;
-          if (!unicharset.get_enabled(unichar_id)) {
+          if (!unicharset_.get_enabled(unichar_id)) {
             continue;
           }
           // Find the mapped_result for unichar_id.
@@ -1161,7 +1161,7 @@ void Classify::ExpandShapesAndApplyCorrections(ADAPT_CLASS_STRUCT **classes, boo
       return;
     }
   }
-  if (unicharset.get_enabled(class_id)) {
+  if (unicharset_.get_enabled(class_id)) {
     int_result->rating = ComputeCorrectedRating(debug, class_id, cp_rating, int_result->rating,
                                                 int_result->feature_misses, bottom, top,
                                                 blob_length, matcher_multiplier, cn_factors);
@@ -1182,10 +1182,10 @@ double Classify::ComputeCorrectedRating(bool debug, int unichar_id, double cp_ra
   double miss_penalty = tessedit_class_miss_scale * feature_misses;
   double vertical_penalty = 0.0;
   // Penalize non-alnums for being vertical misfits.
-  if (!unicharset.get_isalpha(unichar_id) && !unicharset.get_isdigit(unichar_id) &&
+  if (!unicharset_.get_isalpha(unichar_id) && !unicharset_.get_isdigit(unichar_id) &&
       cn_factors[unichar_id] != 0 && classify_misfit_junk_penalty > 0.0) {
     int min_bottom, max_bottom, min_top, max_top;
-    unicharset.get_top_bottom(unichar_id, &min_bottom, &max_bottom, &min_top, &max_top);
+    unicharset_.get_top_bottom(unichar_id, &min_bottom, &max_bottom, &min_top, &max_top);
     if (debug) {
       tprintDebug("top={}, vs [{}, {}], bottom={}, vs [{}, {}]\n", top, min_top, max_top, bottom,
               min_bottom, max_bottom);
@@ -1200,7 +1200,7 @@ double Classify::ComputeCorrectedRating(bool debug, int unichar_id, double cp_ra
   }
   if (debug) {
     tprintDebug("{}: {}%(CP{}, IM{} + CN{}({}) + MP{} + VP{})\n",
-            unicharset.id_to_unichar(unichar_id), result * 100.0, cp_rating * 100.0,
+            unicharset_.id_to_unichar(unichar_id), result * 100.0, cp_rating * 100.0,
             (1.0 - im_rating) * 100.0, (cn_corrected - (1.0 - im_rating)) * 100.0,
             cn_factors[unichar_id], miss_penalty * 100.0, vertical_penalty * 100.0);
   }
@@ -1232,7 +1232,7 @@ UNICHAR_ID *Classify::BaselineClassifier(TBLOB *Blob,
   if (int_features.empty()) {
     return nullptr;
   }
-  auto *CharNormArray = new uint8_t[unicharset.size()];
+  auto *CharNormArray = new uint8_t[unicharset_.size()];
   ClearCharNormArray(CharNormArray);
 
   Results->BlobLength = IntCastRounded(fx_info.Length / kStandardFeatureLength);
@@ -1302,8 +1302,8 @@ int Classify::CharNormTrainingSample(bool pruner_only, int keep_this, const Trai
                 sample.geo_feature(GeoTop), sample.geo_feature(GeoTop));
   // Compute the char_norm_array from the saved cn_feature.
   FEATURE norm_feature = sample.GetCNFeature();
-  std::vector<uint8_t> char_norm_array(unicharset.size());
-  auto num_pruner_classes = std::max(static_cast<unsigned>(unicharset.size()), PreTrainedTemplates->NumClasses);
+  std::vector<uint8_t> char_norm_array(unicharset_.size());
+  auto num_pruner_classes = std::max(static_cast<unsigned>(unicharset_.size()), PreTrainedTemplates->NumClasses);
   std::vector<uint8_t> pruner_norm_array(num_pruner_classes);
   adapt_results->BlobLength = static_cast<int>(ActualOutlineLength(norm_feature) * 20 + 0.5f);
   ComputeCharNormArrays(norm_feature, PreTrainedTemplates, &char_norm_array[0], &pruner_norm_array[0]);
@@ -1388,7 +1388,7 @@ void Classify::ConvertMatchesToChoices(const DENORM &denorm, const TBOX &box,
   for (auto &it : Results->match) {
     const UnicharRating &result = it;
     bool adapted = result.adapted;
-    bool current_is_frag = (unicharset.get_fragment(result.unichar_id) != nullptr);
+    bool current_is_frag = (unicharset_.get_fragment(result.unichar_id) != nullptr);
     if (temp_it.length() + 1 == max_matches && !contains_nonfrag && current_is_frag) {
       continue; // look for a non-fragmented character to fill the
                 // last spot in Choices if only fragments are present
@@ -1418,9 +1418,9 @@ void Classify::ConvertMatchesToChoices(const DENORM &denorm, const TBOX &box,
     }
 
     float min_xheight, max_xheight, yshift;
-    denorm.XHeightRange(result.unichar_id, unicharset, box, &min_xheight, &max_xheight, &yshift);
+    denorm.XHeightRange(result.unichar_id, unicharset_, box, &min_xheight, &max_xheight, &yshift);
     auto *choice = new BLOB_CHOICE(
-        result.unichar_id, Rating, Certainty, unicharset.get_script(result.unichar_id), min_xheight,
+        result.unichar_id, Rating, Certainty, unicharset_.get_script(result.unichar_id), min_xheight,
         max_xheight, yshift, adapted ? BCC_ADAPTED_CLASSIFIER : BCC_STATIC_CLASSIFIER);
     choice->set_fonts(result.fonts);
     temp_it.add_to_end(choice);
@@ -1879,7 +1879,7 @@ void Classify::MakePermanent(ADAPT_TEMPLATES_STRUCT *Templates, CLASS_ID ClassId
         ConfigId, getDict().getUnicharset().debug_str(ClassId).c_str(), ClassId,
         PermConfigFor(Class, ConfigId)->FontinfoId);
     for (UNICHAR_ID *AmbigsPointer = Ambigs; *AmbigsPointer >= 0; ++AmbigsPointer) {
-      tprintDebug("{}", unicharset.id_to_unichar(*AmbigsPointer));
+      tprintDebug("{}", unicharset_.id_to_unichar(*AmbigsPointer));
     }
     tprintDebug("'.\n");
   }
@@ -1926,7 +1926,7 @@ int MakeTempProtoPerm(void *item1, void *item2) {
  */
 void Classify::PrintAdaptiveMatchResults(const ADAPT_RESULTS &results) {
   for (auto &it : results.match) {
-    tprintDebug("{}  ", unicharset.debug_str(it.unichar_id));
+    tprintDebug("{}  ", unicharset_.debug_str(it.unichar_id));
     it.Print();
   }
 } /* PrintAdaptiveMatchResults */
@@ -1952,21 +1952,21 @@ void Classify::RemoveBadMatches(ADAPT_RESULTS *Results) {
 
   if (classify_bln_numeric_mode) {
     UNICHAR_ID unichar_id_one =
-        unicharset.contains_unichar("1") ? unicharset.unichar_to_id("1") : -1;
+        unicharset_.contains_unichar("1") ? unicharset_.unichar_to_id("1") : -1;
     UNICHAR_ID unichar_id_zero =
-        unicharset.contains_unichar("0") ? unicharset.unichar_to_id("0") : -1;
+        unicharset_.contains_unichar("0") ? unicharset_.unichar_to_id("0") : -1;
     float scored_one = ScoredUnichar(unichar_id_one, *Results);
     float scored_zero = ScoredUnichar(unichar_id_zero, *Results);
 
     for (Next = NextGood = 0; Next < Results->match.size(); Next++) {
       const UnicharRating &match = Results->match[Next];
       if (match.rating >= BadMatchThreshold) {
-        if (!unicharset.get_isalpha(match.unichar_id) ||
-            strstr(romans, unicharset.id_to_unichar(match.unichar_id)) != nullptr) {
+        if (!unicharset_.get_isalpha(match.unichar_id) ||
+            strstr(romans, unicharset_.id_to_unichar(match.unichar_id)) != nullptr) {
           // Do nothing here for roman numbers.
-        } else if (unicharset.eq(match.unichar_id, "l") && scored_one < BadMatchThreshold) {
+        } else if (unicharset_.eq(match.unichar_id, "l") && scored_one < BadMatchThreshold) {
           Results->match[Next].unichar_id = unichar_id_one;
-        } else if (unicharset.eq(match.unichar_id, "O") && scored_zero < BadMatchThreshold) {
+        } else if (unicharset_.eq(match.unichar_id, "O") && scored_zero < BadMatchThreshold) {
           Results->match[Next].unichar_id = unichar_id_zero;
         } else {
           Results->match[Next].unichar_id = INVALID_UNICHAR_ID; // Don't copy.
@@ -2015,13 +2015,13 @@ void Classify::RemoveExtraPuncs(ADAPT_RESULTS *Results) {
   for (Next = NextGood = 0; Next < Results->match.size(); Next++) {
     const UnicharRating &match = Results->match[Next];
     bool keep = true;
-    if (strstr(punc_chars, unicharset.id_to_unichar(match.unichar_id)) != nullptr) {
+    if (strstr(punc_chars, unicharset_.id_to_unichar(match.unichar_id)) != nullptr) {
       if (punc_count >= 2) {
         keep = false;
       }
       punc_count++;
     } else {
-      if (strstr(digit_chars, unicharset.id_to_unichar(match.unichar_id)) != nullptr) {
+      if (strstr(digit_chars, unicharset_.id_to_unichar(match.unichar_id)) != nullptr) {
         if (digit_count >= 1) {
           keep = false;
         }
@@ -2106,7 +2106,7 @@ std::string Classify::ClassIDToDebugStr(const INT_TEMPLATES_STRUCT *templates, i
     int shape_id = ClassAndConfigIDToFontOrShapeID(class_id, config_id);
     class_string = shape_table_->DebugStr(shape_id);
   } else {
-    class_string = unicharset.debug_str(class_id);
+    class_string = unicharset_.debug_str(class_id);
   }
   return class_string;
 }

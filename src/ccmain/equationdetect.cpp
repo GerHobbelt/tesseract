@@ -208,7 +208,7 @@ void EquationDetect::IdentifySpecialText(BLOBNBOX *blobnbox, const int height_th
     type = BSTT_MATH;
   } else if (lang_choice) {
     // For other cases: lang_score is similar or significantly higher.
-    type = EstimateTypeForUnichar(lang_tesseract_->unicharset, lang_choice->unichar_id());
+    type = EstimateTypeForUnichar(lang_tesseract_->unicharset_, lang_choice->unichar_id());
   }
 
   if (type == BSTT_NONE && lang_choice &&
@@ -1401,7 +1401,7 @@ void EquationDetect::GetOutputTiffName(const char *name, std::string &image_name
   char page[50];
   snprintf(page, sizeof(page), "%04d", page_count_);
   // name: _spt, _bi, _seed, _merged
-  image_name = (lang_tesseract_->imagebasename) + page + name + ".tiff";
+  image_name = (lang_tesseract_->imagebasename_) + page + name + ".tiff";
 }
 
 void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {

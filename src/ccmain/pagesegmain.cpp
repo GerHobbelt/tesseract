@@ -196,7 +196,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     osr->gradient = gradient_;
   }
   
-  if ( max_page_gradient_recognize != 100 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
+  if ( max_page_gradient_recognize != 100.0 && abs(gradient_) > abs(max_page_gradient_recognize) ) {
     tprintInfo("Returning early due to high page gradient.\n");
     return -1; 
   }
@@ -400,9 +400,9 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       if (osd_tess != this) {
         // We are running osd as part of layout analysis, so constrain the
         // scripts to those allowed by *this.
-        AddAllScriptsConverted(unicharset, osd_tess->unicharset, &osd_scripts);
+        AddAllScriptsConverted(unicharset_, osd_tess->unicharset_, &osd_scripts);
         for (auto &lang : sub_langs_) {
-          AddAllScriptsConverted(lang->unicharset, osd_tess->unicharset, &osd_scripts);
+          AddAllScriptsConverted(lang->unicharset_, osd_tess->unicharset_, &osd_scripts);
         }
       }
       osd_tess->os_detect_blobs(&osd_scripts, &osd_blobs, osr);
@@ -419,10 +419,10 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
         }
       }
       int best_script_id = osr->best_result.script_id;
-      const char *best_script_str = osd_tess->unicharset.get_script_from_script_id(best_script_id);
-      bool cjk = best_script_id == osd_tess->unicharset.han_sid() ||
-                 best_script_id == osd_tess->unicharset.hiragana_sid() ||
-                 best_script_id == osd_tess->unicharset.katakana_sid() ||
+      const char *best_script_str = osd_tess->unicharset_.get_script_from_script_id(best_script_id);
+      bool cjk = best_script_id == osd_tess->unicharset_.han_sid() ||
+                 best_script_id == osd_tess->unicharset_.hiragana_sid() ||
+                 best_script_id == osd_tess->unicharset_.katakana_sid() ||
                  strcmp("Japanese", best_script_str) == 0 ||
                  strcmp("Korean", best_script_str) == 0 || strcmp("Hangul", best_script_str) == 0;
       if (cjk) {

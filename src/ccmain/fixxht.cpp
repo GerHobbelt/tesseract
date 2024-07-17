@@ -76,7 +76,7 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
   for (int blob_id = 0; blob_id < num_blobs; ++blob_id) {
     TBLOB *blob = word_res->rebuild_word->blobs[blob_id];
     UNICHAR_ID class_id = word_res->best_choice->unichar_id(blob_id);
-    if (unicharset.get_isalpha(class_id) || unicharset.get_isdigit(class_id)) {
+    if (unicharset_.get_isalpha(class_id) || unicharset_.get_isdigit(class_id)) {
       TBOX bbox = blob->bounding_box();
       auto top = bbox.top();
 #if 0
@@ -85,7 +85,7 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
       }
 #endif
       int min_bottom, max_bottom, min_top, max_top;
-      unicharset.get_top_bottom(class_id, &min_bottom, &max_bottom, &min_top, &max_top);
+      unicharset_.get_top_bottom(class_id, &min_bottom, &max_bottom, &min_top, &max_top);
       if (max_top - min_top > kMaxCharTopRange) {
         continue;
       }
@@ -96,7 +96,7 @@ int Tesseract::CountMisfitTops(WERD_RES *word_res) {
       }
       if (debug_x_ht_level >= 1) {
         tprintDebug("Class {} is {} with top {} vs limits of {}->{}, +/-{} (bbox: {})\n",
-                unicharset.id_to_unichar(class_id), bad ? "Misfit" : "OK", top, min_top, max_top,
+                unicharset_.id_to_unichar(class_id), bad ? "Misfit" : "OK", top, min_top, max_top,
                     static_cast<int>(x_ht_acceptance_tolerance), bbox.print_to_str());
       }
     }
@@ -117,7 +117,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
     for (int blob_id = 0; blob_id < num_blobs; ++blob_id) {
       TBLOB *blob = word_res->rebuild_word->blobs[blob_id];
       UNICHAR_ID class_id = word_res->best_choice->unichar_id(blob_id);
-      if (unicharset.get_isalpha(class_id) || unicharset.get_isdigit(class_id)) {
+      if (unicharset_.get_isalpha(class_id) || unicharset_.get_isdigit(class_id)) {
         int top = blob->bounding_box().top() + bottom_shift;
         // Clip the top to the limit of normalized feature space.
         if (top >= INT_FEAT_RANGE) {
@@ -125,7 +125,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
         }
         int bottom = blob->bounding_box().bottom() + bottom_shift;
         int min_bottom, max_bottom, min_top, max_top;
-        unicharset.get_top_bottom(class_id, &min_bottom, &max_bottom, &min_top, &max_top);
+        unicharset_.get_top_bottom(class_id, &min_bottom, &max_bottom, &min_top, &max_top);
         // Chars with a wild top range would mess up the result so ignore them.
         if (max_top - min_top > kMaxCharTopRange) {
           continue;
@@ -135,7 +135,7 @@ float Tesseract::ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_sh
         int height = top - kBlnBaselineOffset;
         if (debug_x_ht_level >= 2) {
           tprintDebug("Class {}: height={}, bottom={},{} top={},{}, actual={},{}: ",
-                  unicharset.id_to_unichar(class_id), height, min_bottom, max_bottom, min_top,
+                  unicharset_.id_to_unichar(class_id), height, min_bottom, max_bottom, min_top,
                   max_top, bottom, top);
         }
         // Use only chars that fit in the expected bottom range, and where
