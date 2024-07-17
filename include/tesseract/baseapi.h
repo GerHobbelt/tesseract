@@ -569,7 +569,7 @@ public:
    * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
    * DetectOS, or anything else that changes the internal PAGE_RES.
    */
-  PageIterator *AnalyseLayout(bool merge_similar_words = false);
+  PageIterator *AnalyseLayout(bool merge_similar_words = false, ETEXT_DESC *monitor = nullptr);
 
   /**
    * Recognize the image from SetAndThresholdImage, generating Tesseract
@@ -620,7 +620,7 @@ public:
    * See ProcessPages for descriptions of other parameters.
    */
   bool ProcessPage(Pix *pix, const char *filename,
-                   TessResultRenderer *renderer);
+                   TessResultRenderer *renderer, ETEXT_DESC *monitor = nullptr);
 
   /**
    * Get a reading-order iterator to the results of LayoutAnalysis and/or
@@ -943,7 +943,7 @@ protected:
    * Find lines from the image making the BLOCK_LIST.
    * @return 0 on success.
    */
-  int FindLines();
+  int FindLines(ETEXT_DESC *monitor = nullptr);
 
   /** Delete the PageRes and block list, readying tesseract for OCRing a new page. */
   void ClearResults();

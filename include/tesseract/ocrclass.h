@@ -115,9 +115,9 @@ public:
   PROGRESS_FUNC2 progress_callback2; /// monitor-aware progress callback
   void *cancel_this{nullptr};        /// this or other data for cancel
   std::chrono::steady_clock::time_point end_time;
-  /// Time to stop. Expected to be set only
-  /// by call to set_deadline_msecs().
-  EANYCODE_CHAR text[1]{}; /// character data
+  ///< Time to stop. Expected to be set only by call to set_deadline_msecs().
+  volatile bool abort_the_action{false};
+  EANYCODE_CHAR text__[1]{}; /// character data
 
   ETEXT_DESC() : progress_callback2(&default_progress_func) {
     end_time = std::chrono::time_point<std::chrono::steady_clock,
@@ -128,6 +128,8 @@ public:
   void set_deadline_msecs(int32_t deadline_msecs) {
     if (deadline_msecs > 0) {
       end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadline_msecs);
+    } else {
+      end_time = std::chrono::steady_clock::time_point::max();
     }
   }
 

@@ -1040,7 +1040,7 @@ public:
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
   void recog_training_segmented(const char *filename, PAGE_RES *page_res,
-                                volatile ETEXT_DESC *monitor, FILE *output_file);
+                                ETEXT_DESC *monitor, FILE *output_file);
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:

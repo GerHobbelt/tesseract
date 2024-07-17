@@ -1062,8 +1062,8 @@ int TessBaseAPI::GetThresholdedImageScaleFactor() const {
  * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
-PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
-  if (FindLines() == 0) {
+PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words, ETEXT_DESC *monitor) {
+  if (FindLines(monitor) == 0) {
     AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Analyse Layout"));
 
     if (block_list_->empty()) {
@@ -1086,7 +1086,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   if (tesseract_ == nullptr) {
     return -1;
   }
-  if (FindLines() != 0) {
+  if (FindLines(monitor) != 0) {
     return -1;
   }
 
@@ -1642,7 +1642,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
 }
 
 bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
-                              TessResultRenderer *renderer) {
+                              TessResultRenderer *renderer, ETEXT_DESC *monitor) {
   AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
 
@@ -1740,23 +1740,14 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
 
   if (tesseract_->tessedit_pageseg_mode == PSM_AUTO_ONLY) {
     // Disabled character recognition
-    if (! std::unique_ptr<const PageIterator>(AnalyseLayout())) {
+    if (! std::unique_ptr<const PageIterator>(AnalyseLayout(false, monitor))) {
       failed = true;
     }
   } else if (tesseract_->tessedit_pageseg_mode == PSM_OSD_ONLY) {
-    failed = (FindLines() != 0);
-  } else if (tesseract_->activity_timeout_millisec > 0) {
-    // Running with a timeout.
-    ETEXT_DESC monitor;
-    monitor.cancel = nullptr;
-    monitor.cancel_this = nullptr;
-    monitor.set_deadline_msecs(tesseract_->activity_timeout_millisec);
-
-    // Now run the main recognition.
-    failed = (Recognize(&monitor) < 0);
+    failed = (FindLines(monitor) != 0);
   } else {
-    // Normal layout and character recognition with no timeout.
-    failed = (Recognize(nullptr) < 0);
+    // Normal layout and character recognition.
+    failed = (Recognize(monitor) < 0);
   }
 
   if (tesseract_->tessedit_write_images) {
@@ -2783,7 +2774,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 }
 
 /** Find lines from the image making the BLOCK_LIST. */
-int TessBaseAPI::FindLines() {
+int TessBaseAPI::FindLines(ETEXT_DESC *monitor) {
   if (thresholder_ == nullptr || thresholder_->IsEmpty()) {
     tprintError("Please call SetImage before attempting recognition.\n");
     return -1;
