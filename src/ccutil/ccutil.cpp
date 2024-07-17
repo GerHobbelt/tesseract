@@ -48,7 +48,7 @@ CCUtil::~CCUtil() = default;
  * or is itself named 'tessdata*', i.e. has 'tessdata' as its name or at least
  * as its prefix.
  */
-static bool has_traineddata_files(const std::string &datadir) {
+static bool has_traineddata_files(const std::string &datadir, const std::vector<std::string> &languages_to_load) {
   if (!fs::exists(datadir))
     return false;
   if (!fs::is_directory(datadir) || fs::is_symlink(datadir))
@@ -59,8 +59,19 @@ static bool has_traineddata_files(const std::string &datadir) {
     tprintDebug("testing for traineddata file: inspecting {}\n", dir_entry.path().string());
 
     // Don't use string.ends_with() as we wish to support traineddata archive bundles as well. (future music)
-    if (/* dir_entry.is_regular_file() && */ dir_entry.file_size() > 0 && dir_entry.path().filename().string().find(".traineddata") != std::string::npos)
-      return true;
+    auto fname = dir_entry.path().filename().string();
+    if (/* dir_entry.is_regular_file() && */ dir_entry.file_size() > 0 && fname.find(".traineddata") != std::string::npos) {
+      if (languages_to_load.empty()) {
+        return true;
+      } else {
+        // the first language we hit is makes this directory 'viable':
+        for (const std::string &lang : languages_to_load) {
+          if (fname.starts_with(lang + ".")) {
+            return true;
+          }
+        }
+      }
+    }
   }
   return false;
 }
@@ -75,7 +86,7 @@ static bool has_traineddata_files(const std::string &datadir) {
  * When the path is found viable, it MAY have been modified to point at the precise
  * location in the filesystem.
  */
-static bool is_viable_datapath(std::string& datadir) {
+static bool is_viable_datapath(std::string &datadir, const std::vector<std::string> &languages_to_load) {
   if (datadir.empty())
     return false;
   if (!fs::exists(datadir))
@@ -88,11 +99,11 @@ static bool is_viable_datapath(std::string& datadir) {
     (void)subdir.pop_back();
   }
   std::string subdir2 = subdir + "/tessdata";
-  if (is_viable_datapath(subdir2)) {
+  if (is_viable_datapath(subdir2, languages_to_load)) {
     datadir = subdir2;
     return true;
   }
-  if (has_traineddata_files(subdir)) {
+  if (has_traineddata_files(subdir, languages_to_load)) {
     datadir = subdir;
     return true;
   }
@@ -134,7 +145,7 @@ static void report_datadir_attempt(std::vector<std::string>& attempts, std::vect
   }
 }
 
-static bool determine_datadir(std::string &datadir, const std::string &argv0, const std::string &primary, bool debug_datadir_discovery) {
+static bool determine_datadir(std::string &datadir, const std::string &argv0, const std::string &primary, const std::vector<std::string> &languages_to_load, bool debug_datadir_discovery) {
   datadir.clear();
 
   std::vector<std::string> attempts;
@@ -197,40 +208,35 @@ static bool determine_datadir(std::string &datadir, const std::string &argv0, co
     report_datadir_attempt(attempts, canonical_attempts);
   }
 
-  // now run through the attempts in order and see which one is the first viable one.
-  for (const std::string &entry : attempts) {
-    auto canon = std::filesystem::weakly_canonical(entry);
-    canonical_attempts.push_back(canon);
+  decltype(languages_to_load) nil{};
+  const auto *setptr = &languages_to_load;
+  for (int state = 1; state >= 0; state--) {
+    // now run through the attempts in order and see which one is the first viable one.
+    for (const std::string &entry : attempts) {
+      auto canon = std::filesystem::weakly_canonical(entry);
+      canonical_attempts.push_back(canon);
 
-    std::string testdir = canon.string();
-    if (is_viable_datapath(testdir)) {
-      unixify_path(testdir);
-      // check for missing directory separator
-      if (!testdir.ends_with('/')) {
-        testdir += '/';
+      std::string testdir = canon.string();
+      if (is_viable_datapath(testdir, *setptr)) {
+        unixify_path(testdir);
+        // check for missing directory separator
+        if (!testdir.ends_with('/')) {
+          testdir += '/';
+        }
+        datadir = testdir;
+        return true;
       }
-      datadir = testdir;
-      return true;
     }
+
+    // when we have specified a list of preferred languages and haven't found a viable datadir yet, then we check again and pick the first *generically* viable datadir instead:
+    setptr = &nil;
   }
 
   report_datadir_attempt(attempts, canonical_attempts, "failed to locate the mandatory tesseract data directory containing the traineddata language model files.");
   return false;
 }
 
-/**
- * @brief CCUtil::main_setup - set location of tessdata and template name of output images
- *
- * @param argv0 - paths to the directory with language files and config files.
- * An actual value of argv0 is used if not nullptr, otherwise TESSDATA_PREFIX is
- * used if not nullptr, next try to use compiled in -DTESSDATA_PREFIX. If
- * previous is not successful - use current directory.
- * 
- * @param basename - name of image
- *
- * Return 0 on success, non-zero on error. (The error will already have been reported via tprintError().)
- */
-int CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
+int CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename, const std::vector<std::string> &languages_to_load) {
   if (imagebasename_.empty()) {
     if (output_image_basename == "-" /* stdout */)
       imagebasename_ = "tesseract-stdio-session";
@@ -238,7 +244,7 @@ int CCUtil::main_setup(const std::string &argv0, const std::string &output_image
       imagebasename_ = output_image_basename; /**< name of output/debug image(s) */
   }
 
-  if (!determine_datadir(datadir_, argv0, this->datadir_base_path.value(), this->debug_datadir_discovery)) {
+  if (!determine_datadir(datadir_, argv0, this->datadir_base_path.value(), languages_to_load, this->debug_datadir_discovery)) {
     ASSERT_HOST(datadir_.empty());
     return -1;
   }

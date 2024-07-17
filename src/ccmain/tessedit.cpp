@@ -341,7 +341,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   instance_has_been_initialized_ = true;
 
   // Set the basename, compute the data directory.
-  if (main_setup(arg0, textbase)) {
+  if (main_setup(arg0, textbase, langs_to_load)) {
     tprintError("Tesseract couldn't initialize!\n");
     return -1; // Couldn't load any language!
   }
@@ -351,21 +351,24 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   // Add any languages that this language requires
   bool loaded_primary = false;
   // Load the rest into sub_langs_.
+  // 
   // WARNING: A range based for loop does not work here because langs_to_load
   // might be changed in the loop when a new submodel is found.
   for (size_t lang_index = 0; lang_index < langs_to_load.size(); ++lang_index) {
     const auto &lang_to_load = langs_to_load[lang_index];
     if (!IsStrInList(lang_to_load, langs_not_to_load)) {
-      const char *lang_str = lang_to_load.c_str();
       Tesseract *tess_to_init;
       if (!loaded_primary) {
         tess_to_init = this;
       } else {
         tess_to_init = new Tesseract(this);
-        tess_to_init->main_setup(arg0, textbase);
+        if (tess_to_init->main_setup(arg0, textbase, lang_to_load)) {
+          tprintError("Tesseract couldn't initialize for language {}!\n", lang_to_load);
+          return -1; // Couldn't load any language!
+        }
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_str, oem, configs,
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, oem, configs,
                                                          configs_size, vars_vec, vars_values,
                                                          set_only_non_debug_params, mgr);
       // Forget that language, but keep any reader we were given.
@@ -373,14 +376,14 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 
       if (!loaded_primary) {
         if (result < 0) {
-          tprintError("Failed loading language '{}'\n", lang_str);
+          tprintError("Failed loading language '{}'\n", lang_to_load);
         } else {
           ParseLanguageString(tess_to_init->tessedit_load_sublangs, &langs_to_load, &langs_not_to_load);
           loaded_primary = true;
         }
       } else {
         if (result < 0) {
-          tprintError("Failed loading sub-language '{}'\n", lang_str);
+          tprintError("Failed loading sub-language '{}'\n", lang_to_load);
           delete tess_to_init;
         } else {
           sub_langs_.push_back(tess_to_init);
