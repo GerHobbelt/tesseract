@@ -931,6 +931,9 @@ public:
   }
 
   void set_min_orientation_margin(double margin);
+
+  void ReportDebugInfo();
+
   /* @} */
 
 protected:
