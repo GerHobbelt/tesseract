@@ -381,7 +381,15 @@ public:
            const std::vector<std::string> &vars_values,
            const std::vector<std::string> &configs);
 
+  int Init(const char *datapath, const char *language, OcrEngineMode mode,
+               const char **configs, int configs_size,
+               const std::vector<std::string> *vars_vec,
+               const std::vector<std::string> *vars_values,
+               bool set_only_non_debug_params, FileReader reader);
+
   int Init(const char *datapath, const char *language, OcrEngineMode oem);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader);
 
   int Init(const char *datapath, const char *language, OcrEngineMode oem,
            const std::vector<std::string> &configs);

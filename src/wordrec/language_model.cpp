@@ -142,7 +142,6 @@ void LanguageModel::InitForWord(const WERD_CHOICE *prev_word, bool fixed_pitch,
   max_char_wh_ratio_ = max_char_wh_ratio;
   rating_cert_scale_ = rating_cert_scale;
   acceptable_choice_found_ = false;
-  //correct_segmentation_explored_ = false;
 
   // Initialize vectors with beginning DawgInfos.
   very_beginning_active_dawgs_.clear();

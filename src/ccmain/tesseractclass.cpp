@@ -565,11 +565,14 @@ Dict &Tesseract::getDict() {
 }
 
 void Tesseract::Clear(bool invoked_by_destructor) {
+  // when we're going to clear out everything, make sure to dump/write the diag report before we start the cleanup phase.
+  if (invoked_by_destructor) {
+    ReportDebugInfo();
+  }
+
   for (auto &sub_lang : sub_langs_) {
     sub_lang->Clear(invoked_by_destructor);
   }
-
-  ReportDebugInfo();
 
   if (invoked_by_destructor) {
     pixa_debug_.Clear(invoked_by_destructor);

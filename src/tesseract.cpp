@@ -906,7 +906,7 @@ static inline auto format_as(WritingDirection d) {
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_main(int argc, const char** argv)
+extern "C" int tesseract_main(int argc, const char **argv)
 #endif
 {
 #if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
@@ -1140,7 +1140,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
     if (hlpcmds & LIST_LANGUAGES) {
       PrintLangsList(api);
-        api.End();
+      api.End();
     }
 
     if (hlpcmds & PRINT_PARAMETERS) {
@@ -1180,7 +1180,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetImage(pixs);
 
       std::string outfile = std::string(outputbase) + std::string(".txt");
-      FILE* fout = NULL;
+      FILE *fout = NULL;
 
       if (strcmp(outputbase, "stdout") != 0) {
         fout = fopen(outfile.c_str(), "wb");

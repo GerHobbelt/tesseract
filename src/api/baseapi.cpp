@@ -606,10 +606,21 @@ int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode 
 
 }
 
+int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
+                          int configs_size, const std::vector<std::string> *vars_vec,
+                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader) {
+  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+                            set_only_non_debug_params, reader);
+}
+
 int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
                       const std::vector<std::string>& configs)
 {
 
+}
+
+int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader) {
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false, reader);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language)
@@ -2681,12 +2692,11 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
-  // TODO? write/flush log output / ReportDebugInfo() ?
-
+  // write/flush diagnostics log output via ReportDebugInfo() is done inside ClearResults() before we clear the instance.
+  ClearResults();
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
   }
-  ClearResults();
   if (tesseract_ != nullptr) {
     SetInputImage(nullptr);
   }
