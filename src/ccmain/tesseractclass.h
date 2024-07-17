@@ -257,6 +257,7 @@ public:
 
   Image pix_grey() const;
   void set_pix_grey(Image grey_pix);
+
   Image pix_original() const;
   // Takes ownership of the given original_pix.
   void set_pix_original(Image original_pix);
@@ -307,10 +308,12 @@ public:
 
   int ImageWidth() const;
   int ImageHeight() const;
+
   Image scaled_color() const;
   int scaled_factor() const;
 
   void SetScaledColor(int factor, Image color);
+
   const Textord &textord() const;
   Textord *mutable_textord();
 

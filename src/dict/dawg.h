@@ -74,10 +74,6 @@ enum DawgType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
 
-static inline auto format_as(DawgType dt) {
-  return fmt::underlying(dt);
-}
-
 /*----------------------------------------------------------------------
               C o n s t a n t s
 ----------------------------------------------------------------------*/

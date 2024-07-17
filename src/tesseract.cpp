@@ -881,22 +881,6 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
   return error;
 }
 
-namespace tesseract {
-
-static inline auto format_as(Orientation o) {
-  return fmt::underlying(o);
-}
-
-static inline auto format_as(TextlineOrder o) {
-  return fmt::underlying(o);
-}
-
-static inline auto format_as(WritingDirection d) {
-  return fmt::underlying(d);
-}
-
-}
-
 
 /**********************************************************************
  *  main()
