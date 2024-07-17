@@ -44,8 +44,19 @@ public:
   virtual ~CCUtil();
 
 public:
-  // Read the arguments and set up the data path.
-  void main_setup(const std::string &argv0,                 // program name
+  /**
+   * @brief CCUtil::main_setup - set location of tessdata and template name of output images
+   *
+   * @param argv0 - paths to the directory with language files and config files.
+   * An actual value of argv0 is used if not nullptr, otherwise TESSDATA_PREFIX is
+   * used if not nullptr, next try to use compiled in -DTESSDATA_PREFIX. If
+   * previous is not successful - use current directory.
+   * 
+   * @param basename - name of image
+   *
+   * Return 0 on success, non-zero on error. (The error will already have been reported via tprintError().)
+   */
+  [[nodiscard]] int main_setup(const std::string &argv0,                // program name
                   const std::string & output_image_basename // name of output/debug image(s)
   );
   ParamsVectors *params() {
@@ -74,6 +85,8 @@ public:
   INT_VAR_H(ambigs_debug_level);
   INT_VAR_H(universal_ambigs_debug_level);
   BOOL_VAR_H(use_ambigs_for_adaption);
+  BOOL_VAR_H(debug_datadir_discovery);
+  STRING_VAR_H(datadir_base_path);
 };
 
 } // namespace tesseract

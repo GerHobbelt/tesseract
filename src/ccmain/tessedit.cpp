@@ -341,7 +341,10 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   instance_has_been_initialized_ = true;
 
   // Set the basename, compute the data directory.
-  main_setup(arg0, textbase);
+  if (main_setup(arg0, textbase)) {
+    tprintError("Tesseract couldn't initialize!\n");
+    return -1; // Couldn't load any language!
+  }
 
   sub_langs_.clear();
   // Find the first loadable lang and load into this.
