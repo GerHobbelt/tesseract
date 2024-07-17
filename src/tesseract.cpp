@@ -491,8 +491,7 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
                       bool *print_parameters, bool *print_fonts_table,
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
                       l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
-                      tesseract::OcrEngineMode *enginemode,
-                      bool *rectangle_mode, const char **rectangle_str
+                      tesseract::OcrEngineMode *enginemode
 ) {
   int i = 1;
   if (i < argc) {
@@ -592,10 +591,6 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
     } else if (strcmp(argv[i], "--list-langs") == 0) {
       noocr = true;
       *list_langs = true;
-    } else if (strcmp(argv[i], "--rectangle") == 0 && i + 1 < argc) {
-		*rectangle_mode = true;
-		*rectangle_str = argv[i + 1];
-		++i;
 	} else if (strcmp(argv[i], "--psm") == 0 && i + 1 < argc) {
       if (!checkArgValues(atoi(argv[i + 1]), "PSM", tesseract::PSM_COUNT)) {
         return false;
@@ -861,8 +856,6 @@ extern "C" int tesseract_main(int argc, const char **argv)
   const char *outputbase = nullptr;
   const char *datapath = nullptr;
   const char *visible_pdf_image_file = nullptr;
-  bool rectangle_mode = false;
-  const char *rectangle_str = NULL;
   bool list_langs = false;
   bool print_parameters = false;
   bool print_fonts_table = false;
@@ -897,8 +890,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
   if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
-                 &pagesegmode, &enginemode,
-                 &rectangle_mode, &rectangle_str)) {
+                 &pagesegmode, &enginemode)) {
     return EXIT_FAILURE;
   }
 
@@ -955,94 +947,6 @@ extern "C" int tesseract_main(int argc, const char **argv)
       tprintInfo("Tesseract parameters:\n");
       api.PrintVariables();
       api.End();
-      return EXIT_SUCCESS;
-    }
-
-    if (rectangle_mode) {
-      Pix *pixs = pixRead(image);
-      if (!pixs) {
-        tprintError("Cannot open input file: {}\n", image);
-        return EXIT_FAILURE;
-      }
-
-      api.SetImage(pixs);
-
-      std::string outfile = std::string(outputbase) + std::string(".txt");
-      FILE *fout = NULL;
-
-      if (strcmp(outputbase, "stdout") != 0) {
-        fout = fopen(outfile.c_str(), "wb");
-      } else {
-        fout = stdout;
-      }
-
-      if (fout == NULL) {
-        tprintError("Cannot open output file: {}\n", outfile);
-        pixDestroy(&pixs);
-        return EXIT_FAILURE;
-      }
-
-      // for each rectangle
-      const char *delim = "+";
-      char *token;
-      char *specstr = strdup(rectangle_str);
-
-      token = strtok(specstr, delim);
-
-      while (token != NULL) {
-        int left = 0;
-        int top = 0;
-        int width = 0;
-        int height = 0;
-        char *utf8 = NULL;
-
-        // syntax = x30y60w50h100
-        int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
-        if (params == 4) {
-          // clamp this rectangle
-          if (left < 0) {
-            left = 0;
-          }
-
-          if (top < 0) {
-            top = 0;
-          }
-
-          if (width <= 0) {
-            width = 1;
-          }
-
-          if (height <= 0) {
-            height = 1;
-          }
-
-          if (left + width > pixs->w) {
-            width = pixs->w - left;
-          }
-
-          if (top + height > pixs->h) {
-            height = pixs->h - top;
-          }
-
-          api.SetRectangle(left, top, width, height);
-          utf8 = api.GetUTF8Text();
-          if (utf8) {
-            fwrite(utf8, 1, strlen(utf8), fout);
-            delete[] utf8;
-            utf8 = NULL;
-          }
-        } else {
-          tprintError("incorrect rectangle syntax, expecting something akin to 'l30t60w50h100' instead of '{}'.\n", rectangle_str);
-          fclose(fout);
-          pixDestroy(&pixs);
-          return EXIT_FAILURE;
-        }
-        token = strtok(NULL, delim);
-      }
-
-      fclose(fout);
-      pixDestroy(&pixs);
-      free(specstr);
       return EXIT_SUCCESS;
     }
 
