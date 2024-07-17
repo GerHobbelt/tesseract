@@ -410,15 +410,15 @@ int TessBaseAPIRecognize(TessBaseAPI *handle, ETEXT_DESC *monitor) {
 }
 
 BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename, const char *retry_config,
-                             int timeout_millisec, TessResultRenderer *renderer) {
-  return static_cast<int>(handle->ProcessPages(filename, retry_config, timeout_millisec, renderer));
+                             TessResultRenderer *renderer) {
+  return static_cast<int>(handle->ProcessPages(filename, retry_config, renderer));
 }
 
 BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
-                            const char *filename, const char *retry_config, int timeout_millisec,
+                            const char *filename, const char *retry_config, 
                             TessResultRenderer *renderer) {
   return static_cast<int>(
-      handle->ProcessPage(pix, filename, retry_config, timeout_millisec, renderer));
+      handle->ProcessPage(pix, filename, retry_config, renderer));
 }
 
 TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle) {

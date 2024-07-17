@@ -431,7 +431,7 @@ Tesseract::Tesseract(Tesseract *parent)
                  "With 1 the alternative symbol choices per timestep are included. "
                  "With 2 alternative symbol choices are extracted from the CTC "
                  "process instead of the lattice. The choices are mapped per "
-                 "character."
+                 "character.  "
                  "With 3 both choice mode 1 and mode 2 outputs are included in the "
 		         "hOCR output.",
                  params())
@@ -459,7 +459,8 @@ Tesseract::Tesseract(Tesseract *parent)
     , BOOL_MEMBER(debug_display_page_blocks, false, "Display preliminary OCR results in debug_pixa: show the blocks.", params())
     , BOOL_MEMBER(debug_display_page_baselines, false, "Display preliminary OCR results in debug_pixa: show the baselines.", params()) 
     , BOOL_MEMBER(dump_segmented_word_images, false, "Display intermediate individual bbox/word images about to be fed into the OCR engine in debug_pixa.", params()) 
-    , BOOL_MEMBER(dump_osdetect_process_images, false, "Display intermediate OS (Orientation & Skew) image stages in debug_pixa.", params()) 
+    , BOOL_MEMBER(dump_osdetect_process_images, false, "Display intermediate OS (Orientation & Skew) image stages in debug_pixa.", params())
+    , INT_MEMBER(activity_timeout_millisec, 0, "terminates (and fails) processing if any single page takes too long. Set to 0 for unlimited time.", params())
 
     , pixa_debug_(this)
     , splitter_(this)

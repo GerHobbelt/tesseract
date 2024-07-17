@@ -1306,7 +1306,7 @@ int TessBaseAPI::GetSourceYResolution() {
 // If `tessedit_page_number` is non-negative, will only process that
 // single page. Works for multi-page tiff file as well as or filelist.
 bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char *retry_config,
-                                       int timeout_millisec, TessResultRenderer *renderer) {
+                                       TessResultRenderer *renderer) {
   if (!flist && !buf) {
     return false;
   }
@@ -1361,7 +1361,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
     tesseract_->applybox_page.set_value(page_number);
-	bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
+	bool r = ProcessPage(pix, pagename, retry_config, renderer);
 
     bool two_pass = false;
 
@@ -1407,7 +1407,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
 // If `tessedit_page_number` is non-negative, will only process that
 // single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
-                                            const char *retry_config, int timeout_millisec,
+                                            const char *retry_config,
                                             TessResultRenderer *renderer) {
   Pix *pix = nullptr;
   int page_number = (tesseract_->tessedit_page_number >= 0) ? tesseract_->tessedit_page_number : 0;
@@ -1425,7 +1425,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     }
     tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
     tesseract_->applybox_page.set_value(page_number);
-    bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+    bool r = ProcessPage(pix, filename, retry_config, renderer);
     pixDestroy(&pix);
     if (!r) {
       return false;
@@ -1442,11 +1442,11 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 
 // Master ProcessPages calls ProcessPagesInternal and then does any post-
 // processing required due to being in a training mode.
-bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
+bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config,
                                TessResultRenderer *renderer) {
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Process pages"));
   
-  bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
+  bool result = ProcessPagesInternal(filename, retry_config, renderer);
 #if !DISABLED_LEGACY_ENGINE
   if (result) {
     if (tesseract_->tessedit_train_from_boxes && !tesseract_->WriteTRFile(output_file_.c_str())) {
@@ -1479,7 +1479,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 // identify the scenario that really matters: filelists on
 // stdin. We'll still do our best if the user likes pipes.
 bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_config,
-                                       int timeout_millisec, TessResultRenderer *renderer) {
+                                       TessResultRenderer *renderer) {
   bool stdInput = !strcmp(filename, "stdin") || !strcmp(filename, "/dev/stdin") || !strcmp(filename, "-");
   if (stdInput) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
@@ -1489,7 +1489,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
   }
 
   if (stream_filelist) {
-    return ProcessPagesFileList(stdin, nullptr, retry_config, timeout_millisec, renderer);
+    return ProcessPagesFileList(stdin, nullptr, retry_config, renderer);
   }
 
   // At this point we are officially in auto-detection territory.
@@ -1597,7 +1597,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       std::string u((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
       s = u.c_str();
     }
-    return ProcessPagesFileList(nullptr, &s, retry_config, timeout_millisec, renderer);
+    return ProcessPagesFileList(nullptr, &s, retry_config, renderer);
   }
 
   // Maybe we have a TIFF which is potentially multipage
@@ -1625,11 +1625,11 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 
   // Produce output
   if (tiff) {
-    r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
+    r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, renderer);
   }
   else {
     tesseract_->applybox_page.set_value(-1 /* all pages */);
-	r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+	  r = ProcessPage(pix, filename, retry_config, renderer);
   }
 
   // Clean up memory as needed
@@ -1643,7 +1643,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 }
 
 bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
-                              const char *retry_config, int timeout_millisec,
+                              const char *retry_config,
                               TessResultRenderer *renderer) {
   AutoPopDebugSectionLevel page_level_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
@@ -1747,12 +1747,12 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
     }
   } else if (tesseract_->tessedit_pageseg_mode == PSM_OSD_ONLY) {
     failed = (FindLines() != 0);
-  } else if (timeout_millisec > 0) {
+  } else if (tesseract_->activity_timeout_millisec > 0) {
     // Running with a timeout.
     ETEXT_DESC monitor;
     monitor.cancel = nullptr;
     monitor.cancel_this = nullptr;
-    monitor.set_deadline_msecs(timeout_millisec);
+    monitor.set_deadline_msecs(tesseract_->activity_timeout_millisec);
 
     // Now run the main recognition.
     failed = (Recognize(&monitor) < 0);
