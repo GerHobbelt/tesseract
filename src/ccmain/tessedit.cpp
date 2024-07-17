@@ -224,7 +224,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   UNICHARSET encoder_unicharset;
   encoder_unicharset.CopyFrom(unicharset_);
   unichar_ambigs_.InitUnicharAmbigs(unicharset_, use_ambigs_for_adaption);
-  unichar_ambigs_.LoadUniversal(encoder_unicharset, ambigs_debug_level, &unicharset_);
+  unichar_ambigs_.LoadUniversal(encoder_unicharset, universal_ambigs_debug_level, &unicharset_);
 
   if (!tessedit_ambigs_training && mgr->GetComponent(TESSDATA_AMBIGS, &fp)) {
     unichar_ambigs_.LoadUnicharAmbigs(encoder_unicharset, &fp, ambigs_debug_level,

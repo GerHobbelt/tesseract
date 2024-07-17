@@ -72,6 +72,7 @@ public:
   // These have to be declared and initialized after params_ member, since
   // params_ should be initialized before parameters are added to it.
   INT_VAR_H(ambigs_debug_level);
+  INT_VAR_H(universal_ambigs_debug_level);
   BOOL_VAR_H(use_ambigs_for_adaption);
 };
 

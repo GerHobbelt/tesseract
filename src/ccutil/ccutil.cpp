@@ -29,11 +29,10 @@ namespace tesseract {
 
 CCUtil::CCUtil()
     : params_()
-      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
-      , BOOL_MEMBER(use_ambigs_for_adaption, false,
-                  "Use ambigs for deciding"
-                  " whether to adapt to a character",
-				  params()) {}
+    , INT_MEMBER(ambigs_debug_level, 0, "Debug level for the unichar ambiguities", params())
+    , INT_MEMBER(universal_ambigs_debug_level, 0, "Debug level for loading the universal unichar ambiguities", params())
+    , BOOL_MEMBER(use_ambigs_for_adaption, false, "Use ambigs for deciding whether to adapt to a character", params())
+{}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable
