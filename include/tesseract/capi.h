@@ -322,11 +322,9 @@ TESS_API TessPageIterator *TessBaseAPIAnalyseLayout(TessBaseAPI *handle);
 TESS_API int TessBaseAPIRecognize(TessBaseAPI *handle, ETEXT_DESC *monitor);
 
 TESS_API BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename,
-                                      const char *retry_config,
                                       TessResultRenderer *renderer);
 TESS_API BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                                      int page_index, const char *filename,
-                                     const char *retry_config,
                                      TessResultRenderer *renderer);
 
 TESS_API TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle);

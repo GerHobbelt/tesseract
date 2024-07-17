@@ -592,10 +592,6 @@ public:
    * filename can point to a single image, a multi-page TIFF,
    * or a plain text list of image filenames.
    *
-   * retry_config is useful for debugging. If not nullptr, you can fall
-   * back to an alternate configuration if a page fails for some
-   * reason.
-   *
    * renderer is responsible for creating the output. For example,
    * use the TessTextRenderer if you want plaintext output, or
    * the TessPDFRender to produce searchable PDF.
@@ -605,12 +601,12 @@ public:
    *
    * Returns true if successful, false on error.
    */
-  bool ProcessPages(const char *filename, const char *retry_config,
+  bool ProcessPages(const char *filename, 
                     TessResultRenderer *renderer);
 
 protected:
   // Does the real work of ProcessPages.
-  bool ProcessPagesInternal(const char *filename, const char *retry_config,
+  bool ProcessPagesInternal(const char *filename, 
                             TessResultRenderer *renderer);
 
 public:
@@ -624,7 +620,6 @@ public:
    * See ProcessPages for descriptions of other parameters.
    */
   bool ProcessPage(Pix *pix, const char *filename,
-                   const char *retry_config,
                    TessResultRenderer *renderer);
 
   /**
@@ -1014,14 +1009,13 @@ private:
   // If global parameter `tessedit_page_number` is non-negative, will only process that
   // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesFileList(FILE *fp, std::string *buf,
-                            const char *retry_config,
                             TessResultRenderer *renderer);
   // TIFF supports multipage so gets special consideration.
   //
   // If global parameter `tessedit_page_number` is non-negative, will only process that
   // single page. Works for multi-page tiff file, or filelist.
   bool ProcessPagesMultipageTiff(const unsigned char *data, size_t size,
-                                 const char *filename, const char *retry_config,
+                                 const char *filename, 
                                  TessResultRenderer *renderer);
 }; // class TessBaseAPI.
 

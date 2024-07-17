@@ -1173,7 +1173,9 @@ extern "C" int tesseract_main(int argc, const char **argv)
         }
 #endif
 
-        succeed &= api.ProcessPages(image, nullptr, renderers[0].get());
+        succeed &= api.ProcessPages(image, renderers[0].get());
+
+        // TODO: retry on failure with alternative config set.
 
         if (!succeed) {
           tprintError("Error during page processing. File: {}\n", image);
