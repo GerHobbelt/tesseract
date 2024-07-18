@@ -1715,14 +1715,14 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 // Helper to report the result of the xheight fix.
 void Tesseract::ReportXhtFixResult(bool accept_new_word, float new_x_ht, WERD_RES *word,
                                    WERD_RES *new_word) {
-  //TPrintGroupLinesTillEndOfScope push;
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("New XHT Match:{} = {} ", word->best_choice->unichar_string(),
           word->best_choice->debug_string());
-  word->reject_map.print();
+  tprintDebug("\n  reject_map: {}\n", word->reject_map.print_to_string());
   tprintDebug(" -> {} = {} ", new_word->best_choice->unichar_string(),
           new_word->best_choice->debug_string());
-  new_word->reject_map.print(debug_fp);
-  tprintDebug(" {}->{} {} {}\n", word->guessed_x_ht ? "GUESS" : "CERT",
+  tprintDebug("\n  new.reject_map: {}\n", new_word->reject_map.print_to_string());
+  tprintDebug("  word: {}->{} {} {}\n", word->guessed_x_ht ? "GUESS" : "CERT",
           new_word->guessed_x_ht ? "GUESS" : "CERT", new_x_ht > 0.1 ? "STILL DOUBT" : "OK",
           accept_new_word ? "ACCEPTED" : "");
 }
@@ -2093,6 +2093,8 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     if (location < 0) {
       return true; // For breakpoint use
     }
+    TPrintGroupLinesTillEndOfScope push;
+
     bool show_map_detail = false;
     tessedit_rejection_debug.set_value(true);
     debug_x_ht_level.set_value(2);
@@ -2146,13 +2148,12 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     }
     if (word->best_choice != nullptr) {
       tprintDebug("\"{}\" ", word->best_choice->unichar_string());
-      word->reject_map.print(debug_fp);
-      tprintDebug("\n");
+      tprintDebug("\n  reject_map: {}\n", word->reject_map.print_to_string());
       if (show_map_detail) {
-        tprintDebug("\"{}\"\n", word->best_choice->unichar_string());
+        tprintDebug("  details: \"{}\"\n", word->best_choice->unichar_string());
         for (unsigned i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
-          tprintDebug("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
-          word->reject_map[i].full_print(debug_fp);
+          tprintDebug("  char[{}]: **** \"{}\" ****\n", i, word->best_choice->unichar_string()[i]);
+          tprintDebug("  char[{}]: reject_map: {}\n", i, word->reject_map[i].full_print_to_string());
         }
       }
     } else {

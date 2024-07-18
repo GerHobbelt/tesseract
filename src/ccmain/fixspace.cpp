@@ -814,6 +814,8 @@ float Tesseract::blob_noise_score(TBLOB *blob) {
 }
 
 void fixspace_dbg(WERD_RES *word) {
+  TPrintGroupLinesTillEndOfScope push;
+
   TBOX box = word->word->bounding_box();
   const bool show_map_detail = false;
 
@@ -821,13 +823,12 @@ void fixspace_dbg(WERD_RES *word) {
   tprintDebug(" \"{}\" ", word->best_choice->unichar_string());
   tprintDebug("Blob count: {} (word); {}/{} (rebuild word)\n", word->word->cblob_list()->length(),
           word->rebuild_word->NumBlobs(), word->box_word->length());
-  word->reject_map.print(debug_fp);
-  tprintDebug("\n");
+  tprintDebug("reject_map: {}\n", word->reject_map.print_to_string());
   if (show_map_detail) {
     tprintDebug("\"{}\"\n", word->best_choice->unichar_string());
     for (unsigned i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
       tprintDebug("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
-      word->reject_map[i].full_print(debug_fp);
+      tprintDebug("reject_map[{}] details:\n{}\n", word->reject_map[i].full_print_to_string());
     }
   }
 
