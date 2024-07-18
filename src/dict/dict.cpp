@@ -771,7 +771,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     }
   }
   if (debug) {
-    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
+    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", mdqstr(word->unichar_string()),
             word->rating(), xheight_triggered);
   }
 

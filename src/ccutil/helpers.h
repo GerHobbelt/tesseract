@@ -389,6 +389,38 @@ std::string to_prec(T v, int prec) {
   return buf;
 }
 
+// convert string to a format that's readable in both debug console and HTML/MarkDown:
+// wrap the string in '`' backticks and escape any backticks within by duplicating them.
+static inline std::string mdqstr(const std::string &s) {
+  if (s.empty())
+    return "<empty>";
+  const char *str = s.c_str();
+  if (!strchr(str, '`')) {
+    return "`" + s + "`";
+  }
+  std::string rv;
+  rv = "`";
+  while (*str) {
+    auto pos = strcspn(str, "`");
+    if (pos > 0) {
+      std::string_view particle(str, pos);
+      rv += particle;
+      str += pos;
+    }
+    switch (*str) {
+      case 0:
+        break;
+
+      case '`':
+        rv += "``";
+        str++;
+        continue;
+    }
+  }
+  rv += "`";
+  return rv;
+}
+
 } // namespace tesseract
 
 #endif // TESSERACT_CCUTIL_HELPERS_H_

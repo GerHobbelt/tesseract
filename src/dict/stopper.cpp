@@ -75,8 +75,8 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
         xht = "UNKNOWN";
 		break;
     }
-    tprintDebug("\nStopper:  `{}` (word={}, case={}, xht_ok={}=[{},{}])\n",
-            best_choice.unichar_string().c_str(), (is_valid_word ? "y" : "n"),
+    tprintDebug("\nStopper:  {} (word={}, case={}, xht_ok={}=[{},{}])\n",
+            mdqstr(best_choice.unichar_string()), (is_valid_word ? "y" : "n"),
             (is_case_ok ? "y" : "n"), xht, best_choice.min_x_height(), best_choice.max_x_height());
   }
   // Do not accept invalid words in PASS1.

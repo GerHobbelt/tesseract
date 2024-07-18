@@ -109,9 +109,9 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
   if (word->best_choice->length() > word_length) {
     word->best_choice->make_bad(); // should never happen
     tprintDebug(
-        "recog_word: Discarded long string \"{}\""
+        "recog_word: Discarded long string {}"
         " ({} characters vs {} blobs)\n",
-        word->best_choice->unichar_string(), word->best_choice->length(), word_length);
+        mdqstr(word->best_choice->unichar_string()), word->best_choice->length(), word_length);
     tprintDebug("Word is at:");
     word->word->bounding_box().print();
   }
