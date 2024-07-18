@@ -18,7 +18,7 @@ namespace bin2cpp
   {
   public:
     NormalizeCssFile() { build(); }
-    virtual ~NormalizeCssFile() {}
+    virtual ~NormalizeCssFile() override {}
     virtual size_t getSize() const { return 6138; }
     virtual const char * getFileName() const { return &getFilePath()[0]; }
     virtual const char * getFilePath() const { return "normalize.css"; }

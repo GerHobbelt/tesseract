@@ -18,7 +18,7 @@ namespace bin2cpp
   {
   public:
     ModernnormalizeCssFile() { build(); }
-    virtual ~ModernnormalizeCssFile() {}
+    virtual ~ModernnormalizeCssFile() override {}
     virtual size_t getSize() const { return 4693; }
     virtual const char * getFileName() const { return &getFilePath()[0]; }
     virtual const char * getFilePath() const { return "modern-normalize.css"; }

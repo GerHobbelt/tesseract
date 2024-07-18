@@ -17,7 +17,6 @@ namespace bin2cpp
   class File
   {
   public:
-    // warning C5204: 'bin2cpp::File': class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
     virtual ~File() = default;
 
     virtual size_t getSize() const = 0;
