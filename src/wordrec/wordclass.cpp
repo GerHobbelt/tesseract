@@ -64,7 +64,7 @@ BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, Scroll
                                    wordrec_debug_blamer);
   }
 #ifndef GRAPHICS_DISABLED
-  if (classify_debug_level && string) {
+  if (classify_debug_level > 1 && string) {
     print_ratings_list(string, choices, getDict().getUnicharset());
   }
 
