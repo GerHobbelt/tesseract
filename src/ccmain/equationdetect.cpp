@@ -99,10 +99,11 @@ inline bool IsRightIndented(const EquationDetect::IndentType type) {
   return type == EquationDetect::RIGHT_INDENT || type == EquationDetect::BOTH_INDENT;
 }
 
-EquationDetect::EquationDetect(const char *equ_datapath, const char *equ_name) {
-  const char *default_name = "equ";
+EquationDetect::EquationDetect(TessBaseAPI &owner, const char *equ_datapath, const char *equ_name)
+    : equ_tesseract_(owner)
+{
   if (equ_name == nullptr) {
-    equ_name = default_name;
+    equ_name = "equ";
   }
   lang_tesseract_ = nullptr;
   resolution_ = 0;

@@ -121,6 +121,8 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
       word->best_choice->append_unichar_id(space_id, 1, 0.0, word->best_choice->certainty());
     }
   }
+
+  (void)owner_.Monitor().bump_progress().exec_progress_func();
 }
 
 /**********************************************************************
@@ -154,6 +156,8 @@ void Tesseract::split_and_recog_word(WERD_RES *word) {
   recog_word_recursive(word2);
 
   join_words(word, word2, orig_bb);
+
+  (void)owner_.Monitor().bump_progress().exec_progress_func();
 }
 
 /**********************************************************************

@@ -121,21 +121,8 @@ static void AddBoxTohOCR(const ResultIterator *it, PageIteratorLevel level,
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetHOCRText(int page_number) {
-  return GetHOCRText(nullptr, page_number);
-}
-
-/**
- * Make a HTML-formatted string with hOCR markup from the internal
- * data structures.
- * page_number is 0-based but will appear in the output as 1-based.
- * Image name/input_file_ can be set by SetInputName before calling
- * GetHOCRText
- * STL removed from original patch submission and refactored by rays.
- * Returned string must be freed with the delete [] operator.
- */
-char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   if (tesseract_ == nullptr ||
-      (page_res_ == nullptr && Recognize(monitor) < 0)) {
+      (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 

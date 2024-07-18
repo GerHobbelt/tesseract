@@ -71,6 +71,51 @@ namespace tesseract {
     return strchr("!():;,.?", c) != nullptr;
   }
 
+  // ... because fmt::format("{:.3f}") does not remove trailing insignificant zero digits
+
+  static inline std::string nanoseconds_to_seconds_6(double nsecs) {
+    char buf[60];
+    snprintf(buf, sizeof(buf), "%0.6lf", nsecs / 1E9);
+    // trim off the insignificant tail
+    char *d = buf + strlen(buf) - 1;
+    while (d > buf) {
+      if (*d == '0') {
+        *d-- = 0;
+        continue;
+      }
+      if (*d == '.') {
+        *d-- = 0;
+      }
+      break;
+    }
+    return buf;
+  }
+
+  #undef N        // just in case...
+  #define N(v) nanoseconds_to_seconds_6(v)
+
+  // aligned output: all are 10 wide. For tables.
+  static inline std::string nanoseconds_to_seconds_10_6(double nsecs) {
+    char buf[60];
+    snprintf(buf, sizeof(buf), "%10.6lf", nsecs / 1E9);
+    // trim off the insignificant tail
+    char *d = buf + strlen(buf) - 1;
+    while (d > buf) {
+      if (*d == '0') {
+        *d-- = ' ';
+        continue;
+      }
+      if (*d == '.') {
+        *d-- = ' ';
+      }
+      break;
+    }
+    return buf;
+  }
+
+#undef N10 // just in case...
+#define N10(v) nanoseconds_to_seconds_10_6(v)
+
   static bool is_nonnegligible_difference(double t1, double t2) {
     auto d = t1; // do NOT use std::max(t1, t2) as we're focusing on T1 as the leading number in our caller!
     auto delta = fabs(t2 - t1);
@@ -783,7 +828,7 @@ namespace tesseract {
 
   // Return true when one or more images have been collected.
   bool DebugPixa::HasContent() const {
-    return (pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
+    return (!content_has_been_written_to_file && pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
   }
 
   int DebugPixa::PushNextSection(const std::string &title)
@@ -1414,9 +1459,9 @@ namespace tesseract {
 
       std::string section_timings_intro_msg;
     if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
-        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec (cummulative, i.e. including all subsections: {:.6f} sec.)</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {} sec (cummulative, i.e. including all subsections: {} sec.)</p>\n\n", N(section_info.elapsed_ns), N(section_info.elapsed_ns_cummulative));
     } else {
-      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec</p>\n\n", section_info.elapsed_ns / 1E9);
+      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {} sec</p>\n\n", N(section_info.elapsed_ns));
     }
     fputs(section_timings_intro_msg.c_str(), html);
 
@@ -1612,19 +1657,19 @@ namespace tesseract {
 <p>Data directory: {}</p>\n\
 <p>Main directory: {}</p>\n\
 ",
-        html_styling(tesseract_->datadir, "normalize.css").c_str(),
-        html_styling(tesseract_->datadir, "modern-normalize.css").c_str(),
-        html_styling(tesseract_->datadir, "diag-report.css").c_str(),
+        html_styling(tesseract_->datadir_, "normalize.css").c_str(),
+        html_styling(tesseract_->datadir_, "modern-normalize.css").c_str(),
+        html_styling(tesseract_->datadir_, "diag-report.css").c_str(),
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown_and_encode(tesseract_->input_file_path).c_str(),
-        check_unknown_and_encode(tesseract_->imagebasename).c_str(),
-        check_unknown_and_encode(tesseract_->imagefile).c_str(),
+        check_unknown_and_encode(tesseract_->input_file_path_).c_str(),
+        check_unknown_and_encode(tesseract_->imagebasename_).c_str(),
+        check_unknown_and_encode(tesseract_->imagefile_).c_str(),
         tesseract_->lang_.c_str(),
         languages.str().c_str(),
-        check_unknown_and_encode(tesseract_->language_data_path_prefix).c_str(),
-        check_unknown_and_encode(tesseract_->datadir).c_str(),
-        check_unknown_and_encode(tesseract_->directory).c_str()
+        check_unknown_and_encode(tesseract_->language_data_path_prefix_).c_str(),
+        check_unknown_and_encode(tesseract_->datadir_).c_str(),
+        check_unknown_and_encode(tesseract_->directory_).c_str()
       ).c_str(), html);
 
       plf::nanotimer image_clock;
@@ -1685,34 +1730,34 @@ namespace tesseract {
 
       std::string section_timings_intro_msg;
       if (is_nonnegligible_difference(total_time_elapsed_ns, grand_total_time)) {
-        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec (including all application preparation / overhead: {:.6f} sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9);
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {} sec (including all application preparation / overhead: {} sec).</p>\n\n", N(total_time_elapsed_ns), N(grand_total_time));
       } else {
-        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec.</p>\n\n", total_time_elapsed_ns / 1E9);
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {} sec.</p>\n\n", N(total_time_elapsed_ns));
       }
       fputs(section_timings_intro_msg.c_str(), html);
 
       std::string img_timings_msg;
       for (int i = 0; i < image_series_elapsed_ns.size(); i++) {
-        img_timings_msg += fmt::format("<li>Image #{}: {:.6f} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
+        img_timings_msg += fmt::format("<li>Image #{}: {} sec</li>\n", i, N(image_series_elapsed_ns[i]));
       }
 
       std::string timing_report_msg = fmt::format(
           "<p>\n"
-        "Re overhead costs: the above total time ({:.6f} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {:.6f} sec, alas). It took {:.6f} sec before tesseract was ready to report.\n"
+        "Re overhead costs: the above total time ({} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {} sec, alas). It took {} sec before tesseract was ready to report.\n"
           "</p><p>\n"
-          "While producing this HTML diagnotics log report took {:.6f} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
+          "While producing this HTML diagnotics log report took {} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
           "</p><ul>\n"
-          "<li> saving a <em>lossless</em> WEBP copy of the source image: {:.6f} sec </li>\n"
-              "<li> plus the other images @ {:.6f} sec total:\n"
+          "<li> saving a <em>lossless</em> WEBP copy of the source image: {} sec </li>\n"
+              "<li> plus the other images @ {} sec total:\n"
           "<br>\n"
           "<ul>\n{}\n</ul></li>\n"
           "\n",
-          grand_total_time / 1E9, 
-        (grand_total_time - total_time_elapsed_ns) / 1E9,
-          time_elapsed_until_report / 1E9,
-        report_span_time / 1E9,
-          source_image_elapsed_ns / 1E9,
-          total_images_production_cost / 1E9,
+          N(grand_total_time), 
+        N(grand_total_time - total_time_elapsed_ns),
+          N(time_elapsed_until_report),
+        N(report_span_time),
+          N(source_image_elapsed_ns),
+          N(total_images_production_cost),
           img_timings_msg);
       
       std::string sectiontiming_summary_msg = 
@@ -1738,9 +1783,9 @@ namespace tesseract {
           indent += "&ensp;";
         }
         section_timings_msg += fmt::format(
-            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{:.6f}</td><td class=\"timing-value\">{:.6f}</td></tr>\n",
+            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{}</td><td class=\"timing-value\">{}</td></tr>\n",
             step.level, indent, step.title,
-            step.elapsed_ns / 1E9, step.elapsed_ns_cummulative / 1E9);
+            N(step.elapsed_ns), N(step.elapsed_ns_cummulative));
       }
 
       section_timings_msg = fmt::format(
@@ -1767,35 +1812,35 @@ namespace tesseract {
               "\n\n\n<div class=\"timing-summary\">\n"
           "<h6>Timing summary</h6>\n"
         "<pre>\n"
-        "Wall clock duration:...................... {:10.6f} sec.\n"
-        "Time until report:........................ {:10.6f} sec.\n"
-        "  - actual work:.......................... {:10.6f} sec.\n"
-        "  - prep & misc. overhead:................ {:10.6f} sec\n"
+        "Wall clock duration:...................... {} sec.\n"
+        "Time until report:........................ {} sec.\n"
+        "  - actual work:.......................... {} sec.\n"
+        "  - prep & misc. overhead:................ {} sec\n"
         "  - gap:unaccounted for (~ unidentified overhead):\n"
-        "    ...................................... {:10.6f} sec / {:10.6f} sec\n"
-        "Report production:........................ {:10.6f} sec.\n"
+        "    ...................................... {} sec / {} sec\n"
+        "Report production:........................ {} sec.\n"
         "\n"
-        "Cummulative work effort:.................. {:10.6f} sec\n"
-        "Overhead:................................. {:10.6f} sec\n"
-        "  - reported images production:........... {:10.6f} sec\n"
-        "  - report text production + I/O:......... {:10.6f} sec\n"
-        "  - misc + I/O:........................... {:10.6f} sec\n"
+        "Cummulative work effort:.................. {} sec\n"
+        "Overhead:................................. {} sec\n"
+        "  - reported images production:........... {} sec\n"
+        "  - report text production + I/O:......... {} sec\n"
+        "  - misc + I/O:........................... {} sec\n"
           "</pre>\n"
         "{}"
         "</div>\n",
-      grand_total_time / 1E9, 
-        time_elapsed_until_report / 1E9, 
-        proc_pages_time / 1E9, 
-        (time_elapsed_until_report - proc_pages_time) / 1E9,
-          (grand_total_time - total_time_elapsed_ns) / 1E9,
-          (grand_total_time - time_elapsed_until_report - report_span_time) / 1E9,
-          report_span_time / 1E9,
+      N10(grand_total_time), 
+        N10(time_elapsed_until_report), 
+        N10(proc_pages_time), 
+        N10(time_elapsed_until_report - proc_pages_time),
+          N10(grand_total_time - total_time_elapsed_ns),
+          N(grand_total_time - time_elapsed_until_report - report_span_time),
+          N10(report_span_time),
 
-        proc_pages_time / 1E9, 
-       (grand_total_time - proc_pages_time) / 1E9,
-          (source_image_elapsed_ns + total_images_production_cost) / 1E9,
-          (report_span_time - (source_image_elapsed_ns + total_images_production_cost)) / 1E9,
-          (grand_total_time - proc_pages_time - report_span_time) / 1E9,
+        N10(proc_pages_time), 
+       N10(grand_total_time - proc_pages_time),
+          N10(source_image_elapsed_ns + total_images_production_cost),
+          N10(report_span_time - (source_image_elapsed_ns + total_images_production_cost)),
+          N10(grand_total_time - proc_pages_time - report_span_time),
 
         sectiontiming_summary_msg
         );
@@ -1844,16 +1889,23 @@ namespace tesseract {
   }
 
 
-  void DebugPixa::Clear(bool final_cleanup)
-  {
-    final_cleanup |= content_has_been_written_to_file;
+  void DebugPixa::Clear(bool final_cleanup) {
+    //final_cleanup |= +content_has_been_written_to_file;
     pixaClear(pixa_);
     captions.clear();
-    // NOTE: we only clean the steps[] logging blocks when we've been ascertained that 
-    // this info has been pumped into a logfile (or stdio stream) via our WriteHTML() method....
-    if (final_cleanup) {
-        steps.clear();
-        active_step_index = -1;
+    cliprects.clear();
+
+    steps.clear();
+    info_chunks.clear();
+    image_series_elapsed_ns.clear();
+    active_step_index = -1;
+    total_images_production_cost = 0.0;
+
+    // make sure the logging can commence if we aren't really at the very end yet, i.e. when we aren't invoked by the PixaDebug destructor itself:
+    if (!final_cleanup) {
+      // set up the root info section:
+      PushNextSection("After final cleanup...");
+      content_has_been_written_to_file = false;
     }
   }
 
