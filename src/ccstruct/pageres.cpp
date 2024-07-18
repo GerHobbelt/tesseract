@@ -692,8 +692,8 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
         } else {
           // Old is better.
           if (debug) {
-            tprintDebug("Discarding duplicate choice \"{}\", rating {} vs {}\n",
-                    new_str, word_choice->rating(), choice->rating());
+            tprintDebug("Discarding duplicate choice {}, rating {} vs {}\n",
+                    mdqstr(new_str), word_choice->rating(), choice->rating());
           }
           delete word_choice;
           return false;
@@ -744,12 +744,12 @@ void WERD_RES::PrintBestChoices() const {
   WERD_CHOICE_IT it(const_cast<WERD_CHOICE_LIST *>(&best_choices));
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     if (!it.at_first()) {
-      alternates_str += "\", \"";
+      alternates_str += ", ";
     }
-    alternates_str += it.data()->unichar_string();
+    alternates_str += mdqstr(it.data()->unichar_string());
   }
-  tprintDebug("Alternates for \"{}\": {\"{}\"}\n",
-          best_choice->unichar_string(), alternates_str);
+  tprintDebug("Alternates for {}: [{}]\n",
+          mdqstr(best_choice->unichar_string()), alternates_str);
 }
 
 // Returns the sum of the widths of the blob between start_blob and last_blob

@@ -174,7 +174,7 @@ bool Tesseract::SubAndSuperscriptFix(WERD_RES *word) {
 
   if (superscript_debug >= 1) {
     tprintDebug("Candidate for superscript detection: {} (",
-            word->best_choice->unichar_string().c_str());
+            mdqstr(word->best_choice->unichar_string()));
     if (num_leading || num_remainder_leading) {
       tprintDebug("{}.{} {}-leading ", num_leading, num_remainder_leading, leading_pos);
     }
@@ -415,7 +415,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     }
     recog_word_recursive(prefix);
     if (superscript_debug >= 2) {
-      tprintDebug(" The leading bits look like {} \"{}\"\n", ScriptPosToString(leading_pos), prefix->best_choice->unichar_string());
+      tprintDebug(" The leading bits look like {} {}\n", ScriptPosToString(leading_pos), mdqstr(prefix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties.
@@ -438,7 +438,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     }
     recog_word_recursive(suffix);
     if (superscript_debug >= 2) {
-      tprintDebug(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
+      tprintDebug(" The trailing bits look like {} {}\n", ScriptPosToString(trailing_pos), mdqstr(suffix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties.
@@ -482,7 +482,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
 
   if (superscript_debug >= 1) {
     tprintDebug("{} superscript fix: {}\n", *is_good ? "ACCEPT" : "REJECT",
-            core->best_choice->unichar_string());
+            mdqstr(core->best_choice->unichar_string()));
   }
   return core;
 }

@@ -33,7 +33,7 @@ bool Tesseract::word_adaptable( // should we adapt?
     WERD_RES *word, uint16_t mode) {
   if (tessedit_adaption_debug) {
     tprintDebug("Running word_adaptable() for {}, rating {}, certainty {}, mode {}\n",
-            word->best_choice->unichar_string(), word->best_choice->rating(),
+            mdqstr(word->best_choice->unichar_string()), word->best_choice->rating(),
             word->best_choice->certainty(), mode);
   }
 

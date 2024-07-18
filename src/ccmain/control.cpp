@@ -507,10 +507,10 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
 
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
-      tprintDebug("Pass{}: word at {} --> best choice: \"{}\" [{}] (rating: {} / certainty: {})\n",
+      tprintDebug("Pass{}: word at {} --> best choice: {} {} (rating: {} / certainty: {})\n",
           pass_n, 
           word->word->word->bounding_box().print_to_str(),
-          word->word->best_choice->unichar_string(),
+          mdqstr(word->word->best_choice->unichar_string()),
           word->word->best_choice->debug_string(),
           word->word->best_choice->rating(),
           word->word->best_choice->certainty());
@@ -764,13 +764,13 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
 
     if (w->tesseract->getDict().valid_bigram(prev_best, this_best)) {
       if (tessedit_bigram_debug) {
-        tprintDebug("Top choice \"{} {}\" verified by bigram model.\n", orig_w1_str,
-                orig_w2_str);
+        tprintDebug("Top choice ({} {}) verified by bigram model.\n", mdqstr(orig_w1_str),
+                mdqstr(orig_w2_str));
       }
       continue;
     }
     if (tessedit_bigram_debug > 2) {
-      tprintDebug("Examining alt choices for \"{} {}\".\n", orig_w1_str, orig_w2_str);
+      tprintDebug("Examining alt choices for ({} {}).\n", mdqstr(orig_w1_str), mdqstr(orig_w2_str));
     }
     if (tessedit_bigram_debug > 1) {
       if (!w_prev->best_choices.singleton()) {
@@ -816,9 +816,9 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
           EqualIgnoringCaseAndPunct(*w->best_choice, *overrides_word2[best_idx])) {
         if (tessedit_bigram_debug > 1) {
           tprintDebug(
-              "Top choice \"{} {}\" verified (sans case) by bigram "
+              "Top choice ({} {}) verified (sans case) by bigram "
               "model.\n",
-              orig_w1_str, orig_w2_str);
+              mdqstr(orig_w1_str), mdqstr(orig_w2_str));
         }
         continue;
       }
@@ -845,18 +845,17 @@ void Tesseract::bigram_correction_pass(PAGE_RES *page_res) {
               }
               WERD_CHOICE *p1 = overrides_word1[i];
               WERD_CHOICE *p2 = overrides_word2[i];
-              bigrams_list += p1->unichar_string() + " " + p2->unichar_string();
+              bigrams_list += mdqstr(p1->unichar_string()) + " " + mdqstr(p2->unichar_string());
             }
             choices_description = "There were many choices: {";
             choices_description += bigrams_list;
             choices_description += "}";
           } else {
-            choices_description += "There were " + std::to_string(num_bigram_choices);
-            choices_description += " compatible bigrams.";
+            choices_description += fmt::format("There were {} compatible bigrams.", num_bigram_choices);
           }
         }
-        tprintDebug("Replaced \"{} {}\" with \"{} {}\" with bigram model. {}\n", orig_w1_str,
-                orig_w2_str, new_w1_str, new_w2_str,
+        tprintDebug("Replaced ({} {}) with ({} {}) with bigram model. {}\n", mdqstr(orig_w1_str),
+                mdqstr(orig_w2_str), mdqstr(new_w1_str), mdqstr(new_w2_str),
                 choices_description);
       }
     }
@@ -1125,7 +1124,7 @@ int Tesseract::SelectBestWords(double rating_ratio, double certainty_margin,
 
       tprintDebug("The new {} *best* words produced: [", out_words.size());
       for (int ow = 0; ow < out_words.size(); ow++) {
-        tprintDebug("`{}` ", out_words[ow]->best_choice->unichar_string());
+        tprintDebug("{} ", mdqstr(out_words[ow]->best_choice->unichar_string()));
       }
       tprintDebug("]\n");
     }
@@ -1642,8 +1641,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
     tprintWarn("no best words!!\n");
   }
   if (tessedit_timing_debug) {
-    tprintDebug("classify_word_and_language -> word best choice: \"{}\" (bbox: {}, OCR took {} sec)\n",
-            word_data->word->best_choice->unichar_string(),
+    tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} sec)\n",
+            mdqstr(word_data->word->best_choice->unichar_string()),
         word_data->word->word->bounding_box().print_to_str(),
             clock.get_elapsed_sec());
   }
@@ -1716,12 +1715,12 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 void Tesseract::ReportXhtFixResult(bool accept_new_word, float new_x_ht, WERD_RES *word,
                                    WERD_RES *new_word) {
   TPrintGroupLinesTillEndOfScope push;
-  tprintDebug("New XHT Match:{} = {} ", word->best_choice->unichar_string(),
+  tprintDebug("New XHT Match: {} = {}\n", mdqstr(word->best_choice->unichar_string()),
           word->best_choice->debug_string());
-  tprintDebug("\n  reject_map: {}\n", word->reject_map.print_to_string());
-  tprintDebug(" -> {} = {} ", new_word->best_choice->unichar_string(),
+  tprintDebug("  reject_map: {}\n", word->reject_map.print_to_string());
+  tprintDebug(" -> {} = {}\n", mdqstr(new_word->best_choice->unichar_string()),
           new_word->best_choice->debug_string());
-  tprintDebug("\n  new.reject_map: {}\n", new_word->reject_map.print_to_string());
+  tprintDebug("  new.reject_map: {}\n", new_word->reject_map.print_to_string());
   tprintDebug("  word: {}->{} {} {}\n", word->guessed_x_ht ? "GUESS" : "CERT",
           new_word->guessed_x_ht ? "GUESS" : "CERT", new_x_ht > 0.1 ? "STILL DOUBT" : "OK",
           accept_new_word ? "ACCEPTED" : "");
@@ -1883,7 +1882,7 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
       /* Don't trust fix_quotes! - though I think I've fixed the bug */
       if (static_cast<unsigned>(word->best_choice->length()) != word->box_word->length()) {
         tprintDebug(
-            "POST FIX_QUOTES FAIL String:\"{}\"; Strlen={};"
+            "POST FIX_QUOTES FAIL String:{}; Strlen={};"
             " #Blobs={}\n",
             word->best_choice->debug_string(), word->best_choice->length(),
             word->box_word->length());
@@ -2147,12 +2146,16 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
         break;
     }
     if (word->best_choice != nullptr) {
-      tprintDebug("\"{}\" ", word->best_choice->unichar_string());
-      tprintDebug("\n  reject_map: {}\n", word->reject_map.print_to_string());
+      tprintDebug("{}\n", mdqstr(word->best_choice->unichar_string()));
+      tprintDebug("  reject_map: {}\n", word->reject_map.print_to_string());
       if (show_map_detail) {
-        tprintDebug("  details: \"{}\"\n", word->best_choice->unichar_string());
-        for (unsigned i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
-          tprintDebug("  char[{}]: **** \"{}\" ****\n", i, word->best_choice->unichar_string()[i]);
+        tprintDebug("  details: {}\n", mdqstr(word->best_choice->unichar_string()));
+        const std::string &wstr = word->best_choice->unichar_string();
+        for (unsigned i = 0; wstr[i] != '\0'; i++) {
+          if (wstr[i] != '`')
+            tprintDebug("  char[{}]: **** `{}` ****\n", i, wstr[i]);
+          else
+            tprintDebug("  char[{}]: **** '`' ****\n", i);
           tprintDebug("  char[{}]: reject_map: {}\n", i, word->reject_map[i].full_print_to_string());
         }
       }
@@ -2357,12 +2360,6 @@ void Tesseract::italic_recognition_pass(PAGE_RES *page_res) {
   italic = (word != nullptr && word->fontinfo && word->fontinfo->is_italic());
   word_next = page_res_it.word();
 
-#if 0
-  // This line has some side effect that prevents "Segmentation fault (core dumped)" in certain cases. 
-  // Do not understand why that happens. 
-  (void)word->best_choice->debug_string().c_str();
-#endif
-
   while (word_next != nullptr) {
     page_res_it.forward();
     word_next = page_res_it.word();
@@ -2432,8 +2429,8 @@ void Tesseract::dictionary_correction_pass(PAGE_RES *page_res) {
       if (word->tesseract->getDict().valid_word(*alternate)) {
         // The alternate choice is in the dictionary.
         if (tessedit_bigram_debug) {
-          tprintDebug("Dictionary correction replaces best choice '{}' with '{}'\n",
-                  best->unichar_string(), alternate->unichar_string());
+          tprintDebug("Dictionary correction replaces best choice {} with {}\n",
+                  mdqstr(best->unichar_string()), mdqstr(alternate->unichar_string()));
         }
         // Replace the 'best' choice with a better choice.
         word->ReplaceBestChoice(alternate);

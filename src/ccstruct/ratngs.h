@@ -483,14 +483,29 @@ public:
   WERD_CHOICE shallow_copy(unsigned int start, unsigned int end) const;
 
   void string_and_lengths(std::string *word_str, std::string *word_lengths_str) const;
+
   std::string debug_string() const {
+    if (length_ == 0)
+      return "<empty>";
+
     std::string word_str;
+    word_str += "[`";
+    for (unsigned int i = 0; i < length_; ++i) {
+      const char *u = unicharset_->id_to_unichar(unichar_ids_[i]);
+      if (0 == strcmp(u, "`"))
+        u = "``"; // to help the MarkDown-ish debug log to HTML processor
+      word_str += u;
+    }
+    word_str += "`]{";
     for (unsigned int i = 0; i < length_; ++i) {
       word_str += unicharset_->debug_str(unichar_ids_[i]);
       word_str += " ";
     }
+    word_str.pop_back();
+    word_str += "}";
     return word_str;
   }
+
   // Returns true if any unichar_id in the word is a non-space-delimited char.
   bool ContainsAnyNonSpaceDelimited() const {
     for (unsigned int i = 0; i < length_; ++i) {
