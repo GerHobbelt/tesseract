@@ -818,14 +818,33 @@ bool UNICHARSET::save_to_string(std::string &str) const {
 }
 
 std::string UNICHARSET::debug_full_set_as_string() const {
-  std::string str = fmt::format("(charcount: {})", this->size());
+  std::string str = fmt::format("(charcount: {}) [`", this->size());
+  // ignore the 3 initial slots: SPACE, JOINED, BROKEN
+  std::vector<const char *> ucs(this->size() - 3);
+  for (unsigned id = 3; id < this->size(); ++id) {
+    const char *u = this->id_to_unichar(id);
+    if (0 == strcmp(u, "`"))
+      u = "``";    // to help the MarkDown-ish debug log to HTML processor
+    ucs[id - 3] = u;
+  }
+  std::sort(ucs.begin(), ucs.end(), [](const char *a, const char *b) -> bool {
+    int d = strcmp(a, b);
+    return d < 0;
+  });
+  for (unsigned id = 0; id < this->size() - 3; ++id) {
+    str += ucs[id];
+  }
+  str += "`]\n    {";
   for (unsigned id = 0; id < this->size(); ++id) {
     str += fmt::format(" '{}' ({}:{} {})",
                        this->id_to_unichar(id),
                        id,
                        this->get_normed_unichar(id),
                        this->debug_str(id));
+    if (id % 8 == 7 && id != this->size() - 1)
+      str += "\n      ";
   }
+  str += " }";
   return str;
 }
 
