@@ -55,13 +55,35 @@ static bool has_traineddata_files(const std::string &datadir) {
   if (!fs::is_directory(datadir) || fs::is_symlink(datadir))
     return false;
 
+  // the first language we hit is makes this directory 'viable':
+  for (const std::string &lang : languages_to_load) {
+    auto fname = datadir + "/" + lang + ".traineddata";
+    std::error_code ec;     // ensure the file_size() check doesn't throw.
+    tprintDebug("testing for traineddata file: inspecting {}\n", fname);
+    if (fs::exists(fname) && fs::file_size(fname, ec) > 10240) {
+      return true;
+    }
+  }
+
   // for (const fs::directory_entry &dir_entry : fs::recursive_directory_iterator(datadir)) {
   for (const fs::directory_entry &dir_entry : fs::directory_iterator(datadir)) {
     tprintDebug("testing for traineddata file: inspecting {}\n", dir_entry.path().string());
 
     // Don't use string.ends_with() as we wish to support traineddata archive bundles as well. (future music)
-    if (/* dir_entry.is_regular_file() && */ dir_entry.file_size() > 0 && dir_entry.path().filename().string().find(".traineddata") != std::string::npos)
-      return true;
+    auto fname = dir_entry.path().filename().string();
+    std::error_code ec; // ensure the file_size() check doesn't throw.
+    if (/* dir_entry.is_regular_file() && */ fname.find(".traineddata") != std::string::npos && dir_entry.file_size(ec) > 10240) {
+      if (languages_to_load.empty()) {
+        return true;
+      } else {
+        // the first language we hit is makes this directory 'viable':
+        for (const std::string &lang : languages_to_load) {
+          if (fname.starts_with(lang + ".")) {
+            return true;
+          }
+        }
+      }
+    }
   }
   return false;
 }

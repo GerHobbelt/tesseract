@@ -370,7 +370,7 @@ public:
   void report_progress(int left, int right, int top, int bottom) {
     // do not clutter the screen & logfiles with frequent progress updates: only log another one when it's more than 2 seconds later than the last one.
     std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-    if (now >= next_progress_log_opportunity) {
+    if (now >= next_progress_log_opportunity || progress >= 100.0) {
       // estimate how long we'll take longer, based on the time we spent since the start of this application (the moment when this monitor was instantiated, rather, but alas).
       std::chrono::duration elapsed = now - app_start_time;
       std::chrono::duration total_duration = 100.0 / (progress > 0 ? progress : 5 /* arbitrary value */) * elapsed;
@@ -978,6 +978,18 @@ extern "C" int tesseract_main(int argc, const char **argv)
   // that's the superset we accept at the command line.
     auto& parlst = tess.params_collective();
   ParamsVector surplus_args;
+
+  // collect commandline for display in the diagnostics output
+  std::vector<std::string> argv4diag;
+  for (int ac = 0; ac < argc; ac++) {
+    argv4diag.push_back(argv[ac]);
+  }
+
+    CLI_Monitor monitor;
+    monitor.progress_callback = cli_monitor_progress_f;
+    api.RegisterMonitor(&monitor);
+
+    api.DebugAddCommandline(argv4diag);
 
   int cmd = ParseArgs(argc, argv, parlst, surplus_args);
   if (cmd == WE_ARE_BUGGERED) {

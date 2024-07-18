@@ -207,6 +207,10 @@ public:
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
 
+  /// Note the given command (argv[] set as vector) for later reporting
+  /// in the diagnostics output as part of the HTML log heading.
+  void DebugAddCommandline(const std::vector<std::string> &argv);
+
   /**
    * Clear and free up everything inside, returning the instance to a state
    * equivalent to having just being freshly constructed, with one important

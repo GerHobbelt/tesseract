@@ -39,6 +39,10 @@ namespace tesseract {
     void AddPixWithBBox(const Image &pix, const TBOX &bbox, const char *caption);
     void AddPixWithBBox(const Image &pix, const char *caption);
 
+    /// Note the given command (argv[] set as vector) for later reporting
+    /// in the diagnostics output as part of the HTML log heading.
+    void DebugAddCommandline(const std::vector<std::string> &argv);
+
     // Return reference to info stream, where you can collect the diagnostic information gathered.
     //
     // NOTE: we expect HTML formatted context to be fed into the stream.

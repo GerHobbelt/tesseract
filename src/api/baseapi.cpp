@@ -797,6 +797,15 @@ const ETEXT_DESC &TessBaseAPI::Monitor() const {
   return *monitor_;
 }
 
+
+void TessBaseAPI::DebugAddCommandline(const std::vector<std::string>& argv) {
+  if (tesseract_ == nullptr) {
+    tesseract_ = new Tesseract(*this, nullptr);
+  }
+  tesseract_->DebugAddCommandline(argv);
+}
+
+
 /**
  * Returns the languages string used in the last valid initialization.
  * If the last initialization specified "deu+hin" then that will be
@@ -1442,10 +1451,26 @@ Pix *TessBaseAPI::GetInputImage() {
   return tesseract().pix_original();
 }
 
-static const char* NormalizationModeName(int mode) {
+static const char* NormalizationProcessModeName(int mode) {
   switch(mode) {
-    case 0:
+    case -1:
       return "No normalization";
+    case 0:
+      return "NlBin2 (Thomas Breuel)";
+    case 1:
+      return "NlBin1";
+    case 2:
+      return "OKLab::Value";
+    default:
+      ASSERT0(!"Unknown Normalization Mode");
+      return "Unknown Normalization Mode";
+  }
+}
+
+static const char *NormalizationTargetModeName(int mode) {
+  switch (mode) {
+    case 0:
+      return "No Target";
     case 1:
       return "Thresholding + Recognition";
     case 2:
@@ -1463,34 +1488,85 @@ bool TessBaseAPI::NormalizeImage(int mode) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Normalize Image"));
 
-  if (!GetInputImage()) {
+  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+  // and at the same resolution as the output binary.
+  Image pix = GetInputImage();
+  if (!pix) {
     tprintError("Please use SetImage before applying the image pre-processing steps.\n");
     return false;
   }
 
-  Image pix = thresholder_->GetPixNormRectGrey();
-  if (tess.debug_image_normalization) {
-    tess.AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin (Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
+  Image result_pix = nullptr;
+
+  // Apply one of the various ways we can greyscale + normalize from source to greyscale.
+  int process = (mode >> 2);
+  if (mode == 0)
+    process = -1;
+
+  // ... and feed the result into the designated target(s): thresholder and/or tesseract source image (which is used as LSTM v4/v5 engine input).
+  int targets = (mode & 0x03);
+  bool debug = (tesseract_->debug_image_normalization || tesseract_->tessedit_write_images);
+
+  if (false && debug) {
+    tesseract_->AddPixDebugPage(pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
   }
-  if (mode == 1) {
-    SetInputImage(pix);
-    thresholder_->SetImage(GetInputImage());
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder & set up as input image");
-    }
-  } else if (mode == 2) {
-    thresholder_->SetImage(pix);
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder");
-    }
-  } else if (mode == 3) {
-    SetInputImage(pix);
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(GetInputImage(), "Grayscale normalization, now set up as input image");
-    }
-  } else {
-    return false;
+
+  switch (process) {
+    case -1:
+      // no normalization!
+      if (debug) {
+        tprintDebug("No greyscale image normalization performed: greyscale image will be processed as-is; graynorm_mode = {}.\n", mode);
+      }
+      result_pix = pix.clone();
+      break;
+
+    case 0:
+      result_pix = pixNLNorm2(pix, nullptr);
+      break;
+
+    case 1: {
+      int threshold, fgval, bgval;
+      result_pix = pixNLNorm1(pix, &threshold, &fgval, &bgval);
+    } break;
+
+    default:
+      tprintError("Unsupported normalization mode {} -> {}; not performing any normalization.\n", mode, process);
+      pix.destroy();
+      return false;
   }
+
+  if (debug) {
+    tesseract_->AddPixDebugPage(result_pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
+  }
+
+  switch (targets) {
+    case 0:
+      // no target??? only okay when we don't do any normalization at all.
+      if (process == -1) {
+        thresholder_->SetImage(pix);
+        break;
+      } else {
+        tprintWarn("The normalization mode {} does not designate a target; we will assume you intended {}, which is properly addressed by normalization mode {}.\n", mode, NormalizationTargetModeName(1), mode | 1);
+      }
+      //[[fallthrough]]
+    case 1:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 2:
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 3:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(pix);
+      break;
+  }
+
+  pix.destroy();
+  result_pix.destroy();
+
   return true;
 }
 
@@ -1897,71 +1973,13 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   }
 
   // Image preprocessing on image
-  
-  // pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
-  // 
-  // pixAutoPhotoinvert()
-  //
-  //     if (edgecrop > 0.0) {
-  //  box = boxCreate(0.5f * edgecrop * w, 0.5f * edgecrop * h,
-  //                   (1.0f - edgecrop) * w, (1.0f - edgecrop) * h);
-  //   pix2 = pixClipRectangle(pix1, box, NULL);
-  //   boxDestroy(&box);
-  // }
-  //   else {
-  //   pix2 = pixClone(pix1);
-  // }
-  //
-  // pixCleanBackgroundToWhite()
-  //
-  //   pixalpha = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);  /* save */
-  //   if ((nag = numaGammaTRC(gamma, minval, maxval)) == NULL)
-  //     return (PIX *)ERROR_PTR("nag not made", __func__, pixd);
-  //   pixTRCMap(pixd, NULL, nag);
-  //   pixSetRGBComponent(pixd, pixalpha, L_ALPHA_CHANNEL); /* restore */
-  //   pixSetSpp(pixd, 4);
-  //   numaDestroy(&nag);
-  //   pixDestroy(&pixalpha);
-  //
-  // l_float32  avefg, avebg;
-  //   l_float32 numfg, numbg;
-  //   NUMA *na = pixGetGrayHistogram(pixt, 1);
-  //   l_float32 mean, median, mode, variance;
-  //   numaGetHistogramStats(na, 0.0, 1.0, &mean, &median, &mode, &variance);
-  //
-  // PIX * pixGetRGBComponent ( PIX *pixs, l_int32 comp );
-  //
-  // pixGetRankValue()
-  // numaHistogramGetValFromRank(na, rank, &val);
-  //
-  // numaGetMin(), numaGetMax()
-  //
-  // pixThresholdByConnComp()
-  //
-  //  numaGetNonzeroRange()
-  //
-  // pixMaxDynamicRange
-
-  
-
-
-  
 
   // Grayscale normalization
-  int graynorm_mode = tess.preprocess_graynorm_mode;
+  int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   {
-    Image input_img = GetInputImage();
-
-    if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tess.tessedit_write_images) {
-      // Write normalized image 
-      Pix *p1;
-      if (graynorm_mode == 2) {
-        p1 = thresholder_->GetPixRect();
-      } else {
-        p1 = GetInputImage();
-      }
-      tess.AddPixDebugPage(p1, fmt::format("Greyscale normalized image to process @ graynorm_mode = {}", graynorm_mode));
-    }
+    bool rc = NormalizeImage(graynorm_mode);
+    if (!rc)
+      return false;
   }
 
   // Recognition
@@ -2892,7 +2910,8 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   int user_dpi = tess.user_defined_dpi;
   int y_res = thresholder_->GetScaledYResolution();
   if (user_dpi && (user_dpi < kMinCredibleResolution || user_dpi > kMaxCredibleResolution)) {
-    tprintWarn("User defined image dpi is outside of expected range "
+    tprintWarn(
+        "User defined image dpi is outside of expected range "
         "({} - {})!\n",
         kMinCredibleResolution, kMaxCredibleResolution);
   }
@@ -2903,103 +2922,111 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     if (y_res != 0) {
       // Show warning only if a resolution was given.
       tprintWarn("Invalid resolution {} dpi. Using {} instead.\n",
-              y_res, kMinCredibleResolution);
+                 y_res, kMinCredibleResolution);
     }
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
   if (Monitor().bump_progress().exec_progress_func().kick_watchdog_and_check_for_cancel()) {
-      tprintWarn("Timeout/cancel: abort the image threshold preprocessing stage.\n");
-      return false;
+    tprintWarn("Timeout/cancel: abort the image threshold preprocessing stage.\n");
+    return false;
   }
 
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  Image pix_binary = nullptr;
 
-  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
+  std::string caption = ThresholdMethodName(selected_thresholding_method);
+  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
 
-  {
-    tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-
-	  if (selected_thresholding_method == ThresholdMethod::Otsu) {
-		  Image pix_binary(*pix);
-		  if (!thresholder_->ThresholdToPix(&pix_binary)) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  if (!thresholder_->IsBinary()) {
-			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-			  tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-		  } else {
-			  tesseract_->set_pix_thresholds(nullptr);
-			  tesseract_->set_pix_grey(nullptr);
-		  }
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
-
-        l_int32 w, h, d;
-        Image composite = tesseract_->pix_grey().copy();
-        pixGetDimensions(composite, &w, &h, &d);
-        Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
-        pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
-        tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", sequence));
-
-        mask.destroy();
-        composite.destroy();
-        pix_post.destroy();
-      }
-	  } else {
-		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
-
-		  if (!ok) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  tesseract_->set_pix_thresholds(pix_thresholds);
-		  tesseract_->set_pix_grey(pix_grey);
-
-      std::string caption = ThresholdMethodName(selected_thresholding_method);
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
-        pix_post.destroy();
-      }
-
-      //pix_thresholds.destroy();
-      //pix_grey.destroy();
+  if (selected_thresholding_method == ThresholdMethod::Otsu) {
+    pix_binary = *pix;
+    if (!thresholder_->ThresholdToPix(&pix_binary)) {
+      return false;
     }
+
+    *pix = pix_binary;
+
+    if (!thresholder_->IsBinary()) {
+      tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+      tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+    } else {
+      tesseract_->set_pix_thresholds(nullptr);
+      tesseract_->set_pix_grey(nullptr);
+    }
+  } else {
+    auto [ok, pix_grey, pix_binary2, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
+
+    if (!ok) {
+      return false;
+    }
+
+    pix_binary = pix_binary2;
+    *pix = pix_binary;
+
+    tesseract_->set_pix_thresholds(pix_thresholds);
+    tesseract_->set_pix_grey(pix_grey);
+    // pix_thresholds.destroy();
+    // pix_grey.destroy();
+  }
+
+  if (tesseract_->tessedit_dump_pageseg_images) {
+    tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+    tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+    if (verbose_process) {
+      tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+    }
+    tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+  }
+
+  // demo a bit of pre-postprocessing
+  {
+    const char *sequence = "c1.1 + d3.3";
+    const int dispsep = 0;
+    Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+    tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {} -- just an example to showcase what leptonica can do for us!", caption, sequence));
+
+    l_int32 w, h, d;
+    Image composite = tesseract_->pix_grey().copy();
+    pixGetDimensions(composite, &w, &h, &d);
+    Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
+    pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
+    tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
+
+    Image noise1 = pixEmphasizeImageNoise(tesseract_->pix_original());
+    Image noise2 = pixEmphasizeImageNoise(tesseract_->pix_grey());
+    Image noise3 = pixEmphasizeImageNoise(composite);
+    Image noise4 = pixEmphasizeImageNoise(pix_post);
+    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis A: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis B: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis C: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis D: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+
+    noise1 = pixEmphasizeImageNoise2(tesseract_->pix_original());
+    noise2 = pixEmphasizeImageNoise2(tesseract_->pix_grey());
+    noise3 = pixEmphasizeImageNoise2(composite);
+    noise4 = pixEmphasizeImageNoise2(pix_post);
+    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis E: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis F: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+
+    noise1.destroy();
+    noise2.destroy();
+    noise3.destroy();
+    noise4.destroy();
+    mask.destroy();
+    composite.destroy();
+    pix_post.destroy();
   }
 
   if (verbose_process) {
-    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract *inverts* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that number of black text pixels (*foreground*) should be significantly *lower* than the number of white *background* pixels in a page.\n\n"
-      "With very dark pages that ratio of many background vs. few foreground pixels is the opposite of tesseract's assumption regarding black and white pixels so it will decide to *invert* the image, thus attempting to get back to a *black text over white background input image*. tesseract does this in its effort to feed the inner OCR engine image material that is as close as possible to what it has always been trained with and designed for: basic scanned books and academic publications: those all have: (dark) black text on (light) white plain background.\n\n"
-      "Also note that tesseract is not geared towards recognizing and dealing nicely with other (a.k.a. *non-text*) page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
-    tprintInfo("PROCESS: Removing all non-text image elements in the page image *before you feed it to tesseract* also will have a notable effect on the thresholding (a.k.a. binarization) algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels.\n\n"
-      "Remember: only *foreground* pixels that turn up as *black* in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text; anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
+    tprintInfo(
+        "PROCESS: For overall very dark images you may sometimes observe that tesseract *inverts* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that number of black text pixels (*foreground*) should be significantly *lower* than the number of white *background* pixels in a page.\n\n"
+        "With very dark pages that ratio of many background vs. few foreground pixels is the opposite of tesseract's assumption regarding black and white pixels so it will decide to *invert* the image, thus attempting to get back to a *black text over white background input image*. tesseract does this in its effort to feed the inner OCR engine image material that is as close as possible to what it has always been trained with and designed for: basic scanned books and academic publications: those all have: (dark) black text on (light) white plain background.\n\n"
+        "Also note that tesseract is not geared towards recognizing and dealing nicely with other (a.k.a. *non-text*) page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
+    tprintInfo(
+        "PROCESS: Removing all non-text image elements in the page image *before you feed it to tesseract* also will have a notable effect on the thresholding (a.k.a. binarization) algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels.\n\n"
+        "Remember: only *foreground* pixels that turn up as *black* in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text; anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -3012,12 +3039,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   int estimated_res = ClipToRange(thresholder_->GetScaledEstimatedResolution(),
                                   kMinCredibleResolution, kMaxCredibleResolution);
   if (estimated_res != thresholder_->GetScaledEstimatedResolution()) {
-    tprintWarn("Estimated internal resolution {} out of range! "
+    tprintWarn(
+        "Estimated internal resolution {} out of range! "
         "Corrected to {}.\n",
         thresholder_->GetScaledEstimatedResolution(), estimated_res);
   }
   tess.set_source_resolution(estimated_res);
-  
+
   (void)Monitor().bump_progress().exec_progress_func();
 
   return true;
