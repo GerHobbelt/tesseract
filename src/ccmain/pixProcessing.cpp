@@ -6,6 +6,8 @@
 
 #include <tesseract/tprintf.h> // for tprintf
 
+#include "thresholder.h" 
+
 #include <cstdint>
 #include <cstring>
 
@@ -13,17 +15,389 @@ namespace tesseract {
 
 // Brewer-derived scale for the noise emphasis (RGB)
 static const l_uint32 noiseEmphasisColorMap[] = {
-    0xfcc5c0,
-    0xfa9fb5,
-    0xf768a1,
-    0xdd3497,
-    0xae017e,
-    0x7a0177,
-    0x49006a,
+    0x49006a, // [1]
+    0x7a0177, // [32]
+    0xae017e, // [32+48]
+    0xdd3497,  // [128]
+    0xf768a1, // [128+48]
+    0xfa9fb5, // [128+96 ~ 254-30]
+    0xfcc5c0, // [254]
 };
 
+static l_uint32 interpolate2NoiseEmphasisColors(l_uint32 a, l_uint32 b, l_uint32 offset256) {
+  l_uint32 ax = (a & 0xFF0000) * (256 - offset256);
+  l_uint32 bx = (b & 0xFF0000) * offset256;
+  l_uint32 ay = (a & 0xFF00) * (256 - offset256);
+  l_uint32 by = (b & 0xFF00) * offset256;
+  l_uint32 az = (a & 0xFF) * (256 - offset256);
+  l_uint32 bz = (b & 0xFF) * offset256;
+  l_uint32 rx = ax + bx;
+  l_uint32 ry = ay + by;
+  l_uint32 rz = az + bz;
+  l_uint32 rv = (rx & 0xFF000000) | (ry & 0xFF0000) | (rz & 0xFF00);
+  // rv /= 256;   -- not needed as the lower byte is the ALPHA channel and we're fine like this already.
+  //rv &= 0xFFFFFF00;   // blow away the alpha channel value
+  return rv;
+}
+
+// the noise emphasis core function, which will be applied to every pixel of the source image.
+static inline l_uint32 mapSourceValueTonoiseEmphasisColor(int value) {
+  // mapping: 0 (black) remains BLACK, 255 (white) remains WHITE, the rest get mapped.
+  if (value <= 0)
+    return 0x00000000;
+  if (value >= 255)
+    return 0xFFFFFF00;
+  if (value < 32) {
+    return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[0], noiseEmphasisColorMap[1], l_uint32(value) * 256 / 32);
+  }
+  if (value < 32+48) {
+    return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[1], noiseEmphasisColorMap[2], l_uint32(value - 32) * 256 / 48);
+  }
+  if (value < 128) {
+    return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[2], noiseEmphasisColorMap[3], l_uint32(value - 32 - 48) * 256 / 48);
+  }
+  if (value < 128+48) {
+    return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[3], noiseEmphasisColorMap[4], l_uint32(value - 128) * 256 / 48);
+  }
+  if (value < 128 + 96) {
+    return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[4], noiseEmphasisColorMap[5], l_uint32(value - 128 - 48) * 256 / 48);
+  }
+  return interpolate2NoiseEmphasisColors(noiseEmphasisColorMap[5], noiseEmphasisColorMap[6], l_uint32(value - 128 - 96) * 256 / 32);
+}
+
 PIX *pixEmphasizeImageNoise(PIX *pixs) {
-  return pixClone(pixs);
+  l_int32 d;
+  PIX *pixg, *pixd;
+
+  PROCNAME("pixEmphasizeImageNoise");
+
+  if (!pixs || (d = pixGetDepth(pixs)) < 1) {
+    return (PIX *)ERROR_PTR("pixs undefined or d < 8 bpp", procName, NULL);
+  }
+  if (d == 32) {
+    // ITU-R 601-2 luma
+    pixg = pixConvertRGBToGray(pixs, 0.299, 0.587, 0.114);
+    // Legacy converting
+    // pixg = pixConvertRGBToGray(pixs, 0.3, 0.4, 0.3);
+  } else {
+    auto cmap = pixGetColormap(pixs);
+    if (d != 8 || cmap != NULL) {
+      pixg = pixConvertTo8(pixs, 0);
+    } else {
+      pixg = pixClone(pixs);
+    }
+  }
+
+  // because leptonica's pixMaxDynamicRange() does not maximize at it only
+  // reckons with the *maximum* pixel value and ignores the *minimum* pixel value.
+  // We do reckon with both of 'em, though.
+  pixd = pixMaxDynamicRange2(pixg, L_LINEAR_SCALE);
+  pixDestroy(&pixg);
+  pixg = pixd;
+
+  l_int32 i, j, w, h, wpl;
+  l_int32 dstwpl, blrwpl;
+  l_uint32 *data, *line;
+  l_uint32 *blrdata, *blrline;
+  l_uint32 *dstdata, *dstline;
+
+  pixGetDimensions(pixg, &w, &h, &d);
+  if (d != 8)
+    return (PIX *)ERROR_PTR("pixg not 8 bpp", procName, NULL);
+
+  // blur
+  PIX *pixg2 = pixBlockconv(pixg, 2, 2);
+
+  pixd = pixCreate(w, h, 32);
+  if (!pixd)
+    return NULL;
+
+  data = pixGetData(pixg);
+  wpl = pixGetWpl(pixg);
+
+  blrdata = pixGetData(pixg2);
+  blrwpl = pixGetWpl(pixg2);
+
+  dstdata = pixGetData(pixd);
+  dstwpl = pixGetWpl(pixd);
+
+  for (i = 0; i < h; i++) {
+    line = data + i * wpl;
+    blrline = blrdata + i * blrwpl;
+    dstline = dstdata + i * dstwpl;
+    for (j = 0; j < w; j++) {
+      l_uint8 val = GET_DATA_BYTE(line, j);
+      l_uint8 blrval = GET_DATA_BYTE(blrline, j);
+      int delta = int(blrval >= 128 ? 255 : 0) - int(val);
+      l_uint32 color;
+      if (delta == 0) {
+        // grey to RGBA:
+        color = val;
+        color |= color << 8;
+        color |= color << 8;
+        color = color << 8;
+      } else {
+#if 0
+        // emphasize the difference
+        delta *= 24;
+#else
+        int a = delta;
+        if (a < 0)
+          a = -a;
+        // emphasize the difference
+        if (a < 4)
+          delta *= 16;
+        if (a < 8)
+          delta *= 8;
+        else if (a < 16)
+          delta *= 4;
+        else if (a < 32)
+          delta *= 2;
+        else if (a < 64)
+          delta *= 1;
+        else if (a < 128)
+          delta /= 2;
+        else
+          delta /= 4;
+#endif
+
+        int r = int(val >= 128 ? 255 : 0) + delta;
+        // fold/mirror value into 256 value range
+        if (r < 0) {
+          r = -r;
+          r &= 0x7F;
+          // if (r > 128)
+          //   r = 128;
+        } else if (r >= 256) {
+          r -= 255;
+          r &= 0x7F;
+          // if (r > 128)
+          //   r = 128;
+          r = 255 - r;
+        }
+        color = mapSourceValueTonoiseEmphasisColor(r);
+      }
+      // color = mapSourceValueTonoiseEmphasisColor(int(blrval));
+      SET_DATA_FOUR_BYTES(dstline, j, color);
+    }
+  }
+
+  pixDestroy(&pixg);
+  pixDestroy(&pixg2);
+
+  return pixd;
+}
+
+
+PIX *pixEmphasizeImageNoise2(PIX *pixs) {
+  l_int32 d;
+  PIX *pixg, *pixd;
+
+  PROCNAME("pixEmphasizeImageNoise");
+
+  if (!pixs || (d = pixGetDepth(pixs)) < 1) {
+    return (PIX *)ERROR_PTR("pixs undefined or d < 8 bpp", procName, NULL);
+  }
+  if (d == 32) {
+    // ITU-R 601-2 luma
+    pixg = pixConvertRGBToGray(pixs, 0.299, 0.587, 0.114);
+    // Legacy converting
+    // pixg = pixConvertRGBToGray(pixs, 0.3, 0.4, 0.3);
+  } else {
+    auto cmap = pixGetColormap(pixs);
+    if (d != 8 || cmap != NULL) {
+      pixg = pixConvertTo8(pixs, 0);
+    } else {
+      pixg = pixClone(pixs);
+    }
+  }
+
+  // because leptonica's pixMaxDynamicRange() does not maximize at it only
+  // reckons with the *maximum* pixel value and ignores the *minimum* pixel value.
+  // We do reckon with both of 'em, though.
+  pixd = pixMaxDynamicRange2(pixg, L_LINEAR_SCALE);
+  pixDestroy(&pixg);
+  pixg = pixd;
+
+  l_int32 i, j, w, h, wpl;
+  l_int32 dstwpl;
+  l_uint32 *data, *line;
+  l_uint32 *dstdata, *dstline;
+
+  pixGetDimensions(pixg, &w, &h, &d);
+  if (d != 8)
+    return (PIX *)ERROR_PTR("pixg not 8 bpp", procName, NULL);
+
+  pixd = pixCreate(w, h, 32);
+  if (!pixd)
+    return NULL;
+
+  data = pixGetData(pixg);
+  wpl = pixGetWpl(pixg);
+
+  dstdata = pixGetData(pixd);
+  dstwpl = pixGetWpl(pixd);
+
+  for (i = 0; i < h; i++) {
+    line = data + i * wpl;
+    dstline = dstdata + i * dstwpl;
+    for (j = 0; j < w; j++) {
+      l_uint8 val = GET_DATA_BYTE(line, j);
+      int delta = (val >= 128 ? 255 - int(val) : 0 - int(val));
+      l_uint32 color;
+      if (delta == 0) {
+        // grey to RGBA:
+        color = val;
+        color |= color << 8;
+        color |= color << 8;
+        color = color << 8;
+      } else {
+#if 01
+        // emphasize the difference
+        delta *= 16;
+#else
+        int a = delta;
+        if (a < 0)
+          a = -a;
+        // emphasize the difference
+        if (a < 4)
+          delta *= 16;
+        if (a < 8)
+          delta *= 8;
+        else if (a < 16)
+          delta *= 4;
+        else if (a < 32)
+          delta *= 2;
+        else if (a < 64)
+          delta *= 1;
+        else if (a < 128)
+          delta /= 2;
+        else
+          delta /= 4;
+#endif
+
+        int r = int(val) + delta;
+        // fold/mirror value into 256 value range
+        if (r < 0) {
+          r = -r;
+          r &= 0x7F;
+          // if (r > 128)
+          //  r = 128;
+        } else if (r >= 256) {
+          r -= 255;
+          r &= 0x7F;
+          // if (r > 128)
+          //  r = 128;
+          r = 255 - r;
+        }
+        color = mapSourceValueTonoiseEmphasisColor(r);
+      }
+      // color = mapSourceValueTonoiseEmphasisColor(int(blrval));
+      SET_DATA_FOUR_BYTES(dstline, j, color);
+    }
+  }
+
+  pixDestroy(&pixg);
+
+  return pixd;
+}
+
+
+
+
+
+/*-----------------------------------------------------------------------*
+ *                    Scale for maximum dynamic range                    *
+ *-----------------------------------------------------------------------*/
+/*!
+ * \brief   pixMaxDynamicRange2()
+ *
+ * \param[in]    pixs    8 bpp source
+ * \param[in]    type    L_LINEAR_SCALE or L_LOG_SCALE
+ * \return  pixd    8 bpp, or NULL on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) Scales pixel values to fit maximally within the dest 8 bpp pixd
+ *      (2) Assumes the source 'pixels' are a 1-component scalar.
+ *      (3) Uses a LUT for log scaling.
+ * </pre>
+ */
+PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type) {
+  l_uint8 min, max;
+  l_int32 i, j, w, h, d, wpls, wpld;
+  l_uint32 *datas, *datad;
+  l_uint32 word;
+  l_uint32 *lines, *lined;
+  l_float32 factor;
+  l_float32 *tab;
+  PIX *pixd;
+
+  if (!pixs)
+    return (PIX *)ERROR_PTR("pixs not defined", __func__, NULL);
+  pixGetDimensions(pixs, &w, &h, &d);
+  if (d != 8)
+    return (PIX *)ERROR_PTR("pixs not in {8} bpp", __func__, NULL);
+  if (type != L_LINEAR_SCALE && type != L_LOG_SCALE)
+    return (PIX *)ERROR_PTR("invalid type", __func__, NULL);
+
+  if ((pixd = pixCreate(w, h, 8)) == NULL)
+    return (PIX *)ERROR_PTR("pixd not made", __func__, NULL);
+  pixCopyResolution(pixd, pixs);
+  datas = pixGetData(pixs);
+  datad = pixGetData(pixd);
+  wpls = pixGetWpl(pixs);
+  wpld = pixGetWpl(pixd);
+
+  /* Get min,max */
+  max = 0;
+  min = 255;
+  for (i = 0; i < h; i++) {
+    lines = datas + i * wpls;
+    for (j = 0; j < wpls; j++) {
+      word = *(lines + j);
+      max = L_MAX(max, word >> 24);
+      max = L_MAX(max, (word >> 16) & 0xff);
+      max = L_MAX(max, (word >> 8) & 0xff);
+      max = L_MAX(max, word & 0xff);
+
+      min = L_MIN(min, word >> 24);
+      min = L_MIN(min, (word >> 16) & 0xff);
+      min = L_MIN(min, (word >> 8) & 0xff);
+      min = L_MIN(min, word & 0xff);
+    }
+  }
+
+  /* Map to the full dynamic range */
+  if (type == L_LINEAR_SCALE) {
+    factor = 255.f / (l_float32)(max - min);
+    for (i = 0; i < h; i++) {
+      lines = datas + i * wpls;
+      lined = datad + i * wpld;
+      for (j = 0; j < w; j++) {
+        auto sval = GET_DATA_BYTE(lines, j);
+        sval -= min;
+        auto dval = (l_uint8)(factor * (l_float32)sval + 0.5);
+        SET_DATA_BYTE(lined, j, dval);
+      }
+    }
+  } else { /* type == L_LOG_SCALE) */
+    tab = makeLogBase2Tab();
+    factor = 255.f / getLogBase2(max - min, tab);
+    for (i = 0; i < h; i++) {
+      lines = datas + i * wpls;
+      lined = datad + i * wpld;
+      for (j = 0; j < w; j++) {
+        auto sval = GET_DATA_BYTE(lines, j);
+        sval -= min;
+        auto dval = (l_uint8)(factor * getLogBase2(sval, tab) + 0.5);
+        SET_DATA_BYTE(lined, j, dval);
+      }
+    }
+    LEPT_FREE(tab);
+  }
+
+  return pixd;
 }
 
 
