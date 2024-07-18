@@ -582,7 +582,7 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
     case SHOW_SMALLCAPS_CMD_EVENT:
     case SHOW_DROPCAPS_CMD_EVENT:
       if (!recog_done) {
-        recog_all_words(current_page_res, nullptr, nullptr, nullptr, 0);
+        (void)recog_all_words(current_page_res, nullptr, nullptr, 0);
         recog_done = true;
       }
       break;
@@ -806,11 +806,11 @@ void Tesseract::process_image_event( // action in image win
  *
  * Process the whole image, but load word_config_ for the selected word(s).
  */
-void Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
+bool Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
 #  if !DISABLED_LEGACY_ENGINE
   ResetAdaptiveClassifier();
 #  endif
-  recog_all_words(page_res, nullptr, &selection_box, word_config_.c_str(), 0);
+  return recog_all_words(page_res, &selection_box, word_config_.c_str(), 0);
 }
 
 /**********************************************************************

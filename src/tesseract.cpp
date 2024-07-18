@@ -38,8 +38,11 @@
 #include "simddetect.h"
 #include "tesseractclass.h" // for AnyTessLang
 #include <tesseract/tprintf.h> // for tprintf
+#include <tesseract/ocrclass.h> // for monitor
+
 #include "tlog.h"
 #include "global_params.h"
+#include "helpers.h"
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -199,18 +202,6 @@ static void PrintHelpForOEM() {
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
-static const char* basename(const char* path)
-{
-	size_t i;
-	size_t len = strlen(path);
-	for (i = strcspn(path, ":/\\"); i < len; i = strcspn(path, ":/\\"))
-	{
-		path = path + i + 1;
-		len -= i + 1;
-}
-	return path;
-}
-
 static void PrintHelpExtra(const char *program) {
   program = basename(program);
   tprintInfo(
@@ -366,6 +357,47 @@ static void PrintLangsList(tesseract::TessBaseAPI &api) {
   for (const auto &language : languages) {
     tprintInfo("{}\n", language);
   }
+}
+
+// Demo advanced usage of the new monitor implementation, which
+// explains why we discarded quite a few fields from the original
+// ETEXT_DESC implementation: it's much easier and type-safe to
+// your own as you need them.
+class CLI_Monitor : public ETEXT_DESC {
+public:
+  CLI_Monitor()
+      : ETEXT_DESC(), app_start_time(std::chrono::steady_clock::now()), next_progress_log_opportunity(std::chrono::steady_clock::time_point::min())
+  {}
+
+protected:
+  std::chrono::steady_clock::time_point app_start_time;
+  std::chrono::steady_clock::time_point next_progress_log_opportunity;
+
+public:
+  void report_progress(int left, int right, int top, int bottom) {
+    // do not clutter the screen & logfiles with frequent progress updates: only log another one when it's more than 2 seconds later than the last one.
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    if (now >= next_progress_log_opportunity) {
+      // estimate how long we'll take longer, based on the time we spent since the start of this application (the moment when this monitor was instantiated, rather, but alas).
+      std::chrono::duration elapsed = now - app_start_time;
+      std::chrono::duration total_duration = 100.0 / (progress > 0 ? progress : 5 /* arbitrary value */) * elapsed;
+      std::chrono::duration remaining = total_duration - elapsed;
+
+      tprintInfo("\nSession::progress: {}% @ {} secs; expected {} more secs until finished.\n", to_prec(progress, 3), to_prec(seconds(elapsed), 3), to_prec(seconds(remaining), 3));
+
+      next_progress_log_opportunity = now + std::chrono::seconds(2);
+
+      // See also the notes at PROGRESS_FUNC.
+      // We control the update rate limit using both the built-in 0.1% "significant update" check
+      // plus our own custom elapsed time check against `next_progress_log_opportunity` above.
+      previous_progress = progress;
+    }
+  }
+};
+
+static void cli_monitor_progress_f(ETEXT_DESC* self, int left, int right, int top, int bottom) {
+  CLI_Monitor *me = static_cast<CLI_Monitor *>(self);
+  me->report_progress(left, right, top, bottom);
 }
 
 /**
@@ -913,7 +945,11 @@ extern "C" int tesseract_main(int argc, const char **argv)
 #endif
 
   {
+    CLI_Monitor monitor;
     TessBaseAPI api;
+
+    monitor.progress_callback = cli_monitor_progress_f;
+    api.RegisterMonitor(&monitor);
 
     api.SetOutputName(outputbase);
 
@@ -923,6 +959,14 @@ extern "C" int tesseract_main(int argc, const char **argv)
 
     int config_count = argc - arg_i;
     const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values, false);
+
+    if (init_failed) {
+      tprintError("Could not initialize tesseract.\n");
+      return EXIT_FAILURE;
+    }
+
+  	// TODO: set during init phase and/or when this parameter is edited.
+    monitor.set_deadline_msecs(api.tesseract()->activity_timeout_millisec);
 
     // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above.
     if (!SetVariablesFromCLArgs(api, argc, argv)) {
@@ -936,11 +980,6 @@ extern "C" int tesseract_main(int argc, const char **argv)
       PrintLangsList(api);
       api.End();
       return EXIT_SUCCESS;
-    }
-
-    if (init_failed) {
-      tprintError("Could not initialize tesseract.\n");
-      return EXIT_FAILURE;
     }
 
     if (print_parameters) {
@@ -1088,11 +1127,18 @@ extern "C" int tesseract_main(int argc, const char **argv)
       }
     }
 
+    if (ret_val == EXIT_SUCCESS && api.Monitor().progress < 90) {
+      api.Monitor().set_progress(90.0).exec_progress_func();
+    }
+
     if (ret_val == EXIT_SUCCESS && verbose_process) {
       api.ReportParamsUsageStatistics();
     }
 
     api.FinalizeAndWriteDiagnosticsReport();  // write/flush log output
+
+    api.Monitor().set_progress(100.0).exec_progress_func();
+
     api.Clear();
   }
   // ^^^ end of scope for the Tesseract `api` instance

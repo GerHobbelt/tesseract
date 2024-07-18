@@ -192,7 +192,7 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract(Tesseract *parent = nullptr);
+  Tesseract(TessBaseAPI &owner, Tesseract *parent = nullptr);
   virtual ~Tesseract() override;
 
   // Return appropriate dictionary
@@ -396,11 +396,10 @@ public:
   // Sets up the single word ready for whichever engine is to be run.
   void SetupWordPassN(int pass_n, WordData *word);
   // Runs word recognition on all the words.
-  bool RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT *pr_it,
-                          std::vector<WordData> *words);
-  bool recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor, const TBOX *target_word_box,
+  bool RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<WordData> *words);
+  bool recog_all_words(PAGE_RES *page_res, const TBOX *target_word_box,
                        const char *word_config, int dopasses);
-  void rejection_passes(PAGE_RES *page_res, ETEXT_DESC *monitor, const TBOX *target_word_box,
+  void rejection_passes(PAGE_RES *page_res, const TBOX *target_word_box,
                         const char *word_config);
   void bigram_correction_pass(PAGE_RES *page_res);
   void blamer_pass(PAGE_RES *page_res);
@@ -603,7 +602,7 @@ public:
       const char *new_value   // any prompt data
   );
 #endif // !GRAPHICS_DISABLED
-  void debug_word(PAGE_RES *page_res, const TBOX &selection_box);
+  bool debug_word(PAGE_RES *page_res, const TBOX &selection_box);
   void do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it));
   bool word_display(PAGE_RES_IT *pr_it);
   bool word_bln_display(PAGE_RES_IT *pr_it);
@@ -659,7 +658,6 @@ public:
   void fix_fuzzy_space_list(WERD_RES_LIST &best_perm, ROW *row, BLOCK *block);
   void fix_sp_fp_word(WERD_RES_IT &word_res_it, ROW *row, BLOCK *block);
   void fix_fuzzy_spaces(   // find fuzzy words
-      ETEXT_DESC *monitor, // progress monitor
       int32_t word_count,  // count of words in doc
       PAGE_RES *page_res);
   void dump_words(WERD_RES_LIST &perm, int16_t score, int16_t mode, bool improved);
@@ -1039,8 +1037,7 @@ public:
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
-  void recog_training_segmented(const char *filename, PAGE_RES *page_res,
-                                ETEXT_DESC *monitor, FILE *output_file);
+  void recog_training_segmented(const char *filename, PAGE_RES *page_res, FILE *output_file);
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:
@@ -1115,6 +1112,7 @@ public:
   }
 
 protected:
+  TessBaseAPI &owner_;
   Tesseract* parent_instance_;      // reference to parent tesseract instance for sub-languages. Used, f.e., to allow using a single DebugPixa diagnostic channel for all languages tested on the input.
 
 private:

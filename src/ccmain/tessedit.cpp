@@ -361,7 +361,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       if (!loaded_primary) {
         tess_to_init = this;
       } else {
-        tess_to_init = new Tesseract(this);
+        tess_to_init = new Tesseract(owner_, this);
         if (tess_to_init->main_setup(arg0, textbase, lang_to_load)) {
           tprintError("Tesseract couldn't initialize for language {}!\n", lang_to_load);
           return -1; // Couldn't load any language!

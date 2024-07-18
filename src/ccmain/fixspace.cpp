@@ -72,11 +72,10 @@ static int c_blob_comparator( // sort blobs
  * them as a sublist, process the sublist to find the optimal arrangement of
  * spaces then replace the sublist in the ROW_RES.
  *
- * @param monitor progress monitor
  * @param word_count count of words in doc
  * @param[out] page_res
  */
-void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_RES *page_res) {
+void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
   BLOCK_RES_IT block_res_it;
   ROW_RES_IT row_res_it;
   WERD_RES_IT word_res_it_from;
@@ -109,14 +108,11 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
           }
 
           word_index++;
-          if (monitor != nullptr) {
-            monitor->ocr_alive = true;
-            monitor->progress = 90 + 5 * word_index / word_count;
-            if (monitor->deadline_exceeded() ||
-                (monitor->cancel != nullptr &&
-                 (*monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+          if (owner_.Monitor().bump_progress(word_index, word_count).
+            exec_progress_func()
+            .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
+              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
-            }
           }
         }
 
@@ -135,14 +131,11 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
             word_res_it_to.data()->fontinfo_id2_count = word_res_it_from.data()->fontinfo_id2_count;
           }
 
-          if (monitor != nullptr) {
-            monitor->ocr_alive = true;
-            monitor->progress = 90 + 5 * word_index / word_count;
-            if (monitor->deadline_exceeded() ||
-                (monitor->cancel != nullptr &&
-                 (*monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+          if (owner_.Monitor().bump_progress(word_index, word_count)
+            .exec_progress_func()
+            .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
+              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
-            }
           }
           while (!word_res_it_to.at_last() &&
                  (word_res_it_to.data_relative(1)->word->flag(W_FUZZY_NON) ||

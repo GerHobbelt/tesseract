@@ -40,7 +40,7 @@ static void AddBoxToLSTM(int right, int bottom, int top, int image_height, int p
 }
 
 char *TessBaseAPI::GetLSTMBoxText(int page_number = 0) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 

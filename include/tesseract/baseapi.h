@@ -27,6 +27,7 @@
 
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
+#include <tesseract/ocrclass.h>
 #include <tesseract/params.h>
 
 #include <cstdio>
@@ -96,6 +97,16 @@ public:
    * reading a UNLV zone file, and for searchable PDF output.
    */
   void SetInputName(const char *name);
+
+  /**
+   * Register a user-defined monitor instance, whose lifetime will equal
+   * or surpass this TesseractAPI instance's lifetime, i.e.
+   * the referenced monitor instance MUST remain valid until
+   * we're done with it.
+   */
+  void RegisterMonitor(ETEXT_DESC *monitor);
+  ETEXT_DESC &Monitor();
+  const ETEXT_DESC &Monitor() const;
 
   /**
    * These functions are required for searchable PDF output.
@@ -569,7 +580,7 @@ public:
    * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
    * DetectOS, or anything else that changes the internal PAGE_RES.
    */
-  PageIterator *AnalyseLayout(bool merge_similar_words = false, ETEXT_DESC *monitor = nullptr);
+  PageIterator *AnalyseLayout(bool merge_similar_words = false);
 
   /**
    * Recognize the image from SetAndThresholdImage, generating Tesseract
@@ -577,7 +588,7 @@ public:
    * Optional. The Get*Text functions below will call Recognize if needed.
    * After Recognize, the output is kept internally until the next SetImage.
    */
-  int Recognize(ETEXT_DESC *monitor);
+  int Recognize();
 
   /**
    * Methods to retrieve information after SetAndThresholdImage(),
@@ -620,7 +631,7 @@ public:
    * See ProcessPages for descriptions of other parameters.
    */
   bool ProcessPage(Pix *pix, const char *filename,
-                   TessResultRenderer *renderer, ETEXT_DESC *monitor = nullptr);
+                   TessResultRenderer *renderer);
 
   /**
    * Get a reading-order iterator to the results of LayoutAnalysis and/or
@@ -675,17 +686,8 @@ public:
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
    * monitor can be used to
-   *  cancel the recognition
-   *  receive progress callbacks
-   *
-   * Returned string must be freed with the delete [] operator.
-   */
-  char *GetHOCRText(ETEXT_DESC *monitor, int page_number);
-
-  /**
-   * Make a HTML-formatted string with hOCR markup from the internal
-   * data structures.
-   * page_number is 0-based but will appear in the output as 1-based.
+   * - cancel the recognition
+   * - receive progress callbacks
    *
    * Returned string must be freed with the delete [] operator.
    */
@@ -697,25 +699,9 @@ public:
    *
    * Returned string must be freed with the delete [] operator.
    */
-  char *GetAltoText(ETEXT_DESC *monitor, int page_number);
-
-  /**
-   * Make an XML-formatted string with Alto markup from the internal
-   * data structures.
-   *
-   * Returned string must be freed with the delete [] operator.
-   */
   char *GetAltoText(int page_number);
 
    /**
-   * Make an XML-formatted string with PAGE markup from the internal
-   * data structures.
-   *
-   * Returned string must be freed with the delete [] operator.
-   */
-  char *GetPAGEText(ETEXT_DESC *monitor, int page_number);
-
-  /**
    * Make an XML-formatted string with PAGE markup from the internal
    * data structures.
    *
@@ -943,7 +929,7 @@ protected:
    * Find lines from the image making the BLOCK_LIST.
    * @return 0 on success.
    */
-  int FindLines(ETEXT_DESC *monitor = nullptr);
+  int FindLines();
 
   /** Delete the PageRes and block list, readying tesseract for OCRing a new page. */
   void ClearResults();
@@ -977,6 +963,8 @@ protected:
   Tesseract *osd_tesseract_;         ///< For orientation & script detection.
   EquationDetect *equ_detect_;       ///< The equation detector.
 #endif
+  ETEXT_DESC *monitor_ = nullptr;
+  ETEXT_DESC default_minimal_monitor_;
   FileReader reader_;                ///< Reads files from any filesystem.
   ImageThresholder *thresholder_;    ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;

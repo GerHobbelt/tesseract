@@ -49,8 +49,9 @@
 
 namespace tesseract {
 
-Tesseract::Tesseract(Tesseract *parent)
-    : parent_instance_(parent)
+Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
+    : owner_(owner)
+    , parent_instance_(parent)
     , BOOL_MEMBER(tessedit_resegment_from_boxes, false,
                   "Take segmentation and labeling from box file", params())
     , BOOL_MEMBER(tessedit_resegment_from_line_boxes, false,
@@ -993,6 +994,8 @@ void Tesseract::AddPixDebugPage(const Image &pix, const char *title) {
     return;
 
   pixa_debug_.AddPix(pix, title);
+
+  owner_.Monitor().bump_progress().exec_progress_func();
 }
 
 void Tesseract::AddPixDebugPage(const Image &pix, const std::string &title) {
@@ -1074,7 +1077,7 @@ void Tesseract::ResyncVariablesInternally() {
 }
 
 void Tesseract::ReportDebugInfo() {
-    if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
         AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
         std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
