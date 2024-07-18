@@ -2705,83 +2705,71 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   }
 
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  Image pix_binary = nullptr;
 
   AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
 
   {
-    tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
+    std::string caption = ThresholdMethodName(selected_thresholding_method);
+    tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption));
 
-	  if (selected_thresholding_method == ThresholdMethod::Otsu) {
-		  Image pix_binary(*pix);
-		  if (!thresholder_->ThresholdToPix(&pix_binary)) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  if (!thresholder_->IsBinary()) {
-			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-			  tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-		  } else {
-			  tesseract_->set_pix_thresholds(nullptr);
-			  tesseract_->set_pix_grey(nullptr);
-		  }
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
-
-        l_int32 w, h, d;
-        Image composite = tesseract_->pix_grey().copy();
-        pixGetDimensions(composite, &w, &h, &d);
-        Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
-        pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
-        tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", sequence));
-
-        mask.destroy();
-        composite.destroy();
-        pix_post.destroy();
-      }
-	  } else {
-		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
-
-		  if (!ok) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  tesseract_->set_pix_thresholds(pix_thresholds);
-		  tesseract_->set_pix_grey(pix_grey);
-
-      std::string caption = ThresholdMethodName(selected_thresholding_method);
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
-        pix_post.destroy();
+    if (selected_thresholding_method == ThresholdMethod::Otsu) {
+      pix_binary = *pix;
+      if (!thresholder_->ThresholdToPix(&pix_binary)) {
+        return false;
       }
 
-      //pix_thresholds.destroy();
-      //pix_grey.destroy();
+      *pix = pix_binary;
+
+      if (!thresholder_->IsBinary()) {
+        tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+        tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+      } else {
+        tesseract_->set_pix_thresholds(nullptr);
+        tesseract_->set_pix_grey(nullptr);
+      }
+    } else {
+      auto [ok, pix_grey, pix_binary2, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
+
+      if (!ok) {
+        return false;
+      }
+
+      pix_binary = pix_binary2;
+      *pix = pix_binary;
+
+      tesseract_->set_pix_thresholds(pix_thresholds);
+      tesseract_->set_pix_grey(pix_grey);
+      // pix_thresholds.destroy();
+      // pix_grey.destroy();
+    }
+
+    if (tesseract_->tessedit_dump_pageseg_images) {
+      tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+      tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+      if (verbose_process) {
+        tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+      }
+      tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+    }
+
+    // demo a bit of pre-postprocessing
+    {
+      const char *sequence = "c1.1 + d3.3";
+      const int dispsep = 0;
+      Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+      tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {} -- just an example to showcase what leptonica can do for us!", caption, sequence));
+
+      l_int32 w, h, d;
+      Image composite = tesseract_->pix_grey().copy();
+      pixGetDimensions(composite, &w, &h, &d);
+      Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
+      pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
+      tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
+
+      mask.destroy();
+      composite.destroy();
+      pix_post.destroy();
     }
   }
 

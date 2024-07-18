@@ -41,7 +41,10 @@ enum class ThresholdMethod {
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
   Nlbin,         // NLbin
-  Max,           // Number of Thresholding methods
+  NlbinAdaptive, // NLbinAdaptive
+  NlNorm1Adaptive,
+  NlNorm2Adaptive,
+  Max,   // Number of Thresholding methods
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(ThresholdMethod);
 
@@ -62,6 +65,12 @@ static inline const char* ThresholdMethodName(ThresholdMethod method)
     return "Masking.And.Otsu (on Normalized Background)";
   case ThresholdMethod::Nlbin:
     return "NLbin";
+  case ThresholdMethod::NlbinAdaptive:
+    return "NLbin (Adaptive)";
+  case ThresholdMethod::NlNorm1Adaptive:
+    return "NLNorm1+NlBin (Adaptive)";
+  case ThresholdMethod::NlNorm2Adaptive:
+    return "NLNorm2+NlBin (Adaptive)";
   case ThresholdMethod::Max:
     return "Threshold::MaxOfList";
   default:

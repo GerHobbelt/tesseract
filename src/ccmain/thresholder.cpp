@@ -415,8 +415,7 @@ ImageThresholder::pixNLBin(PIX *pixs, bool adaptive)
   return pixb;
 }
 
-std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
-                                                      ThresholdMethod method) {
+std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMethod method) {
   Image pix_binary = nullptr;
   Image pix_thresholds = nullptr;
 
@@ -429,7 +428,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     return std::make_tuple(true, nullptr, pix_binary, nullptr);
   }
 
-  auto pix_grey = GetPixRectGrey();
+  Image pix_grey = nullptr;
 
   int r = 0;
   l_int32 threshold_val = 0;
@@ -471,10 +470,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
     double kfactor = tesseract_->thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
-	// TODO: make sure every thresholding method reports a log line like this.
     if (tesseract_->thresholding_debug) {
       tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
+
+    pix_grey = GetPixRectGrey();
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
                                (PIX**)pix_thresholds,
@@ -482,12 +482,16 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   } break;
 
   case ThresholdMethod::OtsuOnNormalizedBackground: {
+    pix_grey = GetPixRectGrey();
+
     pix_binary = pixOtsuThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15, 100,
                                                50, 255, 2, 2, 0.1f,
                                                &threshold_val);
   } break;
 
   case ThresholdMethod::MaskingAndOtsuOnNormalizedBackground: {
+    pix_grey = GetPixRectGrey();
+
     pix_binary = pixMaskedThreshOnBackgroundNorm(pix_grey, nullptr, 10, 15,
                                                  100, 50, 2, 2, 0.1f,
                                                  &threshold_val);
@@ -511,6 +515,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
       tprintDebug("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
+    pix_grey = GetPixRectGrey();
+
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
@@ -519,8 +525,29 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(
   } break;
 
   case ThresholdMethod::Nlbin: {
-    auto pix = GetPixRect();
+    Image pix = GetPixRect();
     pix_binary = pixNLBin(pix, false);
+    pix.destroy();
+  } break;
+
+  case ThresholdMethod::NlbinAdaptive: {
+    Image pix = GetPixRect();
+    pix_binary = pixNLBin(pix, true);
+    pix.destroy();
+  } break;
+
+  case ThresholdMethod::NlNorm1Adaptive: {
+    Image pix = GetPixRect();
+    int threshold, fgvalue, bgvalue;
+    pix_grey = pixNLNorm1(pix, &threshold, &fgvalue, &bgvalue);
+    pix_binary = pixNLBin(pix_grey, true);
+  } break;
+  
+  case ThresholdMethod::NlNorm2Adaptive: {
+    Image pix = GetPixRect();
+    int threshold;
+    pix_grey = pixNLNorm2(pix, &threshold);
+    pix_binary = pixNLBin(pix_grey, true);
   } break;
 
   case ThresholdMethod::Otsu: {
