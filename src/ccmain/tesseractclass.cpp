@@ -607,6 +607,10 @@ void Tesseract::ResetDocumentDictionary() {
   }
 }
 
+void Tesseract::DebugAddCommandline(const std::vector<std::string>& argv) {
+  this->pixa_debug_.DebugAddCommandline(argv);
+}
+
 void Tesseract::SetBlackAndWhitelist() {
   // Set the white and blacklists (if any)
   unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),

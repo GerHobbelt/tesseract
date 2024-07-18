@@ -108,6 +108,10 @@ public:
   ETEXT_DESC &Monitor();
   const ETEXT_DESC &Monitor() const;
 
+  /// Note the given command (argv[] set as vector) for later reporting
+  /// in the diagnostics output as part of the HTML log heading.
+  void DebugAddCommandline(const std::vector<std::string> &argv);
+
   /**
    * These functions are required for searchable PDF output.
    * We need our hands on the input file so that we can include

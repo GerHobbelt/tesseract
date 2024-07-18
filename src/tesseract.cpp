@@ -919,6 +919,12 @@ extern "C" int tesseract_main(int argc, const char **argv)
   TIFFSetWarningHandler(Win32WarningHandler);
 #endif // HAVE_TIFFIO_H && _WIN32
 
+  // collect commandline for display in the diagnostics output
+  std::vector<std::string> argv4diag;
+  for (int ac = 0; ac < argc; ac++) {
+    argv4diag.push_back(argv[ac]);
+  }
+
   if (!ParseArgs(argc, argv, &lang, &image, &outputbase, &datapath, &dpi, &list_langs,
                  &visible_pdf_image_file,
                  &print_parameters, &print_fonts_table, &vars_vec, &vars_values, &arg_i,
@@ -950,6 +956,8 @@ extern "C" int tesseract_main(int argc, const char **argv)
 
     monitor.progress_callback = cli_monitor_progress_f;
     api.RegisterMonitor(&monitor);
+
+    api.DebugAddCommandline(argv4diag);
 
     api.SetOutputName(outputbase);
 

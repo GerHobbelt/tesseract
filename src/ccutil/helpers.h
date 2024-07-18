@@ -80,6 +80,14 @@ static inline bool strempty(const char *s) {
   return s == nullptr || *s == 0;
 }
 
+static inline char *strnrpbrk(char *base, const char *breakset, size_t len) {
+  for (size_t i = len; i > 0;) {
+    if (strchr(breakset, base[--i]))
+      return base + i;
+  }
+  return nullptr;
+}
+
 // convert all path separators from native to '/'.
 static inline void unixify_path(std::string &s) {
   std::string::size_type n = 0;

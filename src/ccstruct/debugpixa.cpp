@@ -876,6 +876,8 @@ namespace tesseract {
       auto &prev_step = steps[active_step_index];
       prev_step.elapsed_ns += prev_step.clock.get_elapsed_ns();
       prev_step.clock.stop();
+      if (prev_step.level >= level)
+        prev_step.last_info_chunk = info_chunks.size() - 1;
     }
 
     int rv = active_step_index;
@@ -959,13 +961,86 @@ namespace tesseract {
     return step.level;
   }
 
-  static char* strnrpbrk(char* base, const char* breakset, size_t len)
-  {
-    for (size_t i = len; i > 0; ) {
-      if (strchr(breakset, base[--i]))
-        return base + i;
+  static std::string argv_particle_as_html(const std::string &arg) {
+    const char *message = arg.c_str();
+    bool needs_quotes = (nullptr != strchr(message, ' '));
+    std::string rv;
+    if (needs_quotes) {
+      rv += '"';
     }
-    return nullptr;
+
+    bool zwnbs_pending = false;
+    while (*message) {
+      if (zwnbs_pending) {
+        rv += "&#8288;";
+      }
+      auto pos = strcspn(message, "<>&-");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        rv += particle;
+        message += pos;
+        zwnbs_pending = false;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          rv += "&lt;";
+          message++;
+          break;
+
+        case '>':
+          rv += "&gt;";
+          message++;
+          break;
+
+        case '&':
+          rv += "&amp;";
+          message++;
+          break;
+
+        case '-':
+          if (!zwnbs_pending)
+            rv += "&#8288;-"; // inject Zero width no-break space to prevent PRE wrapping at the dash
+          else
+            rv += "-";
+          message++;
+          zwnbs_pending = true;
+          continue;
+      }
+      zwnbs_pending = false;
+    }
+
+    if (needs_quotes) {
+      rv += '"';
+    }
+
+    return rv;
+  }
+
+  void DebugPixa::DebugAddCommandline(const std::vector<std::string>& argv) {
+    ASSERT0(steps.size() >= 1);
+    ASSERT0(active_step_index >= 0);
+    ASSERT0(active_step_index < steps.size());
+    ASSERT0(info_chunks.size() >= 1);
+
+    auto &f = this->GetInfoStream();
+    f << "\n\
+<blockquote class=\"command-line\">\n\
+<h6>Tesseract Excutes Command</h6>\n\
+\n\
+<pre class=\"command-line\">";
+    bool first = true;
+    for (const std::string &arg : argv) {
+      if (!first)
+        f << ' ';
+      first = false;
+      f << argv_particle_as_html(arg);
+    }
+    f << "</pre>\n\
+</blockquote>\n\
+\n";
   }
 
   static std::string encode_as_html(const std::string &str) {
@@ -1616,15 +1691,11 @@ namespace tesseract {
       std::ostringstream languages;
       int num_subs = tesseract_->num_sub_langs();
       if (num_subs > 0) {
-        languages << "<p>Language";
-        if (num_subs > 1)
-          languages << "s";
-        languages << ": ";
         int i;
         for (i = 0; i < num_subs - 1; ++i) {
           languages << tesseract_->get_sub_lang(i)->lang_ << " + ";
         }
-        languages << tesseract_->get_sub_lang(i)->lang_ << "</p>";
+        languages << tesseract_->get_sub_lang(i)->lang_;
       }
 
       // CSS styles for the generated HTML
@@ -1651,15 +1722,17 @@ namespace tesseract {
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract (version: {}) run @ {}</p>\n\
-<p>Input image file path: {}</p>\n\
-<p>Output base: {}</p>\n\
-<p>Input image path: {}</p>\n\
-<p>Primary Language: {}</p>\n\
-{}\
-<p>Language Data Path Prefix: {}</p>\n\
-<p>Data directory: {}</p>\n\
-<p>Main directory: {}</p>\n\
+<table>\n\
+<tr><td>tesseract version</td><td>{}, run @ {}</td></tr>\n\
+<tr><td>Input image file path</td><td>{}</td></tr>\n\
+<tr><td>Output base</td><td>{}</td></tr>\n\
+<tr><td>Input image path</td><td>{}</td></tr>\n\
+<tr><td>Primary Language</td><td>{}</td></tr>\n\
+<tr><td>Scondary Languages</td><td>{}</td></tr>\n\
+<tr><td>Language Data Path Prefix</td><td>{}</td></tr>\n\
+<tr><td>Data directory</td><td>{}</td></tr>\n\
+<tr><td>Main directory</td><td>{}</td></tr>\n\
+</table>\n\
 ",
         html_styling(tesseract_->datadir_, "normalize.css").c_str(),
         html_styling(tesseract_->datadir_, "modern-normalize.css").c_str(),
