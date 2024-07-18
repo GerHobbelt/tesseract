@@ -377,7 +377,7 @@ public:
   void report_progress(int left, int right, int top, int bottom) {
     // do not clutter the screen & logfiles with frequent progress updates: only log another one when it's more than 2 seconds later than the last one.
     std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-    if (now >= next_progress_log_opportunity) {
+    if (now >= next_progress_log_opportunity || progress >= 100.0) {
       // estimate how long we'll take longer, based on the time we spent since the start of this application (the moment when this monitor was instantiated, rather, but alas).
       std::chrono::duration elapsed = now - app_start_time;
       std::chrono::duration total_duration = 100.0 / (progress > 0 ? progress : 5 /* arbitrary value */) * elapsed;
