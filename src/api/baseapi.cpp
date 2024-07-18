@@ -1241,10 +1241,26 @@ Pix *TessBaseAPI::GetInputImage() {
   return tesseract_->pix_original();
 }
 
-static const char* NormalizationModeName(int mode) {
+static const char* NormalizationProcessModeName(int mode) {
   switch(mode) {
-    case 0:
+    case -1:
       return "No normalization";
+    case 0:
+      return "NlBin2 (Thomas Breuel)";
+    case 1:
+      return "NlBin1";
+    case 2:
+      return "OKLab::Value";
+    default:
+      ASSERT0(!"Unknown Normalization Mode");
+      return "Unknown Normalization Mode";
+  }
+}
+
+static const char *NormalizationTargetModeName(int mode) {
+  switch (mode) {
+    case 0:
+      return "No Target";
     case 1:
       return "Thresholding + Recognition";
     case 2:
@@ -1261,34 +1277,85 @@ static const char* NormalizationModeName(int mode) {
 bool TessBaseAPI::NormalizeImage(int mode) {
   AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Normalize Image"));
 
-  if (!GetInputImage()) {
+  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+  // and at the same resolution as the output binary.
+  Image pix = GetInputImage();
+  if (!pix) {
     tprintError("Please use SetImage before applying the image pre-processing steps.\n");
     return false;
   }
 
-  Image pix = thresholder_->GetPixNormRectGrey();
-  if (tesseract_->debug_image_normalization) {
-    tesseract_->AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin(Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
+  Image result_pix = nullptr;
+
+  // Apply one of the various ways we can greyscale + normalize from source to greyscale.
+  int process = (mode >> 2);
+  if (mode == 0)
+    process = -1;
+
+  // ... and feed the result into the designated target(s): thresholder and/or tesseract source image (which is used as LSTM v4/v5 engine input).
+  int targets = (mode & 0x03);
+  bool debug = (tesseract_->debug_image_normalization || tesseract_->tessedit_write_images);
+
+  if (false && debug) {
+    tesseract_->AddPixDebugPage(pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
   }
-  if (mode == 1) {
-    SetInputImage(pix);
-    thresholder_->SetImage(GetInputImage());
-    if (tesseract_->debug_image_normalization) {
-      tesseract_->AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder & set up as input image");
-    }
-  } else if (mode == 2) {
-    thresholder_->SetImage(pix);
-    if (tesseract_->debug_image_normalization) {
-      tesseract_->AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder");
-    }
-  } else if (mode == 3) {
-    SetInputImage(pix);
-    if (tesseract_->debug_image_normalization) {
-      tesseract_->AddPixDebugPage(GetInputImage(), "Grayscale normalization, now set up as input image");
-    }
-  } else {
-    return false;
+
+  switch (process) {
+    case -1:
+      // no normalization!
+      if (debug) {
+        tprintDebug("No greyscale image normalization performed: greyscale image will be processed as-is; graynorm_mode = {}.\n", mode);
+      }
+      result_pix = pix.clone();
+      break;
+
+    case 0:
+      result_pix = pixNLNorm2(pix, nullptr);
+      break;
+
+    case 1: {
+      int threshold, fgval, bgval;
+      result_pix = pixNLNorm1(pix, &threshold, &fgval, &bgval);
+    } break;
+
+    default:
+      tprintError("Unsupported normalization mode {} -> {}; not performing any normalization.\n", mode, process);
+      pix.destroy();
+      return false;
   }
+
+  if (debug) {
+    tesseract_->AddPixDebugPage(result_pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
+  }
+
+  switch (targets) {
+    case 0:
+      // no target??? only okay when we don't do any normalization at all.
+      if (process == -1) {
+        thresholder_->SetImage(pix);
+        break;
+      } else {
+        tprintWarn("The normalization mode {} does not designate a target; we will assume you intended {}, which is properly addressed by normalization mode {}.\n", mode, NormalizationTargetModeName(1), mode | 1);
+      }
+      //[[fallthrough]]
+    case 1:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 2:
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 3:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(pix);
+      break;
+  }
+
+  pix.destroy();
+  result_pix.destroy();
+
   return true;
 }
 
@@ -1693,71 +1760,13 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   }
 
   // Image preprocessing on image
-  
-  // pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
-  // 
-  // pixAutoPhotoinvert()
-  //
-  //     if (edgecrop > 0.0) {
-  //  box = boxCreate(0.5f * edgecrop * w, 0.5f * edgecrop * h,
-  //                   (1.0f - edgecrop) * w, (1.0f - edgecrop) * h);
-  //   pix2 = pixClipRectangle(pix1, box, NULL);
-  //   boxDestroy(&box);
-  // }
-  //   else {
-  //   pix2 = pixClone(pix1);
-  // }
-  //
-  // pixCleanBackgroundToWhite()
-  //
-  //   pixalpha = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);  /* save */
-  //   if ((nag = numaGammaTRC(gamma, minval, maxval)) == NULL)
-  //     return (PIX *)ERROR_PTR("nag not made", __func__, pixd);
-  //   pixTRCMap(pixd, NULL, nag);
-  //   pixSetRGBComponent(pixd, pixalpha, L_ALPHA_CHANNEL); /* restore */
-  //   pixSetSpp(pixd, 4);
-  //   numaDestroy(&nag);
-  //   pixDestroy(&pixalpha);
-  //
-  // l_float32  avefg, avebg;
-  //   l_float32 numfg, numbg;
-  //   NUMA *na = pixGetGrayHistogram(pixt, 1);
-  //   l_float32 mean, median, mode, variance;
-  //   numaGetHistogramStats(na, 0.0, 1.0, &mean, &median, &mode, &variance);
-  //
-  // PIX * pixGetRGBComponent ( PIX *pixs, l_int32 comp );
-  //
-  // pixGetRankValue()
-  // numaHistogramGetValFromRank(na, rank, &val);
-  //
-  // numaGetMin(), numaGetMax()
-  //
-  // pixThresholdByConnComp()
-  //
-  //  numaGetNonzeroRange()
-  //
-  // pixMaxDynamicRange
-
-  
-
-
-  
 
   // Grayscale normalization
   int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   {
-    Image input_img = GetInputImage();
-
-    if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tesseract_->tessedit_write_images) {
-      // Write normalized image 
-      Pix *p1;
-      if (graynorm_mode == 2) {
-        p1 = thresholder_->GetPixRect();
-      } else {
-        p1 = GetInputImage();
-      }
-      tesseract_->AddPixDebugPage(p1, fmt::format("Greyscale normalized image to process @ graynorm_mode = {}", graynorm_mode));
-    }
+    bool rc = NormalizeImage(graynorm_mode);
+    if (!rc)
+      return false;
   }
 
   // Recognition

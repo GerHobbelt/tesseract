@@ -22,6 +22,8 @@
 #include <tesseract/export.h>
 #include <tesseract/fmt-support.h>
 
+#include <leptonica/allheaders.h>
+
 #include <vector> // for std::vector
 
 struct Pix;
@@ -42,8 +44,6 @@ enum class ThresholdMethod {
   MaskingAndOtsuOnNormalizedBackground,
   Nlbin,         // NLbin
   NlbinAdaptive, // NLbinAdaptive
-  NlNorm1Adaptive,
-  NlNorm2Adaptive,
   Max,   // Number of Thresholding methods
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(ThresholdMethod);
@@ -67,10 +67,6 @@ static inline const char* ThresholdMethodName(ThresholdMethod method)
     return "NLbin";
   case ThresholdMethod::NlbinAdaptive:
     return "NLbin (Adaptive)";
-  case ThresholdMethod::NlNorm1Adaptive:
-    return "NLNorm1+NlBin (Adaptive)";
-  case ThresholdMethod::NlNorm2Adaptive:
-    return "NLNorm2+NlBin (Adaptive)";
   case ThresholdMethod::Max:
     return "Threshold::MaxOfList";
   default:
@@ -197,12 +193,6 @@ public:
   // Provided to the classifier to extract features from the greyscale image.
   virtual Image GetPixRectGrey();
 
-  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
-  // and at the same resolution as the output binary.
-  // The returned Pix must be pixDestroyed.
-  // Provided to the classifier to extract features from the greyscale image.
-  virtual Image GetPixNormRectGrey();
-
 protected:
   // ----------------------------------------------------------------------
   // Utility functions that may be useful components for other thresholders.
@@ -218,15 +208,6 @@ protected:
 
   // Otsu thresholds the rectangle, taking the rectangle from *this.
   void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
-
-  // Return non-linear normalized grayscale
-  Pix *pixNLNorm2(Pix *pixs, int *pthresh);
-
-  // Return non-linear normalized grayscale
-  Pix* pixNLNorm1(Pix* pixs, int* pthresh, int* pfgval, int* pbgval);
-
-  // Return non-linear normalized thresholded image
-  Pix* pixNLBin(Pix* pixs, bool adaptive);
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.
@@ -256,6 +237,26 @@ protected:
   int rect_width_;
   int rect_height_;
 };
+
+//----------------------------------------------------------
+//
+// leptonica additions
+//
+//----------------------------------------------------------
+
+
+
+// Return non-linear normalized grayscale
+PIX *pixNLNorm2(PIX *pixs, int *pthresh);
+
+// Return non-linear normalized grayscale
+PIX *pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval, int *pbgval);
+
+// Return non-linear normalized thresholded image
+PIX *pixNLBin(PIX *pixs, bool adaptive);
+
+PIX *pixEmphasizeImageNoise(const PIX *pixs);
+
 
 } // namespace tesseract.
 
