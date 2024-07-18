@@ -88,7 +88,7 @@ PIX *pixEmphasizeImageNoise(PIX *pixs) {
     }
   }
 
-  // because leptonica's pixMaxDynamicRange() does not maximize at it only
+  // because leptonica's pixMaxDynamicRange() does not maximize as it only
   // reckons with the *maximum* pixel value and ignores the *minimum* pixel value.
   // We do reckon with both of 'em, though.
   pixd = pixMaxDynamicRange2(pixg, L_LINEAR_SCALE);
@@ -147,7 +147,7 @@ PIX *pixEmphasizeImageNoise(PIX *pixs) {
         // emphasize the difference
         if (a < 4)
           delta *= 16;
-        if (a < 8)
+        else if (a < 8)
           delta *= 8;
         else if (a < 16)
           delta *= 4;
@@ -262,7 +262,7 @@ PIX *pixEmphasizeImageNoise2(PIX *pixs) {
         // emphasize the difference
         if (a < 4)
           delta *= 16;
-        if (a < 8)
+        else if (a < 8)
           delta *= 8;
         else if (a < 16)
           delta *= 4;
