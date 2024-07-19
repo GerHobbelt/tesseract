@@ -681,7 +681,7 @@ static inline int MIX(int val1, int val2, const int factor) {
 }
 
 
-  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
+  Image pixMixWithTintedBackground(const Image &src, const Image &background,
                                 float r_factor, float g_factor, float b_factor,
                                 float src_factor, float background_factor,
                                 const TBOX *cliprect) {
@@ -690,13 +690,13 @@ static inline int MIX(int val1, int val2, const int factor) {
   pixGetDimensions(src, &w, &h, &depth);
 
   if (background == nullptr || background == src) {
-    return pixConvertTo32(src);
+    return pixConvertTo32(const_cast<PIX *>(src.ptr()));
   } else {
     int ow, oh, od;
     pixGetDimensions(background, &ow, &oh, &od);
 
-    Image toplayer = pixConvertTo32(src);
-    Image botlayer = pixConvertTo32(const_cast<PIX *>(background)); // quick hack, safe as `background` gets COPIED anyway in there.
+    Image toplayer = pixConvertTo32(const_cast<PIX *>(src.ptr()));
+    Image botlayer = pixConvertTo32(const_cast<PIX *>(background.ptr())); // quick hack, safe as `background` gets COPIED anyway in there.
 
     if (w != ow || h != oh) {
       if (cliprect != nullptr) {
@@ -833,7 +833,11 @@ static inline int MIX(int val1, int val2, const int factor) {
     // botlayer.destroy();
     //toplayer.destroy();
 
+#if 0
+    return botlayer.clone2pix();
+#else
     return botlayer;
+#endif
   }
 }
 

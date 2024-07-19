@@ -51,9 +51,6 @@ ImageData::ImageData(bool vertical, Image pix)
   SetPix(pix);
 }
 ImageData::~ImageData() {
-#ifdef TESSERACT_IMAGEDATA_AS_PIX
-XXXXXXXXXXXXXXXXXXXXXXXXXXX
-#endif
 }
 
 // Builds and returns an ImageData from the basic data. Note that imagedata,

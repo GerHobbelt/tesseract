@@ -36,7 +36,7 @@ PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type);
 
 class TBOX; // bounding box
 
-PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
+Image pixMixWithTintedBackground(const Image &src, const Image &background,
                                 float r_factor, float g_factor, float b_factor,
                                 float src_factor, float background_factor,
                                 const TBOX *cliprect);

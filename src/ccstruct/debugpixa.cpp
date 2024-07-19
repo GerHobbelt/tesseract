@@ -785,7 +785,7 @@ namespace tesseract {
   }
 
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
-    ASSERT0(pixGetRefCount(pix) >= 2);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
     {
@@ -1230,7 +1230,7 @@ namespace tesseract {
   }
 
   Image MixWithLightRedTintedBackground(const Image &pix, const Image &original_image, const TBOX *cliprect) {
-    return pixMixWithTintedBackground(const_cast<PIX *>(pix.ptr()), original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
+    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
   static std::string TruncatedForTitle(const std::string &str) {
