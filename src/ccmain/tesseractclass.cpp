@@ -303,7 +303,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , INT_MEMBER(crunch_leave_uc_strings, 4, "Don't crunch words with long lower case strings.",
                  params())
     , INT_MEMBER(crunch_long_repetitions, 3, "Crunch words with long repetitions.", params())
-    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch.", params())
+    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch. (0..4)", params())
     , INT_MEMBER(fixsp_non_noise_limit, 1, "How many non-noise blobs either side?", params())
     , DOUBLE_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", params())
     , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins.", params())
@@ -313,7 +313,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , INT_MEMBER(x_ht_acceptance_tolerance, 8,
                  "Max allowed deviation of blob top outside of font data.", params())
     , INT_MEMBER(x_ht_min_change, 8, "Min change in xht before actually trying it.", params())
-    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer.", params())
+    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer. (0..4)", params())
     , DOUBLE_MEMBER(superscript_worse_certainty, 2.0,
                     "How many times worse "
                     "certainty does a superscript position glyph need to be for "
@@ -452,8 +452,8 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
     , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", params())
-    , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
-    , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
+    //, INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
+    //, INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
     , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())

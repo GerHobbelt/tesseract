@@ -1027,8 +1027,8 @@ public:
   BOOL_VAR_H(pageseg_apply_music_mask);
   DOUBLE_VAR_H(max_page_gradient_recognize);
   STRING_VAR_H(debug_output_path);
-  INT_VAR_H(debug_baseline_fit);
-  INT_VAR_H(debug_baseline_y_coord);
+  //INT_VAR_H(debug_baseline_fit);
+  //INT_VAR_H(debug_baseline_y_coord);
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
