@@ -786,8 +786,8 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox
     h1 = ih;
   BOX *b1 = boxCreateValid(x1, y1, w1, h1);
   BOX *b2 = nullptr;
-  PIX *ppix = pixClipRectangle(pix, b1, &b2);
-  PIX *ppix32 = pixConvertTo32(ppix);
+  Image ppix = pixClipRectangle(pix, b1, &b2);
+  Image ppix32 = pixConvertTo32(ppix);
   // generate boxes surrounding the focus bbox, covering the surrounding area in ppix32:
   BOXA *blist = boxaCreate(1);
   // box(x1, y1, x - x1, h1) - (x1, y1) ==>
@@ -818,11 +818,10 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox
   boxDestroy(&b2);
   boxDestroy(&b1);
   boxDestroy(&b);
-  pixDestroy(&ppix);
+  //pixDestroy(&ppix);
   ASSERT0(bbox.area() > 0);
   pixa_debug_.AddPixWithBBox(ppix32, bbox, title);
-
-  pixDestroy(&ppix32);
+  //pixDestroy(&ppix32);
 }
 
 void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *title) {
@@ -831,20 +830,20 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *titl
 
 // Destroy any existing pix and return a pointer to the pointer.
 void Tesseract::set_pix_binary(Image pix) {
-  pix_binary_.destroy();
+  //pix_binary_.destroy();
   pix_binary_ = pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
-    lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
+    lang_ref->set_pix_binary(pix);
   }
 }
 
 void Tesseract::set_pix_grey(Image grey_pix) {
-  pix_grey_.destroy();
+  //pix_grey_.destroy();
   pix_grey_ = grey_pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
-    lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
+    lang_ref->set_pix_grey(grey_pix);
   }
 }
 

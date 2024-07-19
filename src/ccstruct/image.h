@@ -29,7 +29,7 @@ public:
 public:
   Image() = default;
   Image(Pix *pix);
-  Image(Pix *&pix);
+  Image(bool take_ownership, Pix *pix);
 
   Image(const Image &pix); 
   Image(Image &&pix) noexcept; 
@@ -40,11 +40,11 @@ public:
   bool operator==(decltype(nullptr)) const { return pix_ == nullptr; }
   bool operator!=(decltype(nullptr)) const { return pix_ != nullptr; }
   explicit operator bool() const { return pix_ != nullptr; }
-  operator Pix *() const { return pix_; }
-  explicit operator Pix **() { return &pix_; }
-  Pix *operator->() const { return pix_; }
-  Image& operator =(Pix* pix);
-  Image &operator=(Pix *&pix);
+  operator Pix *() const noexcept;
+  explicit operator Pix **() noexcept;
+  Pix *operator->() const noexcept;
+  Image &operator=(Pix *pix);
+  Image &operator=(Pix **pix);      // move semantics, C style
   Image &operator=(decltype(nullptr));
   Image &operator=(const Image &pix);
   Image &operator=(Image &&pix) noexcept;
@@ -56,6 +56,11 @@ public:
   bool isZero() const;
   void replace(Pix* pix);
   void replace(Pix *&pix);
+
+  // equivalent of `operator Pix**` i.e. hard cast to `Pix **` type.
+  Pix **obtains() noexcept;
+  // relinquish control of the PIX: pass it on to some-one else. Move semantics simile for C code style.
+  Pix *relinquish() noexcept;
 
   // ops
   Image operator|(Image) const;

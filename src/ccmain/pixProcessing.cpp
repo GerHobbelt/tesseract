@@ -6,7 +6,8 @@
 
 #include <tesseract/tprintf.h> // for tprintf
 
-#include "thresholder.h" 
+#include "pixProcessing.h" 
+#include "rect.h" 
 
 #include <cstdint>
 #include <cstring>
@@ -671,6 +672,170 @@ PIX *pixNLBin(PIX *pixs, bool adaptive) {
 // pixMaxDynamicRange
 
 
+static inline int FADE(int val, const int factor) {
+  return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
+}
+
+static inline int MIX(int val1, int val2, const int factor) {
+  return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
+}
+
+
+  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
+                                float r_factor, float g_factor, float b_factor,
+                                float src_factor, float background_factor,
+                                const TBOX *cliprect) {
+  int w, h, depth;
+  ASSERT0(src != nullptr);
+  pixGetDimensions(src, &w, &h, &depth);
+
+  if (background == nullptr || background == src) {
+    return pixConvertTo32(src);
+  } else {
+    int ow, oh, od;
+    pixGetDimensions(background, &ow, &oh, &od);
+
+    Image toplayer = pixConvertTo32(src);
+    Image botlayer = pixConvertTo32(const_cast<PIX *>(background)); // quick hack, safe as `background` gets COPIED anyway in there.
+
+    if (w != ow || h != oh) {
+      if (cliprect != nullptr) {
+        // when a TBOX is provided, you can bet your bottom dollar `src` is an 'extract' of `background`
+        // and we therefore should paint it back onto there at the right spot:
+        // the cliprectx/y coordinates will tell us!
+        int cx, cy, cw, ch;
+        cx = cliprect->left();
+        cy = cliprect->top();
+        cw = cliprect->width();
+        ch = cliprect->height();
+
+        // when the clipping rectangle indicates another area than we got in `src`, we need to scale `src` first:
+        //
+        // smaller images are generally masks, etc. and we DO NOT want to be
+        // confused by the smoothness introduced by regular scaling, so we
+        // apply brutal sampled scale then:
+        if (w != cw || h != ch) {
+          if (w < cw && h < ch) {
+            toplayer = pixScaleBySamplingWithShift(toplayer, cw * 1.0f / w, ch * 1.0f / h, 0.0f, 0.0f);
+          } else if (w > cw && h > ch) {
+            // the new image has been either scaled up vs. the original OR a
+            // border was added (TODO)
+            //
+            // for now, we simply apply regular smooth scaling
+            toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+          } else {
+            // scale a clipped partial to about match the size of the
+            // original/base image, so the generated HTML + image sequence is
+            // more, äh, uniform/readable.
+#if 0
+              ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+            toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
+          }
+
+          pixGetDimensions(toplayer, &w, &h, &depth);
+        }
+        // now composite over 30% grey: this is done by simply resizing to background using 30% grey as a 'border':
+        int bl = cx;
+        int br = ow - cx - cw;
+        int bt = cy;
+        int bb = oh - cy - ch;
+
+        if (bl || br || bt || bb) {
+          l_uint32 grey;
+          const int g = int(0.7 * 256);
+          (void)composeRGBAPixel(g, g, g, 256, &grey);
+          toplayer = pixAddBorderGeneral(toplayer, bl, br, bt, bb, grey);
+        }
+      } else {
+        // no cliprect specified, so `src` must be scaled version of
+        // `background`.
+        //
+        // smaller images are generally masks, etc. and we DO NOT want to be
+        // confused by the smoothness introduced by regular scaling, so we
+        // apply brutal sampled scale then:
+        if (w < ow && h < oh) {
+          toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
+        } else if (w > ow && h > oh) {
+          // the new image has been either scaled up vs. the original OR a
+          // border was added (TODO)
+          //
+          // for now, we simply apply regular smooth scaling
+          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        } else {
+          // scale a clipped partial to about match the size of the
+          // original/base image, so the generated HTML + image sequence is
+          // more, äh, uniform/readable.
+#if 0
+            ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
+#endif
+          toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
+        }
+      }
+    }
+
+    // constant fade factors:
+    const int red_factor = r_factor * 256;
+    const int green_factor = g_factor * 256;
+    const int blue_factor = b_factor * 256;
+    const int base_mix_factor = src_factor * 256;
+    const int bottom_mix_factor = background_factor * 256;
+
+    auto datas = pixGetData(toplayer);
+    auto datad = pixGetData(botlayer);
+    auto wpls = pixGetWpl(toplayer);
+    auto wpld = pixGetWpl(botlayer);
+    int i, j;
+    for (i = 0; i < oh; i++) {
+      auto lines = (datas + i * wpls);
+      auto lined = (datad + i * wpld);
+      for (j = 0; j < ow; j++) {
+        // if top(SRC) is black, use that.
+        // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use
+        // that. if top(SRC) is white, and bot(DST) is white, use white.
+
+        int rvals, gvals, bvals;
+        extractRGBValues(lines[j], &rvals, &gvals, &bvals);
+
+        int rvald, gvald, bvald;
+        extractRGBValues(lined[j], &rvald, &gvald, &bvald);
+
+        // R
+        int rval = FADE(rvald, red_factor);
+        if (rvals < rval)
+          rval = MIX(rvals, rval, bottom_mix_factor);
+        else
+          rval = MIX(rvals, rval, base_mix_factor);
+
+        // G
+        int gval = FADE(gvald, green_factor);
+        if (gvals < gval)
+          gval = MIX(gvals, gval, bottom_mix_factor);
+        else
+          gval = MIX(gvals, gval, base_mix_factor);
+
+        // B
+        int bval = FADE(bvald, blue_factor);
+        if (bvals < bval)
+          bval = MIX(bvals, bval, bottom_mix_factor);
+        else
+          bval = MIX(bvals, bval, base_mix_factor);
+
+        // A
+        // avald = 0;
+
+        composeRGBPixel(rval, gval, bval, lined + j);
+      }
+    }
+    // pixCopyResolution(pixd, pixs);
+    // pixCopyInputFormat(pixd, pixs);
+
+    // botlayer.destroy();
+    //toplayer.destroy();
+
+    return botlayer;
+  }
+}
 
 
 

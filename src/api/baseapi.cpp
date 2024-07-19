@@ -51,6 +51,7 @@
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
+#include "pixProcessing.h" 
 #include "winutils.h"
 #include "colfind.h"         // for param globals
 #include "oldbasel.h"        // for param globals
@@ -788,18 +789,21 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  */
 void TessBaseAPI::SetImage(Pix *pix, float angle) {
   if (InternalResetImage()) {
-    if (pixGetSpp(pix) == 4) {
+    // as Image will take ownership and `pix` is not owned by us, we must clone it:
+    Image img(false, pix);
+    if (pixGetSpp(img) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
-      Pix *p1 = pixAlphaBlendUniform(pix, 0xFFFFFF00);
-      //Pix *p1 = pixRemoveAlpha(pix);
+      Image p1 = pixAlphaBlendUniform(img, 0xFFFFFF00);
+      //Image p1 = pixRemoveAlpha(img);
       pixSetSpp(p1, 3);
-      (void)pixCopy(pix, p1);
-      pixDestroy(&p1);
-    } else {
-      pix = pixClone(pix);
+      img = p1;           // move semantics: img now owns p1
+      //(void)pixCopy(pix, p1);
+      //pixDestroy(&p1);
+    //} else {
+      //pix = pixClone(pix);     -- already done by the Image constructor
     }
-    thresholder_->SetImage(pix, angle);
-    pixDestroy(&pix);
+    thresholder_->SetImage(img, angle);
+    //pixDestroy(&pix);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -836,19 +840,21 @@ Pix *TessBaseAPI::GetThresholdedImage() {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
     }
 
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+    Image pix;
+    if (!Threshold(pix.obtains())) {
       return nullptr;
     }
-    tesseract_->set_pix_binary(pix);
+    tesseract_->set_pix_binary(pix);     // candidate for move semantics
 
     if (tesseract_->tessedit_dump_pageseg_images) {
       tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
-  // Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
+  // Image p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
+  // because we want to keep the public API as-is for now, instead of migrating it to using Image type directly,
+  // we downgrade to `PIX *` at the exit point, hence the reponsibility to CLONE is ours: 
   return tesseract_->pix_binary().clone();
 }
 
@@ -2694,9 +2700,9 @@ bool TessBaseAPI::InternalResetImage() {
  */
 bool TessBaseAPI::Threshold(Pix **pix) {
   ASSERT_HOST(pix != nullptr);
-  if (*pix != nullptr) {
-    pixDestroy(pix);
-  }
+  //if (*pix != nullptr) {    
+  //  pixDestroy(pix);          -- taken care of by the Image instance further below taking ownership of *pix
+  //}
   // Zero resolution messes up the algorithms, so make sure it is credible.
   int user_dpi = tesseract_->user_defined_dpi;
   int y_res = thresholder_->GetScaledYResolution();
@@ -2724,13 +2730,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   }
 
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
-  Image pix_binary = nullptr;
+  Image pix_binary;
 
   std::string caption = ThresholdMethodName(selected_thresholding_method);
   AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
 
   if (selected_thresholding_method == ThresholdMethod::Otsu) {
-    pix_binary = *pix;
+    pix_binary = pix;
     if (!thresholder_->ThresholdToPix(&pix_binary)) {
       return false;
     }
@@ -2754,7 +2760,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     pix_binary = pix_binary2;
     *pix = pix_binary;
 
-    tesseract_->set_pix_thresholds(pix_thresholds);
+    tesseract_->set_pix_thresholds(pix_thresholds);    // candidates for move semantics
     tesseract_->set_pix_grey(pix_grey);
     // pix_thresholds.destroy();
     // pix_grey.destroy();
@@ -2801,13 +2807,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
 
-    noise1.destroy();
-    noise2.destroy();
-    noise3.destroy();
-    noise4.destroy();
-    mask.destroy();
-    composite.destroy();
-    pix_post.destroy();
+    //noise1.destroy();
+    //noise2.destroy();
+    //noise3.destroy();
+    //noise4.destroy();
+    //mask.destroy();
+    //composite.destroy();
+    //pix_post.destroy();
   }
 
   if (verbose_process) {
@@ -2865,8 +2871,8 @@ int TessBaseAPI::FindLines() {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
-	Image pix = Image();
-	if (!Threshold(&pix.pix_)) {
+	Image pix;
+	if (!Threshold(pix.obtains())) {
 	  return -1;
 	}
 	tesseract_->set_pix_binary(pix);
@@ -3018,11 +3024,11 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
   }
   ClearResults();
   if (tesseract_->pix_binary() == nullptr) {
-	  Image pix = Image();
-	  if (!Threshold(&pix.pix_)) {
+	  Image pix;
+	  if (!Threshold(pix.obtains())) {
 		  return false;
 	  }
-	  tesseract_->set_pix_binary(pix);
+	  tesseract_->set_pix_binary(pix);           // candidate for move semantics
 
     if (tesseract_->tessedit_write_images)
 	    tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "DetectOS (Orientation And Script) : Thresholded Image");

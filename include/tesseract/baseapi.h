@@ -479,7 +479,7 @@ public:
    * May be called any time after SetImage, or after TesseractRect.
    */
   Pix *GetThresholdedImage();
-
+  
   /**
    * Return average gradient of lines on page.
    */

@@ -21,6 +21,7 @@
 
 #include "otsuthr.h"
 #include "thresholder.h"
+#include "pixProcessing.h" 
 #include "tesseractclass.h"
 #include "global_params.h"
 #include <tesseract/tprintf.h> // for tprintf
