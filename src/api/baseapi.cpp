@@ -1237,22 +1237,37 @@ int TessBaseAPI::Recognize() {
   return result;
 }
 
-// Takes ownership of the input pix.
+// DOES NOT takes ownership of the input pix, but clones it instead.
 void TessBaseAPI::SetInputImage(Pix *pix) {
+  Image img(false, pix);
+  img = img.copy();
+  tesseract_->set_pix_original(img);
+}
+
+// Takes ownership of the input pix.
+void TessBaseAPI::SetInputImage(Image &&pix) {
+  tesseract_->set_pix_original(pix);
+}
+void TessBaseAPI::SetInputImage(const Image &pix) {
   tesseract_->set_pix_original(pix);
 }
 
 void TessBaseAPI::SetVisibleImage(Pix *pix) {
-  if (pix_visible_image_)
-    pixDestroy(&pix_visible_image_);
-  pix_visible_image_ = nullptr;
-  if (pix) {
     pix_visible_image_ = pixCopy(NULL, pix);
     // tesseract_->set_pix_visible_image(pix);
-  }
 }
 
-Pix *TessBaseAPI::GetInputImage() {
+void TessBaseAPI::SetVisibleImage(Image &&pix) {
+  pix_visible_image_ = pix;
+  // tesseract_->set_pix_visible_image(pix);
+}
+
+void TessBaseAPI::SetVisibleImage(const Image &pix) {
+  pix_visible_image_ = pix.clone();
+  //tesseract_->set_pix_visible_image(pix);
+}
+
+Pix *TessBaseAPI::GetInputImage() const {
   return tesseract_->pix_original();
 }
 
@@ -2562,7 +2577,7 @@ void TessBaseAPI::WipeSqueakyCleanForReUse() {
     tesseract_->WipeSqueakyCleanForReUse();
   }
 
-  pixDestroy(&pix_visible_image_);
+  //pixDestroy(&pix_visible_image_);
   pix_visible_image_ = nullptr;
   visible_image_file_.clear();
   output_file_.clear();

@@ -28,6 +28,7 @@
 #include <tesseract/version.h>
 #include <tesseract/memcost_estimate.h>  // for ImageCostEstimate
 #include <tesseract/ocrclass.h>
+#include <tesseract/image.h>
 #include <tesseract/params.h>
 
 #include <cstdio>
@@ -124,10 +125,15 @@ public:
 
   const char *GetInputName();
 
-  // Takes ownership of the input pix.
+  // DOES NOT takes ownership of the input pix, but COPIES it instead.
   void SetInputImage(Pix *pix);
+  // Takes ownership of the input pix.
+  void SetInputImage(Image &&pix);
+  // DOES NOT takes ownership of the input pix, but CLONES it instead.
+  void SetInputImage(const Image &pix);
 
-  Pix *GetInputImage();
+  Pix *GetInputImage() const;
+  Image GetInputImageClone();
 
   int GetSourceYResolution();
 
@@ -137,9 +143,15 @@ public:
 
   const char *GetVisibleImageFilename();
 
+  // DOES NOT takes ownership of the input pix, but COPIES it instead.
   void SetVisibleImage(Pix *pix);
+  // Takes ownership of the input pix.
+  void SetVisibleImage(Image &&pix);
+  // DOES NOT takes ownership of the input pix, but CLONES it instead.
+  void SetVisibleImage(const Image &pix);
 
   Pix* GetVisibleImage();
+  Image GetVisibleImageClone();
 
   /**
    * @}
@@ -479,6 +491,7 @@ public:
    * May be called any time after SetImage, or after TesseractRect.
    */
   Pix *GetThresholdedImage();
+  Image GetThresholdedImageClone();
   
   /**
    * Return average gradient of lines on page.
@@ -975,7 +988,7 @@ protected:
   BLOCK_LIST *block_list_;           ///< The page layout.
   PAGE_RES *page_res_;               ///< The page-level data.
   std::string visible_image_file_;
-  Pix* pix_visible_image_;           ///< Image used in output PDF
+  Image pix_visible_image_;          ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.

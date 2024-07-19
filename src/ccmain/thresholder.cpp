@@ -441,11 +441,11 @@ Image ImageThresholder::GetPixRectGrey() {
     }
     if (depth == 24) {
       Image tmp = pixConvert24To32(pix);
-      pix.destroy();
+      //pix.destroy();
       pix = tmp;
     }
     Image result = pixConvertTo8(pix, false);
-    pix.destroy();
+    //pix.destroy();
     return result;
   }
   return pix;
