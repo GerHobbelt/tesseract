@@ -1049,7 +1049,7 @@ void Classify::AmbigClassifier(const std::vector<INT_FEATURE_STRUCT> &int_featur
   UnicharRating int_result;
 
   results->BlobLength = GetCharNormFeature(fx_info, templates, nullptr, CharNormArray);
-  bool debug = matcher_debug_level >= 2 || classify_debug_level > 1;
+  bool debug = (matcher_debug_level >= 2 || classify_debug_level > 1);
   if (debug) {
     tprintDebug("AM Matches =  ");
   }
