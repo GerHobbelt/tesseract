@@ -19,7 +19,7 @@
 #ifndef TESSERACT_CCMAIN_OTSUTHR_H_
 #define TESSERACT_CCMAIN_OTSUTHR_H_
 
-#include "image.h"
+#include <tesseract/image.h>
 
 #include <vector> // for std::vector
 

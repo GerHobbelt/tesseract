@@ -581,12 +581,6 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     ClearPixForDebugView();
   }
 
-  pix_original_.destroy();
-  pix_binary_.destroy();
-  pix_grey_.destroy();
-  pix_thresholds_.destroy();
-  pix_for_debug_view_.destroy();
-  scaled_color_.destroy();
   deskew_ = FCOORD(1.0f, 0.0f);
   reskew_ = FCOORD(1.0f, 0.0f);
   gradient_ = 0.0f;
@@ -663,7 +657,7 @@ void Tesseract::PrepareForPageseg() {
     if (pageseg_strategy > max_pageseg_strategy) {
       max_pageseg_strategy = pageseg_strategy;
     }
-    sub_lang->set_pix_binary(pix_binary().clone());
+    sub_lang->set_pix_binary(pix_binary());
   }
   // Perform shiro-rekha (top-line) splitting and replace the current image by
   // the newly split image.
@@ -672,7 +666,7 @@ void Tesseract::PrepareForPageseg() {
   if (splitter_.Split(true)) {
     Image image = splitter_.splitted_image();
     ASSERT_HOST_MSG(!!image, "splitted_image() must never fail.\n");
-    set_pix_binary(image.clone());
+    set_pix_binary(image);
 
     if (tessedit_dump_pageseg_images) {
       ASSERT0(max_pageseg_strategy >= 0);
@@ -705,7 +699,7 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST *block_list, OSResults *osr) {
   // Restore pix_binary to the binarized original pix for future reference.
   Image orig_source_image = splitter_.orig_pix();
   ASSERT_HOST_MSG(orig_source_image, "orig_pix() should never fail to deliver a valid Image pix.\n");
-  set_pix_binary(orig_source_image.clone());
+  set_pix_binary(orig_source_image);
   // If the pageseg and ocr strategies are different, refresh the block list
   // (from the last SegmentImage call) with blobs from the real image to be used
   // for OCR.
@@ -798,8 +792,8 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox
     h1 = ih;
   BOX *b1 = boxCreateValid(x1, y1, w1, h1);
   BOX *b2 = nullptr;
-  PIX *ppix = pixClipRectangle(pix, b1, &b2);
-  PIX *ppix32 = pixConvertTo32(ppix);
+  Image ppix = pixClipRectangle(const_cast<PIX *>(pix.ptr()), b1, &b2);
+  Image ppix32 = pixConvertTo32(ppix);
   // generate boxes surrounding the focus bbox, covering the surrounding area in ppix32:
   BOXA *blist = boxaCreate(1);
   // box(x1, y1, x - x1, h1) - (x1, y1) ==>
@@ -830,11 +824,10 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image& pix, const TBOX& bbox
   boxDestroy(&b2);
   boxDestroy(&b1);
   boxDestroy(&b);
-  pixDestroy(&ppix);
+  //pixDestroy(&ppix);
   ASSERT0(bbox.area() > 0);
   pixa_debug_.AddPixWithBBox(ppix32, bbox, title);
-
-  pixDestroy(&ppix32);
+  //pixDestroy(&ppix32);
 }
 
 void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *title) {
@@ -843,30 +836,29 @@ void Tesseract::AddPixCompedOverOrigDebugPage(const Image &pix, const char *titl
 
 // Destroy any existing pix and return a pointer to the pointer.
 void Tesseract::set_pix_binary(Image pix) {
-  pix_binary_.destroy();
+  //pix_binary_.destroy();
   pix_binary_ = pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
-    lang_ref->set_pix_binary(pix ? pix.clone() : nullptr);
+    lang_ref->set_pix_binary(pix);
   }
 }
 
 void Tesseract::set_pix_grey(Image grey_pix) {
-  pix_grey_.destroy();
+  //pix_grey_.destroy();
   pix_grey_ = grey_pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
-    lang_ref->set_pix_grey(grey_pix ? grey_pix.clone() : nullptr);
+    lang_ref->set_pix_grey(grey_pix);
   }
 }
 
 // Takes ownership of the given original_pix.
 void Tesseract::set_pix_original(Image original_pix) {
-  pix_original_.destroy();
   pix_original_ = original_pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
-    lang_ref->set_pix_original(original_pix ? original_pix.clone() : nullptr);
+    lang_ref->set_pix_original(original_pix);
   }
 }
 
@@ -896,10 +888,7 @@ Image Tesseract::GetPixForDebugView() {
 }
 
 void Tesseract::ClearPixForDebugView() {
-  if (pix_for_debug_view_ != nullptr) {
-    pix_for_debug_view_.destroy();
-    pix_for_debug_view_ = nullptr;
-  }
+  pix_for_debug_view_ = nullptr;      // automagically destroys any image that was kept in here.
 }
 
 // Returns a pointer to a Pix representing the best available resolution image
@@ -921,7 +910,6 @@ Image Tesseract::BestPix() const {
 }
 
 void Tesseract::set_pix_thresholds(Image thresholds) {
-  pix_thresholds_.destroy();
   pix_thresholds_ = thresholds;
 }
 

@@ -48,6 +48,7 @@
 #include "tessvars.h"
 #include "werdit.h"
 #include "global_params.h"
+#include "pixProcessing.h" 
 
 const char *const kBackUpConfigFile = "tempconfigdata.config";
 #if !DISABLED_LEGACY_ENGINE
@@ -403,7 +404,6 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     // construct a base page image based on the greyscale image, bumped up by the binary for emphasis. Purely done for visual results.
     Image pix = pixConvertTo32(this->pix_grey());
     Image pix2 = pixBlend(pix, this->pix_binary(), 0, 0, 0.33);
-    pix.destroy();
 
     auto count = words->size();
     BOXA *boxa = boxaCreate(count);
@@ -452,9 +452,6 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     // Note that we don't use MixWithLightRedTintedBackground() here, but a tweaked version there-of.
     Image composite = pixMixWithTintedBackground(fg, pix_grey(), 0.9, 0.9, 0.9, 0.95, 0.5, nullptr);
 
-    fg.destroy();
-    pix2.destroy();
-
     // pixBlendBackgroundToColor();
     // pixSetBlackOrWhiteBoxa(mask, boxa, L_SET_BLACK);
     // pixBlendColorByChannel()
@@ -465,8 +462,6 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     tprintInfo("PROCESS: The composite image shows which bounding box areas in the original input image have been designated by tesseract as 'probably text words'. Anything obscured by the red overlay is *not considered for OCR*.\n\nThus this composite image is an important diagnostic tool, for it allows you to visually check the quality of tesseract's page analysis.\n\nRemedying any mistakes you observe is, unfortunately, a bit of an *art*, but suffice to say everything depends on a proper image preprocessing phase, where \"*proper*\" merely means: so you get the results that you want.");
 
     // TODO: mention links to further tips and approaches, including tesseract documentation pages.
-
-    composite.destroy();
 
     boxaClear(boxa);
     boxaDestroy(&boxa);

@@ -209,7 +209,6 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
   }
   if (num_rotations > 0) {
     Image rot_pix = pixRotateOrth(box_pix, num_rotations);
-    box_pix.destroy();
     box_pix = rot_pix;
   }
   // Convert sub-8-bit images to 8 bit.
@@ -217,7 +216,6 @@ ImageData *Tesseract::GetRectImage(const TBOX &box, const BLOCK &block, int padd
   if (depth < 8) {
     Image grey;
     grey = pixConvertTo8(box_pix, false);
-    box_pix.destroy();
     box_pix = grey;
   }
   bool vertical_text = false;
@@ -259,7 +257,6 @@ void Tesseract::LSTMRecognizeWord(const BLOCK &block, ROW *row, WERD_RES *word,
   if (dump_segmented_word_images) {
     Image dbg_pix = im_data->GetPix();
     AddPixCompedOverOrigDebugPage(dbg_pix, fmt::format("LSTMRecognizeWord: invert_threshold:{}, position bbox:{}", double(invert_threshold), word_box.print_to_str()));
-    dbg_pix.destroy();
   }
 
   lstm_recognizer_->SetDebug(classify_debug_level > 0 ? tess_debug_lstm : 0);

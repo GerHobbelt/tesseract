@@ -1,7 +1,7 @@
 #ifndef TESSERACT_CCSTRUCT_DEBUGPIXA_H_
 #define TESSERACT_CCSTRUCT_DEBUGPIXA_H_
 
-#include "image.h"
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
 
@@ -140,12 +140,7 @@ namespace tesseract {
 #endif
   };
 
-  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
-                                  float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor,
-                                  const TBOX *cliprect);
-
-  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect);
+  Image MixWithLightRedTintedBackground(const Image &pix, const Image &original_image, const TBOX *cliprect);
 
   typedef int AutoExecOnScopeExitFunction_f(void);
 

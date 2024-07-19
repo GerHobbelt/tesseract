@@ -51,6 +51,7 @@
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
+#include "pixProcessing.h" 
 #include "winutils.h"
 #include "colfind.h"         // for param globals
 #include "oldbasel.h"        // for param globals
@@ -952,18 +953,16 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  */
 void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle, bool upscale) {
   if (InternalResetImage()) {
-    if (pixGetSpp(pix) == 4) {
+    // as Image will take ownership and `pix` is not owned by us, we must clone it:
+    Image img(false, pix);
+    if (pixGetSpp(img) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
-      Pix *p1 = pixAlphaBlendUniform(pix, 0xFFFFFF00);
-      //Pix *p1 = pixRemoveAlpha(pix);
+      Image p1 = pixAlphaBlendUniform(img, 0xFFFFFF00);
+      //Image p1 = pixRemoveAlpha(img);
       pixSetSpp(p1, 3);
-      (void)pixCopy(pix, p1);
-      pixDestroy(&p1);
-    } else {
-      pix = pixClone(pix);
+      img = p1;           // move semantics: img now owns p1
     }
-    thresholder_->SetImage(pix, exif, angle, upscale);
-    pixDestroy(&pix);
+    thresholder_->SetImage(img, exif, angle, upscale);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -1022,20 +1021,22 @@ Pix *TessBaseAPI::GetThresholdedImage() {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
 	}
 
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+    Image pix;
+    if (!Threshold(pix.obtains())) {
       return nullptr;
     }
-    tess.set_pix_binary(pix);
+    tesseract_->set_pix_binary(pix);     // candidate for move semantics
 
     if (tess.tessedit_dump_pageseg_images) {
       tess.AddPixDebugPage(tess.pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
-  // Pix *p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
+  // Image p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
-  return tess.pix_binary().clone();
+  // because we want to keep the public API as-is for now, instead of migrating it to using Image type directly,
+  // we downgrade to `PIX *` at the exit point, hence the reponsibility to CLONE is ours: 
+  return tesseract_->pix_binary().clone2pix();
 }
 
 /**
@@ -1159,13 +1160,13 @@ Boxa *TessBaseAPI::GetComponentImages(PageIteratorLevel level, bool text_only, b
       Box *lbox = boxCreate(left, top, right - left, bottom - top);
       boxaAddBox(boxa, lbox, L_INSERT);
       if (pixa != nullptr) {
-        Pix *pix = nullptr;
+        Image pix;
         if (raw_image) {
           pix = page_it->GetImage(level, raw_padding, GetInputImage(), &left, &top);
         } else {
           pix = page_it->GetBinaryImage(level);
         }
-        pixaAddPix(*pixa, pix, L_INSERT);
+        pixaAddPix(*pixa, pix, L_CLONE);
         pixaAddBox(*pixa, lbox, L_CLONE);
       }
       if (paraids != nullptr) {
@@ -1244,7 +1245,7 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
   std::vector<int> page_numbers(boxes.size(), 1);
 
   // Init ImageData
-  auto *image_data = new ImageData(vertical, pix);
+  auto *image_data = new ImageData(vertical, Image(false, pix));    // must clone as pix is not ours/ImageData's to own
   image_data->set_page_number(1);
   image_data->AddBoxes(boxes, line_texts, page_numbers);
 
@@ -1432,23 +1433,38 @@ int TessBaseAPI::Recognize() {
   return result;
 }
 
-// Takes ownership of the input pix.
+// DOES NOT takes ownership of the input pix, but clones it instead.
 void TessBaseAPI::SetInputImage(Pix *pix) {
-  tesseract().set_pix_original(pix);
+  Image img(false, pix);
+  img = img.copy();
+  tesseract_->set_pix_original(img);
+}
+
+// Takes ownership of the input pix.
+void TessBaseAPI::SetInputImage(Image &&pix) {
+  tesseract_->set_pix_original(pix);
+}
+void TessBaseAPI::SetInputImage(const Image &pix) {
+  tesseract_->set_pix_original(pix);
 }
 
 void TessBaseAPI::SetVisibleImage(Pix *pix) {
-  if (pix_visible_image_)
-    pixDestroy(&pix_visible_image_);
-  pix_visible_image_ = nullptr;
-  if (pix) {
     pix_visible_image_ = pixCopy(NULL, pix);
-    // tesseract().set_pix_visible_image(pix);
-  }
+    // tesseract_->set_pix_visible_image(pix);
 }
 
-Pix *TessBaseAPI::GetInputImage() {
-  return tesseract().pix_original();
+void TessBaseAPI::SetVisibleImage(Image &&pix) {
+  pix_visible_image_ = pix;
+  // tesseract_->set_pix_visible_image(pix);
+}
+
+void TessBaseAPI::SetVisibleImage(const Image &pix) {
+  pix_visible_image_ = pix;   //.clone();
+  //tesseract_->set_pix_visible_image(pix);
+}
+
+Pix *TessBaseAPI::GetInputImage() const {
+  return tesseract_->pix_original().clone2pix();
 }
 
 static const char* NormalizationProcessModeName(int mode) {
@@ -1517,7 +1533,7 @@ bool TessBaseAPI::NormalizeImage(int mode) {
       if (debug) {
         tprintDebug("No greyscale image normalization performed: greyscale image will be processed as-is; graynorm_mode = {}.\n", mode);
       }
-      result_pix = pix.clone();
+      result_pix = pix;   // clone
       break;
 
     case 0:
@@ -1531,7 +1547,6 @@ bool TessBaseAPI::NormalizeImage(int mode) {
 
     default:
       tprintError("Unsupported normalization mode {} -> {}; not performing any normalization.\n", mode, process);
-      pix.destroy();
       return false;
   }
 
@@ -1563,9 +1578,6 @@ bool TessBaseAPI::NormalizeImage(int mode) {
       thresholder_->SetImage(pix);
       break;
   }
-
-  pix.destroy();
-  result_pix.destroy();
 
   return true;
 }
@@ -1657,7 +1669,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       snprintf(pagename, sizeof(pagename), "%s", lines[i].c_str());
     }
     chomp_string(pagename);
-    Pix *pix = pixRead(pagename);
+    Image pix = pixRead(pagename);
     if (pix == nullptr) {
       tprintError("Image file {} cannot be read!\n", pagename);
       return false;
@@ -1670,8 +1682,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
 
       // pixWrite("/tmp/out.png", pix, IFF_PNG);
-      // Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_WHITE);
+      // Image newpix = pixPaintBoxa(pix, default_boxes, 0);
+      Image newpix = pixSetBlackOrWhiteBoxa(pix.ptr(), default_boxes, L_SET_WHITE);
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);
@@ -1685,10 +1697,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       renderer->AddImage(this);
 
       boxaDestroy(&default_boxes);
-      pixDestroy(&newpix);
     }
 
-    pixDestroy(&pix);
     if (!r) {
       return false;
     }
@@ -1709,7 +1719,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
 // single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
                                             TessResultRenderer *renderer) {
-  Pix *pix = nullptr;
+  Image pix;
   Tesseract& tess = tesseract();
   int page_number = (tess.tessedit_page_number >= 0) ? tess.tessedit_page_number : 0;
   size_t offset = 0;
@@ -1727,7 +1737,6 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
     tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_CORE_RUN);
     bool r = ProcessPage(pix, filename, renderer);
-    pixDestroy(&pix);
     if (!r) {
       return false;
     }
@@ -1911,9 +1920,9 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
                format == IFF_TIFF_ZIP);
 
   // Fail early if we can, before producing any output
-  Pix *pix = nullptr;
+  Image pix = nullptr;
   if (!tiff) {
-    pix = (data != nullptr) ? pixReadMem(data, buf.size()) : pixRead(filename);
+    pix = (data != nullptr ? pixReadMem(data, buf.size()) : pixRead(filename));
     if (pix == nullptr) {
       return false;
     }
@@ -1921,7 +1930,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
 
   // Begin the output
   if (renderer && !renderer->BeginDocument(document_title.c_str())) {
-    pixDestroy(&pix);
     return false;
   }
 
@@ -1933,9 +1941,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
     tesseract().applybox_page.set_value(-1 /* all pages */, PARAM_VALUE_IS_SET_BY_CORE_RUN);
 	  r = ProcessPage(pix, filename, renderer);
   }
-
-  // Clean up memory as needed
-  pixDestroy(&pix);
 
   Monitor().bump_progress().exec_progress_func();
 
@@ -1999,7 +2004,7 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   }
 
   if (tess.tessedit_write_images) {
-    Pix *page_pix = GetThresholdedImage();
+    Image page_pix = GetThresholdedImage();
     tess.AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tess.tessedit_page_number));
   }
 
@@ -2763,7 +2768,7 @@ void TessBaseAPI::WipeSqueakyCleanForReUse() {
     tesseract_->WipeSqueakyCleanForReUse();
   }
 
-  pixDestroy(&pix_visible_image_);
+  //pixDestroy(&pix_visible_image_);
   pix_visible_image_ = nullptr;
   visible_image_file_.clear();
   output_file_.clear();
@@ -2903,7 +2908,7 @@ bool TessBaseAPI::InternalResetImage() {
 bool TessBaseAPI::Threshold(Pix **pix) {
   Tesseract& tess = tesseract();
   ASSERT_HOST(pix != nullptr);
-  if (*pix != nullptr) {
+  if (*pix != nullptr) {    
     pixDestroy(pix);
   }
   // Zero resolution messes up the algorithms, so make sure it is credible.
@@ -2933,18 +2938,18 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   }
 
   auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
-  Image pix_binary = nullptr;
+  Image pix_binary;
 
   std::string caption = ThresholdMethodName(selected_thresholding_method);
   AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
 
   if (selected_thresholding_method == ThresholdMethod::Otsu) {
-    pix_binary = *pix;
+    pix_binary = pix;
     if (!thresholder_->ThresholdToPix(&pix_binary)) {
       return false;
     }
 
-    *pix = pix_binary;
+    *pix = pix_binary.clone2pix();
 
     if (!thresholder_->IsBinary()) {
       tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
@@ -2961,9 +2966,9 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     }
 
     pix_binary = pix_binary2;
-    *pix = pix_binary;
+    *pix = pix_binary.clone2pix();
 
-    tesseract_->set_pix_thresholds(pix_thresholds);
+    tesseract_->set_pix_thresholds(pix_thresholds);    // candidates for move semantics
     tesseract_->set_pix_grey(pix_grey);
     // pix_thresholds.destroy();
     // pix_grey.destroy();
@@ -2992,31 +2997,40 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
     tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
 
-    Image noise1 = pixEmphasizeImageNoise(tesseract_->pix_original());
-    Image noise2 = pixEmphasizeImageNoise(tesseract_->pix_grey());
-    Image noise3 = pixEmphasizeImageNoise(composite);
-    Image noise4 = pixEmphasizeImageNoise(pix_post);
+    Image noise1 = pixEmphasizeImageNoise(tesseract_->pix_original().ptr());
+    Image noise2 = pixEmphasizeImageNoise(tesseract_->pix_grey().ptr());
+    Image noise3 = pixEmphasizeImageNoise(composite.ptr());
+    Image noise4 = pixEmphasizeImageNoise(pix_post.ptr());
     tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis A: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis B: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis C: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis D: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
 
-    noise1 = pixEmphasizeImageNoise2(tesseract_->pix_original());
-    noise2 = pixEmphasizeImageNoise2(tesseract_->pix_grey());
-    noise3 = pixEmphasizeImageNoise2(composite);
-    noise4 = pixEmphasizeImageNoise2(pix_post);
+    noise1 = pixEmphasizeImageNoise2(tesseract_->pix_original().ptr());
+    noise2 = pixEmphasizeImageNoise2(tesseract_->pix_grey().ptr());
+    noise3 = pixEmphasizeImageNoise2(composite.ptr());
+    noise4 = pixEmphasizeImageNoise2(pix_post.ptr());
     tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis E: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis F: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
     tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
 
-    noise1.destroy();
-    noise2.destroy();
-    noise3.destroy();
-    noise4.destroy();
-    mask.destroy();
-    composite.destroy();
-    pix_post.destroy();
+    if (false) {
+      // NOTE/WARNING: if you want to pick up one of these processed images as the replacement `*pix` then you MUST
+      // blow away the previously set *pix or refcounting with that PIX** will leak:
+      if (*pix != nullptr) {
+        pixDestroy(pix); // releasing the previous clone
+      }
+      *pix = composite.clone2pix();
+    }
+
+    //noise1.destroy();
+    //noise2.destroy();
+    //noise3.destroy();
+    //noise4.destroy();
+    //mask.destroy();
+    //composite.destroy();
+    //pix_post.destroy();
   }
 
   if (verbose_process) {
@@ -3073,8 +3087,8 @@ int TessBaseAPI::FindLines() {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
     }
 
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+	Image pix;
+	if (!Threshold(pix.obtains())) {
       return -1;
     }
     tess.set_pix_binary(pix);
@@ -3235,8 +3249,8 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
   ClearResults();
   Tesseract& tess = tesseract();
   if (tess.pix_binary() == nullptr) {
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+	  Image pix;
+	  if (!Threshold(pix.obtains())) {
       return false;
     }
     tess.set_pix_binary(pix);

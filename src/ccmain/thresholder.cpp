@@ -21,6 +21,7 @@
 
 #include "otsuthr.h"
 #include "thresholder.h"
+#include "pixProcessing.h" 
 #include "tesseractclass.h"
 #include "global_params.h"
 #include <tesseract/tprintf.h> // for tprintf
@@ -131,7 +132,6 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
   }
 
   SetImage(pix, exif, angle, upscale);
-  pix.destroy();
 }
 
 // Store the coordinates of the rectangle to process for later use.
@@ -162,11 +162,8 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bool upscale) {
-  if (pix_ != nullptr) {
-    pix_.destroy();
-  }
-
+void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, bool upscale) {
+#if 01
   // Note that pix.clone() does not actually clone the data,
   // it simply makes a new pointer to the existing data.
   // Therefore, there should not be any performance penalty
@@ -175,20 +172,20 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bo
   // Rotate if specified by exif orientation value.
   Image src, temp1, temp2, temp3;
   if (exif == 3 || exif == 4) {
-    temp1 = pixRotateOrth(pix, 2);
+    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 2);
   } else if (exif == 5 || exif == 6) {
-    temp1 = pixRotateOrth(pix, 1);
+    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 1);
   } else if (exif == 7 || exif == 8) {
-    temp1 = pixRotateOrth(pix, 3);
+    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 3);
   } else {
-    temp1 = pix.clone();
+    temp1 = pix;
   }
 
   // Mirror if specified by exif orientation value
   if (exif == 2 || exif == 4 || exif == 5 || exif == 7) {
     temp2 = pixFlipLR(NULL, temp1);
   } else {
-    temp2 = temp1.clone();
+    temp2 = temp1;
   }
 
   if (upscale) {
@@ -197,16 +194,16 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bo
     // 2x is a special case that is both faster and better quality than other scales.
     temp3 = pixScale(temp2, 2.0, 2.0);
   } else {
-    temp3 = temp2.clone();
+    temp3 = temp2;
   }
 
   // Rotate if additional rotation angle is specified
-  src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
-
-  temp1.destroy();
-  temp2.destroy();
-  temp3.destroy();
-
+  //
+  // clones or creates a freshly rotated copy.
+  Image src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+#else
+  Image src = pix;  // clones
+#endif
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -217,7 +214,6 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle, bo
   } else {
     pix_ = src.copy();
   }
-  src.destroy();
   depth = pixGetDepth(pix_);
   pix_channels_ = depth / 8;
   pix_wpl_ = pixGetWpl(pix_);
@@ -236,7 +232,6 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     // allows the caller to modify the output.
     Image original = GetPixRect();
     pix_binary = original.copy();
-    original.destroy();
     return std::make_tuple(true, nullptr, pix_binary, nullptr);
   }
 
@@ -339,13 +334,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
   case ThresholdMethod::Nlbin: {
     Image pix = GetPixRect();
     pix_binary = pixNLBin(pix, false);
-    pix.destroy();
   } break;
 
   case ThresholdMethod::NlbinAdaptive: {
     Image pix = GetPixRect();
     pix_binary = pixNLBin(pix, true);
-    pix.destroy();
   } break;
 
   case ThresholdMethod::Otsu: {
@@ -405,14 +398,11 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
       } else {
         tmp = without_cmap.copy();
       }
-      without_cmap.destroy();
       OtsuThresholdRectToPix(tmp, pix);
-      tmp.destroy();
     } else {
       OtsuThresholdRectToPix(pix_, pix);
     }
   }
-  original.destroy();
   return true;
 }
 
@@ -433,7 +423,6 @@ Image ImageThresholder::GetPixRectThresholds() {
   std::vector<int> thresholds;
   std::vector<int> hi_values;
   OtsuThreshold(pix_grey, 0, 0, width, height, thresholds, hi_values);
-  pix_grey.destroy();
   Image pix_thresholds = pixCreate(width, height, 8);
   int threshold = thresholds[0] > 0 ? thresholds[0] : 128;
   pixSetAllArbitrary(pix_thresholds, threshold);
@@ -453,7 +442,7 @@ void ImageThresholder::Init() {
 Image ImageThresholder::GetPixRect() {
   if (IsFullImage()) {
     // Just clone the whole thing.
-    return pix_.clone();
+    return pix_;  //.clone();
   } else {
     // Crop to the given rectangle.
     Box *box = boxCreate(rect_left_, rect_top_, rect_width_, rect_height_);
@@ -475,12 +464,12 @@ Image ImageThresholder::GetPixRectGrey() {
       tprintInfo("PROCESS: the source image is not a greyscale image, hence we apply a simple conversion to 8 bit greyscale now. The greyscale image is required by any of the binarization a.k.a. thresholding algorithms tesseract employs to produce an image content mask and to analyze the image content, to decide which parts of your input image will be extracted and sent to the OCR core engine after.\n");
     }
     if (depth == 24) {
-      auto tmp = pixConvert24To32(pix);
-      pix.destroy();
+      Image tmp = pixConvert24To32(pix);
+      //pix.destroy();
       pix = tmp;
     }
-    auto result = pixConvertTo8(pix, false);
-    pix.destroy();
+    Image result = pixConvertTo8(pix, false);
+    //pix.destroy();
     return result;
   }
   return pix;

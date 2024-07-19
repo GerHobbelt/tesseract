@@ -21,12 +21,11 @@
 
 #include <tesseract/export.h>
 #include <tesseract/fmt-support.h>
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
 
 #include <vector> // for std::vector
-
-#include "image.h"
 
 struct Pix;
 
@@ -163,7 +162,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix, int exif = 1, const float angle = 0, bool upscale = false);
+  void SetImage(const Image &pix, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.
@@ -239,31 +238,6 @@ protected:
   int rect_width_;
   int rect_height_;
 };
-
-//----------------------------------------------------------
-//
-// leptonica additions
-//
-//----------------------------------------------------------
-
-
-extern "C" {
-
-// Return non-linear normalized grayscale
-PIX *pixNLNorm2(PIX *pixs, int *pthresh);
-
-// Return non-linear normalized grayscale
-PIX *pixNLNorm1(PIX *pixs, int *pthresh, int *pfgval, int *pbgval);
-
-// Return non-linear normalized thresholded image
-PIX *pixNLBin(PIX *pixs, bool adaptive);
-
-PIX *pixEmphasizeImageNoise(PIX *pixs);
-PIX *pixEmphasizeImageNoise2(PIX *pixs);
-
-PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type);
-
-}   // extern "C"
 
 } // namespace tesseract.
 

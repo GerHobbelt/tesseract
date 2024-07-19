@@ -492,7 +492,6 @@ void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*w
     word_dumper(&pr_it);
   }
 
-
   image_win->Brush(Diagnostics::NONE);
   PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {

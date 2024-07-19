@@ -92,7 +92,6 @@ const int kMinRampSize = 1000;
 Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation) {
   tprintDebug("Degrade image:\n");
   Image pix = pixConvertTo8(input, false);
-  input.destroy();
   input = pix;
   int width = pixGetWidth(input);
   int height = pixGetHeight(input);
@@ -103,12 +102,10 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
     // see http://www.leptonica.com/grayscale-morphology.html
     pix = input;
     input = pixErodeGray(pix, 3, 3);
-    pix.destroy();
   }
   // A convolution is essential to any mode as no scanner produces an
   // image as sharp as the electronic image.
   pix = pixBlockconv(input, 1, 1);
-  input.destroy();
   // A small random rotation helps to make the edges jaggy in a realistic way.
   if (rotation != nullptr) {
     float radians_clockwise = 0.0f;
@@ -122,7 +119,6 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
     input = pixRotate(pix, radians_clockwise, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
     // Rotate the boxes to match.
     *rotation = radians_clockwise;
-    pix.destroy();
   } else {
     input = pix;
   }
@@ -134,7 +130,6 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
     // see http://www.leptonica.com/grayscale-morphology.html
     pix = input;
     input = pixErodeGray(pix, 3, 3);
-    pix.destroy();
   }
   // The convolution really needed to be 2x2 to be realistic enough, but
   // we only have 3x3, so we have to bias the image darker or lose thin
@@ -192,10 +187,8 @@ Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool w
     tprintDebug("add noise\n");
     srand(randomizer->IntRand());
     Image pixn = pixAddGaussianNoise(distorted, my_noise);   // 8.0
-    distorted.destroy();
     if (smooth_noise) {
       distorted = pixBlockconv(pixn, my_smooth, my_smooth);   // 1
-      pixn.destroy();
       tprintDebug("smoothen\n");
     } else {
       tprintDebug("noise added\n");
@@ -205,7 +198,6 @@ Image PrepareDistortedPix(const Image pix, bool perspective, bool invert, bool w
   if (blur /*&& randomizer->SignedRand(1.0) > 0.0*/) {
     tprintDebug("blur\n");
     Image blurred = pixBlockconv(distorted, my_blur, my_blur);  // 1
-    distorted.destroy();
     distorted = blurred;
   }
   if (perspective) {
@@ -244,7 +236,6 @@ void GeneratePerspectiveDistortion(int width, int height, TRand *randomizer, Ima
       tprintError("Projective transformation failed!!\n");
       return;
     }
-    pix->destroy();
     *pix = transformed;
   }
   if (boxes != nullptr) {

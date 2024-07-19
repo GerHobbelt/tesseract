@@ -449,10 +449,6 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
       continue;
     }
 
-    pix_glyph.destroy();
-    pix_glyph_sq.destroy();
-    pix_glyph_sq_pad.destroy();
-    pix_glyph_sq_pad_8.destroy();
     n_boxes_saved++;
     y_previous = y;
   }
@@ -701,13 +697,12 @@ static int Main() {
         }
 
         Image gray_pix = pixConvertTo8(pix, false);
-        pix.destroy();
         Image binary = pixThresholdToBinary(gray_pix, 128);
         char img_name[1024];
         if (text2image_find_fonts) {
           if (text2image_render_per_font) {
             std::string fontname_for_file = tesseract::StringReplace(font_used, " ", "_");
-            if (!text2image_output_png){
+            if (!text2image_output_png) {
               snprintf(img_name, 1024, "%s.%s.tif", text2image_outputbase.c_str(),
                                  fontname_for_file.c_str());
               if (!text2image_grayscale) {
@@ -753,8 +748,6 @@ static int Main() {
             tprintError("Individual glyphs not saved\n");
           }
         }
-        gray_pix.destroy();
-        binary.destroy();
       }
       if (text2image_find_fonts && offset != 0) {
         // We just want a list of names, or some sample images so we don't need

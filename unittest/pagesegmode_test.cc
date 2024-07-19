@@ -16,10 +16,10 @@
 #endif
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
+#include <tesseract/image.h>
 #include <string>
 #include "helpers.h"
 #include "include_gunit.h"
-#include "image.h"
 #include "log.h"
 
 #include "testdata.h"

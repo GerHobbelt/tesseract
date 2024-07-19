@@ -51,9 +51,6 @@ ImageData::ImageData(bool vertical, Image pix)
   SetPix(pix);
 }
 ImageData::~ImageData() {
-#ifdef TESSERACT_IMAGEDATA_AS_PIX
-  internal_pix_.destroy();
-#endif
 }
 
 // Builds and returns an ImageData from the basic data. Note that imagedata,
@@ -233,7 +230,6 @@ Image ImageData::PreScale(int target_height, int max_height,
   if (pix == nullptr) {
     tprintError("Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
-    src_pix.destroy();
     return nullptr;
   }
   if (scaled_width != nullptr) {
@@ -242,7 +238,6 @@ Image ImageData::PreScale(int target_height, int max_height,
   if (scaled_height != nullptr) {
     *scaled_height = pixGetHeight(pix);
   }
-  src_pix.destroy();
   if (boxes != nullptr) {
     // Get the boxes.
     boxes->clear();
@@ -282,7 +277,6 @@ void ImageData::Display(Tesseract *tesseract_) const {
                              2 * (height + 4 * kTextSize), width + 10,
                              height + 3 * kTextSize, true);
   win->Draw(pix, 0, win->TranslateYCoordinate(0), "ImageData::Display");
-  pix.destroy();
   // Draw the boxes.
   win->Pen(Diagnostics::RED);
   win->Brush(Diagnostics::NONE);
