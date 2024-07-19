@@ -185,7 +185,6 @@ static bool determine_datadir(std::string &datadir, const std::string &argv0, co
   if (tessdata_prefix && *tessdata_prefix) {
     /* Use tessdata prefix from the environment. */
     std::string testdir = tessdata_prefix;
-    attempts.push_back(testdir + "/tessdata/");
     attempts.push_back(testdir);
   }
 

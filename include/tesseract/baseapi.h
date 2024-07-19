@@ -1051,9 +1051,6 @@ public:
 
   void set_min_orientation_margin(double margin);
 
-  void SetupDebugAllPreset();
-  void SetupDefaultPreset();
-
   void ReportDebugInfo();
 
   /* @} */

@@ -100,9 +100,6 @@ static inline int ParseCommandLineFlags(const char* extra_usage, int* argc, cons
 TESS_COMMON_TRAINING_API
 bool SetConsoleModeToUTF8(void);
 
-TESS_COMMON_TRAINING_API
-bool SetConsoleModeToUTF8(void);
-
 } // namespace tesseract
 
 #endif // TESSERACT_TRAINING_COMMANDLINEFLAGS_H_

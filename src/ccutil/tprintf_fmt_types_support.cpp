@@ -35,8 +35,6 @@
 #include <fmt/base.h>
 #include <fmt/format.h>
 
-#include <magic_enum/magic_enum.hpp>
-
 namespace fmt {
 
 using namespace tesseract;

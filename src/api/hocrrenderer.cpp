@@ -232,7 +232,6 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
           if (tesseract_->hocr_images) {
             hocr_str << "ocr_photo";
           }
-          ASSERT_HOST(false);
           break;
         default:
           hocr_str << "ocr_line";

@@ -376,9 +376,6 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       }
 #endif
 
-      // SHA-1: b453f74e0194f2cf08e9251b1846a0132657c4f8 * Fixed issue #633 (multi-language mode)
-      word->best_choice->set_certainty(corrected_word_certainty);
-
       word->tess_accepted = stopper_dict->AcceptableResult(*word);
     }
   }

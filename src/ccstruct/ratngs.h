@@ -175,7 +175,7 @@ public:
             certainty_,
             min_xheight_,
             max_xheight_,
-            unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_));
+            unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_).c_str());
   }
 
   void print_full() const {
