@@ -312,7 +312,7 @@ public:
   DOUBLE_VAR_H(language_model_penalty_font);
   DOUBLE_VAR_H(language_model_penalty_spacing);
   DOUBLE_VAR_H(language_model_penalty_increment);
-  INT_VAR_H(wordrec_display_segmentations);
+  BOOL_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 
 protected:
