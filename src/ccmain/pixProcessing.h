@@ -4,7 +4,7 @@
 
 #include <leptonica/allheaders.h>
 
-#include "image.h"
+#include <tesseract/image.h>
 
 struct Pix;
 

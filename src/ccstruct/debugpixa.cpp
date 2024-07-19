@@ -2,8 +2,9 @@
 
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#include <tesseract/image.h>
+
 #include "debugpixa.h"
-#include "image.h"
 #include <tesseract/tprintf.h>
 #include "tesseractclass.h"
 #include "global_params.h"

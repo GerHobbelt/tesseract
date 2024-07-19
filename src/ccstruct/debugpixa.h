@@ -1,7 +1,7 @@
 #ifndef TESSERACT_CCSTRUCT_DEBUGPIXA_H_
 #define TESSERACT_CCSTRUCT_DEBUGPIXA_H_
 
-#include "image.h"
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
 

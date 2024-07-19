@@ -13,7 +13,7 @@
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
 
-#include "image.h"
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
 

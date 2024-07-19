@@ -31,10 +31,10 @@
 #ifndef TESSERACT_VIEWER_SCROLLVIEW_H_
 #define TESSERACT_VIEWER_SCROLLVIEW_H_
 
-#include "image.h"
-
 #include <fmt/format.h>
+
 #include <tesseract/export.h>
+#include <tesseract/image.h>
 
 #include <leptonica/environ.h>  /* leptonica */
 

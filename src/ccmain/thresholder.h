@@ -21,12 +21,11 @@
 
 #include <tesseract/export.h>
 #include <tesseract/fmt-support.h>
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
 
 #include <vector> // for std::vector
-
-#include "image.h"
 
 struct Pix;
 
