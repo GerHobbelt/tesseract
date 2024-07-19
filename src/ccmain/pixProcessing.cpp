@@ -420,7 +420,7 @@ PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type) {
  *      (2) A good thresholder together with NLNorm is WAN
  * </pre>
  */
-Pix *pixNLNorm2(Pix *pixs, int *pthresh) {
+PIX *pixNLNorm2(PIX *pixs, int *pthresh) {
   l_int32 d, thresh, w1, h1, w2, h2, fgval, bgval;
   // l_uint32 black_val, white_val;
   l_float32 factor, threshpos, avefg, avebg, numfg, numbg;
@@ -626,7 +626,7 @@ PIX *pixNLBin(PIX *pixs, bool adaptive) {
 
 
   
-  // pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
+// pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
 //
 // pixAutoPhotoinvert()
 //

@@ -28,7 +28,13 @@ public:
 
 public:
   Image() = default;
-  Image(Pix *pix) : pix_(pix) {}
+  Image(Pix *pix);
+  Image(Pix *&pix);
+
+  Image(const Image &pix); 
+  Image(Image &&pix) noexcept; 
+
+  ~Image();
 
   // service
   bool operator==(decltype(nullptr)) const { return pix_ == nullptr; }
@@ -38,6 +44,10 @@ public:
   explicit operator Pix **() { return &pix_; }
   Pix *operator->() const { return pix_; }
   Image& operator =(Pix* pix);
+  Image &operator=(Pix *&pix);
+  Image &operator=(decltype(nullptr));
+  Image &operator=(const Image &pix);
+  Image &operator=(Image &&pix) noexcept;
 
   // api
   Image clone() const; // increases refcount
@@ -45,6 +55,7 @@ public:
   void destroy();
   bool isZero() const;
   void replace(Pix* pix);
+  void replace(Pix *&pix);
 
   // ops
   Image operator|(Image) const;

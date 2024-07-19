@@ -439,11 +439,11 @@ Image ImageThresholder::GetPixRectGrey() {
       tprintInfo("PROCESS: the source image is not a greyscale image, hence we apply a simple conversion to 8 bit greyscale now. The greyscale image is required by any of the binarization a.k.a. thresholding algorithms tesseract employs to produce an image content mask and to analyze the image content, to decide which parts of your input image will be extracted and sent to the OCR core engine after.\n");
     }
     if (depth == 24) {
-      auto tmp = pixConvert24To32(pix);
+      Image tmp = pixConvert24To32(pix);
       pix.destroy();
       pix = tmp;
     }
-    auto result = pixConvertTo8(pix, false);
+    Image result = pixConvertTo8(pix, false);
     pix.destroy();
     return result;
   }

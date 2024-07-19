@@ -19,6 +19,14 @@
 
 namespace tesseract {
 
+Image::Image(Pix *pix)
+    : pix_(pix) {}
+
+Image::Image(Pix *&pix)
+    : pix_(pix) {
+  pix = nullptr;
+}
+
 Image Image::clone() const {
   return pix_ ? pixClone(pix_) : nullptr;
 }
@@ -46,27 +54,89 @@ void Image::replace(Pix *pix) {
   pix_ = pix;
 }
 
-Image& Image::operator =(Pix* pix) {
+void Image::replace(Pix *&pix) {
   if (pix_ != nullptr) {
-  	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-	//
-	// DO NOT invoke pixDestroy on the existing pix_ member pointer! While this would be
-	// the obvious thing to do when `Image` were an *owning* class for the leptonica Pix 
-	// pointer, IT IS NOT.    Doing this cost me dearly, as it only showed up later
-	// when running tesseract bulk tests and then as a *random* Segmentation fault,
-	// which happened due to double-free (this pixDestroy() would not know about the
-	// outside pixDestroy() later on), combined with Windows radom address relocation
-	// (which serves to help protect against fixed-address/offset assuming hacking tools / trojans / viruses)
-	// this resulted in a rather random occurring Segfault (random occurrence while running
-	// the *exact* same test over and over again...)   That was > 7 days lost.
-	// -------------------------------------------------------------------------------------
-	//
-	// this inadvertently triggering a double-free: while `Image` may LOOK like it's a class 
-	// that *owns* the Pix pointer, it DOES NOT: it is merely a C++ wrapper around a leptonica 
-	// pointer and currently little more than that.
-    //pixDestroy(&pix_);
+    pixDestroy(&pix_);
   }
   pix_ = pix;
+  pix = nullptr;
+}
+
+Image &Image::operator=(Pix *pix) {
+  if (pix_ != nullptr) {
+   pixDestroy(&pix_);
+  }
+  pix_ = pix;
+  return *this;
+}
+
+Image &Image::operator=(Pix *&pix) {
+  if (pix_ != nullptr) {
+     pixDestroy(&pix_);
+  }
+  pix_ = pix;
+  pix = nullptr;
+  return *this;
+}
+
+Image::Image(const Image &src) {
+  // copy constructor: clone the source
+  if (this != &src) {
+    if (pix_)
+      pixDestroy(&pix_);
+    if (src.pix_)
+      pix_ = pixClone(src);
+    else
+      pix_ = nullptr;
+  }
+}
+Image::Image(Image &&src) noexcept {
+  if (this != &src) {
+    if (pix_)
+      pixDestroy(&pix_);
+    if (src.pix_) {
+      pix_ = src.pix_;
+      src.pix_ = nullptr;
+    } else {
+      pix_ = nullptr;
+    }
+  }
+}
+
+Image::~Image() {
+  if (pix_)
+    pixDestroy(&pix_);
+}
+
+Image &Image::operator=(const Image &src) {
+  if (this != &src) {
+    if (pix_)
+      pixDestroy(&pix_);
+    if (src.pix_)
+      pix_ = pixClone(src);
+    else
+      pix_ = nullptr;
+  }
+  return *this;
+}
+
+Image &Image::operator=(Image &&src) noexcept {
+  if (this != &src) {
+    if (pix_)
+      pixDestroy(&pix_);
+    if (src.pix_) {
+      pix_ = src.pix_;
+      src.pix_ = nullptr;
+    } else {
+      pix_ = nullptr;
+    }
+  }
+  return *this;
+}
+
+Image &Image::operator=(decltype(nullptr)) {
+  if (pix_)
+    pixDestroy(&pix_);
   return *this;
 }
 
@@ -88,4 +158,4 @@ Image &Image::operator&=(Image i) {
   return *this;
 }
 
-}
+} // namespace tesseract
