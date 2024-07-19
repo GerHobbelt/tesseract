@@ -347,7 +347,6 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   const int kMaxImageWidth = 128 * pixGetHeight(pix);
   if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
     tprintError("Image too large to learn!! Size = {}x{}\n", pixGetWidth(pix), pixGetHeight(pix));
-    //pix.destroy();
     return false;
   }
   if (upside_down) {
@@ -398,11 +397,9 @@ bool LSTMRecognizer::RecognizeLine(const ImageData &image_data,
         SetRandomSeed();
         network_->Forward(HasDebug(), *inputs, nullptr, &scratch_space_, outputs);
       }
-      //inv_pix.destroy();
     }
   }
 
-  //pix.destroy();
   if (HasDebug()) {
     std::vector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);

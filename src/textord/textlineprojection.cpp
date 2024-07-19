@@ -54,7 +54,6 @@ TextlineProjection::TextlineProjection(int resolution) : x_origin_(0), y_origin_
   }
 }
 TextlineProjection::~TextlineProjection() {
-  //pix_.destroy();
 }
 
 // Build the projection profile given the input_block containing lists of
@@ -66,7 +65,6 @@ TextlineProjection::~TextlineProjection() {
 // the range of projection.
 void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD &rotation,
                                              Image nontext_map) {
-  //pix_.destroy();
   TBOX image_box(0, 0, pixGetWidth(nontext_map), pixGetHeight(nontext_map));
   x_origin_ = 0;
   y_origin_ = image_box.height();
@@ -78,7 +76,6 @@ void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD
   ProjectBlobs(&input_block->large_blobs, rotation, image_box, nontext_map);
   Image final_pix = pixBlockconv(pix_, 1, 1);
   //  Pix* final_pix = pixBlockconv(pix_, 2, 2);
-  //pix_.destroy();
   pix_ = final_pix;
 }
 
@@ -150,7 +147,6 @@ void TextlineProjection::DisplayProjection() const {
   ScrollViewReference win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
   win->Draw(pixc, 0, win->TranslateYCoordinate(0), "TextlineProjection::DisplayProjection");
   win->UpdateWindow();
-  //pixc.destroy();
 }
 
 #endif // !GRAPHICS_DISABLED

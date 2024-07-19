@@ -599,7 +599,6 @@ float EquationDetect::ComputeForegroundDensity(const TBOX &tbox) {
   Image pix_sub = pixClipRectangle(pix_bi, box, nullptr);
   l_float32 fract;
   pixForegroundFraction(pix_sub, &fract);
-  //pix_sub.destroy();
   boxDestroy(&box);
 
   return fract;
@@ -1419,7 +1418,6 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  //pix.destroy();
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {

@@ -268,7 +268,6 @@ void CCNonTextDetect::MarkAndDeleteNonTextBlobs(BLOBNBOX_LIST *blobs, int max_bl
         Image blob_pix = blob->cblob()->render_outline();
         pixRasterop(nontext_mask, box.left(), imageheight - box.top(), box.width(), box.height(),
                     PIX_SRC | PIX_DST, blob_pix, 0, 0);
-        //blob_pix.destroy();
       } else {
         if (box.area() < gridsize() * gridsize()) {
           // It is a really bad idea to make lots of small components in the

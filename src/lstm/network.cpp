@@ -378,7 +378,6 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
 int Network::DisplayImage(Image pix, const char *title, ScrollViewReference &window) {
   int height = pixGetHeight(pix);
   window->Draw(pix, 0, 0 /* window->TranslateYCoordinate(0) -- window::Draw() implementations perform the TranslateYCoordinate() internally */, title);
-  //pix.destroy();
   return height;
 }
 #endif // !GRAPHICS_DISABLED

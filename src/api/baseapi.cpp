@@ -1350,7 +1350,6 @@ bool TessBaseAPI::NormalizeImage(int mode) {
 
     default:
       tprintError("Unsupported normalization mode {} -> {}; not performing any normalization.\n", mode, process);
-      //pix.destroy();
       return false;
   }
 
@@ -1382,9 +1381,6 @@ bool TessBaseAPI::NormalizeImage(int mode) {
       thresholder_->SetImage(pix);
       break;
   }
-
-  //pix.destroy();
-  //result_pix.destroy();
 
   return true;
 }
@@ -1505,10 +1501,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       renderer->AddImage(this);
 
       boxaDestroy(&default_boxes);
-      //pixDestroy(&newpix);
     }
 
-    //pixDestroy(&pix);
     if (!r) {
       return false;
     }
@@ -1546,7 +1540,6 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     tprintInfo("Processing page #{} of multipage TIFF {}\n", page_number + 1, filename ? filename : "(from internal storage)");
     tesseract_->applybox_page.set_value(page_number);
     bool r = ProcessPage(pix, filename, renderer);
-    //pixDestroy(&pix);
     if (!r) {
       return false;
     }
@@ -1739,7 +1732,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
 
   // Begin the output
   if (renderer && !renderer->BeginDocument(document_title.c_str())) {
-    //pixDestroy(&pix);
     return false;
   }
 
@@ -1751,9 +1743,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
     tesseract_->applybox_page.set_value(-1 /* all pages */);
 	  r = ProcessPage(pix, filename, renderer);
   }
-
-  // Clean up memory as needed
-  //pixDestroy(&pix);
 
   Monitor().bump_progress().exec_progress_func();
 

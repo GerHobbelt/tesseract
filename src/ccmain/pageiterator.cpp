@@ -474,7 +474,6 @@ Pix *PageIterator::GetBinaryImage(PageIteratorLevel level) const {
     pixRasterop(pix, std::max(0, -mask_x), std::max(0, -mask_y),
                 pixGetWidth(pix), pixGetHeight(pix), PIX_SRC & PIX_DST, mask,
                 std::max(0, mask_x), std::max(0, mask_y));
-    //mask.destroy();
   }
   return pix.clone2pix();
 }
@@ -521,12 +520,10 @@ Pix *PageIterator::GetImage(PageIteratorLevel level, int padding,
     pixRasterop(resized_mask, std::max(0, -mask_x), std::max(0, -mask_y), width,
                 height, PIX_SRC, mask, std::max(0, mask_x),
                 std::max(0, mask_y));
-    //mask.destroy();
     pixDilateBrick(resized_mask, resized_mask, 2 * padding + 1,
                    2 * padding + 1);
     pixInvert(resized_mask, resized_mask);
     pixSetMasked(grey_pix, resized_mask, UINT32_MAX);
-    //resized_mask.destroy();
   }
   return std::move(grey_pix);
 }

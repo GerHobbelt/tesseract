@@ -1300,7 +1300,6 @@ namespace tesseract {
         }
       }
 #endif
-      //img.destroy();
       fputs(
         fmt::format("<section class=\"image-display\">\n\
   <h6>image #{:02d}: {}</h6>\n\

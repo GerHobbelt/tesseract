@@ -94,7 +94,6 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
   }
   if (width < min_width || height < min_width) {
     tprintError("Image too small to scale!! ({}x{} vs minimum width of {})\n", width, height, min_width);
-    //pix.destroy();
     return nullptr;
   }
   return pix;
@@ -112,7 +111,7 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
   bool color = shape.depth() == 3;
   Image var_pix = pix;
   int depth = pixGetDepth(var_pix);
-  Image normed_pix;
+  Image normed_pix = nullptr;
   // On input to BaseAPI, an image is forced to be 1, 8 or 24 bit, without
   // colormap, so we just have to deal with depth conversion here.
   if (color) {
@@ -139,7 +138,6 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
     // Get the scaled image.
     float im_factor = static_cast<float>(target_height) / height;
     Image scaled_pix = pixScale(normed_pix, im_factor, im_factor);
-    //normed_pix.destroy();
     normed_pix = scaled_pix;
   }
   if (tess != nullptr && (verbose_process || tess->tessedit_dump_pageseg_images))
@@ -147,7 +145,6 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
       tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
   input->FromPix(shape, normed_pix, randomizer);
-  //normed_pix.destroy();
 }
 
 } // namespace tesseract.

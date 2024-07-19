@@ -569,12 +569,6 @@ void Tesseract::Clear(bool invoked_by_destructor) {
     ClearPixForDebugView();
   }
 
-  //pix_original_.destroy();
-  //pix_binary_.destroy();
-  //pix_grey_.destroy();
-  //pix_thresholds_.destroy();
-  //pix_for_debug_view_.destroy();
-  //scaled_color_.destroy();
   deskew_ = FCOORD(1.0f, 0.0f);
   reskew_ = FCOORD(1.0f, 0.0f);
   gradient_ = 0.0f;
@@ -849,7 +843,6 @@ void Tesseract::set_pix_grey(Image grey_pix) {
 
 // Takes ownership of the given original_pix.
 void Tesseract::set_pix_original(Image original_pix) {
-  //pix_original_.destroy();
   pix_original_ = original_pix;
   // Clone to sublangs as well.
   for (auto &lang_ref : sub_langs_) {
@@ -884,7 +877,6 @@ Image Tesseract::GetPixForDebugView() {
 
 void Tesseract::ClearPixForDebugView() {
   if (pix_for_debug_view_ != nullptr) {
-    //pix_for_debug_view_.destroy();
     pix_for_debug_view_ = nullptr;
   }
 }
@@ -908,7 +900,6 @@ Image Tesseract::BestPix() const {
 }
 
 void Tesseract::set_pix_thresholds(Image thresholds) {
-  //pix_thresholds_.destroy();
   pix_thresholds_ = thresholds;
 }
 

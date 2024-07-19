@@ -64,7 +64,6 @@ static Image RemoveEnclosingCircle(Image pixs) {
   pixSetOrClearBorder(pixc, 1, 1, 1, 1, PIX_SET);
   pixSeedfillBinary(pixc, pixc, pixsi, 4);
   pixInvert(pixc, pixc);
-  //pixsi.destroy();
   Image pixt = pixs & pixc;
   l_int32 max_count;
   pixCountConnComp(pixt, 8, &max_count);
@@ -72,7 +71,6 @@ static Image RemoveEnclosingCircle(Image pixs) {
   l_int32 min_count = INT32_MAX;
   Image pixout = nullptr;
   for (int i = 1; i < kMaxCircleErosions; i++) {
-    //pixt.destroy();
     pixErodeBrick(pixc, pixc, 3, 3);
     pixt = pixs & pixc;
     l_int32 count;
@@ -82,14 +80,11 @@ static Image RemoveEnclosingCircle(Image pixs) {
       min_count = count;
     } else if (count < min_count) {
       min_count = count;
-      //pixout.destroy();
       pixout = pixt.copy(); // Save the best.
     } else if (count >= min_count) {
       break; // We have passed by the best.
     }
   }
-  //pixt.destroy();
-  //pixc.destroy();
   return pixout;
 }
 
@@ -160,7 +155,6 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     if (pageseg_mode == PSM_CIRCLE_WORD) {
       Image pixcleaned = RemoveEnclosingCircle(pix_binary_);
       if (pixcleaned != nullptr) {
-        //pix_binary_.destroy();
         pix_binary_ = pixcleaned;
       }
     }
@@ -266,8 +260,6 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
     }
     delete finder;
   }
-  //photomask_pix.destroy();
-  //musicmask_pix.destroy();
   if (result < 0) {
     return result;
   }
@@ -337,7 +329,6 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       Image pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
       AddPixDebugPage(pix_no_image_, "Setup Page Seg And Detect Orientation : input image with the detected photo regions removed; the black pixels what remain in this image will be treated as *text*.");
       tprintInfo("PROCESS: The black pixels what remain in the above image will be treated as *text pixels* by tesseract (after some denoising, column finding, etc. that follows next). Each area of black pixels will be collected as *bounding boxes* for the original source image pixel areas which will be clipped and fed into the OCR engine core for text recognition. See the '*Recognize (OCR)' section further below in thhe session log report.\n");
-      //pix_no_image_.destroy();
     }
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) {
