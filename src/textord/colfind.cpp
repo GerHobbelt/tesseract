@@ -433,7 +433,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     SmoothPartnerRuns();
 
 #ifndef GRAPHICS_DISABLED
-    if (textord_tabfind_show_partitions) {
+    if (textord_tabfind_show_partitions > 0) {
       ScrollView *window = MakeWindow(400, 300, "Partitions");
       if (window != nullptr) {
         part_grid_.DisplayBoxes(window);
