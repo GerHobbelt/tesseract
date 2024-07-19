@@ -162,7 +162,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix, float angle = 0);
+  void SetImage(const Image &pix, float angle = 0);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.

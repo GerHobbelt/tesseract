@@ -953,7 +953,7 @@ void BackgroundScrollView::PrepCanvas(void) {
   pixSetAll(wh_pix);
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
   ASSERT0(pix.pix_ != wh_pix.pix_);
-  wh_pix.destroy();
+  //wh_pix.destroy();
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.

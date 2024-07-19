@@ -114,8 +114,8 @@ static void SubtractLinesAndResidue(Image line_pix, Image non_line_pix,
   pixSeedfillBinary(fat_line_pix, fat_line_pix, residue_pix, 8);
   // Subtract the residue from the original image.
   pixSubtract(src_pix, src_pix, fat_line_pix);
-  fat_line_pix.destroy();
-  residue_pix.destroy();
+  //fat_line_pix.destroy();
+  //residue_pix.destroy();
 }
 
 // Returns the maximum strokewidth in the given binary image by doubling
@@ -137,7 +137,7 @@ static int MaxStrokeWidth(Image pix) {
     }
     data += wpl;
   }
-  dist_pix.destroy();
+  //dist_pix.destroy();
   return max_dist * 2;
 }
 
@@ -148,7 +148,7 @@ static int NumTouchingIntersections(Box *line_box, Image intersection_pix) {
   }
   Image rect_pix = pixClipRectangle(intersection_pix, line_box, nullptr);
   Boxa *boxa = pixConnComp(rect_pix, nullptr, 8);
-  rect_pix.destroy();
+  //rect_pix.destroy();
   if (boxa == nullptr) {
     return false;
   }
@@ -179,7 +179,7 @@ static int CountPixelsAdjacentToLine(int line_width, Box *line_box, Image nonlin
   boxDestroy(&box);
   l_int32 result;
   pixCountPixels(rect_pix, &result, nullptr);
-  rect_pix.destroy();
+  //rect_pix.destroy();
   return result;
 }
 
@@ -206,7 +206,7 @@ static int FilterFalsePositives(int resolution, Image nonline_pix, Image interse
     boxGetGeometry(box, &x, &y, &box_width, &box_height);
     Image comp_pix = pixaGetPix(pixa, i, L_CLONE);
     int max_width = MaxStrokeWidth(comp_pix);
-    comp_pix.destroy();
+    //comp_pix.destroy();
     bool bad_line = false;
     // If the length is too short to stand-alone as a line, and the box width
     // is thick enough, and the stroke width is thick enough it is bad.
@@ -412,7 +412,7 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
     boxDestroy(&box);
   }
   boxaDestroy(&boxa);
-  intersection_pix.destroy();
+  //intersection_pix.destroy();
   if (music_mask != nullptr) {
     // The mask currently contains just the bars. Use the mask as a seed
     // and the pix_closed as the mask for a seedfill to get all the
@@ -429,11 +429,11 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
       Image rect_pix = pixClipRectangle(music_mask, box, nullptr);
       l_int32 music_pixels;
       pixCountPixels(rect_pix, &music_pixels, nullptr);
-      rect_pix.destroy();
+      //rect_pix.destroy();
       rect_pix = pixClipRectangle(pix_closed, box, nullptr);
       l_int32 all_pixels;
       pixCountPixels(rect_pix, &all_pixels, nullptr);
-      rect_pix.destroy();
+      //rect_pix.destroy();
       if (music_pixels < kMinMusicPixelFraction * all_pixels) {
         // False positive. Delete from the music mask.
         pixClearInRect(music_mask, box);
@@ -442,7 +442,7 @@ static Image FilterMusic(int resolution, Image pix_closed, Image pix_vline, Imag
     }
     boxaDestroy(&boxa);
     if (music_mask.isZero()) {
-      music_mask.destroy();
+      //music_mask.destroy();
     } else {
       pixSubtract(pix_vline, pix_vline, music_mask);
       pixSubtract(pix_hline, pix_hline, music_mask);
@@ -510,7 +510,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
   }
   pix_hollow = pixSubtract(nullptr, pix_closed, pix_solid);
 
-  pix_solid.destroy();
+  //pix_solid.destroy();
 
 	if (verbose_process) {
 	  tprintInfo("PROCESS:"
@@ -524,7 +524,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
     *pix_vline = pixOpenBrick(nullptr, pix_hollow, 1, h_v_line_brick_size);
     *pix_hline = pixOpenBrick(nullptr, pix_hollow, h_v_line_brick_size, 1);
 
-    pix_hollow.destroy();
+    //pix_hollow.destroy();
 
   // Lines are sufficiently rare, that it is worth checking for a zero image.
   bool v_empty = pix_vline->isZero();
@@ -536,7 +536,7 @@ void LineFinder::GetLineMasks(int resolution, Image src_pix, Image *pix_vline, I
       *pix_music_mask = nullptr;
     }
   }
-  pix_closed.destroy();
+  //pix_closed.destroy();
   Image pix_nonlines = nullptr;
   *pix_intersections = nullptr;
   Image extra_non_hlines = nullptr;
@@ -720,14 +720,14 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(pix_intersections, vertical_x, vertical_y, &pix_vline,
                       pix_non_vline, pix, v_lines);
-  pix_intersections.destroy();
+  //pix_intersections.destroy();
   if (pix_hline != nullptr) {
     // Recompute intersections and re-filter false positive h-lines.
     if (pix_vline != nullptr) {
       pix_intersections = pix_vline & pix_hline;
     }
     if (!FilterFalsePositives(resolution, pix_non_hline, pix_intersections, pix_hline)) {
-      pix_hline.destroy();
+      //pix_hline.destroy();
     }
   }
 
@@ -741,7 +741,7 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
       tesseract_->AddPixDebugPage(pix_hline, "find & remove H/V lines : hline");
     }
   }
-  pix_intersections.destroy();
+  //pix_intersections.destroy();
   if (pix_vline != nullptr && pix_hline != nullptr) {
     // Remove joins (intersections) where lines cross, and the residue.
     // Recalculate the intersections, since some lines have been deleted.
@@ -752,7 +752,7 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
     pixSeedfillBinary(pix_join_residue, pix_join_residue, pix, 8);
     // Now remove the intersection residue.
     pixSubtract(pix, pix, pix_join_residue);
-    pix_join_residue.destroy();
+    //pix_join_residue.destroy();
   }
   // Remove any detected music.
   if (pix_music_mask != nullptr && *pix_music_mask != nullptr) {
@@ -765,11 +765,11 @@ void LineFinder::FindAndRemoveLines(int resolution, Image pix, int *vertical_x,
     tesseract_->AddPixDebugPage(pix, "find & remove H/V lines : pix -> result");
   }
 
-  pix_vline.destroy();
-  pix_non_vline.destroy();
-  pix_hline.destroy();
-  pix_non_hline.destroy();
-  pix_intersections.destroy();
+  //pix_vline.destroy();
+  //pix_non_vline.destroy();
+  //pix_hline.destroy();
+  //pix_non_hline.destroy();
+  //pix_intersections.destroy();
 }
 
 } // namespace tesseract.

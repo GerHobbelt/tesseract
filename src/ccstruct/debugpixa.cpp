@@ -785,6 +785,7 @@ namespace tesseract {
   }
 
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
+    ASSERT0(pixGetRefCount(pix) >= 2);
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
     {
@@ -799,14 +800,19 @@ namespace tesseract {
 
     // warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
 #if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
-    pixaAddPix(pixa_, pix, L_COPY);
+    pixaAddPix(pixa_, const_cast<PIX *>(pix.ptr()), L_COPY);
 #else
-    int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
-    Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+    {
+      int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
+      Image pix_debug = pixAddSingleTextblock(const_cast<PIX *>(pix.ptr()), fonts_, caption, color, L_ADD_BELOW, nullptr);
 
-    pixaAddPix(pixa_, pix_debug.relinquish(), L_INSERT);
-    // or use L_CLONE:
-    //pixaAddPix(pixa_, pix_debug, L_CLONE);
+#if 01
+      pixaAddPix(pixa_, pix_debug.relinquish(), L_INSERT);
+#else
+      // or use L_CLONE:
+      pixaAddPix(pixa_, pix_debug, L_CLONE);
+#endif
+  }
 #endif
 
     captions.push_back(caption);
@@ -1224,7 +1230,7 @@ namespace tesseract {
   }
 
   Image MixWithLightRedTintedBackground(const Image &pix, const Image &original_image, const TBOX *cliprect) {
-    return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
+    return pixMixWithTintedBackground(const_cast<PIX *>(pix.ptr()), original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
   static std::string TruncatedForTitle(const std::string &str) {
@@ -1294,7 +1300,7 @@ namespace tesseract {
         }
       }
 #endif
-      img.destroy();
+      //img.destroy();
       fputs(
         fmt::format("<section class=\"image-display\">\n\
   <h6>image #{:02d}: {}</h6>\n\

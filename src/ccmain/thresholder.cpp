@@ -135,7 +135,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
   }
 
   SetImage(pix, angle);
-  pix.destroy();
+  //pix.destroy();
 }
 
 // Store the coordinates of the rectangle to process for later use.
@@ -166,12 +166,16 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix, const float angle) {
-  if (pix_ != nullptr) {
-    pix_.destroy();
-  }
-  Image src = pixRotate(pix, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
-  //Image src = pix;
+void ImageThresholder::SetImage(const Image &pix, const float angle) {
+  //if (pix_ != nullptr) {
+  //  pix_.destroy();
+  //}
+#if 01
+  // clones or creates a freshly rotated copy.
+  Image src = pixRotate(const_cast<PIX *>(pix.ptr()), angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+#else
+  Image src = pix;  // clones
+#endif
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -182,7 +186,7 @@ void ImageThresholder::SetImage(const Image pix, const float angle) {
   } else {
     pix_ = src.copy();
   }
-  src.destroy();
+  //src.destroy();
   depth = pixGetDepth(pix_);
   pix_channels_ = depth / 8;
   pix_wpl_ = pixGetWpl(pix_);
@@ -201,7 +205,7 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     // allows the caller to modify the output.
     Image original = GetPixRect();
     pix_binary = original.copy();
-    original.destroy();
+    //original.destroy();
     return std::make_tuple(true, nullptr, pix_binary, nullptr);
   }
 
@@ -304,13 +308,13 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
   case ThresholdMethod::Nlbin: {
     Image pix = GetPixRect();
     pix_binary = pixNLBin(pix, false);
-    pix.destroy();
+    //pix.destroy();
   } break;
 
   case ThresholdMethod::NlbinAdaptive: {
     Image pix = GetPixRect();
     pix_binary = pixNLBin(pix, true);
-    pix.destroy();
+    //pix.destroy();
   } break;
 
   case ThresholdMethod::Otsu: {
@@ -370,14 +374,14 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
       } else {
         tmp = without_cmap.copy();
       }
-      without_cmap.destroy();
+      //without_cmap.destroy();
       OtsuThresholdRectToPix(tmp, pix);
-      tmp.destroy();
+      //tmp.destroy();
     } else {
       OtsuThresholdRectToPix(pix_, pix);
     }
   }
-  original.destroy();
+  //original.destroy();
   return true;
 }
 
@@ -398,7 +402,7 @@ Image ImageThresholder::GetPixRectThresholds() {
   std::vector<int> thresholds;
   std::vector<int> hi_values;
   OtsuThreshold(pix_grey, 0, 0, width, height, thresholds, hi_values);
-  pix_grey.destroy();
+  //pix_grey.destroy();
   Image pix_thresholds = pixCreate(width, height, 8);
   int threshold = thresholds[0] > 0 ? thresholds[0] : 128;
   pixSetAllArbitrary(pix_thresholds, threshold);
@@ -418,7 +422,7 @@ void ImageThresholder::Init() {
 Image ImageThresholder::GetPixRect() {
   if (IsFullImage()) {
     // Just clone the whole thing.
-    return pix_.clone();
+    return pix_;  //.clone();
   } else {
     // Crop to the given rectangle.
     Box *box = boxCreate(rect_left_, rect_top_, rect_width_, rect_height_);

@@ -17,7 +17,16 @@
 
 #include <leptonica/allheaders.h>
 
+#include <algorithm>
+#include <utility>
+
 namespace tesseract {
+
+#pragma optimize("", off)
+
+Image::Image()
+    : pix_(nullptr) {
+}
 
 Image::Image(Pix *pix)
     : pix_(pix) {
@@ -36,10 +45,28 @@ Image::Image(bool take_ownership, Pix *pix) {
   }
 }
 
+#if 0
+// this is essentially a NIL op, or rather: identical to the basic assignment, as
+// it goes something like this: take original pix_, clone it in here, thus we have
+// a fresh PIX pointer, which is wrapped in a TEMPORARY Image, which takes ownership
+// (without cloning it ;-) ) and then returns that temporary instance to the outside,
+// so on the path towards reaching the target all this does is injecting one more
+// clone + destroy, thanks to the temporary Image instance.
+//
+// The one that was INTENDED is now named clone2pix(): see above: no more temporary
+// (intermediate) Image instance and thus no ownership being gobbled up by temporaries
+// while the cloned PIX is on its way to the receiver!
 Image Image::clone() const {
   if (pix_)
     return pixClone(pix_);
   return Image();
+}
+#endif
+
+Pix *Image::clone2pix() const {
+  if (pix_)
+    return pixClone(pix_);
+  return nullptr;
 }
 
 Image Image::copy() const {
@@ -78,7 +105,7 @@ void Image::replace(Pix *&pix) {
 Image::Image(const Image &src) {
   // copy constructor: clone the source
   if (src.pix_)
-    pix_ = pixClone(src);
+    pix_ = pixClone(const_cast<PIX *>(src.ptr()));
 }
 Image::Image(Image &&src) noexcept {
   // move constructor: take ownership of the source
@@ -91,7 +118,19 @@ Image::~Image() {
     pixDestroy(&pix_);
 }
 
-Image::operator Pix *() const noexcept {
+Pix *Image::ptr() noexcept {
+  return pix_;
+}
+
+const Pix *Image::ptr() const noexcept {
+  return pix_;
+}
+
+Image::operator const Pix *() const noexcept {
+  return pix_;
+}
+
+Image::operator Pix *() noexcept {
   return pix_;
 }
 
@@ -109,26 +148,28 @@ Pix *Image::relinquish() noexcept {
   return rv;
 }
 
-Pix *Image::operator->() const noexcept {
+Pix *Image::operator->() noexcept {
+  return pix_;
+}
+
+const Pix *Image::operator->() const noexcept {
   return pix_;
 }
 
 Image &Image::operator=(const Image &src) {
   // copy assignment: share ownership
-  if (this != &src) {
+  if (pix_ != src.pix_) {
     if (pix_)
       pixDestroy(&pix_);
     if (src.pix_)
-      pix_ = pixClone(src);
+      pix_ = pixClone(const_cast<PIX *>(src.ptr()));
   }
   return *this;
 }
 
 Image &Image::operator=(Image &&src) noexcept {
   // move assignment: take ownership by SWAPPING: that way we guarantee our `noexcept` clause.
-  auto p = pix_;
-  pix_ = src.pix_;
-  src.pix_ = p;
+  std::swap(pix_, src.pix_);
   return *this;
 }
 

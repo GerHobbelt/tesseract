@@ -397,7 +397,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     // construct a base page image based on the greyscale image, bumped up by the binary for emphasis. Purely done for visual results.
     Image pix = pixConvertTo32(this->pix_grey());
     Image pix2 = pixBlend(pix, this->pix_binary(), 0, 0, 0.33);
-    pix.destroy();
+    //pix.destroy();
 
     auto count = words->size();
     BOXA *boxa = boxaCreate(count);
@@ -446,8 +446,8 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     // Note that we don't use MixWithLightRedTintedBackground() here, but a tweaked version there-of.
     Image composite = pixMixWithTintedBackground(fg, pix_grey(), 0.9, 0.9, 0.9, 0.95, 0.5, nullptr);
 
-    fg.destroy();
-    pix2.destroy();
+    //fg.destroy();
+    //pix2.destroy();
 
     // pixBlendBackgroundToColor();
     // pixSetBlackOrWhiteBoxa(mask, boxa, L_SET_BLACK);
@@ -460,7 +460,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
 
     // TODO: mention links to further tips and approaches, including tesseract documentation pages.
 
-    composite.destroy();
+    //composite.destroy();
 
     boxaClear(boxa);
     boxaDestroy(&boxa);
