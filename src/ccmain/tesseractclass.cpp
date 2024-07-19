@@ -876,9 +876,7 @@ Image Tesseract::GetPixForDebugView() {
 }
 
 void Tesseract::ClearPixForDebugView() {
-  if (pix_for_debug_view_ != nullptr) {
-    pix_for_debug_view_ = nullptr;
-  }
+  pix_for_debug_view_ = nullptr;      // automagically destroys any image that was kept in here.
 }
 
 // Returns a pointer to a Pix representing the best available resolution image
