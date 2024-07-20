@@ -406,7 +406,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     if (superscript_debug >= 3) {
       tprintf(" recognizing first %d chopped blobs\n", num_chopped_leading);
     }
-    recog_word_recursive(prefix);
+    recog_word_recursive(prefix, 0);
     if (superscript_debug >= 2) {
       tprintf(" The leading bits look like %s %s\n", ScriptPosToString(leading_pos),
               prefix->best_choice->unichar_string().c_str());
@@ -430,7 +430,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     if (superscript_debug >= 3) {
       tprintf(" recognizing last %d chopped blobs\n", num_chopped_trailing);
     }
-    recog_word_recursive(suffix);
+    recog_word_recursive(suffix, 0);
     if (superscript_debug >= 2) {
       tprintf(" The trailing bits look like %s %s\n", ScriptPosToString(trailing_pos),
               suffix->best_choice->unichar_string().c_str());
@@ -461,7 +461,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     delete bb1;
     return nullptr;
   }
-  recog_word_recursive(core);
+  recog_word_recursive(core, 0);
 
   // Now paste the results together into core.
   if (suffix) {
