@@ -57,7 +57,6 @@ void Tesseract::recog_word(WERD_RES *word, int call_depth) {
     ASSERT_HOST((word->best_choice == nullptr) == (word->raw_choice == nullptr));
       //word->tess_failed = true;
     word->ClearResults();
-    //  word->reject_map.initialise(word->box_word->length());            --crash
      word->reject_map.initialise(word->uch_set->size());
     word->reject_map.rej_word_tess_failure();
       return;
@@ -116,18 +115,9 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
   {
     static float depth_ema = 0.0;
     if (call_depth > depth_ema) {
-#  if 0
-      static int maxx = 0;
-      if (maxx < call_depth && call_depth > 20 && call_depth % 10 == 0) {
-        maxx = call_depth;
-        tprintDebug("recog_word_recursive call depth: {}, peak: {} +EMA: {}, word length: {}\n", call_depth, maxx, depth_ema, word_length);
-      }
-      if (maxx < call_depth) 
-        maxx = call_depth;
-#  else
       if (debug_recog_word_recursion_depth && call_depth >= 10)
         tprintDebug("recog_word_recursive call depth: {}, peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
-#  endif
+
       depth_ema = call_depth;
     } else {
       // decay rate: slow decay, so we only catch the noteworthy peaks in the diag/log output.
@@ -375,25 +365,11 @@ void Tesseract::join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_b
     // so we push the failed state into `word` and then pass it on, letting the invokers deal with the aftermath.
     // 
     // Cleanup and mark `word` failed (if it isn't already), propagating the failed state down the call chain.
-//    word2->chopped_word->blobs.clear();
-//    word2->rebuild_word->blobs.clear();
-
-    // ripped from elsewhere in the codebase: saw this waiting for us way up the call chain so I assume we'll survive, when cloning that.
-    // 
-#if 01
-    //if (word->best_choice == nullptr || word->best_choice->empty() ||
-      //  strspn(word->best_choice->unichar_string().c_str(), " ") ==
-      //      word->best_choice->length()) {
       word->tess_failed = true;
     ASSERT_HOST((word->best_choice == nullptr) == (word->raw_choice == nullptr));
     word->ClearResults();
       word->reject_map.initialise(word->uch_set->size());
       word->reject_map.rej_word_tess_failure();
-#else
-    // set word as faked/failed and call it a day.
-    word->SetupFake(*word->uch_set);
-#endif
-
     delete word2;
   }
 }
