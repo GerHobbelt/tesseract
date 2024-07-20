@@ -51,6 +51,17 @@ void Tesseract::recog_word(WERD_RES *word, int call_depth) {
   }
   ASSERT_HOST(!word->chopped_word->blobs.empty());
   recog_word_recursive(word, call_depth + 1);
+  if (word->tess_failed) {
+    // word is already marked and set up to fail, so we percolate down...
+    // ...after we duplicate the effort further below for when word is a failed one.
+    ASSERT_HOST((word->best_choice == nullptr) == (word->raw_choice == nullptr));
+      //word->tess_failed = true;
+    word->ClearResults();
+    //  word->reject_map.initialise(word->box_word->length());            --crash
+     word->reject_map.initialise(word->uch_set->size());
+    word->reject_map.rej_word_tess_failure();
+      return;
+  }
   word->SetupBoxWord();
   ASSERT_HOST(word->best_choice != nullptr);
   ASSERT_HOST(static_cast<unsigned>(word->best_choice->length()) == word->box_word->length());
@@ -84,6 +95,8 @@ void Tesseract::recog_word(WERD_RES *word, int call_depth) {
       strspn(word->best_choice->unichar_string().c_str(), " ") ==
           word->best_choice->length()) {
     word->tess_failed = true;
+    ASSERT_HOST((word->best_choice == nullptr) == (word->raw_choice == nullptr));
+    word->ClearResults();
     word->reject_map.initialise(word->box_word->length());
     word->reject_map.rej_word_tess_failure();
   } else {
@@ -103,24 +116,57 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
   {
     static float depth_ema = 0.0;
     if (call_depth > depth_ema) {
+#  if 0
       static int maxx = 0;
       if (maxx < call_depth && call_depth > 20 && call_depth % 10 == 0) {
         maxx = call_depth;
-        tprintDebug("recog_word_recursive call depth: {}, peak: {} +EMA: {}, word length: \n", call_depth, maxx, depth_ema, word_length);
-    }
+        tprintDebug("recog_word_recursive call depth: {}, peak: {} +EMA: {}, word length: {}\n", call_depth, maxx, depth_ema, word_length);
+      }
       if (maxx < call_depth) 
         maxx = call_depth;
-
-        depth_ema = call_depth;
+#  else
+      if (debug_recog_word_recursion_depth && call_depth >= 10)
+        tprintDebug("recog_word_recursive call depth: {}, peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
+#  endif
+      depth_ema = call_depth;
     } else {
+      // decay rate: slow decay, so we only catch the noteworthy peaks in the diag/log output.
       depth_ema *= 0.97;
       depth_ema += 0.03 * call_depth;
     }
+
+    bool restrict_recursion = (call_depth >= recog_word_recursion_depth_limit);
+
+    if (!restrict_recursion && owner_.Monitor().bump_progress().exec_progress_func().kick_watchdog_and_check_for_cancel()) {
+      // deadline reached: as we don't check all the way down once we get a cancel signal, dial down the call depth limit to insane low values in order to stop the word recognizer in its tracks for the remainder of the run.
+      //
+      // what we do to also keep the userland configured value is to flip its sign: that way we can flip that value back at the end of the run if its only this particular session's
+      // deadline that's expired, not just the entire session's -- this is us anticipating tesseract core readying for batch processing in a single session.
+      recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
+
+      tprintInfo("recog_word_recursive call depth is restricted by CANCEL SIGNAL at level {} --> peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
+
+      // set word as faked/failed and call it a day.
+      word->SetupFake(*word->uch_set);
+
+      return;
+    }
+
+    if (!restrict_recursion && word_length > MAX_UNDIVIDED_LENGTH) {
+      return split_and_recog_word(word, call_depth);
+    } else if (restrict_recursion) {
+      tprintWarn("recog_word_recursive call depth is restricted by configuration parameter at level {} --> peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
+
+      // prevent long waits due to gigantic word lengths being processed by cc_recog() as if they were real...
+      if (word_length > MAX_UNDIVIDED_LENGTH * 2) {
+        // set word as faked/failed and call it a day.
+        word->SetupFake(*word->uch_set);
+
+        return;
+      }
+    }
   }
 
-  if (word_length > MAX_UNDIVIDED_LENGTH) {
-    return split_and_recog_word(word, call_depth);
-  }
   cc_recog(word);
   word_length = word->rebuild_word->NumBlobs(); // No of blobs in output.
 
@@ -140,8 +186,6 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
       word->best_choice->append_unichar_id(space_id, 1, 0.0, word->best_choice->certainty());
     }
   }
-
-  (void)owner_.Monitor().bump_progress().exec_progress_func();
 }
 
 /**********************************************************************
@@ -243,86 +287,115 @@ void Tesseract::split_word(WERD_RES *word, unsigned split_pt, WERD_RES **right_p
  *  Also, if orig_bb is provided, stitch it back into word.
  **********************************************************************/
 void Tesseract::join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_bb) const {
-  TBOX prev_box = word->chopped_word->blobs.back()->bounding_box();
-  TBOX blob_box = word2->chopped_word->blobs[0]->bounding_box();
-  // Tack the word2 outputs onto the end of the word outputs.
-  word->chopped_word->blobs.insert(word->chopped_word->blobs.end(), word2->chopped_word->blobs.begin(), word2->chopped_word->blobs.end());
-  word->rebuild_word->blobs.insert(word->rebuild_word->blobs.end(), word2->rebuild_word->blobs.begin(), word2->rebuild_word->blobs.end());
-  word2->chopped_word->blobs.clear();
-  word2->rebuild_word->blobs.clear();
-  TPOINT split_pt;
-  split_pt.x = (prev_box.right() + blob_box.left()) / 2;
-  split_pt.y = (prev_box.top() + prev_box.bottom() + blob_box.top() + blob_box.bottom()) / 4;
-  // Move the word2 seams onto the end of the word1 seam_array.
-  // Since the seam list is one element short, an empty seam marking the
-  // end of the last blob in the first word is needed first.
-  word->seam_array.push_back(new SEAM(0.0f, split_pt));
-  word->seam_array.insert(word->seam_array.end(), word2->seam_array.begin(), word2->seam_array.end());
-  word2->seam_array.clear();
-  // Fix widths and gaps.
-  word->blob_widths.insert(word->blob_widths.end(), word2->blob_widths.begin(), word2->blob_widths.end());
-  word->blob_gaps.insert(word->blob_gaps.end(), word2->blob_gaps.begin(), word2->blob_gaps.end());
-  // Fix the ratings matrix.
-  int rat1 = word->ratings->dimension();
-  int rat2 = word2->ratings->dimension();
-  word->ratings->AttachOnCorner(word2->ratings);
-  ASSERT_HOST(word->ratings->dimension() == rat1 + rat2);
-  word->best_state.insert(word->best_state.end(), word2->best_state.begin(), word2->best_state.end());
-  // Append the word choices.
-  *word->raw_choice += *word2->raw_choice;
+  // due to a timeout or cancel we may end up in here with words marked failed: make sure we don't b0rk on those.
+  if (!word->tess_failed && !word2->tess_failed) {
+    TBOX prev_box = word->chopped_word->blobs.back()->bounding_box();
+    TBOX blob_box = word2->chopped_word->blobs[0]->bounding_box();
+    // Tack the word2 outputs onto the end of the word outputs.
+    word->chopped_word->blobs.insert(word->chopped_word->blobs.end(), word2->chopped_word->blobs.begin(), word2->chopped_word->blobs.end());
+    word->rebuild_word->blobs.insert(word->rebuild_word->blobs.end(), word2->rebuild_word->blobs.begin(), word2->rebuild_word->blobs.end());
+    word2->chopped_word->blobs.clear();
+    word2->rebuild_word->blobs.clear();
+    TPOINT split_pt;
+    split_pt.x = (prev_box.right() + blob_box.left()) / 2;
+    split_pt.y = (prev_box.top() + prev_box.bottom() + blob_box.top() + blob_box.bottom()) / 4;
+    // Move the word2 seams onto the end of the word1 seam_array.
+    // Since the seam list is one element short, an empty seam marking the
+    // end of the last blob in the first word is needed first.
+    word->seam_array.push_back(new SEAM(0.0f, split_pt));
+    word->seam_array.insert(word->seam_array.end(), word2->seam_array.begin(), word2->seam_array.end());
+    word2->seam_array.clear();
+    // Fix widths and gaps.
+    word->blob_widths.insert(word->blob_widths.end(), word2->blob_widths.begin(), word2->blob_widths.end());
+    word->blob_gaps.insert(word->blob_gaps.end(), word2->blob_gaps.begin(), word2->blob_gaps.end());
+    // Fix the ratings matrix.
+    int rat1 = word->ratings->dimension();
+    int rat2 = word2->ratings->dimension();
+    word->ratings->AttachOnCorner(word2->ratings);
+    ASSERT_HOST(word->ratings->dimension() == rat1 + rat2);
+    word->best_state.insert(word->best_state.end(), word2->best_state.begin(), word2->best_state.end());
+    // Append the word choices.
+    *word->raw_choice += *word2->raw_choice;
 
-  // How many alt choices from each should we try to get?
-  const int kAltsPerPiece = 2;
-  // When do we start throwing away extra alt choices?
-  const int kTooManyAltChoices = 100;
+    // How many alt choices from each should we try to get?
+    const int kAltsPerPiece = 2;
+    // When do we start throwing away extra alt choices?
+    const int kTooManyAltChoices = 100;
 
-  // Construct the cartesian product of the best_choices of word(1) and word2.
-  WERD_CHOICE_LIST joined_choices;
-  WERD_CHOICE_IT jc_it(&joined_choices);
-  WERD_CHOICE_IT bc1_it(&word->best_choices);
-  WERD_CHOICE_IT bc2_it(&word2->best_choices);
-  int num_word1_choices = word->best_choices.length();
-  int total_joined_choices = num_word1_choices;
-  // Nota Bene: For the main loop here, we operate only on the 2nd and greater
-  // word2 choices, and put them in the joined_choices list. The 1st word2
-  // choice gets added to the original word1 choices in-place after we have
-  // finished with them.
-  int bc2_index = 1;
-  for (bc2_it.forward(); !bc2_it.at_first(); bc2_it.forward(), ++bc2_index) {
-    if (total_joined_choices >= kTooManyAltChoices && bc2_index > kAltsPerPiece) {
-      break;
-    }
-    int bc1_index = 0;
-    for (bc1_it.move_to_first(); bc1_index < num_word1_choices; ++bc1_index, bc1_it.forward()) {
-      if (total_joined_choices >= kTooManyAltChoices && bc1_index > kAltsPerPiece) {
+    // Construct the cartesian product of the best_choices of word(1) and word2.
+    WERD_CHOICE_LIST joined_choices;
+    WERD_CHOICE_IT jc_it(&joined_choices);
+    WERD_CHOICE_IT bc1_it(&word->best_choices);
+    WERD_CHOICE_IT bc2_it(&word2->best_choices);
+    int num_word1_choices = word->best_choices.length();
+    int total_joined_choices = num_word1_choices;
+    // Nota Bene: For the main loop here, we operate only on the 2nd and greater
+    // word2 choices, and put them in the joined_choices list. The 1st word2
+    // choice gets added to the original word1 choices in-place after we have
+    // finished with them.
+    int bc2_index = 1;
+    for (bc2_it.forward(); !bc2_it.at_first(); bc2_it.forward(), ++bc2_index) {
+      if (total_joined_choices >= kTooManyAltChoices && bc2_index > kAltsPerPiece) {
         break;
       }
-      auto *wc = new WERD_CHOICE(*bc1_it.data());
-      *wc += *bc2_it.data();
-      jc_it.add_after_then_move(wc);
-      ++total_joined_choices;
+      int bc1_index = 0;
+      for (bc1_it.move_to_first(); bc1_index < num_word1_choices; ++bc1_index, bc1_it.forward()) {
+        if (total_joined_choices >= kTooManyAltChoices && bc1_index > kAltsPerPiece) {
+          break;
+        }
+        auto *wc = new WERD_CHOICE(*bc1_it.data());
+        *wc += *bc2_it.data();
+        jc_it.add_after_then_move(wc);
+        ++total_joined_choices;
+      }
     }
-  }
-  // Now that we've filled in as many alternates as we want, paste the best
-  // choice for word2 onto the original word alt_choices.
-  bc1_it.move_to_first();
-  bc2_it.move_to_first();
-  for (bc1_it.mark_cycle_pt(); !bc1_it.cycled_list(); bc1_it.forward()) {
-    *bc1_it.data() += *bc2_it.data();
-  }
-  bc1_it.move_to_last();
-  bc1_it.add_list_after(&joined_choices);
+    // Now that we've filled in as many alternates as we want, paste the best
+    // choice for word2 onto the original word alt_choices.
+    bc1_it.move_to_first();
+    bc2_it.move_to_first();
+    for (bc1_it.mark_cycle_pt(); !bc1_it.cycled_list(); bc1_it.forward()) {
+      *bc1_it.data() += *bc2_it.data();
+    }
+    bc1_it.move_to_last();
+    bc1_it.add_list_after(&joined_choices);
 
-  // Restore the pointer to original blamer bundle and combine blamer
-  // information recorded in the splits.
-  if (orig_bb != nullptr) {
-    orig_bb->JoinBlames(*word->blamer_bundle, *word2->blamer_bundle, wordrec_debug_blamer);
-    delete word->blamer_bundle;
-    word->blamer_bundle = orig_bb;
+    // Restore the pointer to original blamer bundle and combine blamer
+    // information recorded in the splits.
+    if (orig_bb != nullptr) {
+      orig_bb->JoinBlames(*word->blamer_bundle, *word2->blamer_bundle, wordrec_debug_blamer);
+      delete word->blamer_bundle;
+      word->blamer_bundle = orig_bb;
+    }
+    word->SetupBoxWord();
+    word->reject_map.initialise(word->box_word->length());
+    delete word2;
+  } else {
+    // [GerH] to propagate or not to propagate, that is the question here.
+    // We choose to propagate as we tried the other approach and had a spot of trouble and doubtful of our capabilities to deal,
+    // so we push the failed state into `word` and then pass it on, letting the invokers deal with the aftermath.
+    // 
+    // Cleanup and mark `word` failed (if it isn't already), propagating the failed state down the call chain.
+//    word2->chopped_word->blobs.clear();
+//    word2->rebuild_word->blobs.clear();
+
+    // ripped from elsewhere in the codebase: saw this waiting for us way up the call chain so I assume we'll survive, when cloning that.
+    // 
+#if 01
+    //if (word->best_choice == nullptr || word->best_choice->empty() ||
+      //  strspn(word->best_choice->unichar_string().c_str(), " ") ==
+      //      word->best_choice->length()) {
+      word->tess_failed = true;
+    ASSERT_HOST((word->best_choice == nullptr) == (word->raw_choice == nullptr));
+    word->ClearResults();
+      word->reject_map.initialise(word->uch_set->size());
+      word->reject_map.rej_word_tess_failure();
+#else
+    // set word as faked/failed and call it a day.
+    word->SetupFake(*word->uch_set);
+#endif
+
+    delete word2;
   }
-  word->SetupBoxWord();
-  word->reject_map.initialise(word->box_word->length());
-  delete word2;
 }
 
 } // namespace tesseract

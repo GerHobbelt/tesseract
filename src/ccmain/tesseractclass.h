@@ -1038,6 +1038,10 @@ public:
   BOOL_VAR_H(dump_segmented_word_images);
   BOOL_VAR_H(dump_osdetect_process_images);
   INT_VAR_H(activity_timeout_millisec);
+  BOOL_VAR_H(debug_recog_word_recursion_depth);
+  INT_VAR_H(recog_word_recursion_depth_limit);
+  BOOL_VAR_H(debug_output_diagnostics_HTML);
+  INT_VAR_H(debug_output_diagnostics_images_format);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);

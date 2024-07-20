@@ -41,6 +41,8 @@ Image pixMixWithTintedBackground(const Image &src, const Image &background,
                                 float src_factor, float background_factor,
                                 const TBOX *cliprect);
 
+bool pixAlphaIsSaneAndPresent(const PIX *pix);
+
 } // namespace tesseract.
 
 #endif 

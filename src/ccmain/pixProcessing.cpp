@@ -843,4 +843,39 @@ static inline int MIX(int val1, int val2, const int factor) {
 
 
 
+
+
+/*-------------------------------------------------------------*
+ *                 Test alpha component saneness               *
+ *-------------------------------------------------------------*/
+/*!
+ * \brief   pixAlphaIsSaneAndPresent()
+ *
+ * Contrating the result you would get from pixAlphaIsOpaque(), many PIXs
+ * processed by leptonica have their 4th byte, i.e. their alpha channel,
+ * zeroed out as those are 4 deep 32bit RGB images.
+ *
+ * This function checks if ALL alpha values are either all 255 or all 0, in which
+ * case we decide the pix is opaque; otherwise there's a real alpha channel present.
+ * 
+ * \param[in]    pix       32 bpp, spp == 4
+ * \return       opaque    1 if a 'sane' alpha channel is present, 0 otherwise.
+ *
+ * Notes:
+ *      1) On error, we return 0, i.e. 'opaque'.
+ * 
+ *      2) on close inspection of the leptonica code (RTFC), the condition
+ *         to test the alpha channel is
+ *              (alpha ^ 0xff)
+ *         which matches any value != 0 AND != 0xFF, i.e. leptonica already does
+ *         what we intend. Thus we can simply use the leptonica code.
+ */
+bool pixAlphaIsSaneAndPresent(const PIX *pix) {
+  l_int32 opaque;
+
+  if (pixAlphaIsOpaque(const_cast<PIX *>(pix), &opaque))
+    return false;
+  return !opaque;
+}
+
 } // namespace tesseract
