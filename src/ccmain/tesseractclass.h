@@ -647,9 +647,9 @@ public:
       WERD_RES *word, uint16_t mode);
 
   //// tfacepp.cpp ///////////////////////////////////////////////////////
-  void recog_word_recursive(WERD_RES *word);
-  void recog_word(WERD_RES *word);
-  void split_and_recog_word(WERD_RES *word);
+  void recog_word_recursive(WERD_RES *word, int call_depth);
+  void recog_word(WERD_RES *word, int call_depth);
+  void split_and_recog_word(WERD_RES *word, int call_depth);
   void split_word(WERD_RES *word, unsigned split_pt, WERD_RES **right_piece,
                   BlamerBundle **orig_blamer_bundle) const;
   void join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_bb) const;

@@ -49,7 +49,7 @@ void Tesseract::tess_segment_pass_n(int pass_n, WERD_RES *word) {
   } else {
     set_pass2();
   }
-  recog_word(word);
+  recog_word(word, 0);
   if (word->best_choice == nullptr) {
     word->SetupFake(*word->uch_set);
   }

@@ -39,7 +39,7 @@
  **********************************************************************/
 namespace tesseract {
 
-void Tesseract::recog_word(WERD_RES *word) {
+void Tesseract::recog_word(WERD_RES *word, int call_depth) {
   if (wordrec_skip_no_truth_words &&
       (word->blamer_bundle == nullptr ||
        word->blamer_bundle->incorrect_result_reason() == IRR_NO_TRUTH)) {
@@ -50,7 +50,7 @@ void Tesseract::recog_word(WERD_RES *word) {
     return;
   }
   ASSERT_HOST(!word->chopped_word->blobs.empty());
-  recog_word_recursive(word);
+  recog_word_recursive(word, call_depth + 1);
   word->SetupBoxWord();
   ASSERT_HOST(word->best_choice != nullptr);
   ASSERT_HOST(static_cast<unsigned>(word->best_choice->length()) == word->box_word->length());
@@ -97,10 +97,23 @@ void Tesseract::recog_word(WERD_RES *word) {
  * Convert the word to tess form and pass it to the tess segmenter.
  * Convert the output back to editor form.
  **********************************************************************/
-void Tesseract::recog_word_recursive(WERD_RES *word) {
+void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
   auto word_length = word->chopped_word->NumBlobs(); // no of blobs
+
+  {
+    static float depth_ema = 0.0;
+    if (call_depth > depth_ema) {
+      if (call_depth % 10 == 0)
+        tprintDebug("recog_word_recursive call depth: {}, peak EMA: {}, word length: \n", call_depth, depth_ema, word_length);
+      depth_ema = call_depth;
+    } else {
+      depth_ema *= 0.97;
+      depth_ema += 0.03 * call_depth;
+    }
+  }
+
   if (word_length > MAX_UNDIVIDED_LENGTH) {
-    return split_and_recog_word(word);
+    return split_and_recog_word(word, call_depth);
   }
   cc_recog(word);
   word_length = word->rebuild_word->NumBlobs(); // No of blobs in output.
@@ -131,7 +144,7 @@ void Tesseract::recog_word_recursive(WERD_RES *word) {
  * Split the word into 2 smaller pieces at the largest gap.
  * Recognize the pieces and stick the results back together.
  **********************************************************************/
-void Tesseract::split_and_recog_word(WERD_RES *word) {
+void Tesseract::split_and_recog_word(WERD_RES *word, int call_depth) {
   // Find the biggest blob gap in the chopped_word.
   int bestgap = -INT32_MAX;
   int split_index = 0;
@@ -151,9 +164,9 @@ void Tesseract::split_and_recog_word(WERD_RES *word) {
   split_word(word, split_index, &word2, &orig_bb);
 
   // Recognize the first part of the word.
-  recog_word_recursive(word);
+  recog_word_recursive(word, call_depth + 1);
   // Recognize the second part of the word.
-  recog_word_recursive(word2);
+  recog_word_recursive(word2, call_depth + 1);
 
   join_words(word, word2, orig_bb);
 
