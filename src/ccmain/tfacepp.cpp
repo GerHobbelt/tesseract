@@ -103,9 +103,15 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
   {
     static float depth_ema = 0.0;
     if (call_depth > depth_ema) {
-      if (call_depth % 10 == 0)
-        tprintDebug("recog_word_recursive call depth: {}, peak EMA: {}, word length: \n", call_depth, depth_ema, word_length);
-      depth_ema = call_depth;
+      static int maxx = 0;
+      if (maxx < call_depth && call_depth > 20 && call_depth % 10 == 0) {
+        maxx = call_depth;
+        tprintDebug("recog_word_recursive call depth: {}, peak: {} +EMA: {}, word length: \n", call_depth, maxx, depth_ema, word_length);
+    }
+      if (maxx < call_depth) 
+        maxx = call_depth;
+
+        depth_ema = call_depth;
     } else {
       depth_ema *= 0.97;
       depth_ema += 0.03 * call_depth;

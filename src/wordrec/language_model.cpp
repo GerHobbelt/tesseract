@@ -1249,7 +1249,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
   if (dict_->stopper_debug_level >= 1) {
     std::string word_str;
     word->string_and_lengths(&word_str, nullptr);
-    vse->Print(mdqstr(word_str.c_str()));
+    vse->Print(mdqstr(word_str).c_str());
   }
   if (language_model_debug_level > 0) {
     word->print("UpdateBestChoice() constructed word");
