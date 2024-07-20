@@ -32,6 +32,7 @@
 #include "lm_state.h"                // for ViterbiStateEntry, ViterbiState...
 #include "matrix.h"                  // for MATRIX_COORD
 #include "pageres.h"                 // for WERD_RES
+#include "helpers.h"                 // for mdqstr()
 #include <tesseract/params.h>                  // for IntParam, BoolParam, DoubleParam
 #include "params_training_featdef.h" // for ParamsTrainingHypothesis, PTRAI...
 #include <tesseract/tprintf.h>                 // for tprintf
@@ -1248,7 +1249,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
   if (dict_->stopper_debug_level >= 1) {
     std::string word_str;
     word->string_and_lengths(&word_str, nullptr);
-    vse->Print(word_str.c_str());
+    vse->Print(mdqstr(word_str.c_str()));
   }
   if (language_model_debug_level > 0) {
     word->print("UpdateBestChoice() constructed word");
