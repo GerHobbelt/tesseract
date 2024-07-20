@@ -306,7 +306,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , INT_MEMBER(crunch_leave_uc_strings, 4, "Don't crunch words with long lower case strings.",
                  params())
     , INT_MEMBER(crunch_long_repetitions, 3, "Crunch words with long repetitions.", params())
-    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch.", params())
+    , INT_MEMBER(crunch_debug, 0, "Print debug info for word and character crunch. (0..4)", params())
     , INT_MEMBER(fixsp_non_noise_limit, 1, "How many non-noise blobs either side?", params())
     , DOUBLE_MEMBER(fixsp_small_outlines_size, 0.28, "Small if lt xht x this.", params())
     , BOOL_MEMBER(tessedit_prefer_joined_punct, false, "Reward punctuation joins.", params())
@@ -316,7 +316,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , INT_MEMBER(x_ht_acceptance_tolerance, 8,
                  "Max allowed deviation of blob top outside of font data.", params())
     , INT_MEMBER(x_ht_min_change, 8, "Min change in xht before actually trying it.", params())
-    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer.", params())
+    , INT_MEMBER(superscript_debug, 0, "Debug level for sub & superscript fixer. (0..4)", params())
     , DOUBLE_MEMBER(superscript_worse_certainty, 2.0,
                     "How many times worse "
                     "certainty does a superscript position glyph need to be for "
@@ -358,7 +358,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , BOOL_MEMBER(tessedit_create_wordstrbox, false, "Write WordStr format .box output file.", params())
     , BOOL_MEMBER(tessedit_create_pdf, false, "Write .pdf output file.", params())
     , BOOL_MEMBER(textonly_pdf, false, "Create PDF with only one invisible text layer.", params())
-    , INT_MEMBER(jpg_quality, 85, "Set JPEG quality level.", params())
+    , INT_MEMBER(jpg_quality, 85, "Set JPEG/WEBP/PNG quality level as a 0..100% percentage.", params())
     , INT_MEMBER(user_defined_dpi, 0, "Specify DPI for input image.", params())
     , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD.", params())
     , STRING_MEMBER(unrecognised_char, "|", "Output char for unidentified blobs.", params())
@@ -460,8 +460,8 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , DOUBLE_MEMBER(max_page_gradient_recognize, 100,
                   "Exit early (without running recognition) if page gradient is above this amount.", params())
     , BOOL_MEMBER(debug_write_unlv, false, "Saves page segmentation intermediate and output box set as UZN file for diagnostics.", params())
-    , INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
-    , INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
+    //, INT_MEMBER(debug_baseline_fit, 0, "Baseline fit debug level 0..3.", params())
+    //, INT_MEMBER(debug_baseline_y_coord, -2000, "Output baseline fit debug diagnostics for given Y coord, even when debug_baseline_fit is NOT set. Specify a negative value to disable this debug feature.", params())
     , BOOL_MEMBER(debug_line_finding, false, "Debug the line finding process.", params())
     , BOOL_MEMBER(debug_image_normalization, false, "Debug the image normalization process (which precedes the thresholder).", params())
     , BOOL_MEMBER(debug_display_page, false, "Display preliminary OCR results in debug_pixa.", params())
@@ -470,6 +470,10 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , BOOL_MEMBER(dump_segmented_word_images, false, "Display intermediate individual bbox/word images about to be fed into the OCR engine in debug_pixa.", params()) 
     , BOOL_MEMBER(dump_osdetect_process_images, false, "Display intermediate OS (Orientation & Skew) image stages in debug_pixa.", params())
     , INT_MEMBER(activity_timeout_millisec, 0, "terminates (and fails) processing if any single page takes too long. Set to 0 for unlimited time.", params())
+    , BOOL_MEMBER(debug_recog_word_recursion_depth, false, "Debug the word recognizer recursion depth by having peak call depths reported as they appear.", params())
+    , INT_MEMBER(recog_word_recursion_depth_limit, 10000, "Restrict the word recognizer from recursing more than N levels deep. Setting this to a lower number can speed up processing of very noisy images which produce a lot of semi-random text noise as output anyway (with low OCR confidence numbers), but setting this too low can negatively impact any images with large amounts of text, so tread carefully. Empirical numbers today are: 50 and higher is image noise, 40 and lower is complex text pages.", params())
+    , BOOL_MEMBER(debug_output_diagnostics_HTML, false, "Write the debug/diagnostics output to a HTML file, including the collected images of the various process stages inside tesseract. The content is equivalent to the debug info you see on stderr, but in a nicely formatted and easier to grok modern format. Also handy for sharing your sessions' diagnostics with others. The output filename is derived from the source image name and output base path.", params()),
+      INT_MEMBER(debug_output_diagnostics_images_format, IFF_WEBP, "The format of the images included in the debug/diagnostics output HTML file. Specify one of the Leptonica constants: IFF_WEBP=webp, IFF_PNG=png, IFF_JFIF_JPEG=jpeg. While we support the other formats, those are ill-advised to use as web browsers won't support those other formats out of the box and choosing those formats will strongly and *negatively* impact your HTML diagnostics viewing experience.  Tip: use PNG or JPEG if you want the output to be produced faster, WEBP if you want smaller image files with maximum precision. Set the jpeg_quality parameter for any of these formats for targeted compression ratio.", params())
 
     , pixa_debug_(this)
     , splitter_(this)
@@ -1067,7 +1071,7 @@ void Tesseract::ResyncVariablesInternally() {
   DOUBLE_VAR_H(language_model_penalty_font);
   DOUBLE_VAR_H(language_model_penalty_spacing);
   DOUBLE_VAR_H(language_model_penalty_increment);
-  INT_VAR_H(wordrec_display_segmentations);
+        BOOL_VAR_H(wordrec_display_segmentations);
   BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
 #endif
@@ -1082,15 +1086,15 @@ void Tesseract::ResyncVariablesInternally() {
 
 
 void Tesseract::ReportDebugInfo() {
-  if (!debug_output_path.empty() && pixa_debug_.HasContent()) {
+  if (!debug_output_path.empty() && debug_output_diagnostics_HTML && pixa_debug_.HasContent()) {
     AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
     std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
     pixa_debug_.WriteHTML(file_path.c_str());
+    }
 
-    ClearPixForDebugView();
-    pixa_debug_.Clear();
-  }
+  ClearPixForDebugView();
+  pixa_debug_.Clear();
 }
 
 } // namespace tesseract
