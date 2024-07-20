@@ -229,6 +229,10 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
         for (; w < words->size(); ++w) {
           (*words)[w].word->SetupFake(unicharset);
         }
+        // flip recursion setting back to a positive limit; see tface.cpp for the sign-flipping logic inside the recursive word recognizer.
+        if (recog_word_recursion_depth_limit < 0) {
+          recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
+        }
         return false;
       }
     }
@@ -263,6 +267,10 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
     if (make_next_word_fuzzy && pr_it->word() != nullptr) {
       pr_it->MakeCurrentWordFuzzy();
     }
+  }
+  // flip recursion setting back to a positive limit; see tface.cpp for the sign-flipping logic inside the recursive word recognizer.
+  if (recog_word_recursion_depth_limit < 0) {
+    recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
   }
   return true;
 }

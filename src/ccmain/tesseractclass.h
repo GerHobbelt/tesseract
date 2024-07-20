@@ -987,6 +987,10 @@ public:
   INT_VAR_H(lstm_choice_iterations);
   double_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
+  BOOL_VAR_H(debug_recog_word_recursion_depth);
+  INT_VAR_H(recog_word_recursion_depth_limit);
+  BOOL_VAR_H(debug_output_diagnostics_HTML);
+  INT_VAR_H(debug_output_diagnostics_images_format);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);

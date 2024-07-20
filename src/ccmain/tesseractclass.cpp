@@ -351,7 +351,7 @@ Tesseract::Tesseract()
     , BOOL_MEMBER(tessedit_create_pdf, false, "Write .pdf output file", this->params())
     , BOOL_MEMBER(textonly_pdf, false, "Create PDF with only one invisible text layer",
                   this->params())
-    , INT_MEMBER(jpg_quality, 85, "Set JPEG quality level", this->params())
+    , INT_MEMBER(jpg_quality, 85, "Set JPEG/WEBP/PNG quality level as a 0..100% percentage.", this->params())
     , INT_MEMBER(user_defined_dpi, 0, "Specify DPI for input image", this->params())
     , INT_MEMBER(min_characters_to_try, 50, "Specify minimum characters to try during OSD",
                  this->params())
@@ -447,9 +447,12 @@ Tesseract::Tesseract()
                     this->params())
     , BOOL_MEMBER(pageseg_apply_music_mask, false,
                   "Detect music staff and remove intersecting components", this->params())
-    ,
+    , BOOL_MEMBER(debug_recog_word_recursion_depth, false, "Debug the word recognizer recursion depth by having peak call depths reported as they appear.", params())
+    , INT_MEMBER(recog_word_recursion_depth_limit, 10000, "Restrict the word recognizer from recursing more than N levels deep. Setting this to a lower number can speed up processing of very noisy images which produce a lot of semi-random text noise as output anyway (with low OCR confidence numbers), but setting this too low can negatively impact any images with large amounts of text, so tread carefully. Empirical numbers today are: 50 and higher is image noise, 40 and lower is complex text pages.", params())
+    , BOOL_MEMBER(debug_output_diagnostics_HTML, false, "Write the debug/diagnostics output to a HTML file, including the collected images of the various process stages inside tesseract. The content is equivalent to the debug info you see on stderr, but in a nicely formatted and easier to grok modern format. Also handy for sharing your sessions' diagnostics with others. The output filename is derived from the source image name and output base path.", params())
+    , INT_MEMBER(debug_output_diagnostics_images_format, IFF_WEBP, "The format of the images included in the debug/diagnostics output HTML file. Specify one of the Leptonica constants: IFF_WEBP=webp, IFF_PNG=png, IFF_JFIF_JPEG=jpeg. While we support the other formats, those are ill-advised to use as web browsers won't support those other formats out of the box and choosing those formats will strongly and *negatively* impact your HTML diagnostics viewing experience.  Tip: use PNG or JPEG if you want the output to be produced faster, WEBP if you want smaller image files with maximum precision. Set the jpeg_quality parameter for any of these formats for targeted compression ratio.", params())
 
-    backup_config_file_(nullptr)
+    , backup_config_file_(nullptr)
     , pix_binary_(nullptr)
     , pix_grey_(nullptr)
     , pix_original_(nullptr)
