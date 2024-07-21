@@ -22,6 +22,4 @@
 
 #include <cstdio>
 
-extern FILE *debug_fp; // write debug stuff here
-
 #endif

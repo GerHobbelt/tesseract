@@ -36,6 +36,7 @@
 #include "tovars.h"
 #include <tesseract/tprintf.h>
 #include "underlin.h"
+#include "global_params.h"
 
 #include <algorithm>
 #include <cmath>

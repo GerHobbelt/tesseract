@@ -26,36 +26,36 @@
 
 namespace tesseract {
 
-void REJ::full_print(FILE *fp) const {
-  fprintf(fp, "R_TESS_FAILURE: %s\n", flag(R_TESS_FAILURE) ? "T" : "F");
-  fprintf(fp, "R_SMALL_XHT: %s\n", flag(R_SMALL_XHT) ? "T" : "F");
-  fprintf(fp, "R_EDGE_CHAR: %s\n", flag(R_EDGE_CHAR) ? "T" : "F");
-  fprintf(fp, "R_1IL_CONFLICT: %s\n", flag(R_1IL_CONFLICT) ? "T" : "F");
-  fprintf(fp, "R_POSTNN_1IL: %s\n", flag(R_POSTNN_1IL) ? "T" : "F");
-  fprintf(fp, "R_REJ_CBLOB: %s\n", flag(R_REJ_CBLOB) ? "T" : "F");
-  fprintf(fp, "R_MM_REJECT: %s\n", flag(R_MM_REJECT) ? "T" : "F");
-  fprintf(fp, "R_BAD_REPETITION: %s\n", flag(R_BAD_REPETITION) ? "T" : "F");
-  fprintf(fp, "R_POOR_MATCH: %s\n", flag(R_POOR_MATCH) ? "T" : "F");
-  fprintf(fp, "R_NOT_TESS_ACCEPTED: %s\n",
-          flag(R_NOT_TESS_ACCEPTED) ? "T" : "F");
-  fprintf(fp, "R_CONTAINS_BLANKS: %s\n", flag(R_CONTAINS_BLANKS) ? "T" : "F");
-  fprintf(fp, "R_BAD_PERMUTER: %s\n", flag(R_BAD_PERMUTER) ? "T" : "F");
-  fprintf(fp, "R_HYPHEN: %s\n", flag(R_HYPHEN) ? "T" : "F");
-  fprintf(fp, "R_DUBIOUS: %s\n", flag(R_DUBIOUS) ? "T" : "F");
-  fprintf(fp, "R_NO_ALPHANUMS: %s\n", flag(R_NO_ALPHANUMS) ? "T" : "F");
-  fprintf(fp, "R_MOSTLY_REJ: %s\n", flag(R_MOSTLY_REJ) ? "T" : "F");
-  fprintf(fp, "R_XHT_FIXUP: %s\n", flag(R_XHT_FIXUP) ? "T" : "F");
-  fprintf(fp, "R_BAD_QUALITY: %s\n", flag(R_BAD_QUALITY) ? "T" : "F");
-  fprintf(fp, "R_DOC_REJ: %s\n", flag(R_DOC_REJ) ? "T" : "F");
-  fprintf(fp, "R_BLOCK_REJ: %s\n", flag(R_BLOCK_REJ) ? "T" : "F");
-  fprintf(fp, "R_ROW_REJ: %s\n", flag(R_ROW_REJ) ? "T" : "F");
-  fprintf(fp, "R_UNLV_REJ: %s\n", flag(R_UNLV_REJ) ? "T" : "F");
-  fprintf(fp, "R_HYPHEN_ACCEPT: %s\n", flag(R_HYPHEN_ACCEPT) ? "T" : "F");
-  fprintf(fp, "R_NN_ACCEPT: %s\n", flag(R_NN_ACCEPT) ? "T" : "F");
-  fprintf(fp, "R_MM_ACCEPT: %s\n", flag(R_MM_ACCEPT) ? "T" : "F");
-  fprintf(fp, "R_QUALITY_ACCEPT: %s\n", flag(R_QUALITY_ACCEPT) ? "T" : "F");
-  fprintf(fp, "R_MINIMAL_REJ_ACCEPT: %s\n",
-          flag(R_MINIMAL_REJ_ACCEPT) ? "T" : "F");
+std::string REJ::full_print_to_string() const {
+  std::string msg;
+  msg += fmt::format("R_TESS_FAILURE: {}\n", flag(R_TESS_FAILURE) ? "T" : "F");
+  msg += fmt::format("R_SMALL_XHT: {}\n", flag(R_SMALL_XHT) ? "T" : "F");
+  msg += fmt::format("R_EDGE_CHAR: {}\n", flag(R_EDGE_CHAR) ? "T" : "F");
+  msg += fmt::format("R_1IL_CONFLICT: {}\n", flag(R_1IL_CONFLICT) ? "T" : "F");
+  msg += fmt::format("R_POSTNN_1IL: {}\n", flag(R_POSTNN_1IL) ? "T" : "F");
+  msg += fmt::format("R_REJ_CBLOB: {}\n", flag(R_REJ_CBLOB) ? "T" : "F");
+  msg += fmt::format("R_MM_REJECT: {}\n", flag(R_MM_REJECT) ? "T" : "F");
+  msg += fmt::format("R_BAD_REPETITION: {}\n", flag(R_BAD_REPETITION) ? "T" : "F");
+  msg += fmt::format("R_POOR_MATCH: {}\n", flag(R_POOR_MATCH) ? "T" : "F");
+  msg += fmt::format("R_NOT_TESS_ACCEPTED: {}\n", flag(R_NOT_TESS_ACCEPTED) ? "T" : "F");
+  msg += fmt::format("R_CONTAINS_BLANKS: {}\n", flag(R_CONTAINS_BLANKS) ? "T" : "F");
+  msg += fmt::format("R_BAD_PERMUTER: {}\n", flag(R_BAD_PERMUTER) ? "T" : "F");
+  msg += fmt::format("R_HYPHEN: {}\n", flag(R_HYPHEN) ? "T" : "F");
+  msg += fmt::format("R_DUBIOUS: {}\n", flag(R_DUBIOUS) ? "T" : "F");
+  msg += fmt::format("R_NO_ALPHANUMS: {}\n", flag(R_NO_ALPHANUMS) ? "T" : "F");
+  msg += fmt::format("R_MOSTLY_REJ: {}\n", flag(R_MOSTLY_REJ) ? "T" : "F");
+  msg += fmt::format("R_XHT_FIXUP: {}\n", flag(R_XHT_FIXUP) ? "T" : "F");
+  msg += fmt::format("R_BAD_QUALITY: {}\n", flag(R_BAD_QUALITY) ? "T" : "F");
+  msg += fmt::format("R_DOC_REJ: {}\n", flag(R_DOC_REJ) ? "T" : "F");
+  msg += fmt::format("R_BLOCK_REJ: {}\n", flag(R_BLOCK_REJ) ? "T" : "F");
+  msg += fmt::format("R_ROW_REJ: {}\n", flag(R_ROW_REJ) ? "T" : "F");
+  msg += fmt::format("R_UNLV_REJ: {}\n", flag(R_UNLV_REJ) ? "T" : "F");
+  msg += fmt::format("R_HYPHEN_ACCEPT: {}\n", flag(R_HYPHEN_ACCEPT) ? "T" : "F");
+  msg += fmt::format("R_NN_ACCEPT: {}\n", flag(R_NN_ACCEPT) ? "T" : "F");
+  msg += fmt::format("R_MM_ACCEPT: {}\n", flag(R_MM_ACCEPT) ? "T" : "F");
+  msg += fmt::format("R_QUALITY_ACCEPT: {}\n", flag(R_QUALITY_ACCEPT) ? "T" : "F");
+  msg += fmt::format("R_MINIMAL_REJ_ACCEPT: {}\n", flag(R_MINIMAL_REJ_ACCEPT) ? "T" : "F");
+  return msg;
 }
 
 REJMAP &REJMAP::operator=(const REJMAP &source) {
@@ -111,19 +111,23 @@ void REJMAP::remove_pos( // Cut out an element
   }
 }
 
-void REJMAP::print(FILE *fp) const {
-  fputc('"', fp);
+std::string REJMAP::print_to_string() const {
+  std::string msg;
+  msg += '"';
   for (unsigned i = 0; i < len; i++) {
-    fputc( ptr[i].display_char(), fp);
+    msg += ptr[i].display_char();
   }
-  fputc('"', fp);
+  msg += '"';
+  return msg;
 }
 
-void REJMAP::full_print(FILE *fp) const {
+std::string REJMAP::full_print_to_string() const {
+  std::string msg;
   for (unsigned i = 0; i < len; i++) {
-    ptr[i].full_print(fp);
-    fprintf(fp, "\n");
+    msg += ptr[i].full_print_to_string();
+    msg += "\n";
   }
+  return msg;
 }
 
 void REJMAP::rej_word_small_xht() { // Reject whole word

@@ -190,7 +190,7 @@ protected:
           }
           w_decoded += word->best_choice->unichar_string().c_str();
         }
-        LOG(INFO) << "Word:" << w << " = " << word->best_choice->unichar_string()
+        LOG(INFO) << "Word:" << w << " = " << mdqstr(word->best_choice->unichar_string())
           << ", c=" << word->best_choice->certainty() << ", r=" << word->best_choice->rating()
           << ", perm=" << word->best_choice->permuter() << "\n";
       }

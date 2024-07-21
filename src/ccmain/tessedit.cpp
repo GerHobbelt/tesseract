@@ -412,13 +412,17 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
   instance_has_been_initialized_ = true;
 
   // Set the basename, compute the data directory.
-  main_setup(arg0, textbase);
+  if (main_setup(arg0, textbase, langs_to_load)) {
+    tprintError("Tesseract couldn't initialize!\n");
+    return -1; // Couldn't load any language!
+  }
 
   sub_langs_.clear();
   // Find the first loadable lang and load into this.
   // Add any languages that this language requires
   bool loaded_primary = false;
   // Load the rest into sub_langs_.
+  // 
   // WARNING: A range based for loop does not work here because langs_to_load
   // might be changed in the loop when a new submodel is found.
   for (size_t lang_index = 0; lang_index < langs_to_load.size(); ++lang_index) {
@@ -428,8 +432,11 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
       if (!loaded_primary) {
         tess_to_init = this;
       } else {
-        tess_to_init = new Tesseract(this);
-        tess_to_init->main_setup(arg0, textbase);
+        tess_to_init = new Tesseract(owner_, this);
+        if (tess_to_init->main_setup(arg0, textbase, lang_to_load)) {
+          tprintError("Tesseract couldn't initialize for language {}!\n", lang_to_load);
+          return -1; // Couldn't load any language!
+        }
       }
 
       int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, static_cast<tesseract::OcrEngineMode>(this->tessedit_ocr_engine_mode.value()), configs,

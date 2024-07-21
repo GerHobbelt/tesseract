@@ -39,14 +39,15 @@
 using namespace tesseract;
 
 /*-------------------once in subfeat---------------------------------*/
-static DOUBLE_VAR(training_angle_match_scale, 1.0, "Angle Match Scale ...");
 
-static DOUBLE_VAR(training_similarity_midpoint, 0.0075, "Similarity Midpoint ...");
+static DOUBLE_VAR(training_angle_match_scale, 1.0, "Angle match scale ...");
 
-static DOUBLE_VAR(training_similarity_curl, 2.0, "Similarity Curl ...");
+static DOUBLE_VAR(training_similarity_midpoint, 0.0075, "Similarity midpoint ...");
 
-/*-----------------------------once in
- * fasttrain----------------------------------*/
+static DOUBLE_VAR(training_similarity_curl, 2.0, "Similarity curl power ...");
+
+/*-------------------once in fasttrain-------------------------------*/
+
 static DOUBLE_VAR(training_tangent_bbox_pad, 0.5, "Tangent bounding box pad ...");
 
 static DOUBLE_VAR(training_orthogonal_bbox_pad, 2.5, "Orthogonal bounding box pad ...");
@@ -236,6 +237,8 @@ float SubfeatureEvidence(FEATURE Feature, PROTO_STRUCT *Proto) {
  * distance value.  This number is no longer based on the chi squared
  * approximation.  The equation that represents the transform is:
  *       1 / (1 + (sim / midpoint) ^ curl)
+ *
+ * Identical to NormMatch::NormEvidenceOf(), but using a different parameter for the power setting.
  */
 double EvidenceOf(double Similarity) {
   Similarity /= training_similarity_midpoint.value();

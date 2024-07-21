@@ -45,17 +45,11 @@ DictSettings::DictSettings(CCUtil *owner)
     , BOOL_MEMBER(load_freq_dawg, true, "Load frequent word dawg.", owner->params())
     , BOOL_MEMBER(load_unambig_dawg, true, "Load unambiguous word dawg.",
                        owner->params())
-    , BOOL_MEMBER(load_punc_dawg, true,
-                       "Load dawg with punctuation"
-                       " patterns.",
+    , BOOL_MEMBER(load_punc_dawg, true, "Load dawg with punctuation patterns.",
                        owner->params())
-    , BOOL_MEMBER(load_number_dawg, true,
-                       "Load dawg with number"
-                       " patterns.",
+    , BOOL_MEMBER(load_number_dawg, true, "Load dawg with number patterns.",
                        owner->params())
-    , BOOL_MEMBER(load_bigram_dawg, true,
-                       "Load dawg with special word "
-                       "bigrams.",
+    , BOOL_MEMBER(load_bigram_dawg, true, "Load dawg with special word bigrams.",
                        owner->params())
     , DOUBLE_MEMBER(xheight_penalty_subscripts, 0.125,
                     "Score penalty (0.1 = 10%) added if there are subscripts "
@@ -104,9 +98,7 @@ DictSettings::DictSettings(CCUtil *owner)
                     owner->params())
     , INT_MEMBER(stopper_smallword_size, 2, "Size of dict word to be treated as non-dict word.",
                  owner->params())
-    , DOUBLE_MEMBER(stopper_certainty_per_char, -0.50,
-                    "Certainty to add"
-                    " for each dict char above small word size.",
+    , DOUBLE_MEMBER(stopper_certainty_per_char, -0.50, "Certainty to add for each dict char above small word size.",
                     owner->params())
     , DOUBLE_MEMBER(stopper_allowable_character_badness, 3.0,
                     "Max certainty variation allowed in a word (in sigma).", owner->params())
@@ -117,9 +109,7 @@ DictSettings::DictSettings(CCUtil *owner)
                   owner->params())
     , INT_MEMBER(tessedit_truncate_wordchoice_log, 10, "Max words to keep in list.",
                  owner->params())
-    , STRING_MEMBER(word_to_debug, "",
-                    "Word for which stopper debug"
-                    " information should be printed to stdout.",
+    , STRING_MEMBER(word_to_debug, "", "Word for which stopper debug information should be printed to stdout.",
                     owner->params())
     , BOOL_MEMBER(segment_nonalphabetic_script, false,
                   "Don't use any alphabetic-specific tricks."
@@ -771,7 +761,7 @@ void Dict::adjust_word(WERD_CHOICE *word, bool nonword, XHeightConsistencyEnum x
     }
   }
   if (debug) {
-    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", word->unichar_string(),
+    tprintDebug("{}Word: {} {}{}", nonword ? "Non-" : "", mdqstr(word->unichar_string()),
             word->rating(), xheight_triggered);
   }
 

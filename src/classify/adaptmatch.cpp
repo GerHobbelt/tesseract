@@ -466,17 +466,14 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
  * - #classify_enable_adaptive_matcher true if adaptive matcher is enabled
  */
 void Classify::EndAdaptiveClassifier() {
-  std::string Filename;
-  FILE *File;
-
   if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
-    Filename = imagefile_ + ADAPT_TEMPLATE_SUFFIX;
-    File = fopen(Filename.c_str(), "wb");
+    std::string Filename = imagefile_ + ADAPT_TEMPLATE_SUFFIX;
+    FILE *File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
       tprintError("Unable to save adapted templates to file {}!\n", Filename);
     } else {
       tprintDebug("\nSaving adapted templates to file {} ...", Filename);
-      fflush(stdout);
+      //fflush(stdout);
       WriteAdaptedTemplates(File, AdaptedTemplates);
       tprintDebug("\n");
       fclose(File);
@@ -1058,7 +1055,7 @@ void Classify::AmbigClassifier(const std::vector<INT_FEATURE_STRUCT> &int_featur
   UnicharRating int_result;
 
   results->BlobLength = GetCharNormFeature(fx_info, templates, nullptr, CharNormArray);
-  bool debug = matcher_debug_level >= 2 || classify_debug_level > 1;
+  bool debug = (matcher_debug_level >= 2 || classify_debug_level > 1);
   if (debug) {
     tprintDebug("AM Matches =  ");
   }
