@@ -37,8 +37,8 @@ namespace tesseract {
 
 class TestableEquationDetect : public EquationDetect {
 public:
-  TestableEquationDetect(const char *tessdata, Tesseract *lang_tesseract)
-      : EquationDetect(tessdata, EQU_TRAINEDDATA_NAME) {
+  TestableEquationDetect(TessBaseAPI &owner, const char *tessdata, Tesseract *lang_tesseract)
+      : EquationDetect(owner, tessdata, EQU_TRAINEDDATA_NAME) {
     SetLangTesseract(lang_tesseract);
   }
 

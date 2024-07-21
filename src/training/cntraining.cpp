@@ -31,7 +31,6 @@
 #include "featdefs.h"
 #include "ocrfeatures.h"
 #include "oldlist.h"
-#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 

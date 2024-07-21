@@ -53,6 +53,18 @@ blockquote {
   background-color: #ebf3ff;
   max-width: 66em;
 }
+blockquote.command-line {
+  border: solid 4px #ffe3b0;
+  background-color: #fffbeb;
+  max-width: none;
+}
+blockquote.command-line pre {
+  white-space: break-spaces;
+}
+blockquote.command-line h6 {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
 em {
   background-color: #f7ffeb;
 }

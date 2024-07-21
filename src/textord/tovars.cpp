@@ -31,7 +31,7 @@ BOOL_VAR(textord_show_initial_words, false, "Display separate words");
 BOOL_VAR(textord_blocksall_fixed, false, "Moan about prop blocks (debugging)");
 BOOL_VAR(textord_blocksall_prop, false, "Moan about fixed pitch blocks (debugging)");
 INT_VAR(textord_dotmatrix_gap, 3, "Max pixel gap for broken pixed pitch");
-INT_VAR(textord_debug_block, 0, "Block to do debug on");
+//INT_VAR(textord_debug_block, 0, "Block to do debug on");
 INT_VAR(textord_pitch_range, 2, "Max range test on pitch");
 DOUBLE_VAR(textord_wordstats_smooth_factor, 0.05, "Smoothing gap stats");
 DOUBLE_VAR(textord_words_maxspace, 4.0, "Multiple of xheight");

@@ -826,8 +826,7 @@ bool LSTMTrainer::EncodeString(const std::string &str,
   if (unicharset.encode_string(cleaned.c_str(), true, &internal_labels, nullptr,
                                &err_index)) {
     bool success = true;
-	for (int i = 0, l = internal_labels.size(); i < l; i++) {
-	  auto internal_label = internal_labels[i];
+    for (auto internal_label : internal_labels) {
       if (recoder != nullptr) {
         // Re-encode labels via recoder.
         RecodedCharID code;

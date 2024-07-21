@@ -19,9 +19,8 @@
 #ifndef NORMALIS_H
 #define NORMALIS_H
 
-#include "image.h"
-
 #include <tesseract/export.h>
+#include <tesseract/image.h>
 
 #include <vector>
 

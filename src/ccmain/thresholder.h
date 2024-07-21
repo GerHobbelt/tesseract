@@ -21,6 +21,9 @@
 
 #include <tesseract/export.h>
 #include <tesseract/fmt-support.h>
+#include <tesseract/image.h>
+
+#include <leptonica/allheaders.h>
 
 #include <vector> // for std::vector
 
@@ -41,7 +44,8 @@ enum class ThresholdMethod {
   OtsuOnNormalizedBackground,
   MaskingAndOtsuOnNormalizedBackground,
   Nlbin,         // NLbin
-  Max,           // Number of Thresholding methods
+  NlbinAdaptive, // NLbinAdaptive
+  Max,   // Number of Thresholding methods
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(ThresholdMethod);
 
@@ -62,6 +66,8 @@ static inline const char* ThresholdMethodName(ThresholdMethod method)
     return "Masking.And.Otsu (on Normalized Background)";
   case ThresholdMethod::Nlbin:
     return "NLbin";
+  case ThresholdMethod::NlbinAdaptive:
+    return "NLbin (Adaptive)";
   case ThresholdMethod::Max:
     return "Threshold::MaxOfList";
   default:
@@ -156,7 +162,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image pix, int exif = 1, const float angle = 0, bool upscale = false);
+  void SetImage(const Image &pix, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.
@@ -188,12 +194,6 @@ public:
   // Provided to the classifier to extract features from the greyscale image.
   virtual Image GetPixRectGrey();
 
-  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
-  // and at the same resolution as the output binary.
-  // The returned Pix must be pixDestroyed.
-  // Provided to the classifier to extract features from the greyscale image.
-  virtual Image GetPixNormRectGrey();
-
 protected:
   // ----------------------------------------------------------------------
   // Utility functions that may be useful components for other thresholders.
@@ -209,15 +209,6 @@ protected:
 
   // Otsu thresholds the rectangle, taking the rectangle from *this.
   void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
-
-  // Return non-linear normalized grayscale
-  Pix *pixNLNorm2(Pix *pixs, int *pthresh);
-
-  // Return non-linear normalized grayscale
-  Pix* pixNLNorm1(Pix* pixs, int* pthresh, int* pfgval, int* pbgval);
-
-  // Return non-linear normalized thresholded image
-  Pix* pixNLBin(Pix* pixs, bool adaptive);
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.
