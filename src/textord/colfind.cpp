@@ -112,7 +112,6 @@ ColumnFinder::~ColumnFinder() {
 #if !GRAPHICS_DISABLED
   input_blobs_win_ = nullptr;
 #endif
-  nontext_map_.destroy();
   while (denorm_ != nullptr) {
     auto *predecessor = const_cast<DENORM *>(denorm_->predecessor());
     delete denorm_;
@@ -168,7 +167,6 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   }
 #endif // !GRAPHICS_DISABLED
   SetBlockRuleEdges(input_block);
-  nontext_map_.destroy();
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
   CCNonTextDetect nontext_detect(tesseract_, gridspacing, bleft(), tright());
@@ -443,7 +441,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     SmoothPartnerRuns();
 
 #if !GRAPHICS_DISABLED
-    if (textord_tabfind_show_partitions) {
+    if (textord_tabfind_show_partitions > 0) {
         ScrollViewReference window(MakeWindow(tesseract_, 400, 300, "Partitions"));
         part_grid_.DisplayBoxes(window);
         if (!textord_debug_printable) {

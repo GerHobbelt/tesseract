@@ -43,9 +43,13 @@
 #include "simddetect.h"
 #include "tesseractclass.h" // for AnyTessLang
 #include <tesseract/tprintf.h> // for tprintf
+#include <tesseract/ocrclass.h> // for monitor
+
 #include "tlog.h"
+#include "global_params.h"
 #include "pathutils.h"
 #include "imagedata.h" // DocumentData
+#include "helpers.h"
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -192,18 +196,6 @@ static void PrintHelpForOEM() {
   tprintInfo("{}", msg);
 }
 #endif // !DISABLED_LEGACY_ENGINE
-
-static const char* basename(const char* path)
-{
-  size_t i;
-  size_t len = strlen(path);
-  for (i = strcspn(path, ":/\\"); i < len; i = strcspn(path, ":/\\"))
-  {
-    path = path + i + 1;
-    len -= i + 1;
-  }
-  return path;
-}
 
 static void PrintHelpExtra(const char *program) {
   program = basename(program);
@@ -358,6 +350,47 @@ static void PrintLangsList(tesseract::TessBaseAPI &api) {
     tprintInfo("{}\n", language);
   }
   tprintInfo("\n");
+}
+
+// Demo advanced usage of the new monitor implementation, which
+// explains why we discarded quite a few fields from the original
+// ETEXT_DESC implementation: it's much easier and type-safe to
+// your own as you need them.
+class CLI_Monitor : public ETEXT_DESC {
+public:
+  CLI_Monitor()
+      : ETEXT_DESC(), app_start_time(std::chrono::steady_clock::now()), next_progress_log_opportunity(std::chrono::steady_clock::time_point::min())
+  {}
+
+protected:
+  std::chrono::steady_clock::time_point app_start_time;
+  std::chrono::steady_clock::time_point next_progress_log_opportunity;
+
+public:
+  void report_progress(int left, int right, int top, int bottom) {
+    // do not clutter the screen & logfiles with frequent progress updates: only log another one when it's more than 2 seconds later than the last one.
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    if (now >= next_progress_log_opportunity || progress >= 100.0) {
+      // estimate how long we'll take longer, based on the time we spent since the start of this application (the moment when this monitor was instantiated, rather, but alas).
+      std::chrono::duration elapsed = now - app_start_time;
+      std::chrono::duration total_duration = 100.0 / (progress > 0 ? progress : 5 /* arbitrary value */) * elapsed;
+      std::chrono::duration remaining = total_duration - elapsed;
+
+      tprintInfo("\nSession::progress: {}% @ {} secs; expected {} more secs until finished.\n", to_prec(progress, 3), to_prec(seconds(elapsed), 3), to_prec(seconds(remaining), 3));
+
+      next_progress_log_opportunity = now + std::chrono::seconds(2);
+
+      // See also the notes at PROGRESS_FUNC.
+      // We control the update rate limit using both the built-in 0.1% "significant update" check
+      // plus our own custom elapsed time check against `next_progress_log_opportunity` above.
+      previous_progress = progress;
+    }
+  }
+};
+
+static void cli_monitor_progress_f(ETEXT_DESC* self, int left, int right, int top, int bottom) {
+  CLI_Monitor *me = static_cast<CLI_Monitor *>(self);
+  me->report_progress(left, right, top, bottom);
 }
 
 /**
@@ -880,22 +913,6 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
   return error;
 }
 
-namespace tesseract {
-
-static inline auto format_as(Orientation o) {
-  return fmt::underlying(o);
-}
-
-static inline auto format_as(TextlineOrder o) {
-  return fmt::underlying(o);
-}
-
-static inline auto format_as(WritingDirection d) {
-  return fmt::underlying(d);
-}
-
-}
-
 
 /**********************************************************************
  *  main()
@@ -905,7 +922,7 @@ static inline auto format_as(WritingDirection d) {
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
-extern "C" int tesseract_main(int argc, const char** argv)
+extern "C" int tesseract_main(int argc, const char **argv)
 #endif
 {
 #if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
@@ -961,6 +978,18 @@ extern "C" int tesseract_main(int argc, const char** argv)
   // that's the superset we accept at the command line.
     auto& parlst = tess.params_collective();
   ParamsVector surplus_args;
+
+  // collect commandline for display in the diagnostics output
+  std::vector<std::string> argv4diag;
+  for (int ac = 0; ac < argc; ac++) {
+    argv4diag.push_back(argv[ac]);
+  }
+
+    CLI_Monitor monitor;
+    monitor.progress_callback = cli_monitor_progress_f;
+    api.RegisterMonitor(&monitor);
+
+    api.DebugAddCommandline(argv4diag);
 
   int cmd = ParseArgs(argc, argv, parlst, surplus_args);
   if (cmd == WE_ARE_BUGGERED) {
@@ -1139,6 +1168,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
     if (hlpcmds & LIST_LANGUAGES) {
       PrintLangsList(api);
+      api.End();
     }
 
     if (hlpcmds & PRINT_PARAMETERS) {
@@ -1178,7 +1208,7 @@ extern "C" int tesseract_main(int argc, const char** argv)
       api.SetImage(pixs);
 
       std::string outfile = std::string(outputbase) + std::string(".txt");
-      FILE* fout = NULL;
+      FILE *fout = NULL;
 
       if (strcmp(outputbase, "stdout") != 0) {
         fout = fopen(outfile.c_str(), "wb");
@@ -1345,6 +1375,8 @@ extern "C" int tesseract_main(int argc, const char** argv)
 
         succeed &= api.ProcessPages(tess.input_file_path_.c_str(), nullptr, 0, renderers[0].get());
 
+        // TODO: retry on failure with alternative config set.
+
         if (!succeed) {
           tprintError("Error during page processing. File: {}\n", tess.input_file_path_);
           ret_val = EXIT_FAILURE;
@@ -1352,11 +1384,18 @@ extern "C" int tesseract_main(int argc, const char** argv)
       }
     }
 
+    if (ret_val == EXIT_SUCCESS && api.Monitor().progress < 90) {
+      api.Monitor().set_progress(90.0).exec_progress_func();
+    }
+
     if (ret_val == EXIT_SUCCESS && verbose_process) {
       api.ReportParamsUsageStatistics();
     }
 
     supress_premature_log_reporting.stepdown();
+
+    api.Monitor().set_progress(100.0).exec_progress_func();
+
     api.Clear();
   }
   // ^^^ end of scope for the Tesseract `api` instance

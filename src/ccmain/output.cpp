@@ -176,7 +176,7 @@ void Tesseract::write_results(PAGE_RES_IT &page_res_it,
   set_unlv_suspects(word);
   check_debug_pt(word, 120);
   if (tessedit_rejection_debug) {
-    tprintDebug("Dict word: \"{}\": {}\n", word->best_choice->debug_string(),
+    tprintDebug("Dict word: {}: {}\n", word->best_choice->debug_string(),
             dict_word(*(word->best_choice)));
   }
   if (!word->word->flag(W_REP_CHAR) || !tessedit_write_rep_codes) {

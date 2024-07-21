@@ -26,6 +26,7 @@
 #include <tesseract/params.h>
 #include "statistc.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include <leptonica/allheaders.h>
 
@@ -238,9 +239,8 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
                              kMaxRectangularGradient, &x_start, &y_start, &x_end, &y_end)) {
       Image simple_pix = pixCreate(x_end - x_start, y_end - y_start, 1);
       pixSetAll(simple_pix);
-      img_pix.destroy();
       // pixaReplacePix takes ownership of the simple_pix.
-      pixaReplacePix(*pixa, i, simple_pix, nullptr);
+      pixaReplacePix(*pixa, i, simple_pix.clone2pix(), nullptr);
       img_pix = pixaGetPix(*pixa, i, L_CLONE);
       // Fix the box to match the new pix.
       l_int32 x, y, width, height;
@@ -248,7 +248,6 @@ void ImageFind::ConnCompAndRectangularize(Image pix, Boxa **boxa,
       Box *simple_box = boxCreate(x + x_start, y + y_start, x_end - x_start, y_end - y_start);
       boxaReplaceBox(*boxa, i, simple_box);
     }
-    img_pix.destroy();
   }
 }
 
@@ -285,15 +284,11 @@ Image ImageFind::FindImages(Image pix) {
     if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
       Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
       tesseract_->AddPixDebugPage(pixdb, "Find Images -- image op: generated Halftone Mask");
-      pixdb.destroy();
     }
     pixaDestroy(&pixadb);
   }
-  pixr.destroy();
-  if (!ht_found && pixht2 != nullptr) {
-    pixht2.destroy();
-  }
-  if (pixht2 == nullptr) {
+
+  if (!ht_found || pixht2 == nullptr) {
     return pixCreate(width, height, 1);
   }
 
@@ -302,12 +297,12 @@ Image ImageFind::FindImages(Image pix) {
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pixht, "Find Images -- image op: expand replicate");
   }
-  pixht2.destroy();
 
   // Fill to capture pixels near the mask edges that were missed
-  Image pixt = pixSeedfillBinary(nullptr, pixht, pix, 8);
-  pixht |= pixt;
-  pixt.destroy();
+  {
+    Image pixt = pixSeedfillBinary(nullptr, pixht, pix, 8);
+    pixht |= pixt;
+  }
 
   // Eliminate lines and bars that may be joined to images.
   Image pixfinemask = pixReduceRankBinaryCascade(pixht, 1, 1, 3, 3);
@@ -317,33 +312,27 @@ Image ImageFind::FindImages(Image pix) {
   }
   Image pixreduced = pixReduceRankBinaryCascade(pixht, 1, 1, 1, 1);
   Image pixreduced2 = pixReduceRankBinaryCascade(pixreduced, 3, 3, 3, 0);
-  pixreduced.destroy();
   pixDilateBrick(pixreduced2, pixreduced2, 5, 5);
   Image pixcoarsemask = pixExpandReplicate(pixreduced2, 8);
-  pixreduced2.destroy();
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pixcoarsemask, "Find Images : CoarseMask -- image op: 2x reduce rank + dilate brick + expand replicate");
   }
   // Combine the coarse and fine image masks.
   pixcoarsemask &= pixfinemask;
-  pixfinemask.destroy();
   // Dilate a bit to make sure we get everything.
   pixDilateBrick(pixcoarsemask, pixcoarsemask, 3, 3);
   Image pixmask = pixExpandReplicate(pixcoarsemask, 16);
-  pixcoarsemask.destroy();
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pixmask, "Find Images : MaskDilated -- image op: expand replicate");
   }
   // And the image mask with the line and bar remover.
   pixht &= pixmask;
-  pixmask.destroy();
   if (textord_tabfind_show_images) {
     tesseract_->AddPixDebugPage(pixht, "Find Images : FinalMask");
   }
   // Make the result image the same size as the input.
   Image result = pixCreate(width, height, 1);
   result |= pixht;
-  pixht.destroy();
   return result;
 }
 
@@ -482,7 +471,6 @@ int ImageFind::CountPixelsInRotatedBox(TBOX box, const TBOX &im_box, const FCOOR
               box.left() - rotated_im_box.left(), rotated_im_box.top() - box.top());
   l_int32 result;
   pixCountPixels(rect_pix, &result, nullptr);
-  rect_pix.destroy();
   return result;
 }
 
@@ -1194,7 +1182,6 @@ void ImageFind::FindImagePartitions(Image image_pix, const FCOORD &rotation,
       tesseract_->AddPixDebugPage(pix, "Find Image Partitions : ImageComponent");
       tprintDebug("Component has {} parts\n", part_list.length());
     }
-    pix.destroy();
     if (!part_list.empty()) {
       ColPartition_IT part_it(&part_list);
       if (part_list.singleton()) {

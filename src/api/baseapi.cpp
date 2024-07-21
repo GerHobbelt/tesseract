@@ -51,6 +51,7 @@
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 #include "tabletransfer.h"   // for detected tables from tablefind.h
 #include "thresholder.h"     // for ImageThresholder
+#include "pixProcessing.h" 
 #include "winutils.h"
 #include "colfind.h"         // for param globals
 #include "oldbasel.h"        // for param globals
@@ -248,6 +249,7 @@ TessBaseAPI::TessBaseAPI()
       // by: A constructor of a derived API or created
       // implicitly when used in InternalResetImage.
       thresholder_(nullptr),
+      monitor_(&default_minimal_monitor_),
       paragraph_models_(nullptr),
       block_list_(nullptr),
       page_res_(nullptr),
@@ -606,10 +608,21 @@ int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode 
 
 }
 
+int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
+                          int configs_size, const std::vector<std::string> *vars_vec,
+                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader) {
+  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
+                            set_only_non_debug_params, reader);
+}
+
 int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
                       const std::vector<std::string>& configs)
 {
 
+}
+
+int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader) {
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false, reader);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language)
@@ -727,7 +740,7 @@ int TessBaseAPI::Init_Internal(const char *path,
 #endif
   }
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract();
+    tesseract_ = new Tesseract(*this);
   }
   if (reader != nullptr) {
     reader_ = reader;
@@ -736,6 +749,9 @@ int TessBaseAPI::Init_Internal(const char *path,
   if (data_size != 0) {
       mgr.LoadMemBuffer(buggered_languge.c_str(), data, data_size);
   }
+
+  (void)Monitor().set_progress(0.0).exec_progress_func();
+
     if (tess.init_tesseract(datapath, output_file_, &mgr) != 0) {
     return -1;
   }
@@ -759,8 +775,37 @@ int TessBaseAPI::Init_Internal(const char *path,
     tess.ResetAdaptiveClassifier();
 #endif // !DISABLED_LEGACY_ENGINE
 
+  if (Monitor().kick_watchdog_and_check_for_cancel()) {
+      tprintWarn("Timeout/cancel: abort the tesseract initialization stage.\n");
+      return -1;
+  }
+
   return 0;
 }
+
+void TessBaseAPI::RegisterMonitor(ETEXT_DESC *monitor) {
+  if (monitor != nullptr)
+    monitor_ = monitor;
+  else
+    monitor_ = &default_minimal_monitor_;
+}
+
+ETEXT_DESC& TessBaseAPI::Monitor() {
+  return *monitor_;
+}
+
+const ETEXT_DESC &TessBaseAPI::Monitor() const {
+  return *monitor_;
+}
+
+
+void TessBaseAPI::DebugAddCommandline(const std::vector<std::string>& argv) {
+  if (tesseract_ == nullptr) {
+    tesseract_ = new Tesseract(*this, nullptr);
+  }
+  tesseract_->DebugAddCommandline(argv);
+}
+
 
 /**
  * Returns the languages string used in the last valid initialization.
@@ -827,7 +872,10 @@ void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
 
 /** Return the current page segmentation mode. */
 PageSegMode TessBaseAPI::GetPageSegMode() const {
-  return static_cast<PageSegMode>(tesseract().tessedit_pageseg_mode.value());
+  if (tesseract_ == nullptr) {
+    return PSM_SINGLE_BLOCK;
+  }
+  return static_cast<PageSegMode>(tesseract_->tessedit_pageseg_mode.value());
 }
 
 /**
@@ -905,18 +953,16 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  */
 void TessBaseAPI::SetImage(Pix *pix, int exif, const float angle, bool upscale) {
   if (InternalResetImage()) {
-    if (pixGetSpp(pix) == 4) {
+    // as Image will take ownership and `pix` is not owned by us, we must clone it:
+    Image img(false, pix);
+    if (pixGetSpp(img) == 4) {
       // remove alpha channel from image; the background color is assumed to be PURE WHITE.
-      Pix *p1 = pixAlphaBlendUniform(pix, 0xFFFFFF00);
-      //Pix *p1 = pixRemoveAlpha(pix);
+      Image p1 = pixAlphaBlendUniform(img, 0xFFFFFF00);
+      //Image p1 = pixRemoveAlpha(img);
       pixSetSpp(p1, 3);
-      (void)pixCopy(pix, p1);
-      pixDestroy(&p1);
-    } else {
-      pix = pixClone(pix);
+      img = p1;           // move semantics: img now owns p1
     }
-    thresholder_->SetImage(pix, exif, angle, upscale);
-    pixDestroy(&pix);
+    thresholder_->SetImage(img, exif, angle, upscale);
     SetInputImage(thresholder_->GetPixRect());
   }
 }
@@ -971,84 +1017,26 @@ Pix *TessBaseAPI::GetThresholdedImage() {
 
   Tesseract& tess = tesseract();
   if (tess.pix_binary() == nullptr) {
-  if (verbose_process) {
+	if (verbose_process) {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
-  }
+	}
 
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+    Image pix;
+    if (!Threshold(pix.obtains())) {
       return nullptr;
     }
-    tess.set_pix_binary(pix);
+    tesseract_->set_pix_binary(pix);     // candidate for move semantics
 
     if (tess.tessedit_dump_pageseg_images) {
       tess.AddPixDebugPage(tess.pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
-  const char *debug_output_path = tess.debug_output_path.c_str();
+  // Image p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
-  //Pix *p1 = pixRotate(tess.pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
-  // if (scribe_save_binary_rotated_image) {
-  //   Pix *p1 = tess.pix_binary();
-  //   pixWrite("/binary_image.png", p1, IFF_PNG);
-  // }
-  if (tess.scribe_save_grey_rotated_image) {
-    Pix *p1 = tess.pix_grey();
-    tess.AddPixDebugPage(p1, "greyscale image");
-  }
-  if (tess.scribe_save_binary_rotated_image) {
-    Pix *p1 = tess.pix_binary();
-    tess.AddPixDebugPage(p1, "binary (black & white) image");
-  }
-  if (tess.scribe_save_original_rotated_image) {
-    Pix *p1 = tess.pix_original();
-    tess.AddPixDebugPage(p1, "original image");
-  }
-
-  return tess.pix_binary().clone();
-}
-
-/**
- * Function added by Tesseract.js.
- * Saves a .png image of the type specified by `type` to "/image.png"
- * ONLY available after SetImage if you have Leptonica installed.
- */
-void TessBaseAPI::WriteImage(const int type) {
-  if (tesseract_ == nullptr || thresholder_ == nullptr) {
-    return;
-  }
-
-  Tesseract& tess = tesseract();
-  if (type == 0) {
-    if (tess.pix_original() == nullptr) {
-      return;
-    }
-    Pix *p1 = tess.pix_original();
-    pixWrite("/image.png", p1, IFF_PNG);
-
-  } else if (type == 1) {
-    if (tess.pix_grey() == nullptr && !Threshold(static_cast<Pix **>(tess.pix_binary()))) {
-      return;
-    }
-    // When the user uploads a black and white image, there will be no pix_grey.
-    // Therefore, we return pix_binary instead in this case. 
-    if (tess.pix_grey() == nullptr) {
-      Pix *p1 = tess.pix_binary();
-      pixWrite("/image.png", p1, IFF_PNG);
-    } else {
-      Pix *p1 = tess.pix_grey();
-      pixWrite("/image.png", p1, IFF_PNG);
-    }
-  } else if (type == 2) {
-    if (tess.pix_binary() == nullptr && !Threshold(static_cast<Pix**>(tess.pix_binary()))) {
-      return;
-    }
-    Pix *p1 = tess.pix_binary();
-    pixWrite("/image.png", p1, IFF_PNG);
-  }
-
-  return;
+  // because we want to keep the public API as-is for now, instead of migrating it to using Image type directly,
+  // we downgrade to `PIX *` at the exit point, hence the reponsibility to CLONE is ours: 
+  return tesseract_->pix_binary().clone2pix();
 }
 
 /**
@@ -1172,13 +1160,13 @@ Boxa *TessBaseAPI::GetComponentImages(PageIteratorLevel level, bool text_only, b
       Box *lbox = boxCreate(left, top, right - left, bottom - top);
       boxaAddBox(boxa, lbox, L_INSERT);
       if (pixa != nullptr) {
-        Pix *pix = nullptr;
+        Image pix;
         if (raw_image) {
           pix = page_it->GetImage(level, raw_padding, GetInputImage(), &left, &top);
         } else {
           pix = page_it->GetBinaryImage(level);
         }
-        pixaAddPix(*pixa, pix, L_INSERT);
+        pixaAddPix(*pixa, pix, L_CLONE);
         pixaAddBox(*pixa, lbox, L_CLONE);
       }
       if (paraids != nullptr) {
@@ -1257,7 +1245,7 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
   std::vector<int> page_numbers(boxes.size(), 1);
 
   // Init ImageData
-  auto *image_data = new ImageData(vertical, pix);
+  auto *image_data = new ImageData(vertical, Image(false, pix));    // must clone as pix is not ours/ImageData's to own
   image_data->set_page_number(1);
   image_data->AddBoxes(boxes, line_texts, page_numbers);
 
@@ -1316,7 +1304,7 @@ PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
  * Recognize the tesseract global image and return the result as Tesseract
  * internal structures.
  */
-int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
+int TessBaseAPI::Recognize() {
   if (tesseract_ == nullptr) {
     return -1;
   }
@@ -1398,8 +1386,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
     AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("Train Ambigs"));
     FILE *training_output_file = tess.init_recog_training(tess.input_file_path_.c_str());
     // OCR the page segmented into words by tesseract.
-    tess.recog_training_segmented(tess.input_file_path_.c_str(), page_res_, monitor,
-                                         training_output_file);
+    tess.recog_training_segmented(tess.input_file_path_.c_str(), page_res_, training_output_file);
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
@@ -1446,29 +1433,60 @@ int TessBaseAPI::Recognize(ETEXT_DESC *monitor) {
   return result;
 }
 
-// Takes ownership of the input pix.
+// DOES NOT takes ownership of the input pix, but clones it instead.
 void TessBaseAPI::SetInputImage(Pix *pix) {
-  tesseract().set_pix_original(pix);
+  Image img(false, pix);
+  img = img.copy();
+  tesseract_->set_pix_original(img);
+}
+
+// Takes ownership of the input pix.
+void TessBaseAPI::SetInputImage(Image &&pix) {
+  tesseract_->set_pix_original(pix);
+}
+void TessBaseAPI::SetInputImage(const Image &pix) {
+  tesseract_->set_pix_original(pix);
 }
 
 void TessBaseAPI::SetVisibleImage(Pix *pix) {
-  if (pix_visible_image_)
-    pixDestroy(&pix_visible_image_);
-  pix_visible_image_ = nullptr;
-  if (pix) {
     pix_visible_image_ = pixCopy(NULL, pix);
-    // tesseract().set_pix_visible_image(pix);
+    // tesseract_->set_pix_visible_image(pix);
+}
+
+void TessBaseAPI::SetVisibleImage(Image &&pix) {
+  pix_visible_image_ = pix;
+  // tesseract_->set_pix_visible_image(pix);
+}
+
+void TessBaseAPI::SetVisibleImage(const Image &pix) {
+  pix_visible_image_ = pix;   //.clone();
+  //tesseract_->set_pix_visible_image(pix);
+}
+
+Pix *TessBaseAPI::GetInputImage() const {
+  return tesseract_->pix_original().clone2pix();
+}
+
+static const char* NormalizationProcessModeName(int mode) {
+  switch(mode) {
+    case -1:
+      return "No normalization";
+    case 0:
+      return "NlBin2 (Thomas Breuel)";
+    case 1:
+      return "NlBin1";
+    case 2:
+      return "OKLab::Value";
+    default:
+      ASSERT0(!"Unknown Normalization Mode");
+      return "Unknown Normalization Mode";
   }
 }
 
-Pix *TessBaseAPI::GetInputImage() {
-  return tesseract().pix_original();
-}
-
-static const char* NormalizationModeName(int mode) {
-  switch(mode) {
+static const char *NormalizationTargetModeName(int mode) {
+  switch (mode) {
     case 0:
-      return "No normalization";
+      return "No Target";
     case 1:
       return "Thresholding + Recognition";
     case 2:
@@ -1486,34 +1504,81 @@ bool TessBaseAPI::NormalizeImage(int mode) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Normalize Image"));
 
-  if (!GetInputImage()) {
+  // Get a clone/copy of the source image rectangle, reduced to normalized greyscale,
+  // and at the same resolution as the output binary.
+  Image pix = GetInputImage();
+  if (!pix) {
     tprintError("Please use SetImage before applying the image pre-processing steps.\n");
     return false;
   }
 
-  Image pix = thresholder_->GetPixNormRectGrey();
-  if (tess.debug_image_normalization) {
-    tess.AddPixDebugPage(pix, fmt::format("Grayscale normalization based on nlbin (Thomas Breuel) mode = {} ({})", mode, NormalizationModeName(mode)));
+  Image result_pix = nullptr;
+
+  // Apply one of the various ways we can greyscale + normalize from source to greyscale.
+  int process = (mode >> 2);
+  if (mode == 0)
+    process = -1;
+
+  // ... and feed the result into the designated target(s): thresholder and/or tesseract source image (which is used as LSTM v4/v5 engine input).
+  int targets = (mode & 0x03);
+  bool debug = (tesseract_->debug_image_normalization || tesseract_->tessedit_write_images);
+
+  if (false && debug) {
+    tesseract_->AddPixDebugPage(pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
   }
-  if (mode == 1) {
-    SetInputImage(pix);
-    thresholder_->SetImage(GetInputImage());
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder & set up as input image");
-    }
-  } else if (mode == 2) {
-    thresholder_->SetImage(pix);
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(thresholder_->GetPixRect(), "Grayscale normalization, as obtained from the thresholder");
-    }
-  } else if (mode == 3) {
-    SetInputImage(pix);
-    if (tess.debug_image_normalization) {
-      tess.AddPixDebugPage(GetInputImage(), "Grayscale normalization, now set up as input image");
-    }
-  } else {
-    return false;
+
+  switch (process) {
+    case -1:
+      // no normalization!
+      if (debug) {
+        tprintDebug("No greyscale image normalization performed: greyscale image will be processed as-is; graynorm_mode = {}.\n", mode);
+      }
+      result_pix = pix;   // clone
+      break;
+
+    case 0:
+      result_pix = pixNLNorm2(pix, nullptr);
+      break;
+
+    case 1: {
+      int threshold, fgval, bgval;
+      result_pix = pixNLNorm1(pix, &threshold, &fgval, &bgval);
+    } break;
+
+    default:
+      tprintError("Unsupported normalization mode {} -> {}; not performing any normalization.\n", mode, process);
+      return false;
   }
+
+  if (debug) {
+    tesseract_->AddPixDebugPage(result_pix, fmt::format("Grayscale normalization mode = {} ({} ({}) + {} ({}))", mode, NormalizationProcessModeName(process), process, NormalizationTargetModeName(targets), targets));
+  }
+
+  switch (targets) {
+    case 0:
+      // no target??? only okay when we don't do any normalization at all.
+      if (process == -1) {
+        thresholder_->SetImage(pix);
+        break;
+      } else {
+        tprintWarn("The normalization mode {} does not designate a target; we will assume you intended {}, which is properly addressed by normalization mode {}.\n", mode, NormalizationTargetModeName(1), mode | 1);
+      }
+      //[[fallthrough]]
+    case 1:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 2:
+      thresholder_->SetImage(result_pix);
+      break;
+
+    case 3:
+      SetInputImage(result_pix);
+      thresholder_->SetImage(pix);
+      break;
+  }
+
   return true;
 }
 
@@ -1554,8 +1619,8 @@ int TessBaseAPI::GetSourceYResolution() {
 //
 // If `tessedit_page_number` is non-negative, will only process that
 // single page. Works for multi-page tiff file as well as or filelist.
-bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char *retry_config,
-                                       int timeout_millisec, TessResultRenderer *renderer) {
+bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, 
+                                       TessResultRenderer *renderer) {
   if (!flist && !buf) {
     return false;
   }
@@ -1604,21 +1669,21 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
       snprintf(pagename, sizeof(pagename), "%s", lines[i].c_str());
     }
     chomp_string(pagename);
-    Pix *pix = pixRead(pagename);
+    Image pix = pixRead(pagename);
     if (pix == nullptr) {
       tprintError("Image file {} cannot be read!\n", pagename);
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
     tess.applybox_page.set_value(page_number, PARAM_VALUE_IS_SET_BY_CORE_RUN);
-    bool r = ProcessPage(pix, pagename, retry_config, timeout_millisec, renderer);
+	bool r = ProcessPage(pix, pagename, renderer);
 
     if (two_pass || 1) {
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
 
       // pixWrite("/tmp/out.png", pix, IFF_PNG);
-      // Pix *newpix = pixPaintBoxa(pix, default_boxes, 0);
-      Pix *newpix = pixSetBlackOrWhiteBoxa(pix, default_boxes, L_SET_WHITE);
+      // Image newpix = pixPaintBoxa(pix, default_boxes, 0);
+      Image newpix = pixSetBlackOrWhiteBoxa(pix.ptr(), default_boxes, L_SET_WHITE);
       // pixWrite("/tmp/out_boxes.png", newpix, IFF_PNG);
 
       SetPageSegMode(PSM_SINGLE_BLOCK);
@@ -1628,14 +1693,12 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
 
       SetImage(newpix);
 
-      r = r && !Recognize(NULL);
+      r = r && !Recognize();
       renderer->AddImage(this);
 
       boxaDestroy(&default_boxes);
-      pixDestroy(&newpix);
     }
 
-    pixDestroy(&pix);
     if (!r) {
       return false;
     }
@@ -1655,9 +1718,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf, const char
 // If `tessedit_page_number` is non-negative, will only process that
 // single page in the multi-page tiff file.
 bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, const char *filename,
-                                            const char *retry_config, int timeout_millisec,
                                             TessResultRenderer *renderer) {
-  Pix *pix = nullptr;
+  Image pix;
   Tesseract& tess = tesseract();
   int page_number = (tess.tessedit_page_number >= 0) ? tess.tessedit_page_number : 0;
   size_t offset = 0;
@@ -1674,8 +1736,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
     tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_CORE_RUN);
-    bool r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
-    pixDestroy(&pix);
+    bool r = ProcessPage(pix, filename, renderer);
     if (!r) {
       return false;
     }
@@ -1691,12 +1752,12 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
 
 // Master ProcessPages calls ProcessPagesInternal and then does any post-
 // processing required due to being in a training mode.
-bool TessBaseAPI::ProcessPages(const char *filename, const char *retry_config, int timeout_millisec,
+bool TessBaseAPI::ProcessPages(const char *filename, 
                                TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel section_handle(&tess, tess.PushSubordinatePixDebugSection("Process pages"));
   
-  bool result = ProcessPagesInternal(filename, retry_config, timeout_millisec, renderer);
+  bool result = ProcessPagesInternal(filename, renderer);
 #if !DISABLED_LEGACY_ENGINE
   if (result) {
     if (tess.tessedit_train_from_boxes && !tess.WriteTRFile(output_file_.c_str())) {
@@ -1728,8 +1789,8 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 // impractical.  So we support a command line flag to explicitly
 // identify the scenario that really matters: filelists on
 // stdin. We'll still do our best if the user likes pipes.
-bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_config,
-                                       int timeout_millisec, TessResultRenderer *renderer) {
+bool TessBaseAPI::ProcessPagesInternal(const char *filename, 
+                                       TessResultRenderer *renderer) {
   bool stdInput = !strcmp(filename, "stdin") || !strcmp(filename, "/dev/stdin") || !strcmp(filename, "-");
   if (stdInput) {
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
@@ -1739,7 +1800,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
   }
 
   if (stream_filelist) {
-    return ProcessPagesFileList(stdin, nullptr, retry_config, timeout_millisec, renderer);
+    return ProcessPagesFileList(stdin, nullptr, renderer);
   }
 
   // At this point we are officially in auto-detection territory.
@@ -1847,7 +1908,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
       std::string u((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
       s = u.c_str();
     }
-    return ProcessPagesFileList(nullptr, &s, retry_config, timeout_millisec, renderer);
+    return ProcessPagesFileList(nullptr, &s, renderer);
   }
 
   // Maybe we have a TIFF which is potentially multipage
@@ -1859,9 +1920,9 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
                format == IFF_TIFF_ZIP);
 
   // Fail early if we can, before producing any output
-  Pix *pix = nullptr;
+  Image pix = nullptr;
   if (!tiff) {
-    pix = (data != nullptr) ? pixReadMem(data, buf.size()) : pixRead(filename);
+    pix = (data != nullptr ? pixReadMem(data, buf.size()) : pixRead(filename));
     if (pix == nullptr) {
       return false;
     }
@@ -1869,21 +1930,19 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 
   // Begin the output
   if (renderer && !renderer->BeginDocument(document_title.c_str())) {
-    pixDestroy(&pix);
     return false;
   }
 
   // Produce output
   if (tiff) {
-    r = ProcessPagesMultipageTiff(data, buf.size(), filename, retry_config, timeout_millisec, renderer);
+    r = ProcessPagesMultipageTiff(data, buf.size(), filename, renderer);
   }
   else {
     tesseract().applybox_page.set_value(-1 /* all pages */, PARAM_VALUE_IS_SET_BY_CORE_RUN);
-    r = ProcessPage(pix, filename, retry_config, timeout_millisec, renderer);
+	  r = ProcessPage(pix, filename, renderer);
   }
 
-  // Clean up memory as needed
-  pixDestroy(&pix);
+  Monitor().bump_progress().exec_progress_func();
 
   // End the output
   if (!r || (renderer && !renderer->EndDocument())) {
@@ -1893,7 +1952,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename, const char *retry_c
 }
 
 bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
-                              const char *retry_config, int timeout_millisec,
                               TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel page_level_handle(tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tesseract_->tessedit_page_number)));
@@ -1920,71 +1978,13 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
   }
 
   // Image preprocessing on image
-  
-  // pixTRCMap(PIX   *pixs, PIX   *pixm, NUMA  *na)  --> can create and use our own dynamic range mapping with this one!
-  // 
-  // pixAutoPhotoinvert()
-  //
-  //     if (edgecrop > 0.0) {
-  //  box = boxCreate(0.5f * edgecrop * w, 0.5f * edgecrop * h,
-  //                   (1.0f - edgecrop) * w, (1.0f - edgecrop) * h);
-  //   pix2 = pixClipRectangle(pix1, box, NULL);
-  //   boxDestroy(&box);
-  // }
-  //   else {
-  //   pix2 = pixClone(pix1);
-  // }
-  //
-  // pixCleanBackgroundToWhite()
-  //
-  //   pixalpha = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);  /* save */
-  //   if ((nag = numaGammaTRC(gamma, minval, maxval)) == NULL)
-  //     return (PIX *)ERROR_PTR("nag not made", __func__, pixd);
-  //   pixTRCMap(pixd, NULL, nag);
-  //   pixSetRGBComponent(pixd, pixalpha, L_ALPHA_CHANNEL); /* restore */
-  //   pixSetSpp(pixd, 4);
-  //   numaDestroy(&nag);
-  //   pixDestroy(&pixalpha);
-  //
-  // l_float32  avefg, avebg;
-  //   l_float32 numfg, numbg;
-  //   NUMA *na = pixGetGrayHistogram(pixt, 1);
-  //   l_float32 mean, median, mode, variance;
-  //   numaGetHistogramStats(na, 0.0, 1.0, &mean, &median, &mode, &variance);
-  //
-  // PIX * pixGetRGBComponent ( PIX *pixs, l_int32 comp );
-  //
-  // pixGetRankValue()
-  // numaHistogramGetValFromRank(na, rank, &val);
-  //
-  // numaGetMin(), numaGetMax()
-  //
-  // pixThresholdByConnComp()
-  //
-  //  numaGetNonzeroRange()
-  //
-  // pixMaxDynamicRange
-
-  
-
-
-  
 
   // Grayscale normalization
-  int graynorm_mode = tess.preprocess_graynorm_mode;
+  int graynorm_mode = tesseract_->preprocess_graynorm_mode;
   {
-    Image input_img = GetInputImage();
-
-    if (graynorm_mode > 0 && NormalizeImage(graynorm_mode) && tess.tessedit_write_images) {
-      // Write normalized image 
-      Pix *p1;
-      if (graynorm_mode == 2) {
-        p1 = thresholder_->GetPixRect();
-      } else {
-        p1 = GetInputImage();
-      }
-      tess.AddPixDebugPage(p1, fmt::format("Greyscale normalized image to process @ graynorm_mode = {}", graynorm_mode));
-    }
+    bool rc = NormalizeImage(graynorm_mode);
+    if (!rc)
+      return false;
   }
 
   // Recognition
@@ -1998,45 +1998,14 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
     }
   } else if (tess.tessedit_pageseg_mode == PSM_OSD_ONLY) {
     failed = (FindLines() != 0);
-  } else if (timeout_millisec > 0) {
-    // Running with a timeout.
-    ETEXT_DESC monitor;
-    monitor.cancel = nullptr;
-    monitor.cancel_this = nullptr;
-    monitor.set_deadline_msecs(timeout_millisec);
-
-    // Now run the main recognition.
-    failed = (Recognize(&monitor) < 0);
   } else {
-    // Normal layout and character recognition with no timeout.
-    failed = (Recognize(nullptr) < 0);
+    // Normal layout and character recognition.
+    failed = (Recognize() < 0);
   }
 
   if (tess.tessedit_write_images) {
-    Pix *page_pix = GetThresholdedImage();
+    Image page_pix = GetThresholdedImage();
     tess.AddPixDebugPage(page_pix, fmt::format("processed page #{} : text recog done", 1 + tess.tessedit_page_number));
-  }
-
-  if (failed && retry_config != nullptr && retry_config[0] != '\0') {
-    // Save current config variables before switching modes.
-    FILE *fp = fopen(kOldVarsFile, "wb");
-    if (fp == nullptr) {
-      tprintError("Failed to open file \"{}\"\n", kOldVarsFile);
-    } else {
-      DumpVariables(fp);
-      fclose(fp);
-    }
-    // Switch to alternate mode for retry.
-    ReadConfigFile(retry_config);
-    SetImage(pix);
-    
-    // Apply image preprocessing
-    NormalizeImage(graynorm_mode);
-
-    //if (normalize_grayscale) thresholder_->SetImage(thresholder_->GetPixNormRectGrey());
-    Recognize(nullptr);
-    // Restore saved config variables.
-    ReadConfigFile(kOldVarsFile);
   }
 
   if (renderer && !failed) {
@@ -2095,7 +2064,7 @@ MutableIterator *TessBaseAPI::GetMutableIterator() {
 
 /** Make a text string from the internal data structures. */
 char *TessBaseAPI::GetUTF8Text() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
     return nullptr;
   }
   std::string text("");
@@ -2203,7 +2172,7 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
@@ -2389,7 +2358,7 @@ const int kMaxBytesPerLine = kNumbersPerBlob * (kBytesPer64BitNumber + 1) + 1 + 
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetBoxText(int page_number) {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
     return nullptr;
   }
   int blob_count;
@@ -2438,7 +2407,7 @@ const int kLatinChs[] = {0x00a2, 0x0022, 0x0022, 0x0027, 0x0027, 0x00b7, 0x002d,
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetUNLVText() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
     return nullptr;
   }
   bool tilde_crunch_written = false;
@@ -2629,7 +2598,7 @@ int TessBaseAPI::MeanTextConf() {
 
 /** Returns an array of all word confidences, terminated by -1. */
 int *TessBaseAPI::AllWordConfidences() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
     return nullptr;
   }
   int n_word = 0;
@@ -2738,12 +2707,11 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
  * any Recognize or Get* operation.
  */
 void TessBaseAPI::Clear() {
-  // TODO? write/flush log output / ReportDebugInfo() ?
-
+  // write/flush diagnostics log output via ReportDebugInfo() is done inside ClearResults() before we clear the instance.
+  ClearResults();
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
   }
-  ClearResults();
   if (tesseract_ != nullptr) {
     SetInputImage(nullptr);
   }
@@ -2800,7 +2768,7 @@ void TessBaseAPI::WipeSqueakyCleanForReUse() {
     tesseract_->WipeSqueakyCleanForReUse();
   }
 
-  pixDestroy(&pix_visible_image_);
+  //pixDestroy(&pix_visible_image_);
   pix_visible_image_ = nullptr;
   visible_image_file_.clear();
   output_file_.clear();
@@ -2819,6 +2787,11 @@ void TessBaseAPI::End() {
 
   delete tesseract_;
   tesseract_ = nullptr;
+
+  // keep the monitor intact, though!
+#if 0
+  monitor_ = &default_minimal_monitor_;
+#endif
 }
 
 // Clear any library-level memory caches.
@@ -2929,19 +2902,21 @@ bool TessBaseAPI::InternalResetImage() {
  * Run the thresholder to make the thresholded image, returned in pix,
  * which must not be nullptr. *pix must be initialized to nullptr, or point
  * to an existing pixDestroyable Pix.
+ * 
  * The usual argument to Threshold is Tesseract::mutable_pix_binary().
  */
 bool TessBaseAPI::Threshold(Pix **pix) {
   Tesseract& tess = tesseract();
   ASSERT_HOST(pix != nullptr);
-  if (*pix != nullptr) {
+  if (*pix != nullptr) {    
     pixDestroy(pix);
   }
   // Zero resolution messes up the algorithms, so make sure it is credible.
   int user_dpi = tess.user_defined_dpi;
   int y_res = thresholder_->GetScaledYResolution();
   if (user_dpi && (user_dpi < kMinCredibleResolution || user_dpi > kMaxCredibleResolution)) {
-    tprintWarn("User defined image dpi is outside of expected range "
+    tprintWarn(
+        "User defined image dpi is outside of expected range "
         "({} - {})!\n",
         kMinCredibleResolution, kMaxCredibleResolution);
   }
@@ -2952,97 +2927,120 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     if (y_res != 0) {
       // Show warning only if a resolution was given.
       tprintWarn("Invalid resolution {} dpi. Using {} instead.\n",
-              y_res, kMinCredibleResolution);
+                 y_res, kMinCredibleResolution);
     }
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
 
-  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
-
-  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method)));
-
-  {
-    tesseract_->PushNextPixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}", selected_thresholding_method));
-
-	  if (selected_thresholding_method == ThresholdMethod::Otsu) {
-		  Image pix_binary(*pix);
-		  if (!thresholder_->ThresholdToPix(&pix_binary)) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  if (!thresholder_->IsBinary()) {
-			  tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-			  tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
-		  } else {
-			  tesseract_->set_pix_thresholds(nullptr);
-			  tesseract_->set_pix_grey(nullptr);
-		  }
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), "Otsu (tesseract) : Greyscale = pre-image");
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), "Otsu (tesseract) : Thresholds");
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, "Otsu (tesseract) : Binary = post-image");
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("Otsu (tesseract) : post-processed: {} -- just an example to showcase what leptonica can do for us!", sequence));
-
-        l_int32 w, h, d;
-        Image composite = tesseract_->pix_grey().copy();
-        pixGetDimensions(composite, &w, &h, &d);
-        Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
-        pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
-        tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", sequence));
-
-        mask.destroy();
-        composite.destroy();
-        pix_post.destroy();
-      }
-	  } else {
-		  auto [ok, pix_grey, pix_binary, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
-
-		  if (!ok) {
-			  return false;
-		  }
-
-		  *pix = pix_binary;
-
-		  tesseract_->set_pix_thresholds(pix_thresholds);
-		  tesseract_->set_pix_grey(pix_grey);
-
-      std::string caption = ThresholdMethodName(selected_thresholding_method);
-
-      if (tesseract_->tessedit_dump_pageseg_images) {
-        tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-        tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
-        if (verbose_process) {
-          tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
-        }
-        tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
-
-        const char *sequence = "c1.1 + d3.3";
-        const int dispsep = 0;
-        Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-        tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {}", caption, sequence));
-        pix_post.destroy();
-      }
-
-      //pix_thresholds.destroy();
-      //pix_grey.destroy();
-    }
+  if (Monitor().bump_progress().exec_progress_func().kick_watchdog_and_check_for_cancel()) {
+    tprintWarn("Timeout/cancel: abort the image threshold preprocessing stage.\n");
+    return false;
   }
+
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  Image pix_binary;
+
+  std::string caption = ThresholdMethodName(selected_thresholding_method);
+  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
+
+  if (selected_thresholding_method == ThresholdMethod::Otsu) {
+    pix_binary = pix;
+    if (!thresholder_->ThresholdToPix(&pix_binary)) {
+      return false;
+    }
+
+    *pix = pix_binary.clone2pix();
+
+    if (!thresholder_->IsBinary()) {
+      tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+      tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+    } else {
+      tesseract_->set_pix_thresholds(nullptr);
+      tesseract_->set_pix_grey(nullptr);
+    }
+  } else {
+    auto [ok, pix_grey, pix_binary2, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
+
+    if (!ok) {
+      return false;
+    }
+
+    pix_binary = pix_binary2;
+    *pix = pix_binary.clone2pix();
+
+    tesseract_->set_pix_thresholds(pix_thresholds);    // candidates for move semantics
+    tesseract_->set_pix_grey(pix_grey);
+    // pix_thresholds.destroy();
+    // pix_grey.destroy();
+  }
+
+  if (tesseract_->tessedit_dump_pageseg_images) {
+    tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+    tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+    if (verbose_process) {
+      tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
+    }
+    tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+  }
+
+  // demo a bit of pre-postprocessing
+  {
+    const char *sequence = "c1.1 + d3.3";
+    const int dispsep = 0;
+    Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
+    tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {} -- just an example to showcase what leptonica can do for us!", caption, sequence));
+
+    l_int32 w, h, d;
+    Image composite = tesseract_->pix_grey().copy();
+    pixGetDimensions(composite, &w, &h, &d);
+    Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
+    pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
+    tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
+
+    Image noise1 = pixEmphasizeImageNoise(tesseract_->pix_original().ptr());
+    Image noise2 = pixEmphasizeImageNoise(tesseract_->pix_grey().ptr());
+    Image noise3 = pixEmphasizeImageNoise(composite.ptr());
+    Image noise4 = pixEmphasizeImageNoise(pix_post.ptr());
+    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis A: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis B: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis C: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis D: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+
+    noise1 = pixEmphasizeImageNoise2(tesseract_->pix_original().ptr());
+    noise2 = pixEmphasizeImageNoise2(tesseract_->pix_grey().ptr());
+    noise3 = pixEmphasizeImageNoise2(composite.ptr());
+    noise4 = pixEmphasizeImageNoise2(pix_post.ptr());
+    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis E: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis F: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+
+    if (false) {
+      // NOTE/WARNING: if you want to pick up one of these processed images as the replacement `*pix` then you MUST
+      // blow away the previously set *pix or refcounting with that PIX** will leak:
+      if (*pix != nullptr) {
+        pixDestroy(pix); // releasing the previous clone
+      }
+      *pix = composite.clone2pix();
+    }
+
+    //noise1.destroy();
+    //noise2.destroy();
+    //noise3.destroy();
+    //noise4.destroy();
+    //mask.destroy();
+    //composite.destroy();
+    //pix_post.destroy();
+  }
+
   if (verbose_process) {
-    tprintInfo("PROCESS: For overall very dark images you may sometimes observe that tesseract *inverts* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that number of black text pixels (*foreground*) should be significantly *lower* than the number of white *background* pixels in a page.\n\n"
-      "With very dark pages that ratio of many background vs. few foreground pixels is the opposite of tesseract's assumption regarding black and white pixels so it will decide to *invert* the image, thus attempting to get back to a *black text over white background input image*. tesseract does this in its effort to feed the inner OCR engine image material that is as close as possible to what it has always been trained with and designed for: basic scanned books and academic publications: those all have: (dark) black text on (light) white plain background.\n\n"
-      "Also note that tesseract is not geared towards recognizing and dealing nicely with other (a.k.a. *non-text*) page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
-    tprintInfo("PROCESS: Removing all non-text image elements in the page image *before you feed it to tesseract* also will have a notable effect on the thresholding (a.k.a. binarization) algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels.\n\n"
-      "Remember: only *foreground* pixels that turn up as *black* in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text; anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
+    tprintInfo(
+        "PROCESS: For overall very dark images you may sometimes observe that tesseract *inverts* the image in an attempt to extract the foreground 'text' pixels: tesseract naively assumes that number of black text pixels (*foreground*) should be significantly *lower* than the number of white *background* pixels in a page.\n\n"
+        "With very dark pages that ratio of many background vs. few foreground pixels is the opposite of tesseract's assumption regarding black and white pixels so it will decide to *invert* the image, thus attempting to get back to a *black text over white background input image*. tesseract does this in its effort to feed the inner OCR engine image material that is as close as possible to what it has always been trained with and designed for: basic scanned books and academic publications: those all have: (dark) black text on (light) white plain background.\n\n"
+        "Also note that tesseract is not geared towards recognizing and dealing nicely with other (a.k.a. *non-text*) page elements, such as in-page images, charts, illustrations and/or scanner equipment background surrounding your page at the time it was photographed: it benefits all if you can remove and/or clean up such image elements before feeding the image to tesseract.\n");
+    tprintInfo(
+        "PROCESS: Removing all non-text image elements in the page image *before you feed it to tesseract* also will have a notable effect on the thresholding (a.k.a. binarization) algorithm's behaviour as the *pixel greyscale levels histogram* will then have a different shape; tesseract thresholding works best when fed clean page images with high contrast between the (very) light background and (very) dark foreground pixels.\n\n"
+        "Remember: only *foreground* pixels that turn up as *black* in the binarized/thresholded image result above will potentially be sent to the OCR AI engine for decoding into text; anything that doesn't show clearly in the above thresholded image will not be processed by tesseract, so your page image preprocessing process should strive towards making tesseract produce a clear black&white page image above for optimal OCR text extraction results!\n");
   }
 
   thresholder_->GetImageSizes(&rect_left_, &rect_top_, &rect_width_, &rect_height_, &image_width_,
@@ -3055,11 +3053,15 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   int estimated_res = ClipToRange(thresholder_->GetScaledEstimatedResolution(),
                                   kMinCredibleResolution, kMaxCredibleResolution);
   if (estimated_res != thresholder_->GetScaledEstimatedResolution()) {
-    tprintWarn("Estimated internal resolution {} out of range! "
+    tprintWarn(
+        "Estimated internal resolution {} out of range! "
         "Corrected to {}.\n",
         thresholder_->GetScaledEstimatedResolution(), estimated_res);
   }
   tess.set_source_resolution(estimated_res);
+
+  (void)Monitor().bump_progress().exec_progress_func();
+
   return true;
 }
 
@@ -3085,8 +3087,8 @@ int TessBaseAPI::FindLines() {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
     }
 
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+	Image pix;
+	if (!Threshold(pix.obtains())) {
       return -1;
     }
     tess.set_pix_binary(pix);
@@ -3113,7 +3115,7 @@ int TessBaseAPI::FindLines() {
 #if !DISABLED_LEGACY_ENGINE
   if (tess.textord_equation_detect) {
     if (equ_detect_ == nullptr && !datapath_.empty()) {
-      equ_detect_ = new EquationDetect(datapath_.c_str(), nullptr);
+      equ_detect_ = new EquationDetect(*this, datapath_.c_str());
     }
     if (equ_detect_ == nullptr) {
       tprintWarn("Could not set equation detector\n");
@@ -3134,7 +3136,7 @@ int TessBaseAPI::FindLines() {
     if (strcmp(language_.c_str(), "osd") == 0) {
       osd_tess = tesseract_;
     } else {
-      osd_tesseract_ = new Tesseract(tesseract_);
+      osd_tesseract_ = new Tesseract(*this, tesseract_);
       TessdataManager mgr(reader_);
       std::vector<std::string> nil;
       if (datapath_.empty()) {
@@ -3247,8 +3249,8 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
   ClearResults();
   Tesseract& tess = tesseract();
   if (tess.pix_binary() == nullptr) {
-    Image pix = Image();
-    if (!Threshold(&pix.pix_)) {
+	  Image pix;
+	  if (!Threshold(pix.obtains())) {
       return false;
     }
     tess.set_pix_binary(pix);
@@ -3363,196 +3365,6 @@ void TessBaseAPI::ReportDebugInfo() {
   tesseract().ReportDebugInfo();
 }
 
-void TessBaseAPI::SetupDebugAllPreset() {
-  Tesseract& tess = tesseract();
-  Textord &textord = *tess.mutable_textord();
-  
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
-
-  verbose_process.set_value(true, SRC);
-  
-#if !GRAPHICS_DISABLED
-  scrollview_support.set_value(true, SRC);
-#endif
-
-  textord_tabfind_show_images.set_value(true, SRC);
-  // textord_tabfind_show_vlines.set_value(true, SRC);
-
-#if !GRAPHICS_DISABLED
-  textord_tabfind_show_initial_partitions.set_value(true, SRC);
-  textord_tabfind_show_reject_blobs.set_value(true, SRC);
-  textord_tabfind_show_partitions.set_value(2, SRC);
-  textord_tabfind_show_columns.set_value(true, SRC);
-  textord_tabfind_show_blocks.set_value(true, SRC);
-#endif
-
-  textord.textord_noise_debug.set_value(true, SRC);
-  textord_oldbl_debug.set_value(false, SRC); // turned OFF, for 'true' produces very noisy output
-  textord.textord_baseline_debug.set_value(true, SRC);
-  textord_debug_block.set_value(9, SRC);
-  textord_debug_bugs.set_value(9, SRC);
-  textord_debug_tabfind.set_value(1 /* 9 */, SRC); // '9' produces very noisy output
-
-  textord_debug_baselines.set_value(true, SRC);
-  textord_debug_blob.set_value(true, SRC);
-  textord_debug_pitch_metric.set_value(true, SRC);
-  textord_debug_fixed_pitch_test.set_value(true, SRC);
-  textord_debug_pitch.set_value(true, SRC);
-  textord_debug_printable.set_value(true, SRC);
-  textord_debug_xheights.set_value(true, SRC);
-  textord_debug_xheights.set_value(true, SRC);
-
-  textord_show_initial_words.set_value(true, SRC);
-  textord_blocksall_fixed.set_value(true, SRC);
-  textord_blocksall_prop.set_value(true, SRC);
-
-  tess.tessedit_create_hocr.set_value(true, SRC);
-  tess.tessedit_create_alto.set_value(true, SRC);
-  tess.tessedit_create_page_xml.set_value(true, SRC);
-  tess.tessedit_create_tsv.set_value(true, SRC);
-  tess.tessedit_create_pdf.set_value(true, SRC);
-  tess.textonly_pdf.set_value(false, SRC); // turned OFF
-  tess.tessedit_write_unlv.set_value(true, SRC);
-  tess.tessedit_create_lstmbox.set_value(true, SRC);
-  tess.tessedit_create_boxfile.set_value(true, SRC);
-  tess.tessedit_create_wordstrbox.set_value(true, SRC);
-  tess.tessedit_create_txt.set_value(true, SRC);
-
-  tess.tessedit_dump_choices.set_value(true, SRC);
-  tess.tessedit_dump_pageseg_images.set_value(true, SRC);
-
-  tess.tessedit_write_images.set_value(true, SRC);
-
-  tess.tessedit_adaption_debug.set_value(true, SRC);
-  tess.tessedit_debug_block_rejection.set_value(true, SRC);
-  tess.tessedit_debug_doc_rejection.set_value(true, SRC);
-  tess.tessedit_debug_fonts.set_value(true, SRC);
-  tess.tessedit_debug_quality_metrics.set_value(true, SRC);
-
-  tess.tessedit_rejection_debug.set_value(true, SRC);
-  tess.tessedit_timing_debug.set_value(true, SRC);
-
-  tess.tessedit_bigram_debug.set_value(true, SRC);
-
-  tess.tess_debug_lstm.set_value(debug_all >= 1 ? 1 : 0, SRC); // LSTM debug output is extremely noisy
-
-  tess.debug_noise_removal.set_value(true, SRC);
-
-  tess.classify_debug_level.set_value(debug_all.value(), SRC); // LSTM debug output is extremely noisy
-  tess.classify_learning_debug_level.set_value(9, SRC);
-  tess.classify_debug_character_fragments.set_value(true, SRC);
-  tess.classify_enable_adaptive_debugger.set_value(true, SRC);
-  // tess.classify_learn_debug_str.set_value("????????????????", SRC);
-  tess.matcher_debug_separate_windows.set_value(true, SRC);
-  tess.matcher_debug_flags.set_value(true, SRC);
-  tess.matcher_debug_level.set_value(3, SRC);
-
-  tess.multilang_debug_level.set_value(3, SRC);
-
-  tess.paragraph_debug_level.set_value(3, SRC);
-
-  tess.segsearch_debug_level.set_value(3, SRC);
-
-  // TODO: synchronize the settings of all Dict instances during Dict object creation and after any change...
-
-  Dict &dict = tess.getInitialDict();
-  dict.stopper_debug_level.set_value(3, SRC);
-
-  tess.superscript_debug.set_value(true, SRC);
-
-  tess.crunch_debug.set_value(true, SRC);
-
-  dict.dawg_debug_level.set_value(1, SRC); // noisy
-
-  tess.debug_fix_space_level.set_value(9, SRC);
-  tess.debug_x_ht_level.set_value(3, SRC);
-  // tess.debug_file.set_value("xxxxxxxxxxxxxxxxx", SRC);
-  // tess.debug_output_path.set_Value("xxxxxxxxxxxxxx", SRC);
-  debug_misc.set_value(true, SRC);
-
-  dict.hyphen_debug_level.set_value(3, SRC);
-
-  LanguageModelSettings &langmodel = tess.getLanguageModelSettings();
-
-  langmodel.language_model_debug_level.set_value(0, SRC); /* 7 */
-
-  textord.tosp_debug_level.set_value(3, SRC);
-
-  tess.wordrec_debug_level.set_value(3, SRC);
-
-  //dict.word_to_debug.set_value("", SRC);
-
-  tess.scribe_save_grey_rotated_image.set_value(true, SRC);
-  tess.scribe_save_binary_rotated_image.set_value(true, SRC);
-  tess.scribe_save_original_rotated_image.set_value(true, SRC);
-
-  tess.hocr_font_info.set_value(true, SRC);
-  tess.hocr_char_boxes.set_value(true, SRC);
-  tess.hocr_images.set_value(true, SRC);
-
-  tess.thresholding_debug.set_value(true, SRC);
-
-  tess.preprocess_graynorm_mode.set_value(0, SRC); // 0..3
-
-  tess.tessedit_bigram_debug.set_value(true, SRC);
-
-  tess.wordrec_debug_blamer.set_value(true, SRC);
-
-  devanagari_split_debugimage.set_value(true, SRC);
-  devanagari_split_debuglevel.set_value(3, SRC);
-
-  gapmap_debug.set_value(true, SRC);
-
-  poly_debug.set_value(false, SRC); // turned OFF: 'othwerwise 'true' produces very noisy output
-
-  edges_debug.set_value(true, SRC);
-
-  tess.ambigs_debug_level.set_value(3, SRC);
-
-  tess.applybox_debug.set_value(true, SRC);
-
-  tess.bidi_debug.set_value(true, SRC);
-
-  tess.chop_debug.set_value(3, SRC);
-
-  tess.debug_baseline_fit.set_value(1, SRC); // 0..3
-  tess.debug_baseline_y_coord.set_value(-2000, SRC);
-
-  tess.debug_write_unlv.set_value(true, SRC);
-  tess.debug_line_finding.set_value(true, SRC);
-  tess.debug_image_normalization.set_value(true, SRC);
-
-  tess.interactive_display_mode.set_value(false, SRC);       // graphics, but do not invoke ScrollView app.
-
-  tess.debug_display_page.set_value(true, SRC);
-  tess.debug_display_page_blocks.set_value(true, SRC);
-  tess.debug_display_page_baselines.set_value(true, SRC);
-
-  tess.dump_segmented_word_images.set_value(true, SRC);
-  tess.dump_osdetect_process_images.set_value(true, SRC);
-
-  tess.ResyncVariablesInternally();
-}
-
-void TessBaseAPI::SetupDefaultPreset() {
-  Tesseract &tess = tesseract();
-  const ParamSetBySourceType SRC = PARAM_VALUE_IS_SET_BY_PRESET;
-
-  // default: TXT + HOCR renderer     ... plus all the rest of 'em   [GHo patch]
-  tess.tessedit_create_hocr.set_value(true, SRC);
-  tess.tessedit_create_alto.set_value(true, SRC);
-  tess.tessedit_create_page_xml.set_value(true, SRC);
-  tess.tessedit_create_tsv.set_value(true, SRC);
-  tess.tessedit_create_pdf.set_value(true, SRC);
-  tess.textonly_pdf.set_value(false, SRC);         // turned OFF
-  tess.tessedit_write_unlv.set_value(true, SRC);
-  tess.tessedit_create_lstmbox.set_value(true, SRC);
-  tess.tessedit_create_boxfile.set_value(true, SRC);
-  tess.tessedit_create_wordstrbox.set_value(true, SRC);
-  tess.tessedit_create_txt.set_value(true, SRC);
-
-  tess.ResyncVariablesInternally();
-}
 
 
 // sanity check for the imagelist expander below: any CONTROL characters in here signal binary data and thus NOT AN IMAGELIST format.

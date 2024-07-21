@@ -24,6 +24,7 @@
 #include "pageres.h"
 #include "scrollview.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 namespace tesseract {
 
@@ -93,7 +94,6 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
   }
   if (width < min_width || height < min_width) {
     tprintError("Image too small to scale!! ({}x{} vs minimum width of {})\n", width, height, min_width);
-    pix.destroy();
     return nullptr;
   }
   return pix;
@@ -117,7 +117,7 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
   if (color) {
     // Force RGB.
     if (depth == 32) {
-      normed_pix = var_pix.clone();
+      normed_pix = var_pix; //.clone();
     }
     else {
       normed_pix = pixConvertTo32(var_pix);
@@ -126,7 +126,7 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
   else {
     // Convert non-8-bit images to 8 bit.
     if (depth == 8) {
-      normed_pix = var_pix.clone();
+      normed_pix = var_pix; //.clone();
     }
     else {
       normed_pix = pixConvertTo8(var_pix, false);
@@ -141,7 +141,6 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
     // Get the scaled image.
     float im_factor = static_cast<float>(target_height) / height;
     Image scaled_pix = pixScale(normed_pix, im_factor, im_factor);
-    normed_pix.destroy();
     normed_pix = scaled_pix;
   }
   if (tess != nullptr && (verbose_process || tess->tessedit_dump_pageseg_images))
@@ -149,7 +148,6 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
       tess->AddPixCompedOverOrigDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
   input->FromPix(shape, normed_pix, randomizer);
-  normed_pix.destroy();
 }
 
 } // namespace tesseract.
