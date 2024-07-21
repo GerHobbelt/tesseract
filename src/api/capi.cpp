@@ -411,20 +411,20 @@ TessPageIterator *TessBaseAPIAnalyseLayout(TessBaseAPI *handle) {
   return handle->AnalyseLayout();
 }
 
-int TessBaseAPIRecognize(TessBaseAPI *handle, ETEXT_DESC *monitor) {
-  return handle->Recognize(monitor);
+int TessBaseAPIRecognize(TessBaseAPI *handle) {
+  return handle->Recognize();
 }
 
-BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename, const char *retry_config,
-                             int timeout_millisec, TessResultRenderer *renderer) {
-  return static_cast<int>(handle->ProcessPages(filename, retry_config, timeout_millisec, renderer));
+BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename, 
+                             TessResultRenderer *renderer) {
+  return static_cast<int>(handle->ProcessPages(filename, renderer));
 }
 
 BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
-                            const char *filename, const char *retry_config, int timeout_millisec,
+                            const char *filename, 
                             TessResultRenderer *renderer) {
   return static_cast<int>(
-      handle->ProcessPage(pix, filename, retry_config, timeout_millisec, renderer));
+      handle->ProcessPage(pix, filename, renderer));
 }
 
 TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle) {
@@ -440,7 +440,7 @@ char *TessBaseAPIGetUTF8Text(TessBaseAPI *handle) {
 }
 
 char *TessBaseAPIGetHOCRText(TessBaseAPI *handle, int page_number) {
-  return handle->GetHOCRText(nullptr, page_number);
+  return handle->GetHOCRText(page_number);
 }
 
 char *TessBaseAPIGetAltoText(TessBaseAPI *handle, int page_number) {
@@ -709,16 +709,8 @@ void TessMonitorSetCancelFunc(ETEXT_DESC *monitor, TessCancelFunc cancelFunc) {
   monitor->cancel = cancelFunc;
 }
 
-void TessMonitorSetCancelThis(ETEXT_DESC *monitor, void *cancelThis) {
-  monitor->cancel_this = cancelThis;
-}
-
-void *TessMonitorGetCancelThis(ETEXT_DESC *monitor) {
-  return monitor->cancel_this;
-}
-
 void TessMonitorSetProgressFunc(ETEXT_DESC *monitor, TessProgressFunc progressFunc) {
-  monitor->progress_callback2 = progressFunc;
+  monitor->progress_callback = progressFunc;
 }
 
 int TessMonitorGetProgress(ETEXT_DESC *monitor) {

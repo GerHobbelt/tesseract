@@ -20,9 +20,10 @@
 
 #include <tesseract/baseapi.h>
 #include <tesseract/ocrclass.h>
-#include "image.h"
+#include <tesseract/image.h>
 
 #include <leptonica/allheaders.h>
+
 #include "gmock/gmock.h"
 
 #include <fstream>

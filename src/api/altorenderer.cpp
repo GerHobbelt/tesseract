@@ -129,15 +129,7 @@ TessAltoRenderer::TessAltoRenderer(const char *outputbase)
 /// data structures.
 ///
 char *TessBaseAPI::GetAltoText(int page_number) {
-  return GetAltoText(nullptr, page_number);
-}
-
-///
-/// Make an XML-formatted string with ALTO markup from the internal
-/// data structures.
-///
-char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(monitor) < 0)) {
+  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
@@ -172,7 +164,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
         // Handle all kinds of images.
-    //
+		//
         // TODO: optionally add TYPE, for example TYPE="photo".
         alto_str << "\t\t\t\t<Illustration ID=\"cblock_" << bcnt++ << "\"";
         AddBoxToAlto(res_it, RIL_BLOCK, alto_str);

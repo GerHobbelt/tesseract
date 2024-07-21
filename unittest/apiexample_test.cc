@@ -23,6 +23,7 @@
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
+#include <tesseract/image.h>
 #include <time.h>
 #include <fstream>
 #include <iostream>
@@ -30,7 +31,6 @@
 #include <memory> // std::unique_ptr
 #include <string>
 #include "include_gunit.h"
-#include "image.h"
 #include "log.h"
 
 #include "testdata.h"

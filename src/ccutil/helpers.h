@@ -64,6 +64,9 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <type_traits>
+
+//#include <fmt/chrono.h>
 
 #include "serialis.h"
 #include "tesstypes.h" // for TFloat
@@ -78,6 +81,14 @@ static inline bool strempty(const char *s) {
   return s == nullptr || *s == 0;
 }
 
+static inline char *strnrpbrk(char *base, const char *breakset, size_t len) {
+  for (size_t i = len; i > 0;) {
+    if (strchr(breakset, base[--i]))
+      return base + i;
+  }
+  return nullptr;
+}
+
 // convert all path separators from native to '/'.
 static inline void unixify_path(std::string &s) {
   std::string::size_type n = 0;
@@ -85,6 +96,16 @@ static inline void unixify_path(std::string &s) {
     s[n] = '/';
     n++;
   }
+}
+
+static inline const char *basename(const char *path) {
+  size_t i;
+  size_t len = strlen(path);
+  for (i = strcspn(path, ":/\\"); i < len; i = strcspn(path, ":/\\")) {
+    path = path + i + 1;
+    len -= i + 1;
+  }
+  return path;
 }
 
 // Copy a std::string to a newly allocated char *.
@@ -333,6 +354,79 @@ bool Serialize(FILE *fp, const std::vector<T> &data) {
     }
   }
   return true;
+}
+
+// convert chrono::duration to floating point value in seconds:
+template <class Rep, class Period>
+constexpr auto seconds(const std::chrono::duration<Rep, Period> &dur) {
+  return std::chrono::duration<double>(dur).count();
+}
+
+// ... because fmt::format("{:.3f}") does not remove trailing insignificant zero digits
+
+template <typename Type>
+concept FloatType = std::is_same<Type, float>::value ||
+                    std::is_same<Type, double>::value ||
+                    std::is_same<Type, long double>::value;
+
+template <FloatType T>
+std::string to_prec(T v, int prec) {
+  char buf[64];
+  if constexpr (std::is_same_v<T, float>) {
+    snprintf(buf, sizeof(buf), "%0.3f", v);
+  } else if constexpr (std::is_same_v<T, double>) {
+    snprintf(buf, sizeof(buf), "%0.3lf", v);
+  }
+  else if constexpr (std::is_same_v<T, long double>) {
+    snprintf(buf, sizeof(buf), "%0.3Lf", v);
+  }
+
+  // trim off the insignificant tail
+  char *d = buf + strlen(buf) - 1;
+  while (d > buf) {
+    if (*d == '0') {
+      *d-- = 0;
+      continue;
+    }
+    if (*d == '.') {
+      *d-- = 0;
+    }
+    break;
+  }
+
+  return buf;
+}
+
+// convert string to a format that's readable in both debug console and HTML/MarkDown:
+// wrap the string in '`' backticks and escape any backticks within by duplicating them.
+static inline std::string mdqstr(const std::string &s) {
+  if (s.empty())
+    return "<empty>";
+  const char *str = s.c_str();
+  if (!strchr(str, '`')) {
+    return "`" + s + "`";
+  }
+  std::string rv;
+  rv = "`";
+  while (*str) {
+    auto pos = strcspn(str, "`");
+    if (pos > 0) {
+      std::string_view particle(str, pos);
+      rv += particle;
+      str += pos;
+    }
+    switch (*str) {
+      case 0:
+        break;
+
+      case '`':
+        rv += "``";
+        str++;
+        continue;
+    }
+  }
+  rv += "`";
+  return rv;
 }
 
 } // namespace tesseract

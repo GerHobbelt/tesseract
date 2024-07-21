@@ -75,16 +75,16 @@ struct LanguageModelNgramInfo {
   std::string context; ///< context string
   /// Length of the context measured by advancing using UNICHAR::utf8_step()
   /// (should be at most the order of the character ngram model used).
-  int context_unichar_step_len;
+  int context_unichar_step_len = 0;
   /// The paths with pruned set are pruned out from the perspective of the
   /// character ngram model. They are explored further because they represent
   /// a dictionary match or a top choice. Thus ngram_info is still computed
   /// for them in order to calculate the combined cost.
-  bool pruned;
+  bool pruned = false;
   /// -ln(P_ngram_model(path))
-  float ngram_cost;
+  float ngram_cost = 0.0;
   /// -[ ln(P_classifier(path)) + scale_factor * ln(P_ngram_model(path)) ]
-  float ngram_and_classifier_cost;
+  float ngram_and_classifier_cost = 0.0;
 };
 
 /// Struct for storing the information about a path in the segmentation graph
@@ -159,43 +159,43 @@ struct ViterbiStateEntry : public ELIST_LINK {
   void Print(const char *msg) const;
 
   /// Pointers to BLOB_CHOICE and parent ViterbiStateEntry (not owned by this).
-  BLOB_CHOICE *curr_b;
-  ViterbiStateEntry *parent_vse;
+  BLOB_CHOICE *curr_b = nullptr;
+  ViterbiStateEntry *parent_vse = nullptr;
   /// Pointer to a case-competing ViterbiStateEntry in the same list that
   /// represents a path ending in the same letter of the opposite case.
-  ViterbiStateEntry *competing_vse;
+  ViterbiStateEntry *competing_vse = nullptr;
 
   /// Extra information maintained by Dawg language model component
   /// (owned by ViterbiStateEntry).
-  LanguageModelDawgInfo *dawg_info;
+  LanguageModelDawgInfo *dawg_info = nullptr;
 
   /// Extra information maintained by Ngram language model component
   /// (owned by ViterbiStateEntry).
-  LanguageModelNgramInfo *ngram_info;
+  LanguageModelNgramInfo *ngram_info = nullptr;
 
   /// UTF8 string representing the path corresponding to this vse.
   /// Populated only in when language_model_debug_level > 0.
-  std::string *debug_str;
+  std::string *debug_str = nullptr;
 
   /// The cost is an adjusted ratings sum, that is adjusted by all the language
   /// model components that use Viterbi search.
-  float cost;
+  float cost = 0.0;
 
   /// Various information about the characters on the path represented
   /// by this ViterbiStateEntry.
-  float ratings_sum;                  ///< sum of ratings of character on the path
-  float min_certainty;                ///< minimum certainty on the path
-  int adapted;                        ///< number of BLOB_CHOICES from adapted templates
-  int length;                         ///< number of characters on the path
-  float outline_length;               ///< length of the outline so far
+  float ratings_sum = 0.0;            ///< sum of ratings of character on the path
+  float min_certainty = 0.0;          ///< minimum certainty on the path
+  int adapted = 0;                    ///< number of BLOB_CHOICES from adapted templates
+  int length = 0;                     ///< number of characters on the path
+  float outline_length = 0.0;         ///< length of the outline so far
   LMConsistencyInfo consistency_info; ///< path consistency info
   AssociateStats associate_stats;     ///< character widths/gaps/seams
 
   /// Flags for marking the entry as a top choice path with
   /// the smallest rating or lower/upper case letters).
-  LanguageModelFlagsType top_choice_flags;
+  LanguageModelFlagsType top_choice_flags = 0;
 
-  bool updated; ///< set to true if the entry has just been created/updated
+  bool updated = false;               ///< set to true if the entry has just been created/updated
 };
 
 ELISTIZEH(ViterbiStateEntry);
@@ -237,7 +237,7 @@ struct BestChoiceBundle {
   }
 
   /// Flag to indicate whether anything was changed.
-  bool updated;
+  bool updated = false;
   /// Places to try to fix the word suggested by ambiguity checking.
   DANGERR fixpt;
   /// The beam. One LanguageModelState containing a list of ViterbiStateEntry
@@ -245,7 +245,7 @@ struct BestChoiceBundle {
   /// somewhere in the corresponding row.
   std::vector<LanguageModelState *> beam;
   /// Best ViterbiStateEntry and BLOB_CHOICE.
-  ViterbiStateEntry *best_vse;
+  ViterbiStateEntry *best_vse = nullptr;
 };
 
 } // namespace tesseract

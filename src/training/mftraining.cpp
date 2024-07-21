@@ -44,7 +44,6 @@
 #include "shapetable.h"
 #include <tesseract/tprintf.h>
 #include "unicity_table.h"
-#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 

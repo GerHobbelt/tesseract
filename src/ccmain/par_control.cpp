@@ -58,9 +58,9 @@ void Tesseract::PrerecAllWordsPar(const std::vector<WordData> &words) {
   }
   // Pre-classify all the blobs.
   if (tessedit_parallelize > 1) {
-#  ifdef _OPENMP
-#    pragma omp parallel for num_threads(10)
-#  endif // _OPENMP
+#ifdef _OPENMP
+#  pragma omp parallel for num_threads(10)
+#endif // _OPENMP
     // NOLINTNEXTLINE(modernize-loop-convert)
     // Error C3016: index variable in OpenMP 'for' statement must have signed integral type
     for (size_t b = 0; b < blobs.size(); ++b) {

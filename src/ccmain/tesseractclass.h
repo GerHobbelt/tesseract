@@ -193,8 +193,7 @@ using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
 
 class TESS_API Tesseract: public Wordrec {
 public:
-  Tesseract() : Tesseract(nullptr) {};
-  Tesseract(Tesseract *parent);
+  Tesseract(TessBaseAPI &owner, Tesseract *parent = nullptr);
   virtual ~Tesseract() override;
 
   // Return appropriate dictionary
@@ -207,6 +206,10 @@ public:
   void ResetAdaptiveClassifier();
   // Clear the document dictionary for this and all subclassifiers.
   void ResetDocumentDictionary();
+
+  /// Note the given command (argv[] set as vector) for later reporting
+  /// in the diagnostics output as part of the HTML log heading.
+  void DebugAddCommandline(const std::vector<std::string> &argv);
 
   /**
    * Clear and free up everything inside, returning the instance to a state
@@ -253,16 +256,12 @@ public:
 
   // Destroy any existing pix and return a pointer to the pointer.
   void set_pix_binary(Image pix);
-  Image pix_binary() const {
-    return pix_binary_;
-  }
-  Image pix_grey() const {
-    return pix_grey_;
-  }
+  Image pix_binary() const;
+
+  Image pix_grey() const;
   void set_pix_grey(Image grey_pix);
-  Image pix_original() const {
-    return pix_original_;
-  }
+
+  Image pix_original() const;
   // Takes ownership of the given original_pix.
   void set_pix_original(Image original_pix);
 
@@ -305,35 +304,25 @@ public:
   Image BestPix() const;
 
   void set_pix_thresholds(Image thresholds);
-  Image pix_thresholds() {
-	  return pix_thresholds_;
-  }
-  int source_resolution() const {
-    return source_resolution_;
-  }
+  Image pix_thresholds();
+
+  int source_resolution() const;
   void set_source_resolution(int ppi);
+
   int ImageWidth() const;
   int ImageHeight() const;
-  Image scaled_color() const {
-    return scaled_color_;
-  }
-  int scaled_factor() const {
-    return scaled_factor_;
-  }
-  void SetScaledColor(int factor, Image color);
-  const Textord &textord() const {
-    return textord_;
-  }
-  Textord *mutable_textord() {
-    return &textord_;
-  }
 
-  bool right_to_left() const {
-    return right_to_left_;
-  }
-  int num_sub_langs() const {
-    return sub_langs_.size();
-  }
+  Image scaled_color() const;
+  int scaled_factor() const;
+
+  void SetScaledColor(int factor, Image color);
+
+  const Textord &textord() const;
+  Textord *mutable_textord();
+
+  bool right_to_left() const;
+
+  int num_sub_langs() const;
   Tesseract *get_sub_lang(int index) const;
 
   // Returns true if any language uses Tesseract (as opposed to LSTM).
@@ -412,11 +401,10 @@ public:
   // Sets up the single word ready for whichever engine is to be run.
   void SetupWordPassN(int pass_n, WordData *word);
   // Runs word recognition on all the words.
-  bool RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT *pr_it,
-                          std::vector<WordData> *words);
-  bool recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor, const TBOX *target_word_box,
+  bool RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<WordData> *words);
+  bool recog_all_words(PAGE_RES *page_res, const TBOX *target_word_box,
                        const char *word_config, int dopasses);
-  void rejection_passes(PAGE_RES *page_res, ETEXT_DESC *monitor, const TBOX *target_word_box,
+  void rejection_passes(PAGE_RES *page_res, const TBOX *target_word_box,
                         const char *word_config);
   void bigram_correction_pass(PAGE_RES *page_res);
   void blamer_pass(PAGE_RES *page_res);
@@ -659,7 +647,7 @@ public:
       const char *new_value   // any prompt data
   );
 #endif // !GRAPHICS_DISABLED
-  void debug_word(PAGE_RES *page_res, const TBOX &selection_box);
+  bool debug_word(PAGE_RES *page_res, const TBOX &selection_box);
   void do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*word_painter)(PAGE_RES_IT *pr_it));
   bool word_display(PAGE_RES_IT *pr_it);
   bool word_bln_display(PAGE_RES_IT *pr_it);
@@ -700,9 +688,9 @@ public:
       WERD_RES *word, uint16_t mode);
 
   //// tfacepp.cpp ///////////////////////////////////////////////////////
-  void recog_word_recursive(WERD_RES *word);
-  void recog_word(WERD_RES *word);
-  void split_and_recog_word(WERD_RES *word);
+  void recog_word_recursive(WERD_RES *word, int call_depth);
+  void recog_word(WERD_RES *word, int call_depth);
+  void split_and_recog_word(WERD_RES *word, int call_depth);
   void split_word(WERD_RES *word, unsigned split_pt, WERD_RES **right_piece,
                   BlamerBundle **orig_blamer_bundle) const;
   void join_words(WERD_RES *word, WERD_RES *word2, BlamerBundle *orig_bb) const;
@@ -715,7 +703,6 @@ public:
   void fix_fuzzy_space_list(WERD_RES_LIST &best_perm, ROW *row, BLOCK *block);
   void fix_sp_fp_word(WERD_RES_IT &word_res_it, ROW *row, BLOCK *block);
   void fix_fuzzy_spaces(   // find fuzzy words
-      ETEXT_DESC *monitor, // progress monitor
       int32_t word_count,  // count of words in doc
       PAGE_RES *page_res);
   void dump_words(WERD_RES_LIST &perm, int16_t score, int16_t mode, bool improved);
@@ -1092,12 +1079,9 @@ public:
   DOUBLE_VAR_H(lstm_rating_coefficient);
   BOOL_VAR_H(pageseg_apply_music_mask);
   DOUBLE_VAR_H(max_page_gradient_recognize);
-  BOOL_VAR_H(scribe_save_binary_rotated_image);
-  BOOL_VAR_H(scribe_save_grey_rotated_image);
-  BOOL_VAR_H(scribe_save_original_rotated_image);
   STRING_VAR_H(debug_output_path);
-  INT_VAR_H(debug_baseline_fit);
-  INT_VAR_H(debug_baseline_y_coord);
+  //INT_VAR_H(debug_baseline_fit);
+  //INT_VAR_H(debug_baseline_y_coord);
   BOOL_VAR_H(debug_write_unlv);
   BOOL_VAR_H(debug_line_finding);
   BOOL_VAR_H(debug_image_normalization);
@@ -1106,11 +1090,15 @@ public:
   BOOL_VAR_H(debug_display_page_baselines);
   BOOL_VAR_H(dump_segmented_word_images);
   BOOL_VAR_H(dump_osdetect_process_images);
+  INT_VAR_H(activity_timeout_millisec);
+  BOOL_VAR_H(debug_recog_word_recursion_depth);
+  INT_VAR_H(recog_word_recursion_depth_limit);
+  BOOL_VAR_H(debug_output_diagnostics_HTML);
+  INT_VAR_H(debug_output_diagnostics_images_format);
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
   FILE *init_recog_training(const char *filename);
-  void recog_training_segmented(const char *filename, PAGE_RES *page_res,
-                                volatile ETEXT_DESC *monitor, FILE *output_file);
+  void recog_training_segmented(const char *filename, PAGE_RES *page_res, FILE *output_file);
   void ambigs_classify_and_output(const char *label, PAGE_RES_IT *pr_it, FILE *output_file);
 
   // debug PDF output helper methods:
@@ -1185,6 +1173,7 @@ public:
   }
 
 protected:
+  TessBaseAPI &owner_;
   Tesseract* parent_instance_;      // reference to parent tesseract instance for sub-languages. Used, f.e., to allow using a single DebugPixa diagnostic channel for all languages tested on the input.
 
 private:

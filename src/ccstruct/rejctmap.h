@@ -306,7 +306,7 @@ public:
     return (rejected() && !perm_rejected());
   }
 
-  void full_print(FILE *fp) const;
+  std::string full_print_to_string() const;
 };
 
 class REJMAP {
@@ -345,9 +345,9 @@ public:
   // Cut out an element.
   void remove_pos(uint16_t pos);
 
-  void print(FILE *fp) const;
+  std::string print_to_string() const;
 
-  void full_print(FILE *fp) const;
+  std::string full_print_to_string() const;
 
   bool recoverable_rejects() const; // Any non perm rejs?
 

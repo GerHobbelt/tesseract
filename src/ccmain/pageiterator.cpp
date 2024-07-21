@@ -459,7 +459,7 @@ Pix *PageIterator::GetBinaryImage(PageIteratorLevel level) const {
   }
   if (level == RIL_SYMBOL && cblob_it_ != nullptr &&
       cblob_it_->data()->area() != 0) {
-    return cblob_it_->data()->render();
+    return cblob_it_->data()->render().clone2pix();
   }
   Box *box = boxCreate(left, top, right - left, bottom - top);
   Image pix = pixClipRectangle(tesseract_->pix_binary(), box, nullptr);
@@ -474,9 +474,8 @@ Pix *PageIterator::GetBinaryImage(PageIteratorLevel level) const {
     pixRasterop(pix, std::max(0, -mask_x), std::max(0, -mask_y),
                 pixGetWidth(pix), pixGetHeight(pix), PIX_SRC & PIX_DST, mask,
                 std::max(0, mask_x), std::max(0, mask_y));
-    mask.destroy();
   }
-  return pix;
+  return pix.clone2pix();
 }
 
 /**
@@ -521,14 +520,12 @@ Pix *PageIterator::GetImage(PageIteratorLevel level, int padding,
     pixRasterop(resized_mask, std::max(0, -mask_x), std::max(0, -mask_y), width,
                 height, PIX_SRC, mask, std::max(0, mask_x),
                 std::max(0, mask_y));
-    mask.destroy();
     pixDilateBrick(resized_mask, resized_mask, 2 * padding + 1,
                    2 * padding + 1);
     pixInvert(resized_mask, resized_mask);
     pixSetMasked(grey_pix, resized_mask, UINT32_MAX);
-    resized_mask.destroy();
   }
-  return grey_pix;
+  return std::move(grey_pix);
 }
 
 /**
@@ -653,10 +650,10 @@ void PageIterator::BeginWord(int offset) {
     word_length_ = word_res->best_choice->length();
     if (word_res->box_word != nullptr) {
       if (word_res->box_word->length() != static_cast<unsigned>(word_length_)) {
-        tprintWarn("Corrupted word! best_choice[len={}] = {}, box_word[len={}]: ",
-                word_length_, word_res->best_choice->unichar_string(),
-                word_res->box_word->length());
-        word_res->box_word->bounding_box().print();
+        tprintWarn("Corrupted word! best_choice[len={}] = {}, box_word[len={}]: {}\n",
+                word_length_, mdqstr(word_res->best_choice->unichar_string()),
+                word_res->box_word->length(),
+        word_res->box_word->bounding_box().print_to_str());
       }
       ASSERT_HOST(word_res->box_word->length() ==
                   static_cast<unsigned>(word_length_));

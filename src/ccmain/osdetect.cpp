@@ -184,7 +184,6 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
   }
   if (im_pix != nullptr) {
     pixSubtract(pix, pix, im_pix);
-    im_pix.destroy();
   }
   if (dump_osdetect_process_images) {
     AddPixDebugPage(pix, "Removing non-text regions: after FindImages + Subtract : result");
