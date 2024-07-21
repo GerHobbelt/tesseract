@@ -32,6 +32,7 @@
 #include "lm_state.h"                // for ViterbiStateEntry, ViterbiState...
 #include "matrix.h"                  // for MATRIX_COORD
 #include "pageres.h"                 // for WERD_RES
+#include "helpers.h"                 // for mdqstr()
 #include <tesseract/params.h>                  // for IntParam, BoolParam, DoubleParam
 #include "params_training_featdef.h" // for ParamsTrainingHypothesis, PTRAI...
 #include <tesseract/tprintf.h>                 // for tprintf
@@ -115,7 +116,7 @@ LanguageModelSettings::LanguageModelSettings(CCUtil *owner)
                     owner->params())
     , DOUBLE_MEMBER(language_model_penalty_increment, 0.01, "Penalty increment",
                     owner->params())
-    , INT_MEMBER(wordrec_display_segmentations, 0, "Display Segmentations (ScrollView)",
+    , BOOL_MEMBER(wordrec_display_segmentations, false, "Display Segmentations (ScrollView)",
                  owner->params())
     , BOOL_MEMBER(language_model_use_sigmoidal_certainty, false,
                        "Use sigmoidal score for certainty", owner->params())
@@ -142,7 +143,6 @@ void LanguageModel::InitForWord(const WERD_CHOICE *prev_word, bool fixed_pitch,
   max_char_wh_ratio_ = max_char_wh_ratio;
   rating_cert_scale_ = rating_cert_scale;
   acceptable_choice_found_ = false;
-  //correct_segmentation_explored_ = false;
 
   // Initialize vectors with beginning DawgInfos.
   very_beginning_active_dawgs_.clear();
@@ -1256,7 +1256,7 @@ void LanguageModel::UpdateBestChoice(ViterbiStateEntry *vse, LMPainPoints *pain_
   if (dict_->stopper_debug_level >= 1) {
     std::string word_str;
     word->string_and_lengths(&word_str, nullptr);
-    vse->Print(word_str.c_str());
+    vse->Print(mdqstr(word_str).c_str());
   }
   if (language_model_debug_level > 0) {
     word->print("UpdateBestChoice() constructed word");

@@ -28,7 +28,7 @@ extern BOOL_VAR_H(textord_show_initial_words);
 extern BOOL_VAR_H(textord_blocksall_fixed);
 extern BOOL_VAR_H(textord_blocksall_prop);
 extern INT_VAR_H(textord_dotmatrix_gap);
-extern INT_VAR_H(textord_debug_block);
+//extern INT_VAR_H(textord_debug_block);
 extern INT_VAR_H(textord_pitch_range);
 extern DOUBLE_VAR_H(textord_wordstats_smooth_factor);
 extern DOUBLE_VAR_H(textord_words_maxspace);

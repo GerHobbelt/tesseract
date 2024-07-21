@@ -54,7 +54,6 @@ TextlineProjection::TextlineProjection(int resolution) : x_origin_(0), y_origin_
   }
 }
 TextlineProjection::~TextlineProjection() {
-  pix_.destroy();
 }
 
 // Build the projection profile given the input_block containing lists of
@@ -66,7 +65,6 @@ TextlineProjection::~TextlineProjection() {
 // the range of projection.
 void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD &rotation,
                                              Image nontext_map) {
-  pix_.destroy();
   TBOX image_box(0, 0, pixGetWidth(nontext_map), pixGetHeight(nontext_map));
   x_origin_ = 0;
   y_origin_ = image_box.height();
@@ -78,7 +76,6 @@ void TextlineProjection::ConstructProjection(TO_BLOCK *input_block, const FCOORD
   ProjectBlobs(&input_block->large_blobs, rotation, image_box, nontext_map);
   Image final_pix = pixBlockconv(pix_, 1, 1);
   //  Pix* final_pix = pixBlockconv(pix_, 2, 2);
-  pix_.destroy();
   pix_ = final_pix;
 }
 
@@ -131,7 +128,7 @@ void TextlineProjection::DisplayProjection() const {
   Image pixc = pixCreate(width, height, 32);
   int src_wpl = pixGetWpl(pix_);
   int col_wpl = pixGetWpl(pixc);
-  uint32_t *src_data = pixGetData(pix_);
+  const uint32_t *src_data = pixGetData(const_cast<PIX *>(pix_.ptr()));
   uint32_t *col_data = pixGetData(pixc);
   for (int y = 0; y < height; ++y, src_data += src_wpl, col_data += col_wpl) {
     for (int x = 0; x < width; ++x) {
@@ -150,7 +147,6 @@ void TextlineProjection::DisplayProjection() const {
   ScrollViewReference win = ScrollViewManager::MakeScrollView(TESSERACT_NULLPTR, "Projection", 0, 0, width, height, width, height);
   win->Draw(pixc, 0, win->TranslateYCoordinate(0), "TextlineProjection::DisplayProjection");
   win->UpdateWindow();
-  pixc.destroy();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -280,7 +276,7 @@ int TextlineProjection::VerticalDistance(bool debug, int x, int y1, int y2) cons
   }
   int wpl = pixGetWpl(pix_);
   int step = y1 < y2 ? 1 : -1;
-  uint32_t *data = pixGetData(pix_) + y1 * wpl;
+  const uint32_t *data = pixGetData(const_cast<PIX *>(pix_.ptr())) + y1 * wpl;
   wpl *= step;
   int prev_pixel = GET_DATA_BYTE(data, x);
   int distance = 0;
@@ -314,7 +310,7 @@ int TextlineProjection::HorizontalDistance(bool debug, int x1, int x2, int y) co
   }
   int wpl = pixGetWpl(pix_);
   int step = x1 < x2 ? 1 : -1;
-  uint32_t *data = pixGetData(pix_) + y * wpl;
+  const uint32_t *data = pixGetData(const_cast<PIX *>(pix_.ptr())) + y * wpl;
   int prev_pixel = GET_DATA_BYTE(data, x1);
   int distance = 0;
   int right_way_steps = 0;
@@ -521,7 +517,7 @@ int TextlineProjection::MeanPixelsInLineSegment(const DENORM *denorm, int offset
   TruncateToImageBounds(&start_pt);
   TruncateToImageBounds(&end_pt);
   int wpl = pixGetWpl(pix_);
-  uint32_t *data = pixGetData(pix_);
+  const uint32_t *data = pixGetData(const_cast<PIX *>(pix_.ptr()));
   int total = 0;
   int count = 0;
   int x_delta = end_pt.x - start_pt.x;

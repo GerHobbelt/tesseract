@@ -925,10 +925,10 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
     char *pdf_object = nullptr;
     int jpg_quality = api->tesseract().jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
-    if (destroy_pix)
-    {
-      pixDestroy(&pix);
-    }
+	  if (destroy_pix)
+	  {
+	    pixDestroy(&pix);
+	  }
       return false;
     }
     AppendData(pdf_object, objsize);

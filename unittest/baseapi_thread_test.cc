@@ -28,10 +28,10 @@
 #endif
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
+#include <tesseract/image.h>
 #include "commandlineflags.h"
 #include "include_gunit.h"
 #include "log.h"
-#include "image.h"
 
 #include "testdata.h"
 

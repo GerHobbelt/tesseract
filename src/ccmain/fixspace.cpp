@@ -72,11 +72,10 @@ static int c_blob_comparator( // sort blobs
  * them as a sublist, process the sublist to find the optimal arrangement of
  * spaces then replace the sublist in the ROW_RES.
  *
- * @param monitor progress monitor
  * @param word_count count of words in doc
  * @param[out] page_res
  */
-void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_RES *page_res) {
+void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
   BLOCK_RES_IT block_res_it;
   ROW_RES_IT row_res_it;
   WERD_RES_IT word_res_it_from;
@@ -109,14 +108,11 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
           }
 
           word_index++;
-          if (monitor != nullptr) {
-            monitor->ocr_alive = true;
-            monitor->progress = 90 + 5 * word_index / word_count;
-            if (monitor->deadline_exceeded() ||
-                (monitor->cancel != nullptr &&
-                 (monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+          if (owner_.Monitor().bump_progress(word_index, word_count).
+            exec_progress_func()
+            .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
+              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
-            }
           }
         }
 
@@ -135,14 +131,11 @@ void Tesseract::fix_fuzzy_spaces(ETEXT_DESC *monitor, int32_t word_count, PAGE_R
             word_res_it_to.data()->fontinfo_id2_count = word_res_it_from.data()->fontinfo_id2_count;
           }
 
-          if (monitor != nullptr) {
-            monitor->ocr_alive = true;
-            monitor->progress = 90 + 5 * word_index / word_count;
-            if (monitor->deadline_exceeded() ||
-                (monitor->cancel != nullptr &&
-                 (monitor->cancel)(monitor->cancel_this, stats_.dict_words))) {
+          if (owner_.Monitor().bump_progress(word_index, word_count)
+            .exec_progress_func()
+            .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
+              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
-            }
           }
           while (!word_res_it_to.at_last() &&
                  (word_res_it_to.data_relative(1)->word->flag(W_FUZZY_NON) ||
@@ -512,7 +505,7 @@ void Tesseract::dump_words(WERD_RES_LIST &perm, int16_t score, int16_t mode, boo
 
       for (word_res_it.mark_cycle_pt(); !word_res_it.cycled_list(); word_res_it.forward()) {
         if (!word_res_it.data()->part_of_combo) {
-          tprintDebug("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
+          tprintDebug("{}/{} ", mdqstr(word_res_it.data()->best_choice->unichar_string()),
                   static_cast<int>(word_res_it.data()->best_choice->permuter()));
         }
       }
@@ -521,7 +514,7 @@ void Tesseract::dump_words(WERD_RES_LIST &perm, int16_t score, int16_t mode, boo
       tprintDebug("FIX SPACING \"{}\" => \"", stats_.dump_words_str);
       for (word_res_it.mark_cycle_pt(); !word_res_it.cycled_list(); word_res_it.forward()) {
         if (!word_res_it.data()->part_of_combo) {
-          tprintDebug("{}/{} ", word_res_it.data()->best_choice->unichar_string(),
+          tprintDebug("{}/{} ", mdqstr(word_res_it.data()->best_choice->unichar_string()),
                   static_cast<int>(word_res_it.data()->best_choice->permuter()));
         }
       }
@@ -580,7 +573,7 @@ void Tesseract::fix_sp_fp_word(WERD_RES_IT &word_res_it, ROW *row, BLOCK *block)
   }
 
   if (debug_fix_space_level > 1) {
-    tprintDebug("FP fixspace working on \"{}\"\n", word_res->best_choice->unichar_string());
+    tprintDebug("FP fixspace working on {}\n", mdqstr(word_res->best_choice->unichar_string()));
   }
   word_res->word->rej_cblob_list()->sort(c_blob_comparator);
   sub_word_list_it.add_after_stay_put(word_res_it.extract());
@@ -723,8 +716,8 @@ int16_t Tesseract::worst_noise_blob(WERD_RES *word_res, float *worst_noise_score
 
 #ifndef SECURE_NAMES
   if (debug_fix_space_level > 2) {
-    tprintDebug("FP fixspace Noise metrics for \"{}\": ",
-            word_res->best_choice->unichar_string());
+    tprintDebug("FP fixspace Noise metrics for {}: ",
+            mdqstr(word_res->best_choice->unichar_string()));
   }
 #endif
 
@@ -821,20 +814,25 @@ float Tesseract::blob_noise_score(TBLOB *blob) {
 }
 
 void fixspace_dbg(WERD_RES *word) {
+  TPrintGroupLinesTillEndOfScope push;
+
   TBOX box = word->word->bounding_box();
   const bool show_map_detail = false;
 
   box.print();
-  tprintDebug(" \"{}\" ", word->best_choice->unichar_string());
+  tprintDebug(" {} ", mdqstr(word->best_choice->unichar_string()));
   tprintDebug("Blob count: {} (word); {}/{} (rebuild word)\n", word->word->cblob_list()->length(),
           word->rebuild_word->NumBlobs(), word->box_word->length());
-  word->reject_map.print(debug_fp);
-  tprintDebug("\n");
+  tprintDebug("reject_map: {}\n", word->reject_map.print_to_string());
   if (show_map_detail) {
-    tprintDebug("\"{}\"\n", word->best_choice->unichar_string());
-    for (unsigned i = 0; word->best_choice->unichar_string()[i] != '\0'; i++) {
-      tprintDebug("**** \"{}\" ****\n", word->best_choice->unichar_string()[i]);
-      word->reject_map[i].full_print(debug_fp);
+    tprintDebug("{}\n", mdqstr(word->best_choice->unichar_string()));
+    const std::string &wstr = word->best_choice->unichar_string();
+    for (unsigned i = 0; wstr[i] != '\0'; i++) {
+      if (wstr[i] != '`')
+        tprintDebug("**** `{}` ****\n", wstr[i]);
+      else
+        tprintDebug("**** '`' ****\n");
+      tprintDebug("reject_map[{}] details:\n{}\n", word->reject_map[i].full_print_to_string());
     }
   }
 

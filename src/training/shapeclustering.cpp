@@ -21,7 +21,6 @@
 #include "common/commontraining.h"
 #include "common/mastertrainer.h"
 #include <tesseract/params.h>
-#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 
@@ -32,22 +31,22 @@ using namespace tesseract;
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
-INT_VAR(shapclustering_display_cloud_font, -1, "Display cloud of this font, canonical_class1");
-INT_VAR(shapclustering_display_canonical_font, -1, "Display canonical sample of this font, canonical_class2");
-STRING_VAR(shapclustering_canonical_class1, "", "Class to show ambigs for");
-STRING_VAR(shapclustering_canonical_class2, "", "Class to show ambigs for");
+INT_VAR(shapeclustering_display_cloud_font, -1, "Display cloud of this font, canonical_class1");
+INT_VAR(shapeclustering_display_canonical_font, -1, "Display canonical sample of this font, canonical_class2");
+STRING_VAR(shapeclustering_canonical_class1, "", "Class to show ambigs for");
+STRING_VAR(shapeclustering_canonical_class2, "", "Class to show ambigs for");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 // Loads training data, if requested displays debug information, otherwise
 // creates the master shape table by shape clustering and writes it to a file.
-// If shapclustering_display_cloud_font is set, then the cloud features of
-// shapclustering_canonical_class1/shapclustering_display_cloud_font are shown in green ON TOP
-// OF the red canonical features of shapclustering_canonical_class2/
-// shapclustering_display_canonical_font, so as to show which canonical features are
+// If shapeclustering_display_cloud_font is set, then the cloud features of
+// shapeclustering_canonical_class1/shapeclustering_display_cloud_font are shown in green ON TOP
+// OF the red canonical features of shapeclustering_canonical_class2/
+// shapeclustering_display_canonical_font, so as to show which canonical features are
 // NOT in the cloud.
-// Otherwise, if shapclustering_canonical_class1 is set, prints a table of font-wise
-// cluster distances between shapclustering_canonical_class1 and shapclustering_canonical_class2.
+// Otherwise, if shapeclustering_canonical_class1 is set, prints a table of font-wise
+// cluster distances between shapeclustering_canonical_class1 and shapeclustering_canonical_class2.
 #if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
 extern "C" int main(int argc, const char** argv)
 #else
@@ -69,14 +68,14 @@ extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** a
     return EXIT_FAILURE;
   }
 
-  if (shapclustering_display_cloud_font >= 0) {
+  if (shapeclustering_display_cloud_font >= 0) {
 #if !GRAPHICS_DISABLED
-    trainer->DisplaySamples(shapclustering_canonical_class1.c_str(), shapclustering_display_cloud_font,
-                            shapclustering_canonical_class2.c_str(), shapclustering_display_canonical_font);
+    trainer->DisplaySamples(shapeclustering_canonical_class1.c_str(), shapeclustering_display_cloud_font,
+                            shapeclustering_canonical_class2.c_str(), shapeclustering_display_canonical_font);
 #endif // !GRAPHICS_DISABLED
     return EXIT_SUCCESS;
-  } else if (!shapclustering_canonical_class1.empty()) {
-    trainer->DebugCanonical(shapclustering_canonical_class1.c_str(), shapclustering_canonical_class2.c_str());
+  } else if (!shapeclustering_canonical_class1.empty()) {
+    trainer->DebugCanonical(shapeclustering_canonical_class1.c_str(), shapeclustering_canonical_class2.c_str());
     return EXIT_SUCCESS;
   }
   trainer->SetupMasterShapes();

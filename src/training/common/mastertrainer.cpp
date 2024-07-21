@@ -32,6 +32,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
+#include "commandlineflags.h"
 #if !GRAPHICS_DISABLED
 #  include "svmnode.h"
 #endif
@@ -49,7 +50,7 @@ const int kMaxUnicharsPerCluster = 2000;
 // Mean font distance below which to merge fonts and unichars.
 const float kFontMergeDistance = 0.025f;
 
-INT_VAR(trainer_debug_level, 0, "MasterTrainer debug level (0..2).");
+//INT_VAR(trainer_debug_level, 0, "MasterTrainer debug level (0..2).");   -- defined in commontraining.cpp
 
 MasterTrainer::MasterTrainer(NormalizationMode norm_mode, bool shape_analysis,
                              bool replicate_samples)
