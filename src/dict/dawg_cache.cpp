@@ -43,10 +43,10 @@ struct DawgLoader {
 };
 
 Dawg *DawgCache::GetSquishedDawg(const std::string &lang, TessdataType tessdata_dawg_type,
-                                 int debug_level, TessdataManager *data_file) {
+                                 int dawg_debug_level, TessdataManager *data_file) {
   std::string data_id = data_file->GetDataFileName();
   data_id += kTessdataFileSuffixes[tessdata_dawg_type];
-  DawgLoader loader(lang, tessdata_dawg_type, debug_level, data_file);
+  DawgLoader loader(lang, tessdata_dawg_type, dawg_debug_level, data_file);
   return dawgs_.Get(data_id, std::bind(&DawgLoader::Load, &loader));
 }
 

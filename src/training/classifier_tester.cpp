@@ -26,7 +26,6 @@
 #include <tesseract/params.h>
 #include "tessclassifier.h"
 #include "tesseractclass.h"
-#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 

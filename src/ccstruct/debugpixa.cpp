@@ -2,10 +2,14 @@
 
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#include <tesseract/image.h>
+
 #include "debugpixa.h"
-#include "image.h"
 #include <tesseract/tprintf.h>
 #include "tesseractclass.h"
+#include "global_params.h"
+#include "pixProcessing.h" 
+#include "rect.h" 
 
 #include <leptonica/allheaders.h>
 #include <parameters/parameters.h>
@@ -32,17 +36,7 @@
 
 using namespace parameters;
 
-// Set to 0 for PNG, 1 for WEBP output as part of the HTML report.
-#define GENERATE_WEBP_IMAGES  1
-
 namespace tesseract {
-
-  static const char *IMAGE_EXTENSION =
-#if GENERATE_WEBP_IMAGES
-    ".webp";
-#else
-    ".png";
-#endif
 
   // enforce the use of our own basic char checks; MSVC RTL ones barf with
   //    minkernel\crts\ucrt\src\appcrt\convert\isctype.cpp(36) : Assertion failed: c >= -1 && c <= 255
@@ -69,6 +63,51 @@ namespace tesseract {
   static inline bool ispunct(int c) {
     return strchr("!():;,.?", c) != nullptr;
   }
+
+  // ... because fmt::format("{:.3f}") does not remove trailing insignificant zero digits
+
+  static inline std::string nanoseconds_to_seconds_6(double nsecs) {
+    char buf[60];
+    snprintf(buf, sizeof(buf), "%0.6lf", nsecs / 1E9);
+    // trim off the insignificant tail
+    char *d = buf + strlen(buf) - 1;
+    while (d > buf) {
+      if (*d == '0') {
+        *d-- = 0;
+        continue;
+      }
+      if (*d == '.') {
+        *d-- = 0;
+      }
+      break;
+    }
+    return buf;
+  }
+
+  #undef N        // just in case...
+  #define N(v) nanoseconds_to_seconds_6(v)
+
+  // aligned output: all are 10 wide. For tables.
+  static inline std::string nanoseconds_to_seconds_10_6(double nsecs) {
+    char buf[60];
+    snprintf(buf, sizeof(buf), "%10.6lf", nsecs / 1E9);
+    // trim off the insignificant tail
+    char *d = buf + strlen(buf) - 1;
+    while (d > buf) {
+      if (*d == '0') {
+        *d-- = ' ';
+        continue;
+      }
+      if (*d == '.') {
+        *d-- = ' ';
+      }
+      break;
+    }
+    return buf;
+  }
+
+#undef N10 // just in case...
+#define N10(v) nanoseconds_to_seconds_10_6(v)
 
   static bool is_nonnegligible_difference(double t1, double t2) {
     auto d = t1; // do NOT use std::max(t1, t2) as we're focusing on T1 as the leading number in our caller!
@@ -739,6 +778,7 @@ namespace tesseract {
   }
 
   void DebugPixa::AddPixInternal(const Image &pix, const TBOX &bbox, const char *caption) {
+    ASSERT0(pixGetRefCount(pix) >= 1);
     int depth = pixGetDepth(pix);
     ASSERT0(depth >= 1 && depth <= 32);
     {
@@ -753,12 +793,19 @@ namespace tesseract {
 
     // warning C4574: 'TESSERACT_DISABLE_DEBUG_FONTS' is defined to be '0': did you mean to use '#if TESSERACT_DISABLE_DEBUG_FONTS'?
 #if defined(TESSERACT_DISABLE_DEBUG_FONTS) && TESSERACT_DISABLE_DEBUG_FONTS
-    pixaAddPix(pixa_, pix, L_COPY);
+    pixaAddPix(pixa_, const_cast<PIX *>(pix.ptr()), L_COPY);
 #else
-    int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
-    Image pix_debug = pixAddSingleTextblock(pix, fonts_, caption, color, L_ADD_BELOW, nullptr);
+    {
+      int color = depth < 8 ? 1 : (depth > 8 ? 0x00ff0000 : 0x80);
+      Image pix_debug = pixAddSingleTextblock(const_cast<PIX *>(pix.ptr()), fonts_, caption, color, L_ADD_BELOW, nullptr);
 
-    pixaAddPix(pixa_, pix_debug, L_INSERT);
+#if 01
+      pixaAddPix(pixa_, pix_debug.relinquish(), L_INSERT);
+#else
+      // or use L_CLONE:
+      pixaAddPix(pixa_, pix_debug, L_CLONE);
+#endif
+  }
 #endif
 
     captions.push_back(caption);
@@ -782,7 +829,7 @@ namespace tesseract {
 
   // Return true when one or more images have been collected.
   bool DebugPixa::HasContent() const {
-    return (pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
+    return (!content_has_been_written_to_file && pixaGetCount(pixa_) > 0 /* || steps.size() > 0    <-- see also notes at Clear() method; the logic here is that we'll only have something *useful* to report once we've collected one or more images along the way... */ );
   }
 
   int DebugPixa::PushNextSection(const std::string &title)
@@ -833,6 +880,8 @@ namespace tesseract {
       auto &prev_step = steps[active_step_index];
       prev_step.elapsed_ns += prev_step.clock.get_elapsed_ns();
       prev_step.clock.stop();
+      if (prev_step.level >= level)
+        prev_step.last_info_chunk = info_chunks.size() - 1;
     }
 
     int rv = active_step_index;
@@ -916,13 +965,86 @@ namespace tesseract {
     return step.level;
   }
 
-  static char* strnrpbrk(char* base, const char* breakset, size_t len)
-  {
-    for (size_t i = len; i > 0; ) {
-      if (strchr(breakset, base[--i]))
-        return base + i;
+  static std::string argv_particle_as_html(const std::string &arg) {
+    const char *message = arg.c_str();
+    bool needs_quotes = (nullptr != strchr(message, ' '));
+    std::string rv;
+    if (needs_quotes) {
+      rv += '"';
     }
-    return nullptr;
+
+    bool zwnbs_pending = false;
+    while (*message) {
+      if (zwnbs_pending) {
+        rv += "&#8288;";
+      }
+      auto pos = strcspn(message, "<>&-");
+      if (pos > 0) {
+        std::string_view particle(message, pos);
+        rv += particle;
+        message += pos;
+        zwnbs_pending = false;
+      }
+      switch (*message) {
+        case 0:
+          break;
+
+        case '<':
+          rv += "&lt;";
+          message++;
+          break;
+
+        case '>':
+          rv += "&gt;";
+          message++;
+          break;
+
+        case '&':
+          rv += "&amp;";
+          message++;
+          break;
+
+        case '-':
+          if (!zwnbs_pending)
+            rv += "&#8288;-"; // inject Zero width no-break space to prevent PRE wrapping at the dash
+          else
+            rv += "-";
+          message++;
+          zwnbs_pending = true;
+          continue;
+      }
+      zwnbs_pending = false;
+    }
+
+    if (needs_quotes) {
+      rv += '"';
+    }
+
+    return rv;
+  }
+
+  void DebugPixa::DebugAddCommandline(const std::vector<std::string>& argv) {
+    ASSERT0(steps.size() >= 1);
+    ASSERT0(active_step_index >= 0);
+    ASSERT0(active_step_index < steps.size());
+    ASSERT0(info_chunks.size() >= 1);
+
+    auto &f = this->GetInfoStream();
+    f << "\n\
+<blockquote class=\"command-line\">\n\
+<h6>Tesseract Excutes Command</h6>\n\
+\n\
+<pre class=\"command-line\">";
+    bool first = true;
+    for (const std::string &arg : argv) {
+      if (!first)
+        f << ' ';
+      first = false;
+      f << argv_particle_as_html(arg);
+    }
+    f << "</pre>\n\
+</blockquote>\n\
+\n";
   }
 
   static std::string encode_as_html(const std::string &str) {
@@ -1024,16 +1146,7 @@ namespace tesseract {
     str.resize(len);
     return str;
   }
-
-  static inline int FADE(int val, const int factor) {
-    return (val * factor + 255 * (256 - factor)) >> 8 /* div 256 */;
-  }
-
-  static inline int MIX(int val1, int val2, const int factor) {
-    return (val2 * factor + val1 * (256 - factor)) >> 8 /* div 256 */;
-  }
-
-
+    
   static std::string html_styling(const std::string &datadir, const std::string &filename) {
     // first search if the HTML / CSS resource is available on your filesystem.
     //
@@ -1109,164 +1222,7 @@ namespace tesseract {
     return "b0rked!";
   }
 
-  PIX *pixMixWithTintedBackground(PIX *src, const PIX *background,
-                                  float r_factor, float g_factor, float b_factor,
-                                  float src_factor, float background_factor, 
-                                  const TBOX *cliprect) 
-  {
-    int w, h, depth;
-    ASSERT0(src != nullptr);
-    pixGetDimensions(src, &w, &h, &depth);
-
-    if (background == nullptr) {
-      return pixConvertTo32(src);
-    } else {
-      int ow, oh, od;
-      pixGetDimensions(background, &ow, &oh, &od);
-
-      Image toplayer = pixConvertTo32(src);
-      Image botlayer = pixConvertTo32(const_cast<PIX*>(background));  // quick hack
-
-      if (w != ow || h != oh) {
-        if (cliprect != nullptr) {
-          // when a TBOX is provided, you can bet your bottom dollar `src` is an 'extract' of `background`
-          // and we therefore should paint it back onto there at the right spot:
-          // the cliprectx/y coordinates will tell us!
-          int cx, cy, cw, ch;
-          cx = cliprect->left();
-          cy = cliprect->top();
-          cw = cliprect->width();
-          ch = cliprect->height();
-
-          // when the clipping rectangle indicates another area than we got in `src`, we need to scale `src` first:
-          // 
-          // smaller images are generally masks, etc. and we DO NOT want to be
-          // confused by the smoothness introduced by regular scaling, so we
-          // apply brutal sampled scale then:
-          if (w != cw || h != ch) {
-            if (w < cw && h < ch) {
-              toplayer = pixScaleBySamplingWithShift(toplayer, cw * 1.0f / w, ch * 1.0f / h, 0.0f, 0.0f);
-            } else if (w > cw && h > ch) {
-              // the new image has been either scaled up vs. the original OR a
-              // border was added (TODO)
-              //
-              // for now, we simply apply regular smooth scaling
-              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
-            } else {
-              // scale a clipped partial to about match the size of the
-              // original/base image, so the generated HTML + image sequence is
-              // more, äh, uniform/readable.
-#if 0
-              ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
-#endif
-              toplayer = pixScale(toplayer, cw * 1.0f / w, ch * 1.0f / h);
-            }
-
-            pixGetDimensions(toplayer, &w, &h, &depth);
-          }
-            // now composite over 30% grey: this is done by simply resizing to background using 30% grey as a 'border':
-          int bl = cx;
-          int br = ow - cx - cw;
-          int bt = cy;
-          int bb = oh - cy - ch;
-          
-          if (bl || br || bt || bb) {
-            l_uint32 grey;
-            const int g = int(0.7 * 256);
-            (void)composeRGBAPixel(g, g, g, 256, &grey);
-            toplayer = pixAddBorderGeneral(toplayer, bl, br, bt, bb, grey);
-          }
-        } else {
-          // no cliprect specified, so `src` must be scaled version of
-          // `background`.
-          //
-          // smaller images are generally masks, etc. and we DO NOT want to be
-          // confused by the smoothness introduced by regular scaling, so we
-          // apply brutal sampled scale then:
-          if (w < ow && h < oh) {
-            toplayer = pixScaleBySamplingWithShift(toplayer, ow * 1.0f / w, oh * 1.0f / h, 0.0f, 0.0f);
-          } else if (w > ow && h > oh) {
-            // the new image has been either scaled up vs. the original OR a
-            // border was added (TODO)
-            //
-            // for now, we simply apply regular smooth scaling
-            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
-          } else {
-            // scale a clipped partial to about match the size of the
-            // original/base image, so the generated HTML + image sequence is
-            // more, äh, uniform/readable.
-#if 0
-            ASSERT0(!"Should never get here! Non-uniform scaling of images collected in DebugPixa!");
-#endif
-            toplayer = pixScale(toplayer, ow * 1.0f / w, oh * 1.0f / h);
-          }
-        }
-      }
-
-      // constant fade factors:
-      const int red_factor = r_factor * 256;
-      const int green_factor = g_factor * 256;
-      const int blue_factor = b_factor * 256;
-      const int base_mix_factor = src_factor * 256;
-      const int bottom_mix_factor = background_factor * 256;
-
-      auto datas = pixGetData(toplayer);
-      auto datad = pixGetData(botlayer);
-      auto wpls = pixGetWpl(toplayer);
-      auto wpld = pixGetWpl(botlayer);
-      int i, j;
-      for (i = 0; i < oh; i++) {
-        auto lines = (datas + i * wpls);
-        auto lined = (datad + i * wpld);
-        for (j = 0; j < ow; j++) {
-          // if top(SRC) is black, use that.
-          // if top(SRC) is white, and bot(DST) isn't, color bot(DST) red and use
-          // that. if top(SRC) is white, and bot(DST) is white, use white.
-
-          int rvals, gvals, bvals;
-          extractRGBValues(lines[j], &rvals, &gvals, &bvals);
-
-          int rvald, gvald, bvald;
-          extractRGBValues(lined[j], &rvald, &gvald, &bvald);
-
-          // R
-          int rval = FADE(rvald, red_factor);
-          if (rvals < rval)
-            rval = MIX(rvals, rval, bottom_mix_factor);
-          else
-            rval = MIX(rvals, rval, base_mix_factor);
-
-          // G
-          int gval = FADE(gvald, green_factor);
-          if (gvals < gval)
-            gval = MIX(gvals, gval, bottom_mix_factor);
-          else
-            gval = MIX(gvals, gval, base_mix_factor);
-
-          // B
-          int bval = FADE(bvald, blue_factor);
-          if (bvals < bval)
-            bval = MIX(bvals, bval, bottom_mix_factor);
-          else
-            bval = MIX(bvals, bval, base_mix_factor);
-
-          // A
-          // avald = 0;
-
-          composeRGBPixel(rval, gval, bval, lined + j);
-        }
-      }
-      // pixCopyResolution(pixd, pixs);
-      // pixCopyInputFormat(pixd, pixs);
-
-      // botlayer.destroy();
-      toplayer.destroy();
-
-      return botlayer;
-    }
-  }
-
-  Image MixWithLightRedTintedBackground(const Image &pix, const PIX *original_image, const TBOX *cliprect) {
+  Image MixWithLightRedTintedBackground(const Image &pix, const Image &original_image, const TBOX *cliprect) {
     return pixMixWithTintedBackground(pix, original_image, 0.1, 0.5, 0.5, 0.90, 0.085, cliprect);
   }
 
@@ -1293,12 +1249,43 @@ namespace tesseract {
     return rv + "\u2026";  // append ellipsis
   }
 
-  static void write_one_pix_for_html(FILE *html, int counter, const std::string &img_filename, const Image &pix, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr, const Pix *original_image = nullptr) {
+  // takes a leptonica IFF_PNG, ... identifier and produces a sane bunch of datums for us: a *supported* image format id to use, plus the accompanying filename extension.
+  static std::tuple<std::string, int> get_image_output_datums(int image_bitdepth, int debug_output_diagnostics_images_format) {
+    // walk the leptonica table to see what we get; then decide on something sane?
+    //
+    // alas, leptonica doesn't offer the complement of its getFormatFromExtension() API.   *snif*
+    //
+    // Note that we will be processing only 32bit depth images, as all incoming are converted to 32bit depth before writing,
+    // whether they are blended with the source image as reddish background or not in MixWithLightRedTintedBackground().
+    // Hence we only support formats which can write RGB/RGBA.
+    switch (debug_output_diagnostics_images_format) {
+      // case IFF_PNM, IFF_JP2, IFF_PS, IFF_LPDF, IFF_TIFF_G4, IFF_GIF:
+      default:
+        return {".png", IFF_PNG};
+
+      case IFF_BMP:
+        return {".bmp", IFF_BMP};
+
+      case IFF_JFIF_JPEG:
+        return {".jpg", IFF_JFIF_JPEG};
+
+      case IFF_PNG:
+        return {".png", IFF_PNG};
+
+      case IFF_TIFF:
+        return {".tiff", IFF_TIFF};
+
+      case IFF_WEBP:
+        return {".webp", IFF_WEBP};
+    }
+  }
+
+  static void write_one_pix_for_html(FILE *html, int counter, int img_format_id, int img_quality, const std::string &img_filename, const Image &pix, const Image &original_image, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr) {
     if (!!pix) {
       const char *pixfname = fz_basename(img_filename.c_str());
       int w, h, depth;
       pixGetDimensions(pix, &w, &h, &depth);
-      const char *depth_str = ([depth]() {
+      const char *depth_str = ([depth, pix]() {
         switch (depth) {
           default:
             ASSERT0(!"Should never get here!");
@@ -1306,7 +1293,11 @@ namespace tesseract {
           case 1:
             return "monochrome (binary)";
           case 32:
-            return "full color + alpha";
+            // check if the alpha channel actually makes sense:
+            if (pixAlphaIsSaneAndPresent(pix))
+              return "full color + alpha";
+            else
+            return "full color (32bit)";   // don't mention the alpha channel as that is only confusing for users.
           case 24:
             return "full color";
           case 8:
@@ -1317,27 +1308,41 @@ namespace tesseract {
       })();
 
       Image img = MixWithLightRedTintedBackground(pix, original_image, cliprect);
-#if !GENERATE_WEBP_IMAGES
-      /* With best zlib compression (9), get between 1 and 10% improvement
-       * over default (6), but the compression is 3 to 10 times slower.
-       * Use the zlib default (6) as our default compression unless
-       * pix->special falls in the range [10 ... 19]; then subtract 10
-       * to get the compression value.  */
-      pixSetSpecial(img, 10 + 1);
-      pixWrite(img_filename.c_str(), img, IFF_PNG);
-#else
-      FILE *fp = fopen(img_filename.c_str(), "wb+");
-      if (!fp) {
-        tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
-      } else {
-        auto rv = pixWriteStreamWebP(fp, img, 10, TRUE);
-        fclose(fp);
-        if (rv) {
-          tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
-        }
+      ASSERT0(32 == pixGetDepth(img));
+      switch (img_format_id) {
+        default:
+        case IFF_PNG:
+          /* With best zlib compression (9), get between 1 and 10% improvement
+           * over default (6), but the compression is 3 to 10 times slower.
+           * Use the zlib default (6) as our default compression unless
+           * pix->special falls in the range [10 ... 19]; then subtract 10
+           * to get the compression value.  */
+          img_quality = (img_quality + 5) / 10;
+          pixSetSpecial(img, 10 + img_quality);
+          pixWrite(img_filename.c_str(), img, IFF_PNG);
+          break;
+
+        case IFF_JFIF_JPEG:
+          pixSetSpecial(img, img_quality);
+          pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG);
+          break;
+
+        case IFF_WEBP: {
+          FILE *fp = fopen(img_filename.c_str(), "wb+");
+          if (!fp) {
+            tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
+          } else {
+            img_quality += 5;
+            img_quality /= 10;
+            auto rv = pixWriteStreamWebP(fp, img, 1 + img_quality, TRUE);
+            fclose(fp);
+            if (rv) {
+              tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            }
+          }
+        } break;
       }
-#endif
-      img.destroy();
+
       fputs(
         fmt::format("<section class=\"image-display\">\n\
   <h6>image #{:02d}: {}</h6>\n\
@@ -1362,37 +1367,36 @@ namespace tesseract {
 
     counter++;
     const std::string caption = captions[idx];
-    std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION);
 
-    Image pixs = pixaGetPix(pixa_, idx, L_CLONE);
+    Image pixs = pixaGetPix(pixa_, idx, L_CLONE);    // takes ownership, correct
     if (pixs == nullptr) {
       tprintError("{}: pixs[{}] not retrieved.\n", __func__, idx);
       return;
     }
-    {
-      int depth = pixGetDepth(pixs);
-      ASSERT0(depth == 1 || depth == 8 || depth == 24 || depth == 32);
-    }
+
+    int img_depth = pixGetDepth(pixs);
+    ASSERT0(img_depth == 1 || img_depth == 8 || img_depth == 24 || img_depth == 32);
+
+    auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+    std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + image_extension);
+
     TBOX cliprect = cliprects[idx];
     auto clip_area = cliprect.area();
-    PIX *bgimg = nullptr;
+    Image bgimg;
     if (clip_area > 0) {
-      bgimg = tesseract_->pix_original();
+      bgimg = tesseract_->pix_original();       // clones ownership
     }
 
-    write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption), caption);
+    write_one_pix_for_html(html, counter, image_format_id, tesseract_->jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption);
 
     if (clip_area > 0 && false) {
       counter++;
-      fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + IMAGE_EXTENSION;
+      fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + image_extension;
 
-      write_one_pix_for_html(html, counter, fn, pixs, TruncatedForTitle(caption),
-                           caption, 
-                           &cliprect,
-                           bgimg);
+      write_one_pix_for_html(html, counter, image_format_id, tesseract_->jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption, &cliprect);
     }
 
-    pixs.destroy();
+    //pixs.destroy();
 
     double t = image_clock.get_elapsed_ns();
     image_series_elapsed_ns.push_back(t);
@@ -1413,9 +1417,9 @@ namespace tesseract {
 
       std::string section_timings_intro_msg;
     if (is_nonnegligible_difference(section_info.elapsed_ns, section_info.elapsed_ns_cummulative)) {
-        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec (cummulative, i.e. including all subsections: {:.6f} sec.)</p>\n\n", section_info.elapsed_ns / 1E9, section_info.elapsed_ns_cummulative / 1E9);
+        section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {} sec (cummulative, i.e. including all subsections: {} sec.)</p>\n\n", N(section_info.elapsed_ns), N(section_info.elapsed_ns_cummulative));
     } else {
-      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {:.6f} sec</p>\n\n", section_info.elapsed_ns / 1E9);
+      section_timings_intro_msg = fmt::format("<p class=\"timing-info\">This section of the tesseract run took {} sec</p>\n\n", N(section_info.elapsed_ns));
     }
     fputs(section_timings_intro_msg.c_str(), html);
 
@@ -1566,15 +1570,11 @@ namespace tesseract {
       std::ostringstream languages;
       int num_subs = tesseract_->num_sub_langs();
       if (num_subs > 0) {
-        languages << "<p>Language";
-        if (num_subs > 1)
-          languages << "s";
-        languages << ": ";
         int i;
         for (i = 0; i < num_subs - 1; ++i) {
           languages << tesseract_->get_sub_lang(i)->lang_ << " + ";
         }
-        languages << tesseract_->get_sub_lang(i)->lang_ << "</p>";
+        languages << tesseract_->get_sub_lang(i)->lang_;
       }
 
       // CSS styles for the generated HTML
@@ -1601,37 +1601,42 @@ namespace tesseract {
 <body>\n\
 <article>\n\
 <h1>Tesseract diagnostic image set</h1>\n\
-<p>tesseract (version: {}) run @ {}</p>\n\
-<p>Input image file path: {}</p>\n\
-<p>Output base: {}</p>\n\
-<p>Input image path: {}</p>\n\
-<p>Primary Language: {}</p>\n\
-{}\
-<p>Language Data Path Prefix: {}</p>\n\
-<p>Data directory: {}</p>\n\
-<p>Main directory: {}</p>\n\
+<table>\n\
+<tr><td>tesseract version</td><td>{}, run @ {}</td></tr>\n\
+<tr><td>Input image file path</td><td>{}</td></tr>\n\
+<tr><td>Output base</td><td>{}</td></tr>\n\
+<tr><td>Input image path</td><td>{}</td></tr>\n\
+<tr><td>Primary Language</td><td>{}</td></tr>\n\
+<tr><td>Scondary Languages</td><td>{}</td></tr>\n\
+<tr><td>Language Data Path Prefix</td><td>{}</td></tr>\n\
+<tr><td>Data directory</td><td>{}</td></tr>\n\
+<tr><td>Main directory</td><td>{}</td></tr>\n\
+</table>\n\
 ",
-        html_styling(tesseract_->datadir, "normalize.css").c_str(),
-        html_styling(tesseract_->datadir, "modern-normalize.css").c_str(),
-        html_styling(tesseract_->datadir, "diag-report.css").c_str(),
+        html_styling(tesseract_->datadir_, "normalize.css").c_str(),
+        html_styling(tesseract_->datadir_, "modern-normalize.css").c_str(),
+        html_styling(tesseract_->datadir_, "diag-report.css").c_str(),
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown_and_encode(tesseract_->input_file_path).c_str(),
-        check_unknown_and_encode(tesseract_->imagebasename).c_str(),
-        check_unknown_and_encode(tesseract_->imagefile).c_str(),
+        check_unknown_and_encode(tesseract_->input_file_path_).c_str(),
+        check_unknown_and_encode(tesseract_->imagebasename_).c_str(),
+        check_unknown_and_encode(tesseract_->imagefile_).c_str(),
         tesseract_->lang_.c_str(),
         languages.str().c_str(),
-        check_unknown_and_encode(tesseract_->language_data_path_prefix).c_str(),
-        check_unknown_and_encode(tesseract_->datadir).c_str(),
-        check_unknown_and_encode(tesseract_->directory).c_str()
+        check_unknown_and_encode(tesseract_->language_data_path_prefix_).c_str(),
+        check_unknown_and_encode(tesseract_->datadir_).c_str(),
+        check_unknown_and_encode(tesseract_->directory_).c_str()
       ).c_str(), html);
 
       plf::nanotimer image_clock;
       image_clock.start();
       {
-        std::string fn(partname + SanitizeFilenamePart(".img-original.") + IMAGE_EXTENSION);
+        Image pixs = tesseract_->pix_original();
+        int img_depth = pixGetDepth(pixs);
+        auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+        std::string fn(partname + SanitizeFilenamePart(".img-original.") + image_extension);
 
-        write_one_pix_for_html(html, 0, fn, tesseract_->pix_original(), "original image", "The original image as registered with the Tesseract instance.");
+        write_one_pix_for_html(html, 0, image_format_id, tesseract_->jpg_quality, fn, pixs, Image(), "original image", "The original image as registered with the Tesseract instance.");
       }
       source_image_elapsed_ns = image_clock.get_elapsed_ns();
 
@@ -1684,34 +1689,34 @@ namespace tesseract {
 
       std::string section_timings_intro_msg;
       if (is_nonnegligible_difference(total_time_elapsed_ns, grand_total_time)) {
-        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec (including all application preparation / overhead: {:.6f} sec).</p>\n\n", total_time_elapsed_ns / 1E9, grand_total_time / 1E9);
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {} sec (including all application preparation / overhead: {} sec).</p>\n\n", N(total_time_elapsed_ns), N(grand_total_time));
       } else {
-        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {:.6f} sec.</p>\n\n", total_time_elapsed_ns / 1E9);
+        section_timings_intro_msg = fmt::format("\n<hr>\n\n<p class=\"timing-info\">The entire tesseract run took {} sec.</p>\n\n", N(total_time_elapsed_ns));
       }
       fputs(section_timings_intro_msg.c_str(), html);
 
       std::string img_timings_msg;
       for (int i = 0; i < image_series_elapsed_ns.size(); i++) {
-        img_timings_msg += fmt::format("<li>Image #{}: {:.6f} sec</li>\n", i, image_series_elapsed_ns[i] / 1E9);
+        img_timings_msg += fmt::format("<li>Image #{}: {} sec</li>\n", i, N(image_series_elapsed_ns[i]));
       }
 
       std::string timing_report_msg = fmt::format(
           "<p>\n"
-        "Re overhead costs: the above total time ({:.6f} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {:.6f} sec, alas). It took {:.6f} sec before tesseract was ready to report.\n"
+        "Re overhead costs: the above total time ({} sec) includes at least this HTML report production as one of the overhead components (which together clock in at {} sec, alas). It took {} sec before tesseract was ready to report.\n"
           "</p><p>\n"
-          "While producing this HTML diagnotics log report took {:.6f} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
+          "While producing this HTML diagnotics log report took {} sec, this can be further subdivided into a few more numbers, where producing and saving the <em>lossless</em> WEBP images included in this report are a significant cost:\n"
           "</p><ul>\n"
-          "<li> saving a <em>lossless</em> WEBP copy of the source image: {:.6f} sec </li>\n"
-              "<li> plus the other images @ {:.6f} sec total:\n"
+          "<li> saving a <em>lossless</em> WEBP copy of the source image: {} sec </li>\n"
+              "<li> plus the other images @ {} sec total:\n"
           "<br>\n"
           "<ul>\n{}\n</ul></li>\n"
           "\n",
-          grand_total_time / 1E9, 
-        (grand_total_time - total_time_elapsed_ns) / 1E9,
-          time_elapsed_until_report / 1E9,
-        report_span_time / 1E9,
-          source_image_elapsed_ns / 1E9,
-          total_images_production_cost / 1E9,
+          N(grand_total_time), 
+        N(grand_total_time - total_time_elapsed_ns),
+          N(time_elapsed_until_report),
+        N(report_span_time),
+          N(source_image_elapsed_ns),
+          N(total_images_production_cost),
           img_timings_msg);
       
       std::string sectiontiming_summary_msg = 
@@ -1737,9 +1742,9 @@ namespace tesseract {
           indent += "&ensp;";
         }
         section_timings_msg += fmt::format(
-            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{:.6f}</td><td class=\"timing-value\">{:.6f}</td></tr>\n",
+            "<tr><td>{}</td><td>{}{}</td><td class=\"timing-value\">{}</td><td class=\"timing-value\">{}</td></tr>\n",
             step.level, indent, step.title,
-            step.elapsed_ns / 1E9, step.elapsed_ns_cummulative / 1E9);
+            N(step.elapsed_ns), N(step.elapsed_ns_cummulative));
       }
 
       section_timings_msg = fmt::format(
@@ -1766,35 +1771,35 @@ namespace tesseract {
               "\n\n\n<div class=\"timing-summary\">\n"
           "<h6>Timing summary</h6>\n"
         "<pre>\n"
-        "Wall clock duration:...................... {:10.6f} sec.\n"
-        "Time until report:........................ {:10.6f} sec.\n"
-        "  - actual work:.......................... {:10.6f} sec.\n"
-        "  - prep & misc. overhead:................ {:10.6f} sec\n"
+        "Wall clock duration:...................... {} sec.\n"
+        "Time until report:........................ {} sec.\n"
+        "  - actual work:.......................... {} sec.\n"
+        "  - prep & misc. overhead:................ {} sec\n"
         "  - gap:unaccounted for (~ unidentified overhead):\n"
-        "    ...................................... {:10.6f} sec / {:10.6f} sec\n"
-        "Report production:........................ {:10.6f} sec.\n"
+        "    ...................................... {} sec / {} sec\n"
+        "Report production:........................ {} sec.\n"
         "\n"
-        "Cummulative work effort:.................. {:10.6f} sec\n"
-        "Overhead:................................. {:10.6f} sec\n"
-        "  - reported images production:........... {:10.6f} sec\n"
-        "  - report text production + I/O:......... {:10.6f} sec\n"
-        "  - misc + I/O:........................... {:10.6f} sec\n"
+        "Cummulative work effort:.................. {} sec\n"
+        "Overhead:................................. {} sec\n"
+        "  - reported images production:........... {} sec\n"
+        "  - report text production + I/O:......... {} sec\n"
+        "  - misc + I/O:........................... {} sec\n"
           "</pre>\n"
         "{}"
         "</div>\n",
-      grand_total_time / 1E9, 
-        time_elapsed_until_report / 1E9, 
-        proc_pages_time / 1E9, 
-        (time_elapsed_until_report - proc_pages_time) / 1E9,
-          (grand_total_time - total_time_elapsed_ns) / 1E9,
-          (grand_total_time - time_elapsed_until_report - report_span_time) / 1E9,
-          report_span_time / 1E9,
+      N10(grand_total_time), 
+        N10(time_elapsed_until_report), 
+        N10(proc_pages_time), 
+        N10(time_elapsed_until_report - proc_pages_time),
+          N10(grand_total_time - total_time_elapsed_ns),
+          N(grand_total_time - time_elapsed_until_report - report_span_time),
+          N10(report_span_time),
 
-        proc_pages_time / 1E9, 
-       (grand_total_time - proc_pages_time) / 1E9,
-          (source_image_elapsed_ns + total_images_production_cost) / 1E9,
-          (report_span_time - (source_image_elapsed_ns + total_images_production_cost)) / 1E9,
-          (grand_total_time - proc_pages_time - report_span_time) / 1E9,
+        N10(proc_pages_time), 
+       N10(grand_total_time - proc_pages_time),
+          N10(source_image_elapsed_ns + total_images_production_cost),
+          N10(report_span_time - (source_image_elapsed_ns + total_images_production_cost)),
+          N10(grand_total_time - proc_pages_time - report_span_time),
 
         sectiontiming_summary_msg
         );
@@ -1843,16 +1848,23 @@ namespace tesseract {
   }
 
 
-  void DebugPixa::Clear(bool final_cleanup)
-  {
-    final_cleanup |= content_has_been_written_to_file;
+  void DebugPixa::Clear(bool final_cleanup) {
+    //final_cleanup |= +content_has_been_written_to_file;
     pixaClear(pixa_);
     captions.clear();
-    // NOTE: we only clean the steps[] logging blocks when we've been ascertained that 
-    // this info has been pumped into a logfile (or stdio stream) via our WriteHTML() method....
-    if (final_cleanup) {
-        steps.clear();
-        active_step_index = -1;
+    cliprects.clear();
+
+    steps.clear();
+    info_chunks.clear();
+    image_series_elapsed_ns.clear();
+    active_step_index = -1;
+    total_images_production_cost = 0.0;
+
+    // make sure the logging can commence if we aren't really at the very end yet, i.e. when we aren't invoked by the PixaDebug destructor itself:
+    if (!final_cleanup) {
+      // set up the root info section:
+      PushNextSection("After final cleanup...");
+      content_has_been_written_to_file = false;
     }
   }
 

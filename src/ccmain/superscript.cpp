@@ -174,7 +174,7 @@ bool Tesseract::SubAndSuperscriptFix(WERD_RES *word) {
 
   if (superscript_debug >= 1) {
     tprintDebug("Candidate for superscript detection: {} (",
-            word->best_choice->unichar_string().c_str());
+            mdqstr(word->best_choice->unichar_string()));
     if (num_leading || num_remainder_leading) {
       tprintDebug("{}.{} {}-leading ", num_leading, num_remainder_leading, leading_pos);
     }
@@ -413,9 +413,9 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing first {} chopped blobs\n", num_chopped_leading);
     }
-    recog_word_recursive(prefix);
+    recog_word_recursive(prefix, 0);
     if (superscript_debug >= 2) {
-      tprintDebug(" The leading bits look like {} \"{}\"\n", ScriptPosToString(leading_pos), prefix->best_choice->unichar_string());
+      tprintDebug(" The leading bits look like {} {}\n", ScriptPosToString(leading_pos), mdqstr(prefix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties.
@@ -437,9 +437,9 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing last {} chopped blobs\n", num_chopped_trailing);
     }
-    recog_word_recursive(suffix);
+    recog_word_recursive(suffix, 0);
     if (superscript_debug >= 2) {
-      tprintDebug(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
+      tprintDebug(" The trailing bits look like {} {}\n", ScriptPosToString(trailing_pos), mdqstr(suffix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties, blacklist/whitelist
@@ -470,7 +470,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     delete bb1;
     return nullptr;
   }
-  recog_word_recursive(core);
+  recog_word_recursive(core, 0);
 
   // Now paste the results together into core.
   if (suffix) {
@@ -486,7 +486,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
 
   if (superscript_debug >= 1) {
     tprintDebug("{} superscript fix: {}\n", *is_good ? "ACCEPT" : "REJECT",
-            core->best_choice->unichar_string());
+            mdqstr(core->best_choice->unichar_string()));
   }
   return core;
 }

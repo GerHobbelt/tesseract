@@ -27,24 +27,47 @@ public:
   Pix *pix_ = nullptr;
 
 public:
-  Image() = default;
-  Image(Pix *pix) : pix_(pix) {}
+  Image(Pix *pix);  // mark this one as 'explicit' to see all the places where the code transitions between old/leptonica/C and new/C++/Image class styles.
+  Image(bool take_ownership, Pix *pix);
+
+  // https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#c21-if-you-define-or-delete-any-copy-move-or-destructor-function-define-or-delete-them-all
+  // https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#note-106
+
+  ~Image();
+  Image();
+  Image(const Image &src);
+  Image &operator=(const Image &src);
+  Image(Image &&src) noexcept;
+  Image &operator=(Image &&src) noexcept;
 
   // service
   bool operator==(decltype(nullptr)) const { return pix_ == nullptr; }
   bool operator!=(decltype(nullptr)) const { return pix_ != nullptr; }
   explicit operator bool() const { return pix_ != nullptr; }
-  operator Pix *() const { return pix_; }
-  explicit operator Pix **() { return &pix_; }
-  Pix *operator->() const { return pix_; }
-  Image& operator =(Pix* pix);
+  operator Pix *() noexcept;
+  operator const Pix *() const noexcept;
+  explicit operator Pix **() noexcept;
+  const Pix *operator->() const noexcept;
+  Pix *operator->() noexcept;
+  Image &operator=(Pix *pix);
+  Image &operator=(Pix **pix);      // move semantics, C style
+  Image &operator=(decltype(nullptr));
 
   // api
-  Image clone() const; // increases refcount
-  Image copy() const;  // does full copy
+  Pix *clone2pix() const; // increases refcount
+  Image cccclone() const; // increases refcount
+  Image copy() const;     // does full copy
   void destroy();
   bool isZero() const;
   void replace(Pix* pix);
+  void replace(Pix *&pix);
+  Pix *ptr() noexcept;
+  const Pix *ptr() const noexcept;
+
+  // equivalent of `operator Pix**` i.e. hard cast to `Pix **` type.
+  Pix **obtains() noexcept;
+  // relinquish control of the PIX: pass it on to some-one else. Move semantics simile for C code style.
+  Pix *relinquish() noexcept;
 
   // ops
   Image operator|(Image) const;

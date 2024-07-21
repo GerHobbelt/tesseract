@@ -77,7 +77,6 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
 
-
 namespace tesseract {
 
 FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)

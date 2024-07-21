@@ -575,7 +575,7 @@ void WERD_CHOICE::SetScriptPositions(bool small_caps, TWERD *word, int debug) {
   }
 
   if ((debug >= 1 && position_counts[tesseract::SP_NORMAL] < length_) || debug >= 2) {
-    tprintDebug("SetScriptPosition on {}\n", unichar_string());
+    tprintDebug("SetScriptPosition on {}\n", mdqstr(unichar_string()));
     int chunk_index = 0;
     for (unsigned int blob_index = 0; blob_index < length_; ++blob_index) {
       if (debug >= 2 || script_pos_[blob_index] != tesseract::SP_NORMAL) {

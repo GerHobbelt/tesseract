@@ -232,8 +232,8 @@ protected:
 //        new ScrollView(kIms[i], 100, 100, width / 2, height / 2, width, height);
 //    win->Image(src_pix_, 0, 0);
 //    it->Begin();
-//    DebugView::Color color = DebugView::RED;
-//    win->Brush(DebugView::NONE);
+//    Diagnostics::Color color = Diagnostics::RED;
+//    win->Brush(Diagnostics::NONE);
 //    do {
 //      Pta* pts = it->BlockPolygon();
 //      if (pts != nullptr) {

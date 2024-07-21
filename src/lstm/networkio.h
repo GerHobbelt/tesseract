@@ -18,8 +18,9 @@
 #ifndef TESSERACT_LSTM_NETWORKIO_H_
 #define TESSERACT_LSTM_NETWORKIO_H_
 
+#include <tesseract/image.h>
+
 #include "helpers.h"
-#include "image.h"
 #include "static_shape.h"
 #include "stridemap.h"
 #include "weightmatrix.h"
