@@ -23,6 +23,7 @@
 #include "scrollview.h"
 #include "bbgrid.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include "svutil.h" // for SVNetwork
 
@@ -959,8 +960,9 @@ void BackgroundScrollView::PrepCanvas(void) {
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
+  ASSERT0(pixGetRefCount(pix) >= 1);
+
   ASSERT0(pix.pix_ != wh_pix.pix_);
-  wh_pix.destroy();
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
@@ -983,6 +985,7 @@ void BackgroundScrollView::StartEventHandler() {
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
   ASSERT0(!dirty);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pix.destroy();
 }
 
@@ -1038,7 +1041,9 @@ void BackgroundScrollView::SendPolygon() {
       const int width = 1;
       l_int32 r, g, b, a;
       extractRGBAValues(pen_color, &r, &g, &b, &a);
+      ASSERT0(pixGetRefCount(pix) >= 1);
       pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+      ASSERT0(pixGetRefCount(pix) >= 1);
       ptaDestroy(&ptas);
     } else if (length > 2) {
       // A polyline.
@@ -1062,7 +1067,9 @@ void BackgroundScrollView::SendPolygon() {
             const int width = 1;
             l_int32 r, g, b, a;
             extractRGBAValues(pen_color, &r, &g, &b, &a);
+            ASSERT0(pixGetRefCount(pix) >= 1);
             pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 1 /* closed */, 1 /* removedups */);
+            ASSERT0(pixGetRefCount(pix) >= 1);
             ptaDestroy(&ptas);
 
             done = true;
@@ -1089,7 +1096,9 @@ void BackgroundScrollView::SendPolygon() {
         const int width = 1;
         l_int32 r, g, b, a;
         extractRGBAValues(pen_color, &r, &g, &b, &a);
+        ASSERT0(pixGetRefCount(pix) >= 1);
         pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0 /* closed */, 1 /* removedups */);
+        ASSERT0(pixGetRefCount(pix) >= 1);
         ptaDestroy(&ptas);
       }
     }
@@ -1196,7 +1205,9 @@ void BackgroundScrollView::Clear() {
   SendMsg("clear()");
   SendPolygon();
   if (dirty) {
+    ASSERT0(pixGetRefCount(pix) >= 1);
     tesseract_->AddPixCompedOverOrigDebugPage(pix, GetName());
+    ASSERT0(pixGetRefCount(pix) >= 1);
     PrepCanvas();
 
     dirty = false;
@@ -1234,7 +1245,9 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   ptaDestroy(&ptas);
 }
 
@@ -1323,8 +1336,11 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
 
   const int fontsize = 16;
   L_BMF *bmf = bmfCreate(NULL, fontsize);
@@ -1342,14 +1358,15 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
     char chr = mystring[i];
     if (chr == '\n' || chr == '\r')
       continue;
-    PIX *tpix = bmfGetPix(bmf, chr);
+    Image tpix = bmfGetPix(bmf, chr);
     l_int32 baseline;
     bmfGetBaseline(bmf, chr, &baseline);
     int w = pixGetWidth(tpix);
-    //PIX *tpix2 = pixScaleSmooth(tpix, scale, scale);
+    //Image tpix2 = pixScaleSmooth(tpix, scale, scale);
     //pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     int d = pixGetDepth(pix);
-    PIX *tpix2 = nullptr;
+    Image tpix2 = nullptr;
     switch (d) { 
     default: 
         ASSERT_HOST_MSG(false, "Should never get here!");
@@ -1359,19 +1376,19 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
         tpix2 = pixConvertTo32(tpix);
         break;
     }
-    PIX *tpix3 = pixScaleSmooth(tpix2, scale, scale);
+    Image tpix3 = pixScaleSmooth(tpix2, scale, scale);
     // pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
     l_int32 cw, ch, cd;
     pixGetDimensions(tpix3, &cw, &ch, &cd);
     //pixRasterop(pix, x, y - baseline * scale, cw, ch, PIX_XOR, tpix3, 0, 0);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     pixBlendColorByChannel(pix, pix, tpix3, x, y - baseline * scale, 1.0, 0.0, 1.0, 1, 0xFFFFFF00u);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     x += (w + bmf->kernwidth) * scale;
-    pixDestroy(&tpix);
-    pixDestroy(&tpix2);
-    pixDestroy(&tpix3);
   }
 
   width_used = x - bmf->kernwidth * scale - x_start;
+  ASSERT0(pixGetRefCount(pix) >= 1);
   ovf = (x > pixGetWidth(pix) - 1);
 
   bmfDestroy(&bmf);
@@ -1393,8 +1410,11 @@ void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   boxDestroy(&box);
 }
 
@@ -1458,7 +1478,9 @@ void BackgroundScrollView::UpdateWindow() {
   SendMsg("update()");
   SendPolygon();
   if (dirty) {
+    ASSERT0(pixGetRefCount(pix) >= 1);
     tesseract_->AddPixCompedOverOrigDebugPage(pix, fmt::format("{}::update", GetName()));
+    ASSERT0(pixGetRefCount(pix) >= 1);
     // DO NOT clear the canvas!
 
     dirty = false;
@@ -1515,8 +1537,11 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   boxDestroy(&box);
 }
 

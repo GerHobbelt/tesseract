@@ -56,6 +56,8 @@ struct NORM_PROTOS {
  * Return the new type of evidence number corresponding to this
  * normalization adjustment.  The equation that represents the transform is:
  *       1 / (1 + (NormAdj / midpoint) ^ curl)
+ *
+ * Identical to MergeNF::EvidenceOf(), but using a different parameter for the power setting.
  */
 static float NormEvidenceOf(float NormAdj) {
   NormAdj /= classify_norm_adj_midpoint.value();
@@ -73,7 +75,7 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 /** control knobs used to control the normalization adjustment process */
 DOUBLE_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
-DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
+DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl power ...");
 /** Weight of width variance against height and vertical position. */
 const float kWidthErrorWeighting = 0.125f;
 

@@ -44,10 +44,33 @@ public:
   virtual ~CCUtil();
 
 public:
-  // Read the arguments and set up the data path.
-  void main_setup(const std::string &argv0,                 // program name
-                  const std::string & output_image_basename // name of output/debug image(s)
-  );
+  /**
+   * @brief CCUtil::main_setup - set location of tessdata and template name of output images
+   *
+   * @param argv0 - paths to the directory with language files and config files.
+   * An actual value of argv0 is used if not nullptr, otherwise TESSDATA_PREFIX is
+   * used if not nullptr, next try to use compiled in -DTESSDATA_PREFIX. If
+   * previous is not successful - use current directory.
+   * 
+   * @param basename - template name of output images
+   *
+   * @param language_to_load - (optional) language identifier of the language model we wish to use
+   *
+   * Return 0 on success, non-zero on error. (The error will already have been reported via tprintError().)
+   */
+  [[nodiscard]] int main_setup(const std::string &argv0,                 /// program name
+                               const std::string &output_image_basename, /// name of output/debug image(s)
+                               const std::string &language_to_load)
+  {
+    std::vector<std::string> lang_vec;
+    if (!language_to_load.empty())
+      lang_vec.push_back(language_to_load);
+    return main_setup(argv0, output_image_basename, lang_vec);
+  }
+  [[nodiscard]] int main_setup(const std::string &argv0,                 /// program name
+                               const std::string &output_image_basename, /// name of output/debug image(s)
+                               const std::vector<std::string> &languages_to_load);
+
   ParamsVector &params() {
     return params_;
   }

@@ -903,7 +903,6 @@ int StringRenderer::RenderToGrayscaleImage(const char *text, int text_length, Im
   int offset = RenderToImage(text, text_length, &orig_pix);
   if (orig_pix) {
     *pix = pixConvertTo8(orig_pix, false);
-    orig_pix.destroy();
   }
   return offset;
 }
@@ -914,9 +913,7 @@ int StringRenderer::RenderToBinaryImage(const char *text, int text_length, int t
   int offset = RenderToImage(text, text_length, &orig_pix);
   if (orig_pix) {
     Image gray_pix = pixConvertTo8(orig_pix, false);
-    orig_pix.destroy();
     *pix = pixThresholdToBinary(gray_pix, threshold);
-    gray_pix.destroy();
   } else {
     *pix = orig_pix;
   }
@@ -982,7 +979,7 @@ std::string StringRenderer::ConvertFullwidthLatinToBasicLatin(const std::string 
 
 // Returns offset to end of text substring rendered in this method.
 int StringRenderer::RenderToImage(const char *text, int text_length, Image *pix) {
-  if (pix && *pix) {
+  if (pix) {
     pix->destroy();
   }
   InitPangoCairo();
@@ -1140,7 +1137,6 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage, const char *text,
       Image title_image = nullptr;
       RenderToBinaryImage(title, strlen(title), 128, &title_image);
       *image |= title_image;
-      title_image.destroy();
 
       v_margin_ *= 8;
       set_font(orig_font);

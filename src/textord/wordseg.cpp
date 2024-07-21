@@ -467,7 +467,6 @@ int32_t row_words2(   // compute space size
  *
  * Convert a TO_BLOCK to a BLOCK.
  */
-
 void make_real_words(tesseract::Textord *textord,
                      TO_BLOCK *block, // block to do
                      FCOORD rotation  // for drawing

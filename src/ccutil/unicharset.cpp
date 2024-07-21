@@ -54,6 +54,7 @@ static const int ISDIGIT_MASK = 0x8;
 static const int ISPUNCTUATION_MASK = 0x10;
 
 // Y coordinate threshold for determining cap-height vs x-height.
+// 
 // TODO(rays) Bring the global definition down to the ccutil library level,
 // so this constant is relative to some other constants.
 static const int kMeanlineThreshold = 220;
@@ -817,14 +818,33 @@ bool UNICHARSET::save_to_string(std::string &str) const {
 }
 
 std::string UNICHARSET::debug_full_set_as_string() const {
-  std::string str = fmt::format("(charcount: {})", this->size());
+  std::string str = fmt::format("(charcount: {}) [`", this->size());
+  // ignore the 3 initial slots: SPACE, JOINED, BROKEN
+  std::vector<const char *> ucs(this->size() - 3);
+  for (unsigned id = 3; id < this->size(); ++id) {
+    const char *u = this->id_to_unichar(id);
+    if (0 == strcmp(u, "`"))
+      u = "``";    // to help the MarkDown-ish debug log to HTML processor
+    ucs[id - 3] = u;
+  }
+  std::sort(ucs.begin(), ucs.end(), [](const char *a, const char *b) -> bool {
+    int d = strcmp(a, b);
+    return d < 0;
+  });
+  for (unsigned id = 0; id < this->size() - 3; ++id) {
+    str += ucs[id];
+  }
+  str += "`]\n    {";
   for (unsigned id = 0; id < this->size(); ++id) {
     str += fmt::format(" '{}' ({}:{} {})",
                        this->id_to_unichar(id),
                        id,
                        this->get_normed_unichar(id),
                        this->debug_str(id));
+    if (id % 8 == 7 && id != this->size() - 1)
+      str += "\n      ";
   }
+  str += " }";
   return str;
 }
 
@@ -900,7 +920,7 @@ bool UNICHARSET::load_via_fgets(
     stream >> std::setw(255) >> unichar >> std::hex >> properties >> std::dec;
     // stream.flags(std::ios::dec);
     if (stream.fail()) {
-	  tesseract::tprintError("stream failure. ({}:{})\n", __FILE__, __LINE__);
+	    tesseract::tprintError("stream failure. ({}:{})\n", __FILE__, __LINE__);
       return false;
     }
     auto position = stream.tellg();
@@ -968,7 +988,7 @@ bool UNICHARSET::load_via_fgets(
     this->set_ispunctuation(id, properties & ISPUNCTUATION_MASK);
     this->set_isngram(id, false);
     this->set_script(id, script);
-    this->unichars[id].properties.enabled = true;
+    this->set_enabled(id, true);
     this->set_top_bottom(id, min_bottom, max_bottom, min_top, max_top);
     this->set_width_stats(id, width, width_sd);
     this->set_bearing_stats(id, bearing, bearing_sd);
@@ -1080,7 +1100,7 @@ bool UNICHARSET::major_right_to_left() const {
 void UNICHARSET::set_black_and_whitelist(const char *blacklist,
                                          const char *whitelist,
                                          const char *unblacklist) {
-  bool def_enabled = whitelist == nullptr || whitelist[0] == '\0';
+  bool def_enabled = (whitelist == nullptr || whitelist[0] == '\0');
   // Set everything to default
   for (auto &uc : unichars) {
     uc.properties.enabled = def_enabled;

@@ -74,10 +74,6 @@ enum DawgType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(DawgType);
 
-static inline auto format_as(DawgType dt) {
-  return fmt::underlying(dt);
-}
-
 /*----------------------------------------------------------------------
               C o n s t a n t s
 ----------------------------------------------------------------------*/
@@ -117,7 +113,7 @@ static const char kWildcard[] = "*";
 class TESS_API Dawg {
 public:
   /// Magic number to determine endianness when reading the Dawg from file.
-  const int16_t kDawgMagicNumber = 42;
+  static const int16_t kDawgMagicNumber = 42;
   /// A special unichar id that indicates that any appropriate pattern
   /// (e.g.dictionary word, 0-9 digit, etc) can be inserted instead
   /// Used for expressing patterns in punctuation and number Dawgs.
@@ -415,11 +411,11 @@ public:
 class TESS_API SquishedDawg : public Dawg {
 public:
   SquishedDawg(DawgType type, const std::string &lang, PermuterType perm,
-               int debug_level)
-      : Dawg(type, lang, perm, debug_level) {}
+               int dawg_debug_level)
+      : Dawg(type, lang, perm, dawg_debug_level) {}
   SquishedDawg(const char *filename, DawgType type, const std::string &lang,
-               PermuterType perm, int debug_level)
-      : Dawg(type, lang, perm, debug_level) {
+               PermuterType perm, int dawg_debug_level)
+      : Dawg(type, lang, perm, dawg_debug_level) {
     TFile file;
     ASSERT_HOST(file.Open(filename, nullptr));
     ASSERT_HOST(read_squished_dawg(&file));
@@ -427,13 +423,13 @@ public:
   }
   SquishedDawg(EDGE_ARRAY edges, int num_edges, DawgType type,
                const std::string &lang, PermuterType perm, int unicharset_size,
-               int debug_level)
-      : Dawg(type, lang, perm, debug_level),
+               int dawg_debug_level)
+      : Dawg(type, lang, perm, dawg_debug_level),
         edges_(edges),
         num_edges_(num_edges) {
     init(unicharset_size);
     num_forward_edges_in_node0 = num_forward_edges(0);
-    if (debug_level > 3) {
+    if (dawg_debug_level > 3) {
       print_all("SquishedDawg:");
     }
   }

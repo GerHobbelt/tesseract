@@ -73,7 +73,7 @@ void SetBlobStrokeWidth(Image pix, BLOBNBOX *blob) {
   Image pix_blob = pixClipRectangle(pix, blob_pix_box, nullptr);
   boxDestroy(&blob_pix_box);
   Image dist_pix = pixDistanceFunction(pix_blob, 4, 8, L_BOUNDARY_BG);
-  pix_blob.destroy();
+
   // Compute the stroke widths.
   uint32_t *data = pixGetData(dist_pix);
   int wpl = pixGetWpl(dist_pix);
@@ -126,7 +126,7 @@ void SetBlobStrokeWidth(Image pix, BLOBNBOX *blob) {
       pixel = next_pixel;
     }
   }
-  dist_pix.destroy();
+
   // Store the horizontal and vertical width in the blob, keeping both
   // widths if there is enough information, otherwise only the one with
   // the most samples.

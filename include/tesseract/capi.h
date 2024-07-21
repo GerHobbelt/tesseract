@@ -148,9 +148,8 @@ typedef enum TessTextlineOrder {
 typedef struct ETEXT_DESC ETEXT_DESC;
 #endif
 
-typedef bool (*TessCancelFunc)(void *cancel_this, int words);
-typedef bool (*TessProgressFunc)(ETEXT_DESC *ths, int left, int right, int top,
-                                 int bottom);
+typedef bool (*TessCancelFunc)(ETEXT_DESC *cancel_this, int word_count);
+typedef void (*TessProgressFunc)(ETEXT_DESC *ths, int left, int right, int top, int bottom);
 
 struct Pix;
 struct Boxa;
@@ -310,16 +309,12 @@ TESS_API int TessBaseAPIGetThresholdedImageScaleFactor(
 
 TESS_API TessPageIterator *TessBaseAPIAnalyseLayout(TessBaseAPI *handle);
 
-TESS_API int TessBaseAPIRecognize(TessBaseAPI *handle, ETEXT_DESC *monitor);
+TESS_API int TessBaseAPIRecognize(TessBaseAPI *handle);
 
 TESS_API BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename,
-                                      const char *retry_config,
-                                      int timeout_millisec,
                                       TessResultRenderer *renderer);
 TESS_API BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                                      int page_index, const char *filename,
-                                     const char *retry_config,
-                                     int timeout_millisec,
                                      TessResultRenderer *renderer);
 
 TESS_API TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle);

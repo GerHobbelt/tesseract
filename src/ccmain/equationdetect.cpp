@@ -99,10 +99,11 @@ inline bool IsRightIndented(const EquationDetect::IndentType type) {
   return type == EquationDetect::RIGHT_INDENT || type == EquationDetect::BOTH_INDENT;
 }
 
-EquationDetect::EquationDetect(const char *equ_datapath, const char *equ_name) {
-  const char *default_name = "equ";
+EquationDetect::EquationDetect(TessBaseAPI &owner, const char *equ_datapath, const char *equ_name)
+    : equ_tesseract_(owner)
+{
   if (equ_name == nullptr) {
-    equ_name = default_name;
+    equ_name = "equ";
   }
   lang_tesseract_ = nullptr;
   resolution_ = 0;
@@ -598,7 +599,6 @@ float EquationDetect::ComputeForegroundDensity(const TBOX &tbox) {
   Image pix_sub = pixClipRectangle(pix_bi, box, nullptr);
   l_float32 fract;
   pixForegroundFraction(pix_sub, &fract);
-  pix_sub.destroy();
   boxDestroy(&box);
 
   return fract;
@@ -1405,8 +1405,8 @@ void EquationDetect::GetOutputTiffName(const char *name, std::string &image_name
 }
 
 void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
-  Image pix = nullptr, pixBi = lang_tesseract_->pix_binary();
-  pix = pixConvertTo32(pixBi);
+  Image pixBi = lang_tesseract_->pix_binary();
+  Image pix = pixConvertTo32(pixBi.ptr());
   ColPartitionGridSearch gsearch(part_grid_);
   ColPartition *part = nullptr;
   gsearch.StartFullSearch();
@@ -1418,7 +1418,6 @@ void EquationDetect::PaintSpecialTexts(const std::string &outfile) const {
   }
 
   pixWrite(outfile.c_str(), pix, IFF_TIFF_LZW);
-  pix.destroy();
 }
 
 void EquationDetect::PaintColParts(const std::string &outfile) const {

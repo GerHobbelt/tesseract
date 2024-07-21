@@ -74,7 +74,7 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
       name = "corrected_proportional";
       break;
     default:
-      name = "unknown_pitch";
+      name = "unknown/illegal_pitch";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -82,8 +82,7 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<PolyBlockType>::format(PolyBlockType c,
-                                           format_context &ctx) const
+auto fmt::formatter<PolyBlockType>::format(PolyBlockType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum PolyBlockType:
@@ -134,7 +133,7 @@ auto fmt::formatter<PolyBlockType>::format(PolyBlockType c,
       name = "PT_NOISE";
       break;
     default:
-      name = "unknown_blocktype";
+      name = "unknown/illegal_blocktype";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -142,8 +141,7 @@ auto fmt::formatter<PolyBlockType>::format(PolyBlockType c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<Orientation>::format(Orientation c,
-                                         format_context &ctx) const
+auto fmt::formatter<Orientation>::format(Orientation c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum Orientation:
@@ -161,7 +159,7 @@ auto fmt::formatter<Orientation>::format(Orientation c,
       name = "page_left";
       break;
     default:
-      name = "unknown_orientation";
+      name = "unknown/illegal_orientation";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -169,8 +167,7 @@ auto fmt::formatter<Orientation>::format(Orientation c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<WritingDirection>::format(WritingDirection c,
-                                              format_context &ctx) const
+auto fmt::formatter<WritingDirection>::format(WritingDirection c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum WritingDirection:
@@ -185,7 +182,7 @@ auto fmt::formatter<WritingDirection>::format(WritingDirection c,
       name = "top_to_bottom";
       break;
     default:
-      name = "unknown_direction";
+      name = "unknown/illegal_direction";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -193,8 +190,7 @@ auto fmt::formatter<WritingDirection>::format(WritingDirection c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<TextlineOrder>::format(TextlineOrder c,
-                                           format_context &ctx) const
+auto fmt::formatter<TextlineOrder>::format(TextlineOrder c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum TextlineOrder:
@@ -209,7 +205,7 @@ auto fmt::formatter<TextlineOrder>::format(TextlineOrder c,
       name = "order_top_to_bottom";
       break;
     default:
-      name = "order_unknown";
+      name = "unknown/illegal_line_order";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -217,8 +213,7 @@ auto fmt::formatter<TextlineOrder>::format(TextlineOrder c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<PageSegMode>::format(PageSegMode c,
-                                         format_context &ctx) const
+auto fmt::formatter<PageSegMode>::format(PageSegMode c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum PageSegMode:
@@ -266,7 +261,7 @@ auto fmt::formatter<PageSegMode>::format(PageSegMode c,
       name = "Treat_as_a_single_text_line_bypassing_all_tesseract_hacks";
       break;
       default:
-      name = "unknown_page_seg_mode";
+      name = "unknown/illegal_page_seg_mode";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -280,25 +275,25 @@ auto fmt::formatter<TabType>::format(TabType c, format_context &ctx) const
   // enum TabType:
   switch (c) {
     case TabType::TT_NONE:
-      name = "not_a_tab";
+      name = "not_a_TAB";
       break;
     case TabType::TT_DELETED:
-      name = "deleted_not_a_tab_after_analysis";
+      name = "deleted_not_a_TAB_after_analysis";
       break;
     case TabType::TT_MAYBE_RAGGED:
-      name = "maybe_ragged";
+      name = "maybe_ragged_TAB";
       break;
     case TabType::TT_MAYBE_ALIGNED:
-      name = "maybe_aligned";
+      name = "maybe_aligned_TAB";
       break;
     case TabType::TT_CONFIRMED:
-      name = "aligned_with_neighbours";
+      name = "confirmed_TAB_aligned_with_neighbours";
       break;
     case TabType::TT_VLINE:
-      name = "vertical_line";
+      name = "vertical_line_TAB";
       break;
     default:
-      name = "unknown_tab";
+      name = "unknown/illegal_TAB";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -306,14 +301,13 @@ auto fmt::formatter<TabType>::format(TabType c, format_context &ctx) const
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<BlobRegionType>::format(BlobRegionType c,
-                                            format_context &ctx) const
+auto fmt::formatter<BlobRegionType>::format(BlobRegionType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum BlobRegionType:
   switch (c) {
     case BlobRegionType::BRT_NOISE:
-      name = "neither_text_nor_image";
+      name = "neither_text_nor_image_region";
       break;
     case BlobRegionType::BRT_HLINE:
       name = "horizontal_separator_line";
@@ -328,7 +322,7 @@ auto fmt::formatter<BlobRegionType>::format(BlobRegionType c,
       name = "nonrectangular_image";
       break;
     case BlobRegionType::BRT_UNKNOWN:
-      name = "not_determined_yet";
+      name = "region_type_not_determined_yet";
       break;
     case BlobRegionType::BRT_VERT_TEXT:
       name = "vertical_aligned_text";
@@ -337,7 +331,7 @@ auto fmt::formatter<BlobRegionType>::format(BlobRegionType c,
       name = "convincing_text";
       break;
     default:
-      name = "unknown_blob_region";
+      name = "unknown/illegal_blob_region";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -345,8 +339,7 @@ auto fmt::formatter<BlobRegionType>::format(BlobRegionType c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<BlobNeighbourDir>::format(BlobNeighbourDir c,
-                                              format_context &ctx) const
+auto fmt::formatter<BlobNeighbourDir>::format(BlobNeighbourDir c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum BlobNeighbourDir:
@@ -364,7 +357,7 @@ auto fmt::formatter<BlobNeighbourDir>::format(BlobNeighbourDir c,
       name = "above";
       break;
     default:
-      name = "unknown_neighbour_dir";
+      name = "unknown/illegal_neighbour_dir";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -372,77 +365,7 @@ auto fmt::formatter<BlobNeighbourDir>::format(BlobNeighbourDir c,
   return formatter<string_view>::format(id, ctx);
 }
 
-auto fmt::formatter<BlobSpecialTextType>::format(BlobSpecialTextType c,
-                                                 format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum BlobSpecialTextType:
-  switch (c) {
-    case BlobSpecialTextType::BSTT_NONE:
-      name = "BSTT_NONE";
-      break;
-    case BlobSpecialTextType::BSTT_ITALIC:
-      name = "BSTT_ITALIC";
-      break;
-    case BlobSpecialTextType::BSTT_DIGIT:
-      name = "BSTT_DIGIT";
-      break;
-    case BlobSpecialTextType::BSTT_MATH:
-      name = "BSTT_MATH";
-      break;
-    case BlobSpecialTextType::BSTT_UNCLEAR:
-      name = "BSTT_UNCLEAR";
-      break;
-    case BlobSpecialTextType::BSTT_SKIP:
-      name = "BSTT_SKIP";
-      break;
-    default:
-      name = "unknown_special_text_type";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-auto fmt::formatter<BlobTextFlowType>::format(BlobTextFlowType c,
-                                              format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum BlobTextFlowType:
-  switch (c) {
-    case BlobTextFlowType::BTFT_NONE:
-      name = "BTFT_NONE";
-      break;
-    case BlobTextFlowType::BTFT_NONTEXT:
-      name = "BTFT_NONTEXT";
-      break;
-    case BlobTextFlowType::BTFT_NEIGHBOURS:
-      name = "BTFT_NEIGHBOURS";
-      break;
-    case BlobTextFlowType::BTFT_CHAIN:
-      name = "BTFT_CHAIN";
-      break;
-    case BlobTextFlowType::BTFT_STRONG_CHAIN:
-      name = "BTFT_STRONG_CHAIN";
-      break;
-    case BlobTextFlowType::BTFT_TEXT_ON_IMAGE:
-      name = "BTFT_TEXT_ON_IMAGE";
-      break;
-    case BlobTextFlowType::BTFT_LEADER:
-      name = "BTFT_LEADER";
-      break;
-    default:
-      name = "unknown_textflow";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-auto fmt::formatter<NetworkType>::format(NetworkType c,
-                                         format_context &ctx) const
+auto fmt::formatter<NetworkType>::format(NetworkType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
   // enum NetworkType:
@@ -529,7 +452,7 @@ auto fmt::formatter<NetworkType>::format(NetworkType c,
       name = "NT_TENSORFLOW";
       break;
     default:
-      name = "unknown_networktype";
+      name = "unknown/illegal_networktype";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -538,68 +461,25 @@ auto fmt::formatter<NetworkType>::format(NetworkType c,
 }
 
 
-auto fmt::formatter<LineType>::format(LineType c, format_context &ctx) const
+#if 0
+auto fmt::formatter < PermuterType> ::format(PermuterType c, format_context &ctx) const
     -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-      case LineType::LT_START:
-        name = "start";
-        break;
-      case LineType::LT_BODY:
-        name = "body";
-        break;
-      case LineType::LT_UNKNOWN:
-        name = "no_clue/unknown";
-        break;
-      case LineType::LT_MULTIPLE:
-        name = "multiple";
-        break;
-    default:
-      name = "unknown_linetype";
-      break;
+  // enum PermuterType:
+  auto name = magic_enum::enum_name(c);
+
+  if (c > NUM_PERMUTER_TYPES || name.empty()) {
+      name = "unknown/illegal-permuter";
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
 
   return formatter<string_view>::format(id, ctx);
 }
+#endif
 
-auto fmt::formatter<BlobChoiceClassifier>::format(BlobChoiceClassifier c,
-                                                  format_context &ctx) const
+auto fmt::formatter<PermuterType>::format(PermuterType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-      case BlobChoiceClassifier::BCC_STATIC_CLASSIFIER:
-        name = "static";
-        break;
-      case BlobChoiceClassifier::BCC_ADAPTED_CLASSIFIER:
-        name = "adapted";
-        break;
-      case BlobChoiceClassifier::BCC_SPECKLE_CLASSIFIER:
-        name = "speckle";
-        break;
-      case BlobChoiceClassifier::BCC_AMBIG:
-        name = "ambiguous";
-        break;
-      case BlobChoiceClassifier::BCC_FAKE:
-        name = "fake";
-        break;
-    default:
-      name = "unknown_blobchoice";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-
-auto fmt::formatter<PermuterType>::format(PermuterType c,
-                                          format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
+  // enum PermuterType:
   switch (c) {
       case PermuterType::NO_PERM:
         name = "none";
@@ -641,7 +521,7 @@ auto fmt::formatter<PermuterType>::format(PermuterType c,
         name = "compound";
         break;
     default:
-      name = "unknown_permuter";
+      name = "unknown/illegal_permuter";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -653,7 +533,7 @@ auto fmt::formatter<PermuterType>::format(PermuterType c,
 auto fmt::formatter<DawgType>::format(DawgType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
+  // enum DawgType:
   switch (c) {
       case DawgType::DAWG_TYPE_PUNCTUATION:
         name = "Punctuation";
@@ -668,7 +548,7 @@ auto fmt::formatter<DawgType>::format(DawgType c, format_context &ctx) const
         name = "Pattern";
         break;
     default:
-      name = "Unknown";
+      name = "unknown/illegal-dawg";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -680,7 +560,7 @@ auto fmt::formatter<DawgType>::format(DawgType c, format_context &ctx) const
 auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
+  // enum LossType:
   switch (c) {
       case LossType::LT_NONE:
         name = "None/Undefined";
@@ -695,7 +575,7 @@ auto fmt::formatter<LossType>::format(LossType c, format_context &ctx) const
         name = "Logistic";
         break;
     default:
-      name = "Unknown";
+      name = "unknown/illegal-loss";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -792,7 +672,7 @@ auto fmt::formatter<UNICHARSET::Direction>::format(UNICHARSET::Direction c, form
 		break;
 #endif // U_HIDE_DEPRECATED_API
 	default:
-		name = "unknown_threshold_method";
+		name = "unknown/illegal_threshold_method";
 		break;
 	}
 	auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -801,36 +681,37 @@ auto fmt::formatter<UNICHARSET::Direction>::format(UNICHARSET::Direction c, form
 }
 
 
-#if 0
-
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+auto fmt::formatter<BlobSpecialTextType>::format(BlobSpecialTextType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
+  // enum BlobSpecialTextType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobSpecialTextType::BSTT_NONE:
+      name = "no_special_text_type";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+
+    case BlobSpecialTextType::BSTT_ITALIC:
+      name = "italic_style";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+
+    case BlobSpecialTextType::BSTT_DIGIT:
+      name = "digit_symbols";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+
+    case BlobSpecialTextType::BSTT_MATH:
+      name = "mathematical_symbols";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+
+    case BlobSpecialTextType::BSTT_UNCLEAR:
+      name = "unclear(low recognition rate?)";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+
+    case BlobSpecialTextType::BSTT_SKIP:
+      name = "skip_labeling";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
-      break;
+
     default:
-      name = "unknown";
+      name = "unknown/illegal";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -839,34 +720,40 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
 }
 
 
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+auto fmt::formatter<BlobTextFlowType>::format(BlobTextFlowType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
+  // enum BlobTextFlowType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case BlobTextFlowType::BTFT_NONE:
+      name = "no-text-flow-set-yet";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+    case BlobTextFlowType::BTFT_NONTEXT:
+      name = "non-text(too poor to be likely text)";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+
+    case BlobTextFlowType::BTFT_NEIGHBOURS:
+      name = "neighbours-support-flow";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+
+    case BlobTextFlowType::BTFT_CHAIN:
+      name = "weak-chain-flow";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
+
+    case BlobTextFlowType::BTFT_STRONG_CHAIN:
+      name = "strong-chain-flow";
       break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
+
+    case BlobTextFlowType::BTFT_TEXT_ON_IMAGE:
+      name = "strong-chain-of-text-on-image";
       break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
+
+    case BlobTextFlowType::BTFT_LEADER:
+      name = "leader-dots-dashes";
       break;
+
     default:
-      name = "unknown";
+      name = "unknown/illegal_text_flow";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
@@ -875,149 +762,69 @@ auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
 }
 
 
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
+auto fmt::formatter<LineType>::format(LineType c, format_context &ctx) const
     -> decltype(ctx.out()) {
   const char *name;
-  // enum PITCH_TYPE:
+  // enum LineType:
   switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
+    case LineType::LT_START:
+      name = "first-line";
       break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
+
+    case LineType::LT_BODY:
+      name = "body-line";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
+
+    case LineType::LT_UNKNOWN:
+      name = "unknown-line/no_clue";
       break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
+
+    case LineType::LT_MULTIPLE:
+      name = "multiple-line";
       break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
-      break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
-      break;
+
     default:
-      name = "unknown";
+      name = "unknown/illegal_linetype";
+      break;
+  }
+  auto id = fmt::format("{}({})", name, static_cast<char>(c));
+
+  return formatter<string_view>::format(id, ctx);
+}
+
+
+auto fmt::formatter<BlobChoiceClassifier>::format(BlobChoiceClassifier c, format_context &ctx) const
+    -> decltype(ctx.out()) {
+  const char *name;
+  // enum BlobChoiceClassifier:
+  switch (c) {
+    case BlobChoiceClassifier::BCC_STATIC_CLASSIFIER:
+      name = "static-char_norm-classifier";
+      break;
+
+    case BlobChoiceClassifier::BCC_ADAPTED_CLASSIFIER:
+      name = "adaptive-classifier";
+      break;
+
+    case BlobChoiceClassifier::BCC_SPECKLE_CLASSIFIER:
+      name = "speckle-classifier";
+      break;
+
+    case BlobChoiceClassifier::BCC_AMBIG:
+      name = "ambiguity-detection";
+      break;
+
+    case BlobChoiceClassifier::BCC_FAKE:
+      name = "fake-classifier";
+      break;
+
+    default:
+      name = "unknown/illegal_blockchoice";
       break;
   }
   auto id = fmt::format("{}({})", name, static_cast<int>(c));
 
   return formatter<string_view>::format(id, ctx);
 }
-
-
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
-      break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
-      break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
-      break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
-      break;
-    default:
-      name = "unknown";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
-      break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
-      break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
-      break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
-      break;
-    default:
-      name = "unknown";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-
-auto fmt::formatter<PITCH_TYPE>::format(PITCH_TYPE c, format_context &ctx) const
-    -> decltype(ctx.out()) {
-  const char *name;
-  // enum PITCH_TYPE:
-  switch (c) {
-    case PITCH_TYPE::PITCH_DUNNO:
-      name = "insufficient_data";
-      break;
-    case PITCH_TYPE::PITCH_DEF_FIXED:
-      name = "definitely_fixed";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_FIXED:
-      name = "maybe_fixed";
-      break;
-    case PITCH_TYPE::PITCH_DEF_PROP:
-      name = "definitely_proportional";
-      break;
-    case PITCH_TYPE::PITCH_MAYBE_PROP:
-      name = "maybe_proportional";
-      break;
-    case PITCH_TYPE::PITCH_CORR_FIXED:
-      name = "corrected_fixed";
-      break;
-    case PITCH_TYPE::PITCH_CORR_PROP:
-      name = "corrected_proportional";
-      break;
-    default:
-      name = "unknown";
-      break;
-  }
-  auto id = fmt::format("{}({})", name, static_cast<int>(c));
-
-  return formatter<string_view>::format(id, ctx);
-}
-
-#endif
 
 } // namespace fmt
