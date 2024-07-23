@@ -205,9 +205,9 @@ char *TFile::FGets(char *buffer, int buffer_size) {
       break;
     }
   }
-  if (size < buffer_size) {
-    buffer[size] = '\0';
-  }
+  ASSERT0(size < buffer_size);
+  buffer[size] = '\0';
+
   return size > 0 ? buffer : nullptr;
 }
 
