@@ -194,9 +194,10 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     }
   }
   int debug_level_offset = 0;
+  int old_level = debug_baseline_detector_level;
   if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(bounding_box_) > 1) {
 	debug_level_offset = 2;
-	debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+    debug_baseline_detector_level = old_level + debug_level_offset;
   }
 
   // Now we obtained a direction from that fit, see if we can improve the
@@ -221,7 +222,7 @@ bool BaselineRow::FitBaseline(bool use_box_bottoms) {
     good_baseline_ = false;
   }
 
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level = old_level;
 
   return good_baseline_;
 }
@@ -235,14 +236,15 @@ void BaselineRow::AdjustBaselineToParallel(const FCOORD &direction) {
   }
 
   int debug_level_offset = 0;
+  int old_level = debug_baseline_detector_level;
   if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(bounding_box_) > 1) {
 	  debug_level_offset = 2;
-	  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+    debug_baseline_detector_level = old_level + debug_level_offset;
   }
 
   FitConstrainedIfBetter(direction, 0.0, displacement_modes_[0]);
 
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level = old_level;
 }
 
 // Modifies the baseline to snap to the textline grid if the existing
@@ -315,26 +317,28 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
     BLOBNBOX *blob = blob_it.data();
     const TBOX &box = blob->bounding_box();
 
-	int debug_level_offset = 0;
-	if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(box) > 1) {
-		debug_level_offset = 2;
-		debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
-	}
+    int debug_level_offset = 0;
+    int old_level = debug_baseline_detector_level;
+    if (debug_baseline_detector_level + is_within_enhanced_debug_y_coord_range(box) > 1) {
+      debug_level_offset = 2;
+      debug_baseline_detector_level = old_level + debug_level_offset;
+    }
 
-	FCOORD blob_pos((box.left() + box.right()) / 2.0f,
+    FCOORD blob_pos((box.left() + box.right()) / 2.0f,
                     blob->baseline_position());
     double offset = direction * blob_pos;
     perp_blob_dists.push_back(offset);
 
-	if (debug_baseline_detector_level > 0) {
+    if (debug_baseline_detector_level > 0) {
       tprintDebug("Displacement {} for blob at:", offset);
       box.print();
     }
 
-	UpdateRange(offset, &min_dist, &max_dist);
+    UpdateRange(offset, &min_dist, &max_dist);
 
-	debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+    debug_baseline_detector_level = old_level;
   }
+
   // Set up a histogram using disp_quant_factor_ as the bucket size.
   STATS dist_stats(IntCastRounded(min_dist / disp_quant_factor_),
                    IntCastRounded(max_dist / disp_quant_factor_));
@@ -347,7 +351,7 @@ void BaselineRow::SetupBlobDisplacements(const FCOORD &direction) {
   if (debug_baseline_detector_level > 0) {
     for (int i = 0; i < scaled_modes.size(); ++i) {
       tprintDebug("Top mode = {} * {}\n", scaled_modes[i].key() * disp_quant_factor_,
-              scaled_modes[i].data());
+                  scaled_modes[i].data());
     }
   }
 
