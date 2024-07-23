@@ -225,7 +225,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintf("current ngram from spec: ");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, getUnicharset());
-          tprintf("comparison result: %d\n", compare);
+          tprintf("Ambiguity comparison result: %d%s\n", compare, (compare == 0 ? " (we found an ambiguity)" : ""));
         }
         if (compare == 0) {
           // Record the place where we found an ambiguity.
@@ -235,7 +235,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
                                           getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                                           leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintf("fixpt+=(%d %d %d %d %s)\n", blob_index, blob_index + num_wrong_blobs, false,
+              tprintf("fixpt+=(blob_index:%d index+num_wrong_blobs:%d replace:%d isngram:%d leftmost_id:`%s`)\n", blob_index, blob_index + num_wrong_blobs, replace,
                       getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                       getUnicharset().id_to_unichar(leftmost_id));
             }
@@ -462,7 +462,7 @@ int Dict::LengthOfShortestAlphaRun(const WERD_CHOICE &WordChoice) const {
   return shortest;
 }
 
-int Dict::UniformCertainties(const WERD_CHOICE &word) {
+bool Dict::UniformCertainties(const WERD_CHOICE &word) {
   float Certainty;
   float WorstCertainty = FLT_MAX;
   float CertaintyThreshold;
