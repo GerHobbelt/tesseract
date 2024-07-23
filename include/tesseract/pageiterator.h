@@ -40,8 +40,8 @@ class Tesseract;
  * having to handle any tesseract structures.
  * WARNING! This class points to data held within the TessBaseAPI class, and
  * therefore can only be used while the TessBaseAPI class still exists and
- * has not been subjected to a call of Init(), SetImage(), Recognize(), Clear(), End(),
- * DetectOS(), or anything else that changes the internal PAGE_RES.
+ * has not been subjected to a call of Init, SetImage, Recognize, Clear, End
+ * DetectOS, or anything else that changes the internal PAGE_RES.
  * See tesseract/publictypes.h for the definition of PageIteratorLevel.
  * See also ResultIterator, derived from PageIterator, which adds in the
  * ability to access OCR output with text-specific methods.
@@ -63,7 +63,7 @@ public:
    * that tesseract has been given by the Thresholder.
    * After the constructor, Begin has already been called.
    */
-  PageIterator(PAGE_RES *page_res, Tesseract &tesseract, int scale,
+  PageIterator(PAGE_RES *page_res, Tesseract *tesseract, int scale,
                int scaled_yres, int rect_left, int rect_top, int rect_width,
                int rect_height);
   virtual ~PageIterator();
@@ -325,8 +325,8 @@ protected:
 
   /** Pointer to the page_res owned by the API. */
   PAGE_RES *page_res_;
-  /** Reference to the Tesseract object owned by the API. */
-  Tesseract &tesseract_;
+  /** Pointer to the Tesseract object owned by the API. */
+  Tesseract *tesseract_;
   /**
    * The iterator to the page_res_. Owned by this ResultIterator.
    * A pointer just to avoid dragging in Tesseract includes.
@@ -334,7 +334,7 @@ protected:
   PAGE_RES_IT *it_;
   /**
    * The current input WERD being iterated. If there is an output from OCR,
-   * then word_ is nullptr. Owned by the API.
+   * then word_ is nullptr. Owned by the API
    */
   WERD *word_;
   /** The length of the current word_. */

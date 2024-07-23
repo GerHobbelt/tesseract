@@ -662,7 +662,7 @@ void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_pre
   ccutil_.language_data_path_prefix_ = language_data_path_prefix;
 }
 
-void LSTMRecognizer::CopyDebugParameters(CCUtil *src, const Dict *dict_src) {
+void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
   if (src != nullptr && &ccutil_ != src) {
     ccutil_.ambigs_debug_level = src->ambigs_debug_level.value();
     ccutil_.use_ambigs_for_adaption = src->use_ambigs_for_adaption.value();

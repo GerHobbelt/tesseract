@@ -917,17 +917,9 @@ public:
   /** Return the number of dawgs loaded into tesseract_ object. */
   int NumDawgs() const;
 
-  /// Returns a reference to the internal instance of the Tesseract class;
-  /// the presence of which is guaranteed, i.e. the returned pointer
-  /// WILL NOT be `nullptr`.
-  ///
-  /// Note that the reference's lifetime ends once the TessBaseAPI's instance
-  /// is deleted or its End() API is invoked, whichever comes first.
-  ///
-  /// \sa End()
-  /// \sa WipeSqueakyCleanForReUse()
-  Tesseract &tesseract();
-  const Tesseract &tesseract() const;
+  Tesseract *tesseract() const {
+    return tesseract_;
+  }
 
   OcrEngineMode oem() const {
     return last_oem_requested_;
@@ -983,7 +975,7 @@ protected:
   }
 
 protected:
-  mutable Tesseract *tesseract_;             ///< The underlying data object.
+  Tesseract *tesseract_;             ///< The underlying data object.
 #if !DISABLED_LEGACY_ENGINE
   Tesseract *osd_tesseract_;         ///< For orientation & script detection.
   EquationDetect *equ_detect_;       ///< The equation detector.

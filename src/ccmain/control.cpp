@@ -175,8 +175,7 @@ void Tesseract::SetupWordPassN(int pass_n, WordData *word) {
     } else if (pass_n == 2) {
       // TODO(rays) Should we do this on pass1 too?
       word->word->caps_height = 0.0;
-      // V550 An odd precise comparison: word->word->x_height == 0.0f. It's probably better to use a comparison with defined precision: fabs(A - B) < Epsilon. control.cpp 178
-      if (fabs(word->word->x_height) <= FLT_EPSILON) {
+      if (word->word->x_height == 0.0f) {
         word->word->x_height = word->row->x_height();
       }
     }
@@ -1684,8 +1683,6 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 
 #if !DISABLED_LEGACY_ENGINE
     // Fall back to tesseract for failed words or odd words.
-    //V595 The '* in_word' pointer was utilized before it was verified against nullptr. Check lines: 1686, 1693. control.cpp 1686
-	//-V::595 
     (*in_word)->SetupForRecognition(unicharset_, this, OEM_TESSERACT_ONLY, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);

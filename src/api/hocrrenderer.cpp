@@ -229,9 +229,9 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-          if (tesseract_->hocr_images) {
-            hocr_str << "ocr_photo";
-          }
+            if (tesseract_->hocr_images) {
+              hocr_str << "ocr_photo";
+            }
           break;
         default:
           hocr_str << "ocr_line";
@@ -271,8 +271,7 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
     }
     hocr_str << "'";
     const char *lang = res_it->WordRecognitionLanguage();
-    // V526 The 'strcmp' function returns 0 if corresponding strings are equal. Consider examining the condition for mistakes. hocrrenderer.cpp 274
-    if (lang && (!paragraph_lang || 0 == strcmp(lang, paragraph_lang))) {
+    if (lang && (!paragraph_lang || strcmp(lang, paragraph_lang))) {
       hocr_str << " lang='" << lang << "'";
     }
     switch (res_it->WordDirection()) {
@@ -452,7 +451,7 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
       bcnt++;
     }
   }
-  // V729 Function body contains the 'word_end' label that is not used by any 'goto' statements. hocrrenderer.cpp 454
+word_end:
   hocr_str << "  </div>\n";
 
   return copy_string(hocr_str.str());

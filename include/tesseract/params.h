@@ -71,19 +71,6 @@ public:
         return _double_params;
     }
 
-    const std::vector<IntParam *> &int_params() const {
-      return _int_params;
-    }
-    const std::vector<BoolParam *> &bool_params() const {
-      return _bool_params;
-    }
-    const std::vector<StringParam *> &string_params() const {
-      return _string_params;
-    }
-    const std::vector<DoubleParam *> &double_params() const {
-      return _double_params;
-    }
-
     const std::vector<IntParam *> &int_params_c() const {
         return _int_params;
     }

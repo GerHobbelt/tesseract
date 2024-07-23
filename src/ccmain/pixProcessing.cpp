@@ -873,13 +873,7 @@ static inline int MIX(int val1, int val2, const int factor) {
 bool pixAlphaIsSaneAndPresent(const PIX *pix) {
   l_int32 opaque;
 
-    if (!pix)
-      return false;
-    if (pixGetDepth(pix) != 32)
-      return false;
-    if (pixGetSpp(pix) != 4)
-      return false;
-    if (pixAlphaIsOpaque(const_cast<PIX *>(pix), &opaque))
+  if (pixAlphaIsOpaque(const_cast<PIX *>(pix), &opaque))
     return false;
   return !opaque;
 }

@@ -30,8 +30,7 @@ public:
   // ni_ and no_ will be set by AddToStack.
   explicit Plumbing(const std::string &name);
   virtual ~Plumbing() override {
-    // V1053 Calling the 'Clean' virtual function in the destructor may lead to unexpected result at runtime. plumbing.h 33
-    Plumbing::Clean();
+    Clean();
   }
 
   virtual void Clean() override {

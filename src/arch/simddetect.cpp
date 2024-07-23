@@ -364,8 +364,8 @@ void SIMDDetect::Update() {
   } else {
     // Unsupported value of config variable.
     tprintWarn(
-        "Ignoring unsupported config variable value: dotproduct={}\n"
-        "  Supported values for dotproduct: auto generic native"
+			"Ignoring unsupported config variable value: dotproduct={}\n"
+            "  Supported values for dotproduct: auto generic native"
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
         " accelerate"
 #endif

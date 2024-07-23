@@ -820,7 +820,6 @@ void EquationDetect::IdentifyInlinePartsHorizontal() {
       part->set_type(PT_INLINE_EQUATION);
     } else {
       // Check the geometric feature of neighbor.
-      //-V::522
       const TBOX &neighbor_box(neighbor->bounding_box());
       if (neighbor_box.width() > part_box.width() &&
           neighbor->type() != PT_EQUATION) { // Mark as PT_INLINE_EQUATION.

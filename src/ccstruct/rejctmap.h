@@ -108,17 +108,13 @@ class REJ {
 public:
   REJ() = default;
 
-  REJ(const REJ &source) {
+  REJ( // classwise copy
+      const REJ &source) {
     flags = source.flags;
   }
 
-  // V690 The 'REJ' class implements a copy constructor, but lacks the copy assignment operator. It is dangerous to use such a class. rejctmap.h 101 (https://pvs-studio.com/en/docs/warnings/v690/print/)
-  REJ& operator=(const REJ& source) {
-    if (this != &source) {
-      flags = source.flags;
-    }
-    return *this;
-  }
+  REJ &operator=( // assign REJ
+      const REJ &source) = default;
 
   bool flag(REJ_FLAGS rej_flag) const {
     return flags[rej_flag];

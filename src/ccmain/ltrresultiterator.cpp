@@ -29,7 +29,7 @@
 
 namespace tesseract {
 
-LTRResultIterator::LTRResultIterator(PAGE_RES *page_res, Tesseract &tesseract, int scale,
+LTRResultIterator::LTRResultIterator(PAGE_RES *page_res, Tesseract *tesseract, int scale,
                                      int scaled_yres, int rect_left, int rect_top, int rect_width,
                                      int rect_height)
     : PageIterator(page_res, tesseract, scale, scaled_yres, rect_left, rect_top, rect_width,
