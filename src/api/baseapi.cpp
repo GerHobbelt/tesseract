@@ -3066,6 +3066,11 @@ void TessBaseAPI::ClearResults() {
   if (tesseract_ != nullptr) {
     tesseract_->Clear();
   }
+  if (osd_tesseract_ != nullptr) {
+    if (osd_tesseract_ != tesseract_) {
+      osd_tesseract_->Clear();
+    }
+  }
   delete page_res_;
   page_res_ = nullptr;
   recognition_done_ = false;
