@@ -309,7 +309,7 @@ public:
   /// word (i.e. false will be returned in that case). The algorithm computes
   /// the mean and std deviation of the certainties in the word with the worst
   /// certainty thrown out.
-  int UniformCertainties(const WERD_CHOICE &word);
+  bool UniformCertainties(const WERD_CHOICE &word);
   /// Returns true if the given best_choice is good enough to stop.
   bool AcceptableChoice(const WERD_CHOICE &best_choice, XHeightConsistencyEnum xheight_consistency);
   /// Returns false if the best choice for the current word is questionable
