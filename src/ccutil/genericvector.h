@@ -236,7 +236,7 @@ protected:
 
 // The default FileReader loads the whole file into the vector of char,
 // returning false on error.
-inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
+static inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
   bool result = false;
   FILE *fp = fopenUtf8(filename, "rb");
   if (fp != nullptr) {
@@ -257,7 +257,7 @@ inline bool LoadDataFromFile(const char *filename, GenericVector<char> *data) {
 
 // The default FileWriter writes the vector of char to the filename file,
 // returning false on error.
-inline bool SaveDataToFile(const GenericVector<char> &data, const char *filename) {
+static inline bool SaveDataToFile(const GenericVector<char> &data, const char *filename) {
   FILE *fp = fopenUtf8(filename, "wb");
   if (fp == nullptr) {
     return false;
