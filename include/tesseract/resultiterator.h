@@ -237,12 +237,6 @@ private:
 
   /** Is the currently pointed-at character in a minor-direction sequence? */
   bool in_minor_direction_;
-
-  /**
-   * Should detected inter-word spaces be preserved, or "compressed" to a single
-   * space character (default behavior).
-   */
-  bool preserve_interword_spaces_;
 };
 
 } // namespace tesseract.
