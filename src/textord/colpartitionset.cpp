@@ -323,7 +323,7 @@ int ColPartitionSet::UnmatchedWidth(ColPartitionSet *part_set) {
     int y = part->MidY();
     BLOBNBOX_C_IT box_it(part->boxes());
     for (box_it.mark_cycle_pt(); !box_it.cycled_list(); box_it.forward()) {
-      const TBOX &box = it.data()->bounding_box();
+      const TBOX &box = box_it.data()->bounding_box();
       // Assume that the whole blob is outside any column iff its x-middle
       // is outside.
       int x = (box.left() + box.right()) / 2;
