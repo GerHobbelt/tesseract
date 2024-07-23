@@ -72,7 +72,9 @@ enum TabType {
 DECL_FMT_FORMAT_TESSENUMTYPE(TabType);
 
 // The possible region types of a BLOBNBOX.
+// 
 // Note: keep all the text types > BRT_UNKNOWN and all the image types less.
+// 
 // Keep in sync with kBlobTypes in colpartition.cpp and BoxColor, and the
 // *Type static functions below.
 enum BlobRegionType {
@@ -90,6 +92,7 @@ enum BlobRegionType {
 DECL_FMT_FORMAT_TESSENUMTYPE(BlobRegionType);
 
 // enum for elements of arrays that refer to neighbours.
+// 
 // NOTE: keep in this order, so ^2 can be used to flip direction.
 enum BlobNeighbourDir {
   BND_LEFT,
