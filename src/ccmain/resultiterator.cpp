@@ -42,14 +42,6 @@ namespace tesseract {
 ResultIterator::ResultIterator(const LTRResultIterator &resit) : LTRResultIterator(resit) {
   in_minor_direction_ = false;
   at_beginning_of_minor_run_ = false;
-  preserve_interword_spaces_ = false;
-
-  auto *p = ParamUtils::FindParam<BoolParam>(
-      "preserve_interword_spaces", GlobalParams()->bool_params_c(), tesseract_->params()->bool_params_c());
-  if (p != nullptr) {
-    preserve_interword_spaces_ = (bool)(*p);
-  }
-
   current_paragraph_is_ltr_ = CurrentParagraphIsLtr();
   MoveToLogicalStartOfTextline();
 }
@@ -748,7 +740,7 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
 
   int words_appended = 0;
   do {
-    int numSpaces = preserve_interword_spaces_ ? it_->word()->word->space() : (words_appended > 0);
+    int numSpaces = tesseract_->preserve_interword_spaces ? it_->word()->word->space() : (words_appended > 0);
     for (int i = 0; i < numSpaces; ++i) {
       *text += " ";
     }
