@@ -473,7 +473,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
     if (owner_.Monitor().bump_progress(w, words->size())
       .exec_progress_func(pr_it->word()->word->bounding_box())
       .kick_watchdog_and_check_for_cancel(words->size())) {
-        tprintWarn("Timeout/cancel: fake out the rest of the words. {}/{} words processed.\n", w, words->size());
+        tprintError("Timeout/cancel: fake out the rest of the words. {}/{} words processed.\n", w, words->size());
         for (; w < words->size(); ++w) {
           (*words)[w].word->SetupFake(unicharset_);
         }
@@ -716,7 +716,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res,
   }
 
   if (owner_.Monitor().bump_progress().exec_progress_func().kick_watchdog_and_check_for_cancel(stats_.word_count)) {
-      tprintWarn("Timeout/cancel: signaled but we're not doing anything as we're at the end of the session already anyway. {} words processed.\n", stats_.word_count);
+      tprintError("Timeout/cancel: signaled but we're not doing anything as we're at the end of the session already anyway. {} words processed.\n", stats_.word_count);
       //return false;
   }
   return true;
@@ -878,7 +878,7 @@ void Tesseract::rejection_passes(PAGE_RES *page_res, const TBOX *target_word_box
     if (owner_.Monitor().bump_progress(word_index, stats_.word_count)
       .exec_progress_func(target_word_box != nullptr ? target_word_box : nullptr)
       .kick_watchdog_and_check_for_cancel(stats_.word_count)) {
-        tprintWarn("Timeout/cancel: aborting the rejection pass. {}/{} words processed.\n", word_index / stats_.word_count);
+        tprintError("Timeout/cancel: aborting the rejection pass. {}/{} words processed.\n", word_index / stats_.word_count);
         return;
     }
     if (word->rebuild_word == nullptr) {
