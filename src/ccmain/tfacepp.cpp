@@ -134,7 +134,7 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
       // deadline that's expired, not just the entire session's -- this is us anticipating tesseract core readying for batch processing in a single session.
       recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
 
-      tprintInfo("recog_word_recursive call depth is restricted by CANCEL SIGNAL at level {} --> peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
+      tprintError("Timeout/cancel: recog_word_recursive call depth is restricted by CANCEL SIGNAL at level {} --> peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
 
       // set word as faked/failed and call it a day.
       word->SetupFake(*word->uch_set);
