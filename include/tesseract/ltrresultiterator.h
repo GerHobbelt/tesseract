@@ -59,7 +59,7 @@ public:
   // The scaled_yres indicates the effective resolution of the binary image
   // that tesseract has been given by the Thresholder.
   // After the constructor, Begin has already been called.
-  LTRResultIterator(PAGE_RES *page_res, Tesseract *tesseract, int scale,
+  LTRResultIterator(PAGE_RES *page_res, Tesseract &tesseract, int scale,
                     int scaled_yres, int rect_left, int rect_top,
                     int rect_width, int rect_height);
 

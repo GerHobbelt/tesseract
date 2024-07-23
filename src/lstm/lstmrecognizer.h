@@ -293,7 +293,7 @@ public:
                          std::vector<int> *xcoords);
 
   void SetDataPathPrefix(const std::string &language_data_path_prefix);
-  void CopyDebugParameters(CCUtil *src, Dict *dict_src);
+  void CopyDebugParameters(CCUtil *src, const Dict *dict_src);
 
 protected:
   // Sets the random seed from the sample_iteration_;

@@ -187,8 +187,8 @@ struct WordData {
 // may be the consumed in_word, or may be generated independently. This api
 // allows both a conventional tesseract classifier to work, or a line-level
 // classifier that generates multiple words from a merged input.
-using WordRecognizer = void (Tesseract::*)(const WordData &, WERD_RES **,
-                                           PointerVector<WERD_RES> *);
+using WordRecognizer = void (Tesseract::*)(const WordData & /* word_data */, WERD_RES ** /* in_word */,
+                                           PointerVector<WERD_RES> * /* best_words */);
 
 class TESS_API Tesseract: public Wordrec {
 public:
@@ -197,6 +197,7 @@ public:
 
   // Return appropriate dictionary
   virtual Dict &getDict() override;
+  virtual const Dict &getDict() const override;
 
   // Clear as much used memory as possible without resetting the adaptive
   // classifier or losing any other classifier data.

@@ -212,7 +212,7 @@ void TessPDFRenderer::AppendPDFObject(const char *data) {
 // Helper function to prevent us from accidentally writing
 // scientific notation to an HOCR or PDF file. Besides, three
 // decimal points are all you really need.
-static double prec(double x) {
+static inline double prec(double x) {
   double kPrecision = 1000.0;
   double a = round(x * kPrecision) / kPrecision;
   if (a == -0) {
@@ -221,7 +221,7 @@ static double prec(double x) {
   return a;
 }
 
-static long dist2(int x1, int y1, int x2, int y2) {
+static inline auto dist2(int x1, int y1, int x2, int y2) {
   return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
 }
 
@@ -244,12 +244,14 @@ static void GetWordBaseline(int writing_direction, int ppi, int height, int word
   double x, y;
   {
     double l2 = dist2(line_x1, line_y1, line_x2, line_y2);
-    if (l2 == 0) {
+    // V550 An odd precise comparison: l2 == 0. It's probably better to use a comparison with defined precision: fabs(A - B) < Epsilon. pdfrenderer.cpp 247
+    if (fabs(l2) <= DBL_EPSILON) {
       x = line_x1;
       y = line_y1;
     } else {
       int px = word_x1;
       int py = word_y1;
+      // V636 The '(px - line_x2) * (line_x2 - line_x1)' expression was implicitly cast from 'int' type to 'double' type. Consider utilizing an explicit type cast to avoid overflow. An example: double A = (double)(X) * Y;. pdfrenderer.cpp 253
       double t = ((px - line_x2) * (line_x2 - line_x1) + (py - line_y2) * (line_y2 - line_y1)) / l2;
       x = line_x2 + t * (line_x2 - line_x1);
       y = line_y2 + t * (line_y2 - line_y1);
@@ -923,7 +925,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    int jpg_quality = api->tesseract()->jpg_quality;
+    int jpg_quality = api->tesseract().jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
 	  if (destroy_pix)
 	  {

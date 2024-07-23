@@ -720,7 +720,7 @@ namespace tesseract {
   }
 #endif
 
-  DebugPixa::DebugPixa(Tesseract* tess)
+  DebugPixa::DebugPixa(Tesseract& tess)
     : tesseract_(tess)
     , content_has_been_written_to_file(false)
     , active_step_index(-1)
@@ -1316,12 +1316,20 @@ namespace tesseract {
            * to get the compression value.  */
           img_quality = (img_quality + 5) / 10;
           pixSetSpecial(img, 10 + img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_PNG);
+          if (pixWrite(img_filename.c_str(), img, IFF_PNG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
         case IFF_JFIF_JPEG:
           pixSetSpecial(img, img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG);
+          if (pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
         case IFF_WEBP: {
@@ -1329,12 +1337,15 @@ namespace tesseract {
           if (!fp) {
             tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
           } else {
-            img_quality += 5;
-            img_quality /= 10;
-            auto rv = pixWriteStreamWebP(fp, img, 1 + img_quality, TRUE);
+            //img_quality is expected to be in range [0..100]
+            //img_quality += 5;
+            //img_quality /= 10;
+            auto rv = pixWriteStreamWebP(fp, img, img_quality, (img_quality > 99) /* lossless */);
             fclose(fp);
             if (rv) {
               tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+              // delete broken output file(s):
+              remove(img_filename.c_str());
             }
           }
         } break;
@@ -1374,23 +1385,23 @@ namespace tesseract {
     int img_depth = pixGetDepth(pixs);
     ASSERT0(img_depth == 1 || img_depth == 8 || img_depth == 24 || img_depth == 32);
 
-    auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+    auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_.debug_output_diagnostics_images_format);
     std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + image_extension);
 
     TBOX cliprect = cliprects[idx];
     auto clip_area = cliprect.area();
     Image bgimg;
     if (clip_area > 0) {
-      bgimg = tesseract_->pix_original();       // clones ownership
+      bgimg = tesseract_.pix_original();       // clones ownership
     }
 
-    write_one_pix_for_html(html, counter, image_format_id, tesseract_->jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption);
+    write_one_pix_for_html(html, counter, image_format_id, tesseract_.jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption);
 
     if (clip_area > 0 && false) {
       counter++;
       fn = partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + image_extension;
 
-      write_one_pix_for_html(html, counter, image_format_id, tesseract_->jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption, &cliprect);
+      write_one_pix_for_html(html, counter, image_format_id, tesseract_.jpg_quality, fn, pixs, bgimg, TruncatedForTitle(caption), caption, &cliprect);
     }
 
     //pixs.destroy();
@@ -1522,7 +1533,6 @@ namespace tesseract {
 
   
   void DebugPixa::WriteHTML(const char* filename) {
-    ASSERT0(tesseract_ != nullptr);
     if (HasContent()) {
       double time_elapsed_until_report = grand_clock.clock.get_elapsed_ns();
       plf::nanotimer report_clock;
@@ -1572,13 +1582,13 @@ namespace tesseract {
       std::string now_str = ss.str();
 
       std::ostringstream languages;
-      int num_subs = tesseract_->num_sub_langs();
+      int num_subs = tesseract_.num_sub_langs();
       if (num_subs > 0) {
         int i;
         for (i = 0; i < num_subs - 1; ++i) {
-          languages << tesseract_->get_sub_lang(i)->lang_ << " + ";
+          languages << tesseract_.get_sub_lang(i)->lang_ << " + ";
         }
-        languages << tesseract_->get_sub_lang(i)->lang_;
+        languages << tesseract_.get_sub_lang(i)->lang_;
       }
 
       // CSS styles for the generated HTML
@@ -1617,30 +1627,30 @@ namespace tesseract {
 <tr><td>Main directory</td><td>{}</td></tr>\n\
 </table>\n\
 ",
-        html_styling(tesseract_->datadir_, "normalize.css").c_str(),
-        html_styling(tesseract_->datadir_, "modern-normalize.css").c_str(),
-        html_styling(tesseract_->datadir_, "diag-report.css").c_str(),
+        html_styling(tesseract_.datadir_, "normalize.css").c_str(),
+        html_styling(tesseract_.datadir_, "modern-normalize.css").c_str(),
+        html_styling(tesseract_.datadir_, "diag-report.css").c_str(),
         TESSERACT_VERSION_STR, 
         now_str.c_str(),
-        check_unknown_and_encode(tesseract_->input_file_path_).c_str(),
-        check_unknown_and_encode(tesseract_->imagebasename_).c_str(),
-        check_unknown_and_encode(tesseract_->imagefile_).c_str(),
-        tesseract_->lang_.c_str(),
+        check_unknown_and_encode(tesseract_.input_file_path_).c_str(),
+        check_unknown_and_encode(tesseract_.imagebasename_).c_str(),
+        check_unknown_and_encode(tesseract_.imagefile_).c_str(),
+        tesseract_.lang_.c_str(),
         languages.str().c_str(),
-        check_unknown_and_encode(tesseract_->language_data_path_prefix_).c_str(),
-        check_unknown_and_encode(tesseract_->datadir_).c_str(),
-        check_unknown_and_encode(tesseract_->directory_).c_str()
+        check_unknown_and_encode(tesseract_.language_data_path_prefix_).c_str(),
+        check_unknown_and_encode(tesseract_.datadir_).c_str(),
+        check_unknown_and_encode(tesseract_.directory_).c_str()
       ).c_str(), html);
 
       plf::nanotimer image_clock;
       image_clock.start();
       {
-        Image pixs = tesseract_->pix_original();
+        Image pixs = tesseract_.pix_original();
         int img_depth = pixGetDepth(pixs);
-        auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+        auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_.debug_output_diagnostics_images_format);
         std::string fn(partname + SanitizeFilenamePart(".img-original.") + image_extension);
 
-        write_one_pix_for_html(html, 0, image_format_id, tesseract_->jpg_quality, fn, pixs, Image(), "original image", "The original image as registered with the Tesseract instance.");
+        write_one_pix_for_html(html, 0, image_format_id, tesseract_.jpg_quality, fn, pixs, Image(), "original image", "The original image as registered with the Tesseract instance.");
       }
       source_image_elapsed_ns = image_clock.get_elapsed_ns();
 
@@ -1817,7 +1827,7 @@ namespace tesseract {
         step.elapsed_ns = 0;
       }
       
-      tesseract::ParamsVectors *vec = tesseract_->params();
+      tesseract::ParamsVectors *vec = tesseract_.params();
 
       // produce a HTML-formatted parameter usage report by using the regular way to get such a report,
       // then feed it through the NDtext-to-HTML transformer and only then write the final result in one fell swoop to file.
@@ -1846,7 +1856,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      tesseract::ParamsVectors *vec = tesseract_->params();
+      tesseract::ParamsVectors *vec = tesseract_.params();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, level, title);
     }
   }
@@ -1875,13 +1885,13 @@ namespace tesseract {
 
   AutoPopDebugSectionLevel::~AutoPopDebugSectionLevel() {
     if (section_handle_ >= 0) {
-      tesseract_->PopPixDebugSection(section_handle_);
+      tesseract_.PopPixDebugSection(section_handle_);
     }
   }
 
   void AutoPopDebugSectionLevel::pop() {
     if (section_handle_ >= 0) {
-      tesseract_->PopPixDebugSection(section_handle_);
+      tesseract_.PopPixDebugSection(section_handle_);
       section_handle_ = INT_MIN;
     }
   }

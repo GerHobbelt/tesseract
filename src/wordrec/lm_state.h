@@ -123,6 +123,7 @@ struct ViterbiStateEntry : public ELIST_LINK {
       }
     }
     if (debug_str != nullptr) {
+      ASSERT0(debug_uch != nullptr);
       *debug_str += debug_uch;
     }
   }

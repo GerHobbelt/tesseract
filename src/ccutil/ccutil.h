@@ -73,6 +73,9 @@ public:
   ParamsVectors *params() {
     return &params_;
   }
+  const ParamsVectors *params() const {
+    return &params_;
+  }
 
   std::string input_file_path_; // name of currently processed input file
   std::string datadir_;       // dir for data files

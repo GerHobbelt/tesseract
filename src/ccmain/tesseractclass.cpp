@@ -467,7 +467,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , BOOL_MEMBER(debug_output_diagnostics_HTML, false, "Write the debug/diagnostics output to a HTML file, including the collected images of the various process stages inside tesseract. The content is equivalent to the debug info you see on stderr, but in a nicely formatted and easier to grok modern format. Also handy for sharing your sessions' diagnostics with others. The output filename is derived from the source image name and output base path.", params()),
       INT_MEMBER(debug_output_diagnostics_images_format, IFF_WEBP, "The format of the images included in the debug/diagnostics output HTML file. Specify one of the Leptonica constants: IFF_WEBP=webp, IFF_PNG=png, IFF_JFIF_JPEG=jpeg. While we support the other formats, those are ill-advised to use as web browsers won't support those other formats out of the box and choosing those formats will strongly and *negatively* impact your HTML diagnostics viewing experience.  Tip: use PNG or JPEG if you want the output to be produced faster, WEBP if you want smaller image files with maximum precision. Set the jpeg_quality parameter for any of these formats for targeted compression ratio.", params())
 
-    , pixa_debug_(this)
+    , pixa_debug_(*this)
     , splitter_(this)
     , image_finder_(this)
     , line_finder_(this)
@@ -550,6 +550,15 @@ bool Tesseract::RequiresWipeBeforeIndependentReUse() const {
 }
 
 Dict &Tesseract::getDict() {
+  if (0 == Classify::getDict().NumDawgs() && AnyLSTMLang()) {
+    if (lstm_recognizer_ && lstm_recognizer_->GetDict()) {
+      return *lstm_recognizer_->GetDict();
+    }
+  }
+  return Classify::getDict();
+}
+
+const Dict &Tesseract::getDict() const {
   if (0 == Classify::getDict().NumDawgs() && AnyLSTMLang()) {
     if (lstm_recognizer_ && lstm_recognizer_->GetDict()) {
       return *lstm_recognizer_->GetDict();

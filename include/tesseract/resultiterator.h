@@ -224,9 +224,6 @@ private:
    */
   void AppendUTF8ParagraphText(std::string *text) const;
 
-  /** Returns whether the bidi_debug flag is set to at least min_level. */
-  bool BidiDebug(int min_level) const;
-
   bool current_paragraph_is_ltr_;
 
   /**
@@ -238,11 +235,13 @@ private:
   /** Is the currently pointed-at character in a minor-direction sequence? */
   bool in_minor_direction_;
 
+#if 0
   /**
    * Should detected inter-word spaces be preserved, or "compressed" to a single
    * space character (default behavior).
    */
   bool preserve_interword_spaces_;
+#endif
 };
 
 } // namespace tesseract.
