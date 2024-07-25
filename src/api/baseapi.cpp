@@ -776,7 +776,7 @@ int TessBaseAPI::Init_Internal(const char *path,
 #endif // !DISABLED_LEGACY_ENGINE
 
   if (Monitor().kick_watchdog_and_check_for_cancel()) {
-      tprintWarn("Timeout/cancel: abort the tesseract initialization stage.\n");
+      tprintError("Timeout/cancel: abort the tesseract initialization stage.\n");
       return -1;
   }
 
@@ -2933,7 +2933,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
   }
 
   if (Monitor().bump_progress().exec_progress_func().kick_watchdog_and_check_for_cancel()) {
-    tprintWarn("Timeout/cancel: abort the image threshold preprocessing stage.\n");
+    tprintError("Timeout/cancel: abort the image threshold preprocessing stage.\n");
     return false;
   }
 

@@ -1250,7 +1250,7 @@ namespace tesseract {
   }
 
   // takes a leptonica IFF_PNG, ... identifier and produces a sane bunch of datums for us: a *supported* image format id to use, plus the accompanying filename extension.
-  static std::tuple<std::string, int> get_image_output_datums(int image_bitdepth, int debug_output_diagnostics_images_format) {
+  static std::tuple<std::string, int, Image4WebOutputType> get_image_output_datums(int image_bitdepth, int debug_output_diagnostics_images_format) {
     // walk the leptonica table to see what we get; then decide on something sane?
     //
     // alas, leptonica doesn't offer the complement of its getFormatFromExtension() API.   *snif*
@@ -1261,26 +1261,29 @@ namespace tesseract {
     switch (debug_output_diagnostics_images_format) {
       // case IFF_PNM, IFF_JP2, IFF_PS, IFF_LPDF, IFF_TIFF_G4, IFF_GIF:
       default:
-        return {".png", IFF_PNG};
+        return {".png", IFF_PNG, IMG4W_PNG};
 
-      case IFF_BMP:
-        return {".bmp", IFF_BMP};
+      case IMG4W_BMP:
+        return {".bmp", IFF_BMP, IMG4W_BMP};
 
-      case IFF_JFIF_JPEG:
-        return {".jpg", IFF_JFIF_JPEG};
+      case IMG4W_JPEG:
+        return {".jpg", IFF_JFIF_JPEG, IMG4W_JPEG};
 
-      case IFF_PNG:
-        return {".png", IFF_PNG};
+      case IMG4W_PNG:
+        return {".png", IFF_PNG, IMG4W_PNG};
 
-      case IFF_TIFF:
-        return {".tiff", IFF_TIFF};
+      case IMG4W_TIFF:
+        return {".tiff", IFF_TIFF, IMG4W_TIFF};
 
-      case IFF_WEBP:
-        return {".webp", IFF_WEBP};
+      case IMG4W_WEBP:
+        return {".webp", IFF_WEBP, IMG4W_WEBP};
+
+      case IMG4W_WEBP_LOSSLESS:
+        return {".webp", IFF_WEBP, IMG4W_WEBP_LOSSLESS};
     }
   }
 
-  static void write_one_pix_for_html(FILE *html, int counter, int img_format_id, int img_quality, const std::string &img_filename, const Image &pix, const Image &original_image, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr) {
+  static void write_one_pix_for_html(FILE *html, int counter, Image4WebOutputType img_format_id, int img_quality, const std::string &img_filename, const Image &pix, const Image &original_image, const std::string &title, const std::string &description, const TBOX *cliprect = nullptr) {
     if (!!pix) {
       const char *pixfname = fz_basename(img_filename.c_str());
       int w, h, depth;
@@ -1311,33 +1314,72 @@ namespace tesseract {
       ASSERT0(32 == pixGetDepth(img));
       switch (img_format_id) {
         default:
-        case IFF_PNG:
+        case IMG4W_PNG:
           /* With best zlib compression (9), get between 1 and 10% improvement
            * over default (6), but the compression is 3 to 10 times slower.
            * Use the zlib default (6) as our default compression unless
            * pix->special falls in the range [10 ... 19]; then subtract 10
-           * to get the compression value.  */
-          img_quality = (img_quality + 5) / 10;
+           * to get the compression value.
+           *
+           *     compval = Z_DEFAULT_COMPRESSION;
+           *     if (pix->special >= 10 && pix->special < 20)
+           *         compval = pix->special - 10;
+           */
+          img_quality = std::max(0, std::min(9, img_quality / 10));
           pixSetSpecial(img, 10 + img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_PNG);
+          if (pixWrite(img_filename.c_str(), img, IFF_PNG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
-        case IFF_JFIF_JPEG:
+        case IMG4W_JPEG:
+          img_quality = std::max(0, std::min(100, img_quality));
           pixSetSpecial(img, img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG);
+          if (pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
-        case IFF_WEBP: {
+        case IMG4W_TIFF:
+          img_quality = std::max(0, std::min(100, img_quality));
+          pixSetSpecial(img, img_quality);
+          if (pixWrite(img_filename.c_str(), img, IFF_TIFF)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
+          break;
+
+        case IMG4W_BMP:
+          //img_quality = std::max(0, std::min(100, img_quality));
+          //pixSetSpecial(img, img_quality);
+          if (pixWrite(img_filename.c_str(), img, IFF_BMP)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
+          break;
+
+        case IMG4W_WEBP_LOSSLESS:
+          case IMG4W_WEBP: {
           FILE *fp = fopen(img_filename.c_str(), "wb+");
           if (!fp) {
             tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
           } else {
-            img_quality += 5;
-            img_quality /= 10;
-            auto rv = pixWriteStreamWebP(fp, img, 1 + img_quality, TRUE);
+            //img_quality is expected to be in range [0..100]
+            //img_quality += 5;
+            //img_quality /= 10;
+            img_quality = std::max(0, std::min(100, img_quality));
+            auto rv = pixWriteStreamWebP(fp, img, img_quality, (img_format_id == IMG4W_WEBP_LOSSLESS));
             fclose(fp);
             if (rv) {
               tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+              // delete broken output file(s):
+              remove(img_filename.c_str());
             }
           }
         } break;
@@ -1377,7 +1419,7 @@ namespace tesseract {
     int img_depth = pixGetDepth(pixs);
     ASSERT0(img_depth == 1 || img_depth == 8 || img_depth == 24 || img_depth == 32);
 
-    auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+    auto [image_extension, pix_format_id, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
     std::string fn(partname + SanitizeFilenamePart(fmt::format(".img{:04d}.", counter) + caption) + image_extension);
 
     TBOX cliprect = cliprects[idx];
@@ -1633,7 +1675,7 @@ namespace tesseract {
       {
         Image pixs = tesseract_->pix_original();
         int img_depth = pixGetDepth(pixs);
-        auto [image_extension, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
+        auto [image_extension, pix_format_id, image_format_id] = get_image_output_datums(img_depth, tesseract_->debug_output_diagnostics_images_format);
         std::string fn(partname + SanitizeFilenamePart(".img-original.") + image_extension);
 
         write_one_pix_for_html(html, 0, image_format_id, tesseract_->jpg_quality, fn, pixs, Image(), "original image", "The original image as registered with the Tesseract instance.");
