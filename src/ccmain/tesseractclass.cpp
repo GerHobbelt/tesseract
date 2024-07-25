@@ -1079,7 +1079,7 @@ void Tesseract::ResyncVariablesInternally() {
   // init sub-languages:
   for (auto &sub_tess : sub_langs_) {
     if (sub_tess != nullptr) {
-      auto lvl = (bool)sub_tess->debug_display_page;
+            auto lvl = bool(sub_tess->debug_display_page);
     }
   }
 }

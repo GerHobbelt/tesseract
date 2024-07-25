@@ -1203,7 +1203,8 @@ bool TessBaseAPI::WriteLSTMFLineData(const char *name, const char *path,
     return false;
   }
   // Check if truth_text exists
-  if ((truth_text != NULL) && (truth_text[0] == '\0') ||
+  // V522 There might be dereferencing of a potential null pointer 'truth_text'. baseapi.cpp 1039
+  if ((truth_text == NULL) || (truth_text[0] == '\0') ||
       (truth_text[0] == '\n')) {
     tprintError("Ground truth text is empty or starts with newline.\n");
     return false;
@@ -1694,7 +1695,11 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       SetImage(newpix);
 
       r = r && !Recognize();
-      renderer->AddImage(this);
+      // V522 There might be dereferencing of a potential null pointer 'renderer'. baseapi.cpp 1530
+      // V595 The 'renderer' pointer was utilized before it was verified against nullptr. Check lines: 1530, 1545. baseapi.cpp 1530
+      if (renderer) {
+        renderer->AddImage(this);
+      }
 
       boxaDestroy(&default_boxes);
     }
@@ -2368,27 +2373,30 @@ char *TessBaseAPI::GetBoxText(int page_number) {
   result[0] = '\0';
   int output_length = 0;
   LTRResultIterator *it = GetLTRIterator();
-  do {
-    int left, top, right, bottom;
-    if (it->BoundingBox(RIL_SYMBOL, &left, &top, &right, &bottom)) {
-      const std::unique_ptr</*non-const*/ char[]> text(it->GetUTF8Text(RIL_SYMBOL));
-      // Tesseract uses space for recognition failure. Fix to a reject
-      // character, kTesseractReject so we don't create illegal box files.
-      for (int i = 0; text[i] != '\0'; ++i) {
-        if (text[i] == ' ') {
-          text[i] = kTesseractReject;
+  // V522 There might be dereferencing of a potential null pointer 'it'. baseapi.cpp 2233
+  if (it != nullptr) {
+    do {
+      int left, top, right, bottom;
+      if (it->BoundingBox(RIL_SYMBOL, &left, &top, &right, &bottom)) {
+        const std::unique_ptr</*non-const*/ char[]> text(it->GetUTF8Text(RIL_SYMBOL));
+        // Tesseract uses space for recognition failure. Fix to a reject
+        // character, kTesseractReject so we don't create illegal box files.
+        for (int i = 0; text[i] != '\0'; ++i) {
+          if (text[i] == ' ') {
+            text[i] = kTesseractReject;
+          }
+        }
+        snprintf(result + output_length, total_length - output_length, "%s %d %d %d %d %d\n",
+                 text.get(), left, image_height_ - bottom, right, image_height_ - top, page_number);
+        output_length += strlen(result + output_length);
+        // Just in case...
+        if (output_length + kMaxBytesPerLine > total_length) {
+          break;
         }
       }
-      snprintf(result + output_length, total_length - output_length, "%s %d %d %d %d %d\n",
-               text.get(), left, image_height_ - bottom, right, image_height_ - top, page_number);
-      output_length += strlen(result + output_length);
-      // Just in case...
-      if (output_length + kMaxBytesPerLine > total_length) {
-        break;
-      }
-    }
-  } while (it->Next(RIL_SYMBOL));
-  delete it;
+    } while (it->Next(RIL_SYMBOL));
+    delete it;
+  }
   return result;
 }
 
@@ -3144,11 +3152,14 @@ int TessBaseAPI::FindLines() {
             " but data path is undefined\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
-      } else if (osd_tesseract_->init_tesseract(datapath_, "osd", OEM_TESSERACT_ONLY, &mgr) == 0) {
-        osd_tesseract_->set_source_resolution(thresholder_->GetSourceYResolution());
+        // V522 Dereferencing of the null pointer 'osd_tess' might take place. baseapi.cpp 3017
+      } else if (osd_tesseract_ != nullptr && osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY, &mgr) == 0) {
+        osd_tess = osd_tesseract_;
+        ASSERT0(osd_tess != nullptr);
+        ASSERT0(thresholder_ != nullptr);
+        osd_tess->set_source_resolution(thresholder_->GetSourceYResolution());
       } else {
-        tprintWarn(
-            "Auto orientation and script detection requested,"
+        tprintWarn("Auto orientation and script detection requested,"
             " but osd language failed to load\n");
         delete osd_tesseract_;
         osd_tesseract_ = nullptr;
@@ -3320,7 +3331,8 @@ void TessBaseAPI::GetBlockTextOrientations(int **block_orientation, bool **verti
     (*block_orientation)[i] = num_rotations;
     // The classify_rotation is non-zero only if the text has vertical
     // writing direction.
-    (*vertical_writing)[i] = (classify_rotation.y() != 0.0f);
+    // V550 An odd precise comparison: classify_rotation.y() != 0.0f. It's probably better to use a comparison with defined precision: fabs(A - B) > Epsilon. baseapi.cpp 3198
+    (*vertical_writing)[i] = (fabs(classify_rotation.y()) > FLT_EPSILON);
     ++i;
   }
 }

@@ -142,15 +142,16 @@ enum IntmatcherDebugAction { IDA_ADAPTIVE, IDA_STATIC, IDA_SHAPE_INDEX, IDA_BOTH
             Macros
 ----------------------------------------------------------------------------**/
 
-#define MaxNumIntProtosIn(C) (C->NumProtoSets * PROTOS_PER_PROTO_SET)
-#define SetForProto(P) (P / PROTOS_PER_PROTO_SET)
-#define IndexForProto(P) (P % PROTOS_PER_PROTO_SET)
-#define ProtoForProtoId(C, P) (&((C->ProtoSets[SetForProto(P)])->Protos[IndexForProto(P)]))
+// V1003 The macro 'SetForProto' is a dangerous expression. The parameter 'P' must be surrounded by parentheses. intproto.h 146
+#define MaxNumIntProtosIn(C) ((C)->NumProtoSets * PROTOS_PER_PROTO_SET)
+#define SetForProto(P) ((P) / PROTOS_PER_PROTO_SET)
+#define IndexForProto(P) ((P) % PROTOS_PER_PROTO_SET)
+#define ProtoForProtoId(C, P) (&(((C)->ProtoSets[SetForProto(P)])->Protos[IndexForProto(P)]))
 #define PPrunerWordIndexFor(I) (((I) % PROTOS_PER_PROTO_SET) / PROTOS_PER_PP_WERD)
 #define PPrunerBitIndexFor(I) ((I) % PROTOS_PER_PP_WERD)
 #define PPrunerMaskFor(I) (1 << PPrunerBitIndexFor(I))
 
-#define MaxNumClassesIn(T) (T->NumClassPruners * CLASSES_PER_CP)
+#define MaxNumClassesIn(T) ((T)->NumClassPruners * CLASSES_PER_CP)
 #define LegalClassId(c) ((c) >= 0 && (c) < MAX_NUM_CLASSES)
 #define UnusedClassIdIn(T, c) ((T)->Class[c] == nullptr)
 #define ClassForClassId(T, c) ((T)->Class[c])
