@@ -537,7 +537,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
           }
           at_beginning_of_minor_run_ = (word_indices[j - 1] == kMinorRunStart);
           // awesome, we move to word_indices[j]
-          if (BidiDebug(3)) {
+          if (tesseract_->bidi_debug >= 3) {
             tprintDebug("Next(RIL_WORD): {} -> {}\n", this_word_index, word_indices[j]);
           }
           PageIterator::RestartRow();
@@ -548,7 +548,7 @@ bool ResultIterator::Next(PageIteratorLevel level) {
           return true;
         }
       }
-      if (BidiDebug(3)) {
+      if (tesseract_->bidi_debug >= 3) {
         tprintDebug("Next(RIL_WORD): {} -> EOL\n", this_word_index);
       }
       // we're going off the end of the text line.
@@ -721,7 +721,7 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
     Next(RIL_WORD);
     return;
   }
-  if (BidiDebug(1)) {
+  if (tesseract_->bidi_debug >= 1) {
     std::vector<int> textline_order;
     std::vector<StrongScriptDirection> dirs;
     CalculateTextlineOrder(current_paragraph_is_ltr_, *this, &dirs, &textline_order);
@@ -746,11 +746,11 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(std::string *text) {
     }
     AppendUTF8WordText(text);
     words_appended++;
-    if (BidiDebug(2)) {
+    if (tesseract_->bidi_debug >= 2) {
       tprintDebug("Num spaces={}, text={}\n", numSpaces, *text);
     }
   } while (Next(RIL_WORD) && !IsAtBeginningOf(RIL_TEXTLINE));
-  if (BidiDebug(1)) {
+  if (tesseract_->bidi_debug >= 1) {
     tprintDebug("{} words printed\n", words_appended);
   }
   *text += line_separator_;
@@ -770,11 +770,6 @@ void ResultIterator::AppendUTF8ParagraphText(std::string *text) const {
   do {
     it.IterateAndAppendUTF8TextlineText(text);
   } while (it.it_->block() != nullptr && !it.IsAtBeginningOf(RIL_PARA));
-}
-
-bool ResultIterator::BidiDebug(int min_level) const {
-  const int debug_level = tesseract_->bidi_debug;
-  return debug_level >= min_level;
 }
 
 } // namespace tesseract.

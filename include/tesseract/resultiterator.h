@@ -224,9 +224,6 @@ private:
    */
   void AppendUTF8ParagraphText(std::string *text) const;
 
-  /** Returns whether the bidi_debug flag is set to at least min_level. */
-  bool BidiDebug(int min_level) const;
-
   bool current_paragraph_is_ltr_;
 
   /**

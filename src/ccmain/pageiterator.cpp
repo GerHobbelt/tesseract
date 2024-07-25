@@ -80,6 +80,7 @@ PageIterator::PageIterator(const PageIterator &src)
 }
 
 const PageIterator &PageIterator::operator=(const PageIterator &src) {
+  ASSERT_HOST_MSG(tesseract_ != src.tesseract_, "Software coding error: you are trying or assign/copy PageIterator instances which were created referencing different Tesseract instances.\n");
   if (this != &src) {
     page_res_ = src.page_res_;
     tesseract_ = src.tesseract_;

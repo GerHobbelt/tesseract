@@ -1032,33 +1032,6 @@ std::string HOcrEscape(const char *text);
  */
 std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension);
 
-/**
- * Helper function around leptonica's `pixWrite()` which writes the given `pic` image to file, in the `file_type` format.
- *
- * The `file_type` format is defined in leptonica's `imageio.h`. Here's an (possibly incomplete) extract:
- *
- * - IFF_BMP            = 1 (Windows BMP)
- * - IFF_JFIF_JPEG      = 2 (regular JPEG, default quality 75%)
- * - IFF_PNG            = 3 (PNG, lossless)
- * - IFF_TIFF           = 4 (TIFF)
- * - IFF_TIFF_PACKBITS  = 5 (TIFF, lossless)
- * - IFF_TIFF_RLE       = 6 (TIFF, lossless)
- * - IFF_TIFF_G3        = 7 (TIFF, lossless)
- * - IFF_TIFF_G4        = 8 (TIFF, lossless)
- * - IFF_TIFF_LZW       = 9 (TIFF, lossless)
- * - IFF_TIFF_ZIP       = 10 (TIFF, lossless)
- * - IFF_PNM            = 11 (PNM)
- * - IFF_PS             = 12 (PS: PostScript)
- * - IFF_GIF            = 13 (GIF)
- * - IFF_JP2            = 14 (JP2
- * - IFF_WEBP           = 15 (WebP)
- * - IFF_LPDF           = 16 (LDPF)
- * - IFF_TIFF_JPEG      = 17 (JPEG embedded in TIFF)
- * - IFF_DEFAULT        = 18 (The IFF_DEFAULT flag is used to write the file out in the same (input) file format that the pix was read from.  If the pix was not read from file, the input format field will be IFF_UNKNOWN and the output file format will be chosen to be compressed and lossless; namely: IFF_TIFF_G4 for depth = 1 bit and IFF_PNG for everything else.)
- * - IFF_SPIX           = 19 (SPIX: serialized PIX, a leptonica-specific file format)
- */
-void WritePix(const std::string &filepath, Pix *pic, int file_type);
-
 } // namespace tesseract
 
 #endif // TESSERACT_API_BASEAPI_H_
