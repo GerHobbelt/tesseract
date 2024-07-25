@@ -1313,8 +1313,13 @@ namespace tesseract {
            * over default (6), but the compression is 3 to 10 times slower.
            * Use the zlib default (6) as our default compression unless
            * pix->special falls in the range [10 ... 19]; then subtract 10
-           * to get the compression value.  */
-          img_quality = (img_quality + 5) / 10;
+           * to get the compression value.
+           *
+           *     compval = Z_DEFAULT_COMPRESSION;
+           *     if (pix->special >= 10 && pix->special < 20)
+           *         compval = pix->special - 10;
+           */
+          img_quality = std::max(0, std::min(9, img_quality / 10));
           pixSetSpecial(img, 10 + img_quality);
           if (pixWrite(img_filename.c_str(), img, IFF_PNG)) {
             tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
@@ -1324,6 +1329,7 @@ namespace tesseract {
           break;
 
         case IFF_JFIF_JPEG:
+          img_quality = std::max(0, std::min(100, img_quality));
           pixSetSpecial(img, img_quality);
           if (pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG)) {
             tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
@@ -1340,6 +1346,7 @@ namespace tesseract {
             //img_quality is expected to be in range [0..100]
             //img_quality += 5;
             //img_quality /= 10;
+            img_quality = std::max(0, std::min(100, img_quality));
             auto rv = pixWriteStreamWebP(fp, img, img_quality, (img_quality > 99) /* lossless */);
             fclose(fp);
             if (rv) {
