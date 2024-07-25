@@ -28,7 +28,7 @@ public:
   // ni_ and no_ will be set by AddToStack.
   TESS_API
   explicit Series(const std::string &name);
-  ~Series() override = default;
+  virtual ~Series() override = default;
 
   // Returns the shape output from the network given an input shape (which may
   // be partially unknown ie zero).

@@ -29,7 +29,7 @@ class TESS_API Plumbing : public Network {
 public:
   // ni_ and no_ will be set by AddToStack.
   explicit Plumbing(const std::string &name);
-  ~Plumbing() override {
+  virtual ~Plumbing() override {
     for (auto data : stack_) {
       delete data;
     }
