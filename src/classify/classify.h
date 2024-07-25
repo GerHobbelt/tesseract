@@ -269,6 +269,7 @@ public:
     return AdaptedTemplates->NumPermClasses == 0;
   }
   bool LooksLikeGarbage(TBLOB *blob);
+
 #ifndef GRAPHICS_DISABLED
   void RefreshDebugWindow(ScrollView **win, const char *msg, int y_offset, const TBOX &wbox);
 #endif

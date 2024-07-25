@@ -1400,8 +1400,8 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
                                     PointerVector<WERD_RES> *out_words) {
   ROW *row = word_data.row;
   BLOCK *block = word_data.block;
-  prev_word_best_choice_ =
-      word_data.prev_word != nullptr ? word_data.prev_word->word->best_choice : nullptr;
+  ASSERT0(*in_word != nullptr);
+  prev_word_best_choice_ = (word_data.prev_word != nullptr ? word_data.prev_word->word->best_choice : nullptr);
 #ifdef DISABLED_LEGACY_ENGINE
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
 #else
