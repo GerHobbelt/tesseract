@@ -20,6 +20,15 @@ namespace tesseract {
   class TESS_API Tesseract;
   class TESS_API TBOX;
 
+  enum Image4WebOutputType : int {
+    IMG4W_PNG = 0,
+    IMG4W_JPEG,
+    IMG4W_WEBP,
+    IMG4W_WEBP_LOSSLESS,
+    IMG4W_TIFF,
+    IMG4W_BMP,
+  };
+
   // Class to hold a Pixa collection of debug images with captions and save them
   // to a PDF file.
   // The class MAY also store additional diagnostic information, that's interspersed
