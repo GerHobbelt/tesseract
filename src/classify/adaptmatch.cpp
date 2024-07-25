@@ -104,7 +104,7 @@ struct ADAPT_RESULTS {
 
   /// Initializes data members to the default values. Sets the initial
   /// rating of each class to be the worst possible rating (1.0).
-  inline void Initialize() {
+  void Initialize() {
     BlobLength = INT32_MAX;
     HasNonfragment = false;
     ComputeBest();

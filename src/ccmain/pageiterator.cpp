@@ -29,7 +29,7 @@
 
 namespace tesseract {
 
-PageIterator::PageIterator(PAGE_RES *page_res, Tesseract *tesseract, int scale,
+PageIterator::PageIterator(PAGE_RES *page_res, Tesseract &tesseract, int scale,
                            int scaled_yres, int rect_left, int rect_top,
                            int rect_width, int rect_height)
     : page_res_(page_res),
@@ -80,10 +80,10 @@ PageIterator::PageIterator(const PageIterator &src)
 }
 
 const PageIterator &PageIterator::operator=(const PageIterator &src) {
-  ASSERT_HOST_MSG(tesseract_ != src.tesseract_, "Software coding error: you are trying or assign/copy PageIterator instances which were created referencing different Tesseract instances.\n");
+  ASSERT_HOST_MSG(&tesseract_ != &src.tesseract_, "Software coding error: you are trying or assign/copy PageIterator instances which were created referencing different Tesseract instances.\n");
   if (this != &src) {
     page_res_ = src.page_res_;
-    tesseract_ = src.tesseract_;
+    //tesseract_ = src.tesseract_;
     include_upper_dots_ = src.include_upper_dots_;
     include_lower_dots_ = src.include_lower_dots_;
     scale_ = src.scale_;
@@ -337,8 +337,8 @@ bool PageIterator::BoundingBoxInternal(PageIteratorLevel level, int *left,
 
   // Now we have a box in tesseract coordinates relative to the image rectangle,
   // we have to convert the coords to a top-down system.
-  const int pix_height = pixGetHeight(tesseract_->pix_binary());
-  const int pix_width = pixGetWidth(tesseract_->pix_binary());
+  const int pix_height = pixGetHeight(tesseract_.pix_binary());
+  const int pix_width = pixGetWidth(tesseract_.pix_binary());
   *left = ClipToRange(static_cast<int>(box.left()), 0, pix_width);
   *top = ClipToRange(pix_height - box.top(), 0, pix_height);
   *right = ClipToRange(static_cast<int>(box.right()), *left, pix_width);
@@ -463,14 +463,14 @@ Pix *PageIterator::GetBinaryImage(PageIteratorLevel level) const {
     return cblob_it_->data()->render().clone2pix();
   }
   Box *box = boxCreate(left, top, right - left, bottom - top);
-  Image pix = pixClipRectangle(tesseract_->pix_binary(), box, nullptr);
+  Image pix = pixClipRectangle(tesseract_.pix_binary(), box, nullptr);
   boxDestroy(&box);
   if (level == RIL_BLOCK || level == RIL_PARA) {
     // Clip to the block polygon as well.
     TBOX mask_box;
     Image mask = it_->block()->block->render_mask(&mask_box);
     int mask_x = left - mask_box.left();
-    int mask_y = top - (tesseract_->ImageHeight() - mask_box.top());
+    int mask_y = top - (tesseract_.ImageHeight() - mask_box.top());
     // AND the mask and pix, putting the result in pix.
     pixRasterop(pix, std::max(0, -mask_x), std::max(0, -mask_y),
                 pixGetWidth(pix), pixGetHeight(pix), PIX_SRC & PIX_DST, mask,
