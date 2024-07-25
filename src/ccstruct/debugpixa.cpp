@@ -1316,12 +1316,20 @@ namespace tesseract {
            * to get the compression value.  */
           img_quality = (img_quality + 5) / 10;
           pixSetSpecial(img, 10 + img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_PNG);
+          if (pixWrite(img_filename.c_str(), img, IFF_PNG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
         case IFF_JFIF_JPEG:
           pixSetSpecial(img, img_quality);
-          pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG);
+          if (pixWrite(img_filename.c_str(), img, IFF_JFIF_JPEG)) {
+            tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+            // delete broken output file(s):
+            remove(img_filename.c_str());
+          }
           break;
 
         case IFF_WEBP: {
@@ -1329,12 +1337,15 @@ namespace tesseract {
           if (!fp) {
             tprintError("Failed to open file '{}' for writing one of the debug/diagnostics log impages.\n", img_filename);
           } else {
-            img_quality += 5;
-            img_quality /= 10;
-            auto rv = pixWriteStreamWebP(fp, img, 1 + img_quality, TRUE);
+            //img_quality is expected to be in range [0..100]
+            //img_quality += 5;
+            //img_quality /= 10;
+            auto rv = pixWriteStreamWebP(fp, img, img_quality, (img_quality > 99) /* lossless */);
             fclose(fp);
             if (rv) {
               tprintError("Did not succeeed writing the image data to file '{}' while generating the HTML diagnostic/log report.\n", img_filename);
+              // delete broken output file(s):
+              remove(img_filename.c_str());
             }
           }
         } break;
