@@ -140,7 +140,8 @@ const char *ParamContent::GetDescription() const {
   } else if (param_type_ == VT_STRING) {
     return sIt->info_str();
   } else {
-    return nullptr;
+    // V576 Incorrect format. Consider checking the fifth actual argument of the 'fprintf' function. Under certain conditions the pointer can be null. paramsd.cpp 345
+    return "ERROR: ParamContent::GetDescription()";
   }
 }
 
