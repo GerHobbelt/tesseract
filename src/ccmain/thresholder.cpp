@@ -41,7 +41,7 @@
 
 namespace tesseract {
 
-ImageThresholder::ImageThresholder(Tesseract* tess)
+ImageThresholder::ImageThresholder(Tesseract& tess)
     : tesseract_(tess)
     , pix_(nullptr)
     , image_width_(0)
@@ -51,7 +51,6 @@ ImageThresholder::ImageThresholder(Tesseract* tess)
     , scale_(1)
     , yres_(300)
     , estimated_res_(300) {
-  ASSERT0(tess != nullptr);
   SetRectangle(0, 0, 0, 0);
 }
 
@@ -216,14 +215,14 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
-  if (tesseract_->thresholding_debug) {
+  if (tesseract_.thresholding_debug) {
     tprintDebug("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   switch (method) {
   case ThresholdMethod::Sauvola: {
     int window_size;
-    window_size = tesseract_->thresholding_window_size * yres_;
+    window_size = tesseract_.thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
     window_size = std::min(pix_w < pix_h ? pix_w - 3 : pix_h - 3, window_size);
     int half_window_size = window_size / 2;
@@ -242,10 +241,10 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
       ny = pix_h / (half_window_size + 2);
     }
 
-    double kfactor = tesseract_->thresholding_kfactor;
+    double kfactor = tesseract_.thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
-    if (tesseract_->thresholding_debug) {
+    if (tesseract_.thresholding_debug) {
       tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
@@ -274,19 +273,19 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
 
   case ThresholdMethod::LeptonicaOtsu: {
     int tile_size;
-    double tile_size_factor = tesseract_->thresholding_tile_size;
+    double tile_size_factor = tesseract_.thresholding_tile_size;
     tile_size = tile_size_factor * yres_;
     tile_size = std::max(16, tile_size);
 
     int smooth_size;
-    double smooth_size_factor = tesseract_->thresholding_smooth_kernel_size;
+    double smooth_size_factor = tesseract_.thresholding_smooth_kernel_size;
     smooth_size_factor = std::max(0.0, smooth_size_factor);
     smooth_size = smooth_size_factor * yres_;
     int half_smooth_size = smooth_size / 2;
 
-    double score_fraction = tesseract_->thresholding_score_fraction;
+    double score_fraction = tesseract_.thresholding_score_fraction;
 
-    if (tesseract_->thresholding_debug) {
+    if (tesseract_.thresholding_debug) {
       tprintDebug("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
@@ -339,13 +338,13 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
 bool ImageThresholder::ThresholdToPix(Image *pix) {
   // tolerate overlarge images when they're about to be cropped by GetPixRect():
   if (IsFullImage()) {
-    if (tesseract_->CheckAndReportIfImageTooLarge(pix_)) {
+    if (tesseract_.CheckAndReportIfImageTooLarge(pix_)) {
       return false;
     }
   }
   else {
     // validate against the future cropped image size:
-    if (tesseract_->CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
+    if (tesseract_.CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
       return false;
     }
   }

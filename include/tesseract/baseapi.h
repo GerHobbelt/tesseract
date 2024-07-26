@@ -928,8 +928,8 @@ public:
   /// \sa WipeSqueakyCleanForReUse()
   ///
   /// @{
-  const Tesseract *tesseract() const;
-  Tesseract *tesseract();
+  const Tesseract &tesseract() const;
+  Tesseract &tesseract();
   //  https://stackoverflow.com/questions/856542/elegant-solution-to-duplicate-const-and-non-const-getters
   //inline Tesseract &tesseract() {
   //  return const_cast<Tesseract &>(this->tesseract());
