@@ -562,9 +562,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
     tesseract_->WipeSqueakyCleanForReUse();
 #endif
   }
-  if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(*this, nullptr);
-  }
+  ASSERT_HOST(tesseract_ != nullptr);
   if (reader != nullptr) {
     reader_ = reader;
   }
@@ -728,7 +726,10 @@ PageSegMode TessBaseAPI::GetPageSegMode() const {
  */
 char *TessBaseAPI::TesseractRect(const unsigned char *imagedata, int bytes_per_pixel,
                                  int bytes_per_line, int left, int top, int width, int height) {
-  if (tesseract_ == nullptr || width < kMinRectSize || height < kMinRectSize) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+  if (width < kMinRectSize || height < kMinRectSize) {
     return nullptr; // Nothing worth doing.
   }
 
@@ -765,6 +766,9 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
  */
 void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height,
                            int bytes_per_pixel, int bytes_per_line, float angle) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
   if (InternalResetImage()) {
     thresholder_->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line, angle);
     SetInputImage(thresholder_->GetPixRect());
@@ -772,11 +776,13 @@ void TessBaseAPI::SetImage(const unsigned char *imagedata, int width, int height
 }
 
 void TessBaseAPI::SetSourceResolution(int ppi) {
-  if (thresholder_) {
-    thresholder_->SetSourceYResolution(ppi);
-  } else {
-    tprintError("Please call SetImage before SetSourceResolution.\n");
-  }
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+  ASSERT_HOST_MSG(thresholder_ != nullptr,
+                  "{} was invoked without a live tesseract thresholder instance: please call SetImage before attempting this method.\n",
+                  __func__);
+  thresholder_->SetSourceYResolution(ppi);
 }
 
 /**
@@ -788,6 +794,9 @@ void TessBaseAPI::SetSourceResolution(int ppi) {
  * and it is therefore more efficient to provide a Pix directly.
  */
 void TessBaseAPI::SetImage(Pix *pix, float angle) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
   if (InternalResetImage()) {
     // as Image will take ownership and `pix` is not owned by us, we must clone it:
     Image img(false, pix);
@@ -814,9 +823,13 @@ void TessBaseAPI::SetImage(Pix *pix, float angle) {
  * can be recognized with the same image.
  */
 void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
-  if (thresholder_ == nullptr) {
-    return;
-  }
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+  ASSERT_HOST_MSG(thresholder_ != nullptr,
+                  "{} was invoked without a live tesseract thresholder instance: please call SetImage before attempting this method.\n",
+                  __func__);
+
   // TODO: this ClearResults prematurely nukes the page image and pushes for the diagnostics log to be written to output file,
   // while this SetRectangle() very well may be meant to OCR a *second* rectangle in the existing page image, which will fail
   // today as the page image will be lost, thanks to ClearResults.
@@ -832,30 +845,35 @@ void TessBaseAPI::SetRectangle(int left, int top, int width, int height) {
  * Get a copy of the internal thresholded image from Tesseract.
  */
 Pix *TessBaseAPI::GetThresholdedImage() {
-  if (tesseract_ == nullptr || thresholder_ == nullptr) {
-    return nullptr;
-  }
-  if (tesseract_->pix_binary() == nullptr) {
-    if (verbose_process) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+  ASSERT_HOST_MSG(thresholder_ != nullptr,
+                  "{} was invoked without a live tesseract thresholder instance: please call SetImage before attempting this method.\n",
+                  __func__);
+
+  Tesseract* tess = tesseract();
+  if (tess->pix_binary() == nullptr) {
+	if (verbose_process) {
       tprintInfo("PROCESS: the source image is not a binary image, hence we apply a thresholding algo/subprocess to obtain a binarized image.\n");
-    }
+	}
 
     Image pix;
     if (!Threshold(pix.obtains())) {
       return nullptr;
     }
-    tesseract_->set_pix_binary(pix);     // candidate for move semantics
+    tess->set_pix_binary(pix);     // candidate for move semantics
 
-    if (tesseract_->tessedit_dump_pageseg_images) {
-      tesseract_->AddPixDebugPage(tesseract_->pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
+    if (tess->tessedit_dump_pageseg_images) {
+      tess->AddPixDebugPage(tess->pix_binary(), "Thresholded Image result (because it wasn't thresholded yet)");
     }
   }
 
-  // Image p1 = pixRotate(tesseract_->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
+  // Image p1 = pixRotate(tess->pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
   // because we want to keep the public API as-is for now, instead of migrating it to using Image type directly,
   // we downgrade to `PIX *` at the exit point, hence the reponsibility to CLONE is ours: 
-  return tesseract_->pix_binary().clone2pix();
+  return tess->pix_binary().clone2pix();
 }
 
 /**
@@ -1124,65 +1142,68 @@ PageIterator *TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
  * internal structures.
  */
 int TessBaseAPI::Recognize() {
-  if (tesseract_ == nullptr) {
-    return -1;
-  }
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+
+  Tesseract *tess = tesseract();
+
   if (FindLines() != 0) {
     return -1;
   }
 
-  AutoPopDebugSectionLevel section_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize (OCR)"));
+  AutoPopDebugSectionLevel section_handle(tess, tess->PushSubordinatePixDebugSection("Recognize (OCR)"));
 
   delete page_res_;
   if (block_list_->empty()) {
-    page_res_ = new PAGE_RES(false, block_list_, &tesseract_->prev_word_best_choice_);
+    page_res_ = new PAGE_RES(false, block_list_, &tess->prev_word_best_choice_);
     return 0; // Empty page.
   }
 
-  tesseract_->SetBlackAndWhitelist();
+  tess->SetBlackAndWhitelist();
   recognition_done_ = true;
 #if !DISABLED_LEGACY_ENGINE
-  if (tesseract_->tessedit_resegment_from_line_boxes) {
+  if (tess->tessedit_resegment_from_line_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from line boxes.\n");
-    page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path_.c_str(), true, block_list_);
-  } else if (tesseract_->tessedit_resegment_from_boxes) {
+    page_res_ = tess->ApplyBoxes(tess->input_file_path_.c_str(), true, block_list_);
+  } else if (tess->tessedit_resegment_from_boxes) {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from page boxes.\n");
-    page_res_ = tesseract_->ApplyBoxes(tesseract_->input_file_path_.c_str(), false, block_list_);
+    page_res_ = tess->ApplyBoxes(tess->input_file_path_.c_str(), false, block_list_);
   } else
 #endif // !DISABLED_LEGACY_ENGINE
   {
     if (verbose_process)
       tprintInfo("PROCESS: Re-segment from LSTM / previous word best choice.\n");
-    page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(), block_list_, &tesseract_->prev_word_best_choice_);
+    page_res_ = new PAGE_RES(tess->AnyLSTMLang(), block_list_, &tess->prev_word_best_choice_);
   }
 
   if (page_res_ == nullptr) {
     return -1;
   }
 
-  if (tesseract_->tessedit_train_line_recognizer) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
-    if (!tesseract_->TrainLineRecognizer(tesseract_->input_file_path_.c_str(), output_file_, block_list_)) {
+  if (tess->tessedit_train_line_recognizer) {
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Train Line Recognizer: Correct Classify Words"));
+    if (!tess->TrainLineRecognizer(tess->input_file_path_.c_str(), output_file_, block_list_)) {
       return -1;
     }
-    tesseract_->CorrectClassifyWords(page_res_);
+    tess->CorrectClassifyWords(page_res_);
     return 0;
   }
 #if !DISABLED_LEGACY_ENGINE
-  if (tesseract_->tessedit_make_boxes_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
-    tesseract_->CorrectClassifyWords(page_res_);
+  if (tess->tessedit_make_boxes_from_boxes) {
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Make Boxes From Boxes: Correct Classify Words"));
+    tess->CorrectClassifyWords(page_res_);
     return 0;
   }
 #endif // !DISABLED_LEGACY_ENGINE
 
   int result = 0;
-  if (tesseract_->SupportsInteractiveScrollView()) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
+  if (tess->SupportsInteractiveScrollView()) {
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
-    tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
+    tess->pgeditor_main(rect_width_, rect_height_, page_res_);
 #endif // !GRAPHICS_DISABLED
     // The page_res is invalid after an interactive session, so cleanup
     // in a way that lets us continue to the next page without crashing.
@@ -1190,45 +1211,45 @@ int TessBaseAPI::Recognize() {
     page_res_ = nullptr;
     return -1;
 #if !DISABLED_LEGACY_ENGINE
-  } else if (tesseract_->tessedit_train_from_boxes) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train From Boxes"));
+  } else if (tess->tessedit_train_from_boxes) {
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Train From Boxes"));
     std::string fontname;
     ExtractFontName(output_file_.c_str(), &fontname);
-    tesseract_->ApplyBoxTraining(fontname, page_res_);
-  } else if (tesseract_->tessedit_ambigs_training) {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Train Ambigs"));
-    FILE *training_output_file = tesseract_->init_recog_training(tesseract_->input_file_path_.c_str());
+    tess->ApplyBoxTraining(fontname, page_res_);
+  } else if (tess->tessedit_ambigs_training) {
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Train Ambigs"));
+    FILE *training_output_file = tess->init_recog_training(tess->input_file_path_.c_str());
     // OCR the page segmented into words by tesseract.
-    tesseract_->recog_training_segmented(tesseract_->input_file_path_.c_str(), page_res_, training_output_file);
+    tess->recog_training_segmented(tess->input_file_path_.c_str(), page_res_, training_output_file);
     fclose(training_output_file);
 #endif // !DISABLED_LEGACY_ENGINE
   } else {
-    AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("The Main Recognition Phase"));
+    AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("The Main Recognition Phase"));
 
     if (scrollview_support) {
-      tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
+      tess->pgeditor_main(rect_width_, rect_height_, page_res_);
     }
 
     // Now run the main recognition.
-    if (!tesseract_->paragraph_text_based) {
-      AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
+    if (!tess->paragraph_text_based) {
+      AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Detect Paragraphs (Before Recognition)"));
       DetectParagraphs(false);
       if (scrollview_support) {
-        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
+        tess->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
     }
 
-    AutoPopDebugSectionLevel subsection_handle2(tesseract_, tesseract_->PushSubordinatePixDebugSection("Recognize All Words"));
-    if (tesseract_->recog_all_words(page_res_, nullptr, nullptr, 0)) {
+    AutoPopDebugSectionLevel subsection_handle2(tess, tess->PushSubordinatePixDebugSection("Recognize All Words"));
+    if (tess->recog_all_words(page_res_, nullptr, nullptr, 0)) {
       if (scrollview_support) {
-        tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
+        tess->pgeditor_main(rect_width_, rect_height_, page_res_);
       }
       subsection_handle2.pop();
-      if (tesseract_->paragraph_text_based) {
-        AutoPopDebugSectionLevel subsection_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
+      if (tess->paragraph_text_based) {
+        AutoPopDebugSectionLevel subsection_handle(tess, tess->PushSubordinatePixDebugSection("Detect Paragraphs (After Recognition)"));
         DetectParagraphs(true);
         if (scrollview_support) {
-          tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
+          tess->pgeditor_main(rect_width_, rect_height_, page_res_);
         }
       }
     } else {
@@ -1391,8 +1412,13 @@ Pix* TessBaseAPI::GetVisibleImage() {
 }
 
 const char *TessBaseAPI::GetInputName() {
-  if (tesseract_ != nullptr && !tesseract_->input_file_path_.empty()) {
-    return tesseract_->input_file_path_.c_str();
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  Tesseract *tess = tesseract();
+  if (!tess->input_file_path_.empty()) {
+    return tess->input_file_path_.c_str();
   }
   return nullptr;
 }
@@ -1826,7 +1852,11 @@ bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
  * Recognize. The returned iterator must be deleted after use.
  */
 LTRResultIterator *TessBaseAPI::GetLTRIterator() {
-  if (tesseract_ == nullptr || page_res_ == nullptr) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (page_res_ == nullptr) {
     return nullptr;
   }
   return new LTRResultIterator(page_res_, tesseract_, thresholder_->GetScaleFactor(),
@@ -1843,7 +1873,10 @@ LTRResultIterator *TessBaseAPI::GetLTRIterator() {
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
 ResultIterator *TessBaseAPI::GetIterator() {
-  if (tesseract_ == nullptr || page_res_ == nullptr) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+  if (page_res_ == nullptr) {
     return nullptr;
   }
   return ResultIterator::StartOfParagraph(LTRResultIterator(
@@ -1860,7 +1893,10 @@ ResultIterator *TessBaseAPI::GetIterator() {
  * DetectOS, or anything else that changes the internal PAGE_RES.
  */
 MutableIterator *TessBaseAPI::GetMutableIterator() {
-  if (tesseract_ == nullptr || page_res_ == nullptr) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+  if (page_res_ == nullptr) {
     return nullptr;
   }
   return new MutableIterator(page_res_, tesseract_, thresholder_->GetScaleFactor(),
@@ -1870,7 +1906,11 @@ MutableIterator *TessBaseAPI::GetMutableIterator() {
 
 /** Make a text string from the internal data structures. */
 char *TessBaseAPI::GetUTF8Text() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (!recognition_done_ && Recognize() < 0) {
     return nullptr;
   }
   std::string text("");
@@ -1978,7 +2018,11 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetTSVText(int page_number, bool lang_info) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (page_res_ == nullptr && Recognize() < 0) {
     return nullptr;
   }
 
@@ -2164,7 +2208,11 @@ const int kMaxBytesPerLine = kNumbersPerBlob * (kBytesPer64BitNumber + 1) + 1 + 
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetBoxText(int page_number) {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (!recognition_done_ && Recognize() < 0) {
     return nullptr;
   }
   int blob_count;
@@ -2216,7 +2264,11 @@ const int kLatinChs[] = {0x00a2, 0x0022, 0x0022, 0x0027, 0x0027, 0x00b7, 0x002d,
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetUNLVText() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (!recognition_done_ && Recognize() < 0) {
     return nullptr;
   }
   bool tilde_crunch_written = false;
@@ -2407,7 +2459,11 @@ int TessBaseAPI::MeanTextConf() {
 
 /** Returns an array of all word confidences, terminated by -1. */
 int *TessBaseAPI::AllWordConfidences() {
-  if (tesseract_ == nullptr || (!recognition_done_ && Recognize() < 0)) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
+  if (!recognition_done_ && Recognize() < 0) {
     return nullptr;
   }
   int n_word = 0;
@@ -2587,6 +2643,12 @@ void TessBaseAPI::WipeSqueakyCleanForReUse() {
  * destructing and reconstructing your TessBaseAPI.
  * Once End() has been used, none of the other API functions may be used
  * other than Init and anything declared above it in the class definition.
+ *
+ * All `Tesseract*` reference pointers produced by the tesseract() API are invalid
+ * after this call. If you don't want that, i.e. wish to use tesseract
+ * some more, than consider using the new WipeSqueakyCleanForReUse() API
+ * instead: that one DOES NOT invalidate the active Tesseract instance
+ * nor the references to it obtained previously.
  */
 void TessBaseAPI::End() {
   WipeSqueakyCleanForReUse();
@@ -2677,6 +2739,10 @@ void TessBaseAPI::SetDictFunc(DictFunc f) {
  * utf-8 string.
  */
 void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
   if (tesseract_ != nullptr) {
     tesseract_->getDict().probability_in_context_ = f;
     // Set it for the sublangs too.
@@ -2689,15 +2755,14 @@ void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
 
 /** Common code for setting the image. */
 bool TessBaseAPI::InternalResetImage() {
-  if (tesseract_ == nullptr) {
-    tprintError("Please call Init before attempting to set an image.\n");
-    return false;
-  }
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+
   if (thresholder_ != nullptr) {
     thresholder_->Clear();
-  }
-  if (thresholder_ == nullptr) {
-    thresholder_ = new ImageThresholder(tesseract_);
+  } else {
+    thresholder_ = new ImageThresholder(tesseract());
   }
   ClearResults();
   return true;
@@ -2871,7 +2936,13 @@ bool TessBaseAPI::Threshold(Pix **pix) {
 
 /** Find lines from the image making the BLOCK_LIST. */
 int TessBaseAPI::FindLines() {
-  if (thresholder_ == nullptr || thresholder_->IsEmpty()) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+  ASSERT_HOST_MSG(thresholder_ != nullptr,
+                    "{} was invoked without a live tesseract thresholder instance: please call SetImage before attempting this method.\n",
+                    __func__);
+  if (thresholder_->IsEmpty()) {
     tprintError("Please call SetImage before attempting recognition.\n");
     return -1;
   }
@@ -2881,6 +2952,7 @@ int TessBaseAPI::FindLines() {
   if (!block_list_->empty()) {
     return 0;
   }
+  ASSERT0(tesseract_ != nullptr);
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract(*this, nullptr);
 #if !DISABLED_LEGACY_ENGINE
@@ -3015,7 +3087,10 @@ void TessBaseAPI::ClearResults() {
  * Also return the number of recognized blobs in blob_count.
  */
 int TessBaseAPI::TextLength(int *blob_count) const {
-  if (tesseract_ == nullptr || page_res_ == nullptr) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+  if (page_res_ == nullptr) {
     return 0;
   }
 
@@ -3048,9 +3123,9 @@ int TessBaseAPI::TextLength(int *blob_count) const {
  * Returns true if the image was processed successfully.
  */
 bool TessBaseAPI::DetectOS(OSResults *osr) {
-  if (tesseract_ == nullptr) {
-    return false;
-  }
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
   ClearResults();
   if (tesseract_->pix_binary() == nullptr) {
 	  Image pix;
@@ -3150,7 +3225,11 @@ const char *TessBaseAPI::GetUnichar(int unichar_id) const {
 
 /** Return the pointer to the i-th dawg loaded into tesseract_ object. */
 const Dawg *TessBaseAPI::GetDawg(int i) const {
-  if (tesseract_ == nullptr || i >= NumDawgs()) {
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init and/or SetImage before attempting this method.\n",
+                  __func__);
+
+  if (i >= NumDawgs()) {
     return nullptr;
   }
   return tesseract_->getDict().GetDawg(i);
@@ -3158,25 +3237,28 @@ const Dawg *TessBaseAPI::GetDawg(int i) const {
 
 /** Return the number of dawgs loaded into tesseract_ object. */
 int TessBaseAPI::NumDawgs() const {
-  return tesseract_ == nullptr ? 0 : tesseract_->getDict().NumDawgs();
+  ASSERT_HOST_MSG(tesseract_ != nullptr,
+                  "{} was invoked without a live tesseract instance: please call Init before attempting this method.\n",
+                  __func__);
+  return tesseract_->getDict().NumDawgs();
 }
 
 
 void TessBaseAPI::ReportDebugInfo() {
-  if (tesseract_ == nullptr) {
-    return;
-  }
+    ASSERT_HOST_MSG(tesseract_ != nullptr,
+                    "{} was invoked without a "
+                    "live tesseract instance: you may have a bug that looses a "
+                    "lot of tesseract diagnostics info + reporting for you.\n",
+                    __func__);
   tesseract_->ReportDebugInfo();
 }
 
 void TessBaseAPI::FinalizeAndWriteDiagnosticsReport() {
-  if (tesseract_ == nullptr) {
-    ASSERT_HOST_MSG(false,
-                    "FinalizeAndWriteDiagnosticsReport was invoked without a "
+    ASSERT_HOST_MSG(tesseract_ != nullptr,
+                    "{} was invoked without a "
                     "live tesseract instance: you may have a bug that looses a "
-                    "lot of tesseract diagnostics info + reporting for you.\n");
-    return;
-  };
+                    "lot of tesseract diagnostics info + reporting for you.\n",
+                    __func__);
   tesseract_->ReportDebugInfo();
 }
 
@@ -3208,8 +3290,23 @@ std::string HOcrEscape(const char *text) {
   return ret;
 }
 
-std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const char* label, const char* filename_extension)
-{
+const Tesseract *TessBaseAPI::tesseract() const {
+  if (tesseract_ == nullptr) {
+    TessBaseAPI &owner = const_cast<TessBaseAPI &>(*this);
+    tesseract_ = new tesseract::Tesseract(owner, nullptr);
+  }
+  return tesseract_;
+}
+
+Tesseract *TessBaseAPI::tesseract() {
+  if (tesseract_ == nullptr) {
+    TessBaseAPI &owner = *this;
+    tesseract_ = new tesseract::Tesseract(owner, nullptr);
+  }
+  return tesseract_;
+}
+
+std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension) {
   size_t pos = strcspn(basepath, ":\\/");
   const char* filename = basepath;
   const char* p = basepath + pos;
