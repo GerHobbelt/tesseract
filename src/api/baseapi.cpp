@@ -2290,6 +2290,8 @@ char *TessBaseAPI::GetUNLVText() {
   if (!recognition_done_ && Recognize() < 0) {
     return nullptr;
   }
+  Tesseract *tess = tesseract();
+
   bool tilde_crunch_written = false;
   bool last_char_was_newline = true;
   bool last_char_was_tilde = false;
@@ -2323,7 +2325,7 @@ char *TessBaseAPI::GetUNLVText() {
     } else {
       // NORMAL PROCESSING of non tilde crunched words.
       tilde_crunch_written = false;
-      tesseract_->set_unlv_suspects(word);
+      tess->set_unlv_suspects(word);
       const char *wordstr = word->best_choice->unichar_string().c_str();
       const auto &lengths = word->best_choice->unichar_lengths();
       int length = lengths.length();
@@ -2523,13 +2525,14 @@ int *TessBaseAPI::AllWordConfidences() {
  */
 bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   bool success = true;
+  Tesseract *tess = tesseract();
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
 
-  tesseract_->classify_enable_learning = false;
+  tess->classify_enable_learning = false;
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
-  if (tesseract_->applybox_debug) {
+  if (tess->applybox_debug) {
     tprintDebug("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
   }
   if (text != nullptr) {
@@ -2556,9 +2559,9 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
         // No match.
         delete page_res_;
         std::vector<TBOX> boxes;
-        page_res_ = tesseract_->SetupApplyBoxes(boxes, block_list_);
-        tesseract_->ReSegmentByClassification(page_res_);
-        tesseract_->TidyUp(page_res_);
+        page_res_ = tess->SetupApplyBoxes(boxes, block_list_);
+        tess->ReSegmentByClassification(page_res_);
+        tess->TidyUp(page_res_);
         PAGE_RES_IT pr_it(page_res_);
         if (pr_it.word() == nullptr) {
           success = false;
@@ -2569,8 +2572,8 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
         word_res->BestChoiceToCorrectText();
       }
       if (success) {
-        tesseract_->EnableLearning = true;
-        tesseract_->LearnWord(nullptr, word_res);
+        tess->EnableLearning = true;
+        tess->LearnWord(nullptr, word_res);
       }
     } else {
       success = false;
@@ -2797,12 +2800,13 @@ bool TessBaseAPI::InternalResetImage() {
  * The usual argument to Threshold is Tesseract::mutable_pix_binary().
  */
 bool TessBaseAPI::Threshold(Pix **pix) {
+  Tesseract *tess = tesseract();
   ASSERT_HOST(pix != nullptr);
   if (*pix != nullptr) {    
     pixDestroy(pix);
   }
   // Zero resolution messes up the algorithms, so make sure it is credible.
-  int user_dpi = tesseract_->user_defined_dpi;
+  int user_dpi = tess->user_defined_dpi;
   int y_res = thresholder_->GetScaledYResolution();
   if (user_dpi && (user_dpi < kMinCredibleResolution || user_dpi > kMaxCredibleResolution)) {
     tprintWarn(
@@ -2827,11 +2831,11 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     return false;
   }
 
-  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tesseract_->thresholding_method));
+  auto selected_thresholding_method = static_cast<ThresholdMethod>(static_cast<int>(tess->thresholding_method));
   Image pix_binary;
 
   std::string caption = ThresholdMethodName(selected_thresholding_method);
-  AutoPopDebugSectionLevel subsec_handle(tesseract_, tesseract_->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
+  AutoPopDebugSectionLevel subsec_handle(tess, tess->PushSubordinatePixDebugSection(fmt::format("Applying the threshold method chosen for this run: {}: {}", selected_thresholding_method, caption)));
 
   if (selected_thresholding_method == ThresholdMethod::Otsu) {
     pix_binary = pix;
@@ -2842,11 +2846,11 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     *pix = pix_binary.clone2pix();
 
     if (!thresholder_->IsBinary()) {
-      tesseract_->set_pix_thresholds(thresholder_->GetPixRectThresholds());
-      tesseract_->set_pix_grey(thresholder_->GetPixRectGrey());
+      tess->set_pix_thresholds(thresholder_->GetPixRectThresholds());
+      tess->set_pix_grey(thresholder_->GetPixRectGrey());
     } else {
-      tesseract_->set_pix_thresholds(nullptr);
-      tesseract_->set_pix_grey(nullptr);
+      tess->set_pix_thresholds(nullptr);
+      tess->set_pix_grey(nullptr);
     }
   } else {
     auto [ok, pix_grey, pix_binary2, pix_thresholds] = thresholder_->Threshold(selected_thresholding_method);
@@ -2858,19 +2862,19 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     pix_binary = pix_binary2;
     *pix = pix_binary.clone2pix();
 
-    tesseract_->set_pix_thresholds(pix_thresholds);    // candidates for move semantics
-    tesseract_->set_pix_grey(pix_grey);
+    tess->set_pix_thresholds(pix_thresholds);    // candidates for move semantics
+    tess->set_pix_grey(pix_grey);
     // pix_thresholds.destroy();
     // pix_grey.destroy();
   }
 
-  if (tesseract_->tessedit_dump_pageseg_images) {
-    tesseract_->AddPixDebugPage(tesseract_->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
-    tesseract_->AddPixDebugPage(tesseract_->pix_thresholds(), fmt::format("{} : Thresholds", caption));
+  if (tess->tessedit_dump_pageseg_images) {
+    tess->AddPixDebugPage(tess->pix_grey(), fmt::format("{} : Grey = pre-image", caption));
+    tess->AddPixDebugPage(tess->pix_thresholds(), fmt::format("{} : Thresholds", caption));
     if (verbose_process) {
       tprintInfo("PROCESS: The 'Thresholds' image displays the per-pixel grey level which will be used to decide which pixels are *foreground* (text, probably) and which pixels are *background* (i.e. the *paper* the text was printed on); you'll note that each pixel in the original (greyscale!) image which is darker than its corresponding threshold level is *binarized* to black (foreground in tesseract) while any lighter pixel is *binarized* to white (background in tesseract).\n");
     }
-    tesseract_->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
+    tess->AddPixDebugPage(pix_binary, fmt::format("{} : Binary = post-image", caption));
   }
 
   // demo a bit of pre-postprocessing
@@ -2878,32 +2882,32 @@ bool TessBaseAPI::Threshold(Pix **pix) {
     const char *sequence = "c1.1 + d3.3";
     const int dispsep = 0;
     Image pix_post = pixMorphSequence(pix_binary, sequence, dispsep);
-    tesseract_->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {} -- just an example to showcase what leptonica can do for us!", caption, sequence));
+    tess->AddPixCompedOverOrigDebugPage(pix_post, fmt::format("{} : post-processed: {} -- just an example to showcase what leptonica can do for us!", caption, sequence));
 
     l_int32 w, h, d;
-    Image composite = tesseract_->pix_grey().copy();
+    Image composite = tess->pix_grey().copy();
     pixGetDimensions(composite, &w, &h, &d);
     Image mask = pixConvert1To8(nullptr, pix_post, 255, 0);
     pixRasterop(composite, 0, 0, w, h, PIX_PAINT, mask, 0, 0);
-    tesseract_->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
+    tess->AddPixCompedOverOrigDebugPage(composite, fmt::format("{} : post-processed & masked with: {} -- this should remove all image noise that's not very close to the text, i.e. is considered *not part of the text to OCR*.", caption, sequence));
 
-    Image noise1 = pixEmphasizeImageNoise(tesseract_->pix_original().ptr());
-    Image noise2 = pixEmphasizeImageNoise(tesseract_->pix_grey().ptr());
+    Image noise1 = pixEmphasizeImageNoise(tess->pix_original().ptr());
+    Image noise2 = pixEmphasizeImageNoise(tess->pix_grey().ptr());
     Image noise3 = pixEmphasizeImageNoise(composite.ptr());
     Image noise4 = pixEmphasizeImageNoise(pix_post.ptr());
-    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis A: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis B: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis C: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis D: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis A: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis B: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis C: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis D: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
 
-    noise1 = pixEmphasizeImageNoise2(tesseract_->pix_original().ptr());
-    noise2 = pixEmphasizeImageNoise2(tesseract_->pix_grey().ptr());
+    noise1 = pixEmphasizeImageNoise2(tess->pix_original().ptr());
+    noise2 = pixEmphasizeImageNoise2(tess->pix_grey().ptr());
     noise3 = pixEmphasizeImageNoise2(composite.ptr());
     noise4 = pixEmphasizeImageNoise2(pix_post.ptr());
-    tesseract_->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis E: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis F: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
-    tesseract_->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise1, fmt::format("{} : post-processed :: noise emphasis E: emphasized the noise inherent in the source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise2, fmt::format("{} : post-processed :: noise emphasis F: emphasized the noise inherent in the greyscaled / normalized source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise3, fmt::format("{} : post-processed :: noise emphasis G: emphasized the noise inherent in the composited image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
+    tess->AddPixCompedOverOrigDebugPage(noise4, fmt::format("{} : post-processed :: noise emphasis H: emphasized the noise inherent in the closed & binarized / thresholded source image. Every non-black/white pixel is colored to make them more apparent for the human inspector.", caption));
 
     if (false) {
       // NOTE/WARNING: if you want to pick up one of these processed images as the replacement `*pix` then you MUST
@@ -2948,7 +2952,7 @@ bool TessBaseAPI::Threshold(Pix **pix) {
         "Corrected to {}.\n",
         thresholder_->GetScaledEstimatedResolution(), estimated_res);
   }
-  tesseract_->set_source_resolution(estimated_res);
+  tess->set_source_resolution(estimated_res);
 
   (void)Monitor().bump_progress().exec_progress_func();
 
