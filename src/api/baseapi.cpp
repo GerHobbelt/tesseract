@@ -3291,16 +3291,4 @@ std::string mkUniqueOutputFilePath(const char* basepath, int page_number, const 
   return std::move(f);
 }
 
-void WritePix(const std::string &file_path, Pix *pic, int file_type)
-{
-  tprintInfo("Saving image file {}\n", file_path);
-#if defined(HAVE_MUPDF)
-  fz_mkdir_for_file(fz_get_global_context(), file_path.c_str());
-#endif
-  if (pixWrite(file_path.c_str(), pic, file_type))
-  {
-    tprintError("Writing image file {} failed\n", file_path);
-  }
-}
-
 } // namespace tesseract
