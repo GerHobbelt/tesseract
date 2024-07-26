@@ -1056,7 +1056,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
       bool b = false;
-      ASSERT0(api.tesseract() == tess);
+      ASSERT_HOST(api.tesseract() == tess);
       bool in_training_mode =
           (bool(tess->tessedit_ambigs_training)) ||
           (bool(tess->tessedit_resegment_from_boxes)) ||
@@ -1103,7 +1103,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
         succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
         if (succeed && renderers.empty()) {
           // default: TXT + HOCR renderer
-          ASSERT0(api.tesseract() == tess);
+          ASSERT_HOST(api.tesseract() == tess);
           tess->tessedit_create_hocr.set_value(true);
           tess->tessedit_create_alto.set_value(true);
           tess->tessedit_create_page_xml.set_value(true);
