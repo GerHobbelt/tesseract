@@ -74,7 +74,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(const char *classifer_na
       tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
-    tesseract = tess->tesseract();
+    tesseract = &tess->tesseract();
     classify = static_cast<tesseract::Classify *>(tesseract);
     if (classify->shape_table() == nullptr) {
       tprintError("Tesseract must contain a ShapeTable!\n");

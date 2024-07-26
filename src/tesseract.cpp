@@ -974,7 +974,8 @@ extern "C" int tesseract_main(int argc, const char **argv)
     }
 
   	// TODO: set during init phase and/or when this parameter is edited.
-    monitor.set_deadline_msecs(api.tesseract()->activity_timeout_millisec);
+    Tesseract &tess = api.tesseract();
+    monitor.set_deadline_msecs(tess.activity_timeout_millisec);
 
     // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above.
     if (!SetVariablesFromCLArgs(api, argc, argv)) {
@@ -1055,14 +1056,15 @@ extern "C" int tesseract_main(int argc, const char **argv)
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
       bool b = false;
+      ASSERT_HOST(&api.tesseract() == &tess);
       bool in_training_mode =
-          (bool(api.tesseract()->tessedit_ambigs_training)) ||
-          (bool(api.tesseract()->tessedit_resegment_from_boxes)) ||
-          (bool(api.tesseract()->tessedit_make_boxes_from_boxes)) ||
-          (bool(api.tesseract()->tessedit_train_line_recognizer));
+          (bool(tess.tessedit_ambigs_training)) ||
+          (bool(tess.tessedit_resegment_from_boxes)) ||
+          (bool(tess.tessedit_make_boxes_from_boxes)) ||
+          (bool(tess.tessedit_train_line_recognizer));
 
       if (api.GetPageSegMode() == tesseract::PSM_OSD_ONLY) {
-        if (!api.tesseract()->AnyTessLang()) {
+        if (!tess.AnyTessLang()) {
           fprintf(stderr, "Error, OSD requires a model for the legacy engine\n");
           return EXIT_FAILURE;
         }
@@ -1101,17 +1103,18 @@ extern "C" int tesseract_main(int argc, const char **argv)
         succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
         if (succeed && renderers.empty()) {
           // default: TXT + HOCR renderer
-          api.tesseract()->tessedit_create_hocr.set_value(true);
-          api.tesseract()->tessedit_create_alto.set_value(true);
-          api.tesseract()->tessedit_create_page_xml.set_value(true);
-          api.tesseract()->tessedit_create_tsv.set_value(true);
-          api.tesseract()->tessedit_create_pdf.set_value(true);
-          api.tesseract()->textonly_pdf.set_value(true);
-          api.tesseract()->tessedit_write_unlv.set_value(true);
-          api.tesseract()->tessedit_create_lstmbox.set_value(true);
-          api.tesseract()->tessedit_create_boxfile.set_value(true);
-          api.tesseract()->tessedit_create_wordstrbox.set_value(true);
-          api.tesseract()->tessedit_create_txt.set_value(true);
+          ASSERT_HOST(&api.tesseract() == &tess);
+          tess.tessedit_create_hocr.set_value(true);
+          tess.tessedit_create_alto.set_value(true);
+          tess.tessedit_create_page_xml.set_value(true);
+          tess.tessedit_create_tsv.set_value(true);
+          tess.tessedit_create_pdf.set_value(true);
+          tess.textonly_pdf.set_value(true);
+          tess.tessedit_write_unlv.set_value(true);
+          tess.tessedit_create_lstmbox.set_value(true);
+          tess.tessedit_create_boxfile.set_value(true);
+          tess.tessedit_create_wordstrbox.set_value(true);
+          tess.tessedit_create_txt.set_value(true);
 
           succeed &= !PreloadRenderers(api, renderers, pagesegmode, outputbase);
         }
