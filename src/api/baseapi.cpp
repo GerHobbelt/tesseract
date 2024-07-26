@@ -549,22 +549,22 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   }
   std::string datapath = data_size == 0 ? data : language;
   ASSERT_HOST(tesseract_ != nullptr);
+  Tesseract *tess = tesseract();
 
   // If the datapath, OcrEngineMode or the language have changed - start again.
   // Note that the language_ field stores the last requested language that was
-  // initialized successfully, while tesseract_->lang stores the language
+  // initialized successfully, while tess->lang stores the language
   // actually used. They differ only if the requested language was nullptr, in
-  // which case tesseract_->lang is set to the Tesseract default ("eng").
-  if (tesseract_ != nullptr &&
-      tesseract_->RequiresWipeBeforeIndependentReUse() &&
+  // which case tess->lang is set to the Tesseract default ("eng").
+  if (tess->RequiresWipeBeforeIndependentReUse() &&
       (datapath_.empty() || language_.empty() || datapath_ != datapath ||
-       last_oem_requested_ != oem || (language_ != language && tesseract_->lang_ != language))) {
+       last_oem_requested_ != oem || (language_ != language && tess->lang_ != language))) {
 #if 0
     delete tesseract_;
     tesseract_ = nullptr;
 #else
     // try not to throw away tesseract instances. Clean them out rigorously, instead.
-    tesseract_->WipeSqueakyCleanForReUse();
+    tess->WipeSqueakyCleanForReUse();
 #endif
   }
   ASSERT_HOST(tesseract_ != nullptr);
@@ -578,7 +578,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
 
   (void)Monitor().set_progress(0.0).exec_progress_func();
 
-  if (tesseract_->init_tesseract(datapath, output_file_, language, oem, configs,
+  if (tess->init_tesseract(datapath, output_file_, language, oem, configs,
                                   configs_size, vars_vec, vars_values, set_only_non_debug_params,
                                   &mgr) != 0) {
     return -1;
@@ -586,8 +586,8 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
 
   // Update datapath and language requested for the last valid initialization.
   datapath_ = std::move(datapath);
-  if (datapath_.empty() && !tesseract_->datadir_.empty()) {
-    datapath_ = tesseract_->datadir_;
+  if (datapath_.empty() && !tess->datadir_.empty()) {
+    datapath_ = tess->datadir_;
   }
 
   language_ = language;
@@ -600,7 +600,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   // can come through here after a previous failed/aborted/successful
   // initialization and we still would need to set up the Tesseract
   // instance to a definitely known state here anyway.
-  tesseract_->ResetAdaptiveClassifier();
+  tess->ResetAdaptiveClassifier();
 #endif // !DISABLED_LEGACY_ENGINE
 
   if (Monitor().kick_watchdog_and_check_for_cancel()) {
@@ -755,8 +755,9 @@ void TessBaseAPI::ClearAdaptiveClassifier() {
   if (tesseract_ == nullptr) {
     return;
   }
-  tesseract_->ResetAdaptiveClassifier();
-  tesseract_->ResetDocumentDictionary();
+  Tesseract *tess = tesseract();
+  tess->ResetAdaptiveClassifier();
+  tess->ResetDocumentDictionary();
 }
 #endif // !DISABLED_LEGACY_ENGINE
 
