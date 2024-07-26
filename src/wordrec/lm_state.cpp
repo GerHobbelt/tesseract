@@ -31,6 +31,8 @@ void ViterbiStateEntry::Print(const char *msg) const {
   if (this->debug_str != nullptr) {
     s += fmt::format(" str={}", this->debug_str->c_str());
   }
+  ASSERT_HOST(fabs(ratings_sum) < 1e6);
+  ASSERT_HOST(fabs(cost) < 1e6);
   s += fmt::format(" with ratings_sum={} length={} cost={}", this->ratings_sum, this->length, this->cost);
   if (this->top_choice_flags) {
     s += fmt::format(" top_choice_flags={}", this->top_choice_flags);

@@ -691,6 +691,7 @@ void WERD_CHOICE::print(const char *msg) const {
   for (unsigned int i = 0; i < length_; ++i) {
     s += fmt::format("'{}' ", unicharset_->id_to_unichar(unichar_ids_[i]));
   }
+  ASSERT_HOST(fabs(rating_) < 1e6);
   tprintDebug("WERD_CHOICE {}: Length:{}, Rating={}, Certainty={}, AdjustFactor={}, Permuter={}, XHeight.range=[{},{}], ambig_found={}\n", 
           s, length_, rating_, certainty_,
           adjust_factor_, permuter_, min_x_height_, max_x_height_, dangerous_ambig_found_);
