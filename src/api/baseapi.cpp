@@ -2979,7 +2979,7 @@ int TessBaseAPI::FindLines() {
   }
   ASSERT0(tesseract_ != nullptr);
   Tesseract *tess = tesseract();
-#if 0  
+#if 01  
 #if !DISABLED_LEGACY_ENGINE
     tesseract_->InitAdaptiveClassifier(nullptr);
 #endif
