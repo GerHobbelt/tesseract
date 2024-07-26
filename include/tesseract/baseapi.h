@@ -1043,7 +1043,21 @@ public:
   /// Returns a reference to the internal instance of the Tesseract class;
   /// the presence of which is guaranteed, i.e. the returned pointer
   /// WILL NOT be `nullptr`.
-  Tesseract& tesseract() const;
+  ///
+  /// Note that the reference's lifetime ends once the TessBaseAPI's instance
+  /// is deleted or its End() API is invoked, whichever comes first.
+  ///
+  /// \sa End()
+  /// \sa WipeSqueakyCleanForReUse()
+  ///
+  /// @{
+  const Tesseract &tesseract() const;
+  Tesseract &tesseract();
+  //  https://stackoverflow.com/questions/856542/elegant-solution-to-duplicate-const-and-non-const-getters
+  //inline Tesseract &tesseract() {
+  //  return const_cast<Tesseract &>(this->tesseract());
+  //}
+  /// @} 
 
   OcrEngineMode oem() const {
     return last_oem_requested_;
@@ -1099,40 +1113,41 @@ protected:
   }
 
 protected:
-  Tesseract *tesseract_;             ///< The underlying data object.
+  mutable Tesseract *tesseract_ = nullptr;     ///< The underlying data object.
 #if !DISABLED_LEGACY_ENGINE
-  Tesseract *osd_tesseract_;         ///< For orientation & script detection.
-  EquationDetect *equ_detect_;       ///< The equation detector.
+  Tesseract *osd_tesseract_ = nullptr;         ///< For orientation & script detection.
+  EquationDetect *equ_detect_ = nullptr;       ///< The equation detector.
 #endif
   ETEXT_DESC *monitor_ = nullptr;
   ETEXT_DESC default_minimal_monitor_;
   FileReader reader_;                ///< Reads files from any filesystem.
-  ImageThresholder *thresholder_;    ///< Image thresholding module.
-  std::vector<ParagraphModel *> *paragraph_models_;
-  BLOCK_LIST *block_list_;           ///< The page layout.
-  PAGE_RES *page_res_;               ///< The page-level data.
+  ImageThresholder *thresholder_ = nullptr;    ///< Image thresholding module.
+  std::vector<ParagraphModel *> *paragraph_models_ = nullptr;
+  BLOCK_LIST *block_list_ = nullptr;           ///< The page layout.
+  PAGE_RES *page_res_ = nullptr;               ///< The page-level data.
   std::string visible_image_file_;
   Image pix_visible_image_;          ///< Image used in output PDF
   std::string output_file_;          ///< Name used by debug code.
   std::string datapath_;             ///< Current location of tessdata.
   std::string language_;             ///< Last initialized language.
-  OcrEngineMode last_oem_requested_; ///< Last ocr language mode requested.
-  bool recognition_done_;            ///< page_res_ contains recognition data.
+  OcrEngineMode last_oem_requested_ = OEM_DEFAULT; ///< Last ocr language mode requested.
+  bool recognition_done_ = false;            ///< page_res_ contains recognition data.
 
   /**
    * @defgroup ThresholderParams Thresholder Parameters
    * Parameters saved from the Thresholder. Needed to rebuild coordinates.
    */
   /* @{ */
-  int rect_left_;
-  int rect_top_;
-  int rect_width_;
-  int rect_height_;
-  int image_width_;
-  int image_height_;
+  int rect_left_ = 0;
+  int rect_top_ = 0;
+  int rect_width_ = 0;
+  int rect_height_ = 0;
+
+  int image_width_ = 0;
+  int image_height_ = 0;
   /* @} */
 
-private:
+protected:
   // A list of image filenames gets special consideration
   //
   // If global parameter `tessedit_page_number` is non-negative, will only process that

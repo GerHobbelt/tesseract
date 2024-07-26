@@ -475,7 +475,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , BOOL_MEMBER(debug_output_diagnostics_HTML, false, "Write the debug/diagnostics output to a HTML file, including the collected images of the various process stages inside tesseract. The content is equivalent to the debug info you see on stderr, but in a nicely formatted and easier to grok modern format. Also handy for sharing your sessions' diagnostics with others. The output filename is derived from the source image name and output base path.", params()),
       INT_MEMBER(debug_output_diagnostics_images_format, IMG4W_WEBP_LOSSLESS, "The format of the images included in the debug/diagnostics output HTML file. Specify a number: 0:PNG, 1:JPEG, 2:WebP, 3:lossless-WebP, 4:TIFF. While we support TIFF and higher numbers, it is ill-advised to use as web browsers won't support those out of the box and choosing those formats will strongly and *negatively* impact your HTML diagnostics viewing experience.  Tip: use PNG or JPEG if you want the output to be produced faster, lossless-WEBP if you want smaller image files with maximum precision. Set the jpeg_quality parameter for any of these formats for targeted compression ratio.", params())
 
-    , pixa_debug_(this)
+    , pixa_debug_(*this)
     , splitter_(this)
     , image_finder_(this)
     , line_finder_(this)

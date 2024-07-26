@@ -1056,6 +1056,8 @@ extern "C" int tesseract_main(int argc, const char **argv)
       return EXIT_FAILURE;
     }
 
+    Tesseract &tess = api.tesseract();
+
     // First check if we may expect config files at the end of the list; if so,
     // collect them.
     StringParam *cfgs = args_muster.find<StringParam>("config_files");
@@ -1111,11 +1113,13 @@ extern "C" int tesseract_main(int argc, const char **argv)
         return EXIT_FAILURE;
       }
 
-      Tesseract &tess = api.tesseract();
-
     if (!api.InitParameters(vars_vec, vars_values)) {
         return EXIT_FAILURE;
       }
+
+  	// TODO: set during init phase and/or when this parameter is edited.
+    monitor.set_deadline_msecs(tess.activity_timeout_millisec);
+
 
       // set up the debug_all preset; the preset does not overrule any previously configured parameter values!
       SetupDebugAllPreset(api);
@@ -1316,6 +1320,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
       // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
       // In this mode no other OCR result files are written.
       bool b = false;
+      ASSERT_HOST(&api.tesseract() == &tess);
       bool in_training_mode = (tess.tessedit_ambigs_training) ||
         (tess.tessedit_resegment_from_boxes) ||
         (tess.tessedit_make_boxes_from_boxes) ||
@@ -1361,6 +1366,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
         succeed &= !PreloadRenderers(api, renderers, api.GetPageSegMode(), outputbase);
         if (succeed && renderers.empty()) {
           // default: TXT + HOCR renderer
+          ASSERT_HOST(&api.tesseract() == &tess);
           api.SetupDefaultPreset();
           succeed &= !PreloadRenderers(api, renderers, api.GetPageSegMode(), outputbase);
         }
