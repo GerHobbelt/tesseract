@@ -197,7 +197,8 @@ public:
     (void)edge_ref;
     (void)unichar_id;
     (void)word_end;
-    return false;
+    // V601 The 'false' value is implicitly cast to the integer type. dawg.h 200
+    return 0;
   }
 
 protected:

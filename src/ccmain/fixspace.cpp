@@ -111,7 +111,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
           if (owner_.Monitor().bump_progress(word_index, word_count).
             exec_progress_func()
             .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
-              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
+              tprintError("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
           }
         }
@@ -134,7 +134,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
           if (owner_.Monitor().bump_progress(word_index, word_count)
             .exec_progress_func()
             .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
-              tprintWarn("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
+              tprintError("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
           }
           while (!word_res_it_to.at_last() &&

@@ -2643,7 +2643,7 @@ void Tesseract::DetectParagraphs(bool after_text_recognition,
   }
 
   // Now stitch in the row_owners into the rows.
-  row = *block_start;
+  row = *block_start;            // <-- Warning/Note: this statement MAY also alter the tesseract instance reference tracked by the iterator; see also PageIterator::operator=()
   for (auto &row_owner : row_owners) {
     while (!row.PageResIt()->row()) {
       row.Next(RIL_TEXTLINE);
