@@ -694,8 +694,12 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
   // of the assigned column_sets_ index or INT32_MAX if none is set.
   // On return the best_columns_ member is set.
   bool *any_columns_possible = new bool[set_count];
+  bool *any_multi_columns_possible = new bool[set_count];
   int *assigned_costs = new int[set_count];
+  int *best_costs = new int[set_count];
+  int *best_costs_multi = new int[set_count];
   int **column_set_costs = new int *[set_count];
+  int **column_set_costs_multi = new int *[set_count];
   // Set possible column_sets to indicate whether each set is compatible
   // with each column.
   for (int part_i = 0; part_i < set_count; ++part_i) {
@@ -703,13 +707,39 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
     bool debug = line_set != nullptr && WithinTestRegion(2, line_set->bounding_box().left(),
                                                          line_set->bounding_box().bottom());
     column_set_costs[part_i] = new int[column_count];
+    column_set_costs_multi[part_i] = new int[column_count];
     any_columns_possible[part_i] = false;
+    any_multi_columns_possible[part_i] = false;
     assigned_costs[part_i] = INT32_MAX;
+    best_costs[part_i] = INT32_MAX;
+    best_costs_multi[part_i] = INT32_MAX;
     for (int col_i = 0; col_i < column_count; ++col_i) {
+      column_set_costs[part_i][col_i] = INT32_MAX;
+      column_set_costs_multi[part_i][col_i] = INT32_MAX;
+      
       if (line_set != nullptr &&
-          column_sets_.at(col_i)->CompatibleColumns(debug, line_set, WidthCB())) {
-        column_set_costs[part_i][col_i] = column_sets_.at(col_i)->UnmatchedWidth(line_set);
+          column_sets_.at(col_i)->CompatibleColumns(false, line_set, WidthCB())) {
+        // Impose cost when text is not contained within column set.
+        int cost1 = column_sets_.at(col_i)->UnmatchedWidth(line_set);
+        // Impose small cost for less restrictive column sets. 
+        // This gives more restrictive column sets a "tie breaker" against less restrictive sets.
+        // If text fits equally well into a set containing 4 columns and a set containing
+        // a giant single column, the 4 column set should be chosen.
+        int col_i_count = column_sets_.at(col_i)->ColumnCount();
+        // int cost2 = col_i_count <= 20 ? 20 - col_i_count : 0;
+        int cost2 = 0;
+        column_set_costs[part_i][col_i] = cost1 + cost2;
         any_columns_possible[part_i] = true;
+        if (col_i_count > 1) {
+          column_set_costs_multi[part_i][col_i] = cost1 + cost2;
+          any_multi_columns_possible[part_i] = true;
+          if (best_costs_multi[part_i] > column_set_costs[part_i][col_i]) {
+            best_costs_multi[part_i] = column_set_costs[part_i][col_i];
+          }
+        }
+        if (best_costs[part_i] > column_set_costs[part_i][col_i]) {
+          best_costs[part_i] = column_set_costs[part_i][col_i];
+        }
       } else {
         column_set_costs[part_i][col_i] = INT32_MAX;
         if (debug) {
@@ -718,16 +748,34 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
       }
     }
   }
+
+  // Start by identifying the single column set, and using it as a baseline for assigned_costs.
+  ColPartitionSet *single_column_set = nullptr;
+  for (int col_i = 0; col_i < column_count; ++col_i) {
+    if (column_sets_.at(col_i)->ColumnCount() == 1) {
+      single_column_set = column_sets_.at(col_i);
+      for (int part_i = 0; part_i < set_count; ++part_i) {
+        assigned_costs[part_i] = column_set_costs[part_i][col_i];
+      }
+      break;
+    }
+  }
+
+  bool *improvement_possible = new bool[set_count];
+  for(int i = 0; i < set_count; ++i) {
+    improvement_possible[i] = any_columns_possible[i] && best_costs_multi[i] == best_costs[i];
+  }
+
   bool any_multi_column = false;
   // Assign a column set to each vertical grid position.
   // While there is an unassigned range, find its mode.
   int start, end;
-  while (BiggestUnassignedRange(set_count, any_columns_possible, &start, &end)) {
+  while (BiggestUnassignedRange(set_count, improvement_possible, &start, &end)) {
     if (textord_debug_tabfind > 1) {
       tprintDebug("Biggest unassigned range = {}- {}\n", start, end);
     }
     // Find the modal column_set_id in the range.
-    int column_set_id = RangeModalColumnSet(column_set_costs, assigned_costs, start, end);
+    int column_set_id = RangeModalColumnSet(column_set_costs_multi, assigned_costs, start, end);
     if (textord_debug_tabfind > 1) {
       tprintDebug("Range modal column id = {}\n", column_set_id);
       column_sets_.at(column_set_id)->Print();
@@ -756,6 +804,14 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
       any_multi_column = true;
     }
   }
+
+  for (int part_i = 0; part_i < set_count; ++part_i) {
+    if (best_columns_[part_i] == nullptr && single_column_set != nullptr) {
+      // tprintf("Assigning single column set at %d (%dpx)\n", part_i, part_i * gridsize_);
+      best_columns_[part_i] = single_column_set;
+    }
+  }
+
   // If anything remains unassigned, the whole lot is unassigned, so
   // arbitrarily assign id 0.
   if (best_columns_[0] == nullptr) {
@@ -799,7 +855,7 @@ bool ColumnFinder::BiggestUnassignedRange(int set_count, const bool *any_columns
       }
       ++end;
     }
-    if (start < set_count && range_size > best_range_size) {
+    if (start < set_count && range_size > best_range_size && range_size > 1) {
       best_range_size = range_size;
       *best_start = start;
       *best_end = end;
