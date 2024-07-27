@@ -12,6 +12,7 @@
 #include "rect.h" 
 
 #include <leptonica/allheaders.h>
+#include <parameters/parameters.h>
 
 #include <string>
 #include <vector>
@@ -32,6 +33,8 @@
 #ifndef TESSERACT_DISABLE_DEBUG_FONTS 
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
 #endif
+
+using namespace parameters;
 
 namespace tesseract {
 
@@ -1858,7 +1861,7 @@ namespace tesseract {
         step.elapsed_ns = 0;
       }
       
-      tesseract::ParamsVectors *vec = tesseract_.params();
+      tesseract::ParamsVectorSet &vec = tesseract_->params_collective();
 
       // produce a HTML-formatted parameter usage report by using the regular way to get such a report,
       // then feed it through the NDtext-to-HTML transformer and only then write the final result in one fell swoop to file.
@@ -1887,7 +1890,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      tesseract::ParamsVectors *vec = tesseract_.params();
+      ParamsVectorSet &vec = tesseract_->params_collective();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, level, title);
     }
   }

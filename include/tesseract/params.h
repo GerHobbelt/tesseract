@@ -22,6 +22,62 @@
 #define TESSERACT_PARAMS_H
 
 #include <tesseract/export.h> // for TESS_API
+#if 01
+
+
+#include <parameters/parameters.h>
+
+namespace tesseract {
+
+using namespace ::parameters;
+
+class TFile;
+
+
+// --------------------------------------------------------------------------------------------------
+
+
+extern BOOL_VAR_H(stream_filelist);
+extern STRING_VAR_H(document_title);
+#ifdef HAVE_LIBCURL
+extern INT_VAR_H(curl_timeout);
+extern STRING_VAR_H(curl_cookiefile);
+#endif
+extern INT_VAR_H(debug_all);
+extern BOOL_VAR_H(debug_misc);
+extern BOOL_VAR_H(verbose_process);
+#if !GRAPHICS_DISABLED
+extern BOOL_VAR_H(scrollview_support);
+#endif
+extern STRING_VAR_H(vars_report_file);
+extern BOOL_VAR_H(report_all_variables);
+extern DOUBLE_VAR_H(allowed_image_memory_capacity);
+extern BOOL_VAR_H(two_pass);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#else
+
 #include <tesseract/tprintf.h> // for printf (when debugging this code)
 
 #include <cstdint>
@@ -677,6 +733,10 @@ ParamsVectors *GlobalParams();
 #define STRING_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
 
 #define DOUBLE_INIT_MEMBER(name, val, comment, vec) name(val, #name, comment, true, vec)
+
+#endif
+
+
 
 } // namespace tesseract
 

@@ -25,6 +25,7 @@
 #include "matchdefs.h"
 #include "pageres.h"
 #include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "stopper.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
@@ -219,7 +220,6 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   right_to_left_ = unicharset_.major_right_to_left();
 
 #if !DISABLED_LEGACY_ENGINE
-
   // Setup initial unichar ambigs table and read universal ambigs.
   UNICHARSET encoder_unicharset;
   encoder_unicharset.CopyFrom(unicharset_);

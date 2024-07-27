@@ -20,6 +20,10 @@
 
 #include <tesseract/params.h>
 
+
+#if 0
+
+
 #include "helpers.h"  // for chomp_string, mupdf imports, etc.: see also the header collision comment in there (MSVC-specific).
 #include "host.h"     // tesseract/export.h, windows.h for MAX_PATH
 #include "serialis.h" // for TFile
@@ -456,3 +460,6 @@ void ParamUtils::ResetToDefaults(ParamsVectors *member_params) {
 }
 
 } // namespace tesseract
+
+#endif
+

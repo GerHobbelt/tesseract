@@ -19,6 +19,8 @@
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#include <parameters/parameters.h>
+
 #include <cctype>
 #include <cmath>
 #include <cstdint> // for int16_t, int32_t

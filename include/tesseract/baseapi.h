@@ -41,6 +41,8 @@ struct Boxa;
 
 namespace tesseract {
 
+using namespace parameters;
+
 class PAGE_RES;
 class ParagraphModel;
 class BLOCK_LIST;
@@ -215,7 +217,9 @@ public:
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
-  bool SetDebugVariable(const char *name, const char *value);
+  bool SetVariable(const char *name, bool value);
+  bool SetVariable(const char *name, double value);
+  bool SetVariable(const char *name, const std::string &value);
   /**
    * @}
    */

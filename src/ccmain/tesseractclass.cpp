@@ -120,7 +120,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
                     params())
-    , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
+    , INT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
                       "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
                       "Defaults to loading and running the most accurate "
                       "available.",
@@ -130,8 +130,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", params())
     , STRING_MEMBER(tessedit_char_unblacklist, "",
                     "List of chars to override tessedit_char_blacklist.", params())
-    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.",
-                  params())
+    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.", params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
                  "Which top-line splitting process to use for Devanagari "
                  "documents while performing page-segmentation. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
@@ -188,8 +187,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                   "confuse layout analysis, determining diacritics vs noise.",
                   params())
     , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", params())
-    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.",
-                    params())
+    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
@@ -215,8 +213,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
     , DOUBLE_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
     , DOUBLE_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
-    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
-                    params())
+    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.", params())
     , DOUBLE_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
@@ -224,8 +221,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                  "bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, "
                  "bit 5 = CHECK_AMBIG_WERD)",
                  params())
-    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.",
-                  params())
+    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.", params())
     , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
     , BOOL_MEMBER(test_pt, false, "Test for point.", params())
     , DOUBLE_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
@@ -404,7 +400,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())
-    , BOOL_INIT_MEMBER(tessedit_init_config_only, false,
+    , BOOL_MEMBER(tessedit_init_config_only, false,
                        "Only initialize with the config file. Useful if the "
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",

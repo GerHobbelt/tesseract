@@ -82,6 +82,7 @@
 #include <vector>   // for std::vector
 #include <cfloat>
 
+#include <parameters/parameters.h>
 #include <leptonica/allheaders.h> // for pixDestroy, boxCreate, boxaAddBox, box...
 #ifdef HAVE_LIBCURL
 #  include <curl/curl.h>
@@ -107,6 +108,7 @@
 #include "mupdf/assertions.h"
 #endif
 
+using namespace ::parameters;
 
 namespace tesseract {
 
@@ -358,46 +360,48 @@ const std::string &TessBaseAPI::GetOutputName() {
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
   Tesseract &tess = tesseract();
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tess.params());
+  return ParamUtils::SetParam(name, value, tess.params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 bool TessBaseAPI::SetVariable(const char *name, int value) {
-  Tesseract &tess = tesseract();
-  std::string v = fmt::format("{}", value);
-  return ParamUtils::SetParam(name, v.c_str(), SET_PARAM_CONSTRAINT_NON_INIT_ONLY, tess.params());
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
-bool TessBaseAPI::SetDebugVariable(const char *name, const char *value) {
-  Tesseract &tess = tesseract();
-  return ParamUtils::SetParam(name, value, SET_PARAM_CONSTRAINT_DEBUG_ONLY, tess.params());
+bool TessBaseAPI::SetVariable(const char *name, bool value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+}
+
+bool TessBaseAPI::SetVariable(const char *name, double value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+}
+
+bool TessBaseAPI::SetVariable(const char *name, const std::string &value) {
+  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  auto *p = ParamUtils::FindParam<IntParam>(name, GlobalParams()->int_params(),
-                                            tess.params()->int_params());
-  if (p == nullptr) {
+  IntParam *p = ParamUtils::FindParam<IntParam>(name, tesseract().params_collective());
+  if (!p) {
     return false;
   }
-  *value = (int32_t)(*p);
+  *value = p->value();
   return true;
 }
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  auto *p = ParamUtils::FindParam<BoolParam>(name, GlobalParams()->bool_params(),
-                                             tess.params()->bool_params());
-  if (p == nullptr) {
+  BoolParam *p = ParamUtils::FindParam<BoolParam>(name, tesseract().params_collective());
+  if (!p) {
     return false;
   }
-  *value = bool(*p);
+  *value = p->value();
   return true;
 }
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  auto *p = ParamUtils::FindParam<StringParam>(name, GlobalParams()->string_params(),
-                                               tess.params()->string_params());
-  if (p == nullptr) {
+  StringParam *p = ParamUtils::FindParam<StringParam>(name, tesseract().params_collective());
+  if (!p) {
     return nullptr;
   }
   return p->c_str();
@@ -405,20 +409,26 @@ const char *TessBaseAPI::GetStringVariable(const char *name) const {
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  auto *p = ParamUtils::FindParam<DoubleParam>(name, GlobalParams()->double_params(),
-                                               tess.params()->double_params());
-  if (p == nullptr) {
+  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(name, tesseract().params_collective());
+  if (!p) {
     return false;
   }
-  *value = (double)(*p);
+  *value = p->value();
   return true;
 }
 
 /** Get value of named variable as a string, if it exists. */
 bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const {
-  Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  return ParamUtils::GetParamAsString(name, tess.params(), val);
+  Param *p = ParamUtils::FindParam(name, tesseract().params_collective());
+  if (p != nullptr) {
+    if (val != nullptr) {
+      *val = p->raw_value_str();
+    }
+    return true;
+  }
+  return false;
 }
+
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -463,7 +473,7 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
  */
 void TessBaseAPI::PrintVariables(FILE *fp) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  ParamUtils::PrintParams(fp, tess.params(), true);
+  ParamUtils::PrintParams(fp, tess.params_collective(), true);
 }
 
 /** 
@@ -472,7 +482,7 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
 */
 void TessBaseAPI::DumpVariables(FILE *fp) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  ParamUtils::PrintParams(fp, tess.params(), false);
+  ParamUtils::PrintParams(fp, tess.params_collective(), false);
 }
 
 // Report parameters' usage statistics, i.e. report which params have been
@@ -484,7 +494,7 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 // "Which of all those parameters are actually *relevant* to my use case today?"
 void TessBaseAPI::ReportParamsUsageStatistics() const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  const tesseract::ParamsVectors *vec = tess.params();
+  const tesseract::ParamsVectorSet &vec = tess.params_collective();
     std::string fpath = tesseract::vars_report_file;
     FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
     int section_level = tess.GetPixDebugSectionLevel();
