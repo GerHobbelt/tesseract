@@ -1605,7 +1605,7 @@ int32_t compute_row_descdrop(TO_ROW *row, float gradient, int xheight_blob_count
   if (static_cast<float>(blob_count + num_potential_asc) < xheight_blob_count * total_fraction) {
     blob_count = 0;
   }
-  int descdrop = blob_count > 0 ? -blob_index : 0;
+  int descdrop = (blob_count > 0 ? -blob_index : 0);
   if (textord_debug_xheights) {
     tprintDebug("Descdrop: {} (potential ascenders {}, descenders {})\n", descdrop, num_potential_asc,
             blob_count);

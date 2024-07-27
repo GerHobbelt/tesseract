@@ -85,7 +85,7 @@ class TessBaseAPI;
 /// desired.
 class TESS_API ImageThresholder {
 public:
-  ImageThresholder(Tesseract *tess);
+  ImageThresholder(Tesseract &tess);
   virtual ~ImageThresholder();
 
   /// Destroy the Pix if there is one, freeing memory.
@@ -218,7 +218,7 @@ protected:
                           const std::vector <int> &hi_values, Image *pix) const;
 
 private:
-  Tesseract* tesseract_;    // reference to the active instance
+  Tesseract& tesseract_;    // reference to the active instance
 
 protected:
   /// Clone or other copy of the source Pix.
