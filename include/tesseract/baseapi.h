@@ -466,7 +466,7 @@ protected:
                     FileReader reader,
                     const char *data = nullptr, size_t data_size = 0);
 
-/** @} */
+  /** @} */
 
 public:
   /**
