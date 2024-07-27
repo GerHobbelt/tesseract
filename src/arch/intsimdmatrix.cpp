@@ -94,16 +94,18 @@ void IntSimdMatrix::MatrixDotVector(const GENERIC_2D_ARRAY<int8_t> &w,
     int total2 = 0;
     int total3 = 0;
     for (int j = 0; j < num_in; ++j) {
-      total0 += wi0[j] * u[j];
-      total1 += wi1[j] * u[j];
-      total2 += wi2[j] * u[j];
-      total3 += wi3[j] * u[j];
+      int uj = u[j];
+      total0 += wi0[j] * uj;
+      total1 += wi1[j] * uj;
+      total2 += wi2[j] * uj;
+      total3 += wi3[j] * uj;
     }
     // Add in the bias and correct for integer values.
-    v[i + 0] = (total0 + wi0[num_in] * INT8_MAX) * scales[i + 0];
-    v[i + 1] = (total1 + wi1[num_in] * INT8_MAX) * scales[i + 1];
-    v[i + 2] = (total2 + wi2[num_in] * INT8_MAX) * scales[i + 2];
-    v[i + 3] = (total3 + wi3[num_in] * INT8_MAX) * scales[i + 3];
+    // V636 The 'wi0[num_in] * 127i8' expression was implicitly cast from 'int' type to 'float' type. Consider utilizing an explicit type cast to avoid overflow. An example: double A = (double)(X) * Y;. intsimdmatrix.cpp 103
+    v[i + 0] = (total0 + wi0[num_in] * int(INT8_MAX)) * scales[i + 0];
+    v[i + 1] = (total1 + wi1[num_in] * int(INT8_MAX)) * scales[i + 1];
+    v[i + 2] = (total2 + wi2[num_in] * int(INT8_MAX)) * scales[i + 2];
+    v[i + 3] = (total3 + wi3[num_in] * int(INT8_MAX)) * scales[i + 3];
   }
 
   // Capture the remainder mod four
@@ -111,10 +113,11 @@ void IntSimdMatrix::MatrixDotVector(const GENERIC_2D_ARRAY<int8_t> &w,
     const int8_t *wi = w[i];
     int total = 0;
     for (int j = 0; j < num_in; ++j) {
-      total += wi[j] * u[j];
+      int uj = u[j];
+      total += wi[j] * uj;
     }
     // Add in the bias and correct for integer values.
-    v[i] = (total + wi[num_in] * INT8_MAX) * scales[i];
+    v[i] = (total + wi[num_in] * int(INT8_MAX)) * scales[i];
   }
 }
 

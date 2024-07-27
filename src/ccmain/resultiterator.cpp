@@ -43,7 +43,6 @@ namespace tesseract {
 ResultIterator::ResultIterator(const LTRResultIterator &resit) : LTRResultIterator(resit) {
   in_minor_direction_ = false;
   at_beginning_of_minor_run_ = false;
-
   current_paragraph_is_ltr_ = CurrentParagraphIsLtr();
   MoveToLogicalStartOfTextline();
 }
