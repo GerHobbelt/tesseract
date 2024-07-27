@@ -80,6 +80,8 @@ PageIterator::PageIterator(const PageIterator &src)
 }
 
 const PageIterator &PageIterator::operator=(const PageIterator &src) {
+  //ASSERT_HOST_MSG(tesseract_ != src.tesseract_, "Software coding error: you are trying or assign/copy PageIterator instances which were created referencing different Tesseract instances.\n");
+  // ^-------- this one triggers in paragraphs.cpp@2646, hence this iterator class hierarchy MUST track the related Tesseract instance as a C++ pointer rather than a C++ &reference!
   if (this != &src) {
     page_res_ = src.page_res_;
     tesseract_ = src.tesseract_;
