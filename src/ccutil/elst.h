@@ -112,6 +112,7 @@ class TESS_API ELIST {
   friend class ELIST_ITERATOR;
 
   ELIST_LINK *last = nullptr; // End of list
+
   //(Points to head)
   ELIST_LINK *First() { // return first
     return last ? last->next : nullptr;
@@ -188,14 +189,15 @@ public:
 class TESS_API ELIST_ITERATOR {
   friend void ELIST::assign_to_sublist(ELIST_ITERATOR *, ELIST_ITERATOR *);
 
-  ELIST *list;                  // List being iterated
-  ELIST_LINK *prev;             // prev element
-  ELIST_LINK *current;          // current element
-  ELIST_LINK *next;             // next element
-  ELIST_LINK *cycle_pt;         // point we are cycling the list to.
-  bool ex_current_was_last;     // current extracted was end of list
-  bool ex_current_was_cycle_pt; // current extracted was cycle point
-  bool started_cycling;         // Have we moved off the start?
+  // V730 Not all members of a class are initialized inside the constructor. Consider inspecting: prev, current, next, cycle_pt, ex_current_was_last, ex_current_was_cycle_pt, ... elst.h 204
+  ELIST *list = nullptr;                  // List being iterated
+  ELIST_LINK *prev = nullptr;             // prev element
+  ELIST_LINK *current = nullptr;          // current element
+  ELIST_LINK *next = nullptr;             // next element
+  ELIST_LINK *cycle_pt = nullptr;         // point we are cycling the list to.
+  bool ex_current_was_last = false;       // current extracted was end of list
+  bool ex_current_was_cycle_pt = false;   // current extracted was cycle point
+  bool started_cycling = false;           // Have we moved off the start?
 
   ELIST_LINK *extract_sublist(   // from this current...
       ELIST_ITERATOR *other_it); // to other current
@@ -576,6 +578,12 @@ inline void ELIST_ITERATOR::add_list_before(ELIST *list_to_add) {
       list->last = list_to_add->last;
       prev = list->last;
       current = list->First();
+#ifndef NDEBUG
+      // V522 There might be dereferencing of a potential null pointer 'current'. elst.h 579
+      if (!current) {
+        BAD_PARAMETER.abort("ELIST_ITERATOR::add_list_before", "current is nullptr");
+      }
+#endif
       next = current->next;
       ex_current_was_last = false;
     } else {

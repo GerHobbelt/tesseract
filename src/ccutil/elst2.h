@@ -519,6 +519,12 @@ inline void ELIST2_ITERATOR::add_list_after(ELIST2 *list_to_add) {
     } else {
       if (current) { // not extracted
         current->next = list_to_add->First();
+#ifndef NDEBUG
+        // V522 There might be dereferencing of a potential null pointer 'current->next'. elst2.h 522
+        if (!current->next) {
+          BAD_PARAMETER.abort("ELIST2_ITERATOR::add_list_after", "current->next is nullptr");
+        }
+#endif
         current->next->prev = current;
         if (current == list->last) {
           list->last = list_to_add->last;
@@ -528,6 +534,12 @@ inline void ELIST2_ITERATOR::add_list_after(ELIST2 *list_to_add) {
         next = current->next;
       } else { // current extracted
         prev->next = list_to_add->First();
+#ifndef NDEBUG
+        // V522 There might be dereferencing of a potential null pointer 'prev->next'. elst2.h 531
+        if (!prev->next) {
+          BAD_PARAMETER.abort("ELIST2_ITERATOR::add_list_after", "prev->next is nullptr");
+        }
+#endif
         prev->next->prev = prev;
         if (ex_current_was_last) {
           list->last = list_to_add->last;
@@ -565,10 +577,22 @@ inline void ELIST2_ITERATOR::add_list_before(ELIST2 *list_to_add) {
       list->last = list_to_add->last;
       prev = list->last;
       current = list->First();
+#ifndef NDEBUG
+      // V522 There might be dereferencing of a potential null pointer 'current'. elst2.h 568
+      if (!current) {
+        BAD_PARAMETER.abort("ELIST2_ITERATOR::add_list_before", "current is nullptr");
+      }
+#endif
       next = current->next;
       ex_current_was_last = false;
     } else {
       prev->next = list_to_add->First();
+#ifndef NDEBUG
+      // V522 There might be dereferencing of a potential null pointer 'prev->next'. elst2.h 572
+      if (!prev->next) {
+        BAD_PARAMETER.abort("ELIST2_ITERATOR::add_list_before", "prev->next is nullptr");
+      }
+#endif
       prev->next->prev = prev;
 
       if (current) { // not extracted

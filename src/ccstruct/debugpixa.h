@@ -20,6 +20,15 @@ namespace tesseract {
   class TESS_API Tesseract;
   class TESS_API TBOX;
 
+  enum Image4WebOutputType : int {
+    IMG4W_PNG = 0,
+    IMG4W_JPEG,
+    IMG4W_WEBP,
+    IMG4W_WEBP_LOSSLESS,
+    IMG4W_TIFF,
+    IMG4W_BMP,
+  };
+
   // Class to hold a Pixa collection of debug images with captions and save them
   // to a PDF file.
   // The class MAY also store additional diagnostic information, that's interspersed
@@ -27,7 +36,7 @@ namespace tesseract {
   class DebugPixa {
   public:
     // TODO(rays) add another constructor with size control.
-    DebugPixa(Tesseract* tess);
+    DebugPixa(Tesseract& tess);
 
     // If the filename_ has been set and there are any debug images, they are
     // written to the set filename_.
@@ -109,7 +118,7 @@ namespace tesseract {
     };
 
   private:
-    Tesseract* tesseract_;   // reference to the driving tesseract instance
+    Tesseract& tesseract_;   // reference to the driving tesseract instance
 
   private:
     // The collection of images to put in the PDF.
@@ -171,7 +180,7 @@ namespace tesseract {
 
   class AutoPopDebugSectionLevel {
   public:
-    AutoPopDebugSectionLevel(Tesseract *tess, int section_handle)
+    AutoPopDebugSectionLevel(Tesseract &tess, int section_handle)
         : section_handle_(section_handle), tesseract_(tess) {}
 
     // auto-pop via end-of-scope i.e. object destructor:
@@ -181,7 +190,7 @@ namespace tesseract {
     void pop();
 
   protected:
-    Tesseract *tesseract_;
+    Tesseract &tesseract_;
     int section_handle_;
   };
 
