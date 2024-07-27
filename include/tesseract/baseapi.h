@@ -353,7 +353,7 @@ public:
            const std::vector<std::string> *vars_values,
            bool set_only_non_debug_params, FileReader reader);
 
-/** @} */
+  /** @} */
 
   /**
    * Returns the languages string used in the last valid initialization.
