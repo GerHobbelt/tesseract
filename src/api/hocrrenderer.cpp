@@ -451,7 +451,7 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
       bcnt++;
     }
   }
-word_end:
+  // V729 Function body contains the 'word_end' label that is not used by any 'goto' statements. hocrrenderer.cpp 454
   hocr_str << "  </div>\n";
 
   return copy_string(hocr_str.str());
