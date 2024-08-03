@@ -139,10 +139,11 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   }
 
   // Setup the trainer.
+  tesseract::TessBaseAPI api;
   std::string checkpoint_file = training_model_output;
   checkpoint_file += "_checkpoint";
   std::string checkpoint_bak = checkpoint_file + ".bak";
-  tesseract::LSTMTrainer trainer(training_model_output, checkpoint_file,
+  tesseract::LSTMTrainer trainer(api.tesseract(), training_model_output, checkpoint_file,
                                  training_debug_interval,
                                  static_cast<int64_t>(training_max_image_MB) * 1048576);
 #if !defined(NDEEBUG)

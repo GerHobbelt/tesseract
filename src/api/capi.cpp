@@ -231,7 +231,7 @@ BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle, const char *filen
 
 int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     char **vars_values, size_t vars_vec_size) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -241,13 +241,12 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
     }
   }
 
-  return handle->InitFull(datapath, language, mode, configs, configs_size, &varNames, &varValues,
-                      set_only_non_debug_params != 0);
+  return handle->InitFull(datapath, language, mode, configs, configs_size, &varNames, &varValues);
 }
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode oem, const char **configs, int configs_size) {
-  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
+  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,
@@ -261,7 +260,7 @@ int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath, const char *lang
 
 int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const char *language,
                      TessOcrEngineMode mode, const char **configs, int configs_size, char **vars_vec,
-                     char **vars_values, size_t vars_vec_size, BOOL set_only_non_debug_params) {
+                     char **vars_values, size_t vars_vec_size) {
   std::vector<std::string> varNames;
   std::vector<std::string> varValues;
   if (vars_vec != nullptr && vars_values != nullptr) {
@@ -272,7 +271,7 @@ int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size, const
   }
 
   return handle->InitFullWithReader(data, data_size, language, mode, configs, configs_size, &varNames, &varValues,
-                      set_only_non_debug_params != 0, nullptr);
+                      nullptr);
 }
 
 const char *TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI *handle) {

@@ -44,14 +44,14 @@ static int list_components(TessdataManager &tm, const char *filename) {
   return EXIT_SUCCESS;
 }
 
-static int list_network(TessdataManager &tm, const char *filename, int tess_debug_lstm) {
+static int list_network(TessBaseAPI &api, TessdataManager &tm, const char *filename, int tess_debug_lstm) {
   if (filename != nullptr && !tm.Init(filename)) {
     tprintError("Failed to read {}\n", filename);
     return EXIT_FAILURE;
   }
   tesseract::TFile fp;
   if (tm.GetComponent(tesseract::TESSDATA_LSTM, &fp)) {
-    tesseract::LSTMRecognizer recognizer(nullptr);
+    tesseract::LSTMRecognizer recognizer(api.tesseract());
     recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintError("Failed to deserialize LSTM in {}!\n", filename);
@@ -136,6 +136,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
 
   int i;
   tesseract::TessdataManager tm;
+  tesseract::TessBaseAPI api;
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
     tprintInfo("{}\n", tesseract::TessBaseAPI::Version());
     return EXIT_SUCCESS;
@@ -220,7 +221,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       tprintError("No LSTM Component found in {}!\n", argv[2]);
       return EXIT_FAILURE;
     }
-    tesseract::LSTMRecognizer recognizer(nullptr);
+    tesseract::LSTMRecognizer recognizer(api.tesseract());
     recognizer.SetDebug(tess_debug_lstm);
     if (!recognizer.DeSerialize(&tm, &fp)) {
       tprintError("Failed to deserialize LSTM in {}!\n", argv[2]);
@@ -239,15 +240,15 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
   } else if (argc == 3 && strcmp(argv[1], "-d") == 0) {
     return list_components(tm, argv[2]);
   } else if (argc == 3 && strcmp(argv[1], "-l") == 0) {
-    return list_network(tm, argv[2], tess_debug_lstm);
+    return list_network(api, tm, argv[2], tess_debug_lstm);
   } else if (argc == 3 && strcmp(argv[1], "-dl") == 0) {
     int result = list_components(tm, argv[2]);
     if (result == EXIT_SUCCESS) {
-      result = list_network(tm, nullptr, tess_debug_lstm);
+      result = list_network(api, tm, nullptr, tess_debug_lstm);
     }
     return result;
   } else if (argc == 3 && strcmp(argv[1], "-ld") == 0) {
-    int result = list_network(tm, argv[2], tess_debug_lstm);
+    int result = list_network(api, tm, argv[2], tess_debug_lstm);
     if (result == EXIT_SUCCESS) {
       result = list_components(tm, nullptr);
     }

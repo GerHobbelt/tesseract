@@ -59,7 +59,7 @@ const float LanguageModel::kMaxAvgNgramCost = 25.0f;
 LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict *dict)
     : INT_MEMBER(language_model_debug_level, 0, "Language model debug level (0..7)",
                  dict->getCCUtil()->params())
-    , BOOL_INIT_MEMBER(language_model_ngram_on, false,
+    , BOOL_MEMBER(language_model_ngram_on, false,
                        "Turn on/off the use of character ngram model", dict->getCCUtil()->params())
     , INT_MEMBER(language_model_ngram_order, 8, "Maximum order of the character ngram model",
                  dict->getCCUtil()->params())
@@ -118,7 +118,7 @@ LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict 
                     dict->getCCUtil()->params())
     , BOOL_MEMBER(wordrec_display_segmentations, false, "Display Segmentations (ScrollView)",
                  dict->getCCUtil()->params())
-    , BOOL_INIT_MEMBER(language_model_use_sigmoidal_certainty, false,
+    , BOOL_MEMBER(language_model_use_sigmoidal_certainty, false,
                        "Use sigmoidal score for certainty", dict->getCCUtil()->params())
     , dawg_args_(nullptr, new DawgPositionVector(), NO_PERM)
     , fontinfo_table_(fontinfo_table)

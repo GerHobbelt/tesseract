@@ -966,7 +966,7 @@ extern "C" int tesseract_main(int argc, const char **argv)
     }
 
     int config_count = argc - arg_i;
-    const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values, false);
+    const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values);
 
     if (init_failed) {
       tprintError("Could not initialize tesseract.\n");

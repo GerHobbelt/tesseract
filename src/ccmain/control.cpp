@@ -48,6 +48,7 @@
 #include "pixProcessing.h" 
 
 const char *const kBackUpConfigFile = "tempconfigdata.config";
+
 #if !DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
 // original x-height
