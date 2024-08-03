@@ -241,7 +241,7 @@ bool LSTMRecognizer::LoadDictionary(const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&tesseract_);
-  ParamsVectors *params = tesseract_.params();
+  ParamsVector &params = tesseract_.params();
   dict_->user_words_file.ResetFrom(params);
   dict_->user_words_suffix.ResetFrom(params);
   dict_->user_patterns_file.ResetFrom(params);

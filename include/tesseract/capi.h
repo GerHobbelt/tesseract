@@ -212,8 +212,6 @@ TESS_API void TessBaseAPISetOutputName(TessBaseAPI *handle, const char *name);
 
 TESS_API BOOL TessBaseAPISetVariable(TessBaseAPI *handle, const char *name,
                                      const char *value);
-TESS_API BOOL TessBaseAPISetDebugVariable(TessBaseAPI *handle, const char *name,
-                                          const char *value);
 
 TESS_API BOOL TessBaseAPIGetIntVariable(const TessBaseAPI *handle,
                                         const char *name, int *value);

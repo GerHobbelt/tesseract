@@ -176,10 +176,6 @@ BOOL TessBaseAPISetVariable(TessBaseAPI *handle, const char *name, const char *v
   return static_cast<int>(handle->SetVariable(name, value));
 }
 
-BOOL TessBaseAPISetDebugVariable(TessBaseAPI *handle, const char *name, const char *value) {
-  return static_cast<int>(handle->SetDebugVariable(name, value));
-}
-
 BOOL TessBaseAPIGetIntVariable(const TessBaseAPI *handle, const char *name, int *value) {
   return static_cast<int>(handle->GetIntVariable(name, value));
 }
