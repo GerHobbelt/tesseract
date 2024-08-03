@@ -1861,7 +1861,7 @@ namespace tesseract {
         step.elapsed_ns = 0;
       }
       
-      tesseract::ParamsVectorSet &vec = tesseract_->params_collective();
+      tesseract::ParamsVectorSet &vec = tesseract_.params_collective();
 
       // produce a HTML-formatted parameter usage report by using the regular way to get such a report,
       // then feed it through the NDtext-to-HTML transformer and only then write the final result in one fell swoop to file.
@@ -1890,7 +1890,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      ParamsVectorSet &vec = tesseract_->params_collective();
+      ParamsVectorSet &vec = tesseract_.params_collective();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, level, title);
     }
   }

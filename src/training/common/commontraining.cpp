@@ -157,7 +157,7 @@ int ParseArguments(int *argc, const char ***argv) {
   // Set additional parameters from config file if specified.
   if (!trainer_configfile.empty()) {
     ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, ccutil->params());
+    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), ccutil->params());
   }
   return rv;
 }

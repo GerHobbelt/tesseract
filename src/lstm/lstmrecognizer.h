@@ -28,6 +28,7 @@
 #include "series.h"
 #include "unicharcompress.h"
 #include "genericvector.h"     // for PointerVector (ptr only)
+#include "tesseractclass.h"
 
 class BLOB_CHOICE_IT;
 struct Pix;
@@ -52,7 +53,7 @@ enum TrainingFlags {
 class TESS_API LSTMRecognizer {
 public:
   // Takes an OPTIONAL instance reference for internal diagnostics use.
-  LSTMRecognizer(Tesseract *tess);
+  LSTMRecognizer(Tesseract &tess);
   LSTMRecognizer() = delete;
   //LSTMRecognizer(const std::string &language_data_path_prefix);
   ~LSTMRecognizer();
@@ -192,10 +193,10 @@ public:
 
   // Provides access to the UNICHARSET that this classifier works with.
   const UNICHARSET &GetUnicharset() const {
-    return ccutil_.unicharset_;
+    return tesseract_.unicharset_;
   }
   UNICHARSET &GetUnicharset() {
-    return ccutil_.unicharset_;
+    return tesseract_.unicharset_;
   }
   // Provides access to the UnicharCompress that this classifier works with.
   const UnicharCompress &GetRecoder() const {
@@ -225,7 +226,7 @@ public:
   }
 
   // Loads a model from mgr, including the dictionary only if lang is not null.
-  bool Load(const ParamsVectors *params, const std::string &lang, TessdataManager *mgr);
+  bool Load(const std::string &lang, TessdataManager *mgr);
 
   // Writes to the given file. Returns false in case of error.
   // If mgr contains a unicharset and recoder, then they are not encoded to fp.
@@ -247,7 +248,7 @@ public:
   // on the unicharset matching. This enables training to deserialize a model
   // from checkpoint or restore without having to go back and reload the
   // dictionary.
-  bool LoadDictionary(const ParamsVectors *params, const std::string &lang, TessdataManager *mgr);
+  bool LoadDictionary(const std::string &lang, TessdataManager *mgr);
 
   // Recognizes the line image, contained within image_data, returning the
   // recognized tesseract WERD_RES for the words.
@@ -337,14 +338,13 @@ protected:
   const char *DecodeSingleLabel(int label);
 
 protected:
-  // OPTIONAL reference to the active Tesseract instance where LSTM/Input
+  // Reference to the active Tesseract instance where LSTM/Input
   // internal diagnostics should be sent to.
-  Tesseract *tesseract_;
+  // Also provides the unicharset. Only the unicharset element is serialized.
+  // Has to be a CCUtil deriv class, so Dict can point to it.
+  Tesseract &tesseract_;
   // The network hierarchy.
   Network *network_;
-  // The unicharset. Only the unicharset element is serialized.
-  // Has to be a CCUtil, so Dict can point to it.
-  CCUtil ccutil_;
   // For backward compatibility, recoder_ is serialized iff
   // training_flags_ & TF_COMPRESS_UNICHARSET.
   // Further encode/decode ccutil_.unicharset's ids to simplify the unicharset.

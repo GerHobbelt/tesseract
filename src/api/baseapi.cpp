@@ -380,7 +380,7 @@ bool TessBaseAPI::SetVariable(const char *name, const std::string &value) {
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  IntParam *p = ParamUtils::FindParam<IntParam>(name, tesseract().params_collective());
+  IntParam *p = ParamUtils::FindParam<IntParam>(name, tess.params_collective());
   if (!p) {
     return false;
   }
@@ -390,7 +390,7 @@ bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
 
 bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  BoolParam *p = ParamUtils::FindParam<BoolParam>(name, tesseract().params_collective());
+  BoolParam *p = ParamUtils::FindParam<BoolParam>(name, tess.params_collective());
   if (!p) {
     return false;
   }
@@ -400,7 +400,7 @@ bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
 
 const char *TessBaseAPI::GetStringVariable(const char *name) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  StringParam *p = ParamUtils::FindParam<StringParam>(name, tesseract().params_collective());
+  StringParam *p = ParamUtils::FindParam<StringParam>(name, tess.params_collective());
   if (!p) {
     return nullptr;
   }
@@ -409,7 +409,7 @@ const char *TessBaseAPI::GetStringVariable(const char *name) const {
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(name, tesseract().params_collective());
+  DoubleParam *p = ParamUtils::FindParam<DoubleParam>(name, tess.params_collective());
   if (!p) {
     return false;
   }
@@ -419,7 +419,8 @@ bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
 
 /** Get value of named variable as a string, if it exists. */
 bool TessBaseAPI::GetVariableAsString(const char *name, std::string *val) const {
-  Param *p = ParamUtils::FindParam(name, tesseract().params_collective());
+  Tesseract &tess = const_cast<Tesseract &>(tesseract());
+  Param *p = ParamUtils::FindParam(name, tess.params_collective());
   if (p != nullptr) {
     if (val != nullptr) {
       *val = p->raw_value_str();
@@ -519,29 +520,28 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
  */
 int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
                       int configs_size, const std::vector<std::string> *vars_vec,
-                      const std::vector<std::string> *vars_values, bool set_only_non_debug_params) {
+                      const std::vector<std::string> *vars_values) {
   return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
-              set_only_non_debug_params, nullptr);
+              nullptr);
 }
 
 int TessBaseAPI::InitFull(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
                           int configs_size, const std::vector<std::string> *vars_vec,
-                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader) {
+                          const std::vector<std::string> *vars_values, FileReader reader) {
   return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
-                            set_only_non_debug_params, reader);
+                            reader);
 }
 
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem) {
-  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false);
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr);
 }
 
 int TessBaseAPI::InitOem(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader) {
-  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false, reader);
+  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, reader);
 }
 
 int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
-  return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr,
-                false);
+  return InitFull(datapath, language, OEM_DEFAULT, nullptr, 0, nullptr, nullptr);
 }
 
 // In-memory version reads the traineddata file directly from the given
@@ -549,7 +549,7 @@ int TessBaseAPI::InitSimple(const char *datapath, const char *language) {
 // flagged by data_size = 0.
 int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char *language, OcrEngineMode oem,
                       const char **configs, int configs_size, const std::vector<std::string> *vars_vec,
-                      const std::vector<std::string> *vars_values, bool set_only_non_debug_params,
+                      const std::vector<std::string> *vars_values,
                       FileReader reader) {
   if (language == nullptr || language[0] == 0) {
     language = "";
@@ -583,7 +583,7 @@ int TessBaseAPI::InitFullWithReader(const char *data, int data_size, const char 
   (void)Monitor().set_progress(0.0).exec_progress_func();
 
   if (tess.init_tesseract(datapath, output_file_, language, oem, configs,
-                                  configs_size, vars_vec, vars_values, set_only_non_debug_params,
+                                  configs_size, vars_vec, vars_values,
                                   &mgr) != 0) {
     return -1;
   }
@@ -695,7 +695,7 @@ void TessBaseAPI::InitForAnalysePage() {
  */
 void TessBaseAPI::ReadConfigFile(const char *filename) {
   Tesseract &tess = tesseract();
-  tess.read_config_file(filename, SET_PARAM_CONSTRAINT_NON_INIT_ONLY);
+  tess.read_config_file(filename);
 }
 
 /**
@@ -3046,7 +3046,7 @@ int TessBaseAPI::FindLines() {
         osd_tesseract_ = nullptr;
         // V522 Dereferencing of the null pointer 'osd_tess' might take place. baseapi.cpp 3017
       } else if (osd_tesseract_ != nullptr && osd_tesseract_->init_tesseract(datapath_, "", "osd", OEM_TESSERACT_ONLY,
-                                                nullptr, 0, nullptr, nullptr, false, &mgr) == 0) {
+                                                nullptr, 0, nullptr, nullptr, &mgr) == 0) {
         osd_tess = osd_tesseract_;
         ASSERT0(osd_tess != nullptr);
         ASSERT0(thresholder_ != nullptr);

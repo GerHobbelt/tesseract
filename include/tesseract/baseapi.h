@@ -326,22 +326,19 @@ public:
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
    *
-   * If set_only_non_debug_params is true, only params that do not contain
-   * "debug" in the name will be set.
-   *
    * @{
    */
   int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
            const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
-           bool set_only_non_debug_params);
+           const std::vector<std::string> *vars_values
+  );
 
   int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
                const char **configs, int configs_size,
                const std::vector<std::string> *vars_vec,
                const std::vector<std::string> *vars_values,
-               bool set_only_non_debug_params, FileReader reader);
+               FileReader reader);
 
   int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
 
@@ -355,7 +352,7 @@ public:
            OcrEngineMode mode, const char **configs, int configs_size,
            const std::vector<std::string> *vars_vec,
            const std::vector<std::string> *vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+           FileReader reader);
 
   /** @} */
 
