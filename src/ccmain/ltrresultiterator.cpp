@@ -137,6 +137,10 @@ float LTRResultIterator::Confidence(PageIteratorLevel level) const {
       best_choice = res_it.word()->best_choice;
       mean_certainty = best_choice->certainty(blob_index_);
       certainty_count = 1;
+	  break;
+	default:
+	  ASSERT_HOST_MSG(false, "Should never get here.");
+	  break;
   }
   if (certainty_count > 0) {
     mean_certainty /= certainty_count;
