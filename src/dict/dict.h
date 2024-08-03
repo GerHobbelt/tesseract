@@ -315,7 +315,7 @@ public:
   /// Returns false if the best choice for the current word is questionable
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
-  bool AcceptableResult(WERD_RES *word) const;
+  bool AcceptableResult(const WERD_RES *word) const;
 #if !DISABLED_LEGACY_ENGINE
   void EndDangerousAmbigs();
 #endif // !DISABLED_LEGACY_ENGINE

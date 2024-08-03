@@ -112,10 +112,14 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
   }
 }
 
-bool Dict::AcceptableResult(WERD_RES *word) const {
+bool Dict::AcceptableResult(const WERD_RES *word) const {
   if (word->best_choice == nullptr) {
     return false;
   }
+  if (stopper_no_acceptable_choices) {
+    return false;
+  }
+
   float CertaintyThreshold = stopper_nondict_certainty_base - reject_offset_;
   int WordSize;
 
@@ -133,10 +137,9 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
   if (valid_word(*word->best_choice) && case_ok(*word->best_choice)) {
     WordSize = LengthOfShortestAlphaRun(*word->best_choice);
     WordSize -= stopper_smallword_size;
-    if (WordSize < 0) {
-      WordSize = 0;
+    if (WordSize > 0) {
+      CertaintyThreshold += WordSize * stopper_certainty_per_char;
     }
-    CertaintyThreshold += WordSize * stopper_certainty_per_char;
   }
 
   if (stopper_debug_level >= 1) {
@@ -144,7 +147,7 @@ bool Dict::AcceptableResult(WERD_RES *word) const {
             CertaintyThreshold);
   }
 
-  if (word->best_choice->certainty() > CertaintyThreshold && !stopper_no_acceptable_choices) {
+  if (word->best_choice->certainty() > CertaintyThreshold) {
     if (stopper_debug_level >= 1) {
       tprintDebug("ACCEPTED\n");
     }
