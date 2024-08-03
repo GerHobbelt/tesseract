@@ -90,7 +90,9 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  int rv = ParseArguments(&argc, &argv);
+  tesseract::TessBaseAPI api;
+
+  int rv = ParseArguments(api, &argc, &argv);
   if (rv >= 0) {
     return rv;
   }
@@ -139,7 +141,6 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   }
 
   // Setup the trainer.
-  tesseract::TessBaseAPI api;
   std::string checkpoint_file = training_model_output;
   checkpoint_file += "_checkpoint";
   std::string checkpoint_bak = checkpoint_file + ".bak";

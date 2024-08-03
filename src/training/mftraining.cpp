@@ -201,7 +201,9 @@ extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
 {
   tesseract::CheckSharedLibraryVersion();
 
-  int rv = ParseArguments(&argc, &argv);
+  tesseract::TessBaseAPI api;
+
+  int rv = ParseArguments(api, &argc, &argv);
   if (rv >= 0) {
     return rv;
   }

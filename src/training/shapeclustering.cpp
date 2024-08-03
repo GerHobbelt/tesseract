@@ -55,7 +55,9 @@ extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** a
 {
   tesseract::CheckSharedLibraryVersion();
 
-  ParseArguments(&argc, &argv);
+  tesseract::TessBaseAPI api;
+
+  ParseArguments(api, &argc, &argv);
 
   std::string file_prefix;
   auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
