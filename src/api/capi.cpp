@@ -246,7 +246,7 @@ int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath, const char *lang
 
 int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath, const char *language,
                      TessOcrEngineMode oem, const char **configs, int configs_size) {
-  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr, false);
+  return handle->InitFull(datapath, language, oem, configs, configs_size, nullptr, nullptr);
 }
 
 int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath, const char *language,

@@ -51,7 +51,7 @@ const double kCertOffset = -0.085;
 //  ccutil_.language_data_path_prefix = language_data_path_prefix;
 //}
 
-LSTMRecognizer::LSTMRecognizer(Tesseract *tess)
+LSTMRecognizer::LSTMRecognizer(Tesseract &tess)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -88,7 +88,7 @@ void LSTMRecognizer::Clean() {
 }
 
 // Loads a model from mgr, including the dictionary only if lang is not null.
-bool LSTMRecognizer::Load(const ParamsVectors *params, const std::string &lang,
+bool LSTMRecognizer::Load(const std::string &lang,
                           TessdataManager *mgr) {
   TFile fp;
   if (!mgr->GetComponent(TESSDATA_LSTM, &fp)) {
@@ -101,7 +101,7 @@ bool LSTMRecognizer::Load(const ParamsVectors *params, const std::string &lang,
     return true;
   }
   // Allow it to run without a dictionary.
-  LoadDictionary(params, lang, mgr);
+  LoadDictionary(lang, mgr);
   return true;
 }
 
@@ -241,6 +241,7 @@ bool LSTMRecognizer::LoadDictionary(const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&tesseract_);
+  ParamsVectors *params = tesseract_.params();
   dict_->user_words_file.ResetFrom(params);
   dict_->user_words_suffix.ResetFrom(params);
   dict_->user_patterns_file.ResetFrom(params);
