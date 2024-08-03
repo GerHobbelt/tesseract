@@ -12,6 +12,7 @@
 
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
+#include <tesseract/tprintf.h>
 
 #include "ccutil.h"
 #include "winutils.h"
