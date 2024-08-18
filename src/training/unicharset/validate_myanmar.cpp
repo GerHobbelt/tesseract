@@ -101,6 +101,14 @@ bool ValidateMyanmar::ConsumeOptionalSignsIfPresent() {
       }
     }
   }
+  
+  // Allow 0x103a (Asat) followed by 0x1039 (Virama)
+  if (codes_[codes_used_].second == 0x103a && codes_[codes_used_ + 1].second == 0x1039) {
+    if (UseMultiCode(2)) {
+      return true;
+    }
+  }
+  
   // Vowel sign i, ii, ai.
   char32 ch = codes_[codes_used_].second;
   if (ch == 0x102d || ch == 0x102e || ch == 0x1032) {
