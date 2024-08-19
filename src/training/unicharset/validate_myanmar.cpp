@@ -85,6 +85,15 @@ bool ValidateMyanmar::ConsumeSubscriptIfPresent() {
 // Helper consumes/copies a series of optional signs.
 // Returns true if the end of input is reached.
 bool ValidateMyanmar::ConsumeOptionalSignsIfPresent() {
+  // An exception for asat followed by virama
+  const unsigned num_codes = codes_.size();
+
+  if (codes_used_ + 1 < num_codes && codes_[codes_used_].second == 0x103a && 
+      codes_[codes_used_ + 1].second == 0x1039) {
+    if (UseMultiCode(2)) {
+      return true;
+    }
+  }
   // The following characters are allowed, all optional, and in sequence.
   // An exception is kMyanmarMedialYa, which can include kMyanmarAsat.
   const std::vector<char32> kMedials({kMyanmarAsat, kMyanmarMedialYa, 0x103c, 0x103d, 0x103e,
@@ -99,13 +108,6 @@ bool ValidateMyanmar::ConsumeOptionalSignsIfPresent() {
           return true;
         }
       }
-    }
-  }
-  
-  // Allow 0x103a (Asat) followed by 0x1039 (Virama)
-  if (codes_[codes_used_].second == 0x103a && codes_[codes_used_ + 1].second == 0x1039) {
-    if (UseMultiCode(2)) {
-      return true;
     }
   }
   
