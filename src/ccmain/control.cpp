@@ -1648,10 +1648,10 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
     tprintWarn("no best words!!\n");
   }
   if (tessedit_timing_debug) {
-    tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} sec)\n",
+    tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} ms)\n",
             mdqstr(word_data->word->best_choice->unichar_string()),
         word_data->word->word->bounding_box().print_to_str(),
-            clock.get_elapsed_sec());
+            clock.get_elapsed_ms());
   }
 }
 
