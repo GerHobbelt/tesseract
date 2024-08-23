@@ -1593,7 +1593,9 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
   plf::nanotimer clock;
-  clock.start();
+  if (tessedit_timing_debug) {
+    clock.start();
+  }
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
     TBOX bbox = word->word->bounding_box();
