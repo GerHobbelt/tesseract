@@ -19,10 +19,6 @@
 #include "pathutils.h"
 #include "helpers.h"
 
-#if defined(_WIN32)
-#  include <io.h> // for _access
-#endif
-
 #include <cstdlib>
 #include <cstring>    // for std::strrchrA
 #include <filesystem> // for std::filesystem
@@ -189,7 +185,7 @@ static bool determine_datadir(std::string &datadir, const std::string &argv0, co
   }
 
 #if defined(_WIN32)
-  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  if (datadir.empty() || !std::filesystem::exists(datadir)) {
     /* Look for tessdata in directory of executable. */
     wchar_t pth[MAX_PATH];
     DWORD length = GetModuleFileNameW(nullptr, pth, MAX_PATH);
