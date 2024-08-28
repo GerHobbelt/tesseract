@@ -45,7 +45,7 @@
 #include "polyblk.h"         // for POLY_BLOCK
 #include "rect.h"            // for TBOX
 #include "stepblob.h"        // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
-#include "tessdatamanager.h" // for TessdataManager, kTrainedDataSuffix
+#include "tessdatamanager.h" // for TessdataManager
 #include "tesseractclass.h"  // for Tesseract
 #include <tesseract/tprintf.h>         // for tprintf
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
