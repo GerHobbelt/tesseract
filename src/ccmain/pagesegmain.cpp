@@ -107,6 +107,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
     auto lastdot = name.find_last_of('.');
     if (lastdot != std::string::npos) {
       name.resize(lastdot);
+	}
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode) && !name.empty()) {
     read_unlv_file(name, width, height, blocks);
