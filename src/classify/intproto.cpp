@@ -18,7 +18,9 @@
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES // for M_PI
+#endif
 
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
