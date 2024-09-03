@@ -286,7 +286,7 @@ void ColumnFinder::CorrectOrientation(TO_BLOCK *block, bool vertical_text_lines,
 int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int scaled_factor,
                              TO_BLOCK *input_block, Image photo_mask_pix, Image thresholds_pix,
                              Image grey_pix, DebugPixa *pixa_debug, BLOCK_LIST *blocks,
-                             BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks) {
+                             BLOBNBOX_LIST *diacritic_blobs, TO_BLOCK_LIST *to_blocks, std::vector<StructuredTable*> &tables) {
   photo_mask_pix |= nontext_map_;
   stroke_width_->FindLeaderPartitions(input_block, &part_grid_);
   stroke_width_->RemoveLineResidue(&big_parts_);
@@ -419,7 +419,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
       // insert dot-like noise into period_grid_
       table_finder.InsertCleanPartitions(&part_grid_, input_block);
       // Get Table Regions
-      table_finder.LocateTables(&part_grid_, best_columns_, WidthCB(), reskew_);
+      tables = table_finder.LocateTables(&part_grid_, best_columns_, WidthCB(), reskew_);
     }
     GridRemoveUnderlinePartitions();
     part_grid_.DeleteUnknownParts(input_block);
