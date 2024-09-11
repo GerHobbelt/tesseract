@@ -16,6 +16,7 @@ jobs:
         run: |
           ./autogen.sh
           ./linux_build.sh
+          ./download_tessdata.sh
       - name: Package output
         run: tar -czvf anzen-tesseract-linux-amd64.tar.gz -C build-out .
       - name: Save output
@@ -35,6 +36,7 @@ jobs:
         run: |
           ./autogen.sh
           ./macos_build.sh
+          ./download_tessdata.sh
       - name: Package output
         run: tar -czvf anzen-tesseract-macos-arm64.tar.gz -C build-out .
       - name: Save output
