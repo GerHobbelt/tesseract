@@ -36,12 +36,12 @@ jobs:
           ./autogen.sh
           ./macos_build.sh
       - name: Package output
-        run: tar -czvf anzen-tesseract-macos-amd64.tar.gz -C build-out .
+        run: tar -czvf anzen-tesseract-macos-arm64.tar.gz -C build-out .
       - name: Save output
         uses: actions/upload-artifact@v4
         with:
-          name: anzen-tesseract-macos-amd64
-          path: anzen-tesseract-macos-amd64.tar.gz
+          name: anzen-tesseract-macos-arm64
+          path: anzen-tesseract-macos-arm64.tar.gz
 
   create-release:
     needs: [build-linux, build-macos]
