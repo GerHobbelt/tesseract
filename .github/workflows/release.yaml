@@ -6,8 +6,16 @@ on:
   
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - platform: linux-amd64
+            runs-on: ubuntu-latest
+          - platform: linux-arm64
+            runs-on: ubuntu-24-arm64
+
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -18,12 +26,12 @@ jobs:
           ./linux_build.sh
           ./download_tessdata.sh
       - name: Package output
-        run: tar -czvf anzen-tesseract-linux-amd64.tar.gz -C build-out .
+        run: tar -czvf anzen-tesseract-${{ matrix.platform }}.tar.gz -C build-out .
       - name: Save output
         uses: actions/upload-artifact@v4
         with:
-          name: anzen-tesseract-linux-amd64
-          path: anzen-tesseract-linux-amd64.tar.gz
+          name: anzen-tesseract-${{ matrix.platform }}
+          path: anzen-tesseract-${{ matrix.platform }}.tar.gz
 
   build-macos:
     runs-on: macos-latest
