@@ -85,6 +85,7 @@ tessdata_*
 
 # build dirs
 /build*
+!/build.sh
 /*.dll
 /*.lib
 /*.exe
