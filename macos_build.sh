@@ -6,7 +6,12 @@ mkdir -p build build-out
 
 cd build
 
-../configure --disable-openmp --prefix=$(realpath ../build-out) --disable-doc
+../configure \
+    --disable-openmp \
+    --disable-graphics \
+    --disable-doc \
+    --disable-cpu-optimizations \
+    --prefix=$(realpath ../build-out)
 
 make
 make install

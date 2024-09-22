@@ -10,6 +10,8 @@ cd build
     LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,--disable-new-dtags" \
     --disable-openmp \
     --disable-doc \
+    --disable-graphics \
+    --disable-cpu-optimizations \
     --prefix=$(realpath ../build-out)
 
 make
