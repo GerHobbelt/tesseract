@@ -14,7 +14,7 @@ jobs:
           - ubuntu22-amd64
           - ubuntu24-amd64
           - ubuntu22-arm64
-          - ubuntu24-amd64
+          - ubuntu24-arm64
           - macos-arm64
         include:
           - platform: ubuntu22-amd64
