@@ -39,6 +39,8 @@ case "$(uname -s)" in
         ;;
 esac
 
+cd ..
+
 sed '4i\                                     
 TESSERACT_DIR=$(dirname $SCRIPT_DIR)
 ' download_tessdata.sh > build-out/bin/download_tessdata.sh
