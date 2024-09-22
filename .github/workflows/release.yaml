@@ -53,12 +53,12 @@ jobs:
           ./build.sh
           ./download_tessdata.sh
       - name: Package output
-        run: tar -czvf anzen-tesseract-${{ matrix.platform }}.tar.gz -C build-out .
+        run: tar -czvf anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}.tar.gz -C build-out .
       - name: Save output
         uses: actions/upload-artifact@v4
         with:
-          name: anzen-tesseract-${{ matrix.platform }}
-          path: anzen-tesseract-${{ matrix.platform }}.tar.gz
+          name: anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}
+          path: anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}.tar.gz
 
   create-release:
     needs: [build]
