@@ -20,6 +20,10 @@ case "$(uname -s)" in
 
         make
         make install
+
+        cd ..
+        sed '4i\TESSERACT_DIR=$(dirname $SCRIPT_DIR)' download_tessdata.sh > build-out/bin/download_tessdata.sh
+        chmod +x build-out/bin/download_tessdata.sh
         ;;
     Darwin*)
         ../configure \
@@ -32,16 +36,15 @@ case "$(uname -s)" in
         cd ..
         ./macos_link.sh
         cd -
+
+        cd ..
+        sed '4i\                                     
+TESSERACT_DIR=$(dirname $SCRIPT_DIR)
+' download_tessdata.sh > build-out/bin/download_tessdata.sh
+        chmod +x build-out/bin/download_tessdata.sh
         ;;
     *)
         echo "Unsupported platform: $(uname -s)"
         exit 1
         ;;
 esac
-
-cd ..
-
-sed '4i\                                     
-TESSERACT_DIR=$(dirname $SCRIPT_DIR)
-' download_tessdata.sh > build-out/bin/download_tessdata.sh
-chmod +x build-out/bin/download_tessdata.sh
