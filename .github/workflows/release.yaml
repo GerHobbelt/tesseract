@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        type: [dev, prod]
+        build: [dev, prod]
         include:
           - platform: ubuntu22-amd64
             runs-on: ubuntu-22.04
@@ -41,7 +41,7 @@ jobs:
           esac
       - name: Build
         env:
-          ENABLE_CPU_OPTIMIZATIONS: ${{ matrix.type == "prod" && "1" || "" }}
+          ENABLE_CPU_OPTIMIZATIONS: ${{ matrix.build == 'prod' && '1' || '' }}
         run: |
           ./autogen.sh
           ./anzen_build.sh
