@@ -13,6 +13,10 @@ if [[ -z "$ENABLE_CPU_OPTIMIZATIONS" ]]; then
     CONFIGURE_ARGS+=" --disable-cpu-optimizations"
 fi
 
+export CC=clang
+
+export CXX=clang++
+
 case "$(uname -s)" in
     Linux*) 
         ../configure \
