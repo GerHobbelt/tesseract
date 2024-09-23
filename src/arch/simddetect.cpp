@@ -255,31 +255,31 @@ SIMDDetect::SIMDDetect() {
     // This is a dummy to support conditional compilation.
 #if defined(HAVE_AVX512F)
   } else if (avx512F_available_) {
-    printf("SETTING AVX512F\n");
+    // printf("SETTING AVX512F\n");
     // AVX512F detected.
     SetDotProduct(DotProductAVX512F, &IntSimdMatrix::intSimdMatrixAVX2);
 #endif
 #if defined(HAVE_AVX2)
   } else if (avx2_available_) {
-    printf("SETTING AVX2\n");
+    // printf("SETTING AVX2\n");
     // AVX2 detected.
     SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixAVX2);
 #endif
 #if defined(HAVE_AVX)
   } else if (avx_available_) {
-    printf("SETTING AVX\n");
+    // printf("SETTING AVX\n");
     // AVX detected.
     SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixSSE);
 #endif
 #if defined(HAVE_SSE4_1)
   } else if (sse_available_) {
-    printf("SETTING SSE\n");
+    // printf("SETTING SSE\n");
     // SSE detected.
     SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
 #endif
 #if defined(HAVE_NEON)
   } else if (neon_available_) {
-    printf("SETTING NEON\n");
+    // printf("SETTING NEON\n");
     // NEON detected.
     SetDotProduct(DotProductNEON, &IntSimdMatrix::intSimdMatrixNEON);
 #endif
