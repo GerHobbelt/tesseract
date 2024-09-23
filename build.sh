@@ -11,8 +11,8 @@ cd build
 CONFIGURE_ARGS="--disable-openmp --disable-doc --disable-graphics"
 if [[ -z "$ENABLE_CPU_OPTIMIZATIONS" ]]; then 
     CONFIGURE_ARGS+=" --disable-cpu-optimizations --enable-debug"
-    export CFLAGS="-O1"
-    export CXXFLAGS="-O1"
+    export CFLAGS="-O0 -fexcess-precision=standard -fno-fast-math -fsignaling-nans -ffloat-store"
+    export CXXFLAGS="-O0 -fexcess-precision=standard -fno-fast-math -fsignaling-nans -ffloat-store"
 fi
 
 export CC=clang

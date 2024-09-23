@@ -144,7 +144,7 @@ libtesseract_native_la_CXXFLAGS =
 if ENABLE_CPU_OPTIMIZATIONS
 libtesseract_native_la_CXXFLAGS += -O3 -ffast-math
 else
-libtesseract_native_la_CXXFLAGS += -O1
+libtesseract_native_la_CXXFLAGS += -O0 -fexcess-precision=standard -fno-fast-math -fsignaling-nans -ffloat-store
 endif
 if OPENMP_SIMD
 libtesseract_native_la_CXXFLAGS += -fopenmp-simd -DOPENMP_SIMD
