@@ -35,7 +35,7 @@ jobs:
         run: |
           case "$(uname -s)" in
             Linux*) 
-              sudo apt-get install -y autoconf libleptonica-dev
+              sudo apt-get install -y autoconf automake libtool libleptonica-dev clang 
               ;;
             Darwin*)
               brew install autoconf automake libtool pkgconfig leptonica
