@@ -139,7 +139,11 @@ noinst_HEADERS += src/arch/simddetect.h
 
 noinst_LTLIBRARIES += libtesseract_native.la
 
-libtesseract_native_la_CXXFLAGS = -O3 -ffast-math
+
+libtesseract_native_la_CXXFLAGS = -O3
+if ENABLE_CPU_OPTIMIZATIONS
+libtesseract_native_la_CXXFLAGS += -ffast-math
+endif
 if OPENMP_SIMD
 libtesseract_native_la_CXXFLAGS += -fopenmp-simd -DOPENMP_SIMD
 endif
