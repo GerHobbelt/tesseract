@@ -273,7 +273,7 @@ SIMDDetect::SIMDDetect() {
     // SSE detected.
     SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
 #endif
-#if defined(HAVE_NEON) || defined(__aarch64__)
+#if defined(HAVE_NEON)
   } else if (neon_available_) {
     // NEON detected.
     SetDotProduct(DotProductNEON, &IntSimdMatrix::intSimdMatrixNEON);
@@ -296,6 +296,7 @@ void SIMDDetect::Update() {
   // Select code for calculation of dot product based on the
   // value of the config variable if that value is not empty.
   const char *dotproduct_method = "generic";
+  printf("HERE DOTPRODUCT %s\b", dotproduct.c_str());
   if (dotproduct == "auto") {
     // Automatic detection. Nothing to be done.
   } else if (dotproduct == "generic") {
@@ -334,7 +335,7 @@ void SIMDDetect::Update() {
   } else if (dotproduct == "accelerate") {
     SetDotProduct(DotProductAccelerate, IntSimdMatrix::intSimdMatrix);
 #endif
-#if defined(HAVE_NEON) || defined(__aarch64__)
+#if defined(HAVE_NEON)
   } else if (dotproduct == "neon" && neon_available_) {
     // NEON selected by config variable.
     SetDotProduct(DotProductNEON, &IntSimdMatrix::intSimdMatrixNEON);

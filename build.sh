@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+rm -rf build build-out || true
+
 mkdir -p build build-out
 
 cd build
