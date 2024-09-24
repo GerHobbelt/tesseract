@@ -17,10 +17,14 @@
 
 #include "commontraining.h"
 
+#include <boost/algorithm/string/replace.hpp>
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #if DISABLED_LEGACY_ENGINE
 
-#  include <tesseract/params.h>
-#  include <tesseract/tprintf.h>
+#include <tesseract/params.h>
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
@@ -136,9 +140,11 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    fs::path exename = (*argv)[0];
+    auto appname = exename.stem().string();
+    usage += appname;
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += boost::replace_all_copy(appname, "tesseract-", "");
   }
   usage += " [.tr files ...]";
   int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
