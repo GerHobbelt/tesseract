@@ -32,7 +32,7 @@ STRING_VAR(lstmeval_traineddata, "",
                          "be the traineddata file that was given to the trainer");
 STRING_VAR(lstmeval_eval_listfile, "", "File listing sample files in lstmf training format.");
 INT_VAR(lstmeval_max_image_MB, 2000, "Max memory to use for images.");
-INT_VAR(lstmeval_verbosity, 1, "Amount of diagnosting information to output (0-2).");
+INT_VAR(lstmeval_verbosity, 1, "Amount of diagnostics information to output (0-2).");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
