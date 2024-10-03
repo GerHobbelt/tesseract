@@ -30,7 +30,7 @@
 #include <sstream> // for std::stringstream
 #include <unordered_set>
 
-#include <allheaders.h>
+#include <leptonica/allheaders.h>
 #if (LIBLEPT_MAJOR_VERSION == 1 && LIBLEPT_MINOR_VERSION >= 83) || \
     LIBLEPT_MAJOR_VERSION > 1
 #  include <array_internal.h>

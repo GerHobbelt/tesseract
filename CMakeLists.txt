@@ -945,20 +945,13 @@ install(
   RENAME tesseract.pc)
 if(BUILD_EXE)
 install(TARGETS tesseract DESTINATION bin)
-if (MSVC)
-  install(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> DESTINATION bin OPTIONAL)
-endif()
 endif(BUILD_EXE)
 install(
   TARGETS libtesseract
   EXPORT TesseractTargets
   RUNTIME DESTINATION bin
-  RUNTIME DESTINATION bin
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-if (MSVC)
-  install(FILES $<TARGET_PDB_FILE:libtesseract> DESTINATION bin OPTIONAL)
-endif()
 install(
   EXPORT TesseractTargets
   NAMESPACE Tesseract::
