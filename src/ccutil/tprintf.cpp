@@ -213,13 +213,15 @@ void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
   }
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  // Replace /dev/null by nil for Windows.
+  // Replace /dev/null by nul for Windows.
   if (strcmp(debug_file_name, "/dev/null") == 0) {
-    debug_file_name = "";
+    debug_file_name = "nul";
     debug_file.set_value(debug_file_name);
   }
 #endif
 
+	XXXXX TODO: handle null, stderr, stdout
+	
   if (debugfp == nullptr && debug_file_name[0] != '\0') {
     debugfp = fopen(debug_file_name, "a+b");
   } else if (debugfp != nullptr && debug_file_name[0] == '\0') {
