@@ -209,6 +209,8 @@ if test x$check_for_neon = x1; then
   fi
 fi
 
+AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
+
 AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
 AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)
 
@@ -473,6 +475,13 @@ if $have_brew; then
     export PKG_CONFIG_PATH
   fi
 fi
+
+# Cabextract is used for some tests
+AC_CACHE_CHECK([for cabextract], [ac_cv_path_cabextract],
+    [AC_PATH_PROGS_FEATURE_CHECK([cabextract], [cabextract],
+      [[ac_cv_path_cabextract=$ac_path_cabextract ac_path_cabextract_found=:]],
+      [AC_MSG_ERROR([[Cabextract is required, but not installed]])])])
+AC_SUBST([CABEXTRACT], [$ac_cv_path_cabextract])
 
 # ----------------------------------------
 # Check for programs needed to build documentation.
