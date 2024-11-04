@@ -76,7 +76,7 @@ OutFile ${OUTFILE}
 !ifndef PREFIX
 !define PREFIX "../mingw64"
 !endif
-!define TRAININGDIR "${PREFIX}/bin"
+!define BINDIR "${PREFIX}/bin"
 
 # General Definitions
 Name "${PRODUCT_NAME}"
@@ -260,8 +260,8 @@ Section -Main SEC0000
   SectionIn RO
   SetOutPath "$INSTDIR"
   # files included in distribution
-  File ${PREFIX}/bin/tesseract.exe
-  File ${PREFIX}/bin/libtesseract-*.dll
+  File ${BINDIR}/tesseract.exe
+  File ${BINDIR}/libtesseract-*.dll
 !ifdef CROSSBUILD
   File ../dll/*.dll
 !endif
@@ -294,7 +294,7 @@ SectionEnd
 Section "Training Tools" SecTr
   SectionIn 1
   SetOutPath "$INSTDIR"
-  File ${TRAININGDIR}\*.exe
+  File /x tesseract.exe ${BINDIR}/*.exe
 SectionEnd
 
 !define UNINST_EXE "$INSTDIR\tesseract-uninstall.exe"
