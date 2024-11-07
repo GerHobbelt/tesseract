@@ -218,6 +218,15 @@ libtesseract_neon_la_CXXFLAGS += -DHAVE_HWCAP_BASED_NEON_RUNTIME_DETECTION
 endif
 endif
 
+if HAVE_RVV
+libtesseract_rvv_la_CXXFLAGS = $(RVV_CXXFLAGS)
+libtesseract_rvv_la_CXXFLAGS += -O3
+libtesseract_rvv_la_CXXFLAGS += -I$(top_srcdir)/src/ccutil
+libtesseract_rvv_la_SOURCES = src/arch/intsimdmatrixrvv.cpp
+libtesseract_la_LIBADD += libtesseract_rvv.la
+noinst_LTLIBRARIES += libtesseract_rvv.la
+endif
+
 libtesseract_la_SOURCES += src/arch/intsimdmatrix.cpp
 libtesseract_la_SOURCES += src/arch/simddetect.cpp
 
