@@ -8,7 +8,7 @@ includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 # Package Information
 Name: @tesseract_NAME@
-Description: An OCR Engine developed at HP Labs between 1985 and 1995, now maintained by Google.
+Description: An OCR Engine that was developed at HP Labs (1985-1995) and Google (2006-2018).
 URL: https://github.com/tesseract-ocr/tesseract
 Version: @tesseract_VERSION@
 Requires.private: lept
