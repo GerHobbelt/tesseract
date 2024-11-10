@@ -443,8 +443,7 @@ static int stringToOEM(const std::string arg) {
     {"default", 3},
   };
   auto it = oem_map.find(arg);
-  tprintDebug("it: {}, {}\n", it == oem_map.end(), it->second);
-  return it->second;
+  return it == oem_map.end() ? -1 : it->second;
 }
 
 static int stringToPSM(const std::string arg) {
@@ -479,7 +478,7 @@ static int stringToPSM(const std::string arg) {
     {"raw_line", 13},
   };
   auto it = psm_map.find(arg);
-  return it->second;
+  return it == psm_map.end() ? -1 : it->second;
 }
 
 //#include <filesystem>
