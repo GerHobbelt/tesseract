@@ -42,6 +42,7 @@
 #endif
 #include "sorthelper.h"
 #include "tesseractclass.h"
+#include "tesserrstream.h"  // for tesserr
 #include "tessvars.h"
 #include "werdit.h"
 #include "global_params.h"
@@ -1594,7 +1595,8 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
   plf::nanotimer clock;
-  if (tessedit_timing_debug) {
+  const bool timing_debug = tessedit_timing_debug;
+  if (timing_debug) {
     clock.start();
   }
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
@@ -1647,11 +1649,12 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   } else {
     tprintWarn("no best words!!\n");
   }
-  if (tessedit_timing_debug) {
+  if (timing_debug) {
+    auto total_time = clock.get_elapsed_ms();
     tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} ms)\n",
             mdqstr(word_data->word->best_choice->unichar_string()),
         word_data->word->word->bounding_box().print_to_str(),
-            clock.get_elapsed_ms());
+            total_time);
   }
 }
 

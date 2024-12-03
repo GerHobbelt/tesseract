@@ -19,6 +19,7 @@
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
 
+#include "tesserrstream.h"
 #include <tesseract/tprintf.h>
 
 #include <tesseract/params.h>
@@ -236,5 +237,7 @@ void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
   }
 #endif
 }
+
+TessErrStream tesserr;
 
 } // namespace tesseract

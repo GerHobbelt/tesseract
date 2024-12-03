@@ -35,6 +35,9 @@ extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);
 
+// Get file for debug output.
+FILE *get_debugfp();
+
 } // namespace tesseract
 
 #endif

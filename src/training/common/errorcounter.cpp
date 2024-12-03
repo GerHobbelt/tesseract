@@ -21,6 +21,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
+#include "tesserrstream.h"
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
