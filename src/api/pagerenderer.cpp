@@ -3,7 +3,7 @@
 // Description: PAGE XML rendering interface
 // Author:      Jan Kamlah
 
-// (C) Copyright 2021
+// (C) Copyright 2024
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,9 +19,7 @@
 
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
-#ifdef _WIN32
-#  include "host.h" // windows.h for MultiByteToWideChar, ...
-#endif
+
 #include <tesseract/tprintf.h> // for tprintf
 
 #include <tesseract/baseapi.h> // for TessBaseAPI
@@ -713,7 +711,6 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   // Used variables
 
   std::stringstream reading_order_str;
@@ -766,7 +763,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
                     << "\t\t\t<OrderedGroup id=\"ro" << ro_id
                     << "\" caption=\"Regions reading order\">\n";
 
-  ResultIterator *res_it = GetIterator();
+  std::unique_ptr<ResultIterator> res_it(GetIterator());
 
   float block_conf = 0;
   float line_conf = 0;
@@ -786,7 +783,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
         // Handle all kinds of images.
         page_str << "\t\t<GraphicRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</GraphicRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -796,7 +793,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
         // Handle horizontal and vertical lines.
         page_str << "\t\t<SeparatorRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</SeparatorRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -827,7 +824,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       if ((!POLYGONFLAG || (orientation_block != ORIENTATION_PAGE_UP &&
                             orientation_block != ORIENTATION_PAGE_DOWN)) &&
           LEVELFLAG == 0) {
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
       }
     }
 
@@ -869,9 +866,9 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       line_str << "custom=\"" << "readingOrder {index:" << lcnt << ";}\">\n";
       // If level is linebased, get the line polygon and baseline
       if (LEVELFLAG == 0 && (!POLYGONFLAG || skewed_flag)) {
-        AddPointToWordPolygon(res_it, RIL_TEXTLINE, line_top_ltr_pts,
+        AddPointToWordPolygon(res_it.get(), RIL_TEXTLINE, line_top_ltr_pts,
                               line_bottom_ltr_pts, writing_direction);
-        AddBaselineToPTA(res_it, RIL_TEXTLINE, line_baseline_pts);
+        AddBaselineToPTA(res_it.get(), RIL_TEXTLINE, line_baseline_pts);
         if (ttb_flag) {
           line_baseline_pts = TransposePolygonline(line_baseline_pts);
         }
@@ -891,18 +888,18 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
                << WritingDirectionToStr(writing_direction) << "\" "
                << "custom=\"" << "readingOrder {index:" << wcnt << ";}\">\n";
       if ((!POLYGONFLAG || skewed_flag) || ttb_flag) {
-        AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts,
+        AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
                               writing_direction);
       }
     }
 
     if (POLYGONFLAG && !skewed_flag && ttb_flag && LEVELFLAG == 0) {
-      AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts,
+      AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
                             writing_direction);
     }
 
     // Get the word baseline information
-    AddBaselineToPTA(res_it, RIL_WORD, word_baseline_pts);
+    AddBaselineToPTA(res_it.get(), RIL_WORD, word_baseline_pts);
 
     // Get the word text content and polygon
     do {
@@ -911,7 +908,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       if (grapheme && grapheme[0] != 0) {
         word_content << HOcrEscape(grapheme.get()).c_str();
         if (POLYGONFLAG && !skewed_flag && !ttb_flag) {
-          AddPointToWordPolygon(res_it, RIL_SYMBOL, word_top_pts,
+          AddPointToWordPolygon(res_it.get(), RIL_SYMBOL, word_top_pts,
                                 word_bottom_pts, writing_direction);
         }
       }
@@ -1126,7 +1123,6 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-  delete res_it;
   return copy_string(text);
 }
 

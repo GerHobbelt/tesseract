@@ -134,7 +134,6 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   std::stringstream hocr_str;
   // Use "C" locale (needed for double values x_size and x_descenders).
   hocr_str.imbue(std::locale::classic());
