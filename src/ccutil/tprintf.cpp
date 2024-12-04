@@ -238,6 +238,8 @@ void vTessPrint(int level, fmt::string_view format, fmt::format_args args) {
 #endif
 }
 
+#if 0
 TessErrStream tesserr;
+#endif
 
 } // namespace tesseract
