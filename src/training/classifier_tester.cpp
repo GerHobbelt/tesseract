@@ -47,13 +47,13 @@ static const char *names[] = {"pruner", "full"};
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
-static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &api, const char *classifer_name,
+static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &api, const char *classifier_name,
                                                         const UNICHARSET &unicharset, int argc,
                                                         const char **argv) {
   // Decode the classifier string.
   ClassifierName classifier = CN_COUNT;
   for (int c = 0; c < CN_COUNT; ++c) {
-    if (strcmp(classifer_name, names[c]) == 0) {
+    if (strcmp(classifier_name, names[c]) == 0) {
       classifier = static_cast<ClassifierName>(c);
       break;
     }
@@ -86,7 +86,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &
   } else if (classifier == CN_FULL) {
     shape_classifier = new tesseract::TessClassifier(false, classify);
   }
-  tprintDebug("Testing classifier {}:\n", classifer_name);
+  tprintDebug("Testing classifier {}:\n", classifier_name);
   return shape_classifier;
 }
 
