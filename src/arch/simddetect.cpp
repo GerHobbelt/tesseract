@@ -312,6 +312,7 @@ SIMDDetect::SIMDDetect() {
 #if defined(HAVE_RVV)
   } else if (rvv_available_) {
     SetDotProduct(DotProductGeneric, &IntSimdMatrix::intSimdMatrixRVV);
+#endif
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
   } else {
     SetDotProduct(DotProductAccelerate);
@@ -395,7 +396,7 @@ void SIMDDetect::Update() {
         (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
         (sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
         (neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : ""
-	);
+	  );
   }
 
   dotproduct.set_value(dotproduct_method);
