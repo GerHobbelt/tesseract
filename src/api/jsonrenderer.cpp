@@ -116,16 +116,19 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
 
     if (res_it->IsAtBeginningOf(tesseract::RIL_BLOCK)) {
 
-      const std::unique_ptr<const char[]> grapheme(
-          res_it->GetUTF8Text(tesseract::RIL_BLOCK));
-
-
       json_str << "\n    {\n      \"bbox\": ";
       AddBoxToJson(res_it.get(), tesseract::RIL_BLOCK, json_str);
 
-      json_str << ",\n      \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
-      json_str << ",\n      \"confidence\": " 
-              << static_cast<int>(res_it->Confidence(tesseract::RIL_BLOCK));
+      if (recognition_done_) {
+        const std::unique_ptr<const char[]> grapheme(
+            res_it->GetUTF8Text(tesseract::RIL_BLOCK));
+        json_str << ",\n      \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
+        json_str << ",\n      \"confidence\": " 
+                << static_cast<int>(res_it->Confidence(tesseract::RIL_BLOCK));
+      } else {
+        json_str << ",\n      \"text\": null";
+        json_str << ",\n      \"confidence\": null";
+      }
 
       json_str << ",\n      \"blocktype\": " 
               << static_cast<int>(res_it->BlockType());
@@ -134,17 +137,19 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     }
     if (res_it->IsAtBeginningOf(tesseract::RIL_PARA)) {
 
-
-      const std::unique_ptr<const char[]> grapheme(
-          res_it->GetUTF8Text(tesseract::RIL_PARA));
-
       json_str << "\n        {\n          \"bbox\": ";
       AddBoxToJson(res_it.get(), tesseract::RIL_PARA, json_str);
 
-
-      json_str << ",\n          \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
-      json_str << ",\n          \"confidence\": " 
-              << static_cast<int>(res_it->Confidence(tesseract::RIL_PARA));
+      if (recognition_done_) {
+        const std::unique_ptr<const char[]> grapheme(
+            res_it->GetUTF8Text(tesseract::RIL_PARA));
+        json_str << ",\n          \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
+        json_str << ",\n          \"confidence\": " 
+                << static_cast<int>(res_it->Confidence(tesseract::RIL_PARA));
+      } else {
+        json_str << ",\n          \"text\": null";
+        json_str << ",\n          \"confidence\": null";
+      }
 
       json_str << ",\n          \"is_ltr\": " 
               << static_cast<int>(res_it->ParagraphIsLtr());
@@ -153,17 +158,19 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     }
     if (res_it->IsAtBeginningOf(tesseract::RIL_TEXTLINE)) {
 
-      const std::unique_ptr<const char[]> grapheme(
-          res_it->GetUTF8Text(tesseract::RIL_TEXTLINE));
-
-
       json_str << "\n            {\n              \"bbox\": ";
       AddBoxToJson(res_it.get(), tesseract::RIL_TEXTLINE, json_str);
 
-
-      json_str << ",\n          \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
-      json_str << ",\n          \"confidence\": " 
-              << static_cast<int>(res_it->Confidence(tesseract::RIL_TEXTLINE));
+      if (recognition_done_) {
+        const std::unique_ptr<const char[]> grapheme(
+            res_it->GetUTF8Text(tesseract::RIL_TEXTLINE));
+        json_str << ",\n              \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
+        json_str << ",\n              \"confidence\": " 
+                << static_cast<int>(res_it->Confidence(tesseract::RIL_TEXTLINE));
+      } else {
+        json_str << ",\n              \"text\": null";
+        json_str << ",\n              \"confidence\": null";
+      }
 
       float row_height, descenders, ascenders;
       res_it->RowAttributes(&row_height, &descenders, &ascenders);
@@ -189,14 +196,15 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     json_str << "\n                {\n                  \"bbox\": ";
     AddBoxToJson(res_it.get(), tesseract::RIL_WORD, json_str);
 
-
-    const std::unique_ptr<const char[]> grapheme_word(
-      res_it->GetUTF8Text(tesseract::RIL_WORD));
-
-    json_str << ",\n                  \"text\": \"" << JsonEscape(grapheme_word.get()).c_str() << "\",";
-
-    
-    json_str << "\n                  \"confidence\": " << static_cast<int>(res_it->Confidence(tesseract::RIL_WORD));
+    if (recognition_done_) {
+      const std::unique_ptr<const char[]> grapheme_word(
+        res_it->GetUTF8Text(tesseract::RIL_WORD));
+      json_str << ",\n                  \"text\": \"" << JsonEscape(grapheme_word.get()).c_str() << "\",";
+      json_str << "\n                  \"confidence\": " << static_cast<int>(res_it->Confidence(tesseract::RIL_WORD));
+    } else {
+      json_str << ",\n                  \"text\": null,";
+      json_str << "\n                  \"confidence\": null";
+    }
 
     tesseract::WordChoiceIterator wc(*res_it);
     int wc_cnt = 0;
@@ -210,7 +218,7 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
         json_str << "\n                      \"confidence\": " << static_cast<int>(wc.Confidence());
         json_str << "\n                   }";
       }
-    } while (wc.Next());
+    } while (recognition_done_ && wc.Next());
     if (wc_cnt > 0) {
       json_str << "\n                  ]";
     } else {
@@ -223,27 +231,32 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     bool first_char = true;
     do {
       if (!first_char) json_str << ",";
-      const std::unique_ptr<const char[]> grapheme(
-          res_it->GetUTF8Text(tesseract::RIL_SYMBOL));
-      if (grapheme && grapheme[0] != 0) {
-        json_str << "\n";
-        json_str << "                    {\n";
-        json_str << "                      \"bbox\": ";
-        AddBoxToJson(res_it.get(), tesseract::RIL_SYMBOL, json_str);
+      json_str << "\n";
+      json_str << "                    {\n";
+      json_str << "                      \"bbox\": ";
+      AddBoxToJson(res_it.get(), tesseract::RIL_SYMBOL, json_str);
+
+      if (recognition_done_) {
+        const std::unique_ptr<const char[]> grapheme(
+            res_it->GetUTF8Text(tesseract::RIL_SYMBOL));
         json_str << ",\n                      \"text\": \"" << JsonEscape(grapheme.get()).c_str() << "\"";
         json_str << ",\n                      \"confidence\": " 
                 << static_cast<int>(res_it->Confidence(tesseract::RIL_SYMBOL));
-
-        json_str << ",\n                      \"is_superscript\": "
-                << static_cast<int>(res_it->SymbolIsSuperscript());
-        json_str << ",\n                      \"is_subscript\": "
-                << static_cast<int>(res_it->SymbolIsSubscript());
-        json_str << ",\n                      \"is_dropcap\": "
-                << static_cast<int>(res_it->SymbolIsDropcap());
-
-        json_str        << "\n                    }";
-        first_char = false;
+      } else {
+        json_str << ",\n                      \"text\": null";
+        json_str << ",\n                      \"confidence\": null";
       }
+
+      json_str << ",\n                      \"is_superscript\": "
+              << static_cast<int>(res_it->SymbolIsSuperscript());
+      json_str << ",\n                      \"is_subscript\": "
+              << static_cast<int>(res_it->SymbolIsSubscript());
+      json_str << ",\n                      \"is_dropcap\": "
+              << static_cast<int>(res_it->SymbolIsDropcap());
+
+      json_str        << "\n                    }";
+      first_char = false;
+      
       res_it->Next(tesseract::RIL_SYMBOL);
     } while (!res_it->Empty(tesseract::RIL_BLOCK) && 
              !res_it->IsAtBeginningOf(tesseract::RIL_WORD));
