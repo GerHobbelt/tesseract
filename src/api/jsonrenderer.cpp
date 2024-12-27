@@ -45,7 +45,7 @@ std::string JsonEscape(const char *text) {
 static void AddBoxToJson(const tesseract::ResultIterator* it, tesseract::PageIteratorLevel level, std::stringstream& json_str) {
   int left, top, right, bottom;
   it->BoundingBox(level, &left, &top, &right, &bottom);
-  json_str << "[" << left << ", " << top << ", " << right << ", " << bottom << "]";
+  json_str << "{ \"x0\": " << left << ", \"y0\": " << top << ", \"x1\": " << right << ", \"y1\": " << bottom << " }";
 }
 
 static void AddBaselineCoordsToJson(const tesseract::ResultIterator* it, tesseract::PageIteratorLevel level, std::stringstream& json_str) {
@@ -57,18 +57,7 @@ static void AddBaselineCoordsToJson(const tesseract::ResultIterator* it, tessera
     return;
   }
 
-  x1 -= left;
-  x2 -= left;
-  y1 -= bottom;
-  y2 -= bottom;
-
-  if (x1 == x2) {
-    return;
-  }
-  double p1 = (y2 - y1) / static_cast<double>(x2 - x1);
-  double p0 = y1 - p1 * x1;
-
-  json_str << ",\n              \"baseline\": [" << round(p1 * 1000.0) / 1000.0 << ", " << round(p0 * 1000.0) / 1000.0 << "]";
+  json_str << ",\n              \"baseline\": { " << "\"x0\": " << x1 << ", \"y0\": " << y1 << ", \"x1\": " << x2 << ", \"y1\": " << y2 << " }";
 }
 
 /**
@@ -281,15 +270,8 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     const char* font_name =
         res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
                                    &serif, &smallcaps, &pointsize, &font_id);
-    json_str << ",\n                  \"font\": \"" << (font_name ? font_name : "") << "\",";
-    json_str << "\n                  \"attributes\": {\n";
-    json_str << "                    \"bold\": " << static_cast<int>(bold) << ",\n";
-    json_str << "                    \"italic\": " << static_cast<int>(italic) << ",\n";
-    json_str << "                    \"underlined\": " << static_cast<int>(underlined) << ",\n";
-    json_str << "                    \"monospace\": " << static_cast<int>(monospace) << ",\n";
-    json_str << "                    \"serif\": " << static_cast<int>(serif) << ",\n";
-    json_str << "                    \"smallcaps\": " << static_cast<int>(smallcaps) << "\n";
-    json_str << "                  }\n                }";
+    json_str << ",\n                  \"font_name\": \"" << (font_name ? font_name : "") << "\"";
+    json_str << "\n                }";
     first_word = false;
 
     // Close any ending block/paragraph/textline.
