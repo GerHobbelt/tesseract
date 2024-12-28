@@ -227,7 +227,15 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
       json_str << "]";
     }
 
+    bool bold, italic, underlined, monospace, serif, smallcaps;
+    int pointsize, font_id;
+    const char* font_name =
+        res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
+                                   &serif, &smallcaps, &pointsize, &font_id);
+    json_str << ",\n                  \"font_name\": \"" << (font_name ? font_name : "") << "\"";
+
     // Add symbols array
+    // This needs to happen last, as it will advance the iterator to the next word.
     json_str << ",\n                  \"symbols\": [";
     
     bool first_char = true;
@@ -264,13 +272,6 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
              !res_it->IsAtBeginningOf(tesseract::RIL_WORD));
 
     json_str << "\n                  ]";
-
-    bool bold, italic, underlined, monospace, serif, smallcaps;
-    int pointsize, font_id;
-    const char* font_name =
-        res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
-                                   &serif, &smallcaps, &pointsize, &font_id);
-    json_str << ",\n                  \"font_name\": \"" << (font_name ? font_name : "") << "\"";
     json_str << "\n                }";
     first_word = false;
 
