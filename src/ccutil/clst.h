@@ -19,10 +19,10 @@
 #ifndef CLST_H
 #define CLST_H
 
-#include "list.h"
 #include "lsterr.h"
 #include "serialis.h"
 
+#include <algorithm>
 #include <cstdio>
 
 namespace tesseract {
@@ -34,7 +34,7 @@ namespace tesseract {
  **********************************************************************/
 
 template <typename CLASSNAME>
-class TESS_API CLIST {
+class CLIST {
   friend class LINK;
   //friend class ITERATOR;
 
@@ -64,7 +64,7 @@ public:
    *              Generic iterator class for singly linked lists with embedded
    *links
    **********************************************************************/
-  class TESS_API ITERATOR {
+  class ITERATOR {
     CLIST *list = nullptr;                  // List being iterated
     LINK *prev = nullptr;             // prev element
     LINK *current = nullptr;          // current element
@@ -764,7 +764,7 @@ public:
      **********************************************************************/
     void sort(     // sort elements
       int comparator(               // comparison routine
-        const void *, const void *)) {
+        const CLASSNAME *, const CLASSNAME *)) {
       list->sort(comparator);
       move_to_first();
     }
@@ -907,7 +907,9 @@ public:
       }
 
       // Sort the pointer array.
-      std::sort(base.begin(), base.end(), comparator);
+      std::sort(base.begin(), base.end(),
+        // all current comparators return -1,0,1, so we handle this correctly for std::sort
+        [&](auto &&l, auto &&r) {return comparator(l, r) < 0; });
 
       // Rebuild the list from the sorted pointers.
       for (auto current : base) {
