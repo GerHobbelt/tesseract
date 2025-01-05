@@ -42,15 +42,6 @@ extern TESS_API INT_VAR_H(log_level);
 // Get file for debug output.
 TESS_API FILE *get_debugfp();
 
-// Main logging function. Trace printf.
-template <typename ... Types>
-auto tprintf(Types && ... args) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-security"
-  return fprintf(get_debugfp(), std::forward<Types>(args)...);
-#pragma clang diagnostic pop
-}
-
 } // namespace tesseract
 
-#endif // define TESSERACT_CCUTIL_TPRINTF_H
+#endif

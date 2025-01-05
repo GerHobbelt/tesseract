@@ -356,20 +356,11 @@ ICOORDELT_LIST *PB_LINE_IT::get_line(TDimension y) {
 
   if (!r.empty()) {
     r.sort([](const ICOORDELT *p1, const ICOORDELT *p2) {
-      if (p1->x() < p2->x()) {
-        return (-1);
-      } else if (p1->x() > p2->x()) {
-        return (1);
-      } else {
-        return (0);
-      }
-      });
+ 	  // https://stackoverflow.com/questions/47466358/what-is-the-spaceship-three-way-comparison-operator-in-c
+      return (p1->x() <=> p2->x());
+    });
+
     // TODO: remove loop after checking its history.
-#if 0
-    for (r.mark_cycle_pt(); !r.cycled_list(); r.forward()) {
-      x = r.data();
-    }
-#endif
     for (r.mark_cycle_pt(); !r.cycled_list(); r.forward()) {
       r.data()->set_y(r.data_relative(1)->x() - r.data()->x());
       r.forward();

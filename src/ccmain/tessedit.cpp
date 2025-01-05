@@ -42,7 +42,7 @@ namespace tesseract {
 // Read a "config" file containing a set of variable, value pairs.
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
-void Tesseract::read_config_file(const char *filename,
+void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
   if (!filename || !*filename) {
     tprintError("empty config filename specified. No config loaded.\n");
     return;
@@ -92,7 +92,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Set the language data path prefix
   lang_ = !language.empty() ? language : "eng";
   //std::filesystem::path 
-  language_data_path_prefix_ = datadir / (lang + "." + );
+  language_data_path_prefix_ = datadir_ / (lang + ".");
 
   // Initialize TessdataManager.
   std::filesystem::path tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;

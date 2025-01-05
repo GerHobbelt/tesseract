@@ -164,7 +164,7 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
+void ImageThresholder::SetImage(const Image &pix, int exif, const float angle) {
   if (pix_ != nullptr) {
     pix_.destroy();
   }
@@ -190,6 +190,8 @@ void ImageThresholder::SetImage(const Image pix, int exif, const float angle) {
 
   // Rotate if additional rotation angle is specified
   src = pixRotate(temp2, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+  
+  XXXXXXXXXX TODO: clone if angle == 0 XXXXXXXXXXXXXXXXXXXXX
 
   temp1.destroy();
   temp2.destroy();
@@ -379,20 +381,26 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
-    Image original = GetPixRect();
     *pix = original.copy();
     original.destroy();
     return true;
   }
+
   // Handle colormaps
-  Image src = pix_;
-  if (pixGetColormap(src)) {
-    src = pixRemoveColormap(src, REMOVE_CMAP_BASED_ON_SRC);
+  Image src;
+  if (pixGetColormap(original)) {
+    src = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+	  int depth = pixGetDepth(src);
+	  if (depth > 1 && depth < 8) {
+	    src = pixConvertTo8(src, false);
+	  }
+  } else {
+  	src = original.clone();
   }
   OtsuThresholdRectToPix(src, pix);
-  if (src != pix_) {
-    src.destroy();
-  }
+
+  XXXXXXXXXXXXXXXXX TODO: check pix instances' lifetimes...
+
   return true;
 }
 

@@ -20,6 +20,7 @@
 #include "helpers.h"
 
 #include <cstdlib>
+#include <filesystem> // for std::filesystem
 
 
 namespace tesseract {
@@ -329,4 +330,5 @@ void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   imagebasename = basename; /**< name of image */
   datadir = find_data_path(argv0);
 }
+
 } // namespace tesseract
