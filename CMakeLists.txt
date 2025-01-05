@@ -754,6 +754,7 @@ set(TESSERACT_SRC
     src/api/altorenderer.cpp
     src/api/pagerenderer.cpp
     src/api/hocrrenderer.cpp
+    src/api/jsonrenderer.cpp
     src/api/lstmboxrenderer.cpp
     src/api/pdfrenderer.cpp
     src/api/wordstrboxrenderer.cpp)

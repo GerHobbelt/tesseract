@@ -708,6 +708,25 @@ public:
   char *GetHOCRText(int page_number);
 
   /**
+   * Make a JSON-formatted string with JSON from the internal
+   * data structures.
+   * page_number is 0-based but will appear in the output as 1-based.
+   * monitor can be used to
+   *  cancel the recognition
+   *  receive progress callbacks
+   * Returned string must be freed with the delete [] operator.
+   */
+  char *GetJSONText(ETEXT_DESC *monitor, int page_number);
+
+  /**
+   * Make a JSON-formatted string with JSON from the internal
+   * data structures.
+   * page_number is 0-based but will appear in the output as 1-based.
+   * Returned string must be freed with the delete [] operator.
+   */
+  char *GetJSONText(int page_number);
+
+  /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
    *
