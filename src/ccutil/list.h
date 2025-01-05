@@ -19,8 +19,7 @@
 namespace tesseract {
 
 template <typename ITERATOR, typename CLASSNAME>
-class X_ITER : public ITERATOR {
-public:
+struct X_ITER : ITERATOR {
   X_ITER() = default;
 
   template <typename U>
@@ -41,8 +40,7 @@ public:
 };
 
 template <typename CONTAINER, typename ITERATOR, typename CLASSNAME>
-class X_LIST : public CONTAINER {
-public:
+struct X_LIST : CONTAINER {
   X_LIST() = default;
   X_LIST(const X_LIST &) = delete;
   X_LIST &operator=(const X_LIST &) = delete;
