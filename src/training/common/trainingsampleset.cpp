@@ -26,6 +26,7 @@
 #include "intfeaturemap.h"
 #include "intfeaturespace.h"
 #include "shapetable.h"
+#include "tesserrstream.h"  // for tesserr
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"

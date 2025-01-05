@@ -58,7 +58,9 @@ public:
     verror(caller, action, format, fmt::make_format_args(args...));
   }
 
-  void error(const char *caller, TessErrorLogCode action) const;
+  void error(const char *caller, TessErrorLogCode action) const {
+    error(caller, action, nullptr);
+  }
   
   [[noreturn]] void vabort(const char* caller, fmt::string_view format, fmt::format_args args) const;
 

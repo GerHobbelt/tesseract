@@ -28,6 +28,7 @@
 #include <tesseract/unichar.h>
 #include "pageres.h"
 #include "tesseractclass.h"
+#include "tesserrstream.h"  // for tesserr
 #include "unicharset.h"
 
 #if !DISABLED_LEGACY_ENGINE

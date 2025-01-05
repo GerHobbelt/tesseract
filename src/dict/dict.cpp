@@ -20,6 +20,7 @@
 
 #include "dict.h"
 
+#include "tesserrstream.h"  // for tesserr
 #include <tesseract/tprintf.h>
 
 #include <cstdio>

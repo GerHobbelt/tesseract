@@ -28,6 +28,7 @@
 #include <parameters/parameters.h>
 #include "stopper.h"
 #include "tesseractclass.h"
+#include "tesserrstream.h"  // for tesserr
 #include "tessvars.h"
 #include <tesseract/tprintf.h>
 #if !DISABLED_LEGACY_ENGINE
@@ -48,38 +49,29 @@ void Tesseract::read_config_file(const char *filename) {
     return;
   }
 
-  std::string path = datadir_;
-  path += "configs/";
-  path += filename;
-  tprintDebug("Read Config: test if '{}' is a readable file: ", path);
-  FILE *fp;
-  if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-    fclose(fp);
-  } else {
-    path = datadir_;
-    path += "tessconfigs/";
-    path += filename;
-    tprintDebug("NO.\n"
-      "Read Config: test if '{}' is a readable file: ", path);
-    if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-      fclose(fp);
-    } else {
-      path = filename;
-      tprintDebug("NO.\n"
-      "Read Config: test if '{}' is a readable file: ", path);
-      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-        fclose(fp);
-      }
-      else {
-        tprintDebug("NO.\n");
+  // Construct potential config file paths
+  std::vector<std::filesystem::path> config_paths = {
+      datadir / "configs" / filename,
+      datadir / "tessconfigs" / filename,
+      std::filesystem::path(filename)};
+
+  // Use the first existing file or fallback to the last (filename)
+  auto config_file = std::find_if(config_paths.begin(), config_paths.end(),
+                                  [](const std::filesystem::path &path) {
+                                    std::error_code ec;
+									tprintDebug("Read Config: test if '{}' is a readable file: ", path);
+                                    auto rv = std::filesystem::exists(path, ec);
+								    tprintDebug("{}.\n", rv ? "YES" : "NO");
+									return rv;
+                                  });
+	if (config_file == config_paths.end()) {
         tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked.\n", filename);
         return;
       }
-    }
-  }
-  tprintDebug("YES\n");
+  const std::filesystem::path &selected_path = *config_file;
 
-  ParamUtils::ReadParamsFile(path.c_str(), this->params());
+  ParamUtils::ReadParamsFile(selected_path.string().c_str(), constraint,
+                             this->params());
 }
 
 // Returns false if a unicharset file for the specified language was not found
@@ -100,12 +92,11 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
                                          TessdataManager *mgr) {
   // Set the language data path prefix
   lang_ = !language.empty() ? language : "eng";
-  language_data_path_prefix_ = datadir_;
-  language_data_path_prefix_ += lang_;
-  language_data_path_prefix_ += ".";
+  //std::filesystem::path 
+  language_data_path_prefix_ = datadir / (lang + "." + );
 
   // Initialize TessdataManager.
-  std::string tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;
+  std::filesystem::path tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
     tprintError("Error opening data file {}\n", tessdata_path);
     tprintInfo("Please make sure the TESSDATA_PREFIX environment variable is set"

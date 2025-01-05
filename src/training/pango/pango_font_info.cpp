@@ -234,7 +234,7 @@ bool PangoFontInfo::CoversUTF8Text(const char *utf8_text, int byte_length) const
       int len = it.get_utf8(tmp);
       tmp[len] = '\0';
       tprintInfo("'{}' (U+{}) not covered by font.\n", tmp, *it);
-#if PANGO_VERSION_CHECK(1, 52, 0)
+#if PANGO_VERSION_CHECK(1, 50, 4)
       g_object_unref(coverage);
 #else
       pango_coverage_unref(coverage);
@@ -243,7 +243,7 @@ bool PangoFontInfo::CoversUTF8Text(const char *utf8_text, int byte_length) const
       return false;
     }
   }
-#if PANGO_VERSION_CHECK(1, 52, 0)
+#if PANGO_VERSION_CHECK(1, 50, 4)
   g_object_unref(coverage);
 #else
   pango_coverage_unref(coverage);
@@ -315,7 +315,7 @@ int PangoFontInfo::DropUncoveredChars(std::string *utf8_text) const {
     my_strnmove(out, utf8_char, utf8_len);
     out += utf8_len;
   }
-#if PANGO_VERSION_CHECK(1, 52, 0)
+#if PANGO_VERSION_CHECK(1, 50, 4)
   g_object_unref(coverage);
 #else
   pango_coverage_unref(coverage);
@@ -526,9 +526,9 @@ bool FontUtils::IsAvailableFont(const char *input_query_desc, std::string *best_
     *best_match = selected_desc_str;
     // Clip the ending ' 0' if there is one. It seems that, if there is no
     // point size on the end of the fontname, then Pango always appends ' 0'.
-    int len = best_match->size();
+    auto len = best_match->size();
     if (len > 2 && best_match->at(len - 1) == '0' && best_match->at(len - 2) == ' ') {
-      *best_match = best_match->substr(0, len - 2);
+      best_match->resize(len - 2);
     }
   }
   g_free((void *)selected_desc_str);
@@ -620,7 +620,7 @@ int FontUtils::FontScore(const std::unordered_map<char32, int64_t> &ch_map,
       ch_flags->push_back(covered);
     }
   }
-#if PANGO_VERSION_CHECK(1, 52, 0)
+#if PANGO_VERSION_CHECK(1, 50, 4)
   g_object_unref(coverage);
 #else
   pango_coverage_unref(coverage);

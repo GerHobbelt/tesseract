@@ -45,7 +45,7 @@
 #include "polyblk.h"         // for POLY_BLOCK
 #include "rect.h"            // for TBOX
 #include "stepblob.h"        // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
-#include "tessdatamanager.h" // for TessdataManager, kTrainedDataSuffix
+#include "tessdatamanager.h" // for TessdataManager
 #include "tesseractclass.h"  // for Tesseract
 #include <tesseract/tprintf.h>         // for tprintf
 #include "werd.h"            // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
@@ -72,7 +72,7 @@
 #include <cmath>    // for round, M_PI
 #include <cstdint>  // for int32_t
 #include <cstring>  // for strcmp, strcpy
-#include <filesystem> // for path
+#include <filesystem> // for std::filesystem
 #include <fstream>  // for size_t
 #include <iostream> // for std::cin
 #include <locale>   // for std::locale::classic
@@ -92,16 +92,10 @@
 #  include <csignal> // for sigaction, SA_RESETHAND, SIGBUS, SIGFPE
 #endif
 
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-#  include <fcntl.h>
-#  include <io.h>
-#else
-#  include <dirent.h> // for closedir, opendir, readdir, DIR, dirent
-#  include <libgen.h>
-#  include <sys/stat.h> // for stat, S_IFDIR
-#  include <sys/types.h>
-#  include <unistd.h>
-#endif // _WIN32
+#if defined(_WIN32)
+#  include <fcntl.h> // for _O_BINARY
+#  include <io.h>    // for _setmode
+#endif
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/helpers/dir.h"
@@ -175,63 +169,22 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 /* Add all available languages recursively.
  */
-static void addAvailableLanguages(const std::string &datadir, const std::string &base,
+static void addAvailableLanguages(const std::string &datadir,
                                   std::vector<std::string> *langs) {
-  auto base2 = base;
-  if (!base2.empty()) {
-    base2 += "/";
+  if (!std::filesystem::is_directory(datadir)) {
+    std::cerr << "Error: The directory '" << datadir << "' does not exist.\n";
+    return;
   }
-  const size_t extlen = sizeof(kTrainedDataSuffix);
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  const auto kTrainedDataSuffixUtf16 = winutils::Utf8ToUtf16(kTrainedDataSuffix);
-
-  WIN32_FIND_DATAW data;
-  HANDLE handle = FindFirstFileW(winutils::Utf8ToUtf16((datadir + base2 + "*").c_str()).c_str(), &data);
-  if (handle != INVALID_HANDLE_VALUE) {
-    BOOL result = TRUE;
-    for (; result;) {
-      wchar_t *name = data.cFileName;
-      // Skip '.', '..', and hidden files
-      if (name[0] != '.') {
-        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) {
-          addAvailableLanguages(datadir, base2 + winutils::Utf16ToUtf8(name), langs);
-        } else {
-          size_t len = wcslen(name);
-          if (len > extlen && name[len - extlen] == '.' &&
-              wcscmp(&name[len - extlen + 1], kTrainedDataSuffixUtf16.c_str()) == 0) {
-            name[len - extlen] = '\0';
-            langs->push_back(base2 + winutils::Utf16ToUtf8(name));
-          }
-        }
-      }
-      result = FindNextFileW(handle, &data);
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(datadir,
+         std::filesystem::directory_options::follow_directory_symlink |
+         std::filesystem::directory_options::skip_permission_denied)) {
+    auto path = entry.path().lexically_relative(datadir).string();
+    auto extPos = path.rfind(".traineddata");
+    if (extPos != std::string::npos) {
+      langs->push_back(path.substr(0, extPos));
     }
-    FindClose(handle);
   }
-#else // _WIN32
-  DIR *dir = opendir((datadir + base).c_str());
-  if (dir != nullptr) {
-    dirent *de;
-    while ((de = readdir(dir))) {
-      char *name = de->d_name;
-      // Skip '.', '..', and hidden files
-      if (name[0] != '.') {
-        struct stat st;
-        if (stat((datadir + base2 + name).c_str(), &st) == 0 && (st.st_mode & S_IFDIR) == S_IFDIR) {
-          addAvailableLanguages(datadir, base2 + name, langs);
-        } else {
-          size_t len = strlen(name);
-          if (len > extlen && name[len - extlen] == '.' &&
-              strcmp(&name[len - extlen + 1], kTrainedDataSuffix) == 0) {
-            name[len - extlen] = '\0';
-            langs->push_back(base2 + name);
-          }
-        }
-      }
-    }
-    closedir(dir);
-  }
-#endif
 }
 
 
@@ -672,7 +625,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(std::vector<std::string> *langs)
   langs->clear();
   ASSERT_HOST(tesseract_ != nullptr);
   const Tesseract &tess = tesseract();
-  addAvailableLanguages(tess.datadir_, "", langs);
+  addAvailableLanguages(tess.datadir_, langs);
   std::sort(langs->begin(), langs->end());
 }
 

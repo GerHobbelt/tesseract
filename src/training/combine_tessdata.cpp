@@ -148,7 +148,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
       lang += '.';
     }
     std::string output_file = lang;
-    output_file += kTrainedDataSuffix;
+    output_file += "traineddata";
     if (!tm.CombineDataFiles(lang.c_str(), output_file.c_str())) {
       tprintError("Error combining tessdata files into {}\n", output_file);
     } else {

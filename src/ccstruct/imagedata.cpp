@@ -25,6 +25,7 @@
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
 #include <tesseract/tprintf.h>    // for tprintf
+#include "tesserrstream.h" // for tesserr
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
@@ -524,7 +525,8 @@ void DocumentData::Shuffle() {
   TRand random;
   // Different documents get shuffled differently, but the same for the same
   // name.
-  random.set_seed(document_name_.c_str());
+  std::hash<std::string> hasher;
+  random.set_seed(static_cast<uint64_t>(hasher(document_name_)));
   int num_pages = pages_.size();
   // Execute one random swap for each page in the document.
   for (int i = 0; i < num_pages; ++i) {
@@ -546,11 +548,11 @@ bool DocumentData::ReCachePages() {
     delete page;
   }
   pages_.clear();
-#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
+//#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
   auto name_size = document_name_.size();
-  if (name_size > 4 && document_name_.substr(name_size - 4) == ".png") {
+  if (document_name_.ends_with(".png")) {
     // PNG image given instead of LSTMF file.
-    std::string gt_name = document_name_.substr(0, name_size - 3) + "gt.txt";
+    std::string gt_name{document_name_.substr(0, name_size - 3) + "gt.txt"};
     std::ifstream t(gt_name);
     std::string line;
     std::getline(t, line);
@@ -563,18 +565,23 @@ bool DocumentData::ReCachePages() {
     pages_offset_ %= loaded_pages;
     set_total_pages(loaded_pages);
     set_memory_used(memory_used() + image_data->MemoryUsed());
-#if 01
-      tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
-            loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-            document_name_.c_str());
-#endif
+    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
+          loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
+          document_name_.c_str());
     return !pages_.empty();
   }
-#endif
+//#endif
   TFile fp;
-  if (!fp.Open(document_name_.c_str(), reader_) ||
-      !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintError("Deserialize header failed: {}\n", document_name_);
+  if (!fp.Open(document_name_.c_str(), reader_)) {
+    tprintError("Deserialize failed: cannot open file: {}\n", document_name_);
+    return false;
+  }
+  if (!fp.DeSerializeSize(&loaded_pages)) {
+    tprintError("Deserialize header size failed for file: {}\n", document_name_);
+    return false;
+  }
+  if (loaded_pages <= 0) {
+    tprintError("Deserialize header produced faulty page count {} for file: {}\n", loaded_pages, document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -609,7 +616,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintError("Deserialize failed: {} read {}/{} lines\n", document_name_,
+    tprintError("Deserialize failed for file: {}; read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;

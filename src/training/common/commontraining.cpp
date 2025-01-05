@@ -17,10 +17,14 @@
 
 #include "commontraining.h"
 
+#include <boost/algorithm/string/replace.hpp>
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #if DISABLED_LEGACY_ENGINE
 
-#  include <tesseract/params.h>
-#  include <tesseract/tprintf.h>
+#include <tesseract/params.h>
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
@@ -82,6 +86,7 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include "tessdatamanager.h"
 #  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
+#  include "tesseractclass.h"
 
 #if defined(HAVE_MUPDF)
 #include "mupdf/assertions.h"     // for ASSERT
@@ -97,8 +102,6 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 // -M 0.625   -B 0.05   -I 1.0   -C 1e-6.
 CLUSTERCONFIG Config = {elliptical, 0.625, 0.05, 1.0, 1e-6, 0};
 FEATURE_DEFS_STRUCT feature_defs;
-
-static CCUtil *ccutil = nullptr;
 
 INT_VAR(trainer_debug_level, 0, "Level of Trainer debugging");
 INT_VAR(trainer_load_images, 0, "Load images with tr files");
@@ -134,15 +137,14 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-int ParseArguments(int *argc, const char ***argv) {
-	if (!ccutil)
-		ccutil = new CCUtil();
-
+int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
   std::string usage;
   if (*argc) {
-    usage += (*argv)[0];
+    fs::path exename = (*argv)[0];
+    auto appname = exename.stem().string();
+    usage += appname;
     usage += " -v | --version | ";
-    usage += (*argv)[0];
+    usage += boost::replace_all_copy(appname, "tesseract-", "");
   }
   usage += " [.tr files ...]";
   int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
@@ -156,8 +158,7 @@ int ParseArguments(int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!trainer_configfile.empty()) {
-    ASSERT0(ccutil != nullptr);
-    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), ccutil->params());
+    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), api.tesseract().params());
   }
   return rv;
 }

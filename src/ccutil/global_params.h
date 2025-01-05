@@ -19,6 +19,7 @@
 #define TESS_GLOBAL_PARAMS_H
 
 #include <tesseract/params.h>
+#include <utility>            // for std::forward
 
 namespace tesseract {
 
@@ -35,6 +36,21 @@ extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);
 
+// Disable some log messages by setting log_level > 0.
+extern TESS_API INT_VAR_H(log_level);
+
+// Get file for debug output.
+TESS_API FILE *get_debugfp();
+
+// Main logging function. Trace printf.
+template <typename ... Types>
+auto tprintf(Types && ... args) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
+  return fprintf(get_debugfp(), std::forward<Types>(args)...);
+#pragma clang diagnostic pop
+}
+
 } // namespace tesseract
 
-#endif
+#endif // define TESSERACT_CCUTIL_TPRINTF_H

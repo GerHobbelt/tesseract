@@ -80,6 +80,12 @@
 #  endif
 #endif
 
+#if defined(HAVE_RVV)
+#  if defined(HAVE_GETAUXVAL)
+#    include <sys/auxv.h>
+#    define HWCAP_RV(letter) (1ul << ((letter) - 'A'))
+#  endif
+#endif
 
 namespace tesseract {
 
@@ -107,6 +113,8 @@ bool SIMDDetect::neon_available_ = true;
 #elif defined(HAVE_NEON)
 // If true, then Neon has been detected.
 bool SIMDDetect::neon_available_ = true;
+#elif defined(HAVE_RVV)
+bool SIMDDetect::rvv_available_ = false;
 #else
 // If true, then Neon has been detected.
 bool SIMDDetect::neon_available_ = false;
@@ -264,6 +272,13 @@ SIMDDetect::SIMDDetect() {
 #  endif
 #endif
 
+#if defined(HAVE_RVV)
+#  if defined(HAVE_GETAUXVAL)
+  const unsigned long hwcap = getauxval(AT_HWCAP);
+  rvv_available_ = !!(hwcap & HWCAP_RV('V'));
+#  endif
+#endif
+
   // Select code for calculation of dot product based on autodetection.
   const char *dotproduct_method = "generic";
 
@@ -294,6 +309,10 @@ SIMDDetect::SIMDDetect() {
     // NEON detected.
     SetDotProduct(DotProductNEON, IntSimdMatrix::intSimdMatrixNEON);
     dotproduct_method = "neon";
+#if defined(HAVE_RVV)
+  } else if (rvv_available_) {
+    SetDotProduct(DotProductGeneric, &IntSimdMatrix::intSimdMatrixRVV);
+#endif
 #if defined(HAVE_FRAMEWORK_ACCELERATE)
   } else {
     SetDotProduct(DotProductAccelerate);
@@ -377,7 +396,7 @@ void SIMDDetect::Update() {
         (fma_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " fma" : "",
         (sse_available_ && IntSimdMatrix::intSimdMatrixSSE != nullptr) ? " sse" : "",
         (neon_available_ && IntSimdMatrix::intSimdMatrixNEON != nullptr) ? " neon" : ""
-	);
+	  );
   }
 
   dotproduct.set_value(dotproduct_method);

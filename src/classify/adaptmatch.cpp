@@ -650,7 +650,7 @@ void Classify::StartBackupAdaptiveClassifier() {
 void Classify::SetupPass1() {
   EnableLearning = classify_enable_learning;
   UseLearning = false;
-  getDict().SettupStopperPass1();
+  getDict().SetupStopperPass1();
 
 } /* SetupPass1 */
 
@@ -666,7 +666,7 @@ void Classify::SetupPass1() {
 void Classify::SetupPass2() {
   EnableLearning = false;
   UseLearning = true;
-  getDict().SettupStopperPass2();
+  getDict().SetupStopperPass2();
 
 } /* SetupPass2 */
 
