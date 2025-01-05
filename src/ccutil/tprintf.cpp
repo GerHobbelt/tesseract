@@ -111,6 +111,7 @@ static void do_transmit_logline() {
 TPrintGroupLinesTillEndOfScope::TPrintGroupLinesTillEndOfScope() {
   pending_grouping_count++;
 }
+
 // pop pending grouping signal
 TPrintGroupLinesTillEndOfScope::~TPrintGroupLinesTillEndOfScope() {
   // once we get here, a spurious higher level log message may have broken up
@@ -146,7 +147,7 @@ static void fz_tess_tprintf(int level, fmt::string_view format, fmt::format_args
     if (!msg_buffer.empty()) {
       if (!msg_buffer.ends_with('\n'))
         msg_buffer += '\n';
-      // send the lower prio message before continuing with our intermittant
+      // send the lower prio message before continuing with our intermittent
       // higher prio current message:
       do_transmit_logline();
     }

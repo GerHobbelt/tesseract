@@ -77,7 +77,7 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line, const float angle) {
+                                int bytes_per_pixel, int bytes_per_line, int exif, const float angle) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
@@ -171,27 +171,26 @@ void ImageThresholder::SetImage(const Image &pix, int exif, const float angle) {
 
   // Rotate if specified by exif orientation value
   Image src, temp1, temp2;
+  src = pix;
   if (exif == 3 || exif == 4) {
-    temp1 = pixRotateOrth(pix, 2);
+    temp1 = pixRotateOrth(src, 2);
   } else if (exif == 5 || exif == 6) {
-    temp1 = pixRotateOrth(pix, 1);
+    temp1 = pixRotateOrth(src, 1);
   } else if (exif == 7 || exif == 8) {
-    temp1 = pixRotateOrth(pix, 3);
+    temp1 = pixRotateOrth(src, 3);
   } else {
-    temp1 = pix.clone();
+    temp1 = src;
   }
 
   // Mirror if specified by exif orientation value
   if (exif == 2 || exif == 4 || exif == 5 || exif == 7) {
     temp2 = pixFlipLR(NULL, temp1);
   } else {
-    temp2 = temp1.clone();
+    temp2 = temp1;
   }
 
   // Rotate if additional rotation angle is specified
   src = pixRotate(temp2, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
-  
-  XXXXXXXXXX TODO: clone if angle == 0 XXXXXXXXXXXXXXXXXXXXX
 
   temp1.destroy();
   temp2.destroy();
@@ -277,8 +276,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     pix_grey = GetPixRectGrey();
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
-                               (PIX**)pix_thresholds,
-                                (PIX**)pix_binary);
+                               pix_thresholds,
+                               pix_binary);
   } break;
 
   case ThresholdMethod::OtsuOnNormalizedBackground: {
@@ -320,8 +319,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
-                                 (PIX **)pix_thresholds,
-                                 (PIX **)pix_binary);
+                                 pix_thresholds,
+                                 pix_binary);
   } break;
 
   case ThresholdMethod::Nlbin: {
@@ -395,11 +394,9 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
 	    src = pixConvertTo8(src, false);
 	  }
   } else {
-  	src = original.clone();
+  	src = original;
   }
   OtsuThresholdRectToPix(src, pix);
-
-  XXXXXXXXXXXXXXXXX TODO: check pix instances' lifetimes...
 
   return true;
 }
@@ -474,7 +471,7 @@ Image ImageThresholder::GetPixRectGrey() {
 }
 
 // Otsu thresholds the rectangle, taking the rectangle from *this.
-void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const {
+void ImageThresholder::OtsuThresholdRectToPix(const Image &src_pix, Image *out_pix) const {
   std::vector<int> thresholds;
   std::vector<int> hi_values;
 
@@ -488,13 +485,13 @@ void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) con
 /// 
 /// NOTE that num_channels is the size of the thresholds and hi_values
 /// arrays and also the bytes per pixel in src_pix.
-void ImageThresholder::ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
+void ImageThresholder::ThresholdRectToPix(const Image &src_pix, int num_channels, const std::vector<int> &thresholds,
                                           const std::vector<int> &hi_values, Image *pix) const {
   *pix = pixCreate(rect_width_, rect_height_, 1);
   uint32_t *pixdata = pixGetData(*pix);
   int wpl = pixGetWpl(*pix);
   int src_wpl = pixGetWpl(src_pix);
-  uint32_t *srcdata = pixGetData(src_pix);
+  const uint32_t *srcdata = pixGetData(src_pix);
   pixSetXRes(*pix, pixGetXRes(src_pix));
   pixSetYRes(*pix, pixGetYRes(src_pix));
   for (int y = 0; y < rect_height_; ++y) {

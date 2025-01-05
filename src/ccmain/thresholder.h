@@ -208,13 +208,13 @@ protected:
   }
 
   // Otsu thresholds the rectangle, taking the rectangle from *this.
-  void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
+  void OtsuThresholdRectToPix(const Image &src_pix, Image *out_pix) const;
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.
   /// NOTE that num_channels is the size of the thresholds and hi_values
   // arrays and also the bytes per pixel in src_pix.
-  void ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
+  void ThresholdRectToPix(const Image &src_pix, int num_channels, const std::vector<int> &thresholds,
                           const std::vector <int> &hi_values, Image *pix) const;
 
 private:
