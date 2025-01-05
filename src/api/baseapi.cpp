@@ -264,7 +264,7 @@ ImageCostEstimate TessBaseAPI::EstimateImageMemoryCost(int image_width, int imag
   cost *= image_height;
 
   if (allowed_image_memory_capacity > 0.0) {
-    // any rediculous input values will be replaced by the Tesseract configuration value:
+    // any ridiculous input values will be replaced by the Tesseract configuration value:
     if (allowance > allowed_image_memory_capacity || allowance <= 0.0)
       allowance = allowed_image_memory_capacity;
   }
@@ -822,7 +822,7 @@ Pix *TessBaseAPI::GetThresholdedImage() {
   // Image p1 = pixRotate(tess.pix_binary(), 0.15, L_ROTATE_SHEAR, L_BRING_IN_WHITE, 0, 0);
 
   // because we want to keep the public API as-is for now, instead of migrating it to using Image type directly,
-  // we downgrade to `PIX *` at the exit point, hence the reponsibility to CLONE is ours: 
+  // we downgrade to `PIX *` at the exit point, hence the responsibility to CLONE is ours: 
   return tess.pix_binary().clone2pix();
 }
 
@@ -1388,7 +1388,7 @@ const char * TessBaseAPI::GetVisibleImageFilename() {
 
 const char *TessBaseAPI::GetDatapath() {
   Tesseract &tess = tesseract();
-  return tess.datadir_.c_str();
+  return tess.datadir_.string().c_str();
 }
 
 int TessBaseAPI::GetSourceYResolution() {

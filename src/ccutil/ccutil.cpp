@@ -282,7 +282,7 @@ std::filesystem::path find_data_path(const std::string &argv0) {
   if (!argv0.empty()) {
     std::filesystem::path path(argv0);
     if (!std::filesystem::is_directory(path)) {
-      tesserr << "Warning (tessdata): '" << argv0 << "' is not a valid directory.\n";
+      tprintWarn("(tessdata): '{}' is not a valid directory.\n", argv0);
     }
     return path;
   }
@@ -293,7 +293,7 @@ std::filesystem::path find_data_path(const std::string &argv0) {
     if (std::filesystem::exists(path)) {
       return path;
     } else {
-      tprintf("Warning: TESSDATA_PREFIX %s does not exist, ignoring.\n",
+      tprintWarn("TESSDATA_PREFIX '{}' does not exist, ignoring.\n",
               tessdata_prefix);
     }
   }
@@ -327,8 +327,8 @@ std::filesystem::path find_data_path(const std::string &argv0) {
  * @param argv0 - paths to the directory with language files and config files.
  */
 void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
-  imagebasename = basename; /**< name of image */
-  datadir = find_data_path(argv0);
+  imagebasename_ = basename; /**< name of image */
+  datadir_ = find_data_path(argv0);
 }
 
 } // namespace tesseract

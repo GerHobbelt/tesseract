@@ -900,7 +900,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
  *
  **********************************************************************/
 
-static int main1(int argc, const char **argv) {
+static int main1(int argc, const char **argv)
 {
 #if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
   // Raise SIGFPE.
