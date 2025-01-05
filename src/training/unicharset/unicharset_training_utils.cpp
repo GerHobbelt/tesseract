@@ -2,7 +2,6 @@
 // File:        unicharset_training_utils.cpp
 // Description: Training utilities for UNICHARSET.
 // Author:      Ray Smith
-// Created:     Fri Oct 17 17:09:01 PDT 2014
 //
 // (C) Copyright 2014, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +30,7 @@
 #include "icuerrorcode.h"
 #include "normstrngs.h"
 #include "statistc.h"
+#include "tesserrstream.h"   // for tesserr
 #include "unicharset.h"
 
 #if defined(HAS_LIBICU)

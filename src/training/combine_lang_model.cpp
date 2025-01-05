@@ -21,6 +21,7 @@
 #include "common/commandlineflags.h"
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "unicharset/lang_model_helpers.h"
+#include "tesserrstream.h"  // for tesserr
 #include <tesseract/tprintf.h>
 #include "unicharset/unicharset_training_utils.h"
 

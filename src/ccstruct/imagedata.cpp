@@ -25,6 +25,7 @@
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
 #include <tesseract/tprintf.h>    // for tprintf
+#include "tesserrstream.h" // for tesserr
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
