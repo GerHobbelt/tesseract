@@ -169,7 +169,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  */
 static void addAvailableLanguages(const std::string &datadir,
                                   std::vector<std::string> *langs) {
-  if (!std::filesystem::exists(datadir)) {
+  if (!std::filesystem::is_directory(datadir)) {
     std::cerr << "Error: The directory '" << datadir << "' does not exist.\n";
     return;
   }
