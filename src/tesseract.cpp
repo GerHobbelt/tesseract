@@ -899,11 +899,7 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
  *
  **********************************************************************/
 
-#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
-extern "C" int main(int argc, const char** argv)
-#else
-extern "C" int tesseract_main(int argc, const char **argv)
-#endif
+static int main1(int argc, const char **argv) {
 {
 #if defined(__USE_GNU) && defined(HAVE_FEENABLEEXCEPT)
   // Raise SIGFPE.
@@ -1186,4 +1182,20 @@ extern "C" int tesseract_main(int argc, const char **argv)
   TessBaseAPI::ClearPersistentCache();
 
   return ret_val;
+}
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_main(int argc, const char **argv)
+#endif
+{
+  try {
+    return main1(argc, argv);
+  } catch (std::exception &e) {
+    std::cerr << "exception: " << e.what() << "\n";
+  } catch (...) {
+    std::cerr << "unknown exception\n";
+  }
+  return 1;
 }
