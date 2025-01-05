@@ -325,32 +325,6 @@ static void PrintHelpMessage(const char *program) {
       program, program, program, program, program, program);
 }
 
-static bool SetVariablesFromCLArgs(tesseract::TessBaseAPI &api, int argc, const char** argv) {
-  bool success = true;
-  char opt1[256], opt2[255];
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
-      strncpy(opt1, argv[i + 1], 255);
-      opt1[255] = '\0';
-      char *p = strchr(opt1, '=');
-      if (!p) {
-        tprintError("Missing '=' in configvar assignment for '{}'\n", opt1);
-        success = false;
-        break;
-      }
-      *p = 0;
-      strncpy(opt2, strchr(argv[i + 1], '=') + 1, sizeof(opt2) - 1);
-      opt2[254] = 0;
-      ++i;
-
-      if (!api.SetVariable(opt1, opt2)) {
-        tprintError("Could not set the (obviously unknown) option `{}={}`\n", opt1, opt2);
-      }
-    }
-  }
-  return success;
-}
-
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
   std::vector<std::string> languages;
   api.GetAvailableLanguagesAsVector(&languages);
@@ -701,7 +675,16 @@ static bool ParseArgs(int argc, const char** argv, const char **lang, const char
       *print_fonts_table = true;
 #endif  // !DISABLED_LEGACY_ENGINE
     } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
-      // handled properly after api init
+      const std::string argument(argv[i + 1]);
+      const auto equal_pos = argument.find('=');
+      if (equal_pos == std::string::npos) {
+          throw std::invalid_argument("Missing '=' in configvar assignment");
+      }
+      // Extract key and value
+      const std::string key = argument.substr(0, equal_pos);
+      const std::string value = argument.substr(equal_pos + 1);
+      vars_vec->push_back(key);
+      vars_values->push_back(value);
       ++i;
     } else if (strcmp(argv[i], "--visible-pdf-image") == 0 && i + 1 < argc) {
       *visible_pdf_image_file = argv[i + 1];
@@ -1015,10 +998,6 @@ extern "C" int tesseract_main(int argc, const char **argv)
 
     api.SetOutputName(outputbase);
 
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
-    }
-
     int config_count = argc - arg_i;
     const int init_failed = api.InitFull(datapath, lang, enginemode, (config_count > 0 ? &(argv[arg_i]) : nullptr), config_count, &vars_vec, &vars_values);
 
@@ -1030,11 +1009,6 @@ extern "C" int tesseract_main(int argc, const char **argv)
   	// TODO: set during init phase and/or when this parameter is edited.
     Tesseract &tess = api.tesseract();
     monitor.set_deadline_msecs(tess.activity_timeout_millisec);
-
-    // repeat the `-c var=val` load as debug_all MAY have overwritten some of these user-specified settings in the call above.
-    if (!SetVariablesFromCLArgs(api, argc, argv)) {
-      return EXIT_FAILURE;
-    }
 
     // SIMD settings might be overridden by config variable.
     tesseract::SIMDDetect::Update();
