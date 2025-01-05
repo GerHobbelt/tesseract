@@ -351,24 +351,23 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
 
   Image original = GetPixRect();
 
+  // Handle binary image
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
+    Image original = GetPixRect();
     *pix = original.copy();
-  } else {
-    if (pixGetColormap(original)) {
-      Image tmp;
-      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
-      int depth = pixGetDepth(without_cmap);
-      if (depth > 1 && depth < 8) {
-        tmp = pixConvertTo8(without_cmap, false);
-      } else {
-        tmp = without_cmap.copy();
-      }
-      OtsuThresholdRectToPix(tmp, pix);
-    } else {
-      OtsuThresholdRectToPix(pix_, pix);
-    }
+    original.destroy();
+    return true;
+  }
+  // Handle colormaps
+  Image src = pix_;
+  if (pixGetColormap(src)) {
+    src = pixRemoveColormap(src, REMOVE_CMAP_BASED_ON_SRC);
+  }
+  OtsuThresholdRectToPix(src, pix);
+  if (src != pix_) {
+    src.destroy();
   }
   return true;
 }
