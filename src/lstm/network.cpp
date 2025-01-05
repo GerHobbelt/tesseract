@@ -36,9 +36,6 @@
 #include "scrollview.h"
 #include "series.h"
 #include "statistc.h"
-#ifdef INCLUDE_TENSORFLOW
-#  include "tfnetwork.h"
-#endif
 #include <tesseract/tprintf.h>
 
 #undef min
@@ -288,11 +285,7 @@ Network *Network::CreateFromFile(TFile *fp) {
       network = new Series(name);
       break;
     case NT_TENSORFLOW:
-#ifdef INCLUDE_TENSORFLOW
-      network = new TFNetwork(name);
-#else
-      tprintWarn("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
-#endif
+      tprintWarn("Unsupported TensorFlow model\n");
       break;
     // All variants of FullyConnected.
     case NT_SOFTMAX:

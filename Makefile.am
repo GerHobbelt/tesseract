@@ -111,7 +111,6 @@ lib_LTLIBRARIES = libtesseract.la
 libtesseract_la_LDFLAGS = $(LEPTONICA_LIBS)
 libtesseract_la_LDFLAGS += $(libarchive_LIBS)
 libtesseract_la_LDFLAGS += $(libcurl_LIBS)
-libtesseract_la_LDFLAGS += $(TENSORFLOW_LIBS)
 if T_WIN
 libtesseract_la_LDFLAGS += -no-undefined -lws2_32
 else
@@ -545,10 +544,6 @@ libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/dict
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/lstm
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/viewer
 libtesseract_lstm_la_CPPFLAGS += -I$(top_srcdir)/src/fmt/include
-if TENSORFLOW
-libtesseract_lstm_la_CPPFLAGS += -DINCLUDE_TENSORFLOW
-libtesseract_lstm_la_CPPFLAGS += -I/usr/include/tensorflow
-endif
 if !NO_TESSDATA_PREFIX
 libtesseract_lstm_la_CPPFLAGS += -DTESSDATA_PREFIX='"@datadir@"'
 endif
@@ -571,7 +566,6 @@ noinst_HEADERS += src/lstm/reversed.h
 noinst_HEADERS += src/lstm/series.h
 noinst_HEADERS += src/lstm/static_shape.h
 noinst_HEADERS += src/lstm/stridemap.h
-noinst_HEADERS += src/lstm/tfnetwork.h
 noinst_HEADERS += src/lstm/weightmatrix.h
 
 noinst_LTLIBRARIES += libtesseract_lstm.la
@@ -592,10 +586,6 @@ libtesseract_lstm_la_SOURCES += src/lstm/reconfig.cpp
 libtesseract_lstm_la_SOURCES += src/lstm/reversed.cpp
 libtesseract_lstm_la_SOURCES += src/lstm/series.cpp
 libtesseract_lstm_la_SOURCES += src/lstm/stridemap.cpp
-if TENSORFLOW
-libtesseract_lstm_la_SOURCES += src/lstm/tfnetwork.cpp
-libtesseract_lstm_la_SOURCES += src/lstm/tfnetwork.pb.cc
-endif
 libtesseract_lstm_la_SOURCES += src/lstm/weightmatrix.cpp
 
 # Rules for src/textord.
@@ -774,7 +764,6 @@ tesseract_LDFLAGS = $(OPENMP_CXXFLAGS)
 
 tesseract_LDADD = libtesseract.la
 tesseract_LDADD += $(LEPTONICA_LIBS)
-tesseract_LDADD += $(TENSORFLOW_LIBS)
 tesseract_LDADD += $(libarchive_LIBS)
 tesseract_LDADD += $(libcurl_LIBS)
 
@@ -945,7 +934,6 @@ EXTRA_PROGRAMS += $(trainingtools)
 extralib = libtesseract.la
 extralib += $(libarchive_LIBS)
 extralib += $(LEPTONICA_LIBS)
-extralib += $(TENSORFLOW_LIBS)
 if T_WIN
 extralib += -lws2_32
 endif
@@ -1059,7 +1047,6 @@ fuzzer-api-512x256: fuzzer-api
           $< \
           $(builddir)/.libs/libtesseract.a \
           $(LEPTONICA_LIBS) \
-          $(TENSORFLOW_LIBS) \
           $(libarchive_LIBS) \
           $(libcurl_LIBS) \
           -o $@
@@ -1079,7 +1066,6 @@ fuzzer-api-512x256: unittest/fuzzers/fuzzer-api.cpp
           $< \
           $(builddir)/.libs/libtesseract.a \
           $(LEPTONICA_LIBS) \
-          $(TENSORFLOW_LIBS) \
           $(libarchive_LIBS) \
           $(libcurl_LIBS) \
           -o $@
@@ -1193,10 +1179,6 @@ endif # ENABLE_TRAINING
 unittest_CPPFLAGS += -I$(top_srcdir)/src/viewer
 unittest_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 unittest_CPPFLAGS += -I$(top_srcdir)/unittest
-if TENSORFLOW
-unittest_CPPFLAGS += -DINCLUDE_TENSORFLOW
-unittest_CPPFLAGS += -I/usr/include/tensorflow
-endif # TENSORFLOW
 
 # Build googletest:
 check_LTLIBRARIES = libgtest.la libgtest_main.la libgmock.la libgmock_main.la
@@ -1224,7 +1206,6 @@ GTEST_LIBS =  libgtest.la libgtest_main.la -lpthread
 GMOCK_LIBS =  libgmock.la libgmock_main.la
 TESS_LIBS = $(GTEST_LIBS)
 TESS_LIBS += libtesseract.la $(libarchive_LIBS)
-TESS_LIBS += $(TENSORFLOW_LIBS)
 TRAINING_LIBS = libtesseract_training.la
 TRAINING_LIBS += $(TESS_LIBS)
 unittest_CPPFLAGS += -isystem $(top_srcdir)/unittest/third_party/googletest/googletest/include
@@ -1487,10 +1468,6 @@ networkio_test_CPPFLAGS = $(unittest_CPPFLAGS)
 networkio_test_LDADD = $(TESS_LIBS)
 
 normstrngs_test_SOURCES = unittest/normstrngs_test.cc
-if TENSORFLOW
-normstrngs_test_SOURCES += unittest/third_party/utf/rune.c
-normstrngs_test_SOURCES += unittest/util/utf8/unilib.cc
-endif # TENSORFLOW
 normstrngs_test_CPPFLAGS = $(unittest_CPPFLAGS)
 normstrngs_test_LDADD = $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
@@ -1509,11 +1486,6 @@ pagesegmode_test_CPPFLAGS = $(unittest_CPPFLAGS)
 pagesegmode_test_LDADD = $(TRAINING_LIBS) $(LEPTONICA_LIBS)
 
 pango_font_info_test_SOURCES = unittest/pango_font_info_test.cc
-if TENSORFLOW
-pango_font_info_test_SOURCES += unittest/third_party/utf/rune.c
-pango_font_info_test_SOURCES += unittest/util/utf8/unicodetext.cc
-pango_font_info_test_SOURCES += unittest/util/utf8/unilib.cc
-endif # TENSORFLOW
 pango_font_info_test_CPPFLAGS = $(unittest_CPPFLAGS)
 pango_font_info_test_LDADD = $(TRAINING_LIBS) $(LEPTONICA_LIBS)
 pango_font_info_test_LDADD += $(ICU_I18N_LIBS)
