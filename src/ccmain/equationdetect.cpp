@@ -807,7 +807,7 @@ void EquationDetect::IdentifyInlinePartsHorizontal() {
     ColPartition *neighbor = nullptr;
     bool side_neighbor_found = false;
     while ((neighbor = search.NextSideSearch(right_to_left)) != nullptr) {
-      const TBOX &neighbor_box(neighbor->bounding_box());
+      const TBOX &neighbor_box = neighbor->bounding_box();
       if (!IsTextOrEquationType(neighbor->type()) || part_box.x_gap(neighbor_box) > kGapTh ||
           !part_box.major_y_overlap(neighbor_box) || part_box.major_x_overlap(neighbor_box)) {
         continue;
@@ -820,7 +820,7 @@ void EquationDetect::IdentifyInlinePartsHorizontal() {
       part->set_type(PT_INLINE_EQUATION);
     } else {
       // Check the geometric feature of neighbor.
-      const TBOX &neighbor_box(neighbor->bounding_box());
+      const TBOX &neighbor_box = neighbor->bounding_box();
       if (neighbor_box.width() > part_box.width() &&
           neighbor->type() != PT_EQUATION) { // Mark as PT_INLINE_EQUATION.
         part->set_type(PT_INLINE_EQUATION);
