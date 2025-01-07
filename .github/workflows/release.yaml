@@ -9,16 +9,22 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        build: [dev, prod]
+        build: [prod]
         platform:
           - ubuntu22-amd64
           - ubuntu22-arm64
+          - ubuntu24-amd64
+          - ubuntu24-arm64
           - macos-arm64
         include:
           - platform: ubuntu22-amd64
             runs-on: ubuntu-22.04
           - platform: ubuntu22-arm64
             runs-on: ubuntu22-4core-arm64
+          - platform: ubuntu24-amd64
+            runs-on: ubuntu-24.04
+          - platform: ubuntu24-arm64
+            runs-on: ubuntu24-4core-arm64
           - platform: macos-arm64
             runs-on: macos-14
 
