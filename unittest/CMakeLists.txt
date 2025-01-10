@@ -12,11 +12,17 @@ set(COMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/training/common
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googletest/googlemock/include)
 
+if (MSVC)
+    set(TESSBIN_DIR ${EXECUTABLE_OUTPUT_PATH}/$<CONFIG>)
+else()
+    set(TESSBIN_DIR ${EXECUTABLE_OUTPUT_PATH})
+endif()
+
 # Set common compile definitions
 set(COMMON_COMPILE_DEFINITIONS
     "-DTESTING_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../test/testing\""
     "-DTESSDATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../tessdata\""
-    "-DTESSBIN_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+    "-DTESSBIN_DIR=\"${TESSBIN_DIR}\""
     "-DTESTDATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../test/testdata\""
     "-DLANGDATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../langdata_lstm\"")
 

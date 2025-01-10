@@ -288,7 +288,7 @@ endif()
 # Compiler specific environment
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
   set(CMAKE_CXX_FLAGS_DEBUG
-      "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og")
+      "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og -Wno-unknown-pragmas")
 elseif(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE) # strdup
