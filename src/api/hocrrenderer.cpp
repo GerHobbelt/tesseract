@@ -134,7 +134,6 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   std::stringstream hocr_str;
   // Use "C" locale (needed for double values x_size and x_descenders).
   hocr_str.imbue(std::locale::classic());
@@ -229,9 +228,9 @@ char *TessBaseAPI::GetHOCRText(int page_number) {
         case PT_FLOWING_IMAGE:
         case PT_HEADING_IMAGE:
         case PT_PULLOUT_IMAGE:
-            if (tesseract_->hocr_images) {
-              hocr_str << "ocr_photo";
-            }
+          if (tesseract_->hocr_images) {
+            hocr_str << "ocr_photo";
+          }
           break;
         default:
           hocr_str << "ocr_line";
@@ -489,9 +488,9 @@ bool TessHOcrRenderer::BeginDocumentHandler() {
       "  <meta name='ocr-system' content='tesseract " TESSERACT_VERSION_STR
       "' />\n"
       "  <meta name='ocr-capabilities' content='ocr_page ocr_carea ocr_par"
-      " ocr_line ocrx_word ocrp_wconf");
+      " ocr_line ocrx_word ocrp_dir ocrp_lang ocrp_wconf");
   if (font_info_) {
-    AppendString(" ocrp_lang ocrp_dir ocrp_font ocrp_fsize");
+    AppendString(" ocrp_font ocrp_fsize");
   }
   AppendString(
       "'/>\n"

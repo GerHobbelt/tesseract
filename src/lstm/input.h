@@ -92,7 +92,7 @@ public:
   // height == 1. If height == 0 then no scaling.
   // 
   // NOTE: It isn't safe for multiple threads to call this on the same pix.
-  static void PreparePixInput(Tesseract *tess, const StaticShape &shape, const Image pix,
+  static void PreparePixInput(Tesseract &tess, const StaticShape &shape, const Image pix,
                               TRand *randomizer, NetworkIO *input,
                               const TBOX &line_box, float scale_factor);
 

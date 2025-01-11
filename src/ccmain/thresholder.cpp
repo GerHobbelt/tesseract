@@ -34,14 +34,10 @@
 #include <cstring>
 #include <tuple>
 
-#if defined(HAVE_MUPDF)
-#include "mupdf/assertions.h"
-#endif
-
 
 namespace tesseract {
 
-ImageThresholder::ImageThresholder(Tesseract* tess)
+ImageThresholder::ImageThresholder(Tesseract& tess)
     : tesseract_(tess)
     , pix_(nullptr)
     , image_width_(0)
@@ -51,7 +47,6 @@ ImageThresholder::ImageThresholder(Tesseract* tess)
     , scale_(1)
     , yres_(300)
     , estimated_res_(300) {
-  ASSERT0(tess != nullptr);
   SetRectangle(0, 0, 0, 0);
 }
 
@@ -78,7 +73,8 @@ bool ImageThresholder::IsEmpty() const {
 // byte packed with the MSB of the first byte being the first pixel, and a
 // one pixel is WHITE. For binary images set bytes_per_pixel=0.
 void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int height,
-                                int bytes_per_pixel, int bytes_per_line, const float angle) {
+                                int bytes_per_pixel, int bytes_per_line, int exif, 
+                                const float angle, bool upscale) {
   int bpp = bytes_per_pixel * 8;
   if (bpp == 0) {
     bpp = 1;
@@ -134,7 +130,7 @@ void ImageThresholder::SetImage(const unsigned char *imagedata, int width, int h
       tprintError("Cannot convert RAW image to Pix with bpp = {}\n", bpp);
   }
 
-  SetImage(pix, angle);
+  SetImage(pix, exif, angle, upscale);
 }
 
 // Store the coordinates of the rectangle to process for later use.
@@ -165,13 +161,46 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // SetImage for Pix clones its input, so the source pix may be pixDestroyed
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
-void ImageThresholder::SetImage(const Image &pix, const float angle) {
-#if 01
+void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, bool upscale) {
+  // Note that pix.clone() does not actually clone the data,
+  // it simply makes a new pointer to the existing data.
+  // Therefore, there should not be any performance penalty
+  // to having several copies of the same image here.
+
+  // Rotate if specified by exif orientation value.
+  Image src, temp1, temp2, temp3;
+  src = pix;
+  if (exif == 3 || exif == 4) {
+    temp1 = pixRotateOrth(src, 2);
+  } else if (exif == 5 || exif == 6) {
+    temp1 = pixRotateOrth(src, 1);
+  } else if (exif == 7 || exif == 8) {
+    temp1 = pixRotateOrth(src, 3);
+  } else {
+    temp1 = src;
+  }
+
+  // Mirror if specified by exif orientation value
+  if (exif == 2 || exif == 4 || exif == 5 || exif == 7) {
+    temp2 = pixFlipLR(NULL, temp1);
+  } else {
+    temp2 = temp1;
+  }
+
+  if (upscale) {
+    tprintDebug("Upscaling image.\n");
+    // Scale up by 2x if requested.
+    // 2x is a special case that is both faster and better quality than other scales.
+    temp3 = pixScale(temp2, 2.0, 2.0);
+  } else {
+    temp3 = temp2;
+  }
+
+  // Rotate if additional rotation angle is specified
+  //
   // clones or creates a freshly rotated copy.
-  Image src = pixRotate(const_cast<PIX *>(pix.ptr()), angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
-#else
-  Image src = pix;  // clones
-#endif
+  Image src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -216,14 +245,14 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
   l_int32 pix_w, pix_h;
   pixGetDimensions(pix_ /* pix_grey */, &pix_w, &pix_h, nullptr);
 
-  if (tesseract_->thresholding_debug) {
+  if (tesseract_.thresholding_debug) {
     tprintDebug("\nimage width: {}  height: {}  ppi: {}\n", pix_w, pix_h, yres_);
   }
 
   switch (method) {
   case ThresholdMethod::Sauvola: {
     int window_size;
-    window_size = tesseract_->thresholding_window_size * yres_;
+    window_size = tesseract_.thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
     window_size = std::min(pix_w < pix_h ? pix_w - 3 : pix_h - 3, window_size);
     int half_window_size = window_size / 2;
@@ -242,18 +271,18 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
       ny = pix_h / (half_window_size + 2);
     }
 
-    double kfactor = tesseract_->thresholding_kfactor;
+    double kfactor = tesseract_.thresholding_kfactor;
     kfactor = std::max(0.0, kfactor);
 
-    if (tesseract_->thresholding_debug) {
+    if (tesseract_.thresholding_debug) {
       tprintDebug("Sauvola thresholding: window size: {}  kfactor: {}  nx: {}  ny: {}\n", window_size, kfactor, nx, ny);
     }
 
     pix_grey = GetPixRectGrey();
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
-                               (PIX**)pix_thresholds,
-                                (PIX**)pix_binary);
+                               pix_thresholds,
+                               pix_binary);
   } break;
 
   case ThresholdMethod::OtsuOnNormalizedBackground: {
@@ -274,19 +303,19 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
 
   case ThresholdMethod::LeptonicaOtsu: {
     int tile_size;
-    double tile_size_factor = tesseract_->thresholding_tile_size;
+    double tile_size_factor = tesseract_.thresholding_tile_size;
     tile_size = tile_size_factor * yres_;
     tile_size = std::max(16, tile_size);
 
     int smooth_size;
-    double smooth_size_factor = tesseract_->thresholding_smooth_kernel_size;
+    double smooth_size_factor = tesseract_.thresholding_smooth_kernel_size;
     smooth_size_factor = std::max(0.0, smooth_size_factor);
     smooth_size = smooth_size_factor * yres_;
     int half_smooth_size = smooth_size / 2;
 
-    double score_fraction = tesseract_->thresholding_score_fraction;
+    double score_fraction = tesseract_.thresholding_score_fraction;
 
-    if (tesseract_->thresholding_debug) {
+    if (tesseract_.thresholding_debug) {
       tprintDebug("LeptonicaOtsu thresholding: tile size: {}, smooth_size: {}, score_fraction: {}\n", tile_size, smooth_size, score_fraction);
     }
 
@@ -295,8 +324,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
-                                 (PIX **)pix_thresholds,
-                                 (PIX **)pix_binary);
+                                 pix_thresholds,
+                                 pix_binary);
   } break;
 
   case ThresholdMethod::Nlbin: {
@@ -339,38 +368,41 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
 bool ImageThresholder::ThresholdToPix(Image *pix) {
   // tolerate overlarge images when they're about to be cropped by GetPixRect():
   if (IsFullImage()) {
-    if (tesseract_->CheckAndReportIfImageTooLarge(pix_)) {
+    if (tesseract_.CheckAndReportIfImageTooLarge(pix_)) {
       return false;
     }
   }
   else {
     // validate against the future cropped image size:
-    if (tesseract_->CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
+    if (tesseract_.CheckAndReportIfImageTooLarge(rect_width_, rect_height_)) {
       return false;
     }
   }
 
   Image original = GetPixRect();
 
+  // Handle binary image
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
     *pix = original.copy();
-  } else {
-    if (pixGetColormap(original)) {
-      Image tmp;
-      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
-      int depth = pixGetDepth(without_cmap);
-      if (depth > 1 && depth < 8) {
-        tmp = pixConvertTo8(without_cmap, false);
-      } else {
-        tmp = without_cmap.copy();
-      }
-      OtsuThresholdRectToPix(tmp, pix);
-    } else {
-      OtsuThresholdRectToPix(pix_, pix);
-    }
+    original.destroy();
+    return true;
   }
+
+  // Handle colormaps
+  Image src;
+  if (pixGetColormap(original)) {
+    src = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+	  int depth = pixGetDepth(src);
+	  if (depth > 1 && depth < 8) {
+	    src = pixConvertTo8(src, false);
+	  }
+  } else {
+  	src = original;
+  }
+  OtsuThresholdRectToPix(src, pix);
+
   return true;
 }
 
@@ -444,7 +476,7 @@ Image ImageThresholder::GetPixRectGrey() {
 }
 
 // Otsu thresholds the rectangle, taking the rectangle from *this.
-void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const {
+void ImageThresholder::OtsuThresholdRectToPix(const Image &src_pix, Image *out_pix) const {
   std::vector<int> thresholds;
   std::vector<int> hi_values;
 
@@ -458,13 +490,13 @@ void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) con
 /// 
 /// NOTE that num_channels is the size of the thresholds and hi_values
 /// arrays and also the bytes per pixel in src_pix.
-void ImageThresholder::ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
+void ImageThresholder::ThresholdRectToPix(const Image &src_pix, int num_channels, const std::vector<int> &thresholds,
                                           const std::vector<int> &hi_values, Image *pix) const {
   *pix = pixCreate(rect_width_, rect_height_, 1);
   uint32_t *pixdata = pixGetData(*pix);
   int wpl = pixGetWpl(*pix);
   int src_wpl = pixGetWpl(src_pix);
-  uint32_t *srcdata = pixGetData(src_pix);
+  const uint32_t *srcdata = pixGetData(src_pix);
   pixSetXRes(*pix, pixGetXRes(src_pix));
   pixSetYRes(*pix, pixGetYRes(src_pix));
   for (int y = 0; y < rect_height_; ++y) {

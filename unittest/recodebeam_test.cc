@@ -180,9 +180,9 @@ protected:
     // Check that ExtractBestPathAsWords does the same thing.
     TBOX line_box(0, 0, 100, 10);
     for (int i = 0; i < 2; ++i) {
-      beam_search.ExtractBestPathAsWords(line_box, 1.0f, false, &ccutil_.unicharset, words);
+      beam_search.ExtractBestPathAsWords(line_box, 1.0f, &ccutil_.unicharset, words);
       std::string w_decoded;
-      for (int w = 0; w < words->size(); ++w) {
+      for (size_t w = 0; w < words->size(); ++w) {
         const WERD_RES *word = (*words)[w];
         if (w_decoded.size() < truth_utf8.size()) {
           if (!w_decoded.empty() && word->word->space()) {
@@ -454,7 +454,7 @@ TEST_F(RecodeBeamTest, DISABLED_ChiDictionary) {
   ExpectCorrect(outputs, "实学储啬投学生", nullptr, &words);
   // Each is an individual word, with permuter = top choice.
   EXPECT_EQ(7, words.size());
-  for (int w = 0; w < words.size(); ++w) {
+  for (size_t w = 0; w < words.size(); ++w) {
     EXPECT_EQ(TOP_CHOICE_PERM, words[w]->best_choice->permuter());
   }
   // Now try again with the dictionary.
@@ -468,7 +468,7 @@ TEST_F(RecodeBeamTest, DISABLED_ChiDictionary) {
   const int kWordPerms[kNumWords] = {SYSTEM_DAWG_PERM, TOP_CHOICE_PERM, TOP_CHOICE_PERM,
                                      TOP_CHOICE_PERM, SYSTEM_DAWG_PERM};
   EXPECT_EQ(kNumWords, words.size());
-  for (int w = 0; w < kNumWords && w < words.size(); ++w) {
+  for (size_t w = 0; w < kNumWords && w < words.size(); ++w) {
     EXPECT_STREQ(kWords[w], words[w]->best_choice->unichar_string().c_str());
     EXPECT_EQ(kWordPerms[w], words[w]->best_choice->permuter());
   }

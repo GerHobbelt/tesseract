@@ -24,8 +24,6 @@
 #include <vector>              // std::vector
 #include "serialis.h"          // FileWriter
 
-static const char kTrainedDataSuffix[] = "traineddata";
-
 // When adding new tessdata types and file suffixes, please make sure to
 // update TessdataType enum, kTessdataFileSuffixes and kTessdataFileIsText.
 static const char kLangConfigFileSuffix[] = "config";
@@ -228,6 +226,7 @@ public:
 private:
   // Use libarchive.
   bool LoadArchiveFile(const char *filename);
+  bool SaveArchiveFile(const char *filename) const;
 
   /**
    * Fills type with TessdataType of the tessdata component represented by the

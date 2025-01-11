@@ -55,7 +55,9 @@ public:
 
   // api
   Pix *clone2pix() const; // increases refcount
-  Image cccclone() const; // increases refcount
+#if 0
+  Image clone() const;    // increases refcount
+#endif
   Image copy() const;     // does full copy
   void destroy();
   bool isZero() const;

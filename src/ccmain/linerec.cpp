@@ -376,7 +376,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       }
 #endif
 
-      word->tess_accepted = stopper_dict->AcceptableResult(word);
+      word->tess_accepted = stopper_dict->AcceptableResult(*word);
     }
   }
 }

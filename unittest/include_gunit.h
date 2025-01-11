@@ -21,14 +21,14 @@
 
 #define TST_DECLARE_string(name)                                        \
   namespace TStest {                                                    \
-    extern const char *FLAGS_##name;                                    \
+    extern const char *name;                                            \
   }                                                                     \
-  using TStest::FLAGS_##name
+  using TStest::name
 #define TST_DEFINE_string(name, value, meaning)                         \
   namespace TStest {                                                    \
-    const char *FLAGS_##name = (value);                                 \
+    const char *name = (value);                                         \
   }                                                                     \
-  using TStest::FLAGS_##name
+  using TStest::name
 
 #if defined(BUILD_MONOLITHIC) && !defined(BUILD_MONOLITHIC_SINGLE_INSTANCE_NOW)
 
@@ -58,9 +58,9 @@ class file : public tesseract::File {
 public:
   static void MakeTmpdir() {
 #if defined(_WIN32)
-    _mkdir(FLAGS_test_tmpdir);
+    _mkdir(test_tmpdir);
 #else
-    mkdir(FLAGS_test_tmpdir, S_IRWXU | S_IRWXG);
+    mkdir(test_tmpdir, S_IRWXU | S_IRWXG);
 #endif
   }
 

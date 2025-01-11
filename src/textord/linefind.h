@@ -85,7 +85,7 @@ protected:
   // The output list of TabVector makes no reference to the input BLOBNBOXes.
   void FindLineVectors(const ICOORD& bleft, const ICOORD& tright,
                               BLOBNBOX_LIST* line_bblobs, int* vertical_x, int* vertical_y,
-                              TabVector_LIST* vectors);
+                              TabVector_LIST* vectors, bool vertical_search);
 
   // Finds vertical line objects in pix_vline and removes them from src_pix.
   // Uses the given resolution to determine size thresholds instead of any

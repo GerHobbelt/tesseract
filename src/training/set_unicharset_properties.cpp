@@ -36,7 +36,11 @@ extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  (void)tesseract::SetConsoleModeToUTF8();
+
+  int rv = tesseract::ParseCommandLineFlags("-U file -O file -X file --script_dir path", &argc, &argv);
+  if (rv >= 0)
+	  return rv;
 
   // Check validity of input flags.
   if (trainer_input_unicharset_file.empty() || trainer_output_unicharset_file.empty()) {

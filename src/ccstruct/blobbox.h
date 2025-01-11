@@ -156,7 +156,7 @@ class BLOBNBOX;
 
 ELISTIZEH(BLOBNBOX);
 
-class BLOBNBOX : public ELIST_LINK {
+class BLOBNBOX : public ELIST<BLOBNBOX>::LINK {
 public:
   BLOBNBOX() {
     ReInit();
@@ -280,6 +280,13 @@ public:
   int32_t enclosed_area() const {
     return area;
   }
+  bool medium() const {
+    return medium_;
+  }
+  void set_medium(bool val) {
+    medium_ = val;
+  }
+
   bool joined_to_prev() const {
     return joined;
   }
@@ -553,6 +560,7 @@ private:
   BlobSpecialTextType spt_type_;             // Special text type.
   bool joined = false;                       // joined to prev
   bool reduced = false;                      // reduced box set
+  bool medium_ = false;
   int16_t left_rule_ = 0;                    // x-coord of nearest but not crossing rule line
   int16_t right_rule_ = 0;                   // x-coord of nearest but not crossing rule line
   int16_t left_crossing_rule_;               // x-coord of nearest or crossing rule line
@@ -578,7 +586,7 @@ private:
   bool owns_cblob_ = false;
 };
 
-class TO_ROW : public ELIST2_LINK {
+class TO_ROW : public ELIST2<TO_ROW>::LINK {
 public:
   static const int kErrorWeight = 3;
 
@@ -722,7 +730,7 @@ private:
 
 // warning C4946: reinterpret_cast used between related classes: 'tesseract::ELIST2_LINK' and 'tesseract::TO_ROW'
 ELIST2IZEH(TO_ROW);
-class TESS_API TO_BLOCK : public ELIST_LINK {
+class TESS_API TO_BLOCK : public ELIST<TO_BLOCK>::LINK {
 public:
   TO_BLOCK() : pitch_decision(PITCH_DUNNO) {
     clear();

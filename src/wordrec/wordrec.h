@@ -167,7 +167,7 @@ private:
 };
 
 /* ccmain/tstruct.cpp *********************************************************/
-class FRAGMENT : public ELIST_LINK {
+class FRAGMENT : public ELIST<FRAGMENT>::LINK {
 public:
   FRAGMENT() { // constructor
   }
@@ -376,22 +376,30 @@ public:
                                            int16_t end, const char *description, TWERD *word,
                                            BlamerBundle *blamer_bundle);
 
+  LanguageModelSettings& getLanguageModelSettings() {
+    return language_model_;
+  }
+
+protected:
   // Member variables.
 
-  std::unique_ptr<LanguageModel> language_model_;
+  LanguageModel language_model_;
   PRIORITY pass2_ok_split_;
+
+public:
   // Stores the best choice for the previous word in the paragraph.
   // This variable is modified by PAGE_RES_IT when iterating over
   // words to OCR on the page.
   WERD_CHOICE *prev_word_best_choice_;
 
+protected:
   // Function used to fill char choice lattices.
   void (Wordrec::*fill_lattice_)(const MATRIX &ratings, const WERD_CHOICE_LIST &best_choices,
                                  const UNICHARSET &unicharset, BlamerBundle *blamer_bundle);
 
 protected:
   inline bool SegSearchDone(int num_futile_classifications) {
-    return (language_model_->AcceptableChoiceFound() ||
+    return (language_model_.AcceptableChoiceFound() ||
             num_futile_classifications >= segsearch_max_futile_classifications);
   }
 

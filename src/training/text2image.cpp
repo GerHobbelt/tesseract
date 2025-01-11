@@ -644,8 +644,15 @@ static int Main() {
   std::vector<float> page_rotation;
   const char *to_render_utf8 = src_utf8.c_str();
 
+  //
+  srand(time(0));
+  int myrandom = rand();
+  //tprintDebug("random seed=%d", myrandom);
+  //
+
   tesseract::TRand randomizer;
-  randomizer.set_seed(kRandomSeed);
+  //randomizer.set_seed(kRandomSeed);
+  randomizer.set_seed(myrandom);
   std::vector<std::string> font_names;
   // We use a two pass mechanism to rotate images in both direction.
   // The first pass(0) will rotate the images in random directions and
@@ -794,13 +801,13 @@ extern "C" TESS_API int tesseract_text2image_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  if (argc > 1) {
-    if ((strcmp(argv[1], "-v") == 0) || (strcmp(argv[1], "--version") == 0)) {
-      FontUtils::PangoFontTypeInfo();
-      tprintInfo("Pango version: {}\n", pango_version_string());
-    }
-  }
-  tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  auto print_version_f = []() {
+    FontUtils::PangoFontTypeInfo();
+    tprintInfo("Pango {}\n", pango_version_string());
+  };
+  int rv = tesseract::ParseCommandLineFlags("", &argc, &argv, true, print_version_f);
+  if (rv >= 0)
+	  return rv;
   return Main();
 }
 

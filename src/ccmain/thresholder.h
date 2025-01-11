@@ -85,7 +85,7 @@ class TessBaseAPI;
 /// desired.
 class TESS_API ImageThresholder {
 public:
-  ImageThresholder(Tesseract *tess);
+  ImageThresholder(Tesseract &tess);
   virtual ~ImageThresholder();
 
   /// Destroy the Pix if there is one, freeing memory.
@@ -103,7 +103,7 @@ public:
   /// byte packed with the MSB of the first byte being the first pixel, and a
   /// one pixel is WHITE. For binary images set bytes_per_pixel=0.
   void SetImage(const unsigned char *imagedata, int width, int height, int bytes_per_pixel,
-                int bytes_per_line, float angle = 0);
+                int bytes_per_line, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Store the coordinates of the rectangle to process for later use.
   /// Doesn't actually do any thresholding.
@@ -162,7 +162,7 @@ public:
   /// SetImage for Pix clones its input, so the source pix may be pixDestroyed
   /// immediately after, but may not go away until after the Thresholder has
   /// finished with it.
-  void SetImage(const Image &pix, float angle = 0);
+  void SetImage(const Image &pix, int exif = 1, const float angle = 0, bool upscale = false);
 
   /// Threshold the source image as efficiently as possible to the output Pix.
   /// Creates a Pix and sets pix to point to the resulting pointer.
@@ -208,17 +208,17 @@ protected:
   }
 
   // Otsu thresholds the rectangle, taking the rectangle from *this.
-  void OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const;
+  void OtsuThresholdRectToPix(const Image &src_pix, Image *out_pix) const;
 
   /// Threshold the rectangle, taking everything except the src_pix
   /// from the class, using thresholds/hi_values to the output pix.
   /// NOTE that num_channels is the size of the thresholds and hi_values
   // arrays and also the bytes per pixel in src_pix.
-  void ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
+  void ThresholdRectToPix(const Image &src_pix, int num_channels, const std::vector<int> &thresholds,
                           const std::vector <int> &hi_values, Image *pix) const;
 
 private:
-  Tesseract* tesseract_;    // reference to the active instance
+  Tesseract& tesseract_;    // reference to the active instance
 
 protected:
   /// Clone or other copy of the source Pix.

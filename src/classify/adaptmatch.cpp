@@ -525,6 +525,9 @@ void Classify::EndAdaptiveClassifier() {
  *                            enables use of pre-adapted templates
  */
 void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
+
+#if !DISABLED_LEGACY_ENGINE
+
   if (!classify_enable_adaptive_matcher) {
     return;
   }
@@ -594,6 +597,9 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
     delete AdaptedTemplates;
     AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
   }
+
+#endif   // !DISABLED_LEGACY_ENGINE
+
 } /* InitAdaptiveClassifier */
 
 void Classify::ResetAdaptiveClassifierInternal() {
@@ -650,7 +656,7 @@ void Classify::StartBackupAdaptiveClassifier() {
 void Classify::SetupPass1() {
   EnableLearning = classify_enable_learning;
   UseLearning = false;
-  getDict().SettupStopperPass1();
+  getDict().SetupStopperPass1();
 
 } /* SetupPass1 */
 
@@ -666,7 +672,7 @@ void Classify::SetupPass1() {
 void Classify::SetupPass2() {
   EnableLearning = false;
   UseLearning = true;
-  getDict().SettupStopperPass2();
+  getDict().SetupStopperPass2();
 
 } /* SetupPass2 */
 

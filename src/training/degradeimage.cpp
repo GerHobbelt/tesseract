@@ -54,7 +54,7 @@ enum FactorNames {
 };
 
 // Rotation is +/- kRotationRange radians.
-const float kRotationRange = 0.02f;
+const float kRotationRange = 0.05f;
 // Number of grey levels to shift by for each exposure step.
 const int kExposureFactor = 16;
 // Salt and pepper noise is +/- kSaltnPepper.
@@ -114,7 +114,8 @@ Image DegradeImage(Image input, int exposure, TRand *randomizer, float *rotation
     } else if (randomizer != nullptr) {
       radians_clockwise = randomizer->SignedRand(kRotationRange);
     }
-
+    //radians_clockwise = my_rotation;
+    
     input = pixRotate(pix, radians_clockwise, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
     // Rotate the boxes to match.
     *rotation = radians_clockwise;

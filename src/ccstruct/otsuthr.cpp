@@ -34,7 +34,7 @@ namespace tesseract {
 // that there is no apparent foreground. At least one hi_value will not be -1.
 // The return value is the number of channels in the input image, being
 // the size of the output thresholds and hi_values arrays.
-int OtsuThreshold(Image src_pix, int left, int top, int width, int height, std::vector<int> &thresholds,
+int OtsuThreshold(const Image &src_pix, int left, int top, int width, int height, std::vector<int> &thresholds,
                   std::vector<int> &hi_values) {
   int num_channels = pixGetDepth(src_pix) / 8;
   // Of all channels with no good hi_value, keep the best so we can always
@@ -92,7 +92,7 @@ int OtsuThreshold(Image src_pix, int left, int top, int width, int height, std::
 // single channel. Each channel is always one byte per pixel.
 // Histogram is always a kHistogramSize(256) element array to count
 // occurrences of each pixel value.
-void HistogramRect(Image src_pix, int channel, int left, int top, int width, int height,
+void HistogramRect(const Image &src_pix, int channel, int left, int top, int width, int height,
                    int *histogram) {
   int num_channels = pixGetDepth(src_pix) / 8;
   channel = ClipToRange(channel, 0, num_channels - 1);

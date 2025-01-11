@@ -116,21 +116,17 @@ extern "C" TESS_API int tesseract_unicharset_extractor_main(int argc, const char
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  if (argc > 1) {
-    tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
-  }
-  if (argc < 2) {
-    tprintDebug(
-        "Usage: {} [--output_unicharset filename] [--norm_mode mode]"
-        " box_or_text_file [...]\n",
-        argv[0]);
-    tprintDebug("Where mode means:\n");
-    tprintDebug(" 1=combine graphemes (use for Latin and other simple scripts)\n");
-    tprintDebug(" 2=split graphemes (use for Indic/Khmer/Myanmar)\n");
-    tprintDebug(" 3=pure unicode (use for Arabic/Hebrew/Thai/Tibetan)\n");
-    tprintDebug("Reads box or plain text files to extract the unicharset.\n");
-    return EXIT_FAILURE;
-  }
+  int rv = tesseract::ParseCommandLineFlags(
+    "[--output_unicharset filename] [--norm_mode mode] box_or_text_file [...]\n"
+    "\n"
+    "Where mode means:\n"
+    " 1=combine graphemes (use for Latin and other simple scripts)\n"
+    " 2=split graphemes (use for Indic/Khmer/Myanmar)\n"
+    " 3=pure unicode (use for Arabic/Hebrew/Thai/Tibetan)\n"
+    "Reads box or plain text files to extract the unicharset.\n",
+    &argc, &argv);
+	if (rv >= 0)
+		return rv;
   return tesseract::Main(argc, argv);
 }
 
