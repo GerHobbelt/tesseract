@@ -59,7 +59,7 @@ enum DISPLAY_FLAGS {
 
 class ROW; // forward decl
 
-class TESS_API WERD : public ELIST2_LINK {
+class TESS_API WERD : public ELIST2<WERD>::LINK {
 public:
   WERD() = default;
   // WERD constructed with:
@@ -212,7 +212,7 @@ ELIST2IZEH(WERD);
 namespace tesseract {
 
 // compare words by increasing order of left edge, suitable for qsort(3)
-int word_comparator(const void *word1p, const void *word2p);
+int word_comparator(const WERD *word1, const WERD *word2);
 
 } // namespace tesseract
 

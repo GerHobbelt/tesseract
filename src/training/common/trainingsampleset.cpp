@@ -26,6 +26,7 @@
 #include "intfeaturemap.h"
 #include "intfeaturespace.h"
 #include "shapetable.h"
+#include "tesserrstream.h"  // for tesserr
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
@@ -589,7 +590,7 @@ void TrainingSampleSet::SetupFontIdMap() {
   // Number of samples for each font_id.
   std::vector<int> font_counts;
   for (auto &sample : samples_) {
-    const int font_id = sample->font_id();
+    const size_t font_id = sample->font_id();
     while (font_id >= font_counts.size()) {
       font_counts.push_back(0);
     }

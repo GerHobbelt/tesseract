@@ -37,10 +37,10 @@ class Tesseract;
 // comparison or getting its value. It is used in the context of the
 // ParamsEditor as a bridge from the internal tesseract parameters to the
 // ones displayed by the ScrollView server.
-class ParamContent : public ELIST_LINK {
+class ParamContent : public ELIST<ParamContent>::LINK {
 public:
   // Compare two VC objects by their name.
-  static int Compare(const void *v1, const void *v2);
+  static int Compare(const ParamContent *v1, const ParamContent *v2);
 
   // Gets a VC object identified by its ID.
   static ParamContent *GetParamContentById(int id);

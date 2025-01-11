@@ -32,9 +32,6 @@
 #include "../common/networkbuilder.h"
 #include "ratngs.h"
 #include "recodebeam.h"
-#ifdef INCLUDE_TENSORFLOW
-#  include "tfnetwork.h"
-#endif
 #include <tesseract/tprintf.h>
 
 namespace tesseract {
@@ -70,8 +67,8 @@ const int kTargetXScale = 5;
 const int kTargetYScale = 100;
 #endif // !GRAPHICS_DISABLED
 
-LSTMTrainer::LSTMTrainer()
-  : LSTMRecognizer(nullptr)
+LSTMTrainer::LSTMTrainer(Tesseract &tess)
+  : LSTMRecognizer(tess)
   , randomly_rotate_(false)
   , training_data_(0)
   , sub_trainer_(nullptr) 
@@ -80,9 +77,9 @@ LSTMTrainer::LSTMTrainer()
   debug_interval_ = 0;
 }
 
-LSTMTrainer::LSTMTrainer(const std::string &model_base, const std::string &checkpoint_name,
+LSTMTrainer::LSTMTrainer(Tesseract &tess, const std::string &model_base, const std::string &checkpoint_name,
                          int debug_interval, int64_t max_memory)
-  : LSTMRecognizer(nullptr)
+  : LSTMRecognizer(tess)
   , randomly_rotate_(false)
   , training_data_(max_memory)
   , sub_trainer_(nullptr) {
@@ -180,23 +177,6 @@ bool LSTMTrainer::InitNetwork(const char *network_spec, int append_index,
   tprintDebug("null char={}\n", null_char_);
   return true;
 }
-
-// Initializes a trainer from a serialized TFNetworkModel proto.
-// Returns the global step of TensorFlow graph or 0 if failed.
-#ifdef INCLUDE_TENSORFLOW
-int LSTMTrainer::InitTensorFlowNetwork(const std::string &tf_proto) {
-  delete network_;
-  TFNetwork *tf_net = new TFNetwork("TensorFlow");
-  training_iteration_ = tf_net->InitFromProtoStr(tf_proto);
-  if (training_iteration_ == 0) {
-    tprintError("InitFromProtoStr failed!!\n");
-    return 0;
-  }
-  network_ = tf_net;
-  ASSERT_HOST(recoder_.code_range() == tf_net->num_classes());
-  return training_iteration_;
-}
-#endif
 
 // Resets all the iteration counters for fine tuning or traininng a head,
 // where we want the error reporting to reset.
@@ -581,7 +561,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   if (sub_data.empty()) {
     sub_trainer_ = nullptr;
   } else {
-    sub_trainer_ = std::make_unique<LSTMTrainer>();
+    sub_trainer_ = std::make_unique<LSTMTrainer>(tesseract_);
     if (!ReadTrainingDump(sub_data, *sub_trainer_)) {
       return false;
     }
@@ -599,7 +579,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
 // learning rates (by scaling reduction, or layer specific, according to
 // NF_LAYER_SPECIFIC_LR).
 void LSTMTrainer::StartSubtrainer(std::stringstream &log_msg) {
-  sub_trainer_ = std::make_unique<LSTMTrainer>();
+  sub_trainer_ = std::make_unique<LSTMTrainer>(tesseract_);
   if (!ReadTrainingDump(best_trainer_, *sub_trainer_)) {
     log_msg << " Failed to revert to previous best for trial!";
     sub_trainer_.reset();
@@ -720,7 +700,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
         ww_factor *= factor;
       }
       // Make a copy of *this, so we can mess about without damaging anything.
-      LSTMTrainer copy_trainer;
+      LSTMTrainer copy_trainer(tesseract_);
 	  copy_trainer.SetDebug(samples_trainer->HasDebug());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
@@ -747,7 +727,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
         if (num_weights[i] == 0) {
           continue;
         }
-        LSTMTrainer layer_trainer;
+        LSTMTrainer layer_trainer(tesseract_);
 		layer_trainer.SetDebug(samples_trainer->HasDebug());
 		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);
@@ -926,6 +906,8 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
       // Apart from space and null, increment the label. This changes the
       // script-id to the same script-id but upside-down.
       // The labels need to be reversed in order, as the first is now the last.
+	  //
+      // TODO: possibly wrong code, check.
       for (auto truth_label : truth_labels) {
         if (truth_label != UNICHAR_SPACE && truth_label != null_char_) {
           ++truth_label;

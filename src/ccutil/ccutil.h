@@ -19,6 +19,8 @@
 #ifndef TESSERACT_CCUTIL_CCUTIL_H_
 #define TESSERACT_CCUTIL_CCUTIL_H_
 
+#include <filesystem> // for std::filesystem
+
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #if !(defined(WIN32) || defined(_WIN32) || defined(_WIN64))
@@ -81,7 +83,7 @@ public:
 
   std::string visible_image_file_path_; // name of currently input file, used for visible overlays only
   std::string input_file_path_; // name of currently processed input file
-  std::string datadir_;         // dir for data files
+  std::filesystem::path datadir_;       // dir for data files
   std::string imagebasename_;   // name of image
   std::string lang_;
   std::string language_data_path_prefix_;

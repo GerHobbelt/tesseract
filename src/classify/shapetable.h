@@ -27,6 +27,7 @@
 #include "fontinfo.h"
 #include "genericheap.h"
 #include "intmatcher.h"
+#include "tesserrstream.h"  // for tesserr
 
 namespace tesseract {
 

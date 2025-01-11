@@ -39,7 +39,7 @@ class ColSegment;
 ELISTIZEH(ColSegment);
 CLISTIZEH(ColSegment);
 
-class ColSegment : public ELIST_LINK {
+class ColSegment : public ELIST<ColSegment>::LINK {
 public:
   ColSegment();
   ~ColSegment() = default;
