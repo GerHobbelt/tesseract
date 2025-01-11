@@ -29,6 +29,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <functional>
 
 namespace tesseract {
 
@@ -103,7 +104,7 @@ class ETEXT_DESC;
 /// until the application terminates, then you are advised to set the `ETEXT_DESC::abort_the_action`
 /// flag to `true` as well: once that flag is set, all subsequent cancel checks are supposed to signal
 /// and this callback will not be invoked again.
-using CANCEL_FUNC = bool (*)(ETEXT_DESC *self, int word_count);
+typedef bool tesseract_cancel_func_t(ETEXT_DESC *self, int word_count);
 
 /// This callback may be used to report the session's progress.
 ///
@@ -121,7 +122,11 @@ using CANCEL_FUNC = bool (*)(ETEXT_DESC *self, int word_count);
 /// For an example use of this, see the tesseract CLI and its monitor implementation in
 /// `tesseract.cpp::CLI_Monitor`.
 /// 
-using PROGRESS_FUNC = void (*)(ETEXT_DESC *self, int left, int right, int top, int bottom);
+typedef void tesseract_progress_func_t(ETEXT_DESC *self, int left, int right, int top, int bottom);
+
+using CANCEL_FUNC    = std::function<tesseract_cancel_func_t>;
+using PROGRESS_FUNC  = std::function<tesseract_progress_func_t>;
+
 
 /**
  * Progress monitor covers word recognition and layout analysis.

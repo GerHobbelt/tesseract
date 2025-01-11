@@ -30,35 +30,24 @@
 namespace tesseract {
 
 class SVMenuNode;
-
-class BoolParam;
-class DoubleParam;
-class IntParam;
-class StringParam;
 class Tesseract;
-
-// A list of all possible parameter types used.
-enum ParamType { VT_INTEGER, VT_BOOLEAN, VT_STRING, VT_DOUBLE };
 
 // A rather hackish helper structure which can take any kind of parameter input
 // (defined by ParamType) and do a couple of common operations on them, like
 // comparison or getting its value. It is used in the context of the
 // ParamsEditor as a bridge from the internal tesseract parameters to the
 // ones displayed by the ScrollView server.
-class ParamContent : public ELIST_LINK {
+class ParamContent : public ELIST<ParamContent>::LINK {
 public:
   // Compare two VC objects by their name.
-  static int Compare(const void *v1, const void *v2);
+  static int Compare(const ParamContent *v1, const ParamContent *v2);
 
   // Gets a VC object identified by its ID.
   static ParamContent *GetParamContentById(int id);
 
   // Constructors for the various ParamTypes.
   ParamContent() = default;
-  explicit ParamContent(tesseract::StringParam *it);
-  explicit ParamContent(tesseract::IntParam *it);
-  explicit ParamContent(tesseract::BoolParam *it);
-  explicit ParamContent(tesseract::DoubleParam *it);
+  ParamContent(tesseract::Param *it);
 
   // Getters and Setters.
   void SetValue(const char *val);
@@ -78,15 +67,8 @@ private:
   int my_id_;
   // Whether the parameter was changed_ and thus needs to be rewritten.
   bool changed_ = false;
-  // The actual ParamType of this VC object.
-  ParamType param_type_;
 
-  union {
-    tesseract::StringParam *sIt;
-    tesseract::IntParam *iIt;
-    tesseract::BoolParam *bIt;
-    tesseract::DoubleParam *dIt;
-  };
+  tesseract::Param *it_;
 };
 
 ELISTIZEH(ParamContent);

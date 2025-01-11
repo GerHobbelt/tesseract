@@ -153,10 +153,11 @@ ColumnFinder::~ColumnFinder() {
 // determine the gross textline alignment of the page.
 void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix,
                                        TO_BLOCK *input_block) {
-  part_grid_.Init(gridsize(), bleft(), tright());
+  auto gridspacing = gridsize() / 2;
+  part_grid_.Init(gridspacing, bleft(), tright());
   delete stroke_width_;
-  stroke_width_ = new StrokeWidth(tesseract_, gridsize(), bleft(), tright());
-  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridsize());
+  stroke_width_ = new StrokeWidth(tesseract_, gridspacing, bleft(), tright());
+  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridspacing);
   input_block->ReSetAndReFilterBlobs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_blocks) {
@@ -168,7 +169,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   SetBlockRuleEdges(input_block);
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
-  CCNonTextDetect nontext_detect(tesseract_, gridsize(), bleft(), tright());
+  CCNonTextDetect nontext_detect(tesseract_, gridspacing, bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   // warning C4800: Implicit conversion from 'int32_t' to bool. Possible information loss
   nontext_map_ =
@@ -176,6 +177,9 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();
+
+  part_grid_.Init(gridsize(), bleft(), tright());
+  input_block->ReSetAndReFilterBlobs();
 }
 
 // Tests for vertical alignment of text (returning true if so), and generates
@@ -535,18 +539,61 @@ void ColumnFinder::DisplayBlocks(BLOCK_LIST *blocks) {
     blocks_win_->UpdateWindow();
 }
 
+
+void ColumnFinder::DisplayGrid() {
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
+  col_win->Stroke(1);
+  col_win->Pen(Diagnostics::BLUE);
+  for (int i = 0; i < gridheight_; ++i) {
+    col_win->Line(0, i * gridsize_, gridwidth_ * gridsize_, i * gridsize_);
+  }
+  for (int i = 0; i < gridwidth_; ++i) {
+    col_win->Line(i * gridsize_, 0, i * gridsize_, gridheight_ * gridsize_);
+  }
+  col_win->UpdateWindow();
+}
+
 // Displays the column edges at each grid y coordinate defined by
 // best_columns_.
 void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
-    ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
-    DisplayBoxes(col_win);
-    col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
-    for (int i = 0; i < gridheight_; ++i) {
-      ColPartitionSet* columns = best_columns_[i];
-      if (columns != nullptr) {
-        columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
-      }
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
+  for (int i = 0; i < gridheight_; ++i) {
+    ColPartitionSet *columns = best_columns_[i];
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
     }
+  }
+  col_win->UpdateWindow();
+}
+
+// Unlike DisplayColumnBounds, displays the columns in input argument sets.
+void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
+  for (int i = 0; i < sets->size(); ++i) {
+    ColPartitionSet *columns = sets->at(i);
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges(0, gridheight_ * gridsize_, col_win);
+    }
+  }
+  col_win->UpdateWindow();
+}
+
+// Displays edges only at the relevant grid y coordinates, rather than extending to the top/bottom of the page.
+void ColumnFinder::DisplayColumnBounds3(PartSetVector *sets) {
+  ScrollViewReference col_win(MakeWindow(tesseract_, 50, 300, "Columns"));
+  DisplayBoxes(col_win);
+  col_win->Pen(textord_debug_printable ? Diagnostics::BLUE : Diagnostics::GREEN);
+  for (int i = 0; i < gridheight_; ++i) {
+    ColPartitionSet *columns = sets->at(i);
+    if (columns != nullptr) {
+      columns->DisplayColumnEdges3(i * gridsize_, (i + 1) * gridsize_, col_win);
+    }
+  }
+  col_win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
@@ -577,6 +624,14 @@ bool ColumnFinder::MakeColumns(bool single_column) {
       }
       good_only = !good_only;
     } while (column_sets_.empty() && !good_only);
+
+#ifndef GRAPHICS_DISABLED
+    if (textord_tabfind_show_columns) {
+      DisplayColumnBounds3(&part_sets);
+      DisplayColumnBounds2(&column_sets_);
+    }
+#endif
+
     if (textord_debug_tabfind > 0) {
       PrintColumnCandidates("Column candidates");
     }
@@ -766,6 +821,40 @@ bool ColumnFinder::AssignColumns(const PartSetVector &part_sets) {
     improvement_possible[i] = any_columns_possible[i] && best_costs_multi[i] == best_costs[i];
   }
 
+#ifndef GRAPHICS_DISABLED
+    if (textord_tabfind_show_columns) {
+      for (int col_i = 0; col_i < column_count; ++col_i) {
+        ColPartitionSet *col_set = column_sets_.at(col_i);
+        ScrollView *col_win = MakeWindow(50, 300, "Column Costs");
+        for (int j = 0; j < set_count; ++j) {
+
+          bool min_cost = true;
+          for (int k = 0; k < column_count; ++k) {
+            if (k == col_i) continue;
+            if (column_set_costs[j][k] < column_set_costs[j][col_i]) {
+              min_cost = false;
+              break;
+            }
+          }
+
+          auto color = ScrollView::RED;
+          if (!any_columns_possible[j]) {
+            color = ScrollView::GREY;
+          } else if (column_set_costs[j][col_i] < INT32_MAX && min_cost) {
+            color = ScrollView::GREEN;
+          } else if (column_set_costs[j][col_i] < INT32_MAX) {
+            color = ScrollView::ORANGE;
+          }
+
+          col_win->Pen(color);
+          col_set->DisplayColumnEdges(j * gridsize_, (j + 1) * gridsize_, col_win);
+
+        }
+        col_win->UpdateWindow();
+      }
+    }
+#endif
+
   bool any_multi_column = false;
   // Assign a column set to each vertical grid position.
   // While there is an unassigned range, find its mode.
@@ -893,7 +982,7 @@ void ColumnFinder::ShrinkRangeToLongestRun(int **column_set_costs, const int *as
   int best_range_size = 0;
   *best_start = orig_end;
   *best_end = orig_end;
-  int end = orig_end;
+  int end;
   for (int start = orig_start; start < orig_end; start = end) {
     // Find the first possible
     while (start < orig_end) {

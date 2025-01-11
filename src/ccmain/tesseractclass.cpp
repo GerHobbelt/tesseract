@@ -64,13 +64,20 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                   "Break input into lines and remap boxes if present", params())
     , BOOL_MEMBER(tessedit_dump_pageseg_images, false,
                   "Dump intermediate images made during page segmentation", params())
+    , STRING_MEMBER(raw_input_image_path, "", "Path where the raw input page image will be loaded from. Empty when the source image will be fed to teseract through other means / API calls.", params())
+    , STRING_MEMBER(segmentation_mask_input_image_path, "", "Path where the optional segmentation mask page image will be loaded from. Empty when the source image will be fed to teseract through other means. RED channel identifies text segments; BLUE channel identifies graphics (non-text) segments; GREEN channel is reserved for specials. All segments are processed in order of decreasing tint intensity per channel.", params())
+    , STRING_MEMBER(visible_output_source_image_path, "", "Path where the visible page image overlay will be loaded from; this is relevant for PDF output which may produce a page layout using the visible_output_image for page display, while embedding the OCR text output as an invisble overlay suitable for text extraction and copy&paste selection by the user afterwards.", params())
+    , STRING_MEMBER(debug_output_base_path, "", "Path template where the various debug/log files and supporting raw / processed image stages will be saved as part of the debug/diagnostics output.", params())
+    , STRING_MEMBER(debug_output_modes, "html", "A colon-separated set of debug/diagnostics output modes you wish to see output alongside the OCR result. These formats are supported: html, text.", params())
+    , STRING_MEMBER(output_base_path, "", "Path template where the OCR output files will be saved.", params())
+    , STRING_MEMBER(output_base_filename, "", "Filename template: the OCR output files will be named based on this template.", params())
     , DOUBLE_MEMBER(invert_threshold, 0.7,
                     "For lines with a mean confidence below this value, OCR is also tried with an inverted image.",
                     params())
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
-    INT_MEMBER(tessedit_pageseg_mode, PSM_SINGLE_BLOCK,
+    INT_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
                "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, "
                "4=column, "
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
@@ -120,7 +127,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                     "method. "
                     "For standard Otsu use 0.0, otherwise 0.1 is recommended.",
                     params())
-    , INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
+    , INT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
                       "Which OCR engine(s) to run (0: Tesseract, 1: LSTM, 2: both, 3: default). "
                       "Defaults to loading and running the most accurate "
                       "available.",
@@ -130,8 +137,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , STRING_MEMBER(tessedit_char_whitelist, "", "Whitelist of chars to recognize.", params())
     , STRING_MEMBER(tessedit_char_unblacklist, "",
                     "List of chars to override tessedit_char_blacklist.", params())
-    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.",
-                  params())
+    , BOOL_MEMBER(tessedit_ambigs_training, false, "Perform training for ambiguities.", params())
     , INT_MEMBER(pageseg_devanagari_split_strategy, tesseract::ShiroRekhaSplitter::NO_SPLIT,
                  "Which top-line splitting process to use for Devanagari "
                  "documents while performing page-segmentation. (0: no splitting (default), 1: minimal splitting, 2: maximal splitting)",
@@ -188,8 +194,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                   "confuse layout analysis, determining diacritics vs noise.",
                   params())
     , INT_MEMBER(debug_noise_removal, 0, "Debug reassignment of small outlines.", params())
-    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.",
-                    params())
+    , STRING_MEMBER(debug_output_path, "", "Path where to write debug diagnostics.", params())
     ,
     // Worst (min) certainty, for which a diacritic is allowed to make the
     // base
@@ -215,8 +220,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , STRING_MEMBER(chs_trailing_punct2, ")'`\"", "2nd Trailing punctuation.", params())
     , DOUBLE_MEMBER(quality_rej_pc, 0.08, "good_quality_doc lte rejection limit.", params())
     , DOUBLE_MEMBER(quality_blob_pc, 0.0, "good_quality_doc gte good blobs limit.", params())
-    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.",
-                    params())
+    , DOUBLE_MEMBER(quality_outline_pc, 1.0, "good_quality_doc lte outline error limit.", params())
     , DOUBLE_MEMBER(quality_char_pc, 0.95, "good_quality_doc gte good char limit.", params())
     , INT_MEMBER(quality_min_initial_alphas_reqd, 2, "alphas in a good word.", params())
     , INT_MEMBER(tessedit_tess_adaption_mode, 0x27, "Adaptation decision algorithm for tesseract. "
@@ -224,8 +228,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                  "bit 2 = CHECK_DAWGS, bit 3 = CHECK_SPACES, bit 4 = CHECK_ONE_ELL_CONFLICT, "
                  "bit 5 = CHECK_AMBIG_WERD)",
                  params())
-    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.",
-                  params())
+    , BOOL_MEMBER(tessedit_minimal_rej_pass1, false, "Do minimal rejection on pass 1 output.", params())
     , BOOL_MEMBER(tessedit_test_adaption, false, "Test adaption criteria.", params())
     , BOOL_MEMBER(test_pt, false, "Test for point.", params())
     , DOUBLE_MEMBER(test_pt_x, 99999.99, "xcoord.", params())
@@ -393,18 +396,23 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
       STRING_MEMBER(file_type, ".tif", "Filename extension.", params())
     , BOOL_MEMBER(tessedit_override_permuter, true, "According to dict_word.", params())
     , STRING_MEMBER(tessedit_load_sublangs, "", "List of languages to load with this one.", params())
+    , STRING_MEMBER(languages_to_try, "", "List of languages to try when OCRing the next pages.", params())
+    , STRING_MEMBER(reactangles_to_process, "", "List of rectangle areas in the page image to process. When none are specified, the entire page is processed.", params())
+#if !DISABLED_LEGACY_ENGINE
     , BOOL_MEMBER(tessedit_use_primary_params_model, false,
                   "In multilingual mode use params model of the "
                   "primary language.",
                   params())
+#endif
     , DOUBLE_MEMBER(min_orientation_margin, 7.0, "Min acceptable orientation margin.",
                     params())
-    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())      --> debug_line_finding
+    // , BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding.", params())                      --> debug_line_finding
+    // , BOOL_MEMBER(textord_tabfind_show_vlines_scrollview, false, "Debug line finding", this->params())      --> debug_line_finding + !interactive_display_mode
     , BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model.", params())
     , BOOL_MEMBER(tsv_lang_info, false, "Include language info in the  .tsv output file", this->params())
     , BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline.", params())
-    , BOOL_INIT_MEMBER(tessedit_init_config_only, false,
+    , BOOL_MEMBER(tessedit_init_config_only, false,
                        "Only initialize with the config file. Useful if the "
                        "instance is not going to be used for OCR but say only "
                        "for layout analysis.",
@@ -421,8 +429,8 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
                     params())
     , DOUBLE_MEMBER(textord_tabfind_aligned_gap_fraction, 0.75,
                     "Fraction of height used as a minimum gap for aligned blobs.", params())
-    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params())
-    , BOOL_MEMBER(preserve_interword_spaces, false, "When `true`: preserve multiple inter-word spaces as-is, or when `false`: compress multiple inter-word spaces to a single space character.",
+    , INT_MEMBER(tessedit_parallelize, 0, "Run in parallel where possible.", params()),
+      BOOL_MEMBER(preserve_interword_spaces, false, "When `true`: preserve multiple inter-word spaces as-is, or when `false`: compress multiple inter-word spaces to a single space character.",
                   params())
     , STRING_MEMBER(page_separator, "\f", "Page separator (default is form feed control character)",
                     params())
@@ -493,11 +501,15 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , train_line_page_num_(0)
     , instance_has_been_initialized_(false)
 {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::AddActiveTesseractInstance(this);
+#endif
 }
 
 Tesseract::~Tesseract() {
+#if !GRAPHICS_DISABLED
   ScrollViewManager::RemoveActiveTesseractInstance(this);
+#endif
 
   WipeSqueakyCleanForReUse(true);
 }
@@ -1025,59 +1037,60 @@ int Tesseract::GetPixDebugSectionLevel() const {
 }
 
 void Tesseract::ResyncVariablesInternally() {
-    if (lstm_recognizer_ != nullptr) {
-        lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix_);
-        lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
-        lstm_recognizer_->SetDebug(tess_debug_lstm);
-    }
+  if (lstm_recognizer_ != nullptr) {
+    lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix_);
+    lstm_recognizer_->CopyDebugParameters(this, &Classify::getDict());
+    lstm_recognizer_->SetDebug(tess_debug_lstm);
+  }
 
-    if (language_model_ != nullptr) {
-        int lvl = language_model_->language_model_debug_level;
+#if !DISABLED_LEGACY_ENGINE
+  int lvl = language_model_.language_model_debug_level;
 
 #if 0
-        language_model_->CopyDebugParameters(this, &Classify::getDict());
+  language_model_->CopyDebugParameters(this, &Classify::getDict());
 
-        INT_VAR_H(language_model_debug_level);
-        BOOL_VAR_H(language_model_ngram_on);
-        INT_VAR_H(language_model_ngram_order);
-        INT_VAR_H(language_model_viterbi_list_max_num_prunable);
-        INT_VAR_H(language_model_viterbi_list_max_size);
-        DOUBLE_VAR_H(language_model_ngram_small_prob);
-        DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
-        BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-        DOUBLE_VAR_H(language_model_ngram_scale_factor);
-        DOUBLE_VAR_H(language_model_ngram_rating_factor);
-        BOOL_VAR_H(language_model_ngram_space_delimited_language);
-        INT_VAR_H(language_model_min_compound_length);
-        // Penalties used for adjusting path costs and final word rating.
-        DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
-        DOUBLE_VAR_H(language_model_penalty_non_dict_word);
-        DOUBLE_VAR_H(language_model_penalty_punc);
-        DOUBLE_VAR_H(language_model_penalty_case);
-        DOUBLE_VAR_H(language_model_penalty_script);
-        DOUBLE_VAR_H(language_model_penalty_chartype);
-        DOUBLE_VAR_H(language_model_penalty_font);
-        DOUBLE_VAR_H(language_model_penalty_spacing);
-        DOUBLE_VAR_H(language_model_penalty_increment);
+  INT_VAR_H(language_model_debug_level);
+  BOOL_VAR_H(language_model_ngram_on);
+  INT_VAR_H(language_model_ngram_order);
+  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
+  INT_VAR_H(language_model_viterbi_list_max_size);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
+  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
+  BOOL_VAR_H(language_model_ngram_space_delimited_language);
+  INT_VAR_H(language_model_min_compound_length);
+  // Penalties used for adjusting path costs and final word rating.
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
         BOOL_VAR_H(wordrec_display_segmentations);
-        BOOL_VAR_H(language_model_use_sigmoidal_certainty);
+  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 #endif
-    }
+#endif
 
-    // init sub-languages:
-     for (auto &sub_tess : sub_langs_) {
-        if (sub_tess != nullptr) {
+  // init sub-languages:
+  for (auto &sub_tess : sub_langs_) {
+    if (sub_tess != nullptr) {
             auto lvl = bool(sub_tess->debug_display_page);
-        }
     }
+  }
 }
+
 
 void Tesseract::ReportDebugInfo() {
   if (!debug_output_path.empty() && debug_output_diagnostics_HTML && pixa_debug_.HasContent()) {
-        AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
+    AddPixDebugPage(GetPixForDebugView(), "this page's scan/image");
 
-        std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
-        pixa_debug_.WriteHTML(file_path.c_str());
+    std::string file_path = mkUniqueOutputFilePath(debug_output_path.value().c_str() /* imagebasename */, 1 + tessedit_page_number, lang_.c_str(), "html");
+    pixa_debug_.WriteHTML(file_path.c_str());
     }
 
   ClearPixForDebugView();

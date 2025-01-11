@@ -58,6 +58,8 @@ struct SVPolyLineBuffer {
   std::vector<int> ycoords;
 };
 
+#if !GRAPHICS_DISABLED
+
 // A map between the window IDs and their corresponding pointers.
 static std::vector<ScrollViewReference> svmap;
 static std::mutex *svmap_mu = nullptr;       // lock managed by the ScrollViewReference class instances + ScrollViewManager factory
@@ -68,7 +70,11 @@ static std::map<std::pair<ScrollViewReference, SVEventType>,
     waiting_for_events;
 static std::mutex *waiting_for_events_mu;
 
+#endif
+
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
+
+#if !GRAPHICS_DISABLED
 
 std::unique_ptr<SVEvent> SVEvent::copy() const {
   auto any = std::unique_ptr<SVEvent>(new SVEvent);
@@ -89,6 +95,12 @@ std::unique_ptr<SVEvent> SVEvent::copy() const {
 // It is defined here, so the compiler can create a single vtable
 // instead of weak vtables in every compilation unit.
 SVEventHandler::~SVEventHandler() = default;
+
+#endif
+
+/*******************************************************************************
+ * InteractiveScrollView implementation.
+ *******************************************************************************/
 
 #if !GRAPHICS_DISABLED
 
@@ -356,7 +368,7 @@ void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
   // Set up an actual Window on the client side.
   char message[kMaxMsgSize];
   snprintf(message, sizeof(message),
-           "w%u = luajava.newInstance('com.google.scrollview.ui"
+           "w%d = luajava.newInstance('com.google.scrollview.ui"
            ".SVWindow','%s',%u,%u,%u,%u,%u,%u,%u)\n",
            window_id_, window_name_, window_id_, x_pos, y_pos, x_size, y_size,
            x_canvas_size, y_canvas_size);
@@ -404,8 +416,9 @@ void InteractiveScrollView::StartEventHandler() {
 
 #endif // !GRAPHICS_DISABLED
 
-ScrollView::~ScrollView() {
 #if !GRAPHICS_DISABLED
+
+ScrollView::~ScrollView() {
 #if 0    // Cannot invoke virtual method any more as the derived instane has already finished delete-ing by now: we're delete-ing the base class right now! This is taken care of instead by calling Update() from the ScrollViewReference BEFORE invoking the destructor of the derived class!
   Update();
 #endif
@@ -416,11 +429,13 @@ ScrollView::~ScrollView() {
 #endif
 
   delete points_;
-#endif // !GRAPHICS_DISABLED
 }
 
-InteractiveScrollView::~InteractiveScrollView() {
+#endif // !GRAPHICS_DISABLED
+
 #if !GRAPHICS_DISABLED
+
+InteractiveScrollView::~InteractiveScrollView() {
   //svmap_mu->lock();
   if (semaphore_ /* !exit_handler_has_been_invoked */) {
     //svmap_mu->unlock();
@@ -440,13 +455,10 @@ InteractiveScrollView::~InteractiveScrollView() {
 
   delete semaphore_;
   semaphore_ = nullptr;
-#endif // !GRAPHICS_DISABLED
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
-void InteractiveScrollView::vSendMsg(fmt::string_view format,
-                                     fmt::format_args args) {
+void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   if (!points_->empty) {
@@ -454,7 +466,7 @@ void InteractiveScrollView::vSendMsg(fmt::string_view format,
   }
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
   stream_->Send(form.c_str());
@@ -597,12 +609,11 @@ void InteractiveScrollView::AlwaysOnTop(bool b) {
 }
 
 // Adds a message entry to the message box.
-void InteractiveScrollView::vAddMessage(fmt::string_view format,
-                                        fmt::format_args args) {
+void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_args args) {
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
 
@@ -636,15 +647,13 @@ void InteractiveScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   if (x1 == x2 && y1 == y2) {
     return; // Scrollviewer locks up.
   }
-  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2,
-          TranslateYCoordinate(y2));
+  SendMsg("drawRectangle({},{},{},{})", x1, TranslateYCoordinate(y1), x2, TranslateYCoordinate(y2));
 }
 
 // Draw an ellipse using the current pen color.
 // The ellipse is filled with the current brush color.
 void InteractiveScrollView::Ellipse(int x1, int y1, int width, int height) {
-  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width,
-          height);
+  SendMsg("drawEllipse({},{},{},{})", x1, TranslateYCoordinate(y1), width, height);
 }
 
 // Set the pen color to the given RGB values.
@@ -838,8 +847,7 @@ int InteractiveScrollView::ShowYesNoDialog(const char *msg) {
 void InteractiveScrollView::ZoomToRectangle(int x1, int y1, int x2, int y2) {
   y1 = TranslateYCoordinate(y1);
   y2 = TranslateYCoordinate(y2);
-  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2),
-          std::max(x1, x2), std::max(y1, y2));
+  SendMsg("zoomRectangle({},{},{},{})", std::min(x1, x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
 }
 
 // Send an image of type Pix.
@@ -973,7 +981,6 @@ void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
 void BackgroundScrollView::StartEventHandler() {
   ASSERT_HOST_MSG(false, "Should never get here!");
 }
-#endif // !GRAPHICS_DISABLED
 
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
@@ -982,7 +989,6 @@ BackgroundScrollView::~BackgroundScrollView() {
   pix.destroy();
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
@@ -1584,12 +1590,10 @@ void DummyScrollView::Initialize(Tesseract *tess, const char *name,
 void DummyScrollView::StartEventHandler() {
 	ASSERT_HOST_MSG(false, "Should never get here!");
 }
-#endif // !GRAPHICS_DISABLED
 
 DummyScrollView::~DummyScrollView() {
 }
 
-#if !GRAPHICS_DISABLED
 /// Send a message to the server, attaching the window id.
 void DummyScrollView::vSendMsg(fmt::string_view format,	fmt::format_args args) {
 }
@@ -1785,12 +1789,24 @@ char DummyScrollView::Wait() {
 	return '\0';
 }
 
+#endif // !GRAPHICS_DISABLED
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ScrollViewReference::ScrollViewReference() : view_(nullptr), counter_(nullptr), id(-1) {
+#if !GRAPHICS_DISABLED
+
+ScrollViewReference::ScrollViewReference()
+  : view_(nullptr)
+  , counter_(nullptr)
+  , id(-1)
+{
 }
 
-ScrollViewReference::ScrollViewReference(ScrollView *view) : view_(view), counter_(nullptr), id(-1) {
+ScrollViewReference::ScrollViewReference(ScrollView *view)
+  : view_(view)
+  , counter_(nullptr)
+  , id(-1)
+{
   if (view_ != nullptr) {
     counter_ = new int();
     *counter_ = 1;
@@ -1921,7 +1937,11 @@ ScrollViewReference &ScrollViewReference::operator =(ScrollViewReference &&other
   return *this;
 }
 
+#endif // !GRAPHICS_DISABLED
+
 ////////////////////////////////////////////////////////////////////////
+
+#if !GRAPHICS_DISABLED
 
 // if (tesseract_->SupportsInteractiveScrollView()) ...
 
@@ -1929,7 +1949,7 @@ ScrollViewManager::ScrollViewManager() {
   active = nullptr;
 
   if (!svmap_mu) {
-	svmap_mu = new std::mutex();
+    svmap_mu = new std::mutex();
   }
 }
 
@@ -2018,33 +2038,34 @@ void ScrollViewManager::RemoveActiveTesseractInstance(Tesseract *tess) {
   if (it != mgr.active_set.end()) {
     mgr.active_set.erase(it);
     mgr.active = nullptr;
+
     if (mgr.active_set.empty()) {
       // flush all debug windows first
       ScrollView::Update();
 
       // and nuke 'em all, next:
       for (;;) {
-      // limit scope of lock
-      std::vector<ScrollViewReference> delset;
-      {
-        std::lock_guard<std::mutex> guard(*svmap_mu);
-        for (auto &iter : svmap) {
+        // limit scope of lock
+        std::vector<ScrollViewReference> delset;
+        {
+          std::lock_guard<std::mutex> guard(*svmap_mu);
+          for (auto& iter : svmap) {
             if (iter) {
               delset.push_back(iter);
             }
+          }
         }
-      }
 
-      if (delset.size() == 0)
-        break;
+        if (delset.size() == 0)
+          break;
 
-      for (int index = delset.size() - 1; index >= 0; index--) {
-        ScrollViewReference win_ref = delset[index];
-        if (win_ref) {
+        for (int index = delset.size() - 1; index >= 0; index--) {
+          ScrollViewReference win_ref = delset[index];
+          if (win_ref) {
             win_ref->ExitHelper();
+          }
         }
-      }
-      break;
+        break;
       }
     }
   }

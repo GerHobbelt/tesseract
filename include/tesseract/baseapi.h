@@ -30,6 +30,7 @@
 #include <tesseract/ocrclass.h>
 #include <tesseract/image.h>
 #include <tesseract/params.h>
+#include <tesseract/filepath.h>
 
 #include <cstdio>
 #include <tuple>  // for std::tuple
@@ -40,6 +41,8 @@ struct Pixa;
 struct Boxa;
 
 namespace tesseract {
+
+using namespace parameters;
 
 class PAGE_RES;
 class ParagraphModel;
@@ -71,6 +74,15 @@ using DictFunc = PermuterType (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
 
 using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
+
+/**
+ * Defines the trinity of page images to be used by tesseract for each page to be OCR'ed.
+ */
+struct ImagePageFileSpec {
+  std::string page_image_path;          // the page image which must be OCR'ed.
+  std::string segment_mask_image_path;  // an optional segmentation assistant page image. When not RGB, anything non-white is considered content.
+  std::string visible_page_image_path;  // an optional image, specifically for PDF page overlay usage.
+};
 
 /**
  * Base class for all tesseract APIs.
@@ -208,14 +220,17 @@ public:
    * SetVariable() may be used before Init(), but settings will revert to
    * defaults on End().
    *
-   * Note: Must be called after Init(). Only works for non-init variables
-   * (init variables should be passed to Init()).
+   * Note: critical variables are "locked" during the Init() phase and any attempt
+   * to set them to a different value before the End() call will be ignored/rejected
+   * while an error message about the attempt is logged.
    *
    * @{
    */
   bool SetVariable(const char *name, const char *value);
   bool SetVariable(const char *name, int value);
-  bool SetDebugVariable(const char *name, const char *value);
+  bool SetVariable(const char *name, bool value);
+  bool SetVariable(const char *name, double value);
+  bool SetVariable(const char *name, const std::string &value);
   /**
    * @}
    */
@@ -238,6 +253,25 @@ public:
    * parameter if it was found among Tesseract parameters.
    */
   const char *GetStringVariable(const char *name) const;
+
+  // Set up the Tesseract parameters listed in `vars_vec[]` to the specified values
+  // in `vars_values[]`.
+  bool InitParameters(const std::vector<std::string> &vars_vec,
+                      const std::vector<std::string> &vars_values);
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values will not be altered by this call; use this
+  // method if you want to keep the currently active parameter values as a kind
+  // of 'good initial setup' for any subsequent teseract action.
+  void ReadyParametersForReinitialization();
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values are reset to their factory defaults by this call.
+  void ResetParametersToFactoryDefault();
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -287,6 +321,22 @@ public:
   void FinalizeAndWriteDiagnosticsReport(); //  --> ReportDebugInfo()
 
   /**
+   * Inspect the path_params list (which lists images and image-list files)
+   * and recognize the latter (vs. older text-based image file formats) and
+   * expand these into a set of image file paths.
+   *
+   * This process applies a little heuristic for performance reasons:
+   * so as not to have to load every listed image file entirely, we merely
+   * fetch the initial couple of kilobytes and check if that part is
+   * a (aborted) list of file paths, rather than (text-based) image data.
+   * If it is, then it is treated as an image list file and expanded in line,
+   * while otherwise it is flagged as an image file.
+   *
+   * Returns a non-empty set of page image specs on success. The returned set is empty on error.
+   */
+  std::vector<ImagePageFileSpec> ExpandImagelistFilesInSet(const std::vector<std::string> &path_params);
+
+  /**
    * Instances are now mostly thread-safe and totally independent,
    * but some global parameters remain. Basically it is safe to use multiple
    * TessBaseAPIs in different threads in parallel, UNLESS:
@@ -322,39 +372,99 @@ public:
    * rare use case, since there are very few uses that require any parameters
    * to be set before Init.
    *
-   * If set_only_non_debug_params is true, only params that do not contain
-   * "debug" in the name will be set.
-   *
    * @{
    */
-  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
-           const char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
-           bool set_only_non_debug_params);
+  int Init(const char *datapath,
+           ParamsVectorSet &vars);
 
-  int InitFull(const char *datapath, const char *language, OcrEngineMode mode,
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(ParamsVectorSet &vars);
+
+  int Init(ParamsVectorSet &vars,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           ParamsVectorSet &vars,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  int Init(const char *datapath, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values);
+
+  int Init(const char *datapath,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *datapath, const char *language, OcrEngineMode mode,
                const char **configs, int configs_size,
                const std::vector<std::string> *vars_vec,
                const std::vector<std::string> *vars_values,
                bool set_only_non_debug_params, FileReader reader);
 
-  int InitOem(const char *datapath, const char *language, OcrEngineMode oem);
+  int Init(const char *datapath, const char *language, OcrEngineMode oem);
 
-  int InitOem(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader);
+  int Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader);
 
-  int InitSimple(const char *datapath, const char *language);
+  int Init(const char *datapath, const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
 
-  // In-memory version reads the traineddata file directly from the given
-  // data[data_size] array, and/or reads data via a FileReader.
-  int InitFullWithReader(const char *data, int data_size, const char *language,
-           OcrEngineMode mode, const char **configs, int configs_size,
-           const std::vector<std::string> *vars_vec,
-           const std::vector<std::string> *vars_values,
-           bool set_only_non_debug_params, FileReader reader);
+  int Init(const char *datapath, const char *language);
+
+  int Init(const char *datapath, const char *language,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language, OcrEngineMode oem);
+
+  int Init(const char *language, OcrEngineMode oem,
+           const std::vector<std::string> &configs);
+
+  int Init(const char *language);
+
+  int Init(const char *language,
+           const std::vector<std::string> &configs);
+
+  /// Reads the traineddata via a FileReader from path `datapath`.
+  int Init(const char *datapath, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           FileReader reader);
+
+  int Init(const char *datapath,
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values,
+           const std::vector<std::string> &configs,
+           FileReader reader);
+
+  // In-memory version reads the traineddata directly from the given
+  // data[data_size] array.
+  int InitFromMemory(const char *data, size_t data_size, 
+           const std::vector<std::string> &vars_vec,
+           const std::vector<std::string> &vars_values);
+
+  int InitFromMemory(const char *data, size_t data_size, 
+          const std::vector<std::string> &vars_vec,
+          const std::vector<std::string> &vars_values,
+          const std::vector<std::string> &configs);
+
+protected:
+  int Init_Internal(const char *datapath,
+                    ParamsVectorSet &vars,
+                    const std::vector<std::string> &configs,
+                    FileReader reader,
+                    const char *data = nullptr, size_t data_size = 0);
 
   /** @} */
 
+public:
   /**
    * Returns the languages string used in the last valid initialization.
    * If the last initialization specified "deu+hin" then that will be
@@ -444,7 +554,8 @@ public:
    * will automatically perform recognition.
    */
   void SetImage(const unsigned char *imagedata, int width, int height,
-                int bytes_per_pixel, int bytes_per_line, float angle = 0);
+                int bytes_per_pixel, int bytes_per_line, int exif = 1, 
+                const float angle = 0, bool upscale = false);
 
   /**
    * Provide an image for Tesseract to recognize. As with SetImage above,
@@ -454,7 +565,9 @@ public:
    * Use Pix where possible. Tesseract uses Pix as its internal representation
    * and it is therefore more efficient to provide a Pix directly.
    */
-  void SetImage(Pix *pix, float angle = 0);
+  void SetImage(Pix *pix, int exif = 1, const float angle = 0, bool upscale = false);
+
+  int SetImageFile(int exif = 1, const float angle = 0, bool upscale = false);
 
   /**
    * Preprocessing the InputImage 
@@ -711,6 +824,25 @@ public:
   char *GetHOCRText(int page_number);
 
   /**
+   * Make a JSON-formatted string with JSON from the internal
+   * data structures.
+   * page_number is 0-based but will appear in the output as 1-based.
+   * monitor can be used to
+   *  cancel the recognition
+   *  receive progress callbacks
+   * Returned string must be freed with the delete [] operator.
+   */
+  char *GetJSONText(ETEXT_DESC *monitor, int page_number);
+
+  /**
+   * Make a JSON-formatted string with JSON from the internal
+   * data structures.
+   * page_number is 0-based but will appear in the output as 1-based.
+   * Returned string must be freed with the delete [] operator.
+   */
+  char *GetJSONText(int page_number);
+
+  /**
    * Make an XML-formatted string with Alto markup from the internal
    * data structures.
    *
@@ -862,6 +994,12 @@ public:
    * other than Init and anything declared above it in the class definition.
    */
   void End();
+
+  /**
+   * Equivalent to calling End() but with the added feature of all
+   * parameters being reset to factory defaults.
+   */
+  void ResetToDefaults();
 
   /**
    * Clear any library-level memory caches.

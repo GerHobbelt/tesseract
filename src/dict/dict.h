@@ -315,16 +315,16 @@ public:
   /// Returns false if the best choice for the current word is questionable
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
-  bool AcceptableResult(WERD_RES *word) const;
+  bool AcceptableResult(const WERD_RES &word) const;
 #if !DISABLED_LEGACY_ENGINE
   void EndDangerousAmbigs();
 #endif // !DISABLED_LEGACY_ENGINE
   /// Prints the current choices for this word to stdout.
   void DebugWordChoices();
   /// Sets up stopper variables in preparation for the first pass.
-  void SettupStopperPass1();
+  void SetupStopperPass1();
   /// Sets up stopper variables in preparation for the second pass.
-  void SettupStopperPass2();
+  void SetupStopperPass2();
   /* context.cpp *************************************************************/
   /// Check a string to see if it matches a set of lexical rules.
   bool case_ok(const WERD_CHOICE &word) const;

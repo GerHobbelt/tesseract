@@ -25,6 +25,7 @@
 #include <tesseract/capi_training_tools.h>
 
 #include <cstdlib>
+#include <functional>
 
 #if 0
 #define INT_PARAM_FLAG(name, val, comment) INT_VAR(FLAGS_##name, val, comment)
@@ -85,8 +86,16 @@ extern DOUBLE_VAR_H(clusterconfig_confidence);
 // eg. If the input *argv is
 // { "program", "--foo=4", "--bar=true", "file1", "file2" } with *argc = 5, the
 // output *argv is { "program", "file1", "file2" } with *argc = 3
+//
+// Returns either exit code >= 0 (help command found and executed: 0, error in argv set: 1)
+// or -1 to signal the argv[] set has been parsed into the application parameters and
+// execution should continue.
 TESS_COMMON_TRAINING_API
-int ParseCommandLineFlags(const char *usage, int *argc, const char ***argv, const bool remove_flags);
+int ParseCommandLineFlags(const char* extra_usage, std::function<void(const char* exename)> extra_usage_f, int* argc, const char*** argv, const bool remove_flags = true, std::function<void()> print_version_f = nullptr);
+
+static inline int ParseCommandLineFlags(const char* extra_usage, int* argc, const char*** argv, const bool remove_flags = true, std::function<void()> print_version_f = nullptr) {
+  return ParseCommandLineFlags(extra_usage, nullptr, argc, argv, remove_flags, print_version_f);
+}
 
 TESS_COMMON_TRAINING_API
 bool SetConsoleModeToUTF8(void);

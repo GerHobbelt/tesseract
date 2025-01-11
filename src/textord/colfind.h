@@ -179,11 +179,16 @@ public:
   void SetEquationDetect(EquationDetectBase *detect);
 
 private:
+  void DisplayGrid();
   // Displays the blob and block bounding boxes in a window called Blocks.
   void DisplayBlocks(BLOCK_LIST *blocks);
   // Displays the column edges at each grid y coordinate defined by
   // best_columns_.
   void DisplayColumnBounds(PartSetVector *sets);
+  
+  void DisplayColumnBounds2(PartSetVector *sets);
+
+  void DisplayColumnBounds3(PartSetVector *sets);
 
   ////// Functions involved in determining the columns used on the page. /////
 

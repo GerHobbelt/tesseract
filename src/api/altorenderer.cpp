@@ -33,7 +33,7 @@ namespace tesseract {
 /// Add coordinates to specified TextBlock, TextLine or String bounding box.
 /// Add word confidence if adding to a String bounding box.
 ///
-static void AddBoxToAlto(const ResultIterator *it, PageIteratorLevel level,
+static void AddBoxToAlto(const std::unique_ptr<ResultIterator> &it, PageIteratorLevel level,
                          std::stringstream &alto_str) {
   int left, top, right, bottom;
   it->BoundingBox(level, &left, &top, &right, &bottom);
@@ -138,7 +138,6 @@ char *TessBaseAPI::GetAltoText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   std::stringstream alto_str;
   // Use "C" locale (needed for int values larger than 999).
   alto_str.imbue(std::locale::classic());
@@ -149,7 +148,7 @@ char *TessBaseAPI::GetAltoText(int page_number) {
            << " WIDTH=\"" << rect_width_ << "\""
            << " HEIGHT=\"" << rect_height_ << "\">\n";
 
-  ResultIterator *res_it = GetIterator();
+  std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
@@ -167,7 +166,7 @@ char *TessBaseAPI::GetAltoText(int page_number) {
 		//
         // TODO: optionally add TYPE, for example TYPE="photo".
         alto_str << "\t\t\t\t<Illustration ID=\"cblock_" << bcnt++ << "\"";
-        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
         alto_str << "</Illustration>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -176,7 +175,7 @@ char *TessBaseAPI::GetAltoText(int page_number) {
       case PT_VERT_LINE:
         // Handle horizontal and vertical lines.
         alto_str << "\t\t\t\t<GraphicalElement ID=\"cblock_" << bcnt++ << "\"";
-        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
         alto_str << "</GraphicalElement >\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -189,24 +188,24 @@ char *TessBaseAPI::GetAltoText(int page_number) {
 
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       alto_str << "\t\t\t\t<ComposedBlock ID=\"cblock_" << bcnt << "\"";
-      AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+      AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
       alto_str << "\n";
     }
 
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
       alto_str << "\t\t\t\t\t<TextBlock ID=\"block_" << tcnt << "\"";
-      AddBoxToAlto(res_it, RIL_PARA, alto_str);
+      AddBoxToAlto(res_it.get(), RIL_PARA, alto_str);
       alto_str << "\n";
     }
 
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       alto_str << "\t\t\t\t\t\t<TextLine ID=\"line_" << lcnt << "\"";
-      AddBoxToAlto(res_it, RIL_TEXTLINE, alto_str);
+      AddBoxToAlto(res_it.get(), RIL_TEXTLINE, alto_str);
       alto_str << "\n";
     }
 
     alto_str << "\t\t\t\t\t\t\t<String ID=\"string_" << wcnt << "\"";
-    AddBoxToAlto(res_it, RIL_WORD, alto_str);
+    AddBoxToAlto(res_it.get(), RIL_WORD, alto_str);
     alto_str << " CONTENT=\"";
 
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
@@ -253,7 +252,6 @@ char *TessBaseAPI::GetAltoText(int page_number) {
   alto_str << "\t\t\t</PrintSpace>\n"
            << "\t\t</Page>\n";
 
-  delete res_it;
   return copy_string(alto_str.str());
 }
 
