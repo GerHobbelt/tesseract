@@ -30,6 +30,7 @@
 #include "helpers.h"
 #include "linlsq.h"
 #include "makerow.h"
+#include "tesserrstream.h"  // for tesserr
 #include "textord.h"
 #include <tesseract/tprintf.h>
 #include "underlin.h"

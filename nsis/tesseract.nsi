@@ -1,6 +1,6 @@
 ; (C) Copyright 2010, Sergey Bronnikov
 ; (C) Copyright 2010-2012, Zdenko Podobný
-; (C) Copyright 2015-2023 Stefan Weil
+; (C) Copyright 2015-2024 Stefan Weil
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -29,6 +29,12 @@ Unicode true
 ;define CROSSBUILD
 ;define SHARED
 ;define W64
+!ifndef COMMENTS
+!define COMMENTS "GitHub CI build"
+!endif
+!ifndef COMPANYNAME
+!define COMPANYNAME "Open Source Community"
+!endif
 !ifndef SRCDIR
 !define SRCDIR .
 !endif
@@ -43,13 +49,11 @@ Unicode true
 !define PRODUCT_WEB_SITE "https://github.com/tesseract-ocr/tesseract"
 !endif
 !define GITHUB_RAW_FILE_URL \
-  "http://digi.bib.uni-mannheim.de/tesseract/tessdata_fast"
-# "http://digi.bib.uni-mannheim.de/tesseract/tessdata_fast"
-# "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main"
+  "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main"
 
 !ifdef CROSSBUILD
 !addincludedir ${SRCDIR}\nsis\include
-!addplugindir ${SRCDIR}\nsis\plugins
+!addplugindir Plugins/x86-unicode
 !endif
 
 !ifdef W64
@@ -72,7 +76,7 @@ OutFile ${OUTFILE}
 !ifndef PREFIX
 !define PREFIX "../mingw64"
 !endif
-!define TRAININGDIR "${PREFIX}/bin"
+!define BINDIR "${PREFIX}/bin"
 
 # General Definitions
 Name "${PRODUCT_NAME}"
@@ -85,8 +89,8 @@ BrandingText /TRIMCENTER "(c) 2010-2019 ${PRODUCT_NAME}"
 !define /date DATEVERSION "%Y%m%d%H%M%S"
 VIProductVersion "${VERSION}"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey "Comments" "patched version provided by Stefan Weil"
-VIAddVersionKey "CompanyName" "Universitätsbibliothek Mannheim"
+VIAddVersionKey "Comments" "${COMMENTS}"
+VIAddVersionKey "CompanyName" "${COMPANYNAME}"
 VIAddVersionKey "FileDescription" "Tesseract OCR"
 !define /date DATETIME "%Y-%m-%d-%H-%M-%S"
 VIAddVersionKey "FileVersion" "${DATETIME}"
@@ -256,12 +260,12 @@ Section -Main SEC0000
   SectionIn RO
   SetOutPath "$INSTDIR"
   # files included in distribution
-  File ${PREFIX}/bin/tesseract.exe
-  File ${PREFIX}/bin/libtesseract-*.dll
+  File ${BINDIR}/tesseract.exe
+  File ${BINDIR}/libtesseract-*.dll
 !ifdef CROSSBUILD
   File ../dll/*.dll
 !endif
-  File ${SRCDIR}\nsis\winpath.exe
+  File winpath.exe
   File ../doc/*.html
   CreateDirectory "$INSTDIR\tessdata"
   SetOutPath "$INSTDIR\tessdata"
@@ -290,7 +294,7 @@ SectionEnd
 Section "Training Tools" SecTr
   SectionIn 1
   SetOutPath "$INSTDIR"
-  File ${TRAININGDIR}\*.exe
+  File /x tesseract.exe ${BINDIR}/*.exe
 SectionEnd
 
 !define UNINST_EXE "$INSTDIR\tesseract-uninstall.exe"
@@ -353,14 +357,12 @@ SectionGroupEnd
 SectionGroup "Language data" SecGrp_LD
     Section "English" SecLang_eng
     SectionIn RO
-      SetOutPath "$INSTDIR\tessdata"
-      File ${SRCDIR}\tessdata\eng.*
+      !insertmacro Download_Lang_Data eng
     SectionEnd
 
     Section "Orientation and script detection" SecLang_osd
     SectionIn 1
-      SetOutPath "$INSTDIR\tessdata"
-      File ${SRCDIR}\tessdata\osd.*
+      !insertmacro Download_Lang_Data osd
     SectionEnd
 SectionGroupEnd
 
