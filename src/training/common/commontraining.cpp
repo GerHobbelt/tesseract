@@ -18,10 +18,13 @@
 
 #include "commontraining.h"
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #if DISABLED_LEGACY_ENGINE
 
-#  include <tesseract/params.h>
-#  include <tesseract/tprintf.h>
+#include <tesseract/params.h>
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
@@ -76,6 +79,7 @@ int ParseArguments(int* argc, const char ***argv) {
 #  include "tessdatamanager.h"
 #  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
+#  include "tesseractclass.h"
 
 namespace tesseract {
 
@@ -87,8 +91,6 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 // -M 0.625   -B 0.05   -I 1.0   -C 1e-6.
 CLUSTERCONFIG Config = {elliptical, 0.625, 0.05, 1.0, 1e-6, 0};
 FEATURE_DEFS_STRUCT feature_defs;
-
-static CCUtil *ccutil = nullptr;
 
 INT_VAR(trainer_debug_level, 0, "Level of Trainer debugging");
 INT_VAR(trainer_load_images, 0, "Load images with tr files");
@@ -124,10 +126,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argc number of command line arguments to parse
  * @param argv command line arguments
  */
-int ParseArguments(int *argc, const char ***argv) {
-	if (!ccutil)
-		ccutil = new CCUtil();
-
+int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
   int rv = tesseract::ParseCommandLineFlags("[.tr files ...]", argc, argv);
   if (rv >= 0)
 	  return rv;
@@ -139,8 +138,7 @@ int ParseArguments(int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!trainer_configfile.empty()) {
-    ASSERT0(ccutil != nullptr);
-    ParamUtils::ReadParamsFile(trainer_configfile, ccutil->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, api.tesseract().params());
   }
   return rv;
 }
