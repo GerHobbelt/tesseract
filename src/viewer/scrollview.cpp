@@ -368,7 +368,7 @@ void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
   // Set up an actual Window on the client side.
   char message[kMaxMsgSize];
   snprintf(message, sizeof(message),
-           "w%u = luajava.newInstance('com.google.scrollview.ui"
+           "w%d = luajava.newInstance('com.google.scrollview.ui"
            ".SVWindow','%s',%u,%u,%u,%u,%u,%u,%u)\n",
            window_id_, window_name_, window_id_, x_pos, y_pos, x_size, y_size,
            x_canvas_size, y_canvas_size);
@@ -466,7 +466,7 @@ void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args a
   }
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
   stream_->Send(form.c_str());
@@ -613,7 +613,7 @@ void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_arg
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
 
