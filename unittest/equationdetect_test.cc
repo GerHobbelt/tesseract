@@ -23,7 +23,7 @@
 
 #include "testdata.h"
 
-#define ENABLE_IdentifySpecialText_TEST 0
+#define ENABLE_IdentifySpecialText_TEST 01
 #if ENABLE_IdentifySpecialText_TEST
 #  define EQU_TRAINEDDATA_NAME "equ"
 #else

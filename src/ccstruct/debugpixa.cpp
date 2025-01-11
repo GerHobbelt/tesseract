@@ -12,6 +12,7 @@
 #include "rect.h" 
 
 #include <leptonica/allheaders.h>
+#include <parameters/parameters.h>
 
 #include <string>
 #include <vector>
@@ -32,6 +33,8 @@
 #ifndef TESSERACT_DISABLE_DEBUG_FONTS 
 #define TESSERACT_DISABLE_DEBUG_FONTS 1
 #endif
+
+using namespace parameters;
 
 namespace tesseract {
 
@@ -1592,14 +1595,7 @@ namespace tesseract {
 
       content_has_been_written_to_file = true;
 
-      FILE *html;
-
-#if defined(HAVE_MUPDF)
-      fz_mkdir_for_file(fz_get_global_context(), filename);
-      html = fz_fopen_utf8(fz_get_global_context(), filename, "w");
-#else
-      html = fopen(filename, "w");
-#endif
+	  ReportFile html(filename);
       if (!html) {
         tprintError("cannot open diagnostics HTML output file {}: {}\n", filename, strerror(errno));
         return;
@@ -1695,11 +1691,11 @@ namespace tesseract {
 
       int current_section_index = 0; 
       while (current_section_index < section_count) {
-        current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html, current_section_index);
+        current_section_index = WriteInfoSectionToHTML(counter, next_image_index, partname, html(), current_section_index);
       }
 
       for (int i = next_image_index; i < pics_count; i++) {
-        WriteImageToHTML(counter, partname, html, i);
+        WriteImageToHTML(counter, partname, html(), i);
       }
       //pixaClear(pixa_);
 
@@ -1858,7 +1854,7 @@ namespace tesseract {
         step.elapsed_ns = 0;
       }
       
-      tesseract::ParamsVectors *vec = tesseract_.params();
+      tesseract::ParamsVectorSet &vec = tesseract_->params_collective();
 
       // produce a HTML-formatted parameter usage report by using the regular way to get such a report,
       // then feed it through the NDtext-to-HTML transformer and only then write the final result in one fell swoop to file.
@@ -1868,9 +1864,9 @@ namespace tesseract {
       ParamUtils::ReportParamsUsageStatistics(writer, vec, -1, nullptr);
       std::ostringstream html_report_dst;
       add_encoded_as_html(html_report_dst, "params-report", writer.to_string().c_str());
-      fputs(html_report_dst.str().c_str(), html);
+      fputs(html_report_dst.str().c_str(), html());
 
-      fputs("\n</body>\n</html>\n", html);
+      fputs("\n</body>\n</html>\n", html());
 
       fclose(html);
     }
@@ -1887,7 +1883,7 @@ namespace tesseract {
     auto level = section_info.level;
 
     if (level == 3 && verbose_process) {
-      tesseract::ParamsVectors *vec = tesseract_.params();
+      ParamsVectorSet &vec = tesseract_->params_collective();
       ParamUtils::ReportParamsUsageStatistics(nullptr, vec, level, title);
     }
   }

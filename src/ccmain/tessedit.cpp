@@ -25,8 +25,10 @@
 #include "matchdefs.h"
 #include "pageres.h"
 #include <tesseract/params.h>
+#include <parameters/parameters.h>
 #include "stopper.h"
 #include "tesseractclass.h"
+#include "tesserrstream.h"  // for tesserr
 #include "tessvars.h"
 #include <tesseract/tprintf.h>
 #if !DISABLED_LEGACY_ENGINE
@@ -41,48 +43,76 @@ namespace tesseract {
 // Read a "config" file containing a set of variable, value pairs.
 // Searches the standard places: tessdata/configs, tessdata/tessconfigs
 // and also accepts a relative or absolute path name.
-void Tesseract::read_config_file(const char *filename, SetParamConstraint constraint) {
+void Tesseract::read_config_file(const char *filename) {
   if (!filename || !*filename) {
     tprintError("empty config filename specified. No config loaded.\n");
     return;
   }
 
-  std::string path = datadir_;
-  path += "configs/";
-  path += filename;
-  tprintDebug("Read Config: test if '{}' is a readable file: ", path);
-  FILE *fp;
-  if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-    fclose(fp);
-  } else {
-    path = datadir_;
-    path += "tessconfigs/";
-    path += filename;
-    tprintDebug("NO.\n"
-      "Read Config: test if '{}' is a readable file: ", path);
-    if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-      fclose(fp);
-    } else {
-      path = filename;
-      tprintDebug("NO.\n"
-      "Read Config: test if '{}' is a readable file: ", path);
-      if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
-        fclose(fp);
-      }
-      else {
-        tprintDebug("NO.\n");
+  // Construct potential config file paths
+  std::vector<std::filesystem::path> config_paths = {
+      datadir / "configs" / filename,
+      datadir / "tessconfigs" / filename,
+      std::filesystem::path(filename)};
+
+  // Use the first existing file or fallback to the last (filename)
+  auto config_file = std::find_if(config_paths.begin(), config_paths.end(),
+                                  [](const std::filesystem::path &path) {
+                                    std::error_code ec;
+									tprintDebug("Read Config: test if '{}' is a readable file: ", path);
+                                    auto rv = std::filesystem::exists(path, ec);
+								    tprintDebug("{}.\n", rv ? "YES" : "NO");
+									return rv;
+                                  });
+	if (config_file == config_paths.end()) {
         tprintError("Config file '{}' cannot be opened / does not exist anywhere we looked.\n", filename);
         return;
       }
+  const std::filesystem::path &selected_path = *config_file;
+
+  ParamUtils::ReadParamsFile(selected_path.string().c_str(), this->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+}
+
+bool Tesseract::InitParameters(const std::vector<std::string> &vars_vec,
+                               const std::vector<std::string> &vars_values) {
+  // Set params specified in vars_vec (done after setting params from config
+  // files, so that params in vars_vec can override those from files).
+  if (vars_vec.size() != vars_values.size()) {
+    tprintError("The specified set of variables ({}) does not match its accompanying set of values ({}): both should have the same length.\n", vars_vec.size(), vars_values.size());
+    return false;
+  }
+  bool ok = true;
+  for (unsigned i = 0; i < vars_vec.size(); ++i) {
+    if (!ParamUtils::SetParam(vars_vec[i].c_str(), vars_values[i].c_str(), this->params_collective())) {
+      tprintWarn("The parameter '{}' was not found.\n", vars_vec[i].c_str());
+      ok = false;
     }
   }
-  tprintDebug("YES\n");
-
-  ParamUtils::ReadParamsFile(path.c_str(), constraint, this->params());
+  return ok;
 }
+
+// Tesseract parameter values are 'released' for another round of initialization
+// by way of InitParameters() and/or read_config_file().
+//
+// The current parameter values will not be altered by this call; use this
+// method if you want to keep the currently active parameter values as a kind
+// of 'good initial setup' for any subsequent teseract action.
+void Tesseract::ReadyParametersForReinitialization() {
+  ParamUtils::ReadyParametersForReinitialization(this->params_collective());
+}
+
+// Tesseract parameter values are 'released' for another round of initialization
+// by way of InitParameters() and/or read_config_file().
+//
+// The current parameter values are reset to their factory defaults by this call.
+void Tesseract::ResetParametersToFactoryDefault() {
+  ParamUtils::ResetToDefaults(this->params_collective());
+}
+
 
 // Returns false if a unicharset file for the specified language was not found
 // or was invalid.
+// 
 // This function initializes TessdataManager. After TessdataManager is
 // no longer needed, TessdataManager::End() should be called.
 //
@@ -93,21 +123,19 @@ void Tesseract::read_config_file(const char *filename, SetParamConstraint constr
 // OEM_TESSERACT_ONLY if none of the configs specify this variable.
 bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
                                          const std::string &language, OcrEngineMode oem,
-                                         const char **configs, int configs_size,
-                                         const std::vector<std::string> *vars_vec,
-                                         const std::vector<std::string> *vars_values,
-                                         bool set_only_non_debug_params, TessdataManager *mgr) {
+                                         const std::vector<std::string> &configs,
+                                         TessdataManager *mgr) {
   // Set the language data path prefix
   lang_ = !language.empty() ? language : "eng";
-  language_data_path_prefix_ = datadir_;
-  language_data_path_prefix_ += lang_;
-  language_data_path_prefix_ += ".";
+  //std::filesystem::path 
+  language_data_path_prefix_ = datadir_ / (lang + ".");
 
   // Initialize TessdataManager.
-  std::string tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;
+  std::filesystem::path tessdata_path = language_data_path_prefix_ + kTrainedDataSuffix;
   if (!mgr->is_loaded() && !mgr->Init(tessdata_path.c_str())) {
     tprintError("Error opening data file {}\n", tessdata_path);
-    tprintInfo("Please make sure the TESSDATA_PREFIX environment variable is set"
+    tprintInfo(
+        "Please make sure the TESSDATA_PREFIX environment variable is set"
         " to your \"tessdata\" directory.\n");
     return false;
   }
@@ -133,34 +161,21 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(SET_PARAM_CONSTRAINT_NONE, &fp, this->params());
+    ParamUtils::ReadParamsFromFp(fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
   }
 
-  SetParamConstraint set_params_constraint =
-      set_only_non_debug_params ? SET_PARAM_CONSTRAINT_NON_DEBUG_ONLY : SET_PARAM_CONSTRAINT_NONE;
   // Load tesseract variables from config files. This is done after loading
   // language-specific variables from [lang].traineddata file, so that custom
   // config files can override values in [lang].traineddata file.
-  for (int i = 0; i < configs_size; ++i) {
-    read_config_file(configs[i], set_params_constraint);
-  }
-
-  // Set params specified in vars_vec (done after setting params from config
-  // files, so that params in vars_vec can override those from files).
-  if (vars_vec != nullptr && vars_values != nullptr) {
-    for (unsigned i = 0; i < vars_vec->size(); ++i) {
-      if (!ParamUtils::SetParam((*vars_vec)[i].c_str(), (*vars_values)[i].c_str(),
-                                set_params_constraint, this->params())) {
-        tprintWarn("The parameter '{}' was not found.\n", (*vars_vec)[i].c_str());
-      }
-    }
+  for (int i = 0; i < configs.size(); ++i) {
+    read_config_file(configs[i].c_str());
   }
 
   // Write the effective (a.k.a. currently active) tesseract parameter set to disk for later diagnosis / re-use.
   if (!tessedit_write_params_to_file.empty()) {
     FILE *params_file = fopen(tessedit_write_params_to_file.c_str(), "wb");
     if (params_file != nullptr) {
-      ParamUtils::PrintParams(params_file, this->params());
+      ParamUtils::PrintParams(params_file, this->params_collective());
       fclose(params_file);
     } else {
       tprintError("Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
@@ -183,16 +198,15 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED) {
 #endif // DISABLED_LEGACY_ENGINE
     if (mgr->IsComponentAvailable(TESSDATA_LSTM)) {
-      lstm_recognizer_ = new LSTMRecognizer(this);
+      lstm_recognizer_ = new LSTMRecognizer(*this);
 
       ResyncVariablesInternally();
       // lstm_recognizer_->SetDataPathPrefix(language_data_path_prefix);
       // lstm_recognizer_->CopyDebugParameters(this, &getDict());
       // lstm_recognizer_->SetDebug(tess_debug_lstm);
-      
-      ASSERT_HOST(lstm_recognizer_->Load(this->params(),
-                                         lstm_use_matrix ? language : "", mgr));
-	  // TODO: ConvertToInt optional extra
+
+      ASSERT_HOST(lstm_recognizer_->Load(this->params_collective(), lstm_use_matrix ? language : "", mgr));
+      // TODO: ConvertToInt optional extra
     } else {
       tprintError("LSTM requested, but not present!! Loading tesseract.\n");
       tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_ONLY);
@@ -206,7 +220,8 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   }
 #if !DISABLED_LEGACY_ENGINE
   else if (!mgr->GetComponent(TESSDATA_UNICHARSET, &fp) || !unicharset_.load_from_file(&fp, false)) {
-    tprintError("Tesseract (legacy) engine requested, but components are "
+    tprintError(
+        "Tesseract (legacy) engine requested, but components are "
         "not present in {}!!\n",
         tessdata_path);
     return false;
@@ -219,7 +234,6 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   right_to_left_ = unicharset_.major_right_to_left();
 
 #if !DISABLED_LEGACY_ENGINE
-
   // Setup initial unichar ambigs table and read universal ambigs.
   UNICHARSET encoder_unicharset;
   encoder_unicharset.CopyFrom(unicharset_);
@@ -235,9 +249,9 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
   // Load pass1 and pass2 weights (for now these two sets are the same, but in
   // the future separate sets of weights can be generated).
   for (int p = ParamsModel::PTRAIN_PASS1; p < ParamsModel::PTRAIN_NUM_PASSES; ++p) {
-    language_model_->getParamsModel().SetPass(static_cast<ParamsModel::PassEnum>(p));
+    language_model_.setParamsModelPass(static_cast<ParamsModel::PassEnum>(p));
     if (mgr->GetComponent(TESSDATA_PARAMS_MODEL, &fp)) {
-      if (!language_model_->getParamsModel().LoadFromFp(lang_.c_str(), &fp)) {
+      if (!language_model_.LoadParamsModelFromFp(lang_.c_str(), &fp)) {
         return false;
       }
     }
@@ -307,18 +321,65 @@ void Tesseract::ParseLanguageString(const std::string &lang_str, std::vector<std
   }
 }
 
+// Parse a string of the form `<box>[+<box>]*` where box is given as
+// `lNtNwNhN` or `lNtNrNbN` with the `N` being numeric values.
+//
+// Returns an BOXA instance (array of BOX coordinates) on success or NULL on failure.
+// Errors are reported via tprintError() as they happen.
+BOXA *Tesseract::ParseRectsString(const char *rects_str) {
+  // Dev Note: use classic C code approach instead of C++ std::string based: much easier & less heap thrashing.
+  char *rects = strdup(rects_str);
+
+  // also match ',' and ';', as well as '+', in case user used one of those separators instead of '+':
+  BOXA *boxa = boxaCreate(100);
+  int idx = 0;
+  char *token = rects;
+  for (;;) {
+    int pos = strspn(token, " :;+");
+    token += pos;
+    pos = strcspn(rects, " :;+");
+    bool eol = (token[pos] == 0);
+    token[pos] = 0;
+
+    // as an extra service, convert to lowercase before parsing:
+    strlwr(token);
+
+    int left, top, width, height, right, bottom;
+    int params = sscanf(token, "l%dt%dw%dh%d", &left, &top, &width, &height);
+    if (params == 4) {
+      BOX *box = boxCreateValid(left, top, width, height);
+      boxaAddBox(boxa, box, L_INSERT);
+    } else {
+      params = sscanf(token, "l%dt%dr%db%d", &left, &top, &right, &bottom);
+      if (params == 4) {
+        BOX *box = boxCreateValid(left, top, right - left, bottom - top);
+        boxaAddBox(boxa, box, L_INSERT);
+      } else {
+        tprintError("Rectangle spec line part '{}' does not match either of the supported formats LTDH or LTRB, f.e. something akin to 'l30t60w50h100'. Your line:\n    {}\n", token, rects_str);
+        boxaDestroy(&boxa);
+        return nullptr;
+      }
+    }
+    token += pos;
+    if (eol) {
+      break;
+    }
+    token++;
+  }
+  return boxa;
+}
+
+
 // Initialize for potentially a set of languages defined by the language
 // string and recursively any additional languages required by any language
 // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
 // See init_tesseract_internal for args.
 int Tesseract::init_tesseract(const std::string &arg0, const std::string &textbase,
-                              const std::string &language, OcrEngineMode oem, const char **configs,
-                              int configs_size, const std::vector<std::string> *vars_vec,
-                              const std::vector<std::string> *vars_values,
-                              bool set_only_non_debug_params, TessdataManager *mgr) {
+                              const std::vector<std::string> &configs,
+                              TessdataManager *mgr) {
   std::vector<std::string> langs_to_load;
   std::vector<std::string> langs_not_to_load;
-  ParseLanguageString(language, &langs_to_load, &langs_not_to_load);
+  ParseLanguageString(languages_to_try, &langs_to_load, &langs_not_to_load);
 
   for (auto &lang : sub_langs_) {
     delete lang;
@@ -368,9 +429,8 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
         }
       }
 
-      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, oem, configs,
-                                                         configs_size, vars_vec, vars_values,
-                                                         set_only_non_debug_params, mgr);
+      int result = tess_to_init->init_tesseract_internal(arg0, textbase, lang_to_load, static_cast<tesseract::OcrEngineMode>(this->tessedit_ocr_engine_mode.value()), configs,
+                                                         mgr);
       // Forget that language, but keep any reader we were given.
       mgr->Clear();
 
@@ -398,6 +458,7 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     return -1; // Couldn't load any language!
   }
 
+#if !DISABLED_LEGACY_ENGINE
   if (!sub_langs_.empty()) {
     // In multilingual mode word ratings have to be directly comparable,
     // so use the same language model weights for all languages:
@@ -406,18 +467,21 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
     // otherwise use default language model weights.
     if (tessedit_use_primary_params_model) {
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->getParamsModel().Copy(this->language_model_->getParamsModel());
+        sub_lang->language_model_.copyParamsModel(this->language_model_.getParamsModel());
       }
       tprintDebug("Using params model of the primary language.\n");
     } else {
-      this->language_model_->getParamsModel().Clear();
       for (auto &sub_lang : sub_langs_) {
-        sub_lang->language_model_->getParamsModel().Clear();
+        sub_lang->language_model_.clearParamsModel();
       }
+      this->language_model_.clearParamsModel();
     }
   }
+#endif
 
+#if !DISABLED_LEGACY_ENGINE
   SetupUniversalFontIds();
+#endif
 
   return 0;
 }
@@ -433,25 +497,20 @@ int Tesseract::init_tesseract(const std::string &arg0, const std::string &textba
 //
 // language is the language code to load.
 //
-// oem controls which engine(s) will operate on the image
+// oem controls which engine(s) will operate on the image.
 //
-// configs (argv) is an array of config filenames to load variables from.
-// May be nullptr.
-// configs_size (argc) is the number of elements in configs.
-// vars_vec is an optional vector of variables to set.
+// configs is a vector of optional config filenames to load variables from.
+// May be empty.
+//
+// vars_vec is an optional vector of variables to set. May be empty.
 //
 // vars_values is an optional corresponding vector of values for the variables
 // in vars_vec.
-// If set_only_non_debug_params is true, only params that do not contain
-// "debug" in the name will be set.
 int Tesseract::init_tesseract_internal(const std::string &arg0, const std::string &textbase,
                                        const std::string &language, OcrEngineMode oem,
-                                       const char **configs, int configs_size,
-                                       const std::vector<std::string> *vars_vec,
-                                       const std::vector<std::string> *vars_values,
-                                       bool set_only_non_debug_params, TessdataManager *mgr) {
-  if (!init_tesseract_lang_data(arg0, language, oem, configs, configs_size, vars_vec,
-                                vars_values, set_only_non_debug_params, mgr)) {
+                                       const std::vector<std::string> &configs,
+                                       TessdataManager *mgr) {
+  if (!init_tesseract_lang_data(arg0, language, oem, configs, mgr)) {
     return -1;
   }
   if (tessedit_init_config_only) {

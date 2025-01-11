@@ -3,7 +3,7 @@
 // Description: PAGE XML rendering interface
 // Author:      Jan Kamlah
 
-// (C) Copyright 2021
+// (C) Copyright 2024
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +19,6 @@
 
 #include "errcode.h" // for ASSERT_HOST
 #include "helpers.h" // for copy_string
-#ifdef _WIN32
-#  include "host.h" // windows.h for MultiByteToWideChar, ...
-#endif
-#include <tesseract/tprintf.h> // for tprintf
-
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 
@@ -138,7 +133,7 @@ Pta *DestroyAndCreatePta(Pta *pts) {
 ///
 Pta *RecalcPolygonline(Pta *pts, bool upper) {
   int num_pts, num_bin, index = 0;
-  int y, x0, y0, x1, y1;
+  l_float32 y, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
   NUMA *bin_line;
   Pta *pts_recalc;
@@ -148,7 +143,7 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
   bin_line = numaCreate(num_bin + 1);
 
   for (int p = 0; p <= num_bin; ++p) {
-    bin_line->array[p] = -1.;
+    numaAddNumber(bin_line, -1.);
   }
 
   num_pts = ptaGetCount(pts);
@@ -160,17 +155,18 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
   }
 
   do {
-    ptaGetIPt(pts, index, &x0, &y0);
-    ptaGetIPt(pts, index + 1, &x1, &y1);
+    ptaGetPt(pts, index, &x0, &y0);
+    ptaGetPt(pts, index + 1, &x1, &y1);
+    // TODO add +1?
     for (int p = x0 - x_min; p <= x1 - x_min; ++p) {
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
       if (!upper) {
-        if (bin_line->array[p] == -1. || y0 > bin_line->array[p]) {
-          bin_line->array[p] = y0;
-        }
+        if ( val == -1. || y0 > val)
+          numaReplaceNumber(bin_line, p, y0);
       } else {
-        if (bin_line->array[p] == -1. || y0 < bin_line->array[p]) {
-          bin_line->array[p] = y0;
-        }
+        if ( val == -1. || y0 < val)
+          numaReplaceNumber(bin_line, p, y0);
       }
     }
     index += 2;
@@ -180,18 +176,22 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
 
   for (int p = 0; p <= num_bin; ++p) {
     if (p == 0) {
-      y = bin_line->array[p];
+      numaGetFValue(bin_line, p, &y);
       ptaAddPt(pts_recalc, x_min + p, y);
-    } else if (p == num_bin) {
+    }
+    else if (p == num_bin) {
       ptaAddPt(pts_recalc, x_min + p, y);
       break;
-    } else if (y != bin_line->array[p]) {
-      if (y != -1.) {
-        ptaAddPt(pts_recalc, x_min + p, y);
-      }
-      y = bin_line->array[p];
-      if (y != -1.) {
-        ptaAddPt(pts_recalc, x_min + p, y);
+    }
+    else {
+      l_float32 val;
+      numaGetFValue(bin_line, p, &val);
+      if (y != val) {
+        if (y != -1.)
+          ptaAddPt(pts_recalc, x_min + p, y);
+        numaGetFValue(bin_line, p, &y);
+        if (y != -1.)
+          ptaAddPt(pts_recalc, x_min + p, y);
       }
     }
   }
@@ -199,6 +199,7 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
   ptaDestroy(&pts);
   return pts_recalc;
 }
+
 
 ///
 /// Create a rectangle hull around a single line
@@ -266,11 +267,11 @@ static void SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper) {
   int x0, y0, x1, y1, x2, y2, x3, y3, index = 1;
   float m, b, y_min, y_max;
 
-  while (index <= polyline->n - 2) {
+  while (index <= ptaGetCount(polyline) - 2) {
     ptaGetIPt(polyline, index - 1, &x0, &y0);
     ptaGetIPt(polyline, index, &x1, &y1);
     ptaGetIPt(polyline, index + 1, &x2, &y2);
-    if (index + 2 < polyline->n) {
+    if (index + 2 < ptaGetCount(polyline)) {
       // Delete two point indentations
       ptaGetIPt(polyline, index + 2, &x3, &y3);
       if (abs(x3 - x0) <= tolerance * 2) {
@@ -304,7 +305,7 @@ static void SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper) {
         y_min = std::min(y0, y1);
         GetSlopeAndOffset(x0, y_min, x2, y2, &m, &b);
         if ((m * x1 + b) <= y1) {
-          polyline->y[index - 1] = std::min(y0, y1);
+          ptaUpdatePtYCoord(polyline, index - 1, std::min(y0, y1));
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -312,7 +313,7 @@ static void SimplifyLinePolygon(Pta *polyline, int tolerance, bool upper) {
         y_max = std::max(y0, y1);
         GetSlopeAndOffset(x0, y_max, x2, y2, &m, &b);
         if ((m * x1 + b) >= y1) {
-          polyline->y[index - 1] = y_max;
+          ptaUpdatePtYCoord(polyline, index - 1, y_max);
           ptaRemovePt(polyline, index);
           continue;
         }
@@ -338,8 +339,7 @@ static void AddBoxToPAGE(const ResultIterator *it, PageIteratorLevel level,
 ///
 /// Join ltr and rtl polygon information
 ///
-static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss,
-                              tesseract::WritingDirection writing_direction) {
+static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss, tesseract::WritingDirection writing_direction) {
   // If writing direction is NOT right-to-left, handle the left-to-right case.
   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl) != 0) {
@@ -361,8 +361,7 @@ static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss,
 ///
 /// Convert baseline to points and add to polygon
 ///
-static void AddBaselineToPTA(const ResultIterator *it, PageIteratorLevel level,
-                             Pta *baseline_pts) {
+static void AddBaselineToPTA(const ResultIterator *it, PageIteratorLevel level, Pta *baseline_pts) {
   int x1, y1, x2, y2;
 
   it->Baseline(level, &x1, &y1, &x2, &y2);
@@ -390,20 +389,18 @@ static void AddBaselinePtsToPAGE(Pta *baseline_pts, std::stringstream &str) {
 ///
 /// Sort baseline points ascending and deleting duplicates
 ///
-Pta *SortBaseline(Pta *baseline_pts,
-                  tesseract::WritingDirection writing_direction) {
+Pta *SortBaseline(Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
   int num_pts, index = 0;
   float x0, y0, x1, y1;
   Pta *sorted_baseline_pts;
 
-  sorted_baseline_pts =
-      ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, nullptr);
+  sorted_baseline_pts = ptaSort(baseline_pts, L_SORT_BY_X, L_SORT_INCREASING, nullptr);
 
   do {
     ptaGetPt(sorted_baseline_pts, index, &x0, &y0);
     ptaGetPt(sorted_baseline_pts, index + 1, &x1, &y1);
     if (x0 >= x1) {
-      sorted_baseline_pts->y[index] = std::min(y0, y1);
+      ptaUpdatePtYCoord(sorted_baseline_pts, index, std::min(y0, y1));
       ptaRemovePt(sorted_baseline_pts, index + 1);
     } else {
       index++;
@@ -416,11 +413,9 @@ Pta *SortBaseline(Pta *baseline_pts,
 }
 
 ///
-/// Clip baseline to range of the exsitings polygon and simplifies the baseline
-/// linepolygon
+/// Clip baseline to range of the exsitings polygon and simplifies the baseline linepolygon
 ///
-Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts,
-                             tesseract::WritingDirection writing_direction) {
+Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
   int num_pts;
   float m, b, x0, y0, x1, y1;
   float x_min, y_min, x_max, y_max;
@@ -481,27 +476,27 @@ Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts,
 }
 
 ///
-/// Fit the baseline points into the existings polygon
+/// Fit the baseline points into the existing polygon
 ///
-Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts,
-                                tesseract::WritingDirection writing_direction) {
+Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::WritingDirection writing_direction) {
   int num_pts, num_bin, x0, y0, x1, y1;
   float m, b;
   float x_min, y_min, x_max, y_max;
   float delta_median, delta_median_Q1, delta_median_Q3;
   NUMA *bin_line, *poly_bl_delta;
-  Pta *baseline_recalc_pts, *baseline_clipped_pts;
+  Pta* baseline_recalc_pts = NULL;
+  Pta* baseline_clipped_pts;
 
   ptaGetMinMax(bottom_pts, &x_min, &y_min, &x_max, &y_max);
   num_bin = x_max - x_min;
   bin_line = numaCreate(num_bin + 1);
 
   for (int p = 0; p < num_bin + 1; ++p) {
-    bin_line->array[p] = -1.;
+    numaReplaceNumber(bin_line, p, -1.);
   }
 
   num_pts = ptaGetCount(bottom_pts);
-  // Create a interpolated polygon with stepsize 1
+  // Create an interpolated polygon with stepsize 1.
   for (int index = 0; index < num_pts - 1; ++index) {
     ptaGetIPt(bottom_pts, index, &x0, &y0);
     ptaGetIPt(bottom_pts, index + 1, &x1, &y1);
@@ -510,16 +505,18 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts,
     }
     if (y0 == y1) {
       for (int p = x0 - x_min; p < x1 - x_min + 1; ++p) {
-        if (bin_line->array[p] == -1. || y0 > bin_line->array[p]) {
-          bin_line->array[p] = y0;
-        }
+        l_float32 val;
+        numaGetFValue(bin_line, p, &val);
+        if (val == -1. || y0 > val) 
+	      numaSetValue(bin_line, p, y0);
       }
     } else {
       GetSlopeAndOffset(x0, y0, x1, y1, &m, &b);
       for (int p = x0 - x_min; p < x1 - x_min + 1; ++p) {
-        if (bin_line->array[p] == -1. ||
-            ((p + x_min) * m + b) > bin_line->array[p]) {
-          bin_line->array[p] = ((p + x_min) * m + b);
+        l_float32 val;
+        numaGetFValue(bin_line, p, &val);
+        if (val == -1. || ((p+x_min)*m+b) > val) {
+	      numaSetValue(bin_line, p, (p + x_min) * m + b);
         }
       }
     }
@@ -549,13 +546,17 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts,
         y0 = int(x_max * m + b);
         x0 = x_max;
         int x_val = x0 - x_min;
-        numaAddNumber(poly_bl_delta, abs(bin_line->array[x_val] - y0));
+        l_float32 val;
+        numaGetFValue(bin_line, x_val, &val);
+        numaAddNumber(poly_bl_delta, abs(val - y0));
         ptaAddPt(baseline_clipped_pts, x0, y0);
         break;
       }
     }
     int x_val = x0 - x_min;
-    numaAddNumber(poly_bl_delta, abs(bin_line->array[x_val] - y0));
+    l_float32 val;
+    numaGetFValue(bin_line, x_val, &val);
+    numaAddNumber(poly_bl_delta, abs(val - y0));
     ptaAddPt(baseline_clipped_pts, x0, y0);
   }
 
@@ -567,28 +568,28 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts,
   numaGetRankValue(poly_bl_delta, 0.75, nullptr, 0, &delta_median_Q3);
 
   // Fit baseline into the polygon
-  // Todo: Needs maybe some adjustments to suppress fitting to superscript
-  // glyphs
+  // TODO: Needs maybe some adjustments to suppress fitting to superscript glyphs
   baseline_recalc_pts = ptaCreate(0);
   num_pts = ptaGetCount(baseline_clipped_pts);
   for (int p = 0; p < num_pts; ++p) {
     ptaGetIPt(baseline_clipped_pts, p, &x0, &y0);
     int x_val = x0 - x_min;
+    l_float32 x_coord;
+    numaGetFValue(bin_line, p, &x_coord);
     // Delete outliers with IQR
-    if (abs(y0 - bin_line->array[x_val]) >
-            1.5 * delta_median_Q3 + delta_median &&
-        p != 0 && p != num_pts - 1) {
+    if (abs(y0 - x_coord) > 1.5 * delta_median_Q3 + delta_median && p != 0 && p != num_pts - 1) {
+      // TODO: Why was this section added?
       continue;
     }
     if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
-      if (y0 < bin_line->array[x_val]) {
-        ptaAddPt(baseline_recalc_pts, x0, bin_line->array[x_val]);
+      if (y0 < x_coord) {
+        ptaAddPt(baseline_recalc_pts, x0, x_coord);
       } else {
         ptaAddPt(baseline_recalc_pts, x0, y0);
       }
     } else {
-      if (y0 > bin_line->array[x_val]) {
-        ptaAddPt(baseline_recalc_pts, x0, bin_line->array[x_val]);
+      if (y0 > x_coord) {
+        ptaAddPt(baseline_recalc_pts, x0, x_coord);
       } else {
         ptaAddPt(baseline_recalc_pts, x0, y0);
       }
@@ -631,6 +632,7 @@ bool TessPAGERenderer::BeginDocumentHandler() {
 /// Append the PAGE XML for the layout of the image
 ///
 bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
+  // TODO: Set to 2019 back
   if (begin_document) {
     AppendString(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
@@ -644,7 +646,7 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
         "pagecontent.xsd\">\n"
         "\t<Metadata");
 
-    // If a URL is used to recognize a image add it as <Metadata
+    // If a URL is used to recognize an image add it as <Metadata
     // externalRef="url">
     if (std::regex_search(api->GetInputName(),
                           std::regex("^(https?|ftp|ssh):"))) {
@@ -713,7 +715,6 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   // Used variables
 
   std::stringstream reading_order_str;
@@ -745,9 +746,10 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   Pta *line_baseline_ltr_pts = ptaCreate(0);
   Pta *line_baseline_pts = ptaCreate(0);
 
-  bool POLYGONFLAG = tesseract_->page_xml_polygon;
-  int LEVELFLAG = tesseract_->page_xml_level;
-
+  // Replace this with real flags:
+  #define POLYGONFLAG   tesseract_->page_xml_polygon
+  #define LEVELFLAG tesseract_->page_xml_level
+  
   if (LEVELFLAG != 0 && LEVELFLAG != 1) {
     tprintWarn(
         "page_xml_level: for now, only line level (0) and word level (1) are available, and the level "
@@ -766,8 +768,8 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
                     << "\t\t\t<OrderedGroup id=\"ro" << ro_id
                     << "\" caption=\"Regions reading order\">\n";
 
-  ResultIterator *res_it = GetIterator();
-  
+  std::unique_ptr<ResultIterator> res_it(GetIterator());
+
   float block_conf = 0;
   float line_conf = 0;
 
@@ -786,7 +788,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
         // Handle all kinds of images.
         page_str << "\t\t<GraphicRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</GraphicRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -796,7 +798,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
         // Handle horizontal and vertical lines.
         page_str << "\t\t<SeparatorRegion id=\"r" << rcnt++ << "\">\n";
         page_str << "\t\t\t";
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
         page_str << "\t\t</SeparatorRegion>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -809,8 +811,9 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
 
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       // Add Block to reading order
-      reading_order_str << "\t\t\t\t<RegionRefIndexed " << "index=\"" << rcnt
-                        << "\" " << "regionRef=\"r" << rcnt << "\"/>\n";
+      reading_order_str << "\t\t\t\t<RegionRefIndexed "
+                        << "index=\"" << rcnt << "\" "
+                        << "regionRef=\"r" << rcnt << "\"/>\n";
 
       float deskew_angle;
       res_it->Orientation(&orientation_block, &writing_direction_block,
@@ -827,7 +830,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       if ((!POLYGONFLAG || (orientation_block != ORIENTATION_PAGE_UP &&
                             orientation_block != ORIENTATION_PAGE_DOWN)) &&
           LEVELFLAG == 0) {
-        AddBoxToPAGE(res_it, RIL_BLOCK, page_str);
+        AddBoxToPAGE(res_it.get(), RIL_BLOCK, page_str);
       }
     }
 
@@ -851,7 +854,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
     // for now using LinePts
     bool skewed_flag = (orientation_block != ORIENTATION_PAGE_UP &&
                         orientation_block != ORIENTATION_PAGE_DOWN);
-  
+
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);
@@ -869,9 +872,9 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       line_str << "custom=\"" << "readingOrder {index:" << lcnt << ";}\">\n";
       // If level is linebased, get the line polygon and baseline
       if (LEVELFLAG == 0 && (!POLYGONFLAG || skewed_flag)) {
-        AddPointToWordPolygon(res_it, RIL_TEXTLINE, line_top_ltr_pts,
+        AddPointToWordPolygon(res_it.get(), RIL_TEXTLINE, line_top_ltr_pts,
                               line_bottom_ltr_pts, writing_direction);
-        AddBaselineToPTA(res_it, RIL_TEXTLINE, line_baseline_pts);
+        AddBaselineToPTA(res_it.get(), RIL_TEXTLINE, line_baseline_pts);
         if (ttb_flag) {
           line_baseline_pts = TransposePolygonline(line_baseline_pts);
         }
@@ -891,18 +894,18 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
                << WritingDirectionToStr(writing_direction) << "\" "
                << "custom=\"" << "readingOrder {index:" << wcnt << ";}\">\n";
       if ((!POLYGONFLAG || skewed_flag) || ttb_flag) {
-        AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts,
+        AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
                               writing_direction);
       }
     }
 
     if (POLYGONFLAG && !skewed_flag && ttb_flag && LEVELFLAG == 0) {
-      AddPointToWordPolygon(res_it, RIL_WORD, word_top_pts, word_bottom_pts,
+      AddPointToWordPolygon(res_it.get(), RIL_WORD, word_top_pts, word_bottom_pts,
                             writing_direction);
     }
 
     // Get the word baseline information
-    AddBaselineToPTA(res_it, RIL_WORD, word_baseline_pts);
+    AddBaselineToPTA(res_it.get(), RIL_WORD, word_baseline_pts);
 
     // Get the word text content and polygon
     do {
@@ -911,7 +914,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
       if (grapheme && grapheme[0] != 0) {
         word_content << HOcrEscape(grapheme.get()).c_str();
         if (POLYGONFLAG && !skewed_flag && !ttb_flag) {
-          AddPointToWordPolygon(res_it, RIL_SYMBOL, word_top_pts,
+          AddPointToWordPolygon(res_it.get(), RIL_SYMBOL, word_top_pts,
                                 word_bottom_pts, writing_direction);
         }
       }
@@ -1126,7 +1129,6 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-  delete res_it;
   return copy_string(text);
 }
 

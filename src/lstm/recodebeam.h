@@ -199,8 +199,7 @@ public:
               double worst_dict_cert, const UNICHARSET *charset);
 
   void DecodeSecondaryBeams(const NetworkIO &output, double dict_ratio, double cert_offset,
-                            double worst_dict_cert, const UNICHARSET *charset,
-                            int lstm_choice_mode);
+                            double worst_dict_cert, const UNICHARSET *charset);
 
   // Returns the best path as labels/scores/xcoords similar to simple CTC.
   void ExtractBestPathAsLabels(std::vector<int> *labels, std::vector<int> *xcoords) const;
@@ -212,8 +211,7 @@ public:
 
   // Returns the best path as a set of WERD_RES.
   void ExtractBestPathAsWords(const TBOX &line_box, float scale_factor, 
-                              const UNICHARSET *unicharset, PointerVector<WERD_RES> *words,
-                              int lstm_choice_mode);
+                              const UNICHARSET *unicharset, PointerVector<WERD_RES> *words);
 
   // Generates debug output of the content of the beams after a Decode.
   void DebugBeams(const UNICHARSET *unicharset) const;

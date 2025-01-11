@@ -165,19 +165,16 @@ TESS_API void TessDeleteIntArray(const int *arr);
 /* Renderer API */
 TESS_API TessResultRenderer *TessTextRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessHOcrRendererCreate(const char *outputbase);
-TESS_API TessResultRenderer *TessHOcrRendererCreate2(const char *outputbase,
-                                                     BOOL font_info);
+TESS_API TessResultRenderer *TessHOcrRendererCreate2(const char *outputbase, BOOL font_info);
 TESS_API TessResultRenderer *TessAltoRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessPAGERendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessTsvRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessPDFRendererCreate(const char *outputbase,
-                                                   const char *datadir,
-                                                   BOOL textonly);
+                                                   const char *datadir, BOOL textonly);
 TESS_API TessResultRenderer *TessUnlvRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessBoxTextRendererCreate(const char *outputbase);
 TESS_API TessResultRenderer *TessLSTMBoxRendererCreate(const char *outputbase);
-TESS_API TessResultRenderer *TessWordStrBoxRendererCreate(
-    const char *outputbase);
+TESS_API TessResultRenderer *TessWordStrBoxRendererCreate(const char *outputbase);
 
 TESS_API void TessDeleteResultRenderer(TessResultRenderer *renderer);
 TESS_API void TessResultRendererInsert(TessResultRenderer *renderer,
@@ -212,8 +209,6 @@ TESS_API void TessBaseAPISetOutputName(TessBaseAPI *handle, const char *name);
 
 TESS_API BOOL TessBaseAPISetVariable(TessBaseAPI *handle, const char *name,
                                      const char *value);
-TESS_API BOOL TessBaseAPISetDebugVariable(TessBaseAPI *handle, const char *name,
-                                          const char *value);
 
 TESS_API BOOL TessBaseAPIGetIntVariable(const TessBaseAPI *handle,
                                         const char *name, int *value);
@@ -234,23 +229,19 @@ TESS_API BOOL TessBaseAPIDumpVariablesToFile(const TessBaseAPI *handle,
 
 TESS_API int TessBaseAPIInit1(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode oem,
-                              const char **configs, int configs_size);
+                              const char **configs, size_t configs_size);
 TESS_API int TessBaseAPIInit2(TessBaseAPI *handle, const char *datapath,
                               const char *language, TessOcrEngineMode oem);
 TESS_API int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath,
                               const char *language);
 
 TESS_API int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath,
-                              const char *language, TessOcrEngineMode mode,
-                              const char **configs, int configs_size, char **vars_vec,
-                              char **vars_values, size_t vars_vec_size,
-                              BOOL set_only_non_debug_params);
+                              const char **configs, size_t configs_size, const char **vars_vec,
+                              const char **vars_values, size_t vars_vec_size);
 
 TESS_API int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size,
-                              const char *language, TessOcrEngineMode mode,
-                              const char **configs, int configs_size, char **vars_vec,
-                              char **vars_values, size_t vars_vec_size,
-                              BOOL set_only_non_debug_params);
+                              const char **configs, size_t configs_size, const char **vars_vec,
+                              const char **vars_values, size_t vars_vec_size);
 
 TESS_API const char *TessBaseAPIGetInitLanguagesAsString(
     const TessBaseAPI *handle);

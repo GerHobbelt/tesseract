@@ -1137,6 +1137,15 @@ void UNICHARSET::set_black_and_whitelist(const char *blacklist,
   }
 }
 
+// Enables or disables all punctuation unichars
+void UNICHARSET::set_enable_punctuation(bool enable) {
+  for (auto &uc : unichars) {
+    if (uc.properties.ispunctuation) {
+      uc.properties.enabled = enable;
+    }
+  }
+}
+
 // Returns true if there are any repeated unicodes in the normalized
 // text of any unichar-id in the unicharset.
 bool UNICHARSET::AnyRepeatedUnicodes() const {

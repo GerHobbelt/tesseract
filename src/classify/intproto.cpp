@@ -18,7 +18,9 @@
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES // for M_PI
+#endif
 
 // Include automatically generated configuration file if running autoconf.
 #include <tesseract/preparation.h> // compiler config, etc.
@@ -520,7 +522,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
     for (unsigned i = 0; i < fs_size; ++i) {
       fs.push_back(FClass->font_set[i]);
     }
-    IClass->font_set_id = this->fontset_table_.push_back(fs);
+    IClass->font_set_id = this->fontset_table_.push_back(std::move(fs));
     AddIntClass(IntTemplates, ClassId, IClass);
 
     for (ProtoId = 0; ProtoId < FClass->NumProtos; ProtoId++) {

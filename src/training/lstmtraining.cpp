@@ -24,6 +24,11 @@
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
 #endif
+#if defined(_MSC_VER)
+#include <float.h> // for __control87
+//#pragma fenv_access (on)
+#endif
+
 #include "common/commontraining.h"
 #include "unicharset/fileio.h"             // for LoadFileLinesToStrings
 #include "unicharset/lstmtester.h"
@@ -90,7 +95,9 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  int rv = ParseArguments(&argc, &argv);
+  tesseract::TessBaseAPI api;
+
+  int rv = ParseArguments(api, &argc, &argv);
   if (rv >= 0) {
     return rv;
   }
@@ -142,7 +149,7 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   std::string checkpoint_file = training_model_output;
   checkpoint_file += "_checkpoint";
   std::string checkpoint_bak = checkpoint_file + ".bak";
-  tesseract::LSTMTrainer trainer(training_model_output, checkpoint_file,
+  tesseract::LSTMTrainer trainer(api.tesseract(), training_model_output, checkpoint_file,
                                  training_debug_interval,
                                  static_cast<int64_t>(training_max_image_MB) * 1048576);
 #if !defined(NDEEBUG)

@@ -58,7 +58,7 @@ const int kVLineAlignment = 3;
 // Constant number of pixels used as gutter gap tolerance for line finding.
 const int kVLineGutter = 1;
 // Constant number of pixels used as the search size for line finding.
-const int kVLineSearchSize = 150;
+const int kVLineSearchSize = 50;
 // Min number of points to accept for a ragged tab stop.
 const int kMinRaggedTabs = 5;
 // Min number of points to accept for an aligned tab stop.
@@ -431,8 +431,8 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
     }
     TBOX nbox = neighbour->bounding_box();
     int n_y = (nbox.top() + nbox.bottom()) / 2;
-    if ((!top_to_bottom && n_y > start_y + p.max_v_gap) ||
-        (top_to_bottom && n_y < start_y - p.max_v_gap)) {
+    if ((!top_to_bottom && nbox.top() > start_y + p.max_v_gap) ||
+        (top_to_bottom && nbox.bottom() < start_y - p.max_v_gap)) {
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintDebug("Neighbour too far at ({},{})->({},{})\n", nbox.left(), nbox.bottom(), nbox.right(),
                 nbox.top());
@@ -475,7 +475,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       if (bbox->right_tab_type() >= TT_MAYBE_ALIGNED) {
         bbox->set_right_tab_type(TT_DELETED);
       }
-      *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
+      // *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintDebug("gutter\n");
       }
@@ -488,7 +488,7 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       if (bbox->left_tab_type() >= TT_MAYBE_ALIGNED) {
         bbox->set_left_tab_type(TT_DELETED);
       }
-      *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
+      // *end_y = top_to_bottom ? nbox.top() : nbox.bottom();
       if (WithinTestRegion(2, x_start, start_y)) {
         tprintDebug("gutter\n");
       }
@@ -502,8 +502,8 @@ BLOBNBOX *AlignedBlob::FindAlignedBlob(const AlignedBlobParams &p, bool top_to_b
       // Aligned so keep it. If it is a marked tab save it as result,
       // otherwise keep it as backup_result to return in case of later failure.
       if (WithinTestRegion(2, x_start, start_y)) {
-        tprintDebug("aligned, seeking{}, l={}, r={}\n", p.right_tab, neighbour->left_tab_type(),
-                neighbour->right_tab_type());
+        tprintDebug("aligned, seeking{}, l={}, r={}\n", p.right_tab, 
+                neighbour->left_tab_type(), neighbour->right_tab_type());
       }
       TabType n_type = p.right_tab ? neighbour->right_tab_type() : neighbour->left_tab_type();
       if (n_type != TT_NONE && (p.ragged || n_type != TT_MAYBE_RAGGED)) {

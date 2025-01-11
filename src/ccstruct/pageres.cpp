@@ -193,7 +193,7 @@ ROW_RES::ROW_RES(bool merge_similar_words, ROW *the_row) {
 
 WERD_RES &WERD_RES::operator=(const WERD_RES &source) {
   if (this != &source) {
-    this->ELIST_LINK::operator=(source);
+  this->ELIST<WERD_RES>::LINK::operator=(source);
     Clear();
     if (source.combination) {
       word = new WERD;
@@ -537,6 +537,12 @@ void WERD_RES::FilterWordChoices(int debug_level) {
   WERD_CHOICE_IT it(&best_choices);
   int index = 0;
   for (it.forward(); !it.at_first(); it.forward(), ++index) {
+
+    // The option that is the best raw choice is never filtered off.
+    if (raw_choice != nullptr && raw_choice->unichar_string() == it.data()->unichar_string()) {
+      continue;
+    }
+
     WERD_CHOICE *choice = it.data();
     float threshold = StopperAmbigThreshold(best_choice->adjust_factor(),
                                             choice->adjust_factor());

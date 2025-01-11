@@ -310,7 +310,7 @@ char32 FullwidthToHalfwidth(const char32 ch) {
   IcuErrorCode error_code;
   icu::UnicodeString uch_str(static_cast<UChar32>(ch));
   const icu::Transliterator *fulltohalf =
-      icu::Transliterator::createInstance("Fullwidth-Halfwidth", UTRANS_FORWARD, error_code);
+      icu::Transliterator::createInstance(icu::UnicodeString("Fullwidth-Halfwidth"), UTRANS_FORWARD, error_code);
   error_code.assertSuccess();
   error_code.reset();
 

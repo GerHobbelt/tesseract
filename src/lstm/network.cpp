@@ -36,9 +36,6 @@
 #include "scrollview.h"
 #include "series.h"
 #include "statistc.h"
-#ifdef INCLUDE_TENSORFLOW
-#  include "tfnetwork.h"
-#endif
 #include <tesseract/tprintf.h>
 
 #undef min
@@ -86,9 +83,12 @@ Network::Network()
     , ni_(0)
     , no_(0)
     , num_weights_(0)
+#if !GRAPHICS_DISABLED
     , forward_win_(nullptr)
     , backward_win_(nullptr)
-    , randomizer_(nullptr) {}
+    , randomizer_(nullptr)
+#endif
+{}
 Network::Network(NetworkType type, const std::string &name, int ni, int no)
     : type_(type)
     , training_(TS_ENABLED)
@@ -98,9 +98,12 @@ Network::Network(NetworkType type, const std::string &name, int ni, int no)
     , no_(no)
     , num_weights_(0)
     , name_(name)
+#if !GRAPHICS_DISABLED
     , forward_win_(nullptr)
     , backward_win_(nullptr)
-    , randomizer_(nullptr) {}
+#endif
+    , randomizer_(nullptr)
+{}
 
 // Suspends/Enables/Permanently disables training by setting the training_
 // flag. Serialize and DeSerialize only operate on the run-time data if state
@@ -288,11 +291,7 @@ Network *Network::CreateFromFile(TFile *fp) {
       network = new Series(name);
       break;
     case NT_TENSORFLOW:
-#ifdef INCLUDE_TENSORFLOW
-      network = new TFNetwork(name);
-#else
-      tprintWarn("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
-#endif
+      tprintWarn("Unsupported TensorFlow model\n");
       break;
     // All variants of FullyConnected.
     case NT_SOFTMAX:

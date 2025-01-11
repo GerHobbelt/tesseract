@@ -70,7 +70,7 @@ CLISTIZEH(ColPartition);
  * to a given y-coordinate range, eventually, a ColPartitionSet of ColPartitions
  * emerges, which represents the columns over a wide y-coordinate range.
  */
-class TESS_API ColPartition : public ELIST2_LINK {
+class TESS_API ColPartition : public ELIST2<ColPartition>::LINK {
 public:
   // This empty constructor is here only so that the class can be ELISTIZED.
   // TODO(rays) change deep_copy in elst.h line 955 to take a callback copier
@@ -529,6 +529,11 @@ public:
   // Returns true if there is no tabstop violation in merging this and other.
   bool ConfirmNoTabViolation(const ColPartition &other) const;
 
+  // Added for Scribe build.
+  // Returns false if this partition includes 1+ medium blob but the partition being compared to does not.
+  // This avoids cases where partitions that include likely text are smoothed to match the type of partitions including only noise.
+  bool ConfirmNoSizeViolation(const ColPartition &other) const;
+
   // Returns true if other has a similar stroke width to this.
   bool MatchingStrokeWidth(const ColPartition &other,
                            double fractional_tolerance,
@@ -715,9 +720,7 @@ public:
   bool IsInSameColumnAs(const ColPartition &part) const;
 
   // Sort function to sort by bounding box.
-  static int SortByBBox(const void *p1, const void *p2) {
-    const ColPartition *part1 = *static_cast<const ColPartition *const *>(p1);
-    const ColPartition *part2 = *static_cast<const ColPartition *const *>(p2);
+  static int SortByBBox(const ColPartition *part1, const ColPartition *part2) {
     int mid_y1 = part1->bounding_box_.y_middle();
     int mid_y2 = part2->bounding_box_.y_middle();
     if ((part2->bounding_box_.bottom() <= mid_y1 &&

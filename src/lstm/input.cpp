@@ -105,8 +105,7 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // Scale to target height, if the shape's height is > 1, or its depth if the
 // height == 1. If height == 0 then no scaling.
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
-/* static */
-void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Image pix, TRand *randomizer,
+void Input::PreparePixInput(Tesseract &tess, const StaticShape &shape, const Image pix, TRand *randomizer,
                             NetworkIO *input, const TBOX &line_box, float scale_factor) {
   bool color = shape.depth() == 3;
   Image var_pix = pix;
@@ -118,14 +117,17 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
     // Force RGB.
     if (depth == 32) {
       normed_pix = var_pix; //.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo32(var_pix);
     }
-  } else {
+  }
+  else {
     // Convert non-8-bit images to 8 bit.
     if (depth == 8) {
       normed_pix = var_pix; //.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo8(var_pix, false);
     }
   }
@@ -140,9 +142,9 @@ void Input::PreparePixInput(Tesseract *tess, const StaticShape &shape, const Ima
     Image scaled_pix = pixScale(normed_pix, im_factor, im_factor);
     normed_pix = scaled_pix;
   }
-  if (tess != nullptr && (verbose_process || tess->tessedit_dump_pageseg_images))
+  if (verbose_process || tess.tessedit_dump_pageseg_images)
   {
-      tess->AddPixDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
+      tess.AddPixDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
   input->FromPix(shape, normed_pix, randomizer);
 }
