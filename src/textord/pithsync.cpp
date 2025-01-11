@@ -122,7 +122,7 @@ void FPCUTPT::assign(       // constructor
                          // half of pitch
   int16_t half_pitch = pitch / 2 - 1;
   uint32_t lead_flag; // new flag
-  float inv_projection_scale = 1.0 / projection_scale;
+  float inv_projection_scale = 1.0f / projection_scale;
 
   if (half_pitch > 31) {
     half_pitch = 31;
@@ -223,7 +223,7 @@ void FPCUTPT::assign_cheap( // constructor
                          // half of pitch
   int16_t half_pitch = pitch / 2 - 1;
   uint32_t lead_flag; // new flag
-  float inv_projection_scale = 1.0 / projection_scale;
+  float inv_projection_scale = 1.0f / projection_scale;
 
   if (half_pitch > 31) {
     half_pitch = 31;
@@ -515,7 +515,7 @@ double check_pitch_sync3(    // find segmentation
   int16_t best_fake;            // best fake level
   int16_t best_count;           // no of cuts
   FPSEGPT_IT seg_it = seg_list; // output iterator
-  float inv_projection_scale = 1.0 / projection_scale;
+  float inv_projection_scale = 1.0f / projection_scale;
 
   end = (end - start) % pitch;
   if (pitch < 3) {
