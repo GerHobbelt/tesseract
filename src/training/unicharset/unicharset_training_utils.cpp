@@ -159,7 +159,7 @@ void SetScriptProperties(const std::string &script_dir, UNICHARSET *unicharset) 
       tprintError("Failed to load script unicharset from:{}\n", filename);
     }
   }
-  for (int c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
+  for (size_t c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
     if (unicharset->PropertiesIncomplete(c)) {
       tprintWarn("Properties incomplete for index {} = {}\n", c,
               unicharset->id_to_unichar(c));

@@ -85,7 +85,6 @@ set(TATWEEL_TEST_EXTRA_SRC util/utf8/unilib.cc util/utf8/unicodetext.cc
                            third_party/utf/rune.c)
 
 message(STATUS "Enabled tests: ${TEST_SOURCES}")
-message(STATUS "COMMON_INCLUDE_DIRS: ${COMMON_INCLUDE_DIRS}")
 
 foreach(test_source IN LISTS TEST_SOURCES)
   get_filename_component(test_name ${test_source} NAME_WE)
