@@ -111,13 +111,8 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * Sort function to sort rows in y from page top.
  */
 static int row_y_order(       // sort function
-    const void *item1, // items to compare
-    const void *item2) {
-  // converted ptr
-  const TO_ROW *row1 = *reinterpret_cast<const TO_ROW *const *>(item1);
-  // converted ptr
-  const TO_ROW *row2 = *reinterpret_cast<const TO_ROW *const *>(item2);
-
+    const TO_ROW *row1, // items to compare
+    const TO_ROW *row2) {
   if (row1->parallel_c() > row2->parallel_c()) {
     return -1;
   } else if (row1->parallel_c() < row2->parallel_c()) {
@@ -2532,13 +2527,8 @@ OVERLAP_STATE most_overlapping_row( // find best row
  * Sort function to sort blobs in x from page left.
  */
 int blob_x_order(      // sort function
-    const void *item1, // items to compare
-    const void *item2) {
-  // converted ptr
-  const BLOBNBOX *blob1 = *reinterpret_cast<const BLOBNBOX *const *>(item1);
-  // converted ptr
-  const BLOBNBOX *blob2 = *reinterpret_cast<const BLOBNBOX *const *>(item2);
-
+    const BLOBNBOX *blob1, // items to compare
+    const BLOBNBOX *blob2) {
   if (blob1->bounding_box().left() < blob2->bounding_box().left()) {
     return -1;
   } else if (blob1->bounding_box().left() > blob2->bounding_box().left()) {

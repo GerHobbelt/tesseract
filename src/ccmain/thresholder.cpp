@@ -162,7 +162,6 @@ void ImageThresholder::GetImageSizes(int *left, int *top, int *width, int *heigh
 // immediately after, but may not go away until after the Thresholder has
 // finished with it.
 void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, bool upscale) {
-#if 01
   // Note that pix.clone() does not actually clone the data,
   // it simply makes a new pointer to the existing data.
   // Therefore, there should not be any performance penalty
@@ -170,14 +169,15 @@ void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, b
 
   // Rotate if specified by exif orientation value.
   Image src, temp1, temp2, temp3;
+  src = pix;
   if (exif == 3 || exif == 4) {
-    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 2);
+    temp1 = pixRotateOrth(src, 2);
   } else if (exif == 5 || exif == 6) {
-    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 1);
+    temp1 = pixRotateOrth(src, 1);
   } else if (exif == 7 || exif == 8) {
-    temp1 = pixRotateOrth(const_cast<PIX *>(pix.ptr()), 3);
+    temp1 = pixRotateOrth(src, 3);
   } else {
-    temp1 = pix;
+    temp1 = src;
   }
 
   // Mirror if specified by exif orientation value
@@ -200,9 +200,7 @@ void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, b
   //
   // clones or creates a freshly rotated copy.
   Image src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
-#else
-  Image src = pix;  // clones
-#endif
+
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
   // Convert the image as necessary so it is one of binary, plain RGB, or
@@ -283,8 +281,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     pix_grey = GetPixRectGrey();
 
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
-                               (PIX**)pix_thresholds,
-                                (PIX**)pix_binary);
+                               pix_thresholds,
+                               pix_binary);
   } break;
 
   case ThresholdMethod::OtsuOnNormalizedBackground: {
@@ -326,8 +324,8 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     r = pixOtsuAdaptiveThreshold(pix_grey, tile_size, tile_size,
                                  half_smooth_size, half_smooth_size,
                                  score_fraction,
-                                 (PIX **)pix_thresholds,
-                                 (PIX **)pix_binary);
+                                 pix_thresholds,
+                                 pix_binary);
   } break;
 
   case ThresholdMethod::Nlbin: {
@@ -383,25 +381,28 @@ bool ImageThresholder::ThresholdToPix(Image *pix) {
 
   Image original = GetPixRect();
 
+  // Handle binary image
   if (pix_channels_ == 0) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
     *pix = original.copy();
-  } else {
-    if (pixGetColormap(original)) {
-      Image tmp;
-      Image without_cmap = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
-      int depth = pixGetDepth(without_cmap);
-      if (depth > 1 && depth < 8) {
-        tmp = pixConvertTo8(without_cmap, false);
-      } else {
-        tmp = without_cmap.copy();
-      }
-      OtsuThresholdRectToPix(tmp, pix);
-    } else {
-      OtsuThresholdRectToPix(pix_, pix);
-    }
+    original.destroy();
+    return true;
   }
+
+  // Handle colormaps
+  Image src;
+  if (pixGetColormap(original)) {
+    src = pixRemoveColormap(original, REMOVE_CMAP_BASED_ON_SRC);
+	  int depth = pixGetDepth(src);
+	  if (depth > 1 && depth < 8) {
+	    src = pixConvertTo8(src, false);
+	  }
+  } else {
+  	src = original;
+  }
+  OtsuThresholdRectToPix(src, pix);
+
   return true;
 }
 
@@ -475,7 +476,7 @@ Image ImageThresholder::GetPixRectGrey() {
 }
 
 // Otsu thresholds the rectangle, taking the rectangle from *this.
-void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) const {
+void ImageThresholder::OtsuThresholdRectToPix(const Image &src_pix, Image *out_pix) const {
   std::vector<int> thresholds;
   std::vector<int> hi_values;
 
@@ -489,13 +490,13 @@ void ImageThresholder::OtsuThresholdRectToPix(Image src_pix, Image *out_pix) con
 /// 
 /// NOTE that num_channels is the size of the thresholds and hi_values
 /// arrays and also the bytes per pixel in src_pix.
-void ImageThresholder::ThresholdRectToPix(Image src_pix, int num_channels, const std::vector<int> &thresholds,
+void ImageThresholder::ThresholdRectToPix(const Image &src_pix, int num_channels, const std::vector<int> &thresholds,
                                           const std::vector<int> &hi_values, Image *pix) const {
   *pix = pixCreate(rect_width_, rect_height_, 1);
   uint32_t *pixdata = pixGetData(*pix);
   int wpl = pixGetWpl(*pix);
   int src_wpl = pixGetWpl(src_pix);
-  uint32_t *srcdata = pixGetData(src_pix);
+  const uint32_t *srcdata = pixGetData(src_pix);
   pixSetXRes(*pix, pixGetXRes(src_pix));
   pixSetYRes(*pix, pixGetYRes(src_pix));
   for (int y = 0; y < rect_height_; ++y) {

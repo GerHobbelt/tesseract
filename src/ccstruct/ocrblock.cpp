@@ -70,9 +70,9 @@ BLOCK::BLOCK(const char *name, ///< filename
  * Sort Comparator: Return <0 if row1 top < row2 top
  */
 
-static int decreasing_top_order(const void *row1, const void *row2) {
-  return (*reinterpret_cast<ROW *const *>(row2))->bounding_box().top() -
-         (*reinterpret_cast<ROW *const *>(row1))->bounding_box().top();
+static int decreasing_top_order(const ROW *row1, const ROW *row2) {
+  return row2->bounding_box().top() -
+         row1->bounding_box().top();
 }
 
 /**
@@ -225,7 +225,7 @@ BLOCK &BLOCK::operator=( // assignment
     const BLOCK &source  // from this
 ) {
   if (this != &source) {
-    this->ELIST_LINK::operator=(source);
+  this->ELIST<BLOCK>::LINK::operator=(source);
     pdblk = source.pdblk;
     proportional = source.proportional;
     kerning = source.kerning;

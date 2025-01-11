@@ -86,7 +86,7 @@ protected:
     }
     int code_range = compressed_.code_range();
     std::vector<RecodedCharID> times_seen(code_range, zeros);
-    for (int u = 0; u <= unicharset_.size(); ++u) {
+    for (size_t u = 0; u <= unicharset_.size(); ++u) {
       if (u != UNICHAR_SPACE && u != null_char_ &&
           (u == unicharset_.size() ||
            (unicharset_.has_special_codes() && u < SPECIAL_UNICHAR_CODES_COUNT))) {
@@ -162,7 +162,7 @@ protected:
 
   UnicharCompress compressed_;
   UNICHARSET unicharset_;
-  int null_char_;
+  size_t null_char_;
   // The encoding of the null_char_.
   int encoded_null_char_;
 };
@@ -216,7 +216,7 @@ TEST_F(UnicharcompressTest, DoesLigaturesWithDoubles) {
   ExpectCorrect("por");
   // Check that any unichar-id that is encoded with multiple codes has the
   // correct encoded_null_char_ in between.
-  for (int u = 0; u <= unicharset_.size(); ++u) {
+  for (size_t u = 0; u <= unicharset_.size(); ++u) {
     RecodedCharID code;
     int len = compressed_.EncodeUnichar(u, &code);
     if (len > 1) {

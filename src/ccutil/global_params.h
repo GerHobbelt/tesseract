@@ -19,6 +19,7 @@
 #define TESS_GLOBAL_PARAMS_H
 
 #include <tesseract/params.h>
+#include <utility>            // for std::forward
 
 namespace tesseract {
 
@@ -38,6 +39,12 @@ extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);
 extern BOOL_VAR_H(two_pass);
+
+// Disable some log messages by setting log_level > 0.
+extern TESS_API INT_VAR_H(log_level);
+
+// Get file for debug output.
+TESS_API FILE *get_debugfp();
 
 } // namespace tesseract
 

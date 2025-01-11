@@ -45,17 +45,21 @@
 #endif
 #include "sorthelper.h"
 #include "tesseractclass.h"
+#include "tesserrstream.h"  // for tesserr
 #include "tessvars.h"
 #include "werdit.h"
 #include "global_params.h"
 #include "pixProcessing.h" 
 
 const char *const kBackUpConfigFile = "tempconfigdata.config";
+
 #if !DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
 // original x-height
 const double kMinRefitXHeightFraction = 0.5;
 #endif // !DISABLED_LEGACY_ENGINE
+
+namespace tesseract {
 
 /**
  * Make a word from the selected blobs and run Tess on them.
@@ -63,7 +67,6 @@ const double kMinRefitXHeightFraction = 0.5;
  * @param page_res recognise blobs
  * @param selection_box within this box
  */
-namespace tesseract {
 
 void Tesseract::recog_pseudo_word(PAGE_RES *page_res, TBOX &selection_box) {
   PAGE_RES_IT *it = make_pseudo_word(page_res, selection_box);
@@ -1602,7 +1605,10 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   // Points to the best result. May be word or in lang_words.
   const WERD_RES *word = word_data->word;
   plf::nanotimer clock;
-  clock.start();
+  const bool timing_debug = tessedit_timing_debug;
+  if (timing_debug) {
+    clock.start();
+  }
   const bool debug = (classify_debug_level > 0 || multilang_debug_level > 0);
   if (debug) {
     TBOX bbox = word->word->bounding_box();
@@ -1653,11 +1659,12 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT *pr_it, WordD
   } else {
     tprintWarn("no best words!!\n");
   }
-  if (tessedit_timing_debug) {
-    tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} sec)\n",
+  if (timing_debug) {
+    auto total_time = clock.get_elapsed_ms();
+    tprintDebug("classify_word_and_language -> word best choice: {} (bbox: {}, OCR took {} ms)\n",
             mdqstr(word_data->word->best_choice->unichar_string()),
         word_data->word->word->bounding_box().print_to_str(),
-            clock.get_elapsed_sec());
+            total_time);
   }
 }
 

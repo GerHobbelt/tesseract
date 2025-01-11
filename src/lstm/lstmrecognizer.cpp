@@ -51,7 +51,7 @@ const double kCertOffset = -0.085;
 //  ccutil_.language_data_path_prefix = language_data_path_prefix;
 //}
 
-LSTMRecognizer::LSTMRecognizer(Tesseract *tess)
+LSTMRecognizer::LSTMRecognizer(Tesseract &tess)
     : network_(nullptr)
     , training_flags_(0)
     , training_iteration_(0)
@@ -103,7 +103,7 @@ bool LSTMRecognizer::Load(const ParamsVectorSet &params, const std::string &lang
     return true;
   }
   // Allow it to run without a dictionary.
-  LoadDictionary(params, lang, mgr);
+  LoadDictionary(lang, mgr);
   return true;
 }
 
@@ -156,7 +156,7 @@ bool LSTMRecognizer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   }
   bool include_charsets = mgr == nullptr || !mgr->IsComponentAvailable(TESSDATA_LSTM_RECODER) ||
                           !mgr->IsComponentAvailable(TESSDATA_LSTM_UNICHARSET);
-  if (include_charsets && !ccutil_.unicharset_.load_from_file(fp, false)) {
+  if (include_charsets && !GetUnicharset().load_from_file(fp, false)) {
     return false;
   }
   if (!fp->DeSerialize(network_str_)) {
@@ -200,7 +200,7 @@ bool LSTMRecognizer::LoadCharsets(const TessdataManager *mgr) {
   if (!mgr->GetComponent(TESSDATA_LSTM_UNICHARSET, &fp)) {
     return false;
   }
-  if (!ccutil_.unicharset_.load_from_file(&fp, false)) {
+  if (!GetUnicharset().load_from_file(&fp, false)) {
     return false;
   }
   if (!mgr->GetComponent(TESSDATA_LSTM_RECODER, &fp)) {
@@ -242,7 +242,8 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
 bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
-  dict_ = new Dict(&ccutil_);
+  dict_ = new Dict(&tesseract_);
+  ParamsVectors *params = tesseract_.params();
   dict_->user_words_file.ResetToDefault(params);
   dict_->user_words_suffix.ResetToDefault(params);
   dict_->user_patterns_file.ResetToDefault(params);
@@ -252,7 +253,7 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::st
   if (dict_->FinishLoad()) {
     return true; // Success.
   }
-  tprintError("Failed to load any lstm-specific dictionaries for lang {}!!\n", lang);
+  tprintError("Failed to load any LSTM-specific dictionaries for lang {}!!\n", lang);
   delete dict_;
   dict_ = nullptr;
   return false;
@@ -661,13 +662,13 @@ const char *LSTMRecognizer::DecodeSingleLabel(int label) {
 
 
 void LSTMRecognizer::SetDataPathPrefix(const std::string &language_data_path_prefix) {
-  ccutil_.language_data_path_prefix_ = language_data_path_prefix;
+  tesseract_.language_data_path_prefix_ = language_data_path_prefix;
 }
 
 void LSTMRecognizer::CopyDebugParameters(CCUtil *src, Dict *dict_src) {
-  if (src != nullptr && &ccutil_ != src) {
-    ccutil_.ambigs_debug_level = src->ambigs_debug_level.value();
-    ccutil_.use_ambigs_for_adaption = src->use_ambigs_for_adaption.value();
+  if (src != nullptr && &tesseract_ != src) {
+    tesseract_.ambigs_debug_level = src->ambigs_debug_level.value();
+    tesseract_.use_ambigs_for_adaption = src->use_ambigs_for_adaption.value();
   }
 
   if (dict_ != nullptr && dict_ != dict_src) {

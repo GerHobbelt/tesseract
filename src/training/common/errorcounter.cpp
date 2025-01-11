@@ -21,6 +21,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
+#include "tesserrstream.h"
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
@@ -51,7 +52,9 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   std::vector<UnicharRating> results;
 
   plf::nanotimer clock;
-  clock.start();
+  if (report_level > 1) {
+    clock.start();
+  }
   unsigned total_samples = 0;
   double unscaled_error = 0.0;
   // Set a number of samples on which to run the classify debug mode.
@@ -59,7 +62,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   // Iterate over all the samples, accumulating errors.
   for (it->Begin(); !it->AtEnd(); it->Next()) {
     TrainingSample *mutable_sample = it->MutableSample();
-    int page_index = mutable_sample->page_num();
+    size_t page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     // No debug, no keep this.
@@ -86,7 +89,6 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     }
     ++total_samples;
   }
-  const double total_time = clock.get_elapsed_sec();
   // Create the appropriate error report.
   unscaled_error = counter.ReportErrors(report_level, boosting_mode, fontinfo_table, *it,
                                         unichar_error, fonts_report);
@@ -95,8 +97,9 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   }
   if (report_level > 1 && total_samples > 0) {
     // It is useful to know the time in microseconds/char.
-    tprintDebug("Errors computed in {} sec at {} μs/char\n", total_time,
-            1000000.0 * total_time / total_samples);
+    auto total_time = clock.get_elapsed_ms();
+    tprintDebug("Errors computed in {} ms at {} μs/char\n", total_time,
+            1000.0 * total_time / total_samples);
   }
   return unscaled_error;
 }
@@ -120,7 +123,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
   // Iterate over all the samples, accumulating errors.
   for (it->Begin(); !it->AtEnd(); it->Next()) {
     TrainingSample *mutable_sample = it->MutableSample();
-    int page_index = mutable_sample->page_num();
+    size_t page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     new_classifier->SetPageImageForDebugReport(page_pix);
@@ -409,7 +412,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
       }
     }
     tprintDebug("Multi-unichar shape use:\n");
-    for (int u = 0; u < multi_unichar_counts_.size(); ++u) {
+    for (size_t u = 0; u < multi_unichar_counts_.size(); ++u) {
       if (multi_unichar_counts_[u] > 0) {
         tprintDebug("{} multiple answers for unichar: {}\n", multi_unichar_counts_[u],
                 unicharset_.id_to_unichar(u));
