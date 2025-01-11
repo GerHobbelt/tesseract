@@ -3,7 +3,7 @@
 // Description: PAGE XML rendering interface
 // Author:      Jan Kamlah
 
-// (C) Copyright 2021
+// (C) Copyright 2024
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -498,7 +498,7 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
   }
 
   num_pts = ptaGetCount(bottom_pts);
-  // Create a interpolated polygon with stepsize 1
+  // Create an interpolated polygon with stepsize 1.
   for (int index = 0; index < num_pts - 1; ++index) {
     ptaGetIPt(bottom_pts, index, &x0, &y0);
     ptaGetIPt(bottom_pts, index + 1, &x1, &y1);
@@ -648,7 +648,7 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
         "pagecontent.xsd\">\n"
         "\t<Metadata");
 
-    // If a URL is used to recognize a image add it as <Metadata
+    // If a URL is used to recognize an image add it as <Metadata
     // externalRef="url">
     if (std::regex_search(api->GetInputName(),
                           std::regex("^(https?|ftp|ssh):"))) {
@@ -717,7 +717,6 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
   if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   // Used variables
 
   std::stringstream reading_order_str;
@@ -772,7 +771,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
                     << "\" caption=\"Regions reading order\">\n";
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
-  
+
   float block_conf = 0;
   float line_conf = 0;
 
@@ -857,7 +856,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
     // for now using LinePts
     bool skewed_flag = (orientation_block != ORIENTATION_PAGE_UP &&
                         orientation_block != ORIENTATION_PAGE_DOWN);
-  
+
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);

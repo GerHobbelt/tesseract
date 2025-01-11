@@ -25,6 +25,7 @@
 
 #include "../unicharset/fileio.h"
 #include "../unicharset/normstrngs.h"
+#include "tesserrstream.h"  // for tesserr
 #include <tesseract/tprintf.h>
 #include "unicharset.h"
 

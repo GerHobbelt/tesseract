@@ -47,17 +47,17 @@ void tprintError(const S *format, Args &&...args) {
 
 template <typename S, typename... Args>
 void tprintWarn(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_WARN, format, fmt::make_format_args(args...));
+  vTessPrint(T_LOG_WARN, format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 void tprintInfo(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_INFO, format, fmt::make_format_args(args...));
+  vTessPrint(T_LOG_INFO, format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 void tprintDebug(const S *format, Args &&...args) {
-	vTessPrint(T_LOG_DEBUG, format, fmt::make_format_args(args...));
+  vTessPrint(T_LOG_DEBUG, format, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
@@ -65,14 +65,16 @@ void tprintTrace(const S *format, Args &&...args) {
   vTessPrint(T_LOG_TRACE, format, fmt::make_format_args(args...));
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////
 
 // Signal the tprintf line gatherer that the next lines printed, even when terminated
 // by a '\n' newline, are to be kept together as a single pack, a single message.
 // 
 // Any such grouping is ended by the class instance going out of scope (and its destructor
-// being invoked to produce the desired 'side effect') or the grouping is broken up
-// when a different log level message zips through: errors break up warnings/info/debug info, etc.
+// being invoked to produce the desired 'side effect').
+// Also note that the grouping is broken up when a different log level message zips through:
+// errors break up warnings/info/debug info, etc.
 //
 // Anyway, this class only lives for its side effects in tprint log channel:
 class TPrintGroupLinesTillEndOfScope {

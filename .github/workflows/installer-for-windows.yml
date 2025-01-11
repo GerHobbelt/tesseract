@@ -39,7 +39,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build Tesseract installer (64 bit)
-      run: .github/workflows/build.sh x86_64
+      run: nsis/build.sh x86_64
     - uses: actions/upload-artifact@v4
       with:
         name: Tesseract Installer for Windows (64 bit)

@@ -29,7 +29,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
 PACKAGE_YEAR=2024
-PACKAGE_DATE="06/11"
+PACKAGE_DATE="11/10"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -133,6 +133,7 @@ AM_CONDITIONAL([HAVE_AVX512VNNI], false)
 AM_CONDITIONAL([HAVE_FMA], false)
 AM_CONDITIONAL([HAVE_SSE4_1], false)
 AM_CONDITIONAL([HAVE_NEON], false)
+AM_CONDITIONAL([HAVE_RVV], false)
 
 case "${host_cpu}" in
 
@@ -206,6 +207,16 @@ case "${host_cpu}" in
 
     ;;
 
+  riscv*)
+
+    AX_CHECK_COMPILE_FLAG([-march=rv64gcv], [rvv=true], [rvv=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_RVV], [$rvv])
+    if $rvv; then
+      AC_DEFINE([HAVE_RVV], [1], [Enable RVV instructions])
+      check_for_rvv=1
+    fi
+    ;;
+
   *)
 
     AC_MSG_WARN([No compiler options for $host_cpu])
@@ -222,6 +233,16 @@ if test x$check_for_neon = x1; then
 
   if test $ac_cv_func_getauxval = no && test $ac_cv_func_elf_aux_info = no && test $ac_cv_func_android_getCpuFamily = no; then
       AC_MSG_WARN([NEON is available, but we don't know how to check for it.  Will not be able to use NEON.])
+  fi
+fi
+
+# additional checks for RVV targets
+if test x$check_for_rvv = x1; then
+  AC_MSG_NOTICE([checking how to detect RVV availability])
+  AC_CHECK_FUNCS([getauxval])
+
+  if test $ac_cv_func_getauxval = no; then
+      AC_MSG_WARN([RVV is available, but we don't know how to check for it.  Will not be able to use RVV.])
   fi
 fi
 
@@ -300,25 +321,6 @@ AC_ARG_WITH([curl],
             AS_HELP_STRING([--with-curl],
                            [Build with libcurl which supports processing an image URL @<:@default=check@:>@]),
             [], [with_curl=check])
-AC_ARG_WITH([tensorflow],
-  AS_HELP_STRING([--with-tensorflow],
-                 [support TensorFlow @<:@default=check@:>@]),
-  [], [with_tensorflow=check])
-
-# Check whether to build with support for TensorFlow.
-AM_CONDITIONAL([TENSORFLOW], false)
-TENSORFLOW_LIBS=
-AS_IF([test "x$with_tensorflow" != xno],
-  [AC_CHECK_HEADERS([tensorflow/core/framework/graph.pb.h],
-    [AC_SUBST([TENSORFLOW_LIBS], ["-lprotobuf -ltensorflow_cc"])
-      AM_CONDITIONAL([TENSORFLOW], true)
-    ],
-    [if test "x$with_tensorflow" != xcheck; then
-      AC_MSG_FAILURE(
-        [--with-tensorflow was given, but test for libtensorflow-dev failed])
-     fi
-    ])
-  ])
 
 # https://lists.apple.com/archives/unix-porting/2009/Jan/msg00026.html
 m4_define([MY_CHECK_FRAMEWORK],
