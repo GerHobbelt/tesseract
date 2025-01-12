@@ -117,14 +117,17 @@ void Input::PreparePixInput(Tesseract &tess, const StaticShape &shape, const Ima
     // Force RGB.
     if (depth == 32) {
       normed_pix = var_pix; //.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo32(var_pix);
     }
-  } else {
+  }
+  else {
     // Convert non-8-bit images to 8 bit.
     if (depth == 8) {
       normed_pix = var_pix; //.clone();
-    } else {
+    }
+    else {
       normed_pix = pixConvertTo8(var_pix, false);
     }
   }

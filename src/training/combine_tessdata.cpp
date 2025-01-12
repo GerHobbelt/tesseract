@@ -27,11 +27,6 @@
 #include <cerrno>
 #include <iostream> // std::cout
 
-#if defined(HAVE_MUPDF)
-#include "mupdf/fitz.h"           // fz_basename
-#include "mupdf/helpers/dir.h"
-#endif
-
 using namespace tesseract;
 
 static int list_components(TessdataManager &tm, const char *filename) {
@@ -134,8 +129,68 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
 
   int tess_debug_lstm = 0;
 
-  int i;
-  tesseract::TessdataManager tm;
+  auto usage_f = [](const char* exename) {
+    tprintInfo(
+        "Usage for combining tessdata components:\n"
+        "  {} language_data_path_prefix\n"
+        "  (e.g. {} tessdata/eng.)\n\n",
+        exename, exename);
+    tprintInfo(
+        "Usage for extracting tessdata components:\n"
+        "  {} -e traineddata_file [output_component_file...]\n"
+        "  (e.g. {} -e eng.traineddata eng.unicharset)\n\n",
+        exename, exename);
+    tprintInfo(
+        "Usage for overwriting tessdata components:\n"
+        "  {} -o traineddata_file [input_component_file...]\n"
+        "  (e.g. {} -o eng.traineddata eng.unicharset)\n\n",
+        exename, exename);
+    tprintInfo(
+        "Usage for unpacking all tessdata components:\n"
+        "  {} -u traineddata_file output_path_prefix\n"
+        "  (e.g. {} -u eng.traineddata tmp/eng.)\n\n",
+        exename, exename);
+    tprintInfo(
+        "Usage for listing the network information\n"
+        "  {} -l traineddata_file\n"
+        "  (e.g. {} -l eng.traineddata)\n\n",
+        exename, exename);
+    tprintInfo(
+        "Usage for listing directory of components:\n"
+        "  {} -d traineddata_file\n\n",
+        exename);
+    tprintInfo(
+        "NOTE: Above two flags may combined as -dl or -ld to get both outputs.\n\n"
+    );
+    tprintInfo(
+        "Usage for compacting LSTM component to int:\n"
+        "  {} -c traineddata_file\n\n",
+        exename);
+    tprintInfo(
+        "Usage for transforming the proprietary .traineddata file to a zip archive:\n"
+        "  {} -t traineddata_file\n\n",
+        exename);
+  };
+
+  for (int err_round = 0;; err_round++) {
+    int rv = tesseract::ParseCommandLineFlags("unicharset dawgfile wordlistfile", usage_f, &argc, &argv);
+    if (rv > 0)
+      return rv;
+    if (rv == 0)
+      return err_round;
+
+    if (argc < 4) {
+      tesseract::tprintError("Not enough parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+    if (argc > 4) {
+      tesseract::tprintError("Too many parameters specified on commandline.\n");
+      argc = 1;
+      continue;
+    }
+
+    tesseract::TessdataManager tm;
   tesseract::TessBaseAPI api;
   if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
     tprintInfo("{}\n", tesseract::TessBaseAPI::Version());
@@ -291,6 +346,14 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
         exename);
+
+
+
+
+
+
+
+
     return EXIT_FAILURE;
   }
   tm.Directory();

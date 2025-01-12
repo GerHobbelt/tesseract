@@ -46,9 +46,8 @@ class UnicityTable;
 class LMPainPoints;
 struct FontInfo;
 
-// This class that contains the data structures and functions necessary
-// to represent and use the knowledge about the language.
-class LanguageModel {
+// The LanguageModel base class which carries all parameterizable settings.
+class LanguageModelSettings {
 public:
   // Masks for keeping track of top choices that should not be pruned out.
   static const LanguageModelFlagsType kSmallestRatingFlag = 0x1;
@@ -59,9 +58,46 @@ public:
 
   // Denominator for normalizing per-letter ngram cost when deriving
   // penalty adjustments.
-  static const float kMaxAvgNgramCost;
+  //static const float kMaxAvgNgramCost;                                 (obsoleted) (unused)
 
-  LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict *dict);
+  LanguageModelSettings() = delete;
+  LanguageModelSettings(CCUtil *owner);
+  ~LanguageModelSettings() = default;
+
+public:
+  // Parameters.
+  INT_VAR_H(language_model_debug_level);
+  BOOL_VAR_H(language_model_ngram_on);
+  INT_VAR_H(language_model_ngram_order);
+  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
+  INT_VAR_H(language_model_viterbi_list_max_size);
+  DOUBLE_VAR_H(language_model_ngram_small_prob);
+  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
+  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
+  DOUBLE_VAR_H(language_model_ngram_scale_factor);
+  DOUBLE_VAR_H(language_model_ngram_rating_factor);
+  BOOL_VAR_H(language_model_ngram_space_delimited_language);
+  INT_VAR_H(language_model_min_compound_length);
+  // Penalties used for adjusting path costs and final word rating.
+  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
+  DOUBLE_VAR_H(language_model_penalty_punc);
+  DOUBLE_VAR_H(language_model_penalty_case);
+  DOUBLE_VAR_H(language_model_penalty_script);
+  DOUBLE_VAR_H(language_model_penalty_chartype);
+  DOUBLE_VAR_H(language_model_penalty_font);
+  DOUBLE_VAR_H(language_model_penalty_spacing);
+  DOUBLE_VAR_H(language_model_penalty_increment);
+  INT_VAR_H(wordrec_display_segmentations);
+  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
+};
+
+// This class that contains the data structures and functions necessary
+// to represent and use the knowledge about the language.
+class LanguageModel : public LanguageModelSettings {
+public:
+  LanguageModel() = delete;
+  LanguageModel(CCUtil *owner, const UnicityTable<FontInfo> *fontinfo_table, Dict *dict);
   ~LanguageModel();
 
   // Fills the given floats array with features extracted from path represented
@@ -100,8 +136,24 @@ public:
     acceptable_choice_found_ = val;
   }
   // Returns the reference to ParamsModel.
-  inline ParamsModel &getParamsModel() {
+  inline const ParamsModel &getParamsModel() {
     return params_model_;
+  }
+
+  inline void setParamsModelPass(ParamsModel::PassEnum p) {
+    params_model_.SetPass(p);
+  }
+
+  inline bool LoadParamsModelFromFp(const char *lang, TFile *fp) {
+    return params_model_.LoadFromFp(lang, fp);
+  }
+
+  inline void copyParamsModel(const ParamsModel& src) {
+    return params_model_.Copy(src);
+  }
+
+  inline void clearParamsModel(void) {
+    return params_model_.Clear();
   }
 
 protected:
@@ -287,33 +339,6 @@ protected:
     return (vse.dawg_info != nullptr || vse.Consistent() ||
             (vse.ngram_info != nullptr && !vse.ngram_info->pruned));
   }
-
-public:
-  // Parameters.
-  INT_VAR_H(language_model_debug_level);
-  BOOL_VAR_H(language_model_ngram_on);
-  INT_VAR_H(language_model_ngram_order);
-  INT_VAR_H(language_model_viterbi_list_max_num_prunable);
-  INT_VAR_H(language_model_viterbi_list_max_size);
-  DOUBLE_VAR_H(language_model_ngram_small_prob);
-  DOUBLE_VAR_H(language_model_ngram_nonmatch_score);
-  BOOL_VAR_H(language_model_ngram_use_only_first_uft8_step);
-  DOUBLE_VAR_H(language_model_ngram_scale_factor);
-  DOUBLE_VAR_H(language_model_ngram_rating_factor);
-  BOOL_VAR_H(language_model_ngram_space_delimited_language);
-  INT_VAR_H(language_model_min_compound_length);
-  // Penalties used for adjusting path costs and final word rating.
-  DOUBLE_VAR_H(language_model_penalty_non_freq_dict_word);
-  DOUBLE_VAR_H(language_model_penalty_non_dict_word);
-  DOUBLE_VAR_H(language_model_penalty_punc);
-  DOUBLE_VAR_H(language_model_penalty_case);
-  DOUBLE_VAR_H(language_model_penalty_script);
-  DOUBLE_VAR_H(language_model_penalty_chartype);
-  DOUBLE_VAR_H(language_model_penalty_font);
-  DOUBLE_VAR_H(language_model_penalty_spacing);
-  DOUBLE_VAR_H(language_model_penalty_increment);
-  BOOL_VAR_H(wordrec_display_segmentations);
-  BOOL_VAR_H(language_model_use_sigmoidal_certainty);
 
 protected:
   // Member Variables.

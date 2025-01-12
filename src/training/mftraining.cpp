@@ -200,6 +200,7 @@ extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
 #endif
 {
   tesseract::CheckSharedLibraryVersion();
+  (void)tesseract::SetConsoleModeToUTF8();
 
   tesseract::TessBaseAPI api;
 

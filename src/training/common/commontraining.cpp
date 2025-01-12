@@ -14,10 +14,10 @@
 #include <tesseract/preparation.h> // compiler config, etc.
 
 #include <tesseract/assert.h>
+#include <parameters/parameters.h>
 
 #include "commontraining.h"
 
-#include <boost/algorithm/string/replace.hpp>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -54,15 +54,8 @@ STRING_VAR(fontconfig_tmpdir, "/tmp", "Overrides fontconfig default temporary di
  * @param argv command line arguments
  * @note Exceptions: Illegal options terminate the program.
  */
-void ParseArguments(int* argc, const char ***argv) {
-  std::string usage;
-  if (*argc) {
-    usage += (*argv)[0];
-    usage += " -v | --version | ";
-    usage += (*argv)[0];
-  }
-  usage += " [.tr files ...]";
-  tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+int ParseArguments(int* argc, const char ***argv) {
+  return tesseract::ParseCommandLineFlags("[.tr files ...]", argc, argv);
 }
 
 } // namespace tesseract.
@@ -87,10 +80,6 @@ void ParseArguments(int* argc, const char ***argv) {
 #  include <tesseract/tprintf.h>
 #  include "unicity_table.h"
 #  include "tesseractclass.h"
-
-#if defined(HAVE_MUPDF)
-#include "mupdf/assertions.h"     // for ASSERT
-#endif
 
 namespace tesseract {
 
@@ -138,16 +127,7 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * @param argv command line arguments
  */
 int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
-  std::string usage;
-  if (*argc) {
-    fs::path exename = (*argv)[0];
-    auto appname = exename.stem().string();
-    usage += appname;
-    usage += " -v | --version | ";
-    usage += boost::replace_all_copy(appname, "tesseract-", "");
-  }
-  usage += " [.tr files ...]";
-  int rv = tesseract::ParseCommandLineFlags(usage.c_str(), argc, argv, true);
+  int rv = tesseract::ParseCommandLineFlags("[.tr files ...]", argc, argv);
   if (rv >= 0)
 	  return rv;
 

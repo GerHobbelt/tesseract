@@ -53,6 +53,7 @@
 
 #include <cstdint> // for int16_t, int32_t, uint16_t
 #include <cstdio>  // for FILE
+#include <map> 
 
 namespace tesseract {
 
@@ -502,7 +503,9 @@ public:
   bool recog_interactive(PAGE_RES_IT *pr_it);
 
   // Set fonts of this word.
-  void set_word_fonts(WERD_RES *word);
+  void set_word_fonts(WERD_RES *word, std::vector<int> font_choices = std::vector<int>());
+  std::vector<int> score_word_fonts(WERD_RES *word);
+  void score_word_fonts_by_letter(WERD_RES *word, std::map<int, std::map<int, std::map<int, int>>> & page_fonts_letter, int font_id);
   void font_recognition_pass(PAGE_RES *page_res);
   void italic_recognition_pass(PAGE_RES *page_res);
   void dictionary_correction_pass(PAGE_RES *page_res);
@@ -535,20 +538,58 @@ public:
   int16_t count_alphanums(const WERD_CHOICE &word);
   int16_t count_alphas(const WERD_CHOICE &word);
 
+  // Read a configuration file carrying a set of tesseract parameters.
+  // Any parameter (listed in the config file) which has not been set yet, will
+  // be set, while already set-up parameters are silently skipped.
+  // Thus we can establish an easy order of precendence, where
+  // first-come-first-serve i.e. the first occurrence of a parameter
+  // determines its value.
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
   void read_config_file(const char *filename);
+
+  // Set each to the specified parameters to the given value, iff the parameter
+  // has not been set yet.
+  // Invoking this call before invoking read_config_file() will override
+  // the setting in the config file for each of the listed variables.
+  //
+  // Return false when unknown parameters are listed in the vector;
+  // otherwise return true (already set parameters will have been skipped
+  // silently).
+  //
+  // Note: parameter values are 'released' for another round of initialization
+  // like this by invoking one of the ReadyParametersForReinitialization() or
+  // ResetParametersToFactoryDefault() methods.
+  bool InitParameters(const std::vector<std::string> &vars_vec,
+                       const std::vector<std::string> &vars_values);
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values will not be altered by this call; use this
+  // method if you want to keep the currently active parameter values as a kind
+  // of 'good initial setup' for any subsequent teseract action.
+  void ReadyParametersForReinitialization();
+
+  // Tesseract parameter values are 'released' for another round of initialization
+  // by way of InitParameters() and/or read_config_file().
+  //
+  // The current parameter values are reset to their factory defaults by this call.
+  void ResetParametersToFactoryDefault();
+
   // Initialize for potentially a set of languages defined by the language
   // string and recursively any additional languages required by any language
   // traineddata file (via tessedit_load_sublangs in its config) that is loaded.
+  // 
   // See init_tesseract_internal for args.
   int init_tesseract(const std::string &arg0, const std::string &textbase,
-                     const std::string &language, OcrEngineMode oem, const char **configs,
-                     int configs_size, const std::vector<std::string> *vars_vec,
-                     const std::vector<std::string> *vars_values,
+                     const std::vector<std::string> &configs,
                      TessdataManager *mgr);
-  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem) {
-    TessdataManager mgr;
-    return init_tesseract(datapath, {}, language, oem, nullptr, 0, nullptr, nullptr, &mgr);
-  }
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem, TessdataManager *mgr);
+  int init_tesseract(const std::string &datapath, const std::string &language, OcrEngineMode oem);
+  int init_tesseract(const std::string &datapath, TessdataManager *mgr);
 
   // Common initialization for a single language.
   // 
@@ -561,36 +602,38 @@ public:
   // 
   // language is the language code to load.
   // 
-  // oem controls which engine(s) will operate on the image
+  // oem controls which engine(s) will operate on the image.
   // 
-  // configs (argv) is an array of config filenames to load variables from.
-  // May be nullptr.
-  // configs_size (argc) is the number of elements in configs.
-  // vars_vec is an optional vector of variables to set.
+  // configs is a vector of optional config filenames to load variables from.
+  // May be empty.
+  // 
+  // vars_vec is an optional vector of variables to set. May be empty.
   // 
   // vars_values is an optional corresponding vector of values for the variables
   // in vars_vec.
   int init_tesseract_internal(const std::string &arg0, const std::string &textbase,
-                              const std::string &language, OcrEngineMode oem, const char **configs,
-                              int configs_size, const std::vector<std::string> *vars_vec,
-                              const std::vector<std::string> *vars_values,
+                              const std::string &language, OcrEngineMode oem, 
+						                  const std::vector<std::string> &configs,
                               TessdataManager *mgr);
 
+#if !DISABLED_LEGACY_ENGINE
   // Set the universal_id member of each font to be unique among all
   // instances of the same font loaded.
   void SetupUniversalFontIds();
+#endif
 
   void recognize_page(std::string &image_name);
   void end_tesseract();
 
   bool init_tesseract_lang_data(const std::string &arg0,
-                                const std::string &language, OcrEngineMode oem, const char **configs,
-                                int configs_size, const std::vector<std::string> *vars_vec,
-                                const std::vector<std::string> *vars_values,
+                                const std::string &language, OcrEngineMode oem, 
+							                  const std::vector<std::string> &configs,
                                 TessdataManager *mgr);
 
   void ParseLanguageString(const std::string &lang_str, std::vector<std::string> *to_load,
                            std::vector<std::string> *not_to_load);
+
+  static BOXA *ParseRectsString(const char *rects_str);
 
   //// pgedit.h //////////////////////////////////////////////////////////
   SVMenuNode *build_menu_new();
@@ -704,7 +747,7 @@ public:
       WERD_CHOICE *word_choice // after context
   );
   void tess_segment_pass_n(int pass_n, WERD_RES *word);
-  bool tess_acceptable_word(WERD_RES *word);
+  bool tess_acceptable_word(const WERD_RES &word);
 #endif
 
   //// applybox.cpp //////////////////////////////////////////////////////
@@ -806,6 +849,13 @@ public:
   float ComputeCompatibleXheight(WERD_RES *word_res, float *baseline_shift);
   //// Data members ///////////////////////////////////////////////////////
   // TODO(ocr-team): Find and remove obsolete parameters.
+  STRING_VAR_H(raw_input_image_path);
+  STRING_VAR_H(segmentation_mask_input_image_path);
+  STRING_VAR_H(visible_output_source_image_path);
+  STRING_VAR_H(debug_output_base_path);
+  STRING_VAR_H(debug_output_modes);
+  STRING_VAR_H(output_base_path);
+  STRING_VAR_H(output_base_filename);
   BOOL_VAR_H(tessedit_resegment_from_boxes);
   BOOL_VAR_H(tessedit_resegment_from_line_boxes);
   BOOL_VAR_H(tessedit_train_from_boxes);
@@ -1001,11 +1051,16 @@ public:
   STRING_VAR_H(file_type);
   BOOL_VAR_H(tessedit_override_permuter);
   STRING_VAR_H(tessedit_load_sublangs);
+  STRING_VAR_H(languages_to_try);
+  STRING_VAR_H(reactangles_to_process);
+#if !DISABLED_LEGACY_ENGINE
   BOOL_VAR_H(tessedit_use_primary_params_model);
+#endif
   // Min acceptable orientation margin (difference in scores between top and 2nd
   // choice in OSResults::orientations) to believe the page orientation.
   DOUBLE_VAR_H(min_orientation_margin);
   //BOOL_VAR_H(textord_tabfind_show_vlines);
+  //BOOL_VAR_H(textord_tabfind_show_vlines_scrollview);
   BOOL_VAR_H(textord_use_cjk_fp_model);
   BOOL_VAR_H(poly_allow_detailed_fx);
   BOOL_VAR_H(tessedit_init_config_only);
@@ -1126,7 +1181,7 @@ private:
   // have a temporary debug config file loaded, and backup_config_file_
   // will be loaded, and set to null when debug is complete.
   const char *backup_config_file_;
-  // The filename of a config file to read when processing a debug word.
+  // The filename of a config file to read when processing a debug word via Tesseract::debug_word().
   std::string word_config_;
   // Image used for input to layout analysis and tesseract recognition.
   // May be modified by the ShiroRekhaSplitter to eliminate the top-line.

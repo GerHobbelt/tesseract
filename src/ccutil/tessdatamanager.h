@@ -226,6 +226,7 @@ public:
 private:
   // Use libarchive.
   bool LoadArchiveFile(const char *filename);
+  bool SaveArchiveFile(const char *filename) const;
 
   /**
    * Fills type with TessdataType of the tessdata component represented by the

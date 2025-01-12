@@ -117,7 +117,7 @@ void Wordrec::SegSearch(WERD_RES *word_res, BestChoiceBundle *best_choice_bundle
 
   if (segsearch_debug_level > 0) {
     tprintDebug("Done with SegSearch (AcceptableChoiceFound: {})\n",
-            language_model_->AcceptableChoiceFound());
+            language_model_.AcceptableChoiceFound());
   }
 }
 
@@ -139,7 +139,7 @@ void Wordrec::InitialSegSearch(WERD_RES *word_res, LMPainPoints *pain_points,
   // from classifier rating and certainty for the blob.
   float rating_cert_scale = -1.0 * getDict().certainty_scale / rating_scale;
 
-  language_model_->InitForWord(prev_word_best_choice_, assume_fixed_pitch_char_segment,
+  language_model_.InitForWord(prev_word_best_choice_, assume_fixed_pitch_char_segment,
                                segsearch_max_char_wh_ratio, rating_cert_scale);
 
   // Initialize blamer-related information: map character boxes recorded in
@@ -192,7 +192,7 @@ void Wordrec::UpdateSegSearchNodes(float rating_cert_scale, int starting_col,
       BLOB_CHOICE_LIST *current_node = ratings->get(col, row);
       LanguageModelState *parent_node = col == 0 ? nullptr : best_choice_bundle->beam[col - 1];
       if (current_node != nullptr &&
-          language_model_->UpdateState((*pending)[col].IsRowJustClassified(row), col, row,
+          language_model_.UpdateState((*pending)[col].IsRowJustClassified(row), col, row,
                                        current_node, parent_node, pain_points, word_res,
                                        best_choice_bundle, blamer_bundle) &&
           row + 1 < ratings->dimension()) {

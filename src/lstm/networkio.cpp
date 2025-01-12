@@ -235,7 +235,7 @@ void NetworkIO::Copy2DImage(int batch, Image pix, float black, float contrast, T
   int target_width = stride_map_.Size(FD_WIDTH);
   int num_features = NumFeatures();
   bool color = num_features == 3;
-  float inv_contrast = 1.0 / contrast;
+  float inv_contrast = 1.0f / contrast;
   if (width > target_width) {
     width = target_width;
   }
@@ -276,7 +276,7 @@ void NetworkIO::Copy1DGreyImage(int batch, Image pix, float black, float contras
   index.AddOffset(batch, FD_BATCH);
   int t = index.t();
   int target_width = stride_map_.Size(FD_WIDTH);
-  float inv_contrast = 1.0 / contrast;
+  float inv_contrast = 1.0f / contrast;
   if (width > target_width) {
     width = target_width;
   }
@@ -431,7 +431,11 @@ void NetworkIO::Randomize(int t, int offset, int num_features, TRand *randomizer
   if (int_mode_) {
     int8_t *line = i_[t] + offset;
     for (int i = 0; i < num_features; ++i) {
+#if 01
       line[i] = IntCastRounded(randomizer->SignedRand(INT8_MAX));
+#else
+      line[i] = 0; 
+#endif
     }
   } else {
     // float mode.

@@ -525,6 +525,9 @@ void Classify::EndAdaptiveClassifier() {
  *                            enables use of pre-adapted templates
  */
 void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
+
+#if !DISABLED_LEGACY_ENGINE
+
   if (!classify_enable_adaptive_matcher) {
     return;
   }
@@ -594,6 +597,9 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
     delete AdaptedTemplates;
     AdaptedTemplates = new ADAPT_TEMPLATES_STRUCT(unicharset_);
   }
+
+#endif   // !DISABLED_LEGACY_ENGINE
+
 } /* InitAdaptiveClassifier */
 
 void Classify::ResetAdaptiveClassifierInternal() {

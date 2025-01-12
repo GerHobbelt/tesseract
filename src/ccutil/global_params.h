@@ -27,14 +27,18 @@ extern BOOL_VAR_H(stream_filelist);
 extern STRING_VAR_H(document_title);
 #ifdef HAVE_LIBCURL
 extern INT_VAR_H(curl_timeout);
+extern STRING_VAR_H(curl_cookiefile);
 #endif
 extern INT_VAR_H(debug_all);
 extern BOOL_VAR_H(debug_misc);
 extern BOOL_VAR_H(verbose_process);
+#if !GRAPHICS_DISABLED
 extern BOOL_VAR_H(scrollview_support);
+#endif
 extern STRING_VAR_H(vars_report_file);
 extern BOOL_VAR_H(report_all_variables);
 extern DOUBLE_VAR_H(allowed_image_memory_capacity);
+extern BOOL_VAR_H(two_pass);
 
 // Disable some log messages by setting log_level > 0.
 extern TESS_API INT_VAR_H(log_level);
@@ -42,15 +46,6 @@ extern TESS_API INT_VAR_H(log_level);
 // Get file for debug output.
 TESS_API FILE *get_debugfp();
 
-// Main logging function. Trace printf.
-template <typename ... Types>
-auto tprintf(Types && ... args) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-security"
-  return fprintf(get_debugfp(), std::forward<Types>(args)...);
-#pragma clang diagnostic pop
-}
-
 } // namespace tesseract
 
-#endif // define TESSERACT_CCUTIL_TPRINTF_H
+#endif

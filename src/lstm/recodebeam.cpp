@@ -116,7 +116,7 @@ void RecodeBeamSearch::Decode(const GENERIC_2D_ARRAY<float> &output,
 
 void RecodeBeamSearch::DecodeSecondaryBeams(
     const NetworkIO &output, double dict_ratio, double cert_offset,
-    double worst_dict_cert, const UNICHARSET *charset, int lstm_choice_mode) {
+    double worst_dict_cert, const UNICHARSET *charset) {
   for (auto data : secondary_beam_) {
     delete data;
   }
@@ -243,8 +243,7 @@ void RecodeBeamSearch::ExtractBestPathAsUnicharIds(
 void RecodeBeamSearch::ExtractBestPathAsWords(const TBOX &line_box,
                                               float scale_factor,
                                               const UNICHARSET *unicharset,
-                                              PointerVector<WERD_RES> *words,
-                                              int lstm_choice_mode) {
+                                              PointerVector<WERD_RES> *words) {
   words->truncate(0);
   std::vector<int> unichar_ids;
   std::vector<float> certs;

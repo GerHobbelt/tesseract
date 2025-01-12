@@ -101,8 +101,9 @@ Wordrec::Wordrec()
                   "Save alternative paths found during chopping"
                   " and segmentation search",
                   params())
-    , language_model_(std::make_unique<LanguageModel>(&get_fontinfo_table(), &(getDict())))
+    , language_model_(this, std::make_unique<LanguageModel>(&get_fontinfo_table(), &(getDict())))
     , pass2_ok_split_(0.0f)
+    , language_model_(this, &get_fontinfo_table(), &getDict())
     , prev_word_best_choice_(nullptr)
     , fill_lattice_(nullptr) {
 }

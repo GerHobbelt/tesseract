@@ -258,4 +258,16 @@ extern "C" int tesseract_svpaint_main(int argc, const char **argv)
   return EXIT_SUCCESS;
 }
 
+#else
+
+#if defined(TESSERACT_STANDALONE) && !defined(BUILD_MONOLITHIC)
+extern "C" int main(int argc, const char** argv)
+#else
+extern "C" int tesseract_svpaint_main(int argc, const char** argv)
+#endif
+{
+  fprintf(stderr, "%s: this tool is not supported in this build.\n", fz_basename(argv[0]));
+  return EXIT_FAILURE;
+}
+
 #endif // !GRAPHICS_DISABLED

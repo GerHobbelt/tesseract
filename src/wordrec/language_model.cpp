@@ -54,76 +54,83 @@ static inline double log2(double n) {
 }
 #endif // ANDROID
 
-const float LanguageModel::kMaxAvgNgramCost = 25.0f;
+//const float LanguageModelSettings::kMaxAvgNgramCost = 25.0f;
 
-LanguageModel::LanguageModel(const UnicityTable<FontInfo> *fontinfo_table, Dict *dict)
+LanguageModelSettings::LanguageModelSettings(CCUtil *owner)
     : INT_MEMBER(language_model_debug_level, 0, "Language model debug level (0..7)",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , BOOL_MEMBER(language_model_ngram_on, false,
-                       "Turn on/off the use of character ngram model", dict->getCCUtil()->params())
+                       "Turn on/off the use of character ngram model", owner->params())
     , INT_MEMBER(language_model_ngram_order, 8, "Maximum order of the character ngram model",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , INT_MEMBER(language_model_viterbi_list_max_num_prunable, 10,
                  "Maximum number of prunable (those for which"
                  " PrunablePath() is true) entries in each viterbi list"
                  " recorded in BLOB_CHOICEs",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , INT_MEMBER(language_model_viterbi_list_max_size, 500,
                  "Maximum size of viterbi lists recorded in BLOB_CHOICEs",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , DOUBLE_MEMBER(language_model_ngram_small_prob, 0.000001,
                     "To avoid overly small denominators use this as the "
                     "floor of the probability returned by the ngram model.",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_ngram_nonmatch_score, -40.0,
                     "Average classifier score of a non-matching unichar.",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , BOOL_MEMBER(language_model_ngram_use_only_first_uft8_step, false,
                   "Use only the first UTF8 step of the given string"
                   " when computing log probabilities.",
-                  dict->getCCUtil()->params())
+                  owner->params())
     , DOUBLE_MEMBER(language_model_ngram_scale_factor, 0.03,
                     "Strength of the character ngram model relative to the"
                     " character classifier ",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_ngram_rating_factor, 16.0,
                     "Factor to bring log-probs into the same range as ratings"
                     " when multiplied by outline length ",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , BOOL_MEMBER(language_model_ngram_space_delimited_language, true,
-                  "Words are delimited by space", dict->getCCUtil()->params())
+                  "Words are delimited by space", owner->params())
     , INT_MEMBER(language_model_min_compound_length, 3, "Minimum length of compound words",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , DOUBLE_MEMBER(language_model_penalty_non_freq_dict_word, 0.1,
                     "Penalty for words not in the frequent word dictionary",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_non_dict_word, 0.15, "Penalty for non-dictionary words",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_punc, 0.2, "Penalty for inconsistent punctuation",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_case, 0.1, "Penalty for inconsistent case",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_script, 0.5, "Penalty for inconsistent script",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_chartype, 0.3, "Penalty for inconsistent character type",
-                    dict->getCCUtil()->params())
+                    owner->params())
     ,
     // TODO(daria, rays): enable font consistency checking
     // after improving font analysis.
     DOUBLE_MEMBER(language_model_penalty_font, 0.00, "Penalty for inconsistent font",
-                  dict->getCCUtil()->params())
+                  owner->params())
     , DOUBLE_MEMBER(language_model_penalty_spacing, 0.05, "Penalty for inconsistent spacing",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , DOUBLE_MEMBER(language_model_penalty_increment, 0.01, "Penalty increment",
-                    dict->getCCUtil()->params())
+                    owner->params())
     , BOOL_MEMBER(wordrec_display_segmentations, false, "Display Segmentations (ScrollView)",
-                 dict->getCCUtil()->params())
+                 owner->params())
     , BOOL_MEMBER(language_model_use_sigmoidal_certainty, false,
-                       "Use sigmoidal score for certainty", dict->getCCUtil()->params())
+                       "Use sigmoidal score for certainty", owner->params())
+{
+}
+
+
+LanguageModel::LanguageModel(CCUtil *owner, const UnicityTable<FontInfo> *fontinfo_table, Dict *dict)
+    : LanguageModelSettings(owner)
     , dawg_args_(nullptr, new DawgPositionVector(), NO_PERM)
     , fontinfo_table_(fontinfo_table)
     , dict_(dict) {
   ASSERT_HOST(dict_ != nullptr);
+  ASSERT_HOST(dict->getCCUtil() == owner);
 }
 
 LanguageModel::~LanguageModel() {

@@ -130,7 +130,8 @@ public:
   bool ex_current_was_last = false;       // current extracted was end of list
   bool ex_current_was_cycle_pt = false;   // current extracted was cycle point
   bool started_cycling = false;           // Have we moved off the start?
-    /***********************************************************************
+  
+  /***********************************************************************
    *              Iterator::extract_sublist()
    *
    *  This is a private member, used only by IntrusiveForwardList::assign_to_sublist.

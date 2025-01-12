@@ -62,7 +62,9 @@ LSTMRecognizer::LSTMRecognizer(Tesseract &tess)
     , adam_beta_(0.0f)
     , dict_(nullptr)
     , search_(nullptr)
+#if !GRAPHICS_DISABLED
     , debug_win_(nullptr)
+#endif
     , tesseract_(tess)
 {}
 
@@ -87,8 +89,8 @@ void LSTMRecognizer::Clean() {
   search_ = nullptr;
 }
 
-// Loads a model from mgr, including the dictionary only if lang is not null.
-bool LSTMRecognizer::Load(const std::string &lang,
+// Loads a model from mgr, including the dictionary only if lang is not empty.
+bool LSTMRecognizer::Load(const ParamsVectorSet &params, const std::string &lang,
                           TessdataManager *mgr) {
   TFile fp;
   if (!mgr->GetComponent(TESSDATA_LSTM, &fp)) {
@@ -237,7 +239,7 @@ bool LSTMRecognizer::LoadRecoder(TFile *fp) {
 // from checkpoint or restore without having to go back and reload the
 // dictionary.
 // Some parameters have to be passed in (from langdata/config/api via Tesseract)
-bool LSTMRecognizer::LoadDictionary(const std::string &lang,
+bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::string &lang,
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&tesseract_);
@@ -276,11 +278,11 @@ void LSTMRecognizer::RecognizeLine(const ImageData &image_data,
   }
   search_->excludedUnichars.clear();
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
-  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words, lstm_choice_mode);
+  search_->ExtractBestPathAsWords(line_box, scale_factor, &GetUnicharset(), words);
   if (lstm_choice_mode) {
     search_->extractSymbolChoices(&GetUnicharset());
     for (int i = 0; i < lstm_choice_amount; ++i) {
-      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset(), lstm_choice_mode);
+      search_->DecodeSecondaryBeams(outputs, kDictRatio, kCertOffset, worst_dict_cert, &GetUnicharset());
       search_->extractSymbolChoices(&GetUnicharset());
     }
     search_->segmentTimestepsByCharacters();

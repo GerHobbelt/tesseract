@@ -36,6 +36,7 @@ class C_BLOB;
 class DENORM;
 
 ELISTIZEH(C_BLOB);
+
 class TESS_API C_BLOB : public ELIST<C_BLOB>::LINK {
 public:
   C_BLOB() = default;

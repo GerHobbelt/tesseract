@@ -12,63 +12,22 @@
 
 #include "commandlineflags.h"
 #include <tesseract/baseapi.h> // TessBaseAPI::Version
+#include <parameters/parameters.h>
 #include <cmath>               // for std::isnan, NAN
 #include <locale>              // for std::locale::classic
 #include <sstream>             // for std::stringstream
 #include <vector>              // for std::vector
+#include <boost/algorithm/string/replace.hpp>
+#include <filesystem>
 #include "errcode.h"
 #include "helpers.h"
 #include <tesseract/tprintf.h>
 
+namespace fs = std::filesystem;
+
+using namespace ::parameters;
+
 namespace tesseract {
-static bool IntFlagExists(const char *flag_name, int32_t *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<IntParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params_c(), empty);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = (int32_t)(*p);
-  return true;
-}
-
-static bool DoubleFlagExists(const char *flag_name, double *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params_c(), empty);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = static_cast<double>(*p);
-  return true;
-}
-
-static bool BoolFlagExists(const char *flag_name, bool *value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<BoolParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params_c(), empty);
-  if (p == nullptr) {
-    return false;
-  }
-  *value = bool(*p);
-  return true;
-}
-
-static bool StringFlagExists(const char *flag_name, const char **value) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params_c(), empty);
-  *value = (p != nullptr) ? p->c_str() : nullptr;
-  return p != nullptr;
-}
 
 static bool AnyFlagExists(const char *flag_name) {
   std::string full_flag_name("FLAGS_");
@@ -108,121 +67,56 @@ static bool AnyFlagExists(const char *flag_name) {
   return false;
 }
 
-static void SetIntFlagValue(const char *flag_name, const int32_t new_val) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<IntParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params(), empty);
-  ASSERT_HOST(p != nullptr);
-  p->set_value(new_val);
-}
-
-static void SetDoubleFlagValue(const char *flag_name, const double new_val) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<DoubleParam *> empty;
-  auto *p = ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(),
-                                               GlobalParams()->double_params(), empty);
-  ASSERT_HOST(p != nullptr);
-  p->set_value(new_val);
-}
-
-static void SetBoolFlagValue(const char *flag_name, const bool new_val) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<BoolParam *> empty;
-  auto *p =
-      ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params(), empty);
-  ASSERT_HOST(p != nullptr);
-  p->set_value(new_val);
-}
-
-static void SetStringFlagValue(const char *flag_name, const char *new_val) {
-  std::string full_flag_name("FLAGS_");
-  full_flag_name += flag_name;
-  std::vector<StringParam *> empty;
-  auto *p = ParamUtils::FindParam<StringParam>(full_flag_name.c_str(),
-                                               GlobalParams()->string_params(), empty);
-  ASSERT_HOST(p != nullptr);
-  p->set_value(std::string(new_val));
-}
-
-static bool SafeAtoi(const char *str, int *val) {
-  char *endptr = nullptr;
-  *val = strtol(str, &endptr, 10);
-  return endptr != nullptr && *endptr == '\0';
-}
-
-static bool SafeAtod(const char *str, double *val) {
-  double d = NAN;
-  std::stringstream stream(str);
-  // Use "C" locale for reading double value.
-  stream.imbue(std::locale::classic());
-  stream >> d;
-  *val = 0;
-  bool success = !std::isnan(d);
-  if (success) {
-    *val = d;
-  }
-  return success;
-}
-
 static void PrintCommandLineFlags() {
   const char *kFlagNamePrefix = "FLAGS_";
   const int kFlagNamePrefixLen = strlen(kFlagNamePrefix);
-  for (auto &param : GlobalParams()->int_params_c()) {
+  for (ParamPtr param : GlobalParams().as_list()) {
     if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintDebug("  --{}  {}  (type:int default:{})\n",
-             param->name_str() + kFlagNamePrefixLen,
-             param->info_str(), int32_t(*param));
-    }
-  }
-  for (auto &param : GlobalParams()->double_params_c()) {
-    if (!strncmp(param->name_str(), kFlagNamePrefix,
-                 kFlagNamePrefixLen)) {
-      tprintDebug("  --{}  {}  (type:double default:{})\n",
-             param->name_str() + kFlagNamePrefixLen,
-             param->info_str(),
-             static_cast<double>(*param));
-    }
-  }
-  for (auto &param : GlobalParams()->bool_params_c()) {
-    if (!strncmp(param->name_str(), kFlagNamePrefix, kFlagNamePrefixLen)) {
-      tprintDebug("  --{}  {}  (type:bool default:{})\n",
-             param->name_str() + kFlagNamePrefixLen,
-             param->info_str(),
-             bool(*param) ? "true" : "false");
-    }
-  }
-  for (auto &param : GlobalParams()->string_params_c()) {
-    if (!strncmp(param->name_str(), kFlagNamePrefix,
-                 kFlagNamePrefixLen)) {
-      tprintDebug("  --{}  {}  (type:string default:{})\n",
-             param->name_str() + kFlagNamePrefixLen,
-             param->info_str(),
-             param->c_str());
+      tprintInfo("  --{}  {}  (type:{} default:{})\n",
+        param->name_str() + kFlagNamePrefixLen,
+        param->info_str(), 
+        param->value_type_str(),
+	      param->formatted_value_str());
     }
   }
 }
 
-int ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, const bool remove_flags) {
-  if (*argc == 1) {
-    tprintDebug("USAGE: {}\n", usage);
+int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char* exename)> extra_usage_f, int* argc_ref, const char ***argv_ref, const bool remove_flags, std::function<void()> print_version_f) {
+  int argc = *argc_ref;
+  const char** argv = *argv_ref;
+  if (!extra_usage)
+    extra_usage = "";
+
+  std::string appname;
+  if (argc > 0 && argv[0]) {
+    fs::path exename = argv[0];
+    appname = exename.stem().string();
+    extra_usage = boost::replace_all_copy(appname, "tesseract-", "");
+  } 
+  else {
+	appname = "???";
+  }
+
+  if (argc == 1) {
+    tprintInfo("USAGE:\n  {} -v | --version | {}\n", appname, extra_usage);
     PrintCommandLineFlags();
+    if (extra_usage_f) {
+      tprintInfo("\n");
+      extra_usage_f(appname);
+    }
     return 0;
   }
 
-  if (*argc > 1 && (!strcmp((*argv)[1], "-v") || !strcmp((*argv)[1], "--version"))) {
-    tprintDebug("{}\n", TessBaseAPI::Version());
+  if (argc > 1 && (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))) {
+    if (print_version_f)
+      print_version_f();
+    tprintInfo("{} (tesseract) v{}\n", appname, TessBaseAPI::Version());
     return 0;
   }
-
-  PrintCommandLineFlags();
 
   int i;
-  for (i = 1; i < *argc; ++i) {
-    const char *current_arg = (*argv)[i];
+  for (i = 1; i < argc; ++i) {
+    const char *current_arg = argv[i];
     // If argument does not start with a hyphen then break.
     if (current_arg[0] != '-') {
       break;
@@ -235,7 +129,12 @@ int ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, cons
     }
     // If this is asking for usage, print the help message and abort.
     if (!strcmp(current_arg, "help")) {
-      tprintDebug("Usage:\n  {} [OPTION ...]\n\n", usage);
+      tprintInfo("USAGE:\n  {} -v | --version | [OPTION ...] {}\n", appname, extra_usage);
+      PrintCommandLineFlags();
+      return 0;
+    }
+    if (!strcmp(current_arg, "help-extra")) {
+      tprintInfo("USAGE:\n  {} -v | --version | [OPTION ...] {}\n", appname, extra_usage);
       PrintCommandLineFlags();
       return 0;
     }
@@ -251,130 +150,69 @@ int ParseCommandLineFlags(const char *usage, int* argc, const char ***argv, cons
     if (equals_position == nullptr) {
       lhs = current_arg;
     } else {
-      lhs.assign(current_arg, equals_position - current_arg);
+      lhs.assign(current_arg, equals_position);
     }
     if (!lhs.length()) {
-      tprintError("Bad argument: {}\n", (*argv)[i]);
+      tprintError("Bad argument: {}\n", argv[i]);
       return 1;
     }
 
     // Find the flag name in the list of global flags.
     if (AnyFlagExists(lhs.c_str())) {
-      // int32_t flag
-      int32_t int_val;
-      if (IntFlagExists(lhs.c_str(), &int_val)) {
-        if (rhs != nullptr) {
-          if (!strlen(rhs)) {
-            // Bad input of the format --int_flag=
-            tprintError("Bad argument: {}\n", (*argv)[i]);
-            return 1;
-          }
-          if (!SafeAtoi(rhs, &int_val)) {
-            tprintError("Could not parse int from {} in flag {}\n", rhs, (*argv)[i]);
-            return 1;
-          }
-        } else {
-          // We need to parse the next argument
-          if (i + 1 >= *argc) {
-            tprintError("Could not find value argument for flag {}\n", lhs.c_str());
-            return 1;
-          } else {
-            ++i;
-            if (!SafeAtoi((*argv)[i], &int_val)) {
-              tprintError("Could not parse int32_t from {}\n", (*argv)[i]);
-              return 1;
-            }
-          }
-        }
-        SetIntFlagValue(lhs.c_str(), int_val);
-        continue;
-      }
+	    std::string full_flag_name("FLAGS_");
+	    full_flag_name += lhs;
+	    auto *p = ParamUtils::FindParam<Param>(full_flag_name.c_str(), GlobalParams());
+	    if (p == nullptr) {
+	      // Flag was not found. Exit with an error message?
 
-      // double flag
-      double double_val;
-      if (DoubleFlagExists(lhs.c_str(), &double_val)) {
-        if (rhs != nullptr) {
-          if (!strlen(rhs)) {
-            // Bad input of the format --double_flag=
-            tprintError("Bad argument: {}\n", (*argv)[i]);
-            return 1;
-          }
-          if (!SafeAtod(rhs, &double_val)) {
-            tprintError("Could not parse double from {} in flag {}\n", rhs, (*argv)[i]);
-            return 1;
-          }
-        } else {
-          // We need to parse the next argument
-          if (i + 1 >= *argc) {
-            tprintError("Could not find value argument for flag {}\n", lhs.c_str());
-            return 1;
-          } else {
-            ++i;
-            if (!SafeAtod((*argv)[i], &double_val)) {
-              tprintError("Could not parse double from {}\n", (*argv)[i]);
-              return 1;
-            }
-          }
-        }
-        SetDoubleFlagValue(lhs.c_str(), double_val);
-        continue;
-      }
+	      // When the commandline option is a single character, it's probably
+	      // an application specific command. Keep it.
+	      if (lhs.length() == 1) {
+	        break;
+	      }
 
-      // Bool flag. Allow input forms --flag (equivalent to --flag=true),
-      // --flag=false, --flag=true, --flag=0 and --flag=1
-      bool bool_val;
-      if (BoolFlagExists(lhs.c_str(), &bool_val)) {
-        if (rhs == nullptr) {
-          // --flag form
-          bool_val = true;
-        } else {
-          if (!strlen(rhs)) {
-            // Bad input of the format --bool_flag=
-            tprintError("Bad argument: {}\n", (*argv)[i]);
-            return 1;
-          }
-          if (!strcmp(rhs, "false") || !strcmp(rhs, "0")) {
-            bool_val = false;
-          } else if (!strcmp(rhs, "true") || !strcmp(rhs, "1")) {
-            bool_val = true;
-          } else {
-            tprintError("Could not parse bool from flag {}\n", (*argv)[i]);
-            return 1;
-          }
-        }
-        SetBoolFlagValue(lhs.c_str(), bool_val);
-        continue;
-      }
+	      tprintError("Non-existent flag '{}'\n", lhs);
+	      return 1;
+	    }
 
-      // string flag
-      const char *string_val;
-      if (StringFlagExists(lhs.c_str(), &string_val)) {
-        if (rhs != nullptr) {
-          string_val = rhs;
-        } else {
-          // Pick the next argument
-          if (i + 1 >= *argc) {
-            tprintError("Could not find string value for flag {}\n", lhs.c_str());
-            return 1;
-          } else {
-            string_val = (*argv)[++i];
-          }
-        }
-        SetStringFlagValue(lhs.c_str(), string_val);
-        continue;
-      }
+	    // do not require rhs when parameter is the boolean type:
+	    if (rhs == nullptr) {
+	      // Pick the next argument
+	      if (i + 1 >= argc) {
+	        if (p->type() != BOOL_PARAM) {
+	          tprintError("Could not find value for flag {}\n", lhs);
+	          return 1;
+	        }
+	        else {
+	          // --flag form
+	          rhs = "true";
+	        }
+	      }
+	      else {
+	        rhs = argv[++i];
+	      }
+	    }
+	    if (p->type() == BOOL_PARAM && strlen(rhs) == 0) {
+	      // Bad input of the format --bool_flag=
+	      tprintError("Bad boolean flag '{}' argument: '{}'\n", lhs, rhs);
+	      return 1;
+	    }
+
+	    p->set_value(rhs);
+	    if (p->has_faulted()) {
+	      tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
+	      return 1;
+	    }
     }
-
-    // Flag was not found. Exit with an error message.
-    tprintError("Non-existent flag {}\n", (*argv)[i]);
-    return 1;
   } // for each argv
-
-  if (remove_flags) {
-    (*argv)[i - 1] = (*argv)[0];
-    (*argv) += (i - 1);
-    (*argc) -= (i - 1);
+  if (remove_flags && i > 1) {
+    (*argv_ref)[i - 1] = argv[0];
+    (*argv_ref) += (i - 1);
+    (*argc_ref) -= (i - 1);
   }
+
+  PrintCommandLineFlags();
+
   return -1;		// continue executing the application
 }
 

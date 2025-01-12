@@ -63,7 +63,7 @@ extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char**
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  int rv = tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);
+  int rv = tesseract::ParseCommandLineFlags("", &argc, &argv);
   if (rv >= 0)
 	  return rv;
 

@@ -523,10 +523,12 @@ ScrollViewReference TabFind::FindInitialTabVectors(BLOBNBOX_LIST *image_blobs, i
   InsertBlobsToGrid(true, false, &block->blobs, this);
   ScrollViewReference initial_win = FindTabBoxes(min_gutter_width, tabfind_aligned_gap_fraction);
   FindAllTabVectors(min_gutter_width);
+  SortVectors();
+  EvaluateTabs();
 
   TabVector::MergeSimilarTabVectors(vertical_skew_, &vectors_, this);
   SortVectors();
-  EvaluateTabs();
+  //EvaluateTabs();
 #if !GRAPHICS_DISABLED
   if (textord_tabfind_show_initialtabs && initial_win) {
     DisplayTabVectors(initial_win);
@@ -579,8 +581,8 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
   // on a ragged tab.
   std::sort(left_tab_boxes_.begin(), left_tab_boxes_.end(), StdSortByBoxLeft<BLOBNBOX>);
   std::sort(right_tab_boxes_.begin(), right_tab_boxes_.end(), StdSortRightToLeft<BLOBNBOX>);
-  ScrollViewReference tab_win;
 #if !GRAPHICS_DISABLED
+  ScrollViewReference tab_win;
   if (textord_tabfind_show_initialtabs) {
     tab_win = MakeWindow(tesseract_, 0, 100, "InitialTabs");
     tab_win->Pen(Diagnostics::BLUE);
@@ -590,8 +592,10 @@ ScrollViewReference TabFind::FindTabBoxes(int min_gutter_width, double tabfind_a
     DisplayBoxVector(right_tab_boxes_, tab_win);
     DisplayTabs(tab_win);
   }
-#endif // !GRAPHICS_DISABLED
   return tab_win;
+#else
+  return nullptr;
+#endif // !GRAPHICS_DISABLED
 }
 
 bool TabFind::TestBoxForTabs(BLOBNBOX *bbox, int min_gutter_width,

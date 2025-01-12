@@ -29,12 +29,16 @@ namespace tesseract {
 #define NO_SMD "none"
 
 extern BOOL_VAR_H(textord_show_fixed_cuts);
+#if !GRAPHICS_DISABLED
 extern ScrollViewReference to_win;
+#endif
 extern FILE *to_debug;
+#if !GRAPHICS_DISABLED
 // Creates a static display window for textord, and returns a pointer to it.
 ScrollViewReference &create_to_win(ICOORD page_tr);
 void close_to_win();              // Destroy the textord window.
 void create_todebug_win();        // make gradients win
+#endif
 void plot_box_list(               // make gradients win
     ScrollViewReference &win,              // window to draw in
     BLOBNBOX_LIST *list,          // blob list
