@@ -1400,7 +1400,7 @@ int TessBaseAPI::Recognize() {
     }
 
     AutoPopDebugSectionLevel subsection_handle2(tess, tess.PushSubordinatePixDebugSection("Recognize All Words"));
-    if (tess.recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
+    if (tess.recog_all_words(page_res_, nullptr, nullptr, 0)) {
 #if !GRAPHICS_DISABLED
       if (scrollview_support) {
         tess.pgeditor_main(rect_width_, rect_height_, page_res_);

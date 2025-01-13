@@ -1147,7 +1147,7 @@ namespace tesseract {
     return str;
   }
     
-  static std::string html_styling(const std::string &datadir, const std::string &filename) {
+  static std::string html_styling(const std::filesystem::path &datadir, const std::string &filename) {
     // first search if the HTML / CSS resource is available on your filesystem.
     //
     // When we cannot find it anywhere there, we take the built-in version as a fallback.
@@ -1686,7 +1686,7 @@ namespace tesseract {
 
       int next_image_index = 0;
 
-      // calculate the cummulative elapsed time by traversing the section tree bottom-to-top
+      // calculate the cumulative elapsed time by traversing the section tree bottom-to-top
       double total_time_elapsed_ns = gather_cummulative_elapsed_times();
 
       int current_section_index = 0; 
@@ -1799,7 +1799,7 @@ namespace tesseract {
 
       fputs(section_timings_msg.c_str(), html);
 
-      // get the cummulative for "Process Pages" subsection:
+      // get the cumulative for "Process Pages" subsection:
       double proc_pages_time = time_elapsed_until_report;
       for (const auto &step : steps) {
         if (step.title == "Process pages") {
