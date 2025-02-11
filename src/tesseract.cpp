@@ -639,38 +639,38 @@ static int ParseArgs(int argc, const char** argv,
       cmd |= VERSION;
 	  continue;
     } else if (strcmp(argv[i], "-l") == 0) {
-      vars_vec->push_back("languages");                   // [i_a] NEW
+      vars_vec.push_back("languages");                   // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--tessdata-dir") == 0) {
-      vars_vec->push_back("tessdata_path");                   // [i_a] NEW
+      vars_vec.push_back("tessdata_path");                   // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--dpi") == 0) {
-      vars_vec->push_back("source_image_dpi");                   // [i_a] NEW
+      vars_vec.push_back("source_image_dpi");                   // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--loglevel") == 0) {
-      vars_vec->push_back("loglevel");                            // [i_a] NEW
+      vars_vec.push_back("loglevel");                            // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--user-words") == 0) {
-      vars_vec->push_back("user_words_file");
+      vars_vec.push_back("user_words_file");
       PUSH_VALUE_OR_YAK();
 	  continue;
     } else if (strcmp(argv[i], "--user-patterns") == 0) {
-      vars_vec->push_back("user_patterns_file");
+      vars_vec.push_back("user_patterns_file");
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--list-langs") == 0) {
       cmd |= LIST_LANGUAGES;
 	  continue;
     } else if (strcmp(argv[i], "--rectangle") == 0) {
-      vars_vec->push_back("reactangles_to_process");                   // [i_a] NEW
+      vars_vec.push_back("reactangles_to_process");                   // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--outputbase") == 0) {
-      vars_vec->push_back("output_base_path");                       // [i_a] NEW
+      vars_vec.push_back("output_base_path");                       // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       state |= PARSED_OUTPUT_BASEDIR;
 	  continue;
@@ -687,7 +687,7 @@ static int ParseArgs(int argc, const char** argv,
       if (!checkArgValues(psm, "PSM", tesseract::PSM_COUNT)) {
         return false;
 	  }
-      vars_vec->push_back("page_segmenting_mode");                   // [i_a] NEW :: tessedit_pageseg_mode
+      vars_vec.push_back("page_segmenting_mode");                   // [i_a] NEW :: tessedit_pageseg_mode
       vars_values->push_back(value);
       ++i;
       continue;
@@ -700,7 +700,7 @@ static int ParseArgs(int argc, const char** argv,
       if (!checkArgValues(oem, "OEM", tesseract::OEM_COUNT)) {
         return false;
       }
-      vars_vec->push_back("engine_mode");                   // [i_a] NEW :: tessedit_ocr_engine_mode
+      vars_vec.push_back("engine_mode");                   // [i_a] NEW :: tessedit_ocr_engine_mode
       vars_values->push_back(value);
       ++i;
       continue;
@@ -727,36 +727,36 @@ static int ParseArgs(int argc, const char** argv,
       // Extract key and value
       const std::string key = argument.substr(0, equal_pos);
       const std::string value = argument.substr(equal_pos + 1);
-      vars_vec->push_back(key);
+      vars_vec.push_back(key);
       vars_values->push_back(value);
       ++i;
 	  continue;
     } else if (strcmp(argv[i], "--source-image") == 0) {
-      vars_vec->push_back("source_image");                              // [i_a] NEW
+      vars_vec.push_back("source_image");                              // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--mixed-masks-image") == 0) {
-      vars_vec->push_back("mixed_masks_image");                              // [i_a] NEW
+      vars_vec.push_back("mixed_masks_image");                              // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--threshold-level-image") == 0) {
-      vars_vec->push_back("threshold_level_image");                              // [i_a] NEW
+      vars_vec.push_back("threshold_level_image");                              // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--text-mask-image") == 0) {
-      vars_vec->push_back("text_mask_image");                              // [i_a] NEW
+      vars_vec.push_back("text_mask_image");                              // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(argv[i], "--nontext-mask-image") == 0) {
-      vars_vec->push_back("nontext_mask_image");                              // [i_a] NEW
+      vars_vec.push_back("nontext_mask_image");                              // [i_a] NEW
       PUSH_VALUE_OR_YAK();
       continue;
     } else if (strcmp(verb, "--visible-pdf-image") == 0 && i + 1 < argc) {
-      IntParam *p = vars_vec->find<IntParam>("visible_image_file_path");
+      IntParam *p = vars_vec.find<IntParam>("visible_image_file_path");
       p->set_value(argv[i + 1]);
       continue;
     } else if (strcmp(verb, "--config") == 0 && i + 1 < argc) {
-      StringParam *p = vars_vec->find<StringParam>("config_files");
+      StringParam *p = vars_vec.find<StringParam>("config_files");
       std::string cfs = p->value();
       if (!cfs.empty())
         cfs += ';';       // separator suitable for all platforms AFAIAC.
@@ -764,7 +764,7 @@ static int ParseArgs(int argc, const char** argv,
       p->set_value(cfs);
       ++i;
     } else if (strcmp(verb, "--outputbase") == 0 && i + 1 < argc) {
-      StringParam *p = vars_vec->find<StringParam>("output_base_path");
+      StringParam *p = vars_vec.find<StringParam>("output_base_path");
       p->set_value(argv[i + 1]);
       ++i;
     } else if (strcmp(verb, "--") == 0) {
@@ -779,14 +779,14 @@ static int ParseArgs(int argc, const char** argv,
 	if (dash_dash || argv[i][0] != '-') {
 		if (!(state & PARSED_INPUT_IMAGE)) {
       // first non-opt argument: the SOURCE IMAGE,
-      vars_vec->push_back("source_image");                   // [i_a] NEW
+      vars_vec.push_back("source_image");                   // [i_a] NEW
       vars_values->push_back(argv[i]);
       // outputbase follows image, DO allow options in between.
       state |= PARSED_INPUT_IMAGE;
 	  continue;
     } else if (!(state & PARSED_OUTPUT_BASEDIR)) {
       // second non-opt argument: the OUTPUTBASE (follows image)
-      vars_vec->push_back("output_base_path");                   // [i_a] NEW
+      vars_vec.push_back("output_base_path");                   // [i_a] NEW
       vars_values->push_back(argv[i]);
       state |= PARSED_OUTPUT_BASEDIR;
 	  continue;
@@ -797,11 +797,6 @@ static int ParseArgs(int argc, const char** argv,
 	  continue;
     }
 	}
-	 
-      // Unexpected argument.
-      tprintError("Unknown command line argument '{}'\n", argv[i]);
-      return false;
-  }
 
   if (!(state & PARSED_INPUT_IMAGE) && noocr == false) {
     tprintError("Missing input image command line argument.\n");

@@ -40,7 +40,7 @@ bool ETEXT_DESC::kick_watchdog_and_check_for_cancel(int word_count) {
     // abort_the_action = true;   -- don't set this flag here as we do not want the deadline signal to "stick": the cancel call can reset the deadline, resulting in temporary cancel/interuption, by design. When userland code wishes to completely abort the action, it can set the `abort_the_action` flag itself.
     return true;
   }
-  if (cancel != nullptr && (*cancel)(this, word_count)) {
+  if (cancel != nullptr && (cancel)(this, word_count)) {
     // abort_the_action = true;;   -- don't set this flag here as we do not want the deadline signal to "stick": the cancel call can reset the deadline, resulting in temporary cancel/interuption, by design. When userland code wishes to completely abort the action, it can set the `abort_the_action` flag itself.
     return true;
   }
@@ -81,7 +81,7 @@ ETEXT_DESC &ETEXT_DESC::exec_progress_func(int left, int right, int top, int bot
   // don't hammer the userland progress callback; only call it when there's "significant" progress...
   if (std::isnan(previous_progress) || fabs(progress - previous_progress) >= 0.1) {
     if (progress_callback != nullptr) {
-      (*progress_callback)(this, left, right, top, bottom);
+      (progress_callback)(this, left, right, top, bottom);
     }
     //      v---------- the progress callback is supposed to do this itself, so it can fully control when it will be re-invoked.
     //previous_progress = progress;
