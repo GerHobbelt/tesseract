@@ -81,10 +81,6 @@ public:
     return params_collective_;
   }
 
-  ParamsVectorSet &params_collective() {
-    return params_collective_;
-  }
-
   std::string visible_image_file_path_; // name of currently input file, used for visible overlays only
   std::string input_file_path_; // name of currently processed input file
   std::filesystem::path datadir_;       // dir for data files
