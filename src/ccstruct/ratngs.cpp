@@ -368,7 +368,7 @@ void WERD_CHOICE::punct_stripped(unsigned int *start, unsigned int *end) const {
   while (*start < length() && unicharset()->get_ispunctuation(unichar_id(*start))) {
     (*start)++;
   }
-  while (*end > 0 && unicharset()->get_ispunctuation(unichar_id(*end - 1))) {
+  while (*end > *start && unicharset()->get_ispunctuation(unichar_id(*end - 1))) {
     (*end)--;
   }
 }
