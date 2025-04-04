@@ -116,8 +116,13 @@ public:
    * or surpass this TesseractAPI instance's lifetime, i.e.
    * the referenced monitor instance MUST remain valid until
    * we're done with it.
+   *
+   * A monitor can be used to
+   * - cancel the recognition
+   * - receive progress callbacks
    */
   void RegisterMonitor(ETEXT_DESC *monitor);
+  
   ETEXT_DESC &Monitor();
   const ETEXT_DESC &Monitor() const;
 
@@ -760,7 +765,7 @@ public:
    *
    * See ProcessPages for descriptions of other parameters.
    */
-  bool ProcessPage(Pix *pix, const char *filename,
+  bool ProcessPage(Pix *pix, int page_number, const char *filename,
                    TessResultRenderer *renderer);
 
   /**
@@ -822,17 +827,6 @@ public:
    * Returned string must be freed with the delete [] operator.
    */
   char *GetHOCRText(int page_number);
-
-  /**
-   * Make a JSON-formatted string with JSON from the internal
-   * data structures.
-   * page_number is 0-based but will appear in the output as 1-based.
-   * monitor can be used to
-   *  cancel the recognition
-   *  receive progress callbacks
-   * Returned string must be freed with the delete [] operator.
-   */
-  char *GetJSONText(ETEXT_DESC *monitor, int page_number);
 
   /**
    * Make a JSON-formatted string with JSON from the internal

@@ -199,7 +199,7 @@ void ImageThresholder::SetImage(const Image &pix, int exif, const float angle, b
   // Rotate if additional rotation angle is specified
   //
   // clones or creates a freshly rotated copy.
-  Image src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+  src = pixRotate(temp3, angle, L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
 
   int depth;
   pixGetDimensions(src, &image_width_, &image_height_, &depth);
