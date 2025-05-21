@@ -180,7 +180,7 @@ static void PrintHelpForPSM() {
       "                            bypassing hacks that are Tesseract-specific.\n"
       "\n");
 
-#ifdef DISABLED_LEGACY_ENGINE
+#if DISABLED_LEGACY_ENGINE
   tprintInfo("\nNOTE: The OSD modes are currently disabled.\n");
 #endif
 }

@@ -23,7 +23,7 @@ struct Pix;
 namespace tesseract {
 
 class TESS_API Image {
-public:
+protected:
   Pix *pix_ = nullptr;
 
 public:
