@@ -139,13 +139,7 @@ noinst_HEADERS += src/arch/simddetect.h
 
 noinst_LTLIBRARIES += libtesseract_native.la
 
-
-libtesseract_native_la_CXXFLAGS =
-if ENABLE_CPU_OPTIMIZATIONS
-libtesseract_native_la_CXXFLAGS += -O3 -ffast-math
-else
-libtesseract_native_la_CXXFLAGS += -O0 -fexcess-precision=standard -fno-fast-math -fsignaling-nans -ffloat-store
-endif
+libtesseract_native_la_CXXFLAGS = -O3 -ffast-math
 if OPENMP_SIMD
 libtesseract_native_la_CXXFLAGS += -fopenmp-simd -DOPENMP_SIMD
 endif
@@ -729,6 +723,7 @@ tesseract_CPPFLAGS += -I$(top_srcdir)/src/viewer
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 
 tesseract_LDFLAGS = $(OPENMP_CXXFLAGS)
+tesseract_LDFLAGS += -headerpad_max_install_names
 
 tesseract_LDADD = libtesseract.la
 tesseract_LDADD += $(LEPTONICA_LIBS)
