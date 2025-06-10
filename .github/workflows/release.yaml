@@ -35,9 +35,9 @@ jobs:
           case "$(uname -s)" in
             Linux*) 
               sudo apt-get update
-              sudo apt-get install -y autoconf automake libtool libleptonica-dev libcurl4-openssl-dev g++-13
-              echo "CC=gcc-13" >> $GITHUB_ENV
-              echo "CXX=g++-13" >> $GITHUB_ENV
+              sudo apt-get install -y autoconf automake libtool libleptonica-dev libcurl4-openssl-dev g++-12
+              echo "CC=gcc-12" >> $GITHUB_ENV
+              echo "CXX=g++-12" >> $GITHUB_ENV
               ;;
             Darwin*)
               brew install autoconf automake libtool pkgconfig leptonica
