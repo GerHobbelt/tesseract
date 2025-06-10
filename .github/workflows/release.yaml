@@ -1,0 +1,19 @@
+name: Release
+on:
+  push:
+  create:
+    tags:
+      - anzen-v*
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          ./autogen.sh
+          mkdir -p build build-out
+          cd build
+          ../configure --disable-openmp --prefix=$(realpath ../build-out)
+          make && make install
