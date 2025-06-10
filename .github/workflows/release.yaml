@@ -9,7 +9,6 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        build: [prod]
         platform:
           - ubuntu22-amd64
           - ubuntu22-arm64
@@ -47,19 +46,17 @@ jobs:
               ;;
           esac
       - name: Build
-        env:
-          ENABLE_CPU_OPTIMIZATIONS: ${{ matrix.build == 'prod' && '1' || '' }}
         run: |
           ./autogen.sh
           ./build.sh
           ./download_tessdata.sh
       - name: Package output
-        run: tar -czvf anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}.tar.gz -C build-out .
+        run: tar -czvf anzen-tesseract-prod-${{ matrix.platform }}.tar.gz -C build-out .
       - name: Save output
         uses: actions/upload-artifact@v4
         with:
-          name: anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}
-          path: anzen-tesseract-${{ matrix.build }}-${{ matrix.platform }}.tar.gz
+          name: anzen-tesseract-prod-${{ matrix.platform }}
+          path: anzen-tesseract-prod-${{ matrix.platform }}.tar.gz
 
   create-release:
     needs: [build]

@@ -28,8 +28,8 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
-PACKAGE_YEAR=2024
-PACKAGE_DATE="06/11"
+PACKAGE_YEAR=2025
+PACKAGE_DATE="05/25"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -72,6 +72,7 @@ AC_CONFIG_HEADERS([include/config_auto.h:config/config.h.in])
 
 # default conditional
 AM_CONDITIONAL([T_WIN], false)
+AM_CONDITIONAL([MINGW], false)
 AM_CONDITIONAL([GRAPHICS_DISABLED], false)
 AC_SUBST([AM_CPPFLAGS])
 
@@ -87,7 +88,9 @@ AM_SILENT_RULES([yes])
 AC_CANONICAL_HOST
 case "${host_os}" in
     mingw*)
+        AC_DEFINE_UNQUOTED([MINGW], 1, [This is a MinGW system])
         AM_CONDITIONAL([T_WIN], true)
+        AM_CONDITIONAL([MINGW], true)
         AM_CONDITIONAL([ADD_RT], false)
         AC_SUBST([AM_LDFLAGS], ['-no-undefined'])
         ;;
@@ -122,76 +125,77 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=un
 
 ## Checks for supported compiler options.
 
-AC_ARG_ENABLE([cpu-optimizations],
-  [AS_HELP_STRING([--disable-cpu-optimizations], [Disable CPU Optimizations])],
-  [enable_cpu_optimizations=$enableval], [enable_cpu_optimizations=yes])
-
-if test "$enable_cpu_optimizations" = "yes"; then
-  AC_DEFINE([ENABLE_CPU_OPTIMIZATIONS], [1], [Enable CPU Optimizations])
-fi
-AM_CONDITIONAL([ENABLE_CPU_OPTIMIZATIONS], test ${enable_cpu_optimizations} = "yes")
-
 AM_CONDITIONAL([HAVE_AVX], false)
 AM_CONDITIONAL([HAVE_AVX2], false)
 AM_CONDITIONAL([HAVE_AVX512F], false)
 AM_CONDITIONAL([HAVE_FMA], false)
 AM_CONDITIONAL([HAVE_SSE4_1], false)
 AM_CONDITIONAL([HAVE_NEON], false)
+AM_CONDITIONAL([HAVE_RVV], false)
 
 case "${host_cpu}" in
 
   amd64|*86*)
-    if test "$enable_cpu_optimizations" = "yes"; then
-      AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_AVX], ${avx})
-      if $avx; then
-        AC_DEFINE([HAVE_AVX], [1], [Enable AVX instructions])
-      fi
 
-      AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_AVX2], $avx2)
-      if $avx2; then
-        AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
-      fi
-
-      AX_CHECK_COMPILE_FLAG([-mavx512f], [avx512f=true], [avx512f=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_AVX512F], $avx512f)
-      if $avx512f; then
-        AC_DEFINE([HAVE_AVX512F], [1], [Enable AVX512F instructions])
-      fi
-
-      AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_FMA], $fma)
-      if $fma; then
-        AC_DEFINE([HAVE_FMA], [1], [Enable FMA instructions])
-      fi
-
-      AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_SSE4_1], $sse41)
-      if $sse41; then
-        AC_DEFINE([HAVE_SSE4_1], [1], [Enable SSE 4.1 instructions])
-      fi
+    AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX], ${avx})
+    if $avx; then
+      AC_DEFINE([HAVE_AVX], [1], [Enable AVX instructions])
     fi
+
+    AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX2], $avx2)
+    if $avx2; then
+      AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-mavx512f], [avx512f=true], [avx512f=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX512F], $avx512f)
+    if $avx512f; then
+      AC_DEFINE([HAVE_AVX512F], [1], [Enable AVX512F instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_FMA], $fma)
+    if $fma; then
+      AC_DEFINE([HAVE_FMA], [1], [Enable FMA instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_SSE4_1], $sse41)
+    if $sse41; then
+      AC_DEFINE([HAVE_SSE4_1], [1], [Enable SSE 4.1 instructions])
+    fi
+
     ;;
 
   aarch64*|arm64)
-    if test "$enable_cpu_optimizations" = "yes"; then
-      # ARMv8 always has NEON and does not need special compiler flags.
-      AM_CONDITIONAL([HAVE_NEON], true)
-      AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
-    fi
+
+    # ARMv8 always has NEON and does not need special compiler flags.
+    AM_CONDITIONAL([HAVE_NEON], true)
+    AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
     ;;
 
   arm*)
-    if test "$enable_cpu_optimizations" = "yes"; then
-      AX_CHECK_COMPILE_FLAG([-mfpu=neon], [neon=true], [neon=false], [$WERROR])
-      AM_CONDITIONAL([HAVE_NEON], $neon)
-      if $neon; then
-        AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
-        NEON_CXXFLAGS="-mfpu=neon"
-        AC_SUBST([NEON_CXXFLAGS])
-        check_for_neon=1
-      fi
+
+    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [neon=true], [neon=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_NEON], $neon)
+    if $neon; then
+      AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
+      NEON_CXXFLAGS="-mfpu=neon"
+      AC_SUBST([NEON_CXXFLAGS])
+      check_for_neon=1
+    fi
+
+    ;;
+
+  riscv*)
+
+    AX_CHECK_COMPILE_FLAG([-march=rv64gcv], [rvv=true], [rvv=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_RVV], [$rvv])
+    if $rvv; then
+      AC_DEFINE([HAVE_RVV], [1], [Enable RVV instructions])
+      check_for_rvv=1
     fi
     ;;
 
@@ -214,13 +218,18 @@ if test x$check_for_neon = x1; then
   fi
 fi
 
-if test "$enable_cpu_optimizations" = "yes"; then
-  AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
+# additional checks for RVV targets
+if test x$check_for_rvv = x1; then
+  AC_MSG_NOTICE([checking how to detect RVV availability])
+  AC_CHECK_FUNCS([getauxval elf_aux_info])
 
-  AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)
-else
-  AM_CONDITIONAL([OPENMP_SIMD], false)
+  if test $ac_cv_func_getauxval = no && test $ac_cv_func_elf_aux_info = no; then
+      AC_MSG_WARN([RVV is available, but we don't know how to check for it.  Will not be able to use RVV.])
+  fi
 fi
+
+AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
+AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)
 
 AC_ARG_WITH([extra-includes],
             [AS_HELP_STRING([--with-extra-includes=DIR],
@@ -282,25 +291,6 @@ AC_ARG_WITH([curl],
             AS_HELP_STRING([--with-curl],
                            [Build with libcurl which supports processing an image URL @<:@default=check@:>@]),
             [], [with_curl=check])
-AC_ARG_WITH([tensorflow],
-  AS_HELP_STRING([--with-tensorflow],
-                 [support TensorFlow @<:@default=check@:>@]),
-  [], [with_tensorflow=check])
-
-# Check whether to build with support for TensorFlow.
-AM_CONDITIONAL([TENSORFLOW], false)
-TENSORFLOW_LIBS=
-AS_IF([test "x$with_tensorflow" != xno],
-  [AC_CHECK_HEADERS([tensorflow/core/framework/graph.pb.h],
-    [AC_SUBST([TENSORFLOW_LIBS], ["-lprotobuf -ltensorflow_cc"])
-      AM_CONDITIONAL([TENSORFLOW], true)
-    ],
-    [if test "x$with_tensorflow" != xcheck; then
-      AC_MSG_FAILURE(
-        [--with-tensorflow was given, but test for libtensorflow-dev failed])
-     fi
-    ])
-  ])
 
 # https://lists.apple.com/archives/unix-porting/2009/Jan/msg00026.html
 m4_define([MY_CHECK_FRAMEWORK],
@@ -322,12 +312,10 @@ m4_define([MY_CHECK_FRAMEWORK],
 
 case "${host_os}" in
   *darwin* | *-macos10*)
-    if test "$enable_cpu_optimizations" = "yes"; then
-      MY_CHECK_FRAMEWORK([Accelerate])
-      if test $my_cv_framework_Accelerate = yes; then
-        AM_CPPFLAGS="-DHAVE_FRAMEWORK_ACCELERATE $AM_CPPFLAGS"
-        AM_LDFLAGS="$AM_LDFLAGS -framework Accelerate"
-      fi
+    MY_CHECK_FRAMEWORK([Accelerate])
+    if test $my_cv_framework_Accelerate = yes; then
+      AM_CPPFLAGS="-DHAVE_FRAMEWORK_ACCELERATE $AM_CPPFLAGS"
+      AM_LDFLAGS="$AM_LDFLAGS -framework Accelerate"
     fi
     ;;
   *)
@@ -576,6 +564,7 @@ AC_CONFIG_FILES([java/com/google/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/events/Makefile])
 AC_CONFIG_FILES([java/com/google/scrollview/ui/Makefile])
+AC_CONFIG_FILES([nsis/Makefile])
 AC_OUTPUT
 
 # Final message
