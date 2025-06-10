@@ -10,9 +10,6 @@ cd build
 
 CONFIGURE_ARGS="--disable-openmp --disable-doc --disable-graphics"
 
-export CC=clang
-export CXX=clang++
-
 case "$(uname -s)" in
     Linux*) 
         ../configure \
