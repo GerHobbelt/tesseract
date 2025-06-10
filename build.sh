@@ -8,7 +8,7 @@ mkdir -p build build-out
 
 cd build
 
-CONFIGURE_ARGS="--disable-openmp --disable-doc --disable-graphics"
+CONFIGURE_ARGS="--disable-openmp --disable-doc --disable-graphics --disable-static --enable-shared --disable-legacy"
 
 case "$(uname -s)" in
     Linux*) 
@@ -23,7 +23,10 @@ case "$(uname -s)" in
         cp include/config_auto.h ../build-out/
 
         cd ..
+        find build-out -type f -name '*.so*' -exec strip --strip-unneeded {} +
+
         sed '4i\TESSERACT_DIR=$(dirname $SCRIPT_DIR)' download_tessdata.sh > build-out/bin/download_tessdata.sh
+        
         chmod +x build-out/bin/download_tessdata.sh
         ;;
     Darwin*)
