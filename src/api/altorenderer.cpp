@@ -56,7 +56,7 @@ static void AddBoxToAlto(const std::unique_ptr<ResultIterator> &it, PageIterator
   }
 }
 
-static std::string GetID(char const * prefix, int page_number, int counter) {
+static std::string GetID(const char *prefix, int page_number, int counter) {
   std::stringstream idstr;
   // IDs will only have the counter for the first page to keep them consistent
   // with the IDs assigned before this change was made.
