@@ -1575,8 +1575,21 @@ void PAGE_RES_IT::DeleteCurrentWord() {
         break;
       }
     }
-    ASSERT_HOST(!w_it.cycled_list()); //-- #4148 fix
-    delete w_it.extract();
+	
+	//-- #4148 fix(?)
+	//
+    // previous code asserted that the check in the previous loop would always
+    // be entered, and thus this loop would always be broken. It makes sense to
+    // only delete the iterator point if the loop didn't finish naturally, so
+    // we'll make this a conditional check instead of an assertion. it's not
+    // clear if this will force negative downstream effects, but unlike the
+    // previous fix which simply commented the assertion, we will not blindly
+    // call delete in this scenario. this should be a safer approach, although
+    // it may have impact to the data or outputs in connection with this "part
+    // of combination" logic.
+    if (!w_it.cycled_list()) {
+      delete w_it.extract();
+    }
   }
   // Remove the WERD_RES for the new_word.
   // Remove the WORD_RES from the ROW_RES.

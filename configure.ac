@@ -28,8 +28,8 @@ AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
 
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
-PACKAGE_YEAR=2024
-PACKAGE_DATE="11/10"
+PACKAGE_YEAR=2025
+PACKAGE_DATE="05/25"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 
@@ -239,12 +239,14 @@ fi
 # additional checks for RVV targets
 if test x$check_for_rvv = x1; then
   AC_MSG_NOTICE([checking how to detect RVV availability])
-  AC_CHECK_FUNCS([getauxval])
+  AC_CHECK_FUNCS([getauxval elf_aux_info])
 
-  if test $ac_cv_func_getauxval = no; then
+  if test $ac_cv_func_getauxval = no && test $ac_cv_func_elf_aux_info = no; then
       AC_MSG_WARN([RVV is available, but we don't know how to check for it.  Will not be able to use RVV.])
   fi
 fi
+
+AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 
 AX_CHECK_COMPILE_FLAG([-fopenmp-simd], [openmp_simd=true], [openmp_simd=false], [$WERROR])
 AM_CONDITIONAL([OPENMP_SIMD], $openmp_simd)
@@ -462,6 +464,13 @@ if $have_brew; then
     export PKG_CONFIG_PATH
   fi
 fi
+
+# Cabextract is used for some tests
+AC_CACHE_CHECK([for cabextract], [ac_cv_path_cabextract],
+    [AC_PATH_PROGS_FEATURE_CHECK([cabextract], [cabextract],
+      [[ac_cv_path_cabextract=$ac_path_cabextract ac_path_cabextract_found=:]],
+      [AC_MSG_ERROR([[Cabextract is required, but not installed]])])])
+AC_SUBST([CABEXTRACT], [$ac_cv_path_cabextract])
 
 # ----------------------------------------
 # Check for programs needed to build documentation.
