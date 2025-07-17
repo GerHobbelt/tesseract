@@ -250,7 +250,11 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
   }
 
   switch (method) {
-  case ThresholdMethod::Sauvola: {
+  case ThresholdMethod::Sauvola:
+  if (pix_w > 6 && pix_h > 6) {
+    // pixSauvolaBinarizeTiled requires half_window_size >= 2.
+    // Therefore window_size must be at least 4 which requires
+    // pix_w and pix_h to be at least 7.
     int window_size;
     window_size = tesseract_.thresholding_window_size * yres_;
     window_size = std::max(7, window_size);
@@ -283,7 +287,9 @@ std::tuple<bool, Image, Image, Image> ImageThresholder::Threshold(ThresholdMetho
     r = pixSauvolaBinarizeTiled(pix_grey, half_window_size, kfactor, nx, ny,
                                pix_thresholds,
                                pix_binary);
-  } break;
+  }
+  // else: error state, signaled by (pix_binary == nullptr) and checked further below.
+  break;
 
   case ThresholdMethod::OtsuOnNormalizedBackground: {
     pix_grey = GetPixRectGrey();
