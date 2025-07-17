@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019]
-        vsversion: [2019, 2017]
+        os: [windows-latest]
+        vsversion: [2017, 2019, 2022]
 
     steps:
       - name: Checkout Tesseract Source (--head from main branch)

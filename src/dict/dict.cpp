@@ -632,9 +632,9 @@ void Dict::init_active_dawgs(DawgPositionVector *active_dawgs, bool ambigs_mode)
   if (hyphenated()) {
     *active_dawgs = hyphen_active_dawgs_;
     if (dawg_debug_level > 2) {
-      for (unsigned i = 0; i < hyphen_active_dawgs_.size(); ++i) {
+      for (const auto &dawg : hyphen_active_dawgs_) {
         tprintDebug("Adding hyphen beginning dawg [{}, {}]\n",
-                hyphen_active_dawgs_[i].dawg_index, hyphen_active_dawgs_[i].dawg_ref);
+                dawg.dawg_index, dawg.dawg_ref);
       }
     }
   } else {
@@ -920,9 +920,9 @@ bool Dict::valid_punctuation(const WERD_CHOICE &word) {
       new_word.append_unichar_id(Dawg::kPatternUnicharID, 1, 0.0, 0.0);
     }
   }
-  for (unsigned i = 0; i < dawgs_.size(); ++i) {
-    if (dawgs_[i] != nullptr && dawgs_[i]->type() == DAWG_TYPE_PUNCTUATION &&
-        dawgs_[i]->word_in_dawg(new_word)) {
+  for (auto dawg : dawgs_) {
+    if (dawg != nullptr && dawg->type() == DAWG_TYPE_PUNCTUATION &&
+        dawg->word_in_dawg(new_word)) {
       return true;
     }
   }

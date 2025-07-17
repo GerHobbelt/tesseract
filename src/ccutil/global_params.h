@@ -19,6 +19,7 @@
 #define TESS_GLOBAL_PARAMS_H
 
 #include <tesseract/params.h>
+#include <cstdarg>
 #include <utility>            // for std::forward
 
 namespace tesseract {
