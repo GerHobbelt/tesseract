@@ -107,9 +107,6 @@ public:
 
 private:
   OSResults *osr_;
-  static const char *korean_script_;
-  static const char *japanese_script_;
-  static const char *fraktur_script_;
   int korean_id_;
   int japanese_id_;
   int katakana_id_;

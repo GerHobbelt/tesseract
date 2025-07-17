@@ -76,12 +76,11 @@
 #    include <sys/auxv.h>
 #  elif defined(HAVE_ELF_AUX_INFO)
 #    include <sys/auxv.h>
-#    include <sys/elf.h>
 #  endif
 #endif
 
 #if defined(HAVE_RVV)
-#  if defined(HAVE_GETAUXVAL)
+#  if defined(HAVE_GETAUXVAL) || defined(HAVE_ELF_AUX_INFO)
 #    include <sys/auxv.h>
 #    define HWCAP_RV(letter) (1ul << ((letter) - 'A'))
 #  endif
@@ -275,6 +274,10 @@ SIMDDetect::SIMDDetect() {
 #if defined(HAVE_RVV)
 #  if defined(HAVE_GETAUXVAL)
   const unsigned long hwcap = getauxval(AT_HWCAP);
+  rvv_available_ = !!(hwcap & HWCAP_RV('V'));
+#  elif defined(HAVE_ELF_AUX_INFO)
+  unsigned long hwcap = 0;
+  elf_aux_info(AT_HWCAP, &hwcap, sizeof hwcap);
   rvv_available_ = !!(hwcap & HWCAP_RV('V'));
 #  endif
 #endif

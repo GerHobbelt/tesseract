@@ -70,6 +70,8 @@ Classify::Classify()
                     params())
     , DOUBLE_MEMBER(classify_max_certainty_margin, 5.5,
                     "Veto difference between classifier certainties", params())
+    , BOOL_MEMBER(classify_cp_dq_bad_height, true,
+                    "Disqualify matches if height is very bad, rather than just applying classify_class_pruner_multiplier.", params())
     , BOOL_MEMBER(tess_cn_matching, 0, "Character Normalized Matching", params())
     , BOOL_MEMBER(tess_bn_matching, 0, "Baseline Normalized Matching", params())
     , BOOL_MEMBER(classify_enable_adaptive_matcher, 1, "Enable adaptive classifier", params())

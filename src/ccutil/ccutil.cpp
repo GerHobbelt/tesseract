@@ -278,7 +278,7 @@ int CCUtil::main_setup(const std::string &argv0, const std::string &output_image
  * @param argv0 argument to be considered as the data directory path.
  * @return The path to the tessdata directory or current directory.
  */
-std::filesystem::path find_data_path(const std::string &argv0) {
+static std::filesystem::path find_data_path(const std::string &argv0) {
   // If argv0 is set, always use it even if it is not a valid directory
   if (!argv0.empty()) {
     std::filesystem::path path(argv0);
