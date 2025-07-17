@@ -51,7 +51,7 @@
 #include "global_params.h"
 #include "pixProcessing.h" 
 
-const char *const kBackUpConfigFile = "tempconfigdata.config";
+//const char *const kBackUpConfigFile = "tempconfigdata.config";
 
 #if !DISABLED_LEGACY_ENGINE
 // Min believable x-height for any text when refitting as a fraction of
@@ -128,6 +128,8 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
                                   const char *word_config, int pass) {
   if (word_config != nullptr) {
     if (word_box.major_overlap(target_word_box)) {
+      TODO = take_snapshot;
+
       if (backup_config_file_ == nullptr) {
         backup_config_file_ = kBackUpConfigFile;
         {
@@ -143,6 +145,8 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
         }
       }
     } else {
+      TODO = reset_to_snapshot;
+
       if (backup_config_file_ != nullptr) {
         StdioConfigReader reader(backup_config_file_);
         ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);

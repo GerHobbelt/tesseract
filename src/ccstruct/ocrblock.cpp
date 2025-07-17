@@ -225,7 +225,7 @@ BLOCK &BLOCK::operator=( // assignment
     const BLOCK &source  // from this
 ) {
   if (this != &source) {
-  this->ELIST<BLOCK>::LINK::operator=(source);
+    this->ELIST<BLOCK>::LINK::operator=(source);
     pdblk = source.pdblk;
     proportional = source.proportional;
     kerning = source.kerning;
@@ -249,7 +249,7 @@ BLOCK &BLOCK::operator=( // assignment
 BLOCK::BLOCK(const BLOCK &source) {
   // same implementation as assignment operator.
   if (this != &source) {
-    this->ELIST_LINK::operator=(source);
+    this->ELIST<BLOCK>::LINK::operator=(source);
     pdblk = source.pdblk;
     proportional = source.proportional;
     kerning = source.kerning;
