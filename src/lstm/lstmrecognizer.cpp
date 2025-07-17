@@ -243,11 +243,11 @@ bool LSTMRecognizer::LoadDictionary(const ParamsVectorSet &params, const std::st
                                     TessdataManager *mgr) {
   delete dict_;
   dict_ = new Dict(&tesseract_);
-  ParamsVectors *params = tesseract_.params();
-  dict_->user_words_file.ResetToDefault(params);
-  dict_->user_words_suffix.ResetToDefault(params);
-  dict_->user_patterns_file.ResetToDefault(params);
-  dict_->user_patterns_suffix.ResetToDefault(params);
+  ParamsVector &params = tesseract_.params();
+  dict_->user_words_file.ResetFrom(params);
+  dict_->user_words_suffix.ResetFrom(params);
+  dict_->user_patterns_file.ResetFrom(params);
+  dict_->user_patterns_suffix.ResetFrom(params);
   dict_->SetupForLoad(Dict::GlobalDawgCache());
   dict_->LoadLSTM(lang, mgr);
   if (dict_->FinishLoad()) {

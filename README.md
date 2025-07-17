@@ -145,12 +145,35 @@ Examples can be found in the [documentation](https://tesseract-ocr.github.io/tes
 
 ## Tips and Tricks
 
-1-	For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
+1. For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
 image with the word oriented in a way that makes the words horizontal. This helps prevent errors
 sometimes. 
-2-	If you are running an image with just one line and it is not recognized, try running again with different psm mode setting, it should
+2. If you are running an image with just one line and it is not recognized, try running again with different psm mode setting, it should
 output the right words.
-3- Do not run an image with no words on it as it will sometimes stall the system.
+3. Do not run an image with no words on it as it will sometimes stall the system.
+
+
+## Server (TODO / PLANNED)
+
+The time to initialise tesseract can be significant if you have a lot of
+files to process, so tesseractCLI supports a "server" mode where a background
+process provides a way to reuse a single tesseract instance to convert
+multiple documents.
+
+This works via a Unix domain socket.  Bear in mind that if another user on
+the same machine can write to the domain socket you use then they can probably
+read your documents by using tesseract, so it's a good idea to create the socket
+in its own directory which only you can read (`chmod 700 DIRECTORY`).
+
+If you specify `-s SOCKETPATH` and a document path and a server isn't running
+for SOCKETPATH then one will be started in the background.  You can also start
+a server explicitly by using `tesseract -l -s SOCKETPATH` first without
+specifying a document.
+
+Currently you can't use `-u` and `-s SOCKETPATH` together, which means when
+using a server you can convert files from paths specified at server startup, but not files from arbitrary
+URLs (i.e. "uploads").
+
 
 ## For developers
 
