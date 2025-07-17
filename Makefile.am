@@ -1680,7 +1680,7 @@ $(LANGDATA_DIR) $(TESSDATA_DIR) $(TESSDATA_BEST_DIR) $(TESSDATA_FAST_DIR):
 
 $(TESTING_DIR)/Arial_Bold_Italic.ttf:
 	curl -sSL -o Arial.exe https://sourceforge.net/projects/corefonts/files/the%20fonts/final/arial32.exe/download
-	cabextract -F Arialbi.TTF -q Arial.exe
+	@CABEXTRACT@ -F Arialbi.TTF -q Arial.exe
 	rm Arial.exe
 	mv Arialbi.TTF $@
 
@@ -1694,7 +1694,7 @@ $(TESTING_DIR)/Lohit-Hindi.ttf:
 
 $(TESTING_DIR)/Times_New_Roman.ttf:
 	curl -sSL -o Times.exe https://sourceforge.net/projects/corefonts/files/the%20fonts/final/times32.exe/download
-	cabextract -F Times.TTF -q Times.exe
+	@CABEXTRACT@ -F Times.TTF -q Times.exe
 	rm Times.exe
 	mv Times.TTF $@
 
@@ -1703,7 +1703,7 @@ $(TESTING_DIR)/UnBatang.ttf:
 
 $(TESTING_DIR)/Verdana.ttf:
 	curl -sSL -o Verdana.exe https://sourceforge.net/projects/corefonts/files/the%20fonts/final/verdan32.exe/download
-	cabextract -F Verdana.TTF -q Verdana.exe
+	@CABEXTRACT@ -F Verdana.TTF -q Verdana.exe
 	rm Verdana.exe
 	mv Verdana.TTF $@
 

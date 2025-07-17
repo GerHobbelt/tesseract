@@ -138,7 +138,7 @@ int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!trainer_configfile.empty()) {
-    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), tesseract::SET_PARAM_CONSTRAINT_NON_INIT_ONLY, api.tesseract().params());
+    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), api.tesseract().params());
   }
   return rv;
 }
