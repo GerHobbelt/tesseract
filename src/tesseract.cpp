@@ -965,13 +965,13 @@ static bool PreloadRenderers(tesseract::TessBaseAPI &api,
         renderers[r].release(); // at the moment insert() is owning
       }
       size_t l = 1;
-#if !defined(NO_ASSERTIONS)
+#if !defined(NDEBUG)
       for (size_t l = renderers.size(); l > 0; --l) {
         if (renderers[l - 1].get() != nullptr)
           break;
       }
+      assert(l == 1);
 #endif
-      ASSERT0(l == 1);
       renderers.resize(l);
     }
   }

@@ -423,9 +423,9 @@ ScrollView::~ScrollView() {
   Update();
 #endif
 
-#if !defined(NO_ASSERTIONS)
+#if !defined(NDEBUG)
   auto &ref = svmap[GetId()];
-  ASSERT0(ref.GetRef() == nullptr);
+  assert(ref.GetRef() == nullptr);
 #endif
 
   delete points_;
