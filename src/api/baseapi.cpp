@@ -229,11 +229,11 @@ TessBaseAPI::~TessBaseAPI() {
 /**
  * Returns the version identifier as a static string. Do not delete.
  */
-const char *TessBaseAPI::Version() {
+const char *TessBaseAPI::Version(void) {
   return TESSERACT_VERSION_STR;
 }
 
-Tesseract& TessBaseAPI::tesseract() const {
+Tesseract& TessBaseAPI::tesseract(void) const {
   if (tesseract_ == nullptr) {
     tesseract_ = new Tesseract();
   }
