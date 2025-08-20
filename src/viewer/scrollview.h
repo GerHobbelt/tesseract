@@ -43,6 +43,7 @@
 #include <mutex>
 #include <list>
 #include <vector>
+#include <bits/std_mutex.h>
 
 namespace tesseract {
 
