@@ -28,6 +28,7 @@
 #define CCUTIL_OCRCLASS_H_
 
 #include <chrono>
+#include <atomic>
 #include <ctime>
 #include <functional>
 
@@ -135,10 +136,10 @@ using PROGRESS_FUNC  = std::function<tesseract_progress_func_t>;
  */
 class ETEXT_DESC { // output header
 public:
-  float progress{0.0}; /// percent complete increasing (0-100)
-  float previous_progress{NAN}; /// internal tracker used by exec_progress_func() et al
+  std::atomic<float> progress{0.0f}; /// percent complete increasing (0-100)
+  std::atomic<float> previous_progress{NAN}; /// internal tracker used by exec_progress_func() et al
 
-  volatile int8_t ocr_alive{0}; /// watchdog flag: ocr engine sets to 1, (async) monitor resets to 0
+  std::atomic<bool> ocr_alive{false}; /// watchdog flag: ocr engine sets to true, (async) monitor resets to false
 
   CANCEL_FUNC cancel{nullptr};  /// returns true to cancel
   PROGRESS_FUNC progress_callback{nullptr};  /// called whenever progress increases. See also PROGRESS_FUNC notes.
@@ -147,7 +148,7 @@ public:
   ///< Time to stop. Expected to be set only by call to set_deadline_msecs().
 
   /// This flag signals tesseract to abort the current operation. It is checked by calling the kick_watchdog_and_check_for_cancel() method.
-  volatile bool abort_the_action{false};
+  std::atomic<bool> abort_the_action{false};
 
   ETEXT_DESC();
 

@@ -96,9 +96,14 @@ class TESS_API TessBaseAPI {
 public:
   TessBaseAPI();
   virtual ~TessBaseAPI();
+
   // Copy constructor and assignment operator are currently unsupported.
   TessBaseAPI(TessBaseAPI const &) = delete;
   TessBaseAPI &operator=(TessBaseAPI const &) = delete;
+
+  // ditto for move constructor and move operator
+  TessBaseAPI(TessBaseAPI &&) = delete;
+  TessBaseAPI &operator=(TessBaseAPI &&) = delete;
 
   /**
    * Returns the version identifier as a static string. Do not delete.
@@ -120,11 +125,19 @@ public:
    * A monitor can be used to
    * - cancel the recognition
    * - receive progress callbacks
+   *
+   * When passing a nullptr argument, the currently registered monitor will
+   * be removed and the default tesseract monitor will be (re)registered
+   * instead (`default_minimal_monitor_`).
    */
   void RegisterMonitor(ETEXT_DESC *monitor);
-  
+
   ETEXT_DESC &Monitor();
   const ETEXT_DESC &Monitor() const;
+
+  ETEXT_DESC &DefaultMonitor() {
+    return default_minimal_monitor_;
+  }
 
   /// Note the given command (argv[] set as vector) for later reporting
   /// in the diagnostics output as part of the HTML log heading.
