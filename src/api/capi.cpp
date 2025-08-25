@@ -20,7 +20,7 @@
 #include <tesseract/capi.h>
 
 
-const char *TessVersion() {
+const char *TessVersion(void) {
   return TessBaseAPI::Version();
 }
 
@@ -136,7 +136,7 @@ int TessResultRendererImageNum(TessResultRenderer *renderer) {
   return renderer->imagenum();
 }
 
-TessBaseAPI *TessBaseAPICreate() {
+TessBaseAPI *TessBaseAPICreate(void) {
   return new TessBaseAPI;
 }
 
@@ -697,7 +697,7 @@ float TessChoiceIteratorConfidence(const TessChoiceIterator *handle) {
   return handle->Confidence();
 }
 
-ETEXT_DESC *TessMonitorCreate() {
+ETEXT_DESC *TessMonitorCreate(void) {
   return new ETEXT_DESC();
 }
 
