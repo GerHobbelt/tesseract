@@ -15,21 +15,26 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "networkio.h"
+
 #include <cfloat> // for FLT_MAX
 #include <cmath>
 
 #include <leptonica/allheaders.h>
+
 #include "functions.h"
 #include "statistc.h"
 #include "recodebeam.h"
-#include "tprintf.h"
+#include "global_params.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 
 #if 0
 // Minimum value to output for certainty.
-static const float kMinCertainty = -25.0f;
+static const float kMinCertainty = -20.0f;
 // Probability corresponding to kMinCertainty.
 static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
 #endif
@@ -230,6 +235,7 @@ void NetworkIO::Copy2DImage(int batch, Image pix, float black, float contrast, T
   int target_width = stride_map_.Size(FD_WIDTH);
   int num_features = NumFeatures();
   bool color = num_features == 3;
+  float inv_contrast = 1.0f / contrast;
   if (width > target_width) {
     width = target_width;
   }
@@ -242,11 +248,11 @@ void NetworkIO::Copy2DImage(int batch, Image pix, float black, float contrast, T
           int f = 0;
           for (int c = COLOR_RED; c <= COLOR_BLUE; ++c) {
             int pixel = GET_DATA_BYTE(line + x, c);
-            SetPixel(t, f++, pixel, black, contrast);
+            SetPixel(t, f++, pixel, black, inv_contrast);
           }
         } else {
           int pixel = GET_DATA_BYTE(line, x);
-          SetPixel(t, 0, pixel, black, contrast);
+          SetPixel(t, 0, pixel, black, inv_contrast);
         }
       }
     }
@@ -270,6 +276,7 @@ void NetworkIO::Copy1DGreyImage(int batch, Image pix, float black, float contras
   index.AddOffset(batch, FD_BATCH);
   int t = index.t();
   int target_width = stride_map_.Size(FD_WIDTH);
+  float inv_contrast = 1.0f / contrast;
   if (width > target_width) {
     width = target_width;
   }
@@ -278,7 +285,7 @@ void NetworkIO::Copy1DGreyImage(int batch, Image pix, float black, float contras
     for (int y = 0; y < height; ++y) {
       uint32_t *line = pixGetData(pix) + wpl * y;
       int pixel = GET_DATA_BYTE(line, x);
-      SetPixel(t, y, pixel, black, contrast);
+      SetPixel(t, y, pixel, black, inv_contrast);
     }
   }
   for (; x < target_width; ++x) {
@@ -293,8 +300,9 @@ void NetworkIO::Copy1DGreyImage(int batch, Image pix, float black, float contras
 // pixel: the value of the pixel from the image (in one channel)
 // black: the pixel value to map to the lowest of the range of *this
 // contrast: the range of pixel values to stretch to half the range of *this.
-void NetworkIO::SetPixel(int t, int f, int pixel, float black, float contrast) {
-  float float_pixel = (pixel - black) / contrast - 1.0f;
+// inv_contrast: one over the contrast, to save a divide
+void NetworkIO::SetPixel(int t, int f, int pixel, float black, float inv_contrast) {
+  float float_pixel = (pixel - black) * inv_contrast - 1.0f;
   if (int_mode_) {
     i_[t][f] = ClipToRange<int>(IntCastRounded((INT8_MAX + 1) * float_pixel), -INT8_MAX, INT8_MAX);
   } else {
@@ -423,7 +431,11 @@ void NetworkIO::Randomize(int t, int offset, int num_features, TRand *randomizer
   if (int_mode_) {
     int8_t *line = i_[t] + offset;
     for (int i = 0; i < num_features; ++i) {
+#if 01
       line[i] = IntCastRounded(randomizer->SignedRand(INT8_MAX));
+#else
+      line[i] = 0; 
+#endif
     }
   } else {
     // float mode.
@@ -585,7 +597,7 @@ void NetworkIO::EnsureBestLabel(int t, int label) {
 /* static */
 float NetworkIO::ProbToCertainty(float prob) {
 	// Probability corresponding to kMinCertainty.
-#if 0
+#if 01
 	static const float kMinProb = std::exp(RecodeBeamSearch::kMinCertainty);
 	return prob > kMinProb ? std::log(prob) : RecodeBeamSearch::kMinCertainty;
 #else

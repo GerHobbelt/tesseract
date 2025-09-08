@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 // General Notice:
 // 
 // This is not about whether the compiler is optimizing **the rest of your code using FMA instructions**.

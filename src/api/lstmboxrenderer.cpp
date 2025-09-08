@@ -16,9 +16,11 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
+#include "helpers.h"        // for copy_string
 #include "tesseractclass.h" // for Tesseract
 
 
@@ -38,7 +40,7 @@ static void AddBoxToLSTM(int right, int bottom, int top, int image_height, int p
 }
 
 char *TessBaseAPI::GetLSTMBoxText(int page_number = 0) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(nullptr) < 0)) {
+  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
@@ -83,10 +85,8 @@ char *TessBaseAPI::GetLSTMBoxText(int page_number = 0) {
     AddBoxToLSTM(right, bottom, top, image_height_, page_number, lstm_box_str);
     lstm_box_str += "\n"; // end of PAGE
   }
-  char *ret = new char[lstm_box_str.length() + 1];
-  strcpy(ret, lstm_box_str.c_str());
   delete res_it;
-  return ret;
+  return copy_string(lstm_box_str);
 }
 
 /**********************************************************************

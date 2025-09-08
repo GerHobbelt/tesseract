@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cctype>
 #include <climits> // for CHAR_BIT
@@ -164,7 +162,8 @@ static double streamtofloat(FILE *s) {
       k *= 10;
     }
   }
-  double f = v + static_cast<double>(w) / k;
+  // warning C5219 : implicit conversion from 'uint64_t' to 'double', possible loss of data
+  double f = double(v) + double(w) / double(k);
   if (c == 'e' || c == 'E') {
     c = fgetc(s);
     int expsign = 1;

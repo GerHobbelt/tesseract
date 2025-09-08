@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "intsimdmatrix.h"
 
 // General Notice:
@@ -395,7 +397,6 @@ static void matrixDotVector(int dim1, int dim2, const int8_t *wi, const TFloat *
     output += group_size;
   }
   group_size /= 2;
-  w_step /= 2;
 
   if (output + group_size <= rounded_num_out) {
     PartialMatrixDotVector8(wi, scales, u, rounded_num_in, v);

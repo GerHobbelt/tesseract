@@ -20,7 +20,7 @@
 #define PICOFEAT_H
 
 #include "ocrfeatures.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

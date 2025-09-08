@@ -17,11 +17,8 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include <tesseract/debugheap.h>
 #include <tesseract/fmt-support.h>
 
 #include "pgedit.h"
@@ -36,6 +33,7 @@
 #include "tesseractclass.h"
 #include "tordmain.h"
 #include "werdit.h"
+#include "global_params.h"
 
 #include <cctype>
 #include <cmath>
@@ -230,10 +228,6 @@ auto fmt::formatter<CMD_EVENTS>::format(CMD_EVENTS c, format_context &ctx) const
 } // namespace fmt
 
 namespace tesseract {
-
-static inline auto format_as(CMD_EVENTS e) {
-  return fmt::underlying(e);
-}
 
 enum ColorationMode {
   CM_RAINBOW,
@@ -494,7 +488,6 @@ void Tesseract::do_re_display(PAGE_RES *page_res, bool (tesseract::Tesseract::*w
     word_dumper(&pr_it);
   }
 
-
   image_win->Brush(Diagnostics::NONE);
   PAGE_RES_IT pr_it(page_res);
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
@@ -588,7 +581,7 @@ bool Tesseract::process_cmd_win_event( // UI command semantics
     case SHOW_SMALLCAPS_CMD_EVENT:
     case SHOW_DROPCAPS_CMD_EVENT:
       if (!recog_done) {
-        recog_all_words(current_page_res, nullptr, nullptr, nullptr, 0);
+        (void)recog_all_words(current_page_res, nullptr, nullptr, 0);
         recog_done = true;
       }
       break;
@@ -812,11 +805,11 @@ void Tesseract::process_image_event( // action in image win
  *
  * Process the whole image, but load word_config_ for the selected word(s).
  */
-void Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
+bool Tesseract::debug_word(PAGE_RES *page_res, const TBOX &selection_box) {
 #  if !DISABLED_LEGACY_ENGINE
   ResetAdaptiveClassifier();
 #  endif
-  recog_all_words(page_res, nullptr, &selection_box, word_config_.c_str(), 0);
+  return recog_all_words(page_res, &selection_box, word_config_.c_str(), 0);
 }
 
 /**********************************************************************
@@ -853,7 +846,7 @@ bool Tesseract::word_bln_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   if (word_res->chopped_word == nullptr) {
     // Setup word normalization parameters.
-    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, pr_it->row()->row, pr_it->block()->block);
   }
@@ -879,9 +872,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   WERD *word = word_res->word;
   TBOX word_bb;    // word bounding box
-  int word_height; // ht of word BB
   bool displayed_something = false;
-  float shift; // from bot left
 
   if (color_mode != CM_RAINBOW && word_res->box_word != nullptr) {
 #  if !DISABLED_LEGACY_ENGINE
@@ -1025,13 +1016,14 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   if (text.length() > 0) {
     word_bb = word->bounding_box();
     image_win->Pen(Diagnostics::RED);
-    word_height = word_bb.height();
-    int text_height = 0.50 * word_height;
+    auto word_height = word_bb.height();
+    int text_height = word_height / 2;
     if (text_height > 20) {
       text_height = 20;
     }
     image_win->TextAttributes("Arial", text_height, false, false, false);
-    shift = (word_height < word_bb.width()) ? 0.25 * word_height : 0.0f;
+    // from bot left
+    float shift = (word_height < word_bb.width()) ? 0.25f * word_height : 0.0f;
     image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height, text.c_str());
     if (blame.length() > 0) {
       image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height, blame.c_str());
@@ -1108,7 +1100,7 @@ void Tesseract::blob_feature_display(PAGE_RES *page_res, const TBOX &selection_b
   if (it != nullptr) {
     WERD_RES *word_res = it->word();
     word_res->x_height = it->row()->row->x_height();
-    word_res->SetupForRecognition(unicharset, this, tessedit_ocr_engine_mode, nullptr,
+    word_res->SetupForRecognition(unicharset_, this, tessedit_ocr_engine_mode, nullptr,
                                   classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                   poly_allow_detailed_fx, it->row()->row, it->block()->block);
     TWERD *bln_word = word_res->chopped_word;

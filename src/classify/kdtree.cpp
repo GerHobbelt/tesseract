@@ -18,6 +18,8 @@
 /*-----------------------------------------------------------------------------
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "kdtree.h"
 
 #include <algorithm>

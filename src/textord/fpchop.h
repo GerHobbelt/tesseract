@@ -20,12 +20,12 @@
 #define FPCHOP_H
 
 #include "blobbox.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
 
 namespace tesseract {
 
-class C_OUTLINE_FRAG : public ELIST_LINK {
+class C_OUTLINE_FRAG : public ELIST<C_OUTLINE_FRAG>::LINK {
 public:
   C_OUTLINE_FRAG() { // empty constructor
     steps = nullptr;

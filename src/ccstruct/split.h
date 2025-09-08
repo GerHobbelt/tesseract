@@ -20,7 +20,7 @@
 #define SPLIT_H
 
 #include "blobs.h"  // for EDGEPT, TBLOB, TESSLINE
-#include "params.h" // for BOOL_VAR_H, BoolParam
+#include <tesseract/params.h> // for BOOL_VAR_H, BoolParam
 #include "rect.h"   // for TBOX
 
 #undef min

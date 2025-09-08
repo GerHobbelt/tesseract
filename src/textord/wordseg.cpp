@@ -17,11 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "wordseg.h"
 
@@ -93,6 +89,7 @@ void make_single_word(bool one_blob, TO_ROW_LIST *rows, ROW_LIST *real_rows) {
     word->set_flag(W_EOL, true);
     word->set_flag(W_DONT_CHOP, one_blob);
     word_it.add_after_then_move(word);
+    real_row->recalc_bounding_box();
     row_it.add_after_then_move(real_row);
   }
 }
@@ -471,7 +468,6 @@ int32_t row_words2(   // compute space size
  *
  * Convert a TO_BLOCK to a BLOCK.
  */
-
 void make_real_words(tesseract::Textord *textord,
                      TO_BLOCK *block, // block to do
                      FCOORD rotation  // for drawing

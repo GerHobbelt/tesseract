@@ -22,7 +22,7 @@
 #include "points.h"     // for ICOORD, FCOORD
 #include "scrollview.h" // for ScrollView, Diagnostics::Color
 #include "tesstypes.h"  // for TDimension
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
 
 #include <tesseract/export.h> // for TESS_API, DLLSYM
 
@@ -128,7 +128,7 @@ public:
     }
   }
 
-  TDimension width() const { // how high is it?
+  TDimension width() const { // how wide is it?
     if (!null_box()) {
       return top_right.x() - bot_left.x();
     } else {
@@ -295,11 +295,10 @@ public:
     top_right.set_y(y_max);
   }
 
-  void print() const { // print
-    tprintDebug("Bounding box=(l:{},b:{}->r:{},t:{})\n", left(), bottom(), right(), top());
-  }
-  // Appends the bounding box as (%d,%d)->(%d,%d) to a string.
-  void print_to_str(std::string &str) const;
+  void print() const; // print
+
+  // Appends the bounding box as (%d,%d)->(%d,%d)[w,h] to a string.
+  std::string print_to_str() const;
 
 #if !GRAPHICS_DISABLED
   void plot(                  // use current settings

@@ -18,9 +18,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "baselinedetect.h"
 #include "drawtord.h"
@@ -145,7 +143,7 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
     , BOOL_MEMBER(textord_show_blobs, false, "Display unsorted blobs", ccstruct_->params())
     , BOOL_MEMBER(textord_show_boxes, false, "Display unsorted blobs", ccstruct_->params())
     , INT_MEMBER(textord_max_noise_size, 7, "Pixel size of noise", ccstruct_->params())
-    , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level", ccstruct_->params())
+    , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level; used as an increment (offset) for `debug_baseline_detector_level` for while making the textlines and words inside each block.", ccstruct_->params())
     , DOUBLE_MEMBER(textord_noise_area_ratio, 0.7, "Fraction of bounding box for noise",
                     ccstruct_->params())
     , DOUBLE_MEMBER(textord_initialx_ile, 0.75, "Ile of sizes for xheight guess",
@@ -180,7 +178,7 @@ Textord::Textord(Tesseract* tess, CCStruct *ccstruct)
 void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int width, int height,
                           Image binary_pix, Image thresholds_pix, Image grey_pix, bool use_box_bottoms,
                           BLOBNBOX_LIST *diacritic_blobs, BLOCK_LIST *blocks,
-                          TO_BLOCK_LIST *to_blocks, float &gradient) {
+                          TO_BLOCK_LIST *to_blocks, float *gradient) {
   page_tr_.set_x(width);
   page_tr_.set_y(height);
   if (to_blocks->empty()) {
@@ -224,15 +222,16 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   // Make the rows in the block.
   // Do it the old fashioned way.
   if (PSM_LINE_FIND_ENABLED(pageseg_mode)) {
-    gradient = make_rows(page_tr_, to_blocks);
+    *gradient = make_rows(page_tr_, to_blocks);
   } else if (!PSM_SPARSE(pageseg_mode)) {
     // RAW_LINE, SINGLE_LINE, SINGLE_WORD and SINGLE_CHAR all need a single row.
-    gradient = make_single_row(page_tr_, pageseg_mode != PSM_RAW_LINE, to_block, to_blocks);
+    *gradient = make_single_row(page_tr_, pageseg_mode != PSM_RAW_LINE, to_block, to_blocks);
   } else {
-    gradient = 0.0f;
+    *gradient = 0.0f;
   }
-  int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
-  debug_baseline_detector_level = debug_baseline_detector_level + debug_level_offset;
+  const int debug_level_offset = std::max(0, textord_baseline_debug + 0 /* to implicitly use operator int() on the referenced variable */);
+  int old_level = debug_baseline_detector_level;
+  debug_baseline_detector_level = old_level + debug_level_offset;
   BaselineDetect baseline_detector(reskew, to_blocks);
   baseline_detector.ComputeStraightBaselines(use_box_bottoms);
   baseline_detector.ComputeBaselineSplinesAndXheights(
@@ -240,7 +239,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   // Now make the words in the lines.
   if (PSM_WORD_FIND_ENABLED(pageseg_mode)) {
     // SINGLE_LINE uses the old word maker on the single line.
-    make_words(this, page_tr_, gradient, blocks, to_blocks);
+    make_words(this, page_tr_, *gradient, blocks, to_blocks);
   } else {
     // SINGLE_WORD and SINGLE_CHAR cram all the blobs into a
     // single word, and in SINGLE_CHAR mode, all the outlines
@@ -258,7 +257,7 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
   for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
     b_it.data()->compute_row_margins();
   }
-  debug_baseline_detector_level = debug_baseline_detector_level - debug_level_offset;
+  debug_baseline_detector_level = old_level;
 #if !GRAPHICS_DISABLED
   close_to_win();
 #endif

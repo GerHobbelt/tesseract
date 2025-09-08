@@ -15,10 +15,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 #include <tesseract/baseapi.h>
 #include <tesseract/renderer.h>
 #include <cstring>
@@ -46,15 +43,15 @@ TessResultRenderer::TessResultRenderer(const char *outputbase, const char *exten
   if (strcmp(outputbase, "-") && strcmp(outputbase, "stdout")) {
     std::string outfile = std::string(outputbase) + "." + extension;
 
-  // mupdf-monolith has extra features: automatically create the path
-  // (directories) contained in the `outputbase` path, iff they
-  // don't already exist. (UNIX `mkdir -p` style)
+	// mupdf-monolith has extra features: automatically create the path
+	// (directories) contained in the `outputbase` path, iff they
+	// don't already exist. (UNIX `mkdir -p` style)
 #if defined(HAVE_MUPDF)
-  fz_context *ctx = fz_get_global_context();
-  fz_mkdir_for_file(ctx, outfile.c_str());
-  fout_ = fz_fopen_utf8(ctx, outfile.c_str(), "wb");
+	fz_context *ctx = fz_get_global_context();
+	fz_mkdir_for_file(ctx, outfile.c_str());
+	fout_ = fz_fopen_utf8(ctx, outfile.c_str(), "wb");
 #else
-  fout_ = fopen(outfile.c_str(), "wb");
+	fout_ = fopen(outfile.c_str(), "wb");
 #endif
 
     if (fout_ == nullptr) {
@@ -136,7 +133,7 @@ void TessResultRenderer::AppendData(const char *s, int len) {
   if (!tesseract::Serialize(fout_, s, len)) {
     happy_ = false;
   }
-  fflush(fout_);
+  //fflush(fout_);  -- only slows down performance.
 }
 
 bool TessResultRenderer::BeginDocumentHandler() {

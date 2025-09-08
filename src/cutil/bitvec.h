@@ -52,11 +52,11 @@ static inline void copy_all_bits(BIT_VECTOR source, BIT_VECTOR dest, size_t leng
   }
 }
 
-#define SET_BIT(array, bit) (array[bit / BITSINLONG] |= 1 << (bit & (BITSINLONG - 1)))
+#define SET_BIT(array, bit) (array[(bit) / BITSINLONG] |= 1 << ((bit) & (BITSINLONG - 1)))
 
-#define reset_bit(array, bit) (array[bit / BITSINLONG] &= ~(1 << (bit & (BITSINLONG - 1))))
+#define reset_bit(array, bit) (array[(bit) / BITSINLONG] &= ~(1 << ((bit) & (BITSINLONG - 1))))
 
-#define test_bit(array, bit) (array[bit / BITSINLONG] & (1 << (bit & (BITSINLONG - 1))))
+#define test_bit(array, bit) (array[(bit) / BITSINLONG] & (1 << ((bit) & (BITSINLONG - 1))))
 
 static inline size_t WordsInVectorOfSize(size_t NumBits) {
   return (NumBits + BITSINLONG - 1) / BITSINLONG;

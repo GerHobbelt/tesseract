@@ -11,22 +11,16 @@
 // limitations under the License.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+#include <tesseract/tprintf.h>
 
 #include "ccutil.h"
-#include "winutils.h"
+#include "tesserrstream.h"  // for tesserr
 #include "pathutils.h"
-
-#if defined(_WIN32)
-#  include <io.h> // for _access
-#endif
+#include "helpers.h"
 
 #include <cstdlib>
-#include <cstring> // for std::strrchr
+#include <filesystem> // for std::filesystem
 
 
 namespace tesseract {
@@ -34,11 +28,12 @@ namespace tesseract {
 CCUtil::CCUtil()
     : params_("tesseract")
     , params_collective_({&params_, &GlobalParams()})
-      , INT_INIT_MEMBER(ambigs_debug_level, 0, "Debug level for unichar ambiguities", params())
-      , BOOL_MEMBER(use_ambigs_for_adaption, false,
-                  "Use ambigs for deciding"
-                  " whether to adapt to a character",
-				  params()) {}
+    , INT_MEMBER(ambigs_debug_level, 0, "Debug level for the unichar ambiguities", params())
+    , INT_MEMBER(universal_ambigs_debug_level, 0, "Debug level for loading the universal unichar ambiguities", params())
+    , BOOL_MEMBER(use_ambigs_for_adaption, false, "Use ambigs for deciding whether to adapt to a character", params())
+    , BOOL_MEMBER(debug_datadir_discovery, false, "Show which paths tesseract will inspect while looking for its designated data directory, which contains the traineddata, configs, etc.", params())
+    , STRING_MEMBER(datadir_base_path, "", "The designated tesseract data directory, which contains the traineddata, configs, etc.; setting this variable is one way to help tesseract locate the desired data path. (C++ API, the location of the current tesseract binary/application, the environment variable TESSDATA_PREFIX and current working directory are the other ways) A null/empty path spec means ignore-look-elsewhere for hints to the actual data directory, i.e. go down the afore-mentioned list to find the data path.", params())
+{}
 
 // Destructor.
 // It is defined here, so the compiler can create a single vtable
@@ -46,73 +41,295 @@ CCUtil::CCUtil()
 CCUtil::~CCUtil() = default;
 
 /**
- * @brief CCUtil::main_setup - set location of tessdata and name of image
- *
- * @param argv0 - paths to the directory with language files and config files.
- * An actual value of argv0 is used if not nullptr, otherwise TESSDATA_PREFIX is
- * used if not nullptr, next try to use compiled in -DTESSDATA_PREFIX. If
- * previous is not successful - use current directory.
- * @param basename - name of image
+ * Return `true` when the given directory contains at least one `*traineddata*` file
+ * or is itself named 'tessdata*', i.e. has 'tessdata' as its name or at least
+ * as its prefix.
  */
-void CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename) {
-  if (output_image_basename == "-" /* stdout */)
-    imagebasename = "tesseract-stdio-session";
-  else
-    imagebasename = output_image_basename; /**< name of output/debug image(s) */
-  
-  datadir.clear();
+static bool has_traineddata_files(const std::string &datadir) {
+  if (!fs::exists(datadir))
+    return false;
+  if (!fs::is_directory(datadir) || fs::is_symlink(datadir))
+    return false;
 
-  const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+  // the first language we hit is makes this directory 'viable':
+  for (const std::string &lang : languages_to_load) {
+    auto fname = datadir + "/" + lang + ".traineddata";
+    std::error_code ec;     // ensure the file_size() check doesn't throw.
+    tprintDebug("testing for traineddata file: inspecting {}\n", fname);
+    if (fs::exists(fname) && fs::file_size(fname, ec) > 10240) {
+      return true;
+    }
+  }
 
-  if (!argv0.empty()) {
-    /* Use tessdata prefix from the command line. */
-    datadir = argv0;
-  } else if (tessdata_prefix) {
-    /* Use tessdata prefix from the environment. */
-    datadir = tessdata_prefix;
-#if defined(_WIN32)
-  } 
-  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
-    /* Look for tessdata in directory of executable. */
-    wchar_t path[MAX_PATH];
-    DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
-    if (length > 0 && length < MAX_PATH) {
-      wchar_t *separator = std::wcsrchr(path, '\\');
-      if (separator != nullptr) {
-        *separator = '\0';
-        std::string subdir = winutils::Utf16ToUtf8(path);
-        subdir += "/tessdata";
-        if (_access(subdir.c_str(), 0) == 0) {
-          datadir = subdir;
+  // for (const fs::directory_entry &dir_entry : fs::recursive_directory_iterator(datadir)) {
+  for (const fs::directory_entry &dir_entry : fs::directory_iterator(datadir)) {
+    tprintDebug("testing for traineddata file: inspecting {}\n", dir_entry.path().string());
+
+    // Don't use string.ends_with() as we wish to support traineddata archive bundles as well. (future music)
+    auto fname = dir_entry.path().filename().string();
+    std::error_code ec; // ensure the file_size() check doesn't throw.
+    if (/* dir_entry.is_regular_file() && */ fname.find(".traineddata") != std::string::npos && dir_entry.file_size(ec) > 10240) {
+      if (languages_to_load.empty()) {
+        return true;
+      } else {
+        // the first language we hit is makes this directory 'viable':
+        for (const std::string &lang : languages_to_load) {
+          if (fname.starts_with(lang + ".")) {
+            return true;
+          }
         }
       }
     }
-#endif /* _WIN32 */
+  }
+  return false;
+}
+
+/**
+ * Return `true` when the path is a viable /tessdata/ directory tree.
+ *
+ * The path is deemed viable when it contains at least one `*traineddata*` file
+ * or is itself named 'tessdata*', i.e. has 'tessdata' as its name or at least
+ * as its prefix.
+ *
+ * When the path is found viable, it MAY have been modified to point at the precise
+ * location in the filesystem.
+ */
+static bool is_viable_datapath(std::string &datadir, const std::vector<std::string> &languages_to_load) {
+  if (datadir.empty())
+    return false;
+  if (!fs::exists(datadir))
+    return false;
+  if (!fs::is_directory(datadir) || fs::is_symlink(datadir))
+    return false;
+
+  std::string subdir = datadir;
+  if (subdir.ends_with('/')) {
+    (void)subdir.pop_back();
+  }
+  std::string subdir2 = subdir + "/tessdata";
+  if (is_viable_datapath(subdir2, languages_to_load)) {
+    datadir = subdir2;
+    return true;
+  }
+  if (has_traineddata_files(subdir, languages_to_load)) {
+    datadir = subdir;
+    return true;
+  }
+  return false;
+}
+
+static void report_datadir_attempt(std::vector<std::string>& attempts, std::vector<std::filesystem::path>& canonical_attempts, const char* error_msg = nullptr) {
+  std::ostringstream msg;
+  if (error_msg) {
+    msg << error_msg;
+    msg << "\n  tesseract was looking for (and in) these directories, in order:\n";
+  } else {
+    msg << "Determining the tesseract data directory. tesseract is going to look for (and in) these directories, in order:\n";
   }
 
-  // datadir may still be empty:
-  if (datadir.empty() || _access(datadir.c_str(), 0) != 0) {
+  for (int i = 0, l = attempts.size(), c_l = canonical_attempts.size(); i < l; i++) {
+    std::string testdir = attempts[i];
+    unixify_path(testdir);
+    if (i < c_l) {
+      auto canon = canonical_attempts[i];
+      std::string canon_testdir = canon.string();
+      unixify_path(canon_testdir);
+
+      msg << fmt::format("  {}    --> {}\n", testdir, canon_testdir);
+    } else {
+      auto canon = std::filesystem::weakly_canonical(testdir);
+      std::string canon_testdir = canon.string();
+      unixify_path(canon_testdir);
+
+      msg << fmt::format("  {}    --> {}\n", testdir, canon_testdir);
+    }
+  }
+
+  const std::string &s = msg.str();
+  if (!error_msg) {
+    tprintDebug("{}", s);
+  } else {
+    tprintError("ERROR: {}", s);
+  }
+}
+
+static bool determine_datadir(std::string &datadir, const std::string &argv0, const std::string &primary, const std::vector<std::string> &languages_to_load, bool debug_datadir_discovery) {
+  datadir.clear();
+
+  std::vector<std::string> attempts;
+
+  const char *tessdata_prefix = getenv("TESSDATA_PREFIX");
+
+  // Ignore TESSDATA_PREFIX if there is no matching filesystem entry.
+  if (tessdata_prefix != nullptr && !std::filesystem::exists(tessdata_prefix)) {
+    tprintWarn("Environment variable TESSDATA_PREFIX's value '{}' is not a directory that exists in your filesystem; tesseract will ignore it.\n", tessdata_prefix);
+    tessdata_prefix = nullptr;
+  }
+
+  if (!primary.empty()) {
+    /* Use specified primary directory override. */
+    attempts.push_back(primary);
+  }
+
+  if (!argv0.empty()) {
+    /* Use tessdata prefix from the command line. */
+    attempts.push_back(argv0);
+    std::filesystem::path p(argv0);
+    attempts.push_back(p.parent_path().string());    // = basedir(argv0)
+  }
+
+  if (tessdata_prefix && *tessdata_prefix) {
+    /* Use tessdata prefix from the environment. */
+    std::string testdir = tessdata_prefix;
+    attempts.push_back(testdir);
+  }
+
+#if defined(_WIN32)
+  if (datadir.empty() || !std::filesystem::exists(datadir)) {
+    /* Look for tessdata in directory of executable. */
+    wchar_t pth[MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, pth, MAX_PATH);
+    if (length > 0 && length < MAX_PATH) {
+      std::filesystem::path p(pth);
+      attempts.push_back(p.parent_path().string());  // = basedir(executable)
+    }
+  }
+#endif /* _WIN32 */
+
 #if defined(TESSDATA_PREFIX)
+  {
     // Use tessdata prefix which was compiled in.
-    datadir = TESSDATA_PREFIX "/tessdata/";
+    std::string testdir = TESSDATA_PREFIX "/tessdata/";
     // Note that some software (for example conda) patches TESSDATA_PREFIX
     // in the binary, so it might be shorter. Recalculate its length.
-    datadir.resize(std::strlen(datadir.c_str()));
-#else
-    datadir = "./";
-    std::string subdir = datadir;
-    subdir += "/tessdata";
-    if (_access(subdir.c_str(), 0) == 0) {
-      datadir = subdir;
-    }
+    testdir.resize(std::strlen(datadir.c_str()));
+    attempts.push_back(testdir);
+  }
 #endif /* TESSDATA_PREFIX */
+
+  // last resort: check in current working directory
+  attempts.push_back(std::filesystem::current_path().string() + "/tessdata/");
+
+  std::vector<std::filesystem::path> canonical_attempts;
+
+  if (debug_datadir_discovery) {
+    report_datadir_attempt(attempts, canonical_attempts);
+  }
+
+  decltype(languages_to_load) nil{};
+  const auto *setptr = &languages_to_load;
+  for (int state = 1; state >= 0; state--) {
+    // now run through the attempts in order and see which one is the first viable one.
+    for (const std::string &entry : attempts) {
+      auto canon = std::filesystem::weakly_canonical(entry);
+      canonical_attempts.push_back(canon);
+
+      std::string testdir = canon.string();
+      if (is_viable_datapath(testdir, *setptr)) {
+        unixify_path(testdir);
+        // check for missing directory separator
+        if (!testdir.ends_with('/')) {
+          testdir += '/';
+        }
+        datadir = testdir;
+        return true;
+      }
+    }
+
+    // when we have specified a list of preferred languages and haven't found a viable datadir yet, then we check again and pick the first *generically* viable datadir instead:
+    setptr = &nil;
+  }
+
+  report_datadir_attempt(attempts, canonical_attempts, "failed to locate the mandatory tesseract data directory containing the traineddata language model files.");
+  return false;
+}
+
+int CCUtil::main_setup(const std::string &argv0, const std::string &output_image_basename, const std::vector<std::string> &languages_to_load) {
+  if (imagebasename_.empty()) {
+    if (output_image_basename == "-" /* stdout */)
+      imagebasename_ = "tesseract-stdio-session";
+    else
+      imagebasename_ = output_image_basename; /**< name of output/debug image(s) */
+  }
+
+  if (!determine_datadir(datadir_, argv0, this->datadir_base_path.value(), languages_to_load, this->debug_datadir_discovery)) {
+    ASSERT_HOST(datadir_.empty());
+    return -1;
   }
 
   // check for missing directory separator
-  const char lastchar = datadir.back();
-  if (lastchar != '/' && lastchar != '\\') {
-    datadir += '/';
+  ASSERT_HOST(datadir_.ends_with('/'));
+  return 0;
+}
+
+/**
+ * @brief Finds the path to the tessdata directory.
+ *
+ * This function determines the location of the tessdata directory based on the
+ * following order of precedence:
+ * 1. If `argv0` is provided, use it.
+ * 2. If `TESSDATA_PREFIX` environment variable is set and the path exists, use
+ *    it.
+ * 3. On Windows, check for a "tessdata" directory in the executable's directory
+ *    and use it.
+ * 4. If `TESSDATA_PREFIX` is defined at compile time, use it.
+ * 5. Otherwise, use the current working directory.
+ *
+ * @param argv0 argument to be considered as the data directory path.
+ * @return The path to the tessdata directory or current directory.
+ */
+static std::filesystem::path find_data_path(const std::string &argv0) {
+  // If argv0 is set, always use it even if it is not a valid directory
+  if (!argv0.empty()) {
+    std::filesystem::path path(argv0);
+    if (!std::filesystem::is_directory(path)) {
+      tprintWarn("(tessdata): '{}' is not a valid directory.\n", argv0);
+    }
+    return path;
   }
+
+  // Check environment variable if argv0 is not specified
+  if (const char *tessdata_prefix = std::getenv("TESSDATA_PREFIX")) {
+    std::filesystem::path path(tessdata_prefix);
+    if (std::filesystem::exists(path)) {
+      return path;
+    } else {
+      tprintWarn("TESSDATA_PREFIX '{}' does not exist, ignoring.\n",
+              tessdata_prefix);
+    }
+  }
+
+#ifdef _WIN32
+  // Windows-specific: check for 'tessdata' not existing in the executable
+  // directory
+  wchar_t path[MAX_PATH];
+  if (DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
+      length > 0 && length < MAX_PATH) {
+    std::filesystem::path exe_path(path);
+    auto tessdata_subdir = exe_path.parent_path() / "tessdata";
+    if (std::filesystem::exists(tessdata_subdir)) {
+      return tessdata_subdir;
+    }
+  }
+#endif
+
+  // Fallback to compile-time or current directory
+#ifdef TESSDATA_PREFIX
+  return std::filesystem::path(TESSDATA_PREFIX) / "tessdata";
+#else
+  return std::filesystem::current_path();
+#endif
+}
+
+
+/**
+ * @brief CCUtil::main_setup - set location of tessdata and name of image
+ *
+ * @param argv0 - paths to the directory with language files and config files.
+ */
+void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
+  imagebasename_ = basename; /**< name of image */
+  datadir_ = find_data_path(argv0);
 }
 
 } // namespace tesseract

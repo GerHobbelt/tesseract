@@ -54,6 +54,8 @@
   a = reverse (reverse (a))
 
 ******************************************************************************/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "oldlist.h"
 
 #include "errcode.h" // for ASSERT_HOST

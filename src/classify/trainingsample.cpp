@@ -13,11 +13,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#define _USE_MATH_DEFINES // for M_PI
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "trainingsample.h"
 

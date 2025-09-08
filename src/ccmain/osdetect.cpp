@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/osdetect.h>
 
 #include "blobs.h"   // for TPOINT, TWERD, TBLOB
@@ -48,18 +50,6 @@ const float kHanRatioInKorean = 0.7;
 const float kHanRatioInJapanese = 0.3;
 
 const float kNonAmbiguousMargin = 1.0;
-
-// General scripts
-static const char *han_script = "Han";
-static const char *latin_script = "Latin";
-static const char *katakana_script = "Katakana";
-static const char *hiragana_script = "Hiragana";
-static const char *hangul_script = "Hangul";
-
-// Pseudo-scripts Name
-const char *ScriptDetector::korean_script_ = "Korean";
-const char *ScriptDetector::japanese_script_ = "Japanese";
-const char *ScriptDetector::fraktur_script_ = "Fraktur";
 
 void OSResults::update_best_orientation() {
   float first = orientations[0];
@@ -173,14 +163,19 @@ void Tesseract::remove_nontext_regions(BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blo
   }
 
   line_finder_.FindAndRemoveLines(resolution, pix, &vertical_x, &vertical_y, nullptr, &v_lines, &h_lines);
-  AddPixDebugPage(pix, "Removing nontext regions: after FindAndRemoveLines : result");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(pix, "Removing non-text regions: after FindAndRemoveLines : result");
+  }
   Image im_pix = image_finder_.FindImages(pix);
-  AddPixDebugPage(im_pix, "Removing nontext regions: after FindAndRemoveLines : mask or image on-text) areas");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(im_pix, "Removing non-text regions: after FindAndRemoveLines : mask or image on-text) areas");
+  }
   if (im_pix != nullptr) {
     pixSubtract(pix, pix, im_pix);
-    im_pix.destroy();
   }
-  AddPixDebugPage(pix, "Removing nontext regions: after FindImages + Subtract : result");
+  if (dump_osdetect_process_images) {
+    AddPixDebugPage(pix, "Removing non-text regions: after FindImages + Subtract : result");
+  }
 
   mutable_textord()->find_components(pix_binary(), blocks, to_blocks);
 }
@@ -284,7 +279,7 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
     osr = &osr_;
   }
 
-  osr->unicharset = &this->unicharset;
+  osr->unicharset = &this->unicharset_;
   OrientationDetector o(allowed_scripts, osr);
   ScriptDetector s(allowed_scripts, osr, this);
 
@@ -391,9 +386,8 @@ bool OrientationDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
         for (choice_it.mark_cycle_pt(); !choice_it.cycled_list() && choice == nullptr;
              choice_it.forward()) {
           int choice_script = choice_it.data()->script_id();
-          unsigned s = 0;
-          for (s = 0; s < allowed_scripts_->size(); ++s) {
-            if ((*allowed_scripts_)[s] == choice_script) {
+          for (auto script : *allowed_scripts_) {
+            if (script == choice_script) {
               choice = choice_it.data();
               break;
             }
@@ -456,14 +450,16 @@ ScriptDetector::ScriptDetector(const std::vector<int> *allowed_scripts, OSResult
   osr_ = osr;
   tess_ = tess;
   allowed_scripts_ = allowed_scripts;
-  katakana_id_ = tess_->unicharset.add_script(katakana_script);
-  hiragana_id_ = tess_->unicharset.add_script(hiragana_script);
-  han_id_ = tess_->unicharset.add_script(han_script);
-  hangul_id_ = tess_->unicharset.add_script(hangul_script);
-  japanese_id_ = tess_->unicharset.add_script(japanese_script_);
-  korean_id_ = tess_->unicharset.add_script(korean_script_);
-  latin_id_ = tess_->unicharset.add_script(latin_script);
-  fraktur_id_ = tess_->unicharset.add_script(fraktur_script_);
+  // General scripts
+  katakana_id_ = tess_->unicharset_.add_script("Katakana");
+  hiragana_id_ = tess_->unicharset_.add_script("Hiragana");
+  han_id_ = tess_->unicharset_.add_script("Han");
+  hangul_id_ = tess_->unicharset_.add_script("Hangul");
+  latin_id_ = tess_->unicharset_.add_script("Latin");
+  // Pseudo-scripts
+  fraktur_id_ = tess_->unicharset_.add_script("Fraktur");
+  japanese_id_ = tess_->unicharset_.add_script("Japanese");
+  korean_id_ = tess_->unicharset_.add_script("Korean");
 }
 
 
@@ -507,7 +503,7 @@ void ScriptDetector::detect_blob(BLOB_CHOICE_LIST *scores) {
       }
       done[id] = true;
 
-      const char *unichar = tess_->unicharset.id_to_unichar(choice->unichar_id());
+      const char *unichar = tess_->unicharset_.id_to_unichar(choice->unichar_id());
       // Save data from the first match
       if (prev_score < 0) {
         prev_score = -choice->certainty();

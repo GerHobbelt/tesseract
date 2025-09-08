@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "paragraphs.h"
 
 #include "helpers.h"             // for UpdateRange, ClipToRange
@@ -31,7 +33,8 @@
 #include "ratngs.h"              // for WERD_CHOICE
 #include "rect.h"                // for TBOX
 #include "statistc.h"            // for STATS
-#include "tprintf.h"             // for tprintf
+#include "tesserrstream.h"       // for tesserr
+#include <tesseract/tprintf.h>             // for tprintf
 #include "unicharset.h"          // for UNICHARSET
 #include "werd.h"                // for WERD, W_REP_CHAR
 #include "tesseractclass.h"
@@ -122,6 +125,8 @@ static void PrintTable(const std::vector<std::vector<std::string>> &rows, const 
     linewidth += max_col_width;
   }
 
+  TPrintGroupLinesTillEndOfScope push;
+
   linewidth += max_col_widths.size() * strlen(colsep);
   for (const auto &row : rows) {
     std::string msg;
@@ -175,27 +180,31 @@ static void PrintDetectorState(const ParagraphTheory &theory,
     rows[i].AppendDebugInfo(theory, row);
     row.push_back(RtlEmbed(ri.text, !ri.ltr));
   }
-  PrintTable(output, " ");
+  PrintTable(output, "\t");
 
   tprintDebug("Active Paragraph Models:\n");
   unsigned m = 0;
   for (const auto &model : theory.models()) {
     tprintDebug(" {}: {}\n", ++m, model->ToString());
   }
+  if (m == 0) {
+    tprintDebug(" <none>\n");
+  }
 }
 
-static void DebugDump(bool should_print, const char *phase, const ParagraphTheory &theory,
+static void DebugDump(Tesseract &tess, const char *phase,
+                      const ParagraphTheory &theory,
                       const std::vector<RowScratchRegisters> &rows) {
-  if (!should_print) {
-    return;
-  }
-  tprintDebug("# {}\n", phase);
+  int dbg_section_level = tess.GetPixDebugSectionLevel();
+
+  tprintDebug("{} {}\n", std::string(std::max(1, dbg_section_level + 1), '#'), phase);
   PrintDetectorState(theory, rows);
 }
 
 // Print out the text for rows[row_start, row_end)
 static void PrintRowRange(const std::vector<RowScratchRegisters> &rows, int row_start,
                           int row_end) {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("======================================\n");
   for (int row = row_start; row < row_end; row++) {
     tprintDebug("{}\n", rows[row].ri_->text.c_str());
@@ -2045,13 +2054,13 @@ static void ModelStrongEvidence(int debug_level, std::vector<RowScratchRegisters
 //       clues.
 //   (3) Form models for any sequence of start + continuation lines.
 //   (4) Smear the paragraph models to cover surrounding text.
-static void StrongEvidenceClassify(int debug_level, std::vector<RowScratchRegisters> *rows,
+static void StrongEvidenceClassify(Tesseract &tess, std::vector<RowScratchRegisters> *rows,
                                    int row_start, int row_end, ParagraphTheory *theory) {
-  if (!AcceptableRowArgs(debug_level, 2, __func__, rows, row_start, row_end)) {
+  if (!AcceptableRowArgs(tess.paragraph_debug_level, 2, __func__, rows, row_start, row_end)) {
     return;
   }
 
-  if (debug_level > 1) {
+  if (tess.paragraph_debug_level > 1) {
     tprintDebug("#############################################\n");
     tprintDebug("# StrongEvidenceClassify( rows[{}:{}) )\n", row_start, row_end);
     tprintDebug("#############################################\n");
@@ -2060,12 +2069,14 @@ static void StrongEvidenceClassify(int debug_level, std::vector<RowScratchRegist
   RecomputeMarginsAndClearHypotheses(rows, row_start, row_end, 10);
   MarkStrongEvidence(rows, row_start, row_end);
 
-  DebugDump(debug_level > 2, "Initial strong signals.", *theory, *rows);
+  if (tess.paragraph_debug_level > 2)
+    DebugDump(tess, "Initial strong signals.", *theory, *rows);
 
   // Create paragraph models.
-  ModelStrongEvidence(debug_level, rows, row_start, row_end, false, theory);
+  ModelStrongEvidence(tess.paragraph_debug_level, rows, row_start, row_end, false, theory);
 
-  DebugDump(debug_level > 2, "Unsmeared hypotheses.s.", *theory, *rows);
+  if (tess.paragraph_debug_level > 2)
+    DebugDump(tess, "Unsmeared hypotheses.s.", *theory, *rows);
 
   // At this point, some rows are marked up as paragraphs with model numbers,
   // and some rows are marked up as either LT_START or LT_BODY.  Now let's
@@ -2190,7 +2201,9 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
   rows[row].StrongHypotheses(&row_models);
 
   for (auto &row_model : row_models) {
-    bool all_starts = rows[row].GetLineType();
+    // TODO: GetLineType() produces one of {LT_UNKNOWN, LT_MULTIPLE, LT_START, LT_BODY} and hence `all_starts` is always `true` here.
+    auto lt = rows[row].GetLineType();
+    bool all_starts = (lt == LT_START);
     int run_length = 1;
     bool continues = true;
     for (int i = row - 1; i >= 0 && continues; i--) {
@@ -2208,6 +2221,7 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
         case LT_UNKNOWN: // explicit fall-through
         default:
           continues = false;
+          break;
       }
     }
     continues = true;
@@ -2226,6 +2240,7 @@ static bool RowIsStranded(const std::vector<RowScratchRegisters> &rows, int row)
         case LT_UNKNOWN: // explicit fall-through
         default:
           continues = false;
+          break;
       }
     }
     if (run_length > 2 || (!all_starts && run_length > 1)) {
@@ -2344,8 +2359,8 @@ void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
   //   be a paragraph of its own.
   SeparateSimpleLeaderLines(&rows, 0, rows.size(), &theory);
 
-  int debug_level = this->paragraph_debug_level;
-  DebugDump(debug_level > 1, "End of Pass 1", theory, rows);
+  if (paragraph_debug_level > 1)
+    DebugDump(*this, "End of Pass 1", theory, rows);
 
   std::vector<Interval> leftovers;
   LeftoverSegments(rows, &leftovers, 0, rows.size());
@@ -2355,7 +2370,7 @@ void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
     //   followed by two lines that look like body lines, make a paragraph
     //   model for that and see if that model applies throughout the text
     //   (that is, "smear" it).
-    StrongEvidenceClassify(debug_level, &rows, leftover.begin, leftover.end, &theory);
+    StrongEvidenceClassify(*this, &rows, leftover.begin, leftover.end, &theory);
 
     // Pass 2b:
     //   If we had any luck in pass 2a, we got part of the page and didn't
@@ -2368,12 +2383,13 @@ void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
         (leftovers2.size() == 1 && (leftovers2[0].begin != 0 || static_cast<size_t>(leftovers2[0].end) != rows.size()));
     if (pass2a_was_useful) {
       for (auto &leftover2 : leftovers2) {
-        StrongEvidenceClassify(debug_level, &rows, leftover2.begin, leftover2.end, &theory);
+        StrongEvidenceClassify(*this, &rows, leftover2.begin, leftover2.end, &theory);
       }
     }
   }
 
-  DebugDump(debug_level > 1, "End of Pass 2", theory, rows);
+  if (paragraph_debug_level > 1)
+    DebugDump(*this, "End of Pass 2", theory, rows);
 
   // Pass 3:
   //   These are the dregs for which we didn't have enough strong textual
@@ -2381,13 +2397,14 @@ void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
   //   the geometric clues are simple enough that we could just use those.
   LeftoverSegments(rows, &leftovers, 0, rows.size());
   for (auto &leftover : leftovers) {
-    GeometricClassify(debug_level, &rows, leftover.begin, leftover.end, &theory);
+    GeometricClassify(paragraph_debug_level, &rows, leftover.begin, leftover.end, &theory);
   }
 
   // Undo any flush models for which there's little evidence.
-  DowngradeWeakestToCrowns(debug_level, &theory, &rows);
+  DowngradeWeakestToCrowns(paragraph_debug_level, &theory, &rows);
 
-  DebugDump(debug_level > 1, "End of Pass 3", theory, rows);
+  if (paragraph_debug_level > 1)
+    DebugDump(*this, "End of Pass 3", theory, rows);
 
   // Pass 4:
   //   Take everything that's still not marked up well and clear all markings.
@@ -2398,12 +2415,14 @@ void Tesseract::DetectParagraphs(std::vector<RowInfo> *row_infos,
     }
   }
 
-  DebugDump(debug_level > 1, "End of Pass 4", theory, rows);
+  if (paragraph_debug_level > 1)
+    DebugDump(*this, "End of Pass 4", theory, rows);
 
   // Convert all of the unique hypothesis runs to PARAs.
-  ConvertHypothesizedModelRunsToParagraphs(debug_level, rows, row_owners, &theory);
+  ConvertHypothesizedModelRunsToParagraphs(paragraph_debug_level, rows, row_owners, &theory);
 
-  DebugDump(debug_level > 0, "Final Paragraph Segmentation", theory, rows);
+  if (paragraph_debug_level > 0)
+    DebugDump(*this, "Final Paragraph Segmentation", theory, rows);
 
   // Finally, clean up any dangling nullptr row paragraph parents.
   CanonicalizeDetectionResults(row_owners, paragraphs);
@@ -2415,8 +2434,8 @@ static void InitializeTextAndBoxesPreRecognition(const MutableIterator &it, RowI
   // Set up text, lword_text, and rword_text (mostly for debug printing).
   std::string fake_text;
   PageIterator pit(static_cast<const PageIterator &>(it));
-  bool first_word = true;
   if (!pit.Empty(RIL_WORD)) {
+    bool first_word = true;
     do {
       fake_text += "x";
       if (first_word) {
@@ -2500,7 +2519,6 @@ static void InitializeRowInfo(bool after_recognition, const MutableIterator &it,
   info->rword_likely_starts_idea = false;
   info->rword_likely_ends_idea = false;
   info->has_leaders = false;
-  info->ltr = true;
 
   if (!after_recognition) {
     InitializeTextAndBoxesPreRecognition(it, info);
@@ -2626,7 +2644,7 @@ void Tesseract::DetectParagraphs(bool after_text_recognition,
   }
 
   // Now stitch in the row_owners into the rows.
-  row = *block_start;
+  row = *block_start;            // <-- Warning/Note: this statement MAY also alter the tesseract instance reference tracked by the iterator; see also PageIterator::operator=()
   for (auto &row_owner : row_owners) {
     while (!row.PageResIt()->row()) {
       row.Next(RIL_TEXTLINE);

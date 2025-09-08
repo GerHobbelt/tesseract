@@ -17,14 +17,12 @@
  *************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "split.h"
 
 #include "coutln.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <algorithm>
 

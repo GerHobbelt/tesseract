@@ -21,13 +21,10 @@
 ----------------------------------------------------------------------*/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
-#define _USE_MATH_DEFINES // for M_PI
 #include "chop.h"
 #include <cmath> // for M_PI
 #include "outlines.h"

@@ -13,9 +13,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <algorithm>
 
@@ -28,9 +26,11 @@
 #include "intfeaturemap.h"
 #include "intfeaturespace.h"
 #include "shapetable.h"
+#include "tesserrstream.h"  // for tesserr
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
+#include "commandlineflags.h"
 
 namespace tesseract {
 
@@ -590,7 +590,7 @@ void TrainingSampleSet::SetupFontIdMap() {
   // Number of samples for each font_id.
   std::vector<int> font_counts;
   for (auto &sample : samples_) {
-    const int font_id = sample->font_id();
+    const size_t font_id = sample->font_id();
     while (font_id >= font_counts.size()) {
       font_counts.push_back(0);
     }
@@ -606,10 +606,10 @@ void TrainingSampleSet::SetupFontIdMap() {
 // Finds the sample for each font, class pair that has least maximum
 // distance to all the other samples of the same font, class.
 // OrganizeByFontAndClass must have been already called.
-void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool debug) {
+void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map) {
   ASSERT_HOST(font_class_array_ != nullptr);
   IntFeatureDist f_table;
-  if (debug) {
+  if (trainer_debug_level > 0) {
     tprintDebug("Feature table size {}\n", map.sparse_size());
   }
   f_table.Init(&map);
@@ -626,7 +626,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
       if (fcinfo.samples.empty() || (kTestChar >= 0 && c != kTestChar)) {
         fcinfo.canonical_sample = -1;
         fcinfo.canonical_dist = 0.0f;
-        if (debug) {
+        if (trainer_debug_level > 0) {
           tprintDebug("Skipping class {}\n", c);
         }
         continue;
@@ -681,7 +681,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
         worst_s1 = max_s1;
         worst_s2 = max_s2;
       }
-      if (debug) {
+      if (trainer_debug_level > 0) {
         tprintDebug(
             "Found {} samples of class {}={}, font {}, "
             "dist range [{}, {}], worst pair= {}, {}\n",
@@ -691,7 +691,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap &map, bool d
       }
     }
   }
-  if (debug) {
+  if (trainer_debug_level > 0) {
     tprintDebug("Global worst dist = {}, between sample {} and {}\n", global_worst_dist, worst_s1,
             worst_s2);
   }

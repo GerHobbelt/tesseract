@@ -20,15 +20,13 @@
 #ifndef TESSERACT_CCSTRUCT_BLAMER_H_
 #define TESSERACT_CCSTRUCT_BLAMER_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "boxword.h" // for BoxWord
 #include "params_training_featdef.h" // for ParamsTrainingBundle, ParamsTra...
 #include "ratngs.h"                    // for BLOB_CHOICE_LIST (ptr only)
 #include "rect.h"                      // for TBOX
-#include "tprintf.h"                   // for tprintf
+#include <tesseract/tprintf.h>                   // for tprintf
 
 #include <tesseract/unichar.h> // for UNICHAR_ID
 
@@ -112,8 +110,10 @@ struct BlamerBundle {
     ClearResults();
   }
   BlamerBundle(const BlamerBundle &other) {
-    this->CopyTruth(other);
-    this->CopyResults(other);
+    if (this != &other) {
+      this->CopyTruth(other);
+      this->CopyResults(other);
+    }
   }
   ~BlamerBundle() {
     delete[] lattice_data_;
@@ -304,16 +304,16 @@ private:
 
 private:
   // Set to true when bounding boxes for individual unichars are recorded.
-  bool truth_has_char_boxes_;
+  bool truth_has_char_boxes_ = false;
   // Variables used by the segmentation search when looking for the blame.
   // Set to true while segmentation search is continued after the usual
   // termination condition in order to look for the blame.
-  bool segsearch_is_looking_for_blame_;
+  bool segsearch_is_looking_for_blame_ = false;
   // Set to true if best choice is a dictionary word and
   // classifier's top choice.
-  bool best_choice_is_dict_and_top_choice_;
+  bool best_choice_is_dict_and_top_choice_ = false;
   // Tolerance for bounding box comparisons in normalized space.
-  int norm_box_tolerance_;
+  int norm_box_tolerance_ = 0;
   // The true_word (in the original image coordinate space) contains ground
   // truth bounding boxes for this WERD_RES.
   tesseract::BoxWord truth_word_;
@@ -323,7 +323,7 @@ private:
   // Contains ground truth unichar for each of the bounding boxes in truth_word.
   std::vector<std::string> truth_text_;
   // The reason for incorrect OCR result.
-  IncorrectResultReason incorrect_result_reason_;
+  IncorrectResultReason incorrect_result_reason_ = IRR_CORRECT;
   // Debug text associated with the blame.
   std::string debug_;
   // Misadaption debug information (filled in if this word was misadapted to).
@@ -334,10 +334,10 @@ private:
   std::vector<int> correct_segmentation_rows_;
   // Best rating for correctly segmented path
   // (set and used by SegSearch when looking for blame).
-  float best_correctly_segmented_rating_;
-  int lattice_size_; // size of lattice_data in bytes
+  float best_correctly_segmented_rating_ = 0.0;
+  int lattice_size_ = 0; // size of lattice_data in bytes
   // Serialized segmentation search lattice.
-  char *lattice_data_;
+  char *lattice_data_ = nullptr;
   // Information about hypotheses (paths) explored by the segmentation search.
   tesseract::ParamsTrainingBundle params_training_bundle_;
 };

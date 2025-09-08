@@ -15,6 +15,8 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "normfeat.h"
 
 #include "featdefs.h"

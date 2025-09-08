@@ -21,10 +21,7 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
-#define _USE_MATH_DEFINES // for M_PI
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cmath> // for M_PI
 #include <cstdio>
@@ -45,9 +42,8 @@
 #include "oldlist.h"
 #include "protos.h"
 #include "shapetable.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicity_table.h"
-#include "mupdf/fitz/string-util.h"
 
 #include "tesseract/capi_training_tools.h"
 
@@ -107,8 +103,8 @@ static LIST ClusterOneConfig(int shape_id, const char *class_label, LIST mf_clas
   // representing almost all samples of the class/font.
   MergeInsignificantProtos(proto_list, class_label, clusterer, &Config);
 #if !GRAPHICS_DISABLED
-  if (strcmp(FLAGS_test_ch.c_str(), class_label) == 0) {
-    DisplayProtoList(FLAGS_test_ch.c_str(), proto_list);
+  if (strcmp(trainer_test_ch.c_str(), class_label) == 0) {
+    DisplayProtoList(trainer_test_ch.c_str(), proto_list);
   }
 #endif // !GRAPHICS_DISABLED
   // Delete the protos that will not be used in the inttemp output file.
@@ -206,7 +202,9 @@ extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
   tesseract::CheckSharedLibraryVersion();
   (void)tesseract::SetConsoleModeToUTF8();
 
-  int rv = ParseArguments(&argc, &argv);
+  tesseract::TessBaseAPI api;
+
+  int rv = ParseArguments(api, &argc, &argv);
   if (rv >= 0) {
     return rv;
   }
@@ -277,7 +275,7 @@ extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
   FreeLabeledClassList(mf_classes);
   delete shape_table;
   tprintDebug("Done!\n");
-  if (!FLAGS_test_ch.empty()) {
+  if (!trainer_test_ch.empty()) {
     // If we are displaying debug window(s), wait for the user to look at them.
     tprintDebug("Hit return to exit...\n");
     while (getchar() != '\n') {

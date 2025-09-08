@@ -5,4 +5,5 @@ data_DATA += lstmbox wordstrbox
 # Configurations for OCR output.
 data_DATA += alto hocr page pdf tsv txt
 data_DATA += linebox rebox strokewidth bigram normalize_grayscale
+data_DATA += debug-all
 EXTRA_DIST = $(data_DATA)

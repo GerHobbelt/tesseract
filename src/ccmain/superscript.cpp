@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "normalis.h"
 #include "tesseractclass.h"
 #include "blobs.h"
@@ -172,7 +174,7 @@ bool Tesseract::SubAndSuperscriptFix(WERD_RES *word) {
 
   if (superscript_debug >= 1) {
     tprintDebug("Candidate for superscript detection: {} (",
-            word->best_choice->unichar_string().c_str());
+            mdqstr(word->best_choice->unichar_string()));
     if (num_leading || num_remainder_leading) {
       tprintDebug("{}.{} {}-leading ", num_leading, num_remainder_leading, leading_pos);
     }
@@ -402,23 +404,26 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   //  Recognize the pieces in turn.
   int saved_cp_multiplier = classify_class_pruner_multiplier;
   int saved_im_multiplier = classify_integer_matcher_multiplier;
+  bool saved_classify_cp_dq_bad_height = classify_cp_dq_bad_height;
   if (prefix) {
     // Turn off Tesseract's y-position penalties for the leading superscript.
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
+    classify_cp_dq_bad_height.set_value(false);
 
     // Adjust our expectations about the baseline for this prefix.
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing first {} chopped blobs\n", num_chopped_leading);
     }
-    recog_word_recursive(prefix);
+    recog_word_recursive(prefix, 0);
     if (superscript_debug >= 2) {
-      tprintDebug(" The leading bits look like {} \"{}\"\n", ScriptPosToString(leading_pos), prefix->best_choice->unichar_string());
+      tprintDebug(" The leading bits look like {} {}\n", ScriptPosToString(leading_pos), mdqstr(prefix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties.
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
+    classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
   }
 
   if (superscript_debug >= 3) {
@@ -430,20 +435,22 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     // Turn off Tesseract's y-position penalties for the trailing superscript, disable punctuation unichars
     classify_class_pruner_multiplier.set_value(0);
     classify_integer_matcher_multiplier.set_value(0);
-    unicharset.set_enable_punctuation(false);
+    classify_cp_dq_bad_height.set_value(false);
+    unicharset_.set_enable_punctuation(false);
 
     if (superscript_debug >= 3) {
       tprintDebug(" recognizing last {} chopped blobs\n", num_chopped_trailing);
     }
-    recog_word_recursive(suffix);
+    recog_word_recursive(suffix, 0);
     if (superscript_debug >= 2) {
-      tprintDebug(" The trailing bits look like {} \"{}\"\n", ScriptPosToString(trailing_pos), suffix->best_choice->unichar_string());
+      tprintDebug(" The trailing bits look like {} {}\n", ScriptPosToString(trailing_pos), mdqstr(suffix->best_choice->unichar_string()));
     }
 
     // Restore the normal y-position penalties, blacklist/whitelist
     classify_class_pruner_multiplier.set_value(saved_cp_multiplier);
     classify_integer_matcher_multiplier.set_value(saved_im_multiplier);
-    unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
+    classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
+    unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
                                      tessedit_char_whitelist.c_str(),
                                      tessedit_char_unblacklist.c_str());
   }
@@ -468,7 +475,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
     delete bb1;
     return nullptr;
   }
-  recog_word_recursive(core);
+  recog_word_recursive(core, 0);
 
   // Now paste the results together into core.
   if (suffix) {
@@ -484,7 +491,7 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
 
   if (superscript_debug >= 1) {
     tprintDebug("{} superscript fix: {}\n", *is_good ? "ACCEPT" : "REJECT",
-            core->best_choice->unichar_string());
+            mdqstr(core->best_choice->unichar_string()));
   }
   return core;
 }

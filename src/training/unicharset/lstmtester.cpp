@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "lstmtester.h"
 #include <iomanip>  // for std::setprecision
 #include <thread>   // for std::thread
@@ -80,7 +82,8 @@ std::string LSTMTester::RunEvalAsync(int iteration, const double *training_error
 std::string LSTMTester::RunEvalSync(int iteration, const double *training_errors,
                                     const TessdataManager &model_mgr, int training_stage,
                                     int verbosity) {
-  LSTMTrainer trainer;
+  TessBaseAPI api;
+  LSTMTrainer trainer(api.tesseract());
   trainer.SetDebug(HasDebug());
   trainer.InitCharSet(model_mgr);
   TFile fp;

@@ -17,8 +17,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <cstdio>
 
 #include "tessvars.h"
-
-FILE *debug_fp = stderr; // write debug stuff here

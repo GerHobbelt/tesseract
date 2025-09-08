@@ -15,9 +15,7 @@
  ******************************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -269,10 +267,19 @@ for (int bit = 0; bit < BITS_PER_WERD/NUM_BITS_PER_CLASS; bit++) {
   /// norm_count_. Applies a simple subtractive penalty for incorrect vertical
   /// position provided by the normalization_factors array, indexed by
   /// character class, and scaled by the norm_multiplier.
-  void NormalizeForXheight(int norm_multiplier, const uint8_t *normalization_factors) {
+  void NormalizeForXheight(int norm_multiplier, const uint8_t *normalization_factors, bool dq_bad_height) {
     for (int class_id = 0; class_id < max_classes_; class_id++) {
-      norm_count_[class_id] =
-          class_count_[class_id] - ((norm_multiplier * normalization_factors[class_id]) >> 8);
+      // If height is off by >50%, the character is disqualified.
+      if (dq_bad_height && normalization_factors[class_id] > 128) {
+        norm_count_[class_id] = 0;
+      // If height if off by >25%, the character is heavily penalized.
+      } else if (false && dq_bad_height && normalization_factors[class_id] > 64) {
+        norm_count_[class_id] = class_count_[class_id] - 10;
+      // Otherwise, the standard continuous penalty is applied.
+      } else {
+        norm_count_[class_id] =
+            class_count_[class_id] - ((norm_multiplier * normalization_factors[class_id]) >> 8);
+      }
     }
   }
 
@@ -438,22 +445,22 @@ int Classify::PruneClasses(const INT_TEMPLATES_STRUCT *int_templates, int num_fe
   pruner.AdjustForExpectedNumFeatures(expected_num_features, classify_cp_cutoff_strength);
   // Apply disabled classes in unicharset - only works without a shape_table.
   if (shape_table_ == nullptr) {
-    pruner.DisableDisabledClasses(unicharset);
+    pruner.DisableDisabledClasses(unicharset_);
   }
   // If fragments are disabled, remove them, also only without a shape table.
   if (disable_character_fragments && shape_table_ == nullptr) {
-    pruner.DisableFragments(unicharset);
+    pruner.DisableFragments(unicharset_);
   }
 
   // If we have good x-heights, apply the given normalization factors.
   if (normalization_factors != nullptr) {
-    pruner.NormalizeForXheight(classify_class_pruner_multiplier, normalization_factors);
+    pruner.NormalizeForXheight(classify_class_pruner_multiplier, normalization_factors, classify_cp_dq_bad_height);
   } else {
     pruner.NoNormalization();
   }
   // Do the actual pruning and sort the short-list.
   pruner.PruneAndSort(classify_class_pruner_threshold, keep_this, shape_table_ == nullptr,
-                      unicharset);
+                      unicharset_);
 
   if (classify_debug_level > 2) {
     pruner.DebugMatch(*this, int_templates, features);
@@ -992,7 +999,6 @@ void IntegerMatcher::DisplayProtoDebugInfo(INT_CLASS_STRUCT *ClassTemplate, BIT_
                                            const ScratchEvidence &tables,
                                            bool SeparateDebugWindows) {
   uint16_t ProtoNum;
-  uint16_t ActualProtoNum;
   PROTO_SET_STRUCT *ProtoSet;
   int ProtoSetIndex;
 
@@ -1004,7 +1010,7 @@ void IntegerMatcher::DisplayProtoDebugInfo(INT_CLASS_STRUCT *ClassTemplate, BIT_
 
   for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
     ProtoSet = ClassTemplate->ProtoSets[ProtoSetIndex];
-    ActualProtoNum = ProtoSetIndex * PROTOS_PER_PROTO_SET;
+    uint16_t ActualProtoNum = ProtoSetIndex * PROTOS_PER_PROTO_SET;
     for (ProtoNum = 0;
          ((ProtoNum < PROTOS_PER_PROTO_SET) && (ActualProtoNum < ClassTemplate->NumProtos));
          ProtoNum++, ActualProtoNum++) {
@@ -1077,13 +1083,12 @@ void ScratchEvidence::UpdateSumOfProtoEvidences(INT_CLASS_STRUCT *ClassTemplate,
   uint16_t ProtoNum;
   PROTO_SET_STRUCT *ProtoSet;
   int NumProtos;
-  uint16_t ActualProtoNum;
 
   NumProtos = ClassTemplate->NumProtos;
 
   for (ProtoSetIndex = 0; ProtoSetIndex < ClassTemplate->NumProtoSets; ProtoSetIndex++) {
     ProtoSet = ClassTemplate->ProtoSets[ProtoSetIndex];
-    ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
+    uint16_t ActualProtoNum = (ProtoSetIndex * PROTOS_PER_PROTO_SET);
     for (ProtoNum = 0; ((ProtoNum < PROTOS_PER_PROTO_SET) && (ActualProtoNum < NumProtos));
          ProtoNum++, ActualProtoNum++) {
       int temp = 0;
@@ -1126,16 +1131,23 @@ void ScratchEvidence::NormalizeSums(INT_CLASS_STRUCT *ClassTemplate, int16_t Num
 int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const ScratchEvidence &tables,
                                   UnicharRating *result) {
   int best_match = 0;
+  bool debug = (*classify_debug_level_ > 2);
   result->config = 0;
   result->fonts.clear();
   result->fonts.reserve(class_template->NumConfigs);
 
   // Find best match.
   // ClassTemplate->NumConfigs can become larger than MAX_NUM_CONFIGS.
+  if (debug) {
+    for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
+      tprintDebug("Config {}    \t", c);
+    }
+    tprintDebug("Best match:\n  ");
+  }
   for (int c = 0; c < MAX_NUM_CONFIGS && c < class_template->NumConfigs; ++c) {
     int rating = tables.sum_feature_evidence_[c];
-    if (*classify_debug_level_ > 2) {
-      tprintDebug("Config {}, rating={}\n", c, rating);
+    if (debug) {
+      tprintDebug("rating={}\t", rating);
     }
     if (rating > best_match) {
       result->config = c;
@@ -1146,6 +1158,10 @@ int IntegerMatcher::FindBestMatch(INT_CLASS_STRUCT *class_template, const Scratc
 
   // Compute confidence on a Probability scale.
   result->rating = best_match / 65536.0f;
+
+  if (debug) {
+    tprintDebug("Config {}, best_match={}, rating={}\n", result->config, best_match, result->rating);
+  }
 
   return best_match;
 }

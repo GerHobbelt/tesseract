@@ -20,11 +20,24 @@
 #define OLDBASEL_H
 
 #include "blobbox.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 
 extern BOOL_VAR_H(textord_oldbl_debug);
+extern BOOL_VAR_H(textord_really_old_xheight);
+extern BOOL_VAR_H(textord_debug_baselines);
+extern BOOL_VAR_H(textord_oldbl_paradef);
+extern BOOL_VAR_H(textord_oldbl_split_splines);
+extern BOOL_VAR_H(textord_oldbl_merge_parts);
+extern BOOL_VAR_H(oldbl_corrfix);
+extern BOOL_VAR_H(oldbl_xhfix);
+extern BOOL_VAR_H(textord_ocropus_mode);
+extern DOUBLE_VAR_H(oldbl_xhfract);
+extern INT_VAR_H(oldbl_holed_losscount);
+extern DOUBLE_VAR_H(oldbl_dot_error_size);
+extern DOUBLE_VAR_H(textord_oldbl_jumplimit);
+
 
 int get_blob_coords(    // get boxes
     TO_ROW *row,        // row to use

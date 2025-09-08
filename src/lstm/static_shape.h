@@ -21,7 +21,7 @@
 #include <tesseract/fmt-support.h>
 
 #include "serialis.h" // for TFile
-#include "tprintf.h"  // for tprintf
+#include <tesseract/tprintf.h>  // for tprintf
 
 namespace tesseract {
 
@@ -34,10 +34,6 @@ enum LossType {
   LT_LOGISTIC, // Logistic outputs with independent values.
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(LossType);
-
-static inline auto format_as(LossType t) {
-  return fmt::underlying(t);
-}
 
 // Simple class to hold the tensor shape that is known at network build time
 // and the LossType of the loss function.

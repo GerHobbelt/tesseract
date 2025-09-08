@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "output.h"
 
 #include "control.h"
@@ -101,11 +103,11 @@ void Tesseract::write_results(PAGE_RES_IT &page_res_it,
                               bool force_eol) {  // override tilde crunch?
   WERD_RES *word = page_res_it.word();
   const UNICHARSET &uchset = *word->uch_set;
-  bool need_reject = false;
   UNICHAR_ID space = uchset.unichar_to_id(" ");
 
   if ((word->unlv_crunch_mode != CR_NONE || word->best_choice->empty()) &&
       !tessedit_zero_kelvin_rejection && !tessedit_word_for_word) {
+    bool need_reject = false;
     if ((word->unlv_crunch_mode != CR_DELETE) &&
         (!stats_.tilde_crunch_written ||
          ((word->unlv_crunch_mode == CR_KEEP_SPACE) && (word->word->space() > 0) &&
@@ -174,7 +176,7 @@ void Tesseract::write_results(PAGE_RES_IT &page_res_it,
   set_unlv_suspects(word);
   check_debug_pt(word, 120);
   if (tessedit_rejection_debug) {
-    tprintDebug("Dict word: \"{}\": {}\n", word->best_choice->debug_string(),
+    tprintDebug("Dict word: {}: {}\n", word->best_choice->debug_string(),
             dict_word(*(word->best_choice)));
   }
   if (!word->word->flag(W_REP_CHAR) || !tessedit_write_rep_codes) {
@@ -397,7 +399,7 @@ bool Tesseract::acceptable_number_string(const char *s, const char *lengths) {
   }
 
   for (; *s != '\0'; s += *(lengths++)) {
-    if (unicharset.get_isdigit(s, *lengths)) {
+    if (unicharset_.get_isdigit(s, *lengths)) {
       prev_digit = true;
     } else if (prev_digit && (*lengths == 1 && ((*s == '.') || (*s == ',') || (*s == '-')))) {
       prev_digit = false;

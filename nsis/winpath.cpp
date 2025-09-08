@@ -1,3 +1,20 @@
+// Copyright (C) 2024 Stefan Weil
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// winpath - run a Windows program with extended PATH
+//
+// Usage:
+//
+//     winpath [CMD [ARGUMENT ...]]
+//
+// Example:
+//
+//     winpath cmd
+//
+// This will start a Windows command line with PATH extended by
+// the location of the winpath executable.
+
 #include <process.h>    // _spawnvp
 #include <stdlib.h>     // _putenv_s
 #include <string.h>     // strcpy, strcat

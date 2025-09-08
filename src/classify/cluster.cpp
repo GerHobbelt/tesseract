@@ -15,14 +15,14 @@
  ** limitations under the License.
  *****************************************************************************/
 
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "cluster.h"
 
 #include "genericheap.h"
 #include "kdpair.h"
 #include "matrix.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include "helpers.h"
 

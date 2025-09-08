@@ -122,7 +122,8 @@ private:
   }
   // Returns a mask to select the appropriate bit for the given index.
   uint32_t BitMask(int index) const {
-    return 1 << (index & (kBitFactor - 1));
+    // warning C4365: 'return': conversion from 'int' to 'uint32_t', signed/unsigned mismatch
+    return uint32_t(1) << (uint32_t(index) & (kBitFactor - 1));
   }
   // Returns the number of array elements needed to represent the current
   // bit_size_.

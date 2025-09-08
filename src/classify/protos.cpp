@@ -18,14 +18,14 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "protos.h"
 
 #include "classify.h"
 #include "intproto.h"
-#include "params.h"
-#include "tprintf.h"
+#include <tesseract/params.h>
+#include <tesseract/tprintf.h>
 
 #include <cmath> // for M_PI
 #include <cstdio>

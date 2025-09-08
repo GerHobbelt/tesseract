@@ -15,9 +15,7 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "lstm.h"
 
@@ -37,7 +35,7 @@
 #include "fullyconnected.h"
 #include "functions.h"
 #include "networkscratch.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 // Macros for openmp code if it is available, otherwise empty macros.
 #if defined(_OPENMP) && 0
@@ -119,8 +117,7 @@ LSTM::LSTM(const std::string &name, int ni, int ns, int no, bool two_dimensional
     nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : ceil_log2(no_);
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
-    tprintError("{} is invalid type of LSTM!\n", type);
-    ASSERT_HOST(false);
+    ASSERT_HOST_MSG(false, "{} is invalid type of LSTM!\n", type);
   }
   na_ += nf_;
 }

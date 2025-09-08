@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <tesseract/debugheap.h>
 
@@ -36,8 +34,9 @@
 #include "textord.h"
 #include "tordmain.h"
 #include "tovars.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "underlin.h"
+#include "global_params.h"
 
 #include <algorithm>
 #include <cmath>
@@ -62,16 +61,16 @@ BOOL_VAR(textord_old_xheight, false, "Use old xheight algorithm");
 BOOL_VAR(textord_fix_xheight_bug, true, "Use spline baseline");
 BOOL_VAR(textord_fix_makerow_bug, true, "Prevent multiple baselines");
 BOOL_VAR(textord_debug_xheights, false, "Test xheight algorithms");
-static BOOL_VAR(textord_biased_skewcalc, true, "Bias skew estimates with line length");
-static BOOL_VAR(textord_interpolating_skew, true, "Interpolate across gaps");
-static INT_VAR(textord_skewsmooth_offset, 4, "For smooth factor");
-static INT_VAR(textord_skewsmooth_offset2, 1, "For smooth factor");
+BOOL_VAR(textord_biased_skewcalc, true, "Bias skew estimates with line length");
+BOOL_VAR(textord_interpolating_skew, true, "Interpolate across gaps");
+INT_VAR(textord_skewsmooth_offset, 4, "For smooth factor");
+INT_VAR(textord_skewsmooth_offset2, 1, "For smooth factor");
 INT_VAR(textord_test_x, -INT32_MAX, "coord of test pt");
 INT_VAR(textord_test_y, -INT32_MAX, "coord of test pt");
 INT_VAR(textord_min_blobs_in_row, 4, "Min blobs before gradient counted");
 INT_VAR(textord_spline_minblobs, 8, "Min blobs in each spline segment");
 INT_VAR(textord_spline_medianwin, 6, "Size of window for spline segmentation");
-static INT_VAR(textord_max_blob_overlaps, 4, "Max number of blobs a big blob can overlap");
+INT_VAR(textord_max_blob_overlaps, 4, "Max number of blobs a big blob can overlap");
 INT_VAR(textord_min_xheight, 10, "Min credible pixel xheight");
 DOUBLE_VAR(textord_spline_shift_fraction, 0.02, "Fraction of line spacing for quad");
 DOUBLE_VAR(textord_skew_ile, 0.5, "Ile of gradients for page skew");
@@ -79,8 +78,8 @@ DOUBLE_VAR(textord_skew_lag, 0.02, "Lag for skew on row accumulation");
 DOUBLE_VAR(textord_linespace_iqrlimit, 0.2, "Max iqr/median for linespace");
 DOUBLE_VAR(textord_width_limit, 8, "Max width of blobs to make rows");
 DOUBLE_VAR(textord_chop_width, 1.5, "Max width before chopping");
-static DOUBLE_VAR(textord_expansion_factor, 1.0, "Factor to expand rows by in expand_rows");
-static DOUBLE_VAR(textord_overlap_x, 0.375, "Fraction of linespace for good overlap");
+DOUBLE_VAR(textord_expansion_factor, 1.0, "Factor to expand rows by in expand_rows");
+DOUBLE_VAR(textord_overlap_x, 0.375, "Fraction of linespace for good overlap");
 DOUBLE_VAR(textord_minxh, 0.25, "fraction of linesize for min xheight");
 DOUBLE_VAR(textord_min_linesize, 1.25, "* blob height for initial linesize");
 DOUBLE_VAR(textord_excess_blobsize, 1.3, "New row made if blob makes row this big");
@@ -90,7 +89,7 @@ DOUBLE_VAR(textord_min_blob_height_fraction, 0.75,
            "Min blob height/top to include blob top into xheight stats");
 DOUBLE_VAR(textord_xheight_mode_fraction, 0.4, "Min pile height to make xheight");
 DOUBLE_VAR(textord_ascheight_mode_fraction, 0.08, "Min pile height to make ascheight");
-static DOUBLE_VAR(textord_descheight_mode_fraction, 0.08, "Min pile height to make descheight");
+DOUBLE_VAR(textord_descheight_mode_fraction, 0.08, "Min pile height to make descheight");
 DOUBLE_VAR(textord_ascx_ratio_min, 1.25, "Min cap/xheight");
 DOUBLE_VAR(textord_ascx_ratio_max, 1.8, "Max cap/xheight");
 DOUBLE_VAR(textord_descx_ratio_min, 0.25, "Min desc/xheight");
@@ -112,13 +111,8 @@ FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
  * Sort function to sort rows in y from page top.
  */
 static int row_y_order(       // sort function
-    const void *item1, // items to compare
-    const void *item2) {
-  // converted ptr
-  const TO_ROW *row1 = *reinterpret_cast<const TO_ROW *const *>(item1);
-  // converted ptr
-  const TO_ROW *row2 = *reinterpret_cast<const TO_ROW *const *>(item2);
-
+    const TO_ROW *row1, // items to compare
+    const TO_ROW *row2) {
   if (row1->parallel_c() > row2->parallel_c()) {
     return -1;
   } else if (row1->parallel_c() < row2->parallel_c()) {
@@ -722,6 +716,8 @@ bool find_best_dropout_row( // find neighbours
   if ((distance < 0 && !row_it->at_last()) || (distance >= 0 && !row_it->at_first())) {
     row_offset = row_inc;
     do {
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+      ASSERT_HOST(row_offset < INT8_MAX && row_offset >= INT8_MIN);
       next_row = row_it->data_relative(row_offset);
       next_index = static_cast<int32_t>(std::floor(next_row->intercept()));
       if ((distance < 0 && next_index < line_index &&
@@ -1604,7 +1600,7 @@ int32_t compute_row_descdrop(TO_ROW *row, float gradient, int xheight_blob_count
   if (static_cast<float>(blob_count + num_potential_asc) < xheight_blob_count * total_fraction) {
     blob_count = 0;
   }
-  int descdrop = blob_count > 0 ? -blob_index : 0;
+  int descdrop = (blob_count > 0 ? -blob_index : 0);
   if (textord_debug_xheights) {
     tprintDebug("Descdrop: {} (potential ascenders {}, descenders {})\n", descdrop, num_potential_asc,
             blob_count);
@@ -2531,13 +2527,8 @@ OVERLAP_STATE most_overlapping_row( // find best row
  * Sort function to sort blobs in x from page left.
  */
 int blob_x_order(      // sort function
-    const void *item1, // items to compare
-    const void *item2) {
-  // converted ptr
-  const BLOBNBOX *blob1 = *reinterpret_cast<const BLOBNBOX *const *>(item1);
-  // converted ptr
-  const BLOBNBOX *blob2 = *reinterpret_cast<const BLOBNBOX *const *>(item2);
-
+    const BLOBNBOX *blob1, // items to compare
+    const BLOBNBOX *blob2) {
   if (blob1->bounding_box().left() < blob2->bounding_box().left()) {
     return -1;
   } else if (blob1->bounding_box().left() > blob2->bounding_box().left()) {

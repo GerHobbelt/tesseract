@@ -17,16 +17,15 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "imagedata.h"
 
 #include "boxread.h"    // for ReadMemBoxes
 #include "rect.h"       // for TBOX
 #include "scrollview.h" // for ScrollView, Diagnostics::CYAN, Diagnostics::NONE
-#include "tprintf.h"    // for tprintf
+#include <tesseract/tprintf.h>    // for tprintf
+#include "tesserrstream.h" // for tesserr
 
 #include "helpers.h"  // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "serialis.h" // for TFile
@@ -34,7 +33,6 @@
 #include <leptonica/allheaders.h> // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 
 #include <algorithm>    // for max, min
-#include <fstream>      // for std::ifstream
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
 
@@ -54,9 +52,6 @@ ImageData::ImageData(bool vertical, Image pix)
   SetPix(pix);
 }
 ImageData::~ImageData() {
-#ifdef TESSERACT_IMAGEDATA_AS_PIX
-  internal_pix_.destroy();
-#endif
 }
 
 // Builds and returns an ImageData from the basic data. Note that imagedata,
@@ -236,7 +231,6 @@ Image ImageData::PreScale(int target_height, int max_height,
   if (pix == nullptr) {
     tprintError("Scaling pix of size {}, {} by factor {} made null pix!!\n",
             input_width, input_height, im_factor);
-    src_pix.destroy();
     return nullptr;
   }
   if (scaled_width != nullptr) {
@@ -245,7 +239,6 @@ Image ImageData::PreScale(int target_height, int max_height,
   if (scaled_height != nullptr) {
     *scaled_height = pixGetHeight(pix);
   }
-  src_pix.destroy();
   if (boxes != nullptr) {
     // Get the boxes.
     boxes->clear();
@@ -285,7 +278,6 @@ void ImageData::Display(Tesseract *tesseract_) const {
                              2 * (height + 4 * kTextSize), width + 10,
                              height + 3 * kTextSize, true);
   win->Draw(pix, 0, win->TranslateYCoordinate(0), "ImageData::Display");
-  pix.destroy();
   // Draw the boxes.
   win->Pen(Diagnostics::RED);
   win->Brush(Diagnostics::NONE);
@@ -533,7 +525,8 @@ void DocumentData::Shuffle() {
   TRand random;
   // Different documents get shuffled differently, but the same for the same
   // name.
-  random.set_seed(document_name_);
+  std::hash<std::string> hasher;
+  random.set_seed(static_cast<uint64_t>(hasher(document_name_)));
   int num_pages = pages_.size();
   // Execute one random swap for each page in the document.
   for (int i = 0; i < num_pages; ++i) {
@@ -555,10 +548,11 @@ bool DocumentData::ReCachePages() {
     delete page;
   }
   pages_.clear();
-#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
+//#if !defined(TESSERACT_IMAGEDATA_AS_PIX)
+  auto name_size = document_name_.size();
   if (document_name_.ends_with(".png")) {
     // PNG image given instead of LSTMF file.
-    std::string gt_name = document_name_.substr(0, document_name_.length() - 3) + "gt.txt";
+    std::string gt_name{document_name_.substr(0, name_size - 3) + "gt.txt"};
     std::ifstream t(gt_name);
     std::string line;
     std::getline(t, line);
@@ -571,18 +565,23 @@ bool DocumentData::ReCachePages() {
     pages_offset_ %= loaded_pages;
     set_total_pages(loaded_pages);
     set_memory_used(memory_used() + image_data->MemoryUsed());
-#if 01
-      tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
-              loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-              document_name_);
-#endif
+    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
+          loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
+          document_name_.c_str());
     return !pages_.empty();
   }
-#endif
+//#endif
   TFile fp;
-  if (!fp.Open(document_name_.c_str(), reader_) ||
-      !fp.DeSerializeSize(&loaded_pages) || loaded_pages <= 0) {
-    tprintError("Deserialize header failed: {}\n", document_name_);
+  if (!fp.Open(document_name_.c_str(), reader_)) {
+    tprintError("Deserialize failed: cannot open file: {}\n", document_name_);
+    return false;
+  }
+  if (!fp.DeSerializeSize(&loaded_pages)) {
+    tprintError("Deserialize header size failed for file: {}\n", document_name_);
+    return false;
+  }
+  if (loaded_pages <= 0) {
+    tprintError("Deserialize header produced faulty page count {} for file: {}\n", loaded_pages, document_name_);
     return false;
   }
   pages_offset_ %= loaded_pages;
@@ -617,7 +616,7 @@ bool DocumentData::ReCachePages() {
     }
   }
   if (page < loaded_pages) {
-    tprintError("Deserialize failed: {} read {}/{} lines\n", document_name_,
+    tprintError("Deserialize failed for file: {}; read {}/{} lines\n", document_name_,
             page, loaded_pages);
     for (auto page : pages_) {
       delete page;

@@ -35,6 +35,9 @@ extern BOOL_VAR_H(textord_fast_pitch_test);
 extern DOUBLE_VAR_H(textord_projection_scale);
 extern DOUBLE_VAR_H(textord_balance_factor);
 
+extern BOOL_VAR_H(textord_all_prop);
+extern BOOL_VAR_H(textord_disable_pitch_test);
+
 void compute_fixed_pitch(ICOORD page_tr,             // top right
                          TO_BLOCK_LIST *port_blocks, // input list
                          float gradient,             // page skew

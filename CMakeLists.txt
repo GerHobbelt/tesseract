@@ -288,7 +288,7 @@ endif()
 # Compiler specific environment
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
   set(CMAKE_CXX_FLAGS_DEBUG
-      "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og")
+      "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og -Wno-unknown-pragmas")
 elseif(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE) # strdup
@@ -312,6 +312,10 @@ elseif(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     message(STATUS "Building with static CRT.")
   endif()
+  # Workaround: When building on VS 2022 17.10 or newer, but using an older runtime,
+  # mutexes can crash
+  # https://stackoverflow.com/questions/78598141/first-stdmutexlock-crashes-in-application-built-with-latest-visual-studio
+  add_definitions(-D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 endif()
 if(CLANG) # clang all platforms
   set(CMAKE_CXX_FLAGS_RELEASE
@@ -326,7 +330,10 @@ if(OPENMP_BUILD
   set(OPENMP_BUILD OFF)
 endif()
 if(OPENMP_BUILD)
-  find_package(OpenMP QUIET)
+  if(MSVC)  # supported from cmake 3.30
+    set(OpenMP_RUNTIME_MSVC "llvm")
+  endif(MSVC)
+  find_package(OpenMP)
   # https://stackoverflow.com/questions/12399422
   # how-to-set-linker-flags-for-openmp-in-cmakes-try-compile-function
   if(NOT OpenMP_FOUND
@@ -398,6 +405,13 @@ if(SW_BUILD)
   sw_execute()
 else()
   find_package(PkgConfig)
+  if(APPLE)
+    if(DEFINED ENV{HOMEBREW_PREFIX})
+      set(HOMEBREW_PREFIX $ENV{HOMEBREW_PREFIX})
+      set(PKG_CONFIG_PATH "${HOMEBREW_PREFIX}/opt/icu4c/lib/pkgconfig:${HOMEBREW_PREFIX}/opt/libarchive/lib/pkgconfig")
+      set(ENV{PKG_CONFIG_PATH} "${PKG_CONFIG_PATH}")
+    endif()
+  endif()
   # Check for required library. option -DLeptonica_DIR=path => cmake hint where
   # to find leptonica
   find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
@@ -525,6 +539,7 @@ message(STATUS "General configuration for Tesseract ${PACKAGE_VERSION}")
 message(STATUS "--------------------------------------------------------")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE} ${BUILD_ARCH}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Used standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "CXX compiler options: ${COMPILER_FLAGS}")
 get_directory_property(DirCompDefs COMPILE_DEFINITIONS)
@@ -746,6 +761,7 @@ set(TESSERACT_SRC
     src/api/altorenderer.cpp
     src/api/pagerenderer.cpp
     src/api/hocrrenderer.cpp
+    src/api/jsonrenderer.cpp
     src/api/lstmboxrenderer.cpp
     src/api/pdfrenderer.cpp
     src/api/wordstrboxrenderer.cpp)
@@ -835,7 +851,7 @@ set_target_properties(
                           ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set_target_properties(
   libtesseract PROPERTIES SOVERSION
-                          ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+                          ${VERSION_MAJOR}.${VERSION_MINOR})
 
 set_target_properties(
   libtesseract
@@ -906,7 +922,9 @@ if(BUILD_TESTS
    AND EXISTS
        ${CMAKE_CURRENT_SOURCE_DIR}/unittest/third_party/googletest/CMakeLists.txt
 )
+  enable_testing()
   add_subdirectory(unittest/third_party/googletest)
+  add_subdirectory(unittest)
 endif()
 
 if(BUILD_TRAINING_TOOLS)
@@ -940,12 +958,19 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   RENAME tesseract.pc)
 install(TARGETS tesseract DESTINATION bin)
+if (MSVC)
+  install(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> DESTINATION bin OPTIONAL)
+endif()
 install(
   TARGETS libtesseract
   EXPORT TesseractTargets
   RUNTIME DESTINATION bin
+  RUNTIME DESTINATION bin
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if (MSVC AND BUILD_SHARED_LIBS)
+  install(FILES $<TARGET_PDB_FILE:libtesseract> DESTINATION bin OPTIONAL)
+endif()
 install(
   EXPORT TesseractTargets
   NAMESPACE Tesseract::

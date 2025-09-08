@@ -18,15 +18,12 @@
 //
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "scrollview.h"
 #include "bbgrid.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 #include "svutil.h" // for SVNetwork
 
@@ -371,7 +368,7 @@ void InteractiveScrollView::Initialize(Tesseract *tess, const char *name,
   // Set up an actual Window on the client side.
   char message[kMaxMsgSize];
   snprintf(message, sizeof(message),
-           "w%u = luajava.newInstance('com.google.scrollview.ui"
+           "w%d = luajava.newInstance('com.google.scrollview.ui"
            ".SVWindow','%s',%u,%u,%u,%u,%u,%u,%u)\n",
            window_id_, window_name_, window_id_, x_pos, y_pos, x_size, y_size,
            x_canvas_size, y_canvas_size);
@@ -469,7 +466,7 @@ void InteractiveScrollView::vSendMsg(fmt::string_view format, fmt::format_args a
   }
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
   stream_->Send(form.c_str());
@@ -616,7 +613,7 @@ void InteractiveScrollView::vAddMessage(fmt::string_view format, fmt::format_arg
   auto message = fmt::vformat(format, args);
 
   char winidstr[kMaxIntPairSize];
-  snprintf(winidstr, kMaxIntPairSize, "w%u:", window_id_);
+  snprintf(winidstr, kMaxIntPairSize, "w%d:", window_id_);
   std::string form(winidstr);
   form += message;
 
@@ -962,9 +959,10 @@ void BackgroundScrollView::PrepCanvas(void) {
 
   Image wh_pix = pixCreate(width, height, 32 /* RGBA */);
   pixSetAll(wh_pix);
-  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary());
+  pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
+  ASSERT0(pixGetRefCount(pix) >= 1);
+
   ASSERT0(pix.pix_ != wh_pix.pix_);
-  wh_pix.destroy();
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.
@@ -981,39 +979,41 @@ void BackgroundScrollView::Initialize(Tesseract *tess, const char *name,
 
 /// Sits and waits for events on this window.
 void BackgroundScrollView::StartEventHandler() {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 BackgroundScrollView::~BackgroundScrollView() {
   // we ASSUME the gathered content has been pushed off before we get here!
   ASSERT0(!dirty);
+  ASSERT0(pixGetRefCount(pix) >= 1);
+  pix.destroy();
 }
 
 /// Send a message to the server, attaching the window id.
 void BackgroundScrollView::vSendMsg(fmt::string_view format,
                                     fmt::format_args args) {
   auto message = fmt::vformat(format, args);
-  tprintDebug("DEBUG-DRAW: {}\n", message);
+  //tprintDebug("DEBUG-DRAW: {}\n", message);
 }
 
 /// Add an Event Listener to this ScrollView Window
 void BackgroundScrollView::AddEventHandler(SVEventHandler *listener) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 void BackgroundScrollView::Signal() {
-    ASSERT0(!"Should never get here!");
+    ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 void BackgroundScrollView::SetEvent(const SVEvent *svevent) {
-    ASSERT0(!"Should never get here!");
+    ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 /// Block until an event of the given type is received.
 /// Note: The calling function is responsible for deleting the returned
 /// SVEvent afterwards!
 std::unique_ptr<SVEvent> BackgroundScrollView::AwaitEvent(SVEventType type) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   return std::make_unique<SVEvent>();
 }
 
@@ -1041,7 +1041,9 @@ void BackgroundScrollView::SendPolygon() {
       const int width = 1;
       l_int32 r, g, b, a;
       extractRGBAValues(pen_color, &r, &g, &b, &a);
+      ASSERT0(pixGetRefCount(pix) >= 1);
       pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+      ASSERT0(pixGetRefCount(pix) >= 1);
       ptaDestroy(&ptas);
     } else if (length > 2) {
       // A polyline.
@@ -1065,7 +1067,9 @@ void BackgroundScrollView::SendPolygon() {
             const int width = 1;
             l_int32 r, g, b, a;
             extractRGBAValues(pen_color, &r, &g, &b, &a);
+            ASSERT0(pixGetRefCount(pix) >= 1);
             pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 1 /* closed */, 1 /* removedups */);
+            ASSERT0(pixGetRefCount(pix) >= 1);
             ptaDestroy(&ptas);
 
             done = true;
@@ -1092,7 +1096,9 @@ void BackgroundScrollView::SendPolygon() {
         const int width = 1;
         l_int32 r, g, b, a;
         extractRGBAValues(pen_color, &r, &g, &b, &a);
+        ASSERT0(pixGetRefCount(pix) >= 1);
         pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0 /* closed */, 1 /* removedups */);
+        ASSERT0(pixGetRefCount(pix) >= 1);
         ptaDestroy(&ptas);
       }
     }
@@ -1148,7 +1154,7 @@ void BackgroundScrollView::Line(int x1, int y1, int x2, int y2) {
 
 // Set the visibility of the window.
 void BackgroundScrollView::SetVisible(bool visible) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (visible) {
     SendMsg("setVisible(true)");
   } else {
@@ -1158,7 +1164,7 @@ void BackgroundScrollView::SetVisible(bool visible) {
 
 // Set the alwaysOnTop flag.
 void BackgroundScrollView::AlwaysOnTop(bool b) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (b) {
     SendMsg("setAlwaysOnTop(true)");
   } else {
@@ -1182,7 +1188,7 @@ void BackgroundScrollView::vAddMessage(fmt::string_view format,
 
 // Set a messagebox.
 void BackgroundScrollView::AddMessageBox() {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   SendMsg("addMessageBox()");
 }
 
@@ -1199,7 +1205,9 @@ void BackgroundScrollView::Clear() {
   SendMsg("clear()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddClippedPixDebugPage(pix, GetName());
+    ASSERT0(pixGetRefCount(pix) >= 1);
+    tesseract_->AddPixCompedOverOrigDebugPage(pix, GetName());
+    ASSERT0(pixGetRefCount(pix) >= 1);
     PrepCanvas();
 
     dirty = false;
@@ -1237,7 +1245,9 @@ void BackgroundScrollView::Rectangle(int x1, int y1, int x2, int y2) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderPolylineBlend(pix, ptas, width, r, g, b, kMixFactor, 0, 1 /* removedups */);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   ptaDestroy(&ptas);
 }
 
@@ -1326,8 +1336,11 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
 
   const int fontsize = 16;
   L_BMF *bmf = bmfCreate(NULL, fontsize);
@@ -1345,36 +1358,37 @@ void BackgroundScrollView::Text(int x, int y, const char *mystring) {
     char chr = mystring[i];
     if (chr == '\n' || chr == '\r')
       continue;
-    PIX *tpix = bmfGetPix(bmf, chr);
+    Image tpix = bmfGetPix(bmf, chr);
     l_int32 baseline;
     bmfGetBaseline(bmf, chr, &baseline);
     int w = pixGetWidth(tpix);
-    //PIX *tpix2 = pixScaleSmooth(tpix, scale, scale);
+    //Image tpix2 = pixScaleSmooth(tpix, scale, scale);
     //pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     int d = pixGetDepth(pix);
-    PIX *tpix2 = nullptr;
+    Image tpix2 = nullptr;
     switch (d) { 
     default: 
-        ASSERT0(!"Should never get here!");
+        ASSERT_HOST_MSG(false, "Should never get here!");
         break;
 
     case 32:
         tpix2 = pixConvertTo32(tpix);
         break;
     }
-    PIX *tpix3 = pixScaleSmooth(tpix2, scale, scale);
+    Image tpix3 = pixScaleSmooth(tpix2, scale, scale);
     // pixPaintThroughMask(pix, tpix, x, y - baseline * scale, pen_color);
     l_int32 cw, ch, cd;
     pixGetDimensions(tpix3, &cw, &ch, &cd);
     //pixRasterop(pix, x, y - baseline * scale, cw, ch, PIX_XOR, tpix3, 0, 0);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     pixBlendColorByChannel(pix, pix, tpix3, x, y - baseline * scale, 1.0, 0.0, 1.0, 1, 0xFFFFFF00u);
+    ASSERT0(pixGetRefCount(pix) >= 1);
     x += (w + bmf->kernwidth) * scale;
-    pixDestroy(&tpix);
-    pixDestroy(&tpix2);
-    pixDestroy(&tpix3);
   }
 
   width_used = x - bmf->kernwidth * scale - x_start;
+  ASSERT0(pixGetRefCount(pix) >= 1);
   ovf = (x > pixGetWidth(pix) - 1);
 
   bmfDestroy(&bmf);
@@ -1396,15 +1410,18 @@ void BackgroundScrollView::Draw(const char *image, int x_pos, int y_pos) {
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   boxDestroy(&box);
 }
 
 // Add new checkboxmenuentry to menubar.
 void BackgroundScrollView::MenuItem(const char *parent, const char *name,
                                      int cmdEvent, bool flag) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (parent == nullptr) {
     parent = "";
   }
@@ -1418,7 +1435,7 @@ void BackgroundScrollView::MenuItem(const char *parent, const char *name,
 // Add new menuentry to menubar.
 void BackgroundScrollView::MenuItem(const char *parent, const char *name,
                                      int cmdEvent) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (parent == nullptr) {
     parent = "";
   }
@@ -1427,7 +1444,7 @@ void BackgroundScrollView::MenuItem(const char *parent, const char *name,
 
 // Add new submenu to menubar.
 void BackgroundScrollView::MenuItem(const char *parent, const char *name) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (parent == nullptr) {
     parent = "";
   }
@@ -1436,7 +1453,7 @@ void BackgroundScrollView::MenuItem(const char *parent, const char *name) {
 
 // Add new submenu to popupmenu.
 void BackgroundScrollView::PopupItem(const char *parent, const char *name) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (parent == nullptr) {
     parent = "";
   }
@@ -1447,7 +1464,7 @@ void BackgroundScrollView::PopupItem(const char *parent, const char *name) {
 void BackgroundScrollView::PopupItem(const char *parent, const char *name,
                                       int cmdEvent, const char *value,
                                       const char *desc) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   if (parent == nullptr) {
     parent = "";
   }
@@ -1461,7 +1478,9 @@ void BackgroundScrollView::UpdateWindow() {
   SendMsg("update()");
   SendPolygon();
   if (dirty) {
-    tesseract_->AddClippedPixDebugPage(pix, fmt::format("{}::update", GetName()));
+    ASSERT0(pixGetRefCount(pix) >= 1);
+    tesseract_->AddPixCompedOverOrigDebugPage(pix, fmt::format("{}::update", GetName()));
+    ASSERT0(pixGetRefCount(pix) >= 1);
     // DO NOT clear the canvas!
 
     dirty = false;
@@ -1482,13 +1501,13 @@ void BackgroundScrollView::Brush(Color color) {
 
 // Shows a modal Input Dialog which can return any kind of String
 char *BackgroundScrollView::ShowInputDialog(const char *msg) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   return nullptr;
 }
 
 // Shows a modal Yes/No Dialog which will return 'y' or 'n'
 int BackgroundScrollView::ShowYesNoDialog(const char *msg) {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   return 0;
 }
 
@@ -1510,7 +1529,7 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
 
   //SendMsg("drawImage(x:{},y:{},\"{}\")", x_pos, y_pos, title);
 
-  tesseract_->AddClippedPixDebugPage(image, title);
+  tesseract_->AddPixCompedOverOrigDebugPage(image, title);
 
   int w = pixGetWidth(image);
   int h = pixGetHeight(image);
@@ -1518,8 +1537,11 @@ void BackgroundScrollView::Draw(Image image, int x_pos, int y_pos, const char *t
   const int width = 1;
   l_int32 r, g, b, a;
   extractRGBAValues(pen_color, &r, &g, &b, &a);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixRenderBoxBlend(pix, box, width, r, g, b, kMixFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   pixBlendInRect(pix, box, pen_color, kBlendPaintLayerFactor);
+  ASSERT0(pixGetRefCount(pix) >= 1);
   boxDestroy(&box);
 }
 
@@ -1533,7 +1555,7 @@ int BackgroundScrollView::TranslateYCoordinate(int y) {
 }
 
 char BackgroundScrollView::Wait() {
-  ASSERT0(!"Should never get here!");
+  ASSERT_HOST_MSG(false, "Should never get here!");
   return '\0';
 }
 
@@ -1566,7 +1588,7 @@ void DummyScrollView::Initialize(Tesseract *tess, const char *name,
 
 /// Sits and waits for events on this window.
 void DummyScrollView::StartEventHandler() {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 DummyScrollView::~DummyScrollView() {
@@ -1578,22 +1600,22 @@ void DummyScrollView::vSendMsg(fmt::string_view format,	fmt::format_args args) {
 
 /// Add an Event Listener to this ScrollView Window
 void DummyScrollView::AddEventHandler(SVEventHandler *listener) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 void DummyScrollView::Signal() {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 void DummyScrollView::SetEvent(const SVEvent *svevent) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 /// Block until an event of the given type is received.
 /// Note: The calling function is responsible for deleting the returned
 /// SVEvent afterwards!
 std::unique_ptr<SVEvent> DummyScrollView::AwaitEvent(SVEventType type) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 	return std::make_unique<SVEvent>();
 }
 
@@ -1622,12 +1644,12 @@ void DummyScrollView::Line(int x1, int y1, int x2, int y2) {
 
 // Set the visibility of the window.
 void DummyScrollView::SetVisible(bool visible) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Set the alwaysOnTop flag.
 void DummyScrollView::AlwaysOnTop(bool b) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Adds a message entry to the message box.
@@ -1636,7 +1658,7 @@ void DummyScrollView::vAddMessage(fmt::string_view format, fmt::format_args args
 
 // Set a messagebox.
 void DummyScrollView::AddMessageBox() {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Exit the client completely (and notify the server of it).
@@ -1704,24 +1726,24 @@ void DummyScrollView::MenuItem(const char *parent, const char *name, int cmdEven
 
 // Add new menuentry to menubar.
 void DummyScrollView::MenuItem(const char *parent, const char *name, int cmdEvent) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Add new submenu to menubar.
 void DummyScrollView::MenuItem(const char *parent, const char *name) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Add new submenu to popupmenu.
 void DummyScrollView::PopupItem(const char *parent, const char *name) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Add new submenuentry to popupmenu.
 void DummyScrollView::PopupItem(const char *parent, const char *name,
 	int cmdEvent, const char *value,
 	const char *desc) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 }
 
 // Send an update message for a single window.
@@ -1738,13 +1760,13 @@ void DummyScrollView::Brush(Color color) {
 
 // Shows a modal Input Dialog which can return any kind of String
 char *DummyScrollView::ShowInputDialog(const char *msg) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 	return nullptr;
 }
 
 // Shows a modal Yes/No Dialog which will return 'y' or 'n'
 int DummyScrollView::ShowYesNoDialog(const char *msg) {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 	return 0;
 }
 
@@ -1763,7 +1785,7 @@ int DummyScrollView::TranslateYCoordinate(int y) {
 }
 
 char DummyScrollView::Wait() {
-	ASSERT0(!"Should never get here!");
+	ASSERT_HOST_MSG(false, "Should never get here!");
 	return '\0';
 }
 
@@ -1945,10 +1967,11 @@ ScrollViewManager::~ScrollViewManager() {
 ScrollViewReference ScrollViewManager::MakeScrollView(Tesseract *tess, const char *name, int x_pos, int y_pos, int x_size, int y_size, int x_canvas_size, int y_canvas_size, bool y_axis_reversed, const char *server_name) {
   ScrollViewManager &mgr = GetScrollViewManager();
   mgr.SetActiveTesseractInstance(tess);
-  tess = mgr.GetActiveTesseractInstance();
+  tess = mgr.GetActiveTesseractInstance();    // TODO: only pick up the active one when the current one, i.e. the one we got passed, is NULL.  Though that may(??) be wrong when we add multi-instance running support and don't ditch interactive view --> interactive view cannot go together with multiple tesseract instances running in parallel.
 
   ScrollViewReference rv; 
 
+  ASSERT_HOST(tess != nullptr);
   if (scrollview_support) {
     if (tess->SupportsInteractiveScrollView()) {
       rv = new InteractiveScrollView(tess, name, x_pos, y_pos, x_size, y_size,

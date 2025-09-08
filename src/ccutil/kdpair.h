@@ -99,7 +99,7 @@ struct KDPairDec : public KDPair<Key, Data> {
 template <typename Key, typename Data>
 class KDPtrPair {
 public:
-  KDPtrPair() : data_(nullptr) {}
+  KDPtrPair() : data_(nullptr), key_(0) {}
   KDPtrPair(Key k, Data *d) : data_(d), key_(k) {}
   // Copy constructor steals the pointer from src and nulls it in src, thereby
   // moving the (single) ownership of the data.
@@ -114,10 +114,12 @@ public:
   // Operator= steals the pointer from src and nulls it in src, thereby
   // moving the (single) ownership of the data.
   void operator=(const KDPtrPair &src) {
-    delete this->data_;
-    this->data_ = src.data_;
-    ((KDPtrPair &)src).data_ = nullptr;
-    this->key_ = src.key_;
+    if (this != &src) {
+      delete this->data_;
+      this->data_ = src.data_;
+      ((KDPtrPair &)src).data_ = nullptr;
+      this->key_ = src.key_;
+    }
   }
 
   int operator==(const KDPtrPair<Key, Data> &other) const {

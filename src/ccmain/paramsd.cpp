@@ -20,15 +20,11 @@
 // tesseract from the ui.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !GRAPHICS_DISABLED
 
-#include <tesseract/debugheap.h>
-
-#  include "params.h" // for ParamsVectorSet, StringParam, BoolParam
+#  include <tesseract/params.h> // for ParamsVectorSet, StringParam, BoolParam
 #  include "paramsd.h"
 #  include "scrollview.h"     // for SVEvent, ScrollView, SVET_POPUP
 #  include "svmnode.h"        // for SVMenuNode
@@ -127,9 +123,7 @@ static void GetPrefixes(const char *s, std::string &level_one, std::string &leve
 }
 
 // Compare two VC objects by their name.
-int ParamContent::Compare(const void *v1, const void *v2) {
-  const ParamContent *one = *static_cast<const ParamContent *const *>(v1);
-  const ParamContent *two = *static_cast<const ParamContent *const *>(v2);
+int ParamContent::Compare(const ParamContent *one, const ParamContent *two) {
   return strcmp(one->GetName(), two->GetName());
 }
 
@@ -226,7 +220,7 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference &sv) 
     SVMenuNode *svMenuRoot = BuildListOfAllLeaves(tess);
 
     std::string paramfile;
-    paramfile = tess->datadir;
+    paramfile = tess->datadir_;
     paramfile += VARDIR;   // parameters dir
     paramfile += "edited"; // actual name
 

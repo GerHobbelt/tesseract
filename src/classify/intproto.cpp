@@ -18,14 +18,12 @@
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES // for M_PI
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
 #endif
 
-#include <tesseract/debugheap.h>
+// Include automatically generated configuration file if running autoconf.
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "intproto.h"
 
@@ -524,7 +522,7 @@ INT_TEMPLATES_STRUCT *Classify::CreateIntTemplates(CLASSES FloatProtos,
     for (unsigned i = 0; i < fs_size; ++i) {
       fs.push_back(FClass->font_set[i]);
     }
-    IClass->font_set_id = this->fontset_table_.push_back(fs);
+    IClass->font_set_id = this->fontset_table_.push_back(std::move(fs));
     AddIntClass(IntTemplates, ClassId, IClass);
 
     for (ProtoId = 0; ProtoId < FClass->NumProtos; ProtoId++) {
@@ -1232,8 +1230,8 @@ CLASS_ID Classify::GetClassToDebug(const char *Prompt, bool *adaptive_on, bool *
           tprintWarn("No shape table loaded!\n");
         }
       } else {
-        if (unicharset.contains_unichar(ev->parameter)) {
-          unichar_id = unicharset.unichar_to_id(ev->parameter);
+        if (unicharset_.contains_unichar(ev->parameter)) {
+          unichar_id = unicharset_.unichar_to_id(ev->parameter);
           if (ev->command_id == IDA_ADAPTIVE) {
             *adaptive_on = true;
             *pretrained_on = false;

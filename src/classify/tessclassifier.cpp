@@ -16,9 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -61,7 +59,7 @@ const ShapeTable *TessClassifier::GetShapeTable() const {
 // Provides access to the UNICHARSET that this classifier works with.
 // Only needs to be overridden if GetShapeTable() can return nullptr.
 const UNICHARSET &TessClassifier::GetUnicharset() const {
-  return classify_->unicharset;
+  return classify_->unicharset_;
 }
 
 // Displays classification as the given shape_id. Creates as many windows

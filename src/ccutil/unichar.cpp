@@ -16,9 +16,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/unichar.h>
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #define UNI_MAX_LEGAL_UTF32 0x0010FFFF
 
@@ -115,16 +117,20 @@ int UNICHAR::first_uni() const {
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 3:
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 2:
       uni += static_cast<unsigned char>(*src++);
       uni <<= 6;
       // Fall through.
+      [[fallthrough]];
     case 1:
       uni += static_cast<unsigned char>(*src++);
+      break;
   }
   uni -= utf8_offsets[len];
   return uni;

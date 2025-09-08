@@ -14,6 +14,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "dotproduct.h"
 
 namespace tesseract {

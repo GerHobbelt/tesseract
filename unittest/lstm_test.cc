@@ -1,25 +1,26 @@
-// (C) Copyright 2017, Google Inc.
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * (C) Copyright 2017, Google Inc.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http: *www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
 
-// Generating the training data:
-// If the format of the lstmf (ImageData) file changes, the training data will
-// have to be regenerated as follows:
-//
-// Use --xsize 800 for text2image to be similar to original training data.
-//
-// tesstrain.py --fonts_dir /usr/share/fonts --lang eng \
-// --linedata_only   --noextract_font_properties --langdata_dir ../langdata_lstm \
-// --tessdata_dir ../tessdata --output_dir ~/tesseract/test/testdata \
-// --fontlist "Arial" --maxpages 10
-//
+ * Generating the training data:
+ * If the format of the lstmf (ImageData) file changes, the training data will
+ * have to be regenerated as follows:
+ *
+ * Use --xsize 800 for text2image to be similar to original training data.
+ *
+ * tesstrain.py --fonts_dir /usr/share/fonts --lang eng \
+ * --linedata_only   --noextract_font_properties --langdata_dir ../langdata_lstm \
+ * --tessdata_dir ../tessdata --output_dir ~/tesseract/test/testdata \
+ * --fontlist "Arial" --maxpages 10
+ */
 
 #include "lstm_test.h"
 

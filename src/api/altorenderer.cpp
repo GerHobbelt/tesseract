@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <tesseract/debugheap.h>
-#include "errcode.h" // for ASSERT_HOST
+#include <tesseract/preparation.h> // compiler config, etc.
 
-#include "tprintf.h" // for tprintf
+#include "errcode.h" // for ASSERT_HOST
+#include "helpers.h" // for copy_string
+
+#include <tesseract/tprintf.h> // for tprintf
 #include "tesseractclass.h"  // for Tesseract
 
 #include <tesseract/baseapi.h>
@@ -31,7 +33,7 @@ namespace tesseract {
 /// Add coordinates to specified TextBlock, TextLine or String bounding box.
 /// Add word confidence if adding to a String bounding box.
 ///
-static void AddBoxToAlto(const ResultIterator *it, PageIteratorLevel level,
+static void AddBoxToAlto(const std::unique_ptr<ResultIterator> &it, PageIteratorLevel level,
                          std::stringstream &alto_str) {
   int left, top, right, bottom;
   it->BoundingBox(level, &left, &top, &right, &bottom);
@@ -52,6 +54,20 @@ static void AddBoxToAlto(const ResultIterator *it, PageIteratorLevel level,
   } else {
     alto_str << ">";
   }
+}
+
+static std::string GetID(const char *prefix, int page_number, int counter) {
+  std::stringstream idstr;
+  // IDs will only have the counter for the first page to keep them consistent
+  // with the IDs assigned before this change was made.
+  // From the second page on, IDs will also contain the page number to make them unique.
+  if (page_number == 0) {
+    idstr << prefix << "_" << counter;
+  } else {
+    idstr << prefix << "_" << page_number << "_" << counter;
+  }
+
+  return idstr.str();
 }
 
 ///
@@ -127,24 +143,15 @@ TessAltoRenderer::TessAltoRenderer(const char *outputbase)
 /// data structures.
 ///
 char *TessBaseAPI::GetAltoText(int page_number) {
-  return GetAltoText(nullptr, page_number);
-}
-
-///
-/// Make an XML-formatted string with ALTO markup from the internal
-/// data structures.
-///
-char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(monitor) < 0)) {
+  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
   int lcnt = 0, tcnt = 0, bcnt = 0, wcnt = 0;
 
-  if (tesseract_->input_file_path.empty()) {
+  if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   std::stringstream alto_str;
   // Use "C" locale (needed for int values larger than 999).
   alto_str.imbue(std::locale::classic());
@@ -155,7 +162,7 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
            << " WIDTH=\"" << rect_width_ << "\""
            << " HEIGHT=\"" << rect_height_ << "\">\n";
 
-  ResultIterator *res_it = GetIterator();
+  std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
@@ -170,10 +177,10 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
         // Handle all kinds of images.
-    //
+		//
         // TODO: optionally add TYPE, for example TYPE="photo".
-        alto_str << "\t\t\t\t<Illustration ID=\"cblock_" << bcnt++ << "\"";
-        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        alto_str << "\t\t\t\t<Illustration ID=\"" << GetID("cblock", page_number, bcnt++) << "\"";
+        AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
         alto_str << "</Illustration>\n";
         res_it->Next(RIL_BLOCK);
         continue;
@@ -181,38 +188,38 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
       case PT_HORZ_LINE:
       case PT_VERT_LINE:
         // Handle horizontal and vertical lines.
-        alto_str << "\t\t\t\t<GraphicalElement ID=\"cblock_" << bcnt++ << "\"";
-        AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+        alto_str << "\t\t\t\t<GraphicalElement ID=\"" << GetID("cblock", page_number, bcnt++) << "\"";
+        AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
         alto_str << "</GraphicalElement >\n";
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintError("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }
 
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
-      alto_str << "\t\t\t\t<ComposedBlock ID=\"cblock_" << bcnt << "\"";
-      AddBoxToAlto(res_it, RIL_BLOCK, alto_str);
+      alto_str << "\t\t\t\t<ComposedBlock ID=\"" << GetID("cblock", page_number, bcnt) << "\"";
+      AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);
       alto_str << "\n";
     }
 
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
-      alto_str << "\t\t\t\t\t<TextBlock ID=\"block_" << tcnt << "\"";
-      AddBoxToAlto(res_it, RIL_PARA, alto_str);
+      alto_str << "\t\t\t\t\t<TextBlock ID=\"" << GetID("block", page_number, tcnt) << "\"";
+      AddBoxToAlto(res_it.get(), RIL_PARA, alto_str);
       alto_str << "\n";
     }
 
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
-      alto_str << "\t\t\t\t\t\t<TextLine ID=\"line_" << lcnt << "\"";
-      AddBoxToAlto(res_it, RIL_TEXTLINE, alto_str);
+      alto_str << "\t\t\t\t\t\t<TextLine ID=\"" << GetID("line", page_number, lcnt) << "\"";
+      AddBoxToAlto(res_it.get(), RIL_TEXTLINE, alto_str);
       alto_str << "\n";
     }
 
-    alto_str << "\t\t\t\t\t\t\t<String ID=\"string_" << wcnt << "\"";
-    AddBoxToAlto(res_it, RIL_WORD, alto_str);
+    alto_str << "\t\t\t\t\t\t\t<String ID=\"" << GetID("string", page_number, wcnt) << "\"";
+    AddBoxToAlto(res_it.get(), RIL_WORD, alto_str);
     alto_str << " CONTENT=\"";
 
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
@@ -258,12 +265,8 @@ char *TessBaseAPI::GetAltoText(ETEXT_DESC *monitor, int page_number) {
 
   alto_str << "\t\t\t</PrintSpace>\n"
            << "\t\t</Page>\n";
-  const std::string &text = alto_str.str();
 
-  char *result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  delete res_it;
-  return result;
+  return copy_string(alto_str.str());
 }
 
 } // namespace tesseract

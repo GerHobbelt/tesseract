@@ -39,6 +39,8 @@ using UNICHAR_ID = int;
 static const int INVALID_UNICHAR_ID = -1;
 // A special unichar that corresponds to INVALID_UNICHAR_ID.
 static const char INVALID_UNICHAR[] = "__INVALID_UNICHAR__";
+// A special unichar that corresponds to id being outside legal range.
+static const char OUTOFRANGE_UNICHAR[] = "__OUTOFRANGE_UNICHAR__";
 
 enum StrongScriptDirection {
   DIR_NEUTRAL = 0,       // Text contains only neutral characters.

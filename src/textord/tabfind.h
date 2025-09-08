@@ -345,7 +345,7 @@ private:
 
 protected:
   ICOORD vertical_skew_; ///< Estimate of true vertical in this image.
-  int resolution_;       ///< Of source image in pixels per inch.
+  int resolution_ = 0;       ///< Of source image in pixels per inch.
 private:
   ICOORD image_origin_;         ///< Top-left of image in deskewed coords
   TabVector_LIST vectors_;      ///< List of rule line and tabstops.
@@ -354,7 +354,7 @@ private:
   // List of commonly occurring width ranges with x=min and y=max.
   ICOORDELT_LIST column_widths_; ///< List of commonly occurring width ranges.
   /** Callback to test an int for being a common width. */
-  WidthCallback width_cb_;
+  WidthCallback width_cb_ = 0;
   // Sets of bounding boxes that are candidate tab stops.
   std::vector<BLOBNBOX *> left_tab_boxes_;
   std::vector<BLOBNBOX *> right_tab_boxes_;

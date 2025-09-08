@@ -9,9 +9,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if defined(PANGO_ENABLE_ENGINE)
 
@@ -27,7 +25,7 @@
 #include <memory>
 #include <string>
 
-BOOL_PARAM_FLAG(display, false, "Display image for inspection");
+BOOL_VAR(stringrenderer_display, false, "Display image for inspection");
 
 namespace tesseract {
 
@@ -60,14 +58,14 @@ protected:
     std::locale::global(system_locale);
 
     l_chooseDisplayProg(L_DISPLAY_WITH_XZGV);
-    FLAGS_fonts_dir = TESTING_DIR;
-    FLAGS_fontconfig_tmpdir = FLAGS_test_tmpdir;
+    trainer_fonts_dir = TESTING_DIR;
+    trainer_fontconfig_tmpdir = stringrenderer_test_tmpdir;
     file::MakeTmpdir();
     PangoFontInfo::SoftInitFontConfig(); // init early
   }
 
   void DisplayClusterBoxes(Image pix) {
-    if (!FLAGS_display) {
+    if (!stringrenderer_display) {
       return;
     }
     const std::vector<BoxChar *> &boxchars = renderer_->GetBoxes();
@@ -411,7 +409,7 @@ TEST_F(StringRendererTest, DoesRenderAllFontsToImage) {
       EXPECT_TRUE(pix != nullptr);
       EXPECT_STRNE("", font_used.c_str());
     }
-    if (FLAGS_display) {
+    if (stringrenderer_display) {
       pixDisplay(pix, 0, 0);
     }
     pix.destroy();

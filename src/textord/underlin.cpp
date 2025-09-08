@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "underlin.h"
 
 namespace tesseract {
@@ -214,7 +216,7 @@ void vertical_cunderline_projection( // project outlines
   C_OUTLINE_IT out_it = outline->child();
 
   pos = outline->start_pos();
-  TDimension length = outline->pathlength();
+  TDimension length = outline->pathlength();      // of outline
   for (TDimension stepindex = 0; stepindex < length; stepindex++) {
     step = outline->step(stepindex);
     if (step.x() > 0) {

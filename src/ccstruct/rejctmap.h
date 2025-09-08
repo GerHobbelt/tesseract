@@ -41,7 +41,7 @@ OF THIS IMPLIED TEMPORAL ORDERING OF THE FLAGS!!!!
 #define REJCTMAP_H
 
 #include "errcode.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 #include <bitset>
 #include <memory>
@@ -108,13 +108,18 @@ class REJ {
 public:
   REJ() = default;
 
-  REJ( // classwise copy
-      const REJ &source) {
+  // copy constructor
+  REJ(const REJ &source) {
     flags = source.flags;
   }
 
-  REJ &operator=( // assign REJ
-      const REJ &source) = default;
+  // V690 The 'REJ' class implements a copy constructor, but lacks the copy assignment operator. It is dangerous to use such a class. rejctmap.h 101
+  REJ &operator=(const REJ &source) {
+    if (this != &source) {
+      flags = source.flags;
+    }
+    return *this;
+  }
 
   bool flag(REJ_FLAGS rej_flag) const {
     return flags[rej_flag];
@@ -306,7 +311,7 @@ public:
     return (rejected() && !perm_rejected());
   }
 
-  void full_print(FILE *fp) const;
+  std::string full_print_to_string() const;
 };
 
 class REJMAP {
@@ -345,9 +350,9 @@ public:
   // Cut out an element.
   void remove_pos(uint16_t pos);
 
-  void print(FILE *fp) const;
+  std::string print_to_string() const;
 
-  void full_print(FILE *fp) const;
+  std::string full_print_to_string() const;
 
   bool recoverable_rejects() const; // Any non perm rejs?
 

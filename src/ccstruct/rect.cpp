@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "rect.h"
 
@@ -220,14 +218,23 @@ void TBOX::plot(                  // use current settings
   ptaDestroy(&pta);
 }
 
+void TBOX::print() const { // print
+  tprintDebug("Bounding box={}\n", print_to_str());
+}
+
 // Appends the bounding box as ({},{})->({},{}) to a string.
-void TBOX::print_to_str(std::string &str) const {
+std::string TBOX::print_to_str() const {
   // "({},{})->({},{})", left(), bottom(), right(), top()
-  str += "(" + std::to_string(left());
-  str += "," + std::to_string(bottom());
-  str += ")->(" + std::to_string(right());
-  str += "," + std::to_string(top());
-  str += ')';
+  if (!null_box()) {
+    return fmt::format("(l:{},b:{}->r:{},t:{})[=>width:{},height:{}]", left(), bottom(), right(), top(), width(), height());
+  } else {
+    // if we still got a kind of sane corner coordinate, don't hesitate to report it:
+    if (right() >= 0 && top() >= 0) {
+      return fmt::format("<null_box>:(l:{},b:{}->r:{},t:{})[=>zero area]", left(), bottom(), right(), top());
+    } else {
+      return "<null_box>";
+    }
+  }
 }
 
 // Writes to the given file. Returns false in case of error.

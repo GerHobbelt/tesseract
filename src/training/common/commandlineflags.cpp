@@ -8,17 +8,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "commandlineflags.h"
 #include <tesseract/baseapi.h> // TessBaseAPI::Version
+#include <parameters/parameters.h>
 #include <cmath>               // for std::isnan, NAN
 #include <locale>              // for std::locale::classic
 #include <sstream>             // for std::stringstream
 #include <vector>              // for std::vector
+#include <boost/algorithm/string/replace.hpp>
+#include <filesystem>
 #include "errcode.h"
 #include "helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
+
+namespace fs = std::filesystem;
+
+using namespace ::parameters;
 
 namespace tesseract {
+
+static bool AnyFlagExists(const char *flag_name) {
+  std::string full_flag_name("FLAGS_");
+  full_flag_name += flag_name;
+  {
+    std::vector<IntParam *> empty;
+    auto *p =
+        ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params_c(), empty);
+    if (p) {
+      return true;
+    }
+  }
+  {
+    std::vector<BoolParam *> empty;
+    auto *p =
+        ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params_c(), empty);
+    if (p) {
+      return true;
+    }
+  }
+  {
+    std::vector<DoubleParam *> empty;
+    auto *p =
+        ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(), GlobalParams()->double_params_c(), empty);
+    if (p) {
+      return true;
+    }
+  }
+  {
+    std::vector<StringParam *> empty;
+    auto *p =
+        ParamUtils::FindParam<StringParam>(full_flag_name.c_str(), GlobalParams()->string_params_c(), empty);
+    if (p) {
+      return true;
+    }
+  }
+  return false;
+}
 
 static void PrintCommandLineFlags() {
   const char *kFlagNamePrefix = "FLAGS_";
@@ -39,7 +86,16 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
   const char** argv = *argv_ref;
   if (!extra_usage)
     extra_usage = "";
-  const char* appname = ((argc > 0 && argv[0]) ? fz_basename(argv[0]) : "???");
+
+  std::string appname;
+  if (argc > 0 && argv[0]) {
+    fs::path exename = argv[0];
+    appname = exename.stem().string();
+    extra_usage = boost::replace_all_copy(appname, "tesseract-", "");
+  } 
+  else {
+	appname = "???";
+  }
 
   if (argc == 1) {
     tprintInfo("USAGE:\n  {} -v | --version | {}\n", appname, extra_usage);
@@ -94,7 +150,7 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
     if (equals_position == nullptr) {
       lhs = current_arg;
     } else {
-      lhs.assign(current_arg, equals_position - current_arg);
+      lhs.assign(current_arg, equals_position);
     }
     if (!lhs.length()) {
       tprintError("Bad argument: {}\n", argv[i]);
@@ -102,48 +158,51 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
     }
 
     // Find the flag name in the list of global flags.
-    std::string full_flag_name("FLAGS_");
-    full_flag_name += lhs;
-    auto *p = ParamUtils::FindParam<Param>(full_flag_name.c_str(), GlobalParams());
-    if (p == nullptr) {
-      // Flag was not found. Exit with an error message?
+    if (AnyFlagExists(lhs.c_str())) {
+	    std::string full_flag_name("FLAGS_");
+	    full_flag_name += lhs;
+	    auto *p = ParamUtils::FindParam<Param>(full_flag_name.c_str(), GlobalParams());
+	    if (p == nullptr) {
+	      // Flag was not found. Exit with an error message?
 
-      // When the commandline option is a single character, it's probably
-      // an application specific command. Keep it.
-      if (lhs.length() == 1) {
-        break;
-      }
+	      // When the commandline option is a single character, it's probably
+	      // an application specific command. Keep it.
+	      if (lhs.length() == 1) {
+	        break;
+	      }
 
-      tprintError("Non-existent flag '{}'\n", lhs);
-      return 1;
-    }
+	      tprintError("Non-existent flag '{}'\n", lhs);
+	      return 1;
+	    }
 
-    // do not require rhs when parameter is the boolean type:
-    if (rhs == nullptr) {
-      // Pick the next argument
-      if (i + 1 >= argc) {
-        if (p->type() != BOOL_PARAM) {
-          tprintError("Could not find value for flag {}\n", lhs);
-          return 1;
-        }
-        else {
-          // --flag form
-          rhs = "true";
-        }
-      }
-      else {
-        rhs = argv[++i];
-      }
-    }
-    if (p->type() == BOOL_PARAM && strlen(rhs) == 0) {
-      // Bad input of the format --bool_flag=
-      tprintError("Bad boolean flag '{}' argument: '{}'\n", lhs, rhs);
-      return 1;
-    }
+	    // do not require rhs when parameter is the boolean type:
+	    if (rhs == nullptr) {
+	      // Pick the next argument
+	      if (i + 1 >= argc) {
+	        if (p->type() != BOOL_PARAM) {
+	          tprintError("Could not find value for flag {}\n", lhs);
+	          return 1;
+	        }
+	        else {
+	          // --flag form
+	          rhs = "true";
+	        }
+	      }
+	      else {
+	        rhs = argv[++i];
+	      }
+	    }
+	    if (p->type() == BOOL_PARAM && strlen(rhs) == 0) {
+	      // Bad input of the format --bool_flag=
+	      tprintError("Bad boolean flag '{}' argument: '{}'\n", lhs, rhs);
+	      return 1;
+	    }
 
-    if (!p->set_value(rhs)) {
-      tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
-      return 1;
+	    p->set_value(rhs);
+	    if (p->has_faulted()) {
+	      tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
+	      return 1;
+	    }
     }
   } // for each argv
   if (remove_flags && i > 1) {
@@ -151,6 +210,9 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
     (*argv_ref) += (i - 1);
     (*argc_ref) -= (i - 1);
   }
+
+  PrintCommandLineFlags();
+
   return -1;		// continue executing the application
 }
 

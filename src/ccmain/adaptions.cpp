@@ -17,6 +17,9 @@
  *
  **********************************************************************/
 
+// Include automatically generated configuration file if running autoconf.
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <cctype>
 #include <cstring>
 #include "control.h"
@@ -25,17 +28,12 @@
 #include "tesseractclass.h"
 #include "tessvars.h"
 
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
 namespace tesseract {
 bool Tesseract::word_adaptable( // should we adapt?
     WERD_RES *word, uint16_t mode) {
   if (tessedit_adaption_debug) {
     tprintDebug("Running word_adaptable() for {}, rating {}, certainty {}, mode {}\n",
-            word->best_choice->unichar_string(), word->best_choice->rating(),
+            mdqstr(word->best_choice->unichar_string()), word->best_choice->rating(),
             word->best_choice->certainty(), mode);
   }
 

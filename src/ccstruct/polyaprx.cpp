@@ -16,16 +16,18 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "polyaprx.h"
 
 #include "blobs.h"   // for EDGEPT, TPOINT, VECTOR, TESSLINE
 #include "coutln.h"  // for C_OUTLINE
 #include "errcode.h" // for ASSERT_HOST
 #include "mod128.h"  // for DIR128
-#include "params.h"  // for BoolParam, BOOL_VAR
+#include <tesseract/params.h>  // for BoolParam, BOOL_VAR
 #include "points.h"  // for ICOORD
 #include "rect.h"    // for TBOX
-#include "tprintf.h" // for tprintf
+#include <tesseract/tprintf.h> // for tprintf
 
 #include <cstdint> // for INT16_MAX, int8_t
 
@@ -33,9 +35,8 @@ namespace tesseract {
 
 #define FASTEDGELENGTH 256
 
-static BOOL_VAR(poly_debug, false, "Debug old poly");
-static BOOL_VAR(poly_wide_objects_better, true,
-                "More accurate approx on wide things");
+BOOL_VAR(poly_debug, false, "Debug old poly");
+BOOL_VAR(poly_wide_objects_better, true, "More accurate approx on wide things");
 
 #define fixed_dist 20  // really an int_variable
 #define approx_dist 15 // really an int_variable

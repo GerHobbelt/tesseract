@@ -264,7 +264,9 @@ public:
   // stored COLUMN-major, so the left-most index is the most significant.
   // This allows [][] access to use indices in the same order as (,).
   virtual int index(int column, int row) const {
-    return (column * dim2_ + row);
+    auto rv = column * dim2_ + row;
+    ASSERT_HOST(rv >= 0);
+    return rv;
   }
 
   // Put a list element into the matrix at a specific location.
@@ -634,7 +636,9 @@ public:
   int index(int column, int row) const override {
     ASSERT_HOST(row >= column);
     ASSERT_HOST(row - column < this->dim2_);
-    return column * this->dim2_ + row - column;
+    auto rv = column * this->dim2_ + row - column;
+    ASSERT_HOST(rv >= 0);
+    return rv;
   }
 
   // Appends array2 corner-to-corner to *this, making an array of dimension
@@ -671,7 +675,7 @@ public:
   MATRIX(int dimension, int bandwidth)
       : BandTriMatrix<BLOB_CHOICE_LIST *>(dimension, bandwidth, NOT_CLASSIFIED) {}
 
-  ~MATRIX() override;
+  virtual ~MATRIX() override;
 
   // Returns true if there are any real classification results.
   bool Classified(int col, int row, int wildcard_id) const;
@@ -705,6 +709,11 @@ struct MATRIX_COORD {
   MATRIX_COORD() : col(0), row(0) {}
   MATRIX_COORD(int c, int r) : col(c), row(r) {}
   ~MATRIX_COORD() = default;
+
+  // warning C5267: definition of implicit assignment operator for 'tesseract::MATRIX_COORD' is deprecated because it has a user-provided destructor
+  MATRIX_COORD(const MATRIX_COORD &src) noexcept = default;
+  MATRIX_COORD(MATRIX_COORD &&src) noexcept = default;
+  MATRIX_COORD &operator=(const MATRIX_COORD &src) noexcept = default;
 
   bool Valid(const MATRIX &m) const {
     return 0 <= col && col < m.dimension() && col <= row && row < col + m.bandwidth() &&

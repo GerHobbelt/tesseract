@@ -39,6 +39,7 @@ const int kMaxNumberOfScripts = 116 + 1 + 2 + 1;
 struct OSBestResult {
   OSBestResult()
       : orientation_id(0), script_id(0), sconfidence(0.0), oconfidence(0.0) {}
+
   int orientation_id;
   int script_id;
   float sconfidence;
@@ -106,9 +107,6 @@ public:
 
 private:
   OSResults *osr_;
-  static const char *korean_script_;
-  static const char *japanese_script_;
-  static const char *fraktur_script_;
   int korean_id_;
   int japanese_id_;
   int katakana_id_;

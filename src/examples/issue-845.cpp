@@ -158,7 +158,7 @@ extern "C" int main(int argc, const char **argv)
 #else
   tesseract::OcrEngineMode enginemode = tesseract::OEM_TESSERACT_ONLY;
 #endif
-  api->InitOem(NULL, "eng", enginemode);
+  api->Init("eng", enginemode);
 
   const char *imgpath = argv[1];
   if (!imgpath) {

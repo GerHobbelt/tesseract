@@ -15,6 +15,8 @@
  ** limitations under the License.
  ******************************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "featdefs.h"
 
 #include "picofeat.h" // for PicoFeatureLength

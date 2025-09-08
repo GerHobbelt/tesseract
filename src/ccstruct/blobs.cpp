@@ -21,9 +21,7 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "blobs.h"
 
@@ -379,7 +377,9 @@ void TBLOB::CopyFrom(const TBLOB &src) {
     if (outlines == nullptr) {
       outlines = new_outline;
     } else {
-      prev_outline->next = new_outline;
+      if (prev_outline != nullptr) {
+        prev_outline->next = new_outline;
+      }
     }
     prev_outline = new_outline;
   }

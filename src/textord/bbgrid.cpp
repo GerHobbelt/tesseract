@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "bbgrid.h"
 #include "helpers.h"
 #include "ocrblock.h"

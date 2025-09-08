@@ -16,15 +16,11 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "pdf_ttf.h"
-#include "tprintf.h"
-#include "helpers.h" // for Swap
+#include <tesseract/tprintf.h>
+#include "helpers.h" // for Swap, copy_string
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
@@ -247,13 +243,13 @@ static void GetWordBaseline(int writing_direction, int ppi, int height, int word
   double word_length;
   double x, y;
   {
-    int px = word_x1;
-    int py = word_y1;
     double l2 = dist2(line_x1, line_y1, line_x2, line_y2);
     if (l2 == 0) {
       x = line_x1;
       y = line_y1;
     } else {
+      int px = word_x1;
+      int py = word_y1;
       double t = ((px - line_x2) * (line_x2 - line_x1) + (py - line_y2) * (line_y2 - line_y1)) / l2;
       x = line_x2 + t * (line_x2 - line_x1);
       y = line_y2 + t * (line_y2 - line_y1);
@@ -505,10 +501,7 @@ char *TessPDFRenderer::GetPDFTextObjects(TessBaseAPI *api, double width, double 
       pdf_str << "ET\n"; // end the text object
     }
   }
-  const std::string &text = pdf_str.str();
-  char *result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(pdf_str.str());
 }
 
 bool TessPDFRenderer::BeginDocumentHandler() {
@@ -930,12 +923,12 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI *api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    int jpg_quality = api->tesseract()->jpg_quality;
+    int jpg_quality = api->tesseract().jpg_quality;
     if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality)) {
-    if (destroy_pix)
-    {
-      pixDestroy(&pix);
-    }
+	  if (destroy_pix)
+	  {
+	    pixDestroy(&pix);
+	  }
       return false;
     }
     AppendData(pdf_object, objsize);

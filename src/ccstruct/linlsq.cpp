@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "linlsq.h"
 #include <cmath> // for std::sqrt
 #include <cstdio>

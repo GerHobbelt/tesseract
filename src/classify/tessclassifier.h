@@ -36,17 +36,17 @@ class TESS_API TessClassifier : public ShapeClassifier {
 public:
   TessClassifier(bool pruner_only, tesseract::Classify *classify)
       : pruner_only_(pruner_only), classify_(classify) {}
-  ~TessClassifier() override = default;
+  virtual ~TessClassifier() override = default;
 
   // Classifies the given [training] sample, writing to results.
   // See ShapeClassifier for a full description.
   int UnicharClassifySample(const TrainingSample &sample, int debug,
                             UNICHAR_ID keep_this, std::vector<UnicharRating> *results) override;
   // Provides access to the ShapeTable that this classifier works with.
-  const ShapeTable *GetShapeTable() const override;
+  virtual const ShapeTable *GetShapeTable() const override;
   // Provides access to the UNICHARSET that this classifier works with.
   // Only needs to be overridden if GetShapeTable() can return nullptr.
-  const UNICHARSET &GetUnicharset() const override;
+  virtual const UNICHARSET &GetUnicharset() const override;
 
   // Displays classification as the given shape_id. Creates as many windows
   // as it feels fit, using index as a guide for placement. Adds any created

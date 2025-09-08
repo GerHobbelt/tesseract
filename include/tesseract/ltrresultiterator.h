@@ -63,7 +63,7 @@ public:
                     int scaled_yres, int rect_left, int rect_top,
                     int rect_width, int rect_height);
 
-  ~LTRResultIterator() override;
+  virtual ~LTRResultIterator() override;
 
   // LTRResultIterators may be copied! This makes it possible to iterate over
   // all the objects at a lower level, while maintaining an iterator to

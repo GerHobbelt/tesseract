@@ -148,9 +148,8 @@ typedef enum TessTextlineOrder {
 typedef struct ETEXT_DESC ETEXT_DESC;
 #endif
 
-typedef bool (*TessCancelFunc)(void *cancel_this, int words);
-typedef bool (*TessProgressFunc)(ETEXT_DESC *ths, int left, int right, int top,
-                                 int bottom);
+typedef bool (*TessCancelFunc)(ETEXT_DESC *cancel_this, int word_count);
+typedef void (*TessProgressFunc)(ETEXT_DESC *ths, int left, int right, int top, int bottom);
 
 struct Pix;
 struct Boxa;
@@ -210,8 +209,6 @@ TESS_API void TessBaseAPISetOutputName(TessBaseAPI *handle, const char *name);
 
 TESS_API BOOL TessBaseAPISetVariable(TessBaseAPI *handle, const char *name,
                                      const char *value);
-TESS_API BOOL TessBaseAPISetDebugVariable(TessBaseAPI *handle, const char *name,
-                                          const char *value);
 
 TESS_API BOOL TessBaseAPIGetIntVariable(const TessBaseAPI *handle,
                                         const char *name, int *value);
@@ -239,16 +236,12 @@ TESS_API int TessBaseAPIInit3(TessBaseAPI *handle, const char *datapath,
                               const char *language);
 
 TESS_API int TessBaseAPIInit4(TessBaseAPI *handle, const char *datapath,
-                              const char *language, TessOcrEngineMode mode,
                               const char **configs, size_t configs_size, const char **vars_vec,
-                              const char **vars_values, size_t vars_vec_size,
-                              BOOL set_only_non_debug_params);
+                              const char **vars_values, size_t vars_vec_size);
 
 TESS_API int TessBaseAPIInit5(TessBaseAPI *handle, const char *data, int data_size,
-                              const char *language, TessOcrEngineMode mode,
                               const char **configs, size_t configs_size, const char **vars_vec,
-                              const char **vars_values, size_t vars_vec_size,
-                              BOOL set_only_non_debug_params);
+                              const char **vars_values, size_t vars_vec_size);
 
 TESS_API const char *TessBaseAPIGetInitLanguagesAsString(
     const TessBaseAPI *handle);
@@ -261,8 +254,6 @@ TESS_API void TessBaseAPIInitForAnalysePage(TessBaseAPI *handle);
 
 TESS_API void TessBaseAPIReadConfigFile(TessBaseAPI *handle,
                                         const char *filename);
-TESS_API void TessBaseAPIReadDebugConfigFile(TessBaseAPI *handle,
-                                             const char *filename);
 
 TESS_API void TessBaseAPISetPageSegMode(TessBaseAPI *handle,
                                         TessPageSegMode mode);
@@ -318,16 +309,12 @@ TESS_API int TessBaseAPIGetThresholdedImageScaleFactor(
 
 TESS_API TessPageIterator *TessBaseAPIAnalyseLayout(TessBaseAPI *handle);
 
-TESS_API int TessBaseAPIRecognize(TessBaseAPI *handle, ETEXT_DESC *monitor);
+TESS_API int TessBaseAPIRecognize(TessBaseAPI *handle);
 
 TESS_API BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename,
-                                      const char *retry_config,
-                                      int timeout_millisec,
                                       TessResultRenderer *renderer);
 TESS_API BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                                      int page_index, const char *filename,
-                                     const char *retry_config,
-                                     int timeout_millisec,
                                      TessResultRenderer *renderer);
 
 TESS_API TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle);

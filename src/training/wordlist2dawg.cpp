@@ -19,9 +19,7 @@
 // Given a file that contains a list of words (one word per line) this program
 // generates the corresponding squished DAWG file.
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "classify.h"
 #include "common/commontraining.h"     // CheckSharedLibraryVersion

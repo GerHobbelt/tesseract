@@ -78,13 +78,13 @@ ELISTIZEH(WERD_RES);
  *************************************************************************/
 class PAGE_RES { // page result
 public:
-  int32_t char_count;
-  int32_t rej_count;
+  int32_t char_count = 0;
+  int32_t rej_count = 0;
   BLOCK_RES_LIST block_res_list;
-  bool rejected;
+  bool rejected = false;
   // Updated every time PAGE_RES_IT iterating on this PAGE_RES moves to
   // the next word. This pointer is not owned by PAGE_RES class.
-  WERD_CHOICE **prev_word_best_choice;
+  WERD_CHOICE **prev_word_best_choice = nullptr;
   // Sums of blame reasons computed by the blamer.
   std::vector<int> blame_reasons;
   // Debug information about all the misadaptions on this page.
@@ -117,15 +117,15 @@ public:
  * BLOCK_RES - Block results
  *************************************************************************/
 
-class BLOCK_RES : public ELIST_LINK {
+class BLOCK_RES : public ELIST<BLOCK_RES>::LINK {
 public:
-  BLOCK *block;       // real block
-  int32_t char_count; // chars in block
-  int32_t rej_count;  // rejected chars
-  int16_t font_class; //
-  int16_t row_count;
-  float x_height;
-  bool font_assigned; // block already
+  BLOCK *block = nullptr;       // real block
+  int32_t char_count = 0; // chars in block
+  int32_t rej_count = 0;  // rejected chars
+  int16_t font_class = 0; //
+  int16_t row_count = 0;
+  float x_height = 0;
+  bool font_assigned = false; // block already
   //      processed
 
   ROW_RES_LIST row_res_list;
@@ -141,12 +141,12 @@ public:
  * ROW_RES - Row results
  *************************************************************************/
 
-class ROW_RES : public ELIST_LINK {
+class ROW_RES : public ELIST<ROW_RES>::LINK {
 public:
-  ROW *row;                     // real row
-  int32_t char_count;           // chars in block
-  int32_t rej_count;            // rejected chars
-  int32_t whole_word_rej_count; // rejs in total rej wds
+  ROW *row = nullptr;               // real row
+  int32_t char_count = 0;           // chars in block
+  int32_t rej_count = 0;            // rejected chars
+  int32_t whole_word_rej_count = 0; // rejs in total rej wds
   WERD_RES_LIST word_res_list;
 
   ROW_RES() = default;
@@ -163,7 +163,7 @@ enum CRUNCH_MODE { CR_NONE, CR_KEEP_SPACE, CR_LOOSE_SPACE, CR_DELETE };
 
 // WERD_RES is a collection of publicly accessible members that gathers
 // information about a word result.
-class TESS_API WERD_RES : public ELIST_LINK {
+class TESS_API WERD_RES : public ELIST<WERD_RES>::LINK {
 public:
   // Which word is which?
   // There are 3 coordinate spaces in use here: a possibly rotated pixel space,
@@ -192,7 +192,7 @@ public:
   // match as they are both before any chopping.
   // TODO(rays) determine if docqual does anything useful and delete bln_boxes
   // if it doesn't.
-  tesseract::BoxWord *bln_boxes = nullptr; // BLN input bounding boxes.
+  BoxWord *bln_boxes = nullptr; // BLN input bounding boxes.
   // The ROW that this word sits in. NOT owned by the WERD_RES.
   ROW *blob_row = nullptr;
   // The denorm provides the transformation to get back to the rotated image
@@ -269,7 +269,7 @@ public:
   // The length of box_word matches rebuild_word, best_state (if set) and
   // correct_text (if set), as well as best_choice and represents the
   // number of classified units in the output.
-  tesseract::BoxWord *box_word = nullptr; // Denormalized output boxes.
+  BoxWord *box_word = nullptr; // Denormalized output boxes.
   // The Tesseract that was used to recognize this word. Just a borrowed
   // pointer. Note: Tesseract's class definition is in a higher-level library.
   // We avoid introducing a cyclic dependency by not using the Tesseract
@@ -277,7 +277,7 @@ public:
   // for the top-level multi-language controller, and maybe for output of
   // the recognized language.
   // tesseract points to data owned elsewhere.
-  tesseract::Tesseract *tesseract = nullptr;
+  Tesseract *tesseract = nullptr;
   // The best_state stores the relationship between chopped_word and
   // rebuild_word. Each blob[i] in rebuild_word is composed of best_state[i]
   // adjacent blobs in chopped_word. The seams in seam_array are hidden
@@ -347,7 +347,7 @@ public:
   }
   // Deep copies everything except the ratings MATRIX.
   // To get that use deep_copy below.
-  WERD_RES(const WERD_RES &source) : ELIST_LINK(source) {
+  WERD_RES(const WERD_RES &source) : ELIST<WERD_RES>::LINK(source) {
     // combination is used in function Clear which is called from operator=.
     combination = false;
     *this = source; // see operator=
@@ -469,11 +469,11 @@ public:
   // features on low resolution images.
   // 
   // The norm_mode sets the default mode for normalization in absence
-  // of any of the above flags. It should really be a tesseract::OcrEngineMode
+  // of any of the above flags. It should really be a OcrEngineMode
   // but is declared as int for ease of use with tessedit_ocr_engine_mode.
   // Returns false if the word is empty and sets up fake results.
   bool SetupForRecognition(const UNICHARSET &unicharset_in,
-                           tesseract::Tesseract *tesseract,
+                           Tesseract *tesseract,
                            int norm_mode, const TBOX *norm_box,
                            bool numeric_mode, bool use_body_size,
                            bool allow_detailed_fx, ROW *row,
@@ -608,7 +608,7 @@ public:
   // the given position. (When a sub/superscript is recognized as a separate
   // word, it falls victim to the rule that a whole word cannot be sub or
   // superscript, so this function overrides that problem.)
-  void SetAllScriptPositions(tesseract::ScriptPos position);
+  void SetAllScriptPositions(ScriptPos position);
 
   // Classifies the word with some already-calculated BLOB_CHOICEs.
   // The choices are an array of blob_count pointers to BLOB_CHOICE,
@@ -685,7 +685,7 @@ public:
 
 class TESS_API PAGE_RES_IT {
 public:
-  PAGE_RES *page_res; // page being iterated
+  PAGE_RES *page_res = nullptr; // page being iterated
 
   PAGE_RES_IT() = default;
 
@@ -788,17 +788,17 @@ public:
 private:
   WERD_RES *internal_forward(bool new_block, bool empty_ok);
 
-  WERD_RES *prev_word_res;   // previous word
-  ROW_RES *prev_row_res;     // row of prev word
-  BLOCK_RES *prev_block_res; // block of prev word
+  WERD_RES *prev_word_res = nullptr; // previous word
+  ROW_RES *prev_row_res = nullptr;   // row of prev word
+  BLOCK_RES *prev_block_res = nullptr; // block of prev word
 
-  WERD_RES *word_res;   // current word
-  ROW_RES *row_res;     // row of current word
-  BLOCK_RES *block_res; // block of cur. word
+  WERD_RES *word_res = nullptr; // current word
+  ROW_RES *row_res = nullptr;   // row of current word
+  BLOCK_RES *block_res = nullptr; // block of cur. word
 
-  WERD_RES *next_word_res;   // next word
-  ROW_RES *next_row_res;     // row of next word
-  BLOCK_RES *next_block_res; // block of next word
+  WERD_RES *next_word_res = nullptr; // next word
+  ROW_RES *next_row_res = nullptr;   // row of next word
+  BLOCK_RES *next_block_res = nullptr; // block of next word
 
   BLOCK_RES_IT block_res_it; // iterators
   ROW_RES_IT row_res_it;

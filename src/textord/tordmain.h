@@ -22,7 +22,7 @@
 #include "blobbox.h"
 #include "blobs.h"
 #include "ocrblock.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 struct Pix;
 

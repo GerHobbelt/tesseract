@@ -16,6 +16,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "plumbing.h"
 
 namespace tesseract {

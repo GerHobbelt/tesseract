@@ -80,7 +80,7 @@ build/*
 __pycache__
 
 # tessdata
-*.traineddata
+#*.traineddata
 tessdata_*
 
 # build dirs

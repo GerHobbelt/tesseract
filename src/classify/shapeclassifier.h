@@ -20,10 +20,10 @@
 #ifndef TESSERACT_CLASSIFY_SHAPECLASSIFIER_H_
 #define TESSERACT_CLASSIFY_SHAPECLASSIFIER_H_
 
-#include "image.h"
-#include "scrollview.h"
-
+#include <tesseract/image.h>
 #include <tesseract/unichar.h>
+
+#include "scrollview.h"
 
 #include <vector>
 

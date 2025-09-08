@@ -17,7 +17,8 @@
 /*----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
-#define _USE_MATH_DEFINES // for M_PI
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "fpoint.h"
 #include <cmath> // for M_PI
 #include <cstdio>

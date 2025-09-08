@@ -17,6 +17,8 @@
  *
  ******************************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blkocc.h"
 
 #include "drawtord.h"
@@ -124,7 +126,7 @@ static void horizontal_cblob_projection( // project outlines
 /**
  * horizontal_coutline_projection
  *
- * Compute the horizontal projection of a outline from its outlines
+ * Compute the horizontal projection of an outline from its outlines
  * and add to the given STATS.
  */
 

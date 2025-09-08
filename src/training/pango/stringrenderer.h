@@ -31,8 +31,9 @@
 #include "export.h"
 
 #include <tesseract/export.h>
+#include <tesseract/image.h>
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 #if defined(PANGO_ENABLE_ENGINE)
 
@@ -40,9 +41,6 @@
 //#include "pango/pangocairo.h"
 
 #include "pango_font_info.h"
-
-
-#include "image.h"
 
 #include <string>
 #include <unordered_map>

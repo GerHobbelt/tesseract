@@ -20,15 +20,13 @@
 #ifndef TESSERACT_CCUTIL_AMBIGS_H_
 #define TESSERACT_CCUTIL_AMBIGS_H_
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
 #  include <tesseract/unichar.h>
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
-#  include "tprintf.h"
+#  include <tesseract/tprintf.h>
 #  include "unicharset.h"
 
 #  define MAX_AMBIG_SIZE 10
@@ -109,7 +107,7 @@ public:
 
 // AMBIG_SPEC_LIST stores a list of dangerous ambigs that
 // start with the same unichar (e.g. r->t rn->m rr1->m).
-class AmbigSpec : public ELIST_LINK {
+class AmbigSpec : public ELIST<AmbigSpec>::LINK {
 public:
   AmbigSpec();
   ~AmbigSpec() = default;
@@ -117,9 +115,7 @@ public:
   // Comparator function for sorting AmbigSpec_LISTs. The lists will
   // be sorted by their wrong_ngram arrays. Example of wrong_ngram vectors
   // in a sorted AmbigSpec_LIST: [9 1 3], [9 3 4], [9 8], [9, 8 1].
-  static int compare_ambig_specs(const void *spec1, const void *spec2) {
-    const AmbigSpec *s1 = *static_cast<const AmbigSpec *const *>(spec1);
-    const AmbigSpec *s2 = *static_cast<const AmbigSpec *const *>(spec2);
+  static int compare_ambig_specs(const AmbigSpec *s1, const AmbigSpec *s2) {
     int result = UnicharIdArrayUtils::compare(s1->wrong_ngram, s2->wrong_ngram);
     if (result != 0) {
       return result;
@@ -166,7 +162,7 @@ public:
   void InitUnicharAmbigs(const UNICHARSET &unicharset, bool use_ambigs_for_adaption);
 
   // Loads the universal ambigs that are useful for any language.
-  void LoadUniversal(const UNICHARSET &encoder_set, UNICHARSET *unicharset);
+  void LoadUniversal(const UNICHARSET &encoder_set, int universal_ambigs_debug_level, UNICHARSET *unicharset);
 
   // Fills in two ambiguity tables (replaceable and dangerous) with information
   // read from the ambigs file. An ambiguity table is an array of lists.
@@ -180,7 +176,7 @@ public:
   // unichar ids that are ambiguous to it.
   // encoder_set is used to encode the ambiguity strings, undisturbed by new
   // unichar_ids that may be created by adding the ambigs.
-  void LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambigs_file, int debug_level,
+  void LoadUnicharAmbigs(const UNICHARSET &encoder_set, TFile *ambigs_file, int ambigs_debug_level,
                          bool use_ambigs_for_adaption, UNICHARSET *unicharset);
 
   // Returns definite 1-1 ambigs for the given unichar id.
@@ -221,6 +217,10 @@ private:
                        UNICHAR_ID *test_unichar_ids, int replacement_ambig_part_size,
                        const char *replacement_string, int type, AmbigSpec *ambig_spec,
                        UNICHARSET *unicharset);
+
+  std::string debug_print_for_unicharset_stmt(const UNICHARSET &unicharset);
+
+  const UNICHARSET *last_unicharset_for_diagnostics_printed_{nullptr};
 
   UnicharAmbigsVector dang_ambigs_;
   UnicharAmbigsVector replace_ambigs_;

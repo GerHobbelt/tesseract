@@ -3,7 +3,7 @@
 // Description: PAGE XML rendering interface
 // Author:      Jan Kamlah
 
-// (C) Copyright 2021
+// (C) Copyright 2024
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,7 +15,10 @@
 // limitations under the License.
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
+#include "errcode.h" // for ASSERT_HOST
+#include "helpers.h" // for copy_string
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <tesseract/renderer.h>
 
@@ -28,8 +31,8 @@
 #include <unordered_set>
 
 #include <leptonica/allheaders.h>
-#include <leptonica/pix_internal.h>
 #include <leptonica/array_internal.h>
+#include <leptonica/pix_internal.h>
 
 #include <tesseract/renderer.h>
 #include "tesseractclass.h" // for Tesseract
@@ -341,7 +344,7 @@ static void AppendLinePolygon(Pta *pts_ltr, Pta *pts_rtl, Pta *ptss, tesseract::
   if (writing_direction != WRITING_DIRECTION_RIGHT_TO_LEFT) {
     if (ptaGetCount(pts_rtl) != 0) {
       ptaJoin(pts_ltr, pts_rtl, 0, -1);
-      DestroyAndCreatePta(pts_rtl);
+      ptaDestroy(&pts_rtl);
     }
     ptaJoin(pts_ltr, ptss, 0, -1);
   } else {
@@ -493,7 +496,7 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
   }
 
   num_pts = ptaGetCount(bottom_pts);
-  // Create a interpolated polygon with stepsize 1
+  // Create an interpolated polygon with stepsize 1.
   for (int index = 0; index < num_pts - 1; ++index) {
     ptaGetIPt(bottom_pts, index, &x0, &y0);
     ptaGetIPt(bottom_pts, index + 1, &x1, &y1);
@@ -576,16 +579,6 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
     // Delete outliers with IQR
     if (abs(y0 - x_coord) > 1.5 * delta_median_Q3 + delta_median && p != 0 && p != num_pts - 1) {
       // TODO: Why was this section added?
-#if 0
-      // If it's the starting or end point adjust the y value in the median
-      // delta range
-      if (p == 0 || p == num_pts-1) {
-        if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
-          if (y0 < x_coord) y0 = y0-delta_median;
-        } else if (y0 > x_coord) y0 = y0+delta_median;
-        ptaAddPt(baseline_recalc_pts, x0, y0);
-      }
-#endif	  
       continue;
     }
     if (writing_direction == WRITING_DIRECTION_TOP_TO_BOTTOM) {
@@ -602,7 +595,8 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
       }
     }
   }
-  // Return recalculated baseline if this fails return the bottom line as baseline
+  // Return recalculated baseline if this fails return the bottom line as
+  // baseline
   ptaDestroy(&baseline_clipped_pts);
   if (ptaGetCount(baseline_recalc_pts) < 2) {
     ptaDestroy(&baseline_recalc_pts);
@@ -652,7 +646,7 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
         "pagecontent.xsd\">\n"
         "\t<Metadata");
 
-    // If a URL is used to recognize a image add it as <Metadata
+    // If a URL is used to recognize an image add it as <Metadata
     // externalRef="url">
     if (std::regex_search(api->GetInputName(),
                           std::regex("^(https?|ftp|ssh):"))) {
@@ -711,37 +705,16 @@ TessPAGERenderer::TessPAGERenderer(const char *outputbase)
 /// data structures.
 ///
 char *TessBaseAPI::GetPAGEText(int page_number) {
-  return GetPAGEText(nullptr, page_number);
-}
-
-///
-/// Make an XML-formatted string with PAGE markup from the internal
-/// data structures.
-///
-char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
-  if (tesseract_ == nullptr || (page_res_ == nullptr && Recognize(monitor) < 0)) {
+  if (tesseract_ == nullptr ||
+      (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
   int rcnt = 0, lcnt = 0, wcnt = 0;
 
-  if (tesseract_->input_file_path.empty()) {
+  if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
-#if defined(_WIN32) && 0
-  // convert input name from ANSI encoding to utf-8
-  int str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, nullptr, 0);
-  wchar_t *uni16_str = new WCHAR[str16_len];
-  str16_len = MultiByteToWideChar(CP_ACP, 0, input_file_.c_str(), -1, uni16_str, str16_len);
-  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, nullptr, 0, nullptr, nullptr);
-  char *utf8_str = new char[utf8_len];
-  WideCharToMultiByte(CP_UTF8, 0, uni16_str, str16_len, utf8_str, utf8_len, nullptr, nullptr);
-  input_file_ = utf8_str;
-  delete[] uni16_str;
-  delete[] utf8_str;
-#endif
-
   // Used variables
 
   std::stringstream reading_order_str;
@@ -778,7 +751,9 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   #define LEVELFLAG tesseract_->page_xml_level
   
   if (LEVELFLAG != 0 && LEVELFLAG != 1) {
-    tprintError("For now, only line level and word level are available, and the level is reset to line level.\n");
+    tprintWarn(
+        "page_xml_level: for now, only line level (0) and word level (1) are available, and the level "
+        "is reset to line level.\n");
     LEVELFLAG = 0;
   }
 
@@ -794,6 +769,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
                     << "\" caption=\"Regions reading order\">\n";
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
+
+  float block_conf = 0;
+  float line_conf = 0;
+
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
@@ -824,13 +803,12 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintError("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }
 
-    float block_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
       // Add Block to reading order
       reading_order_str << "\t\t\t\t<RegionRefIndexed "
@@ -877,7 +855,6 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
     bool skewed_flag = (orientation_block != ORIENTATION_PAGE_UP &&
                         orientation_block != ORIENTATION_PAGE_DOWN);
 
-    float line_conf = 0;
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);
@@ -946,8 +923,10 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
 
     if (LEVELFLAG > 0 || (POLYGONFLAG && !skewed_flag)) {
       // Sort wordpolygons
-      word_top_pts = RecalcPolygonline(word_top_pts, 1 - ttb_flag);
-      word_bottom_pts = RecalcPolygonline(word_bottom_pts, 0 + ttb_flag);
+      // 
+      // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
+      word_top_pts = RecalcPolygonline(word_top_pts, !ttb_flag);
+      word_bottom_pts = RecalcPolygonline(word_bottom_pts, ttb_flag);
 
       // AppendLinePolygon
       AppendLinePolygon(line_top_ltr_pts, line_top_rtl_pts, word_top_pts,
@@ -1001,9 +980,9 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
         writing_direction < 2 && writing_direction_before < 2 &&
         res_it->WordDirection()) {
       if (writing_direction_before == WRITING_DIRECTION_LEFT_TO_RIGHT) {
-        // line_content << "‏" << word_content.str();
+        // line_content << "\u200F" << word_content.str();
       } else {
-        // line_content << "‎" << word_content.str();
+        // line_content << "\u200E" << word_content.str();
       }
     } else {
       // line_content << word_content.str();
@@ -1029,13 +1008,13 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
       }
       if ((POLYGONFLAG && !skewed_flag) || LEVELFLAG > 0) {
         // Recalc Polygonlines
-        line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, 1 - ttb_flag);
+        line_top_ltr_pts = RecalcPolygonline(line_top_ltr_pts, !ttb_flag);
         line_bottom_ltr_pts =
-            RecalcPolygonline(line_bottom_ltr_pts, 0 + ttb_flag);
+            RecalcPolygonline(line_bottom_ltr_pts, ttb_flag);
 
         // Smooth the polygonline
-        SimplifyLinePolygon(line_top_ltr_pts, 5, 1 - ttb_flag);
-        SimplifyLinePolygon(line_bottom_ltr_pts, 5, 0 + ttb_flag);
+        SimplifyLinePolygon(line_top_ltr_pts, 5, !ttb_flag);
+        SimplifyLinePolygon(line_bottom_ltr_pts, 5, ttb_flag);
 
         // Fit linepolygon matching the baselinepoints
         line_baseline_pts = SortBaseline(line_baseline_pts, writing_direction);
@@ -1150,11 +1129,7 @@ char *TessBaseAPI::GetPAGEText(ETEXT_DESC *monitor, int page_number) {
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
-  // Allocate memory for result to hold text.length() characters plus a null
-  // terminator Safely copy the string into result, ensuring no overflow.
-  char* result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(text);
 }
 
 } // namespace tesseract

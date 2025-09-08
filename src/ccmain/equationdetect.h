@@ -36,8 +36,8 @@ class ColPartitionSet;
 
 class TESS_API EquationDetect : public EquationDetectBase {
 public:
-  EquationDetect(const char *equ_datapath, const char *equ_language);
-  ~EquationDetect() override;
+  EquationDetect(TessBaseAPI &owner, const char *equ_datapath, const char *equ_language = nullptr);
+  virtual ~EquationDetect() override;
 
   enum IndentType { NO_INDENT, LEFT_INDENT, RIGHT_INDENT, BOTH_INDENT, INDENT_TYPE_COUNT };
 

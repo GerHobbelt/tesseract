@@ -20,7 +20,7 @@
 #define PITHSYNC_H
 
 #include "blobbox.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "statistc.h"
 
 namespace tesseract {

@@ -20,7 +20,7 @@
 #include "include_gunit.h"
 #include "matrix.h"
 #include "simddetect.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "intsimdmatrix.h" // for IntSimdMatrix
 #include "simddetect.h" // for DotProduct
 #include "tesstypes.h"

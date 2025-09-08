@@ -3,10 +3,16 @@ name: unittest
 # ubuntu-20.04-gcc-unittest - CI runs out of diskspace.
 on:
   push:
-  schedule:
-    - cron: 0 0 * * *
-  workflow_dispatch:
-
+  pull_request:
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**Makefile.am'
+      - '/configure.ac'
+      - 'unittest/**.c'
+      - 'unittest/**.cc'
+  #schedule:
+  #  - cron: 0 0 * * *
   workflow_dispatch:
 
 jobs:
@@ -17,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { name: ubuntu-20.04-gcc-unittest, os: ubuntu-20.04, cxx: g++, cxxflags: '-g -O2 -fsanitize=address,undefined' }
+          - { name: ubuntu-24.04-gcc-unittest, os: ubuntu-24.04, cxx: g++, cxxflags: '-g -O2 -fsanitize=address,undefined' }
           - { name: ubuntu-22.04-clang-unittest, os: ubuntu-22.04, cxx: clang++, cxxflags: '-g -O2 -fsanitize=address,undefined -stdlib=libc++' }
     steps:
     - uses: actions/checkout@v4
@@ -41,7 +47,6 @@ jobs:
 
     - name: Setup
       run: |
-           mkdir -p m4
            ./autogen.sh
 
     - name: Configure (Linux)

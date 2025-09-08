@@ -10,9 +10,7 @@
 
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "winutils.h"
 
@@ -54,6 +52,16 @@ std::string Utf16ToUtf8(const wchar_t* utf16Str) {
   }
 
   return result;
+}
+
+// convert input name from ANSI encoding to utf-8
+std::string AnsiToUtf8(const char *AnsiStr) {
+  auto str16_len = MultiByteToWideChar(CP_ACP, 0, AnsiStr, -1, nullptr, 0);
+  wchar_t *uni16_str = new WCHAR[str16_len];
+  str16_len = MultiByteToWideChar(CP_ACP, 0, AnsiStr, -1, uni16_str, str16_len);
+  std::string utf8_str = Utf16ToUtf8(uni16_str);
+  delete[] uni16_str;
+  return utf8_str;
 }
 
 } // namespace winutils

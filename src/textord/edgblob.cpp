@@ -17,11 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "edgblob.h"
 
@@ -40,25 +36,18 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 //  - number of children exceeds edges_max_children_per_outline
 //  - number of nested layers exceeds edges_max_children_layers
 //  - joint complexity exceeds edges_children_count_limit(as in child_count())
-static BOOL_VAR(edges_use_new_outline_complexity, false,
-                "Use the new outline complexity module");
-static INT_VAR(edges_max_children_per_outline, 10,
-               "Max number of children inside a character outline");
-static INT_VAR(edges_max_children_layers, 5,
-               "Max layers of nested children inside a character outline");
-static BOOL_VAR(edges_debug, false, "turn on debugging for this module");
+BOOL_VAR(edges_use_new_outline_complexity, false, "Use the new outline complexity module");
+INT_VAR(edges_max_children_per_outline, 10, "Max number of children inside a character outline");
+INT_VAR(edges_max_children_layers, 5, "Max layers of nested children inside a character outline");
+BOOL_VAR(edges_debug, false, "turn on debugging for this module");
 
-static INT_VAR(edges_children_per_grandchild, 10,
-               "Importance ratio for chucking outlines");
-static INT_VAR(edges_children_count_limit, 45, "Max holes allowed in blob");
-static BOOL_VAR(edges_children_fix, false,
-                "Remove boxy parents of char-like children");
-static INT_VAR(edges_min_nonhole, 12, "Min pixels for potential char in box");
-static INT_VAR(edges_patharea_ratio, 40,
-               "Max lensq/area for acceptable child outline");
-static DOUBLE_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
-static DOUBLE_VAR(edges_boxarea, 0.875,
-                  "Min area fraction of grandchild for box");
+INT_VAR(edges_children_per_grandchild, 10, "Importance ratio for chucking outlines");
+INT_VAR(edges_children_count_limit, 45, "Max holes allowed in blob");
+BOOL_VAR(edges_children_fix, false, "Remove boxy parents of char-like children");
+INT_VAR(edges_min_nonhole, 12, "Min pixels for potential char in box");
+INT_VAR(edges_patharea_ratio, 40, "Max lensq/area for acceptable child outline");
+DOUBLE_VAR(edges_childarea, 0.5, "Min area fraction of child outline");
+DOUBLE_VAR(edges_boxarea, 0.875, "Min area fraction of grandchild for box");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 

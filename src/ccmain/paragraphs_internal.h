@@ -55,10 +55,6 @@ enum LineType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(LineType);
 
-static inline auto format_as(LineType t) {
-  return fmt::underlying(t);
-}
-
 // The first paragraph in a page of body text is often un-indented.
 // This is a typographic convention which is common to indicate either that:
 // (1) The paragraph is the continuation of a previous paragraph, or

@@ -16,9 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "alignedblob.h"
 #include "colpartitiongrid.h"
@@ -68,8 +66,8 @@ TabFind::TabFind(Tesseract* tess, int gridsize, const ICOORD &bleft, const ICOOR
     : AlignedBlob(tess, gridsize, bleft, tright)
     , resolution_(resolution)
     , image_origin_(0, tright.y() - 1)
-    , v_it_(&vectors_) {
-  width_cb_ = nullptr;
+    , v_it_(&vectors_)
+    , width_cb_(nullptr) {
   v_it_.add_list_after(vlines);
   SetVerticalSkewAndParallelize(vertical_x, vertical_y);
   using namespace std::placeholders; // for _1

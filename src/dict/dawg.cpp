@@ -20,11 +20,13 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "dawg.h"
 
 #include "dict.h"
 #include "helpers.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <memory>
 

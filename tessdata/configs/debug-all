@@ -1,0 +1,177 @@
+#
+# debug-all preset: turns on ALMOST all debugging in tesseract
+#
+# Only the extreme loudmouths (in terms of output volume ;-) ) are toned down or disabled.
+# See the comments below for where this measure of restraint has been applied.
+#
+
+verbose_process                                                 Y                            
+scrollview_support                                                 Y                            
+
+textord_tabfind_show_images                                                 Y                            
+//textord_tabfind_show_vlines                                                 Y                            
+
+#if !GRAPHICS_DISABLED
+
+textord_tabfind_show_initial_partitions                                                 Y                            
+textord_tabfind_show_reject_blobs                                                 Y                            
+textord_tabfind_show_partitions                                                 2                            
+textord_tabfind_show_columns                                                 Y                            
+textord_tabfind_show_blocks                                                 Y                            
+
+#endif
+
+textord_noise_debug                                                 Y                            
+
+textord_oldbl_debug                                                 N                            
+# ^^^^^^^^^^^ very noisy output
+
+textord_baseline_debug                                                 Y                            
+textord_debug_block                                                 9                            
+textord_debug_bugs                                                 9   
+                         
+textord_debug_tabfind                                                 1
+# ^^^^^^^^^^^^^^^ = 9     --> very noisy output
+
+textord_debug_baselines                                                 Y                            
+textord_debug_blob                                                 Y                            
+textord_debug_blob                                                 Y                            
+textord_debug_pitch_metric                                                 Y                            
+textord_debug_fixed_pitch_test                                                 Y                            
+textord_debug_pitch                                                 Y                            
+textord_debug_printable                                                 Y                            
+textord_debug_xheights                                                 Y                            
+textord_debug_xheights                                                 Y                            
+
+textord_show_initial_words                                                 Y                            
+textord_blocksall_fixed                                                 Y                            
+textord_blocksall_prop                                                 Y                            
+
+tessedit_create_hocr                                                 Y                            
+tessedit_create_alto                                                 Y                            
+tessedit_create_page_xml                                                 Y                            
+tessedit_create_tsv                                                 Y                            
+tessedit_create_pdf                                                 Y                            
+textonly_pdf                                                 n                            
+tessedit_write_unlv                                                 Y                            
+tessedit_create_lstmbox                                                 Y                            
+tessedit_create_boxfile                                                 Y                            
+tessedit_create_wordstrbox                                                 Y                            
+tessedit_create_txt                                                 Y                            
+
+tessedit_dump_choices                                                 Y                            
+tessedit_dump_pageseg_images                                                 Y                            
+
+tessedit_write_images                                                 Y                            
+
+tessedit_adaption_debug                                                 Y                            
+tessedit_debug_block_rejection                                                 Y                            
+tessedit_debug_doc_rejection                                                 Y                            
+tessedit_debug_fonts                                                 Y                            
+tessedit_debug_quality_metrics                                                 Y                            
+
+tessedit_rejection_debug                                                 Y                            
+tessedit_timing_debug                                                 Y                            
+
+tessedit_bigram_debug                                                 Y                            
+
+tess_debug_lstm                                                      1
+# ^^^^^^^^^^^^  = 1   --> LSTM debug output is extremely noisy
+
+debug_noise_removal                                                 Y                            
+
+classify_debug_level                                                1
+#^^^^^^^^^^^^^^^^^^^ > 1 --> LSTM debug output is extremely noisy
+
+classify_learning_debug_level                                                 9                            
+classify_debug_character_fragments                                                 Y                            
+classify_enable_adaptive_debugger                                                 Y                            
+
+matcher_debug_separate_windows                                                 Y                            
+matcher_debug_flags                                                 Y                            
+matcher_debug_level                                                 3                            
+
+multilang_debug_level                                                 3                            
+
+paragraph_debug_level                                                 3                            
+
+segsearch_debug_level                                                 3                            
+
+stopper_debug_level                                                 3                            
+
+superscript_debug                                                 Y                            
+
+crunch_debug                                                 Y                            
+
+dawg_debug_level                                                 1                               
+// ^^^^^^^^^^^^^^^ = 1    --> noisy
+
+debug_fix_space_level                                                 9                            
+debug_x_ht_level                                                 3                            
+
+debug_misc                                                 Y                            
+
+hyphen_debug_level                                                 3                            
+
+language_model_debug_level                                                 1
+# ^^^^^^^^^^^^^^^^^^^^ = 7     -- noisy
+
+tosp_debug_level                                                 3                            
+
+wordrec_debug_level                                                 3                            
+
+word_to_debug                                                 Y                            
+
+scribe_save_grey_rotated_image                                                 Y                            
+scribe_save_binary_rotated_image                                                 Y                            
+scribe_save_original_rotated_image                                                 Y                            
+
+hocr_font_info                                                 Y                            
+hocr_char_boxes                                                 Y                            
+hocr_images                                                 Y                            
+
+thresholding_debug                                                 Y                            
+
+preprocess_graynorm_mode                                                 0
+# ^^^^^^^^^^^^^^^^^^^ = 0..3
+
+tessedit_bigram_debug                                                 Y                            
+
+wordrec_debug_blamer                                                 Y                            
+
+devanagari_split_debugimage                                                 Y                            
+devanagari_split_debuglevel                                                 3                            
+
+gapmap_debug                                                 Y                            
+
+poly_debug                                                 N                             
+# ^^^^^^^^^^^^^ --> very noisy output
+
+edges_debug                                                 Y                            
+
+ambigs_debug_level                                                 3                            
+
+applybox_debug                                                 Y                            
+
+bidi_debug                                                 Y                            
+
+chop_debug                                                 Y                            
+
+debug_baseline_fit                                                 1                             
+# ^^^^^^^^^^^^^^^^^^   0..3
+
+debug_baseline_y_coord                                                 -2000                            
+
+debug_write_unlv                                                 Y                            
+debug_line_finding                                                 Y                            
+debug_image_normalization                                                 Y                            
+
+interactive_display_mode                                                 N                            
+# ^^^^^^^^^^^^^^^^^^^^^^^^ we're all about non-interactive BATCH MODE processing!
+
+debug_display_page                                                 Y                            
+debug_display_page_blocks                                                 Y                            
+debug_display_page_baselines                                                 Y                            
+dump_segmented_word_images                                                 Y                            
+dump_osdetect_process_images                                                 Y                            
+

@@ -334,7 +334,7 @@ protected:
   PAGE_RES_IT *it_;
   /**
    * The current input WERD being iterated. If there is an output from OCR,
-   * then word_ is nullptr. Owned by the API
+   * then word_ is nullptr. Owned by the API.
    */
   WERD *word_;
   /** The length of the current word_. */

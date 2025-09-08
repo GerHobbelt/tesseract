@@ -15,7 +15,7 @@
 
 #include <leptonica/allheaders.h>
 #include "ocrblock.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 struct Pix;
 struct Box;

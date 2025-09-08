@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "ocrpara.h"
 
 #include "host.h" // For NearlyEqual()
@@ -83,11 +85,9 @@ bool ParagraphModel::Comparable(const ParagraphModel &other) const {
 }
 
 std::string ParagraphModel::ToString() const {
-  char buffer[200];
   const char *alignment = ParagraphJustificationToString(justification_);
-  snprintf(buffer, sizeof(buffer), "margin: %d, first_indent: %d, body_indent: %d, alignment: %s",
+  return fmt::format("margin: {}, first_indent: {}, body_indent: {}, alignment: {}",
            margin_, first_indent_, body_indent_, alignment);
-  return std::string(buffer);
 }
 
 } // namespace tesseract

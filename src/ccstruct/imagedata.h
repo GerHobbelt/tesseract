@@ -19,7 +19,8 @@
 #ifndef TESSERACT_IMAGE_IMAGEDATA_H_
 #define TESSERACT_IMAGE_IMAGEDATA_H_
 
-#include "image.h"
+#include <tesseract/image.h>
+
 #include "points.h" // for FCOORD
 
 #include <mutex>  // for std::mutex

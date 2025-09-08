@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "topitch.h"
 
@@ -38,10 +36,10 @@
 
 namespace tesseract {
 
-static BOOL_VAR(textord_all_prop, false, "All doc is proportial text");
+BOOL_VAR(textord_all_prop, false, "All doc is proportial text");
 BOOL_VAR(textord_debug_fixed_pitch_test, false, "Debug on fixed pitch test");
 BOOL_VAR(textord_debug_pitch, false, "Debug pitch detection");
-static BOOL_VAR(textord_disable_pitch_test, false, "Turn off dp fixed pitch algorithm");
+BOOL_VAR(textord_disable_pitch_test, false, "Turn off dp fixed pitch algorithm");
 BOOL_VAR(textord_fast_pitch_test, false, "Do even faster pitch algorithm");
 BOOL_VAR(textord_debug_pitch_metric, false, "Write full metric stuff");
 BOOL_VAR(textord_show_row_cuts, false, "Draw row-level cuts");
@@ -976,7 +974,8 @@ bool fixed_pitch_row(TO_ROW *row, // row to do
         res_string = "MF";
         break;
       default:
-        ;
+        res_string = "??";
+		break;
     }
     tprintDebug(":sd/p={}:occ={}:init_res={}\n", pitch_sd / row->fixed_pitch, sp_sd, res_string);
   }

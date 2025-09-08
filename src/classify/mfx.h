@@ -19,7 +19,7 @@
 #define MFX_H
 
 #include "mfdefs.h"
-#include "params.h"
+#include <tesseract/params.h>
 
 namespace tesseract {
 

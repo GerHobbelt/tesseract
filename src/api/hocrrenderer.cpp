@@ -17,13 +17,15 @@
  *
  **********************************************************************/
 
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/baseapi.h> // for TessBaseAPI
 #include <locale>              // for std::locale::classic
 #include <memory>              // for std::unique_ptr
 #include <sstream>             // for std::stringstream
 
 #include <tesseract/renderer.h>
+#include "helpers.h"        // for copy_string
 #include "tesseractclass.h" // for Tesseract
 
 namespace tesseract {
@@ -119,21 +121,8 @@ static void AddBoxTohOCR(const ResultIterator *it, PageIteratorLevel level,
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetHOCRText(int page_number) {
-  return GetHOCRText(nullptr, page_number);
-}
-
-/**
- * Make a HTML-formatted string with hOCR markup from the internal
- * data structures.
- * page_number is 0-based but will appear in the output as 1-based.
- * Image name/input_file_ can be set by SetInputName before calling
- * GetHOCRText
- * STL removed from original patch submission and refactored by rays.
- * Returned string must be freed with the delete [] operator.
- */
-char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   if (tesseract_ == nullptr ||
-      (page_res_ == nullptr && Recognize(monitor) < 0)) {
+      (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
@@ -142,10 +131,9 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
   bool para_is_ltr = true;       // Default direction is LTR
   const char *paragraph_lang = nullptr;
 
-  if (tesseract_->input_file_path.empty()) {
+  if (tesseract_->input_file_path_.empty()) {
     SetInputName(nullptr);
   }
-
   std::stringstream hocr_str;
   // Use "C" locale (needed for double values x_size and x_descenders).
   hocr_str.imbue(std::locale::classic());
@@ -155,8 +143,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
            << " id='"
            << "page_" << page_id << "'"
            << " title='image \"";
-  if (!tesseract_->input_file_path.empty()) {
-    hocr_str << HOcrEscape(tesseract_->input_file_path.c_str());
+  if (!tesseract_->input_file_path_.empty()) {
+    hocr_str << HOcrEscape(tesseract_->input_file_path_.c_str());
   } else {
     hocr_str << "unknown";
   }
@@ -192,8 +180,8 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
         res_it->Next(RIL_BLOCK);
         continue;
       case PT_NOISE:
-        tprintError("TODO: Please report image which triggers the noise case.\n");
-        ASSERT_HOST(false);
+        ASSERT_HOST_MSG(false, "TODO: Please report image which triggers the noise case.\n");
+        break;
       default:
         break;
     }
@@ -243,7 +231,6 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
           if (tesseract_->hocr_images) {
             hocr_str << "ocr_photo";
           }
-          ASSERT_HOST(false);
           break;
         default:
           hocr_str << "ocr_line";
@@ -463,13 +450,10 @@ char *TessBaseAPI::GetHOCRText(ETEXT_DESC *monitor, int page_number) {
       bcnt++;
     }
   }
-word_end:
+  // V729 Function body contains the 'word_end' label that is not used by any 'goto' statements. hocrrenderer.cpp 454
   hocr_str << "  </div>\n";
 
-  const std::string &text = hocr_str.str();
-  char* result = new char[text.length() + 1];
-  strcpy(result, text.c_str());
-  return result;
+  return copy_string(hocr_str.str());
 }
 
 /**********************************************************************
@@ -504,9 +488,9 @@ bool TessHOcrRenderer::BeginDocumentHandler() {
       "  <meta name='ocr-system' content='tesseract " TESSERACT_VERSION_STR
       "' />\n"
       "  <meta name='ocr-capabilities' content='ocr_page ocr_carea ocr_par"
-      " ocr_line ocrx_word ocrp_wconf");
+      " ocr_line ocrx_word ocrp_dir ocrp_lang ocrp_wconf");
   if (font_info_) {
-    AppendString(" ocrp_lang ocrp_dir ocrp_font ocrp_fsize");
+    AppendString(" ocrp_font ocrp_fsize");
   }
   AppendString(
       "'/>\n"

@@ -13,7 +13,7 @@
 #define BS_THREAD_POOL_VERSION "v3.3.0 (2022-08-03)"
 
 #if defined(HAVE_MUPDF)
-#include "tprintf.h"          // for tprintf
+#include <tesseract/tprintf.h>          // for tprintf
 #endif
 
 #include <atomic>             // std::atomic
@@ -300,7 +300,8 @@ public:
     /**
      * @brief Destruct the thread pool. Waits for all tasks to complete, then destroys all threads. Note that if the pool is paused, then any tasks still in the queue will never be executed.
      */
-    ~thread_pool()
+    // warning C4265: 'BS::thread_pool': class has virtual functions, but its non-trivial destructor is not virtual; instances of this class may not be destructed correctly
+    virtual ~thread_pool()
     {
         wait_for_tasks();
         destroy_threads();

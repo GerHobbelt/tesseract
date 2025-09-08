@@ -20,9 +20,7 @@
 ----------------------------------------------------------------------*/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -68,20 +66,20 @@ void Wordrec::add_seam_to_queue(float new_priority, SEAM *new_seam, SeamQueue *s
   if (new_seam == nullptr) {
     return;
   }
-  if (chop_debug) {
+  if (chop_debug > 0) {
     tprintDebug("Pushing new seam with priority {} :", new_priority);
     new_seam->Print("seam: ");
   }
   if (seams->size() >= MAX_NUM_SEAMS) {
     SeamPair old_pair(0, nullptr);
     if (seams->PopWorst(&old_pair) && old_pair.key() <= new_priority) {
-      if (chop_debug) {
+      if (chop_debug > 0) {
         tprintDebug("Old seam staying with priority {}\n", old_pair.key());
       }
       delete new_seam;
       seams->Push(&old_pair);
       return;
-    } else if (chop_debug) {
+    } else if (chop_debug > 0) {
       tprintDebug("New seam with priority {} beats old worst seam with {}\n", new_priority,
               old_pair.key());
     }
@@ -134,10 +132,8 @@ void Wordrec::choose_best_seam(SeamQueue *seam_queue, const SPLIT *split, PRIORI
     my_priority =
         seam->FullPriority(bbox.left(), bbox.right(), chop_overlap_knob, chop_centered_maxwidth,
                            chop_center_knob, chop_width_change_knob);
-    if (chop_debug) {
-      char str[80];
-      snprintf(str, sizeof(str), "Full my_priority %0.0f,  ", my_priority);
-      seam->Print(str);
+    if (chop_debug > 0) {
+      seam->Print(fmt::format("Full my_priority {:0.1},  ", my_priority).c_str());
     }
 
     if ((*seam_result == nullptr || (*seam_result)->priority() > my_priority) &&
@@ -224,7 +220,7 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
 
 #if !GRAPHICS_DISABLED
   if (chop_debug > 2) {
-    wordrec_display_splits = true;
+    wordrec_display_splits.set_value(true);
   }
 
   draw_blob_edges(blob);
@@ -283,8 +279,8 @@ SEAM *Wordrec::pick_good_seam(TBLOB *blob) {
 #endif
   }
 
-  if (chop_debug) {
-    wordrec_display_splits = false;
+  if (chop_debug > 0) {
+    wordrec_display_splits.set_value(false);
   }
 
   return (seam);

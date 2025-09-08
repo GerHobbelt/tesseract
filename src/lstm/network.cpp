@@ -16,9 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "network.h"
 
@@ -38,10 +36,7 @@
 #include "scrollview.h"
 #include "series.h"
 #include "statistc.h"
-#ifdef INCLUDE_TENSORFLOW
-#  include "tfnetwork.h"
-#endif
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #undef min
 #undef max
@@ -296,11 +291,7 @@ Network *Network::CreateFromFile(TFile *fp) {
       network = new Series(name);
       break;
     case NT_TENSORFLOW:
-#ifdef INCLUDE_TENSORFLOW
-      network = new TFNetwork(name);
-#else
-      tprintWarn("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
-#endif
+      tprintWarn("Unsupported TensorFlow model\n");
       break;
     // All variants of FullyConnected.
     case NT_SOFTMAX:
@@ -385,8 +376,7 @@ void Network::ClearWindow(bool tess_coords, const char *window_name, int width, 
 // The pix is pixDestroyed.
 int Network::DisplayImage(Image pix, const char *title, ScrollViewReference &window) {
   int height = pixGetHeight(pix);
-  window->Draw(pix, 0, window->TranslateYCoordinate(0), title);
-  pix.destroy();
+  window->Draw(pix, 0, 0 /* window->TranslateYCoordinate(0) -- window::Draw() implementations perform the TranslateYCoordinate() internally */, title);
   return height;
 }
 #endif // !GRAPHICS_DISABLED

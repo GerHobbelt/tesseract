@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "common/commontraining.h" // CheckSharedLibraryVersion
 #include "dawg.h"
 #include "trie.h"

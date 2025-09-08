@@ -39,7 +39,7 @@
 #include <tesseract/export.h>
 
 #include <cstdlib> // for exit
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #if defined(HAS_LIBICU)
 

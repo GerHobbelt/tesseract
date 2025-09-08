@@ -33,6 +33,8 @@
 
 namespace tesseract {
 
+  class TBOX;
+
 /**********************************************************************
  * EANYCODE_CHAR
  * Description of a single character. The character code is defined by
@@ -96,61 +98,87 @@ struct EANYCODE_CHAR { /*single character */
  **********************************************************************/
 class ETEXT_DESC;
 
-typedef bool tesseract_cancel_func_t(void* cancel_this, int words_count);
-typedef bool tesseract_progress_func_t(int progress, int left, int right, int top, int bottom);
-typedef bool tesseract_progress2_func_t(ETEXT_DESC* self, int left, int right, int top, int bottom);
+/// Return true when the session should be canceled.
+///
+/// Notes: the cancel signal is not "sticky", i.e. persisted. If the cancel is meant to be permanent,
+/// until the application terminates, then you are advised to set the `ETEXT_DESC::abort_the_action`
+/// flag to `true` as well: once that flag is set, all subsequent cancel checks are supposed to signal
+/// and this callback will not be invoked again.
+typedef bool tesseract_cancel_func_t(ETEXT_DESC *self, int word_count);
+
+/// This callback may be used to report the session's progress.
+///
+/// Notes: as we expect userland code to use their own enhanced derived class instance for the monitor,
+/// where ETEXT_DESC is the inherited base class, we also anticipate enhanced behaviour of the
+/// progress callback itself:
+/// we only invoke the progress callback when either `ETEXT_DESC::previous_progress` equals NaN or when
+/// `ETEXT_DESC::previous_progress` and `ETEXT_DESC::progress` differ by 0.1 or more, i.e. 0.1%, which
+/// we designate "important enough to notify the outside world".
+///
+/// As your userland progress callback handler may be more elaborate and/or have other rate limiting
+/// features built in, we expect the progress callback to copy/update the `ETEXT_DESC::previous_progress`
+/// value itself: we don't touch it so you have full control over rate limiting the progress reports.
+///
+/// For an example use of this, see the tesseract CLI and its monitor implementation in
+/// `tesseract.cpp::CLI_Monitor`.
+/// 
+typedef void tesseract_progress_func_t(ETEXT_DESC *self, int left, int right, int top, int bottom);
 
 using CANCEL_FUNC    = std::function<tesseract_cancel_func_t>;
 using PROGRESS_FUNC  = std::function<tesseract_progress_func_t>;
-using PROGRESS_FUNC2 = std::function<tesseract_progress2_func_t>;
 
+
+/**
+ * Progress monitor covers word recognition and layout analysis.
+ *
+ * See Ray comment in https://github.com/tesseract-ocr/tesseract/pull/27
+ */
 class ETEXT_DESC { // output header
 public:
-  int16_t count{0};    /// chars in this buffer(0)
-  int16_t progress{0}; /// percent complete increasing (0-100)
-  /** Progress monitor covers word recognition and it does not cover layout
-   * analysis.
-   * See Ray comment in https://github.com/tesseract-ocr/tesseract/pull/27 */
-  int8_t more_to_come{0};       /// true if not last
-  volatile int8_t ocr_alive{0}; /// ocr sets to 1, HP 0
-  int8_t err_code{0};           /// for errcode use
+  float progress{0.0}; /// percent complete increasing (0-100)
+  float previous_progress{NAN}; /// internal tracker used by exec_progress_func() et al
+
+  volatile int8_t ocr_alive{0}; /// watchdog flag: ocr engine sets to 1, (async) monitor resets to 0
+
   CANCEL_FUNC cancel{nullptr};  /// returns true to cancel
-  PROGRESS_FUNC progress_callback{nullptr};   /// called whenever progress increases
-  PROGRESS_FUNC2 progress_callback2{nullptr}; /// monitor-aware progress callback
-  void *cancel_this{nullptr};        /// this or other data for cancel
+  PROGRESS_FUNC progress_callback{nullptr};  /// called whenever progress increases. See also PROGRESS_FUNC notes.
+
   std::chrono::steady_clock::time_point end_time;
-  /// Time to stop. Expected to be set only
-  /// by call to set_deadline_msecs().
-  EANYCODE_CHAR text[1]{}; /// character data
+  ///< Time to stop. Expected to be set only by call to set_deadline_msecs().
 
-  ETEXT_DESC() : progress_callback2(&default_progress_func) {
-    end_time = std::chrono::time_point<std::chrono::steady_clock,
-                                       std::chrono::milliseconds>();
-  }
+  /// This flag signals tesseract to abort the current operation. It is checked by calling the kick_watchdog_and_check_for_cancel() method.
+  volatile bool abort_the_action{false};
 
-  // Sets the end time to be deadline_msecs milliseconds from now.
-  void set_deadline_msecs(int32_t deadline_msecs) {
-    if (deadline_msecs > 0) {
-      end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadline_msecs);
-    }
-  }
+  ETEXT_DESC();
+
+  void reset_values_to_Factory_Defaults();
+
+  // Sets the end time to be deadline_msecs milliseconds from now. Any `deadline_msecs` value <= 0 will disable the deadline by setting an deadline in infinity.
+  void set_deadline_msecs(int32_t deadline_msecs);
 
   // Returns false if we've not passed the end_time, or have not set a deadline.
-  bool deadline_exceeded() const {
-    if (end_time.time_since_epoch() == std::chrono::steady_clock::duration::zero()) {
-      return false;
-    }
-    auto now = std::chrono::steady_clock::now();
-    return (now > end_time);
-  }
+  bool deadline_exceeded() const;
 
-private:
-  static bool default_progress_func(ETEXT_DESC *ths, int left, int right, int top, int bottom) {
-    if (ths->progress_callback != nullptr) {
-      return (ths->progress_callback)(ths->progress, left, right, top, bottom);
-    }
-    return true;
-  }
+  // Return true when cancel state has been flagged through whatever means.
+  bool kick_watchdog_and_check_for_cancel(int word_count = 0);
+
+  // increment progress by 'one point'.
+  //
+  // Note: uses a exponential degradation to smooth the progress towards 100%
+  // without knowing how often this method will be invoked. Guarantees to
+  // never rise above 99.9%, i.e. you must explicitly set progress to 100%
+  // when done; it cannot be achieved through this call.
+  ETEXT_DESC &bump_progress() noexcept;
+  // Ditto, but possibly increase the progress faster using the ratio
+  // part_count/whole_count; conditions may apply...
+  ETEXT_DESC &bump_progress(int part_count, int whole_count) noexcept;
+
+  ETEXT_DESC &set_progress(float percentage) noexcept;
+
+  ETEXT_DESC &exec_progress_func(int left, int right, int top, int bottom);
+  ETEXT_DESC &exec_progress_func(const TBOX *box);
+  ETEXT_DESC &exec_progress_func(const TBOX &box);
+  ETEXT_DESC &exec_progress_func();
 };
 
 } // namespace tesseract

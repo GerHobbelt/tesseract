@@ -20,7 +20,7 @@
 #define WERD_H
 
 #include "elst2.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "stepblob.h"
 
 #include <bitset>
@@ -59,7 +59,7 @@ enum DISPLAY_FLAGS {
 
 class ROW; // forward decl
 
-class TESS_API WERD : public ELIST2_LINK {
+class TESS_API WERD : public ELIST2<WERD>::LINK {
 public:
   WERD() = default;
   // WERD constructed with:
@@ -78,6 +78,9 @@ public:
   WERD *ConstructFromSingleBlob(bool bol, bool eol, C_BLOB *blob);
 
   ~WERD() = default;
+
+  WERD(const WERD &source) noexcept = delete;
+  WERD(WERD &&source) noexcept = delete;
 
   // assignment
   WERD &operator=(const WERD &source);
@@ -200,7 +203,7 @@ private:
   C_BLOB_LIST rej_cblobs; // DUFF blobs
 };
 
-ELIST2IZEH(WERD)
+ELIST2IZEH(WERD);
 
 } // namespace tesseract
 
@@ -209,7 +212,7 @@ ELIST2IZEH(WERD)
 namespace tesseract {
 
 // compare words by increasing order of left edge, suitable for qsort(3)
-int word_comparator(const void *word1p, const void *word2p);
+int word_comparator(const WERD *word1, const WERD *word2);
 
 } // namespace tesseract
 

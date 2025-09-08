@@ -16,11 +16,11 @@
  *
  **********************************************************************/
 
-#ifndef SCANEDG_H
-#define SCANEDG_H
+#ifndef TESSERACT_SCANEDG_H
+#define TESSERACT_SCANEDG_H
 
-#include "image.h"
-#include "params.h"
+#include <tesseract/image.h>
+#include <tesseract/params.h>
 
 struct Pix;
 

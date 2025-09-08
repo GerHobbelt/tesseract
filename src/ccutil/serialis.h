@@ -304,6 +304,9 @@ public:
   // Skip data.
   bool Skip(size_t count);
 
+  // Return the file content as a long string.
+  std::vector<char> ReadAllRemainingContent();
+
   // Reads a line like fgets. Returns nullptr on EOF, otherwise buffer.
   // Reads at most buffer_size bytes, including '\0' terminator, even if
   // the line is longer. Does nothing if buffer_size <= 0.

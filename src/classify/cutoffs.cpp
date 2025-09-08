@@ -18,9 +18,7 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -68,9 +66,9 @@ void Classify::ReadNewCutoffs(TFile *fp, uint16_t *Cutoffs) {
       break;
     }
     if (Class.compare("NULL") == 0) {
-      ClassId = unicharset.unichar_to_id(" ");
+      ClassId = unicharset_.unichar_to_id(" ");
     } else {
-      ClassId = unicharset.unichar_to_id(Class.c_str());
+      ClassId = unicharset_.unichar_to_id(Class.c_str());
     }
     ASSERT_HOST(ClassId >= 0 && ClassId < MAX_NUM_CLASSES);
     Cutoffs[ClassId] = Cutoff;

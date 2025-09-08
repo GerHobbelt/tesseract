@@ -17,9 +17,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <leptonica/allheaders.h>
 
@@ -34,6 +32,7 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
+#include "commandlineflags.h"
 #if !GRAPHICS_DISABLED
 #  include "svmnode.h"
 #endif
@@ -51,8 +50,10 @@ const int kMaxUnicharsPerCluster = 2000;
 // Mean font distance below which to merge fonts and unichars.
 const float kFontMergeDistance = 0.025f;
 
+//INT_VAR(trainer_debug_level, 0, "MasterTrainer debug level (0..2).");   -- defined in commontraining.cpp
+
 MasterTrainer::MasterTrainer(NormalizationMode norm_mode, bool shape_analysis,
-                             bool replicate_samples, int debug_level)
+                             bool replicate_samples)
     : norm_mode_(norm_mode),
       samples_(fontinfo_table_),
       junk_samples_(fontinfo_table_),
@@ -61,8 +62,7 @@ MasterTrainer::MasterTrainer(NormalizationMode norm_mode, bool shape_analysis,
       enable_shape_analysis_(shape_analysis),
       enable_replication_(replicate_samples),
       fragments_(nullptr),
-      prev_unichar_id_(-1),
-      debug_level_(debug_level) {}
+      prev_unichar_id_(-1) {}
 
 MasterTrainer::~MasterTrainer() {
   delete[] fragments_;
@@ -247,7 +247,7 @@ void MasterTrainer::LoadPageImages(const char *filename) {
 // Sets up the samples appropriately for class/fontwise access.
 // Deletes outlier samples.
 void MasterTrainer::PostLoadCleanup() {
-  if (debug_level_ > 0) {
+  if (trainer_debug_level > 0) {
     tprintDebug("PostLoadCleanup...\n");
   }
   if (enable_shape_analysis_) {
@@ -261,24 +261,24 @@ void MasterTrainer::PostLoadCleanup() {
   samples_.IndexFeatures(feature_space_);
   // TODO(rays) DeleteOutliers is currently turned off to prove NOP-ness
   // against current training.
-  //  samples_.DeleteOutliers(feature_space_, debug_level_ > 0);
+  //  samples_.DeleteOutliers(feature_space_);
   samples_.OrganizeByFontAndClass();
-  if (debug_level_ > 0) {
+  if (trainer_debug_level > 0) {
     tprintDebug("ComputeCanonicalSamples...\n");
   }
-  samples_.ComputeCanonicalSamples(feature_map_, debug_level_ > 0);
+  samples_.ComputeCanonicalSamples(feature_map_);
 }
 
 // Gets the samples ready for training. Use after both
 // ReadTrainingSamples+PostLoadCleanup or DeSerialize.
 // Re-indexes the features and computes canonical and cloud features.
 void MasterTrainer::PreTrainingSetup() {
-  if (debug_level_ > 0) {
+  if (trainer_debug_level > 0) {
     tprintDebug("PreTrainingSetup...\n");
   }
   samples_.IndexFeatures(feature_space_);
   samples_.ComputeCanonicalFeatures();
-  if (debug_level_ > 0) {
+  if (trainer_debug_level > 0) {
     tprintDebug("ComputeCloudFeatures...\n");
   }
   samples_.ComputeCloudFeatures(feature_space_.Size());
@@ -366,7 +366,7 @@ void MasterTrainer::IncludeJunk() {
 // samples.
 void MasterTrainer::ReplicateAndRandomizeSamplesIfRequired() {
   if (enable_replication_) {
-    if (debug_level_ > 0) {
+    if (trainer_debug_level > 0) {
       tprintDebug("ReplicateAndRandomize...\n");
     }
     verify_samples_.ReplicateAndRandomizeSamples();
@@ -1046,7 +1046,7 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
   }
   tprintDebug("Stopped with {} merged, min dist {}\n", num_merged, min_dist);
   delete[] shape_dists;
-  if (debug_level_ > 1) {
+  if (trainer_debug_level > 1) {
     for (int s1 = 0; s1 < num_shapes; ++s1) {
       if (shapes->MasterDestinationIndex(s1) == s1) {
         tprintDebug("Master shape:{}\n", shapes->DebugStr(s1).c_str());

@@ -183,6 +183,20 @@ private:
 };
 
 /**
+ * Renders tesseract output into an json text string
+ */
+class TESS_API TessJsonRenderer : public TessResultRenderer {
+public:
+  explicit TessJsonRenderer(const char *outputbase);
+
+protected:
+  bool BeginDocumentHandler() override;
+  bool AddImageHandler(TessBaseAPI *api) override;
+  bool EndDocumentHandler() override;
+};
+
+
+/**
  * Renders tesseract output into an alto text string
  */
 class TESS_API TessAltoRenderer : public TessResultRenderer {

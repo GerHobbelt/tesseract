@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "werd.h"
 
@@ -260,6 +258,7 @@ void WERD::copy_on(WERD *other) {
  */
 
 void WERD::print() const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Blanks= {}\n", blanks);
   bounding_box().print();
   tprintDebug("Flags = {} = {}\n", flags.to_ulong(), flags.to_ulong());
@@ -355,7 +354,7 @@ WERD *WERD::shallow_copy() {
  */
 
 WERD &WERD::operator=(const WERD &source) {
-  this->ELIST2_LINK::operator=(source);
+  this->ELIST2<WERD>::LINK::operator=(source);
   blanks = source.blanks;
   flags = source.flags;
   script_id_ = source.script_id_;
@@ -374,9 +373,7 @@ WERD &WERD::operator=(const WERD &source) {
  *  order of left edge.
  */
 
-int word_comparator(const void *word1p, const void *word2p) {
-  const WERD *word1 = *reinterpret_cast<const WERD *const *>(word1p);
-  const WERD *word2 = *reinterpret_cast<const WERD *const *>(word2p);
+int word_comparator(const WERD *word1, const WERD *word2) {
   return word1->bounding_box().left() - word2->bounding_box().left();
 }
 

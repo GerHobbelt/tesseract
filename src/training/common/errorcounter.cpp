@@ -13,9 +13,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "errorcounter.h"
 
@@ -23,12 +21,15 @@
 #include "sampleiterator.h"
 #include "shapeclassifier.h"
 #include "shapetable.h"
+#include "tesserrstream.h"
 #include "trainingsample.h"
 #include "trainingsampleset.h"
 #include "unicity_table.h"
 
 #include <algorithm>
 #include <ctime>
+
+#include <plf_nanotimer.hpp>
 
 namespace tesseract {
 
@@ -50,7 +51,10 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   ErrorCounter counter(classifier->GetUnicharset(), fontsize);
   std::vector<UnicharRating> results;
 
-  clock_t start = clock();
+  plf::nanotimer clock;
+  if (report_level > 1) {
+    clock.start();
+  }
   unsigned total_samples = 0;
   double unscaled_error = 0.0;
   // Set a number of samples on which to run the classify debug mode.
@@ -58,7 +62,7 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   // Iterate over all the samples, accumulating errors.
   for (it->Begin(); !it->AtEnd(); it->Next()) {
     TrainingSample *mutable_sample = it->MutableSample();
-    int page_index = mutable_sample->page_num();
+    size_t page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     // No debug, no keep this.
@@ -85,7 +89,6 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
     }
     ++total_samples;
   }
-  const double total_time = 1.0 * (clock() - start) / CLOCKS_PER_SEC;
   // Create the appropriate error report.
   unscaled_error = counter.ReportErrors(report_level, boosting_mode, fontinfo_table, *it,
                                         unichar_error, fonts_report);
@@ -94,8 +97,9 @@ double ErrorCounter::ComputeErrorRate(ShapeClassifier *classifier, int report_le
   }
   if (report_level > 1 && total_samples > 0) {
     // It is useful to know the time in microseconds/char.
-    tprintDebug("Errors computed in {} at {} μs/char\n", total_time,
-            1000000.0 * total_time / total_samples);
+    auto total_time = clock.get_elapsed_ms();
+    tprintDebug("Errors computed in {} ms at {} μs/char\n", total_time,
+            1000.0 * total_time / total_samples);
   }
   return unscaled_error;
 }
@@ -119,7 +123,7 @@ void ErrorCounter::DebugNewErrors(ShapeClassifier *new_classifier, ShapeClassifi
   // Iterate over all the samples, accumulating errors.
   for (it->Begin(); !it->AtEnd(); it->Next()) {
     TrainingSample *mutable_sample = it->MutableSample();
-    int page_index = mutable_sample->page_num();
+    size_t page_index = mutable_sample->page_num();
     Image page_pix =
         0 <= page_index && page_index < page_images.size() ? page_images[page_index] : nullptr;
     new_classifier->SetPageImageForDebugReport(page_pix);
@@ -408,7 +412,7 @@ double ErrorCounter::ReportErrors(int report_level, CountTypes boosting_mode,
       }
     }
     tprintDebug("Multi-unichar shape use:\n");
-    for (int u = 0; u < multi_unichar_counts_.size(); ++u) {
+    for (size_t u = 0; u < multi_unichar_counts_.size(); ++u) {
       if (multi_unichar_counts_[u] > 0) {
         tprintDebug("{} multiple answers for unichar: {}\n", multi_unichar_counts_[u],
                 unicharset_.id_to_unichar(u));
@@ -446,15 +450,14 @@ bool ErrorCounter::ReportString(bool even_if_empty, const Counts &counts, std::s
   // on each number.
   const int kMaxExtraLength = 5; // Length of +eddd.
   // Keep this format string and the snprintf in sync with the CountTypes enum.
-  const char format_str[] =
-      "Unichar=%.4g%%[1], %.4g%%[2], %.4g%%[n], %.4g%%[T] "
-      "Mult=%.4g%%, Jn=%.4g%%, Brk=%.4g%%, Rej=%.4g%%, "
-      "FontAttr=%.4g%%, Multi=%.4g%%, "
-      "Answers=%.3g, Rank=%.3g, "
-      "OKjunk=%.4g%%, Badjunk=%.4g%%";
-  constexpr size_t max_str_len = sizeof(format_str) + kMaxExtraLength * (CT_SIZE - 1) + 1;
-  char formatted_str[max_str_len];
-  snprintf(formatted_str, max_str_len, format_str, rates[CT_UNICHAR_TOP1_ERR] * 100.0,
+  // warning C4774: 'snprintf' : format string expected in argument 3 is not a string literal
+  std::string formatted_str = fmt::format(
+      "Unichar={:.4g}%[1], {:.4g}%[2], {:.4g}%[n], {:.4g}%[T] "
+      "Mult={:.4g}%, Jn={:.4g}%, Brk={:.4g}%, Rej={:.4g}%, "
+      "FontAttr={:.4g}%, Multi={:.4g}%, "
+      "Answers={:.3g}, Rank={:.3g}, "
+      "OKjunk={:.4g}%, Badjunk={:.4g}%",
+           rates[CT_UNICHAR_TOP1_ERR] * 100.0,
            rates[CT_UNICHAR_TOP2_ERR] * 100.0, rates[CT_UNICHAR_TOPN_ERR] * 100.0,
            rates[CT_UNICHAR_TOPTOP_ERR] * 100.0, rates[CT_OK_MULTI_UNICHAR] * 100.0,
            rates[CT_OK_JOINED] * 100.0, rates[CT_OK_BROKEN] * 100.0, rates[CT_REJECT] * 100.0,

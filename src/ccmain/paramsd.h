@@ -25,16 +25,11 @@
 
 #  include "elst.h"       // for ELIST_ITERATOR, ELISTIZEH, ELIST_LINK
 #  include "scrollview.h" // for ScrollView (ptr only), SVEvent (ptr only)
-#  include "params.h"     // for ParamType
+#  include <tesseract/params.h>     // for ParamType
 
 namespace tesseract {
 
 class SVMenuNode;
-
-class BoolParam;
-class DoubleParam;
-class IntParam;
-class StringParam;
 class Tesseract;
 
 // A rather hackish helper structure which can take any kind of parameter input
@@ -42,10 +37,10 @@ class Tesseract;
 // comparison or getting its value. It is used in the context of the
 // ParamsEditor as a bridge from the internal tesseract parameters to the
 // ones displayed by the ScrollView server.
-class ParamContent : public ELIST_LINK {
+class ParamContent : public ELIST<ParamContent>::LINK {
 public:
   // Compare two VC objects by their name.
-  static int Compare(const void *v1, const void *v2);
+  static int Compare(const ParamContent *v1, const ParamContent *v2);
 
   // Gets a VC object identified by its ID.
   static ParamContent *GetParamContentById(int id);

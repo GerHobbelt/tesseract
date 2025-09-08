@@ -19,9 +19,7 @@
 #ifndef RATNGS_H
 #define RATNGS_H
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "clst.h"
 #include "elst.h"       // for ELIST_ITERATOR, ELISTIZE, ELISTIZEH
@@ -55,11 +53,7 @@ enum BlobChoiceClassifier {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(BlobChoiceClassifier);
 
-static inline auto format_as(BlobChoiceClassifier c) {
-  return fmt::underlying(c);
-}
-
-class BLOB_CHOICE : public ELIST_LINK {
+class BLOB_CHOICE : public ELIST<BLOB_CHOICE>::LINK {
 public:
   BLOB_CHOICE() {
     unichar_id_ = UNICHAR_SPACE;
@@ -181,7 +175,7 @@ public:
             certainty_,
             min_xheight_,
             max_xheight_,
-            unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_));
+            unichar_id_, (unicharset == nullptr) ? "" : unicharset->debug_str(unichar_id_).c_str());
   }
 
   void print_full() const {
@@ -241,7 +235,7 @@ ELISTIZEH(BLOB_CHOICE);
 BLOB_CHOICE *FindMatchingChoice(UNICHAR_ID char_id, BLOB_CHOICE_LIST *bc_list);
 
 // Permuter codes used in WERD_CHOICEs.
-enum PermuterType {
+enum PermuterType : int {
   NO_PERM,           // 0
   PUNC_PERM,         // 1
   TOP_CHOICE_PERM,   // 2
@@ -260,16 +254,12 @@ enum PermuterType {
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(PermuterType);
 
-static inline auto format_as(PermuterType pt) {
-  return fmt::underlying(pt);
-}
-
 // ScriptPos tells whether a character is subscript, superscript or normal.
 enum ScriptPos { SP_NORMAL, SP_SUBSCRIPT, SP_SUPERSCRIPT, SP_DROPCAP };
 
 const char *ScriptPosToString(ScriptPos script_pos);
 
-class TESS_API WERD_CHOICE : public ELIST_LINK {
+class TESS_API WERD_CHOICE : public ELIST<WERD_CHOICE>::LINK {
 public:
   static const float kBadRating;
   static const char *permuter_name(uint8_t permuter);
@@ -286,7 +276,7 @@ public:
     this->init(src_string, src_lengths, src_rating, src_certainty, src_permuter);
   }
   WERD_CHOICE(const char *src_string, const UNICHARSET &unicharset);
-  WERD_CHOICE(const WERD_CHOICE &word) : ELIST_LINK(word), unicharset_(word.unicharset_) {
+  WERD_CHOICE(const WERD_CHOICE &word) : ELIST<WERD_CHOICE>::LINK(word), unicharset_(word.unicharset_) {
     this->init(word.length());
     this->operator=(word);
   }
@@ -493,14 +483,29 @@ public:
   WERD_CHOICE shallow_copy(unsigned int start, unsigned int end) const;
 
   void string_and_lengths(std::string *word_str, std::string *word_lengths_str) const;
+
   std::string debug_string() const {
+    if (length_ == 0)
+      return "<empty>";
+
     std::string word_str;
+    word_str += "[`";
+    for (unsigned int i = 0; i < length_; ++i) {
+      const char *u = unicharset_->id_to_unichar(unichar_ids_[i]);
+      if (0 == strcmp(u, "`"))
+        u = "``"; // to help the MarkDown-ish debug log to HTML processor
+      word_str += u;
+    }
+    word_str += "`]{";
     for (unsigned int i = 0; i < length_; ++i) {
       word_str += unicharset_->debug_str(unichar_ids_[i]);
       word_str += " ";
     }
+    word_str.pop_back();
+    word_str += "}";
     return word_str;
   }
+
   // Returns true if any unichar_id in the word is a non-space-delimited char.
   bool ContainsAnyNonSpaceDelimited() const {
     for (unsigned int i = 0; i < length_; ++i) {

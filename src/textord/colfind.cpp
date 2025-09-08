@@ -18,11 +18,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "colfind.h"
 
@@ -35,7 +31,7 @@
 #include "blobbox.h"
 #include "linefind.h"
 #include "normalis.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "scrollview.h"
 #include "strokewidth.h"
 #include "tablefind.h"
@@ -67,14 +63,13 @@ const double kMinGutterWidthGrid = 0.5;
 const double kMaxDistToPartSizeRatio = 1.5;
 
 #if !GRAPHICS_DISABLED
-static BOOL_VAR(textord_tabfind_show_initial_partitions, false, "Show partition bounds");
-static BOOL_VAR(textord_tabfind_show_reject_blobs, false, "Show blobs rejected as noise");
-static INT_VAR(textord_tabfind_show_partitions, 0,
-               "Show partition bounds, waiting if >1 (ScrollView)");
-static BOOL_VAR(textord_tabfind_show_columns, false, "Show column bounds (ScrollView)");
-static BOOL_VAR(textord_tabfind_show_blocks, false, "Show final block bounds (ScrollView)");
+BOOL_VAR(textord_tabfind_show_initial_partitions, false, "Show partition bounds");
+BOOL_VAR(textord_tabfind_show_reject_blobs, false, "Show blobs rejected as noise");
+INT_VAR(textord_tabfind_show_partitions, 0, "Show partition bounds, waiting if >1 (ScrollView)");
+BOOL_VAR(textord_tabfind_show_columns, false, "Show column bounds (ScrollView)");
+BOOL_VAR(textord_tabfind_show_blocks, false, "Show final block bounds (ScrollView)");
 #endif
-static BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
+BOOL_VAR(textord_tabfind_find_tables, true, "run table detection");
 
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
@@ -117,7 +112,6 @@ ColumnFinder::~ColumnFinder() {
 #if !GRAPHICS_DISABLED
   input_blobs_win_ = nullptr;
 #endif
-  nontext_map_.destroy();
   while (denorm_ != nullptr) {
     auto *predecessor = const_cast<DENORM *>(denorm_->predecessor());
     delete denorm_;
@@ -173,13 +167,13 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   }
 #endif // !GRAPHICS_DISABLED
   SetBlockRuleEdges(input_block);
-  nontext_map_.destroy();
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
   CCNonTextDetect nontext_detect(tesseract_, gridspacing, bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
+  // warning C4800: Implicit conversion from 'int32_t' to bool. Possible information loss
   nontext_map_ =
-      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
+      nontext_detect.ComputeNonTextMask(textord_debug_tabfind > 0, photo_mask_pix, input_block);
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();
@@ -447,7 +441,7 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode, Image scaled_color, int s
     SmoothPartnerRuns();
 
 #if !GRAPHICS_DISABLED
-    if (textord_tabfind_show_partitions) {
+    if (textord_tabfind_show_partitions > 0) {
         ScrollViewReference window(MakeWindow(tesseract_, 400, 300, "Partitions"));
         part_grid_.DisplayBoxes(window);
         if (!textord_debug_printable) {

@@ -22,7 +22,7 @@
 
 #include <cmath>     // for abs
 #include "blobs.h"   // for TPOINT
-#include "params.h"  // for IntParam
+#include <tesseract/params.h>  // for IntParam
 #include "wordrec.h" // for Wordrec
 
 /*----------------------------------------------------------------------

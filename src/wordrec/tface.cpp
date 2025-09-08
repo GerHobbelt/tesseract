@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <cmath>
 
 #include "wordrec.h"
@@ -40,19 +42,19 @@ void Wordrec::program_editup(const std::string &textbase, TessdataManager *init_
                              TessdataManager *init_dict) {
   if (!textbase.empty()) {
     if (textbase == "-" /* stdout */)
-      imagefile = "tesseract-stdio-session";
+      imagefile_ = "tesseract-stdio-session";
     else
-      imagefile = textbase;
+      imagefile_ = textbase;
   }
 #if !DISABLED_LEGACY_ENGINE
   InitFeatureDefs(&feature_defs_);
   InitAdaptiveClassifier(init_classifier);
   if (init_dict) {
     getDict().SetupForLoad(Dict::GlobalDawgCache());
-    getDict().Load(lang, init_dict);
+    getDict().Load(lang_, init_dict);
     getDict().FinishLoad();
   }
-  pass2_ok_split = chop_ok_split;
+  pass2_ok_split_ = chop_ok_split.value();
 #endif // !DISABLED_LEGACY_ENGINE
 }
 
@@ -99,7 +101,7 @@ int Wordrec::dict_word(const WERD_CHOICE &word) {
  */
 void Wordrec::set_pass1() {
   chop_ok_split.set_value(70.0);
-  language_model_->setParamsModelPass(ParamsModel::PTRAIN_PASS1);
+  language_model_.setParamsModelPass(ParamsModel::PTRAIN_PASS1);
   SetupPass1();
 }
 
@@ -109,8 +111,8 @@ void Wordrec::set_pass1() {
  * Get ready to do some pass 2 stuff.
  */
 void Wordrec::set_pass2() {
-  chop_ok_split.set_value(pass2_ok_split);
-  language_model_->setParamsModelPass(ParamsModel::PTRAIN_PASS2);
+  chop_ok_split.set_value(pass2_ok_split_, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+  language_model_.setParamsModelPass(ParamsModel::PTRAIN_PASS2);
   SetupPass2();
 }
 

@@ -21,14 +21,12 @@
 ----------------------------------------------------------------------*/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
 #include "blamer.h"  // for blamer_bundle
-#include "params.h"  // for BoolParam
+#include <tesseract/params.h>  // for BoolParam
 #include "render.h"  // for display_blob, blob_window, wordrec_blob_pause
 #include "wordrec.h" // for Wordrec
 
@@ -66,7 +64,7 @@ BLOB_CHOICE_LIST *Wordrec::classify_blob(TBLOB *blob, const char *string, Diagno
                                    wordrec_debug_blamer);
   }
 #if !GRAPHICS_DISABLED
-  if (classify_debug_level && string) {
+  if (classify_debug_level > 1 && string) {
     print_ratings_list(string, choices, getDict().getUnicharset());
   }
 

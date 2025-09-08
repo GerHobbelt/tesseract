@@ -17,9 +17,7 @@
  **********************************************************************/
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "blobbox.h"
 #include "blobs.h"   // for TPOINT
@@ -904,7 +902,7 @@ void vertical_cblob_projection( // project outlines
 /**********************************************************************
  * vertical_coutline_projection
  *
- * Compute the vertical projection of a outline from its outlines
+ * Compute the vertical projection of an outline from its outlines
  * and add to the given STATS.
  **********************************************************************/
 

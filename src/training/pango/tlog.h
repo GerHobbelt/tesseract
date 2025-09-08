@@ -26,13 +26,14 @@
 
 #include "../common/commandlineflags.h"
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
-TESS_PANGO_TRAINING_API
-DECLARE_INT_PARAM_FLAG(tlog_level);
+TESS_API
+extern INT_VAR_H(tlog_level);
 
 namespace tesseract {
 
+#if 0
   // Variant guarded by the numeric logging level parameter FLAGS_tlog_level
   // (default 0).  Code using ParseCommandLineFlags() can control its value using
   // the --tlog_level commandline argument. Otherwise it must be specified in a
@@ -61,6 +62,8 @@ namespace tesseract {
   static inline void tlog(int level, const char* format, Args &&...args) {
 	  TLOG<char>(level, format, args...);
   }
+#endif
+
 }
 
 #endif // TESSERACT_TRAINING_TLOG_H_

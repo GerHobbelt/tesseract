@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "input.h"
 
 #include <leptonica/allheaders.h>
@@ -22,6 +24,7 @@
 #include "pageres.h"
 #include "scrollview.h"
 #include "tesseractclass.h"
+#include "global_params.h"
 
 namespace tesseract {
 
@@ -91,7 +94,6 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
   }
   if (width < min_width || height < min_width) {
     tprintError("Image too small to scale!! ({}x{} vs minimum width of {})\n", width, height, min_width);
-    pix.destroy();
     return nullptr;
   }
   return pix;
@@ -103,9 +105,8 @@ Image Input::PrepareLSTMInputs(const ImageData &image_data, const Network *netwo
 // Scale to target height, if the shape's height is > 1, or its depth if the
 // height == 1. If height == 0 then no scaling.
 // NOTE: It isn't safe for multiple threads to call this on the same pix.
-/* static */
-void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* randomizer,
-                            NetworkIO* input) {
+void Input::PreparePixInput(Tesseract &tess, const StaticShape &shape, const Image pix, TRand *randomizer,
+                            NetworkIO *input, const TBOX &line_box, float scale_factor) {
   bool color = shape.depth() == 3;
   Image var_pix = pix;
   int depth = pixGetDepth(var_pix);
@@ -115,7 +116,7 @@ void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* ra
   if (color) {
     // Force RGB.
     if (depth == 32) {
-      normed_pix = var_pix.clone();
+      normed_pix = var_pix; //.clone();
     }
     else {
       normed_pix = pixConvertTo32(var_pix);
@@ -124,7 +125,7 @@ void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* ra
   else {
     // Convert non-8-bit images to 8 bit.
     if (depth == 8) {
-      normed_pix = var_pix.clone();
+      normed_pix = var_pix; //.clone();
     }
     else {
       normed_pix = pixConvertTo8(var_pix, false);
@@ -139,16 +140,13 @@ void Input::PreparePixInput(const StaticShape& shape, const Image pix, TRand* ra
     // Get the scaled image.
     float im_factor = static_cast<float>(target_height) / height;
     Image scaled_pix = pixScale(normed_pix, im_factor, im_factor);
-    normed_pix.destroy();
     normed_pix = scaled_pix;
   }
-#if 0
-  if (true /* debug */) {
-    tess->AddClippedPixDebugPage(normed_pix, fmt::format("LSTM: prepare to recognize one line of text. (height:{}, target_height:{})", height, target_height));
+  if (verbose_process || tess.tessedit_dump_pageseg_images)
+  {
+      tess.AddPixDebugPage(normed_pix, fmt::format("LSTM normed input image: prepare to recognize one line of text. (height:{}, target_height:{}, scale_factor:{}, position box:{})", height, target_height, scale_factor, line_box.print_to_str()));
   }
-#endif
   input->FromPix(shape, normed_pix, randomizer);
-  normed_pix.destroy();
 }
 
 } // namespace tesseract.

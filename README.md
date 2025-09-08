@@ -1,9 +1,13 @@
-# tesseract-ocr with --visible-pdf-image
+# tesseract-ocr with various patches and enhanced diagnostics output
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: (tested with leptonica 1.82.0)
+* leptonica: (tested with leptonica 1.83+: master branch)
+
+## Modifications / enhancements
+
+**TODO**
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that is used in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with this fork is to give us the best of both worlds. This is very useful for digitizing documents.
 
@@ -21,22 +25,20 @@ Here's the original feature request upstream: https://github.com/tesseract-ocr/t
 
 # Tesseract OCR
 
-[![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819/branch/master?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
-[![Build status](https://github.com/tesseract-ocr/tesseract/actions/workflows/sw.yml/badge.svg)](https://github.com/tesseract-ocr/tesseract/actions/workflows/sw.yml)\
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/tesseract-ocr/badge.svg)](https://scan.coverity.com/projects/tesseract-ocr)
 [![CodeQL](https://github.com/tesseract-ocr/tesseract/workflows/CodeQL/badge.svg)](https://github.com/tesseract-ocr/tesseract/security/code-scanning)
-[![OSS-Fuzz](https://img.shields.io/badge/oss--fuzz-fuzzing-brightgreen)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=2&q=proj:tesseract-ocr)
+[![OSS-Fuzz](https://img.shields.io/badge/oss--fuzz-fuzzing-brightgreen)](https://issues.oss-fuzz.com/issues?q=is:open%20title:tesseract-ocr)
 \
 [![GitHub license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/tesseract-ocr/tesseract/main/LICENSE)
 [![Downloads](https://img.shields.io/badge/download-all%20releases-brightgreen.svg)](https://github.com/tesseract-ocr/tesseract/releases/)
 
 
-# tesseract-ocr with visible_pdf_image
+# tesseract-ocr
 
 This is a modified version of Tesseract. The official upstream project is here: https://github.com/tesseract-ocr/tesseract
 
 Dependencies:
-* leptonica: This branch works with leptonica 1.79.0. Some APIs were deprecated in versions after 1.80.0.
+* leptonica: latest release / master branch.
 
 The modifications in the visible_pdf_image branch enable the user to input both a "cleaned" image to be used for OCR and a "visible" image that the user will see in the output PDF. Cleaning an image helps OCR engines by removing background colors and patterns, sharpening text, increasing contrast, etc. The process usually makes the image look terrible to humans, so the idea with these patches is to give us the best of both worlds.
 
@@ -143,12 +145,35 @@ Examples can be found in the [documentation](https://tesseract-ocr.github.io/tes
 
 ## Tips and Tricks
 
-1-	For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
-image with the word oriented in way that make the words horizontal. This help prevent out errors
-sometime. 
-2-	If running an image with just one line and it is not recognized, try running again, it should
+1. For non-roman alphabet languages (languages with alphabet other abc…) it is best to have the 
+image with the word oriented in a way that makes the words horizontal. This helps prevent errors
+sometimes. 
+2. If you are running an image with just one line and it is not recognized, try running again with different psm mode setting, it should
 output the right words.
-3- Do not run an image with no words on it as it will sometime stall the system.
+3. Do not run an image with no words on it as it will sometimes stall the system.
+
+
+## Server (TODO / PLANNED)
+
+The time to initialise tesseract can be significant if you have a lot of
+files to process, so tesseractCLI supports a "server" mode where a background
+process provides a way to reuse a single tesseract instance to convert
+multiple documents.
+
+This works via a Unix domain socket.  Bear in mind that if another user on
+the same machine can write to the domain socket you use then they can probably
+read your documents by using tesseract, so it's a good idea to create the socket
+in its own directory which only you can read (`chmod 700 DIRECTORY`).
+
+If you specify `-s SOCKETPATH` and a document path and a server isn't running
+for SOCKETPATH then one will be started in the background.  You can also start
+a server explicitly by using `tesseract -l -s SOCKETPATH` first without
+specifying a document.
+
+Currently you can't use `-u` and `-s SOCKETPATH` together, which means when
+using a server you can convert files from paths specified at server startup, but not files from arbitrary
+URLs (i.e. "uploads").
+
 
 ## For developers
 
@@ -196,7 +221,7 @@ uses a [BSD 2-clause license](http://leptonica.com/about-the-license.html).
 ## Dependencies
 
 Tesseract uses [Leptonica library](https://github.com/DanBloomberg/leptonica)
-for opening input images (e.g. not documents like pdf).
+for opening input images (hence not documents like pdf).
 It is suggested to use leptonica with built-in support for [zlib](https://zlib.net),
 [png](https://sourceforge.net/projects/libpng) and
 [tiff](http://www.simplesystems.org/libtiff) (for multipage tiff).

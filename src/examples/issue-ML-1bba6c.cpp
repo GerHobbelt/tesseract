@@ -26,7 +26,7 @@ This is my basic code:
 #include <iostream>
 
 //tesseract includes
-#include "tesseract/baseapi.h"
+#include <tesseract/baseapi.h>
 
 //Leptonica includes
 #include <leptonica/allheaders.h>
@@ -40,7 +40,7 @@ extern "C" int main(int argc, const char **argv)
 {
     tesseract::TessBaseAPI api;
     // Initialize tesseract-ocr with English, without specifying tessdata path
-    if (api.InitSimple(nullptr, "eng"))
+    if (api.Init("eng"))
     {
         std::cout << "Could not initialize tesseract." << std::endl;
         return 1;

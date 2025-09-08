@@ -20,9 +20,7 @@
 #define TESSERACT_CLASSIFY_CLASSIFY_H_
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if DISABLED_LEGACY_ENGINE
 
@@ -98,6 +96,11 @@ public:
   virtual ~Classify() override;
 
   virtual Dict &getDict() {
+    return dict_;
+  }
+
+  // Return initial dictionary component that is always present in the tesseract instance.
+  Dict &getInitialDict() {
     return dict_;
   }
 
@@ -271,6 +274,7 @@ public:
     return AdaptedTemplates->NumPermClasses == 0;
   }
   bool LooksLikeGarbage(TBLOB *blob);
+
 #if !GRAPHICS_DISABLED
   void RefreshDebugWindow(ScrollViewReference &win, const char *msg, int y_offset, const TBOX &wbox);
 #endif
@@ -373,6 +377,7 @@ public:
   DOUBLE_VAR_H(classify_char_norm_range);
   DOUBLE_VAR_H(classify_max_rating_ratio);
   DOUBLE_VAR_H(classify_max_certainty_margin);
+  BOOL_VAR_H(classify_cp_dq_bad_height);
 
   /* adaptmatch.cpp ***********************************************************/
   BOOL_VAR_H(tess_cn_matching);

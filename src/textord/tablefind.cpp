@@ -16,11 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
-
-#include <tesseract/debugheap.h>
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <algorithm>
 #include <cmath>
@@ -895,8 +891,6 @@ bool TableFinder::HasWideOrNoInterWordGap(ColPartition *part) const {
   }
 
   // Variables used to compute inter-blob spacing.
-  int current_x0 = -1;
-  int current_x1 = -1;
   int previous_x1 = -1;
   // Stores the maximum gap detected.
   int largest_partition_gap_found = -1;
@@ -908,8 +902,8 @@ bool TableFinder::HasWideOrNoInterWordGap(ColPartition *part) const {
 
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
-    current_x0 = blob->bounding_box().left();
-    current_x1 = blob->bounding_box().right();
+    int current_x0 = blob->bounding_box().left();
+    int current_x1 = blob->bounding_box().right();
     if (previous_x1 != -1) {
       int gap = current_x0 - previous_x1;
 
@@ -2155,7 +2149,7 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid *grid,
 //////// ColSegment code
 ////////
 ColSegment::ColSegment()
-    : ELIST_LINK(),
+    : ELIST<ColSegment>::LINK(),
       num_table_cells_(0),
       num_text_cells_(0),
       type_(COL_UNKNOWN) {}

@@ -15,12 +15,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "series.h"
 
 #include "fullyconnected.h"
 #include "networkscratch.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include "tesserrstream.h"  // for tesserr
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 

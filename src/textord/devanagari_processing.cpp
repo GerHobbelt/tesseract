@@ -17,9 +17,7 @@
  *
  **********************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "devanagari_processing.h"
 
@@ -40,17 +38,18 @@ INT_VAR(devanagari_split_debuglevel, 0, "Debug level for split shiro-rekha proce
 BOOL_VAR(devanagari_split_debugimage, 0,
          "Whether to create a debug image for split shiro-rekha process.");
 
-ShiroRekhaSplitter::ShiroRekhaSplitter(Tesseract* tess)
-  : tesseract_(tess) {
+ShiroRekhaSplitter::ShiroRekhaSplitter(Tesseract* tess) :
+  tesseract_(tess),
+  orig_pix_(nullptr),
+  splitted_image_(nullptr),
+  pageseg_split_strategy_(NO_SPLIT),
+  ocr_split_strategy_(NO_SPLIT),
+  debug_image_(nullptr),
+  segmentation_block_list_(nullptr),
+  global_xheight_(kUnspecifiedXheight),
+  perform_close_(false)
+{
   ASSERT0(tess != nullptr);
-  orig_pix_ = nullptr;
-  segmentation_block_list_ = nullptr;
-  splitted_image_ = nullptr;
-  global_xheight_ = kUnspecifiedXheight;
-  perform_close_ = false;
-  debug_image_ = nullptr;
-  pageseg_split_strategy_ = NO_SPLIT;
-  ocr_split_strategy_ = NO_SPLIT;
 }
 
 ShiroRekhaSplitter::~ShiroRekhaSplitter() {
@@ -59,11 +58,8 @@ ShiroRekhaSplitter::~ShiroRekhaSplitter() {
 }
 
 void ShiroRekhaSplitter::Clear() {
-  orig_pix_.destroy();
-  splitted_image_.destroy();
   pageseg_split_strategy_ = NO_SPLIT;
   ocr_split_strategy_ = NO_SPLIT;
-  debug_image_.destroy();
   segmentation_block_list_ = nullptr;
   global_xheight_ = kUnspecifiedXheight;
   perform_close_ = false;
@@ -71,10 +67,7 @@ void ShiroRekhaSplitter::Clear() {
 
 // On setting the input image, a clone of it is owned by this class.
 void ShiroRekhaSplitter::set_orig_pix(Image pix) {
-  if (orig_pix_) {
-    orig_pix_.destroy();
-  }
-  orig_pix_ = pix.clone();
+  orig_pix_ = pix;  //.clone();
 }
 
 // Top-level method to perform splitting based on current settings.
@@ -95,32 +88,28 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg) {
     tprintDebug("Initial pageseg available = {}\n", segmentation_block_list_ ? "yes" : "no");
   }
   // Create a copy of original image to store the splitting output.
-  splitted_image_.destroy();
   splitted_image_ = orig_pix_.copy();
 
   // Initialize debug image if required.
   if (devanagari_split_debugimage) {
-    debug_image_.destroy();
     debug_image_ = pixConvertTo32(orig_pix_);
   }
 
   // Determine all connected components in the input image. A close operation
   // may be required prior to this, depending on the current settings.
-  Image pix_for_ccs = orig_pix_.clone();
+  Image pix_for_ccs = orig_pix_; //.clone();
   if (perform_close_ && global_xheight_ != kUnspecifiedXheight && !segmentation_block_list_) {
     if (devanagari_split_debuglevel > 0) {
       tprintDebug("Performing a global close operation..\n");
     }
     // A global measure is available for xheight, but no local information
     // exists.
-    pix_for_ccs.destroy();
     pix_for_ccs = orig_pix_.copy();
     PerformClose(pix_for_ccs, global_xheight_);
   }
   Pixa *ccs;
   Boxa *tmp_boxa = pixConnComp(pix_for_ccs, &ccs, 8);
   boxaDestroy(&tmp_boxa);
-  pix_for_ccs.destroy();
 
   // Iterate over all connected components. Get their bounding boxes and clip
   // out the image regions corresponding to these boxes from the original image.
@@ -149,7 +138,6 @@ bool ShiroRekhaSplitter::Split(bool split_for_pageseg) {
     } else if (devanagari_split_debuglevel > 0) {
       tprintDebug("CC dropped from splitting: {},{} ({}, {})\n", x, y, w, h);
     }
-    word_pix.destroy();
     boxDestroy(&box);
   }
   // Actually clear the boxes now.
@@ -285,7 +273,6 @@ void ShiroRekhaSplitter::SplitWordShiroRekha(SplitStrategy split_strategy, Image
 
   PixelHistogram vert_hist;
   vert_hist.ConstructVerticalCountHist(word_in_xheight);
-  word_in_xheight.destroy();
 
   // If the number of black pixel in any column of the image is less than a
   // fraction of the stroke width, treat it as noise / a stray mark. Perform

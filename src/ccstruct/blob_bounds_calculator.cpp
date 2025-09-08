@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "blob_bounds_calculator.h"
 #include <algorithm>
 #include <cassert>
@@ -84,8 +86,10 @@ void CharacterPlaceDecisions::add_place(unsigned prev_index, bool has_boxes,
 
     // Remove all decisions that no longer satisfy maximum cost difference
     // requirement.
+
+    // warning C4855: implicit capture of 'this' via '[=]' is deprecated in '/std:c++20'
     auto last_it = std::remove_if(decisions.begin(), decisions.end(),
-                                  [=](const auto& d) {
+                                  [this, max_cost_diff](const auto &d) {
       return d.cost > min_cost + max_cost_diff;
     });
     decisions.erase(last_it, decisions.end());
@@ -396,7 +400,8 @@ void BoxBoundariesCalculator::add_costs_for_remaining_boxes(
 	assert(decision.end.index.value() > 0);
 
     auto unused_boxes = bounds_.size() - decision.end.index.value();
-    decision.cost += unused_boxes * config_.box_with_no_symbol_cost;
+    // warning C5219: implicit conversion from 'unsigned __int64' to 'double', possible loss of data
+    decision.cost += double(unused_boxes) * config_.box_with_no_symbol_cost;
   }
 }
 

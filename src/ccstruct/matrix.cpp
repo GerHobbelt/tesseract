@@ -19,10 +19,12 @@
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "matrix.h"
 
 #include "ratngs.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "unicharset.h"
 
 namespace tesseract {
@@ -113,6 +115,7 @@ MATRIX *MATRIX::DeepCopy() const {
 
 // Print the best guesses out of the match rating matrix.
 void MATRIX::print(const UNICHARSET &unicharset) const {
+  TPrintGroupLinesTillEndOfScope push;
   tprintDebug("Ratings Matrix (top 3 choices)\n");
   int dim = dimension();
   int band_width = bandwidth();
@@ -124,16 +127,16 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         continue;
       }
       BLOB_CHOICE_IT b_it(rating);
-      tprintDebug("col={} row={} ", col, row);
+      tprintDebug("col={} row={}\t", col, row);
       for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-        tprintDebug("{} rat={} cert={} ", unicharset.id_to_unichar(b_it.data()->unichar_id()),
+        tprintDebug("`{}` rat={} cert={}\t", unicharset.id_to_unichar(b_it.data()->unichar_id()),
                 b_it.data()->rating(), b_it.data()->certainty());
       }
       tprintDebug("\n");
     }
     tprintDebug("\n");
   }
-  tprintDebug("\n");
+  tprintDebug("\n\n");
   for (col = 0; col < dim; ++col) {
     tprintDebug("\t{}", col);
   }
@@ -141,7 +144,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
   for (row = 0; row < dim; ++row) {
     for (col = 0; col <= row; ++col) {
       if (col == 0) {
-        tprintDebug("{}\t", row);
+        tprintDebug(" {} \t", row);
       }
       if (row >= col + band_width) {
         tprintDebug(" \t");
@@ -152,7 +155,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
         BLOB_CHOICE_IT b_it(rating);
         int counter = 0;
         for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
-          tprintDebug("{} ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
+          tprintDebug("`{}` ", unicharset.id_to_unichar(b_it.data()->unichar_id()));
           ++counter;
           if (counter == 3) {
             break;
@@ -165,6 +168,7 @@ void MATRIX::print(const UNICHARSET &unicharset) const {
     }
     tprintDebug("\n");
   }
+  tprintDebug("\n");
 }
 
 } // namespace tesseract

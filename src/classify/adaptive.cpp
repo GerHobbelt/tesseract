@@ -15,9 +15,7 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -65,13 +63,12 @@ PERM_CONFIG_STRUCT::~PERM_CONFIG_STRUCT() {
   delete[] Ambigs;
 }
 
-ADAPT_CLASS_STRUCT::ADAPT_CLASS_STRUCT() {
-  NumPermConfigs = 0;
-  MaxNumTimesSeen = 0;
-  TempProtos = NIL_LIST;
-
-  PermProtos = NewBitVector(MAX_NUM_PROTOS);
-  PermConfigs = NewBitVector(MAX_NUM_CONFIGS);
+ADAPT_CLASS_STRUCT::ADAPT_CLASS_STRUCT() :
+  NumPermConfigs(0),
+  MaxNumTimesSeen(0),
+  PermProtos(NewBitVector(MAX_NUM_PROTOS)),
+  PermConfigs(NewBitVector(MAX_NUM_CONFIGS)),
+  TempProtos(NIL_LIST) {
   zero_all_bits(PermProtos, WordsInVectorOfSize(MAX_NUM_PROTOS));
   zero_all_bits(PermConfigs, WordsInVectorOfSize(MAX_NUM_CONFIGS));
 
@@ -130,16 +127,13 @@ int Classify::GetFontinfoId(ADAPT_CLASS_STRUCT *Class, uint8_t ConfigId) {
 ///
 /// @param MaxProtoId  max id of any proto in new config
 /// @param FontinfoId font information from pre-trained templates
-TEMP_CONFIG_STRUCT::TEMP_CONFIG_STRUCT(int maxProtoId, int fontinfoId) {
-  int NumProtos = maxProtoId + 1;
-
-  Protos = NewBitVector(NumProtos);
-
-  NumTimesSeen = 1;
-  MaxProtoId = maxProtoId;
-  ProtoVectorSize = WordsInVectorOfSize(NumProtos);
+TEMP_CONFIG_STRUCT::TEMP_CONFIG_STRUCT(int maxProtoId, int fontinfoId) :
+  NumTimesSeen(1),
+  ProtoVectorSize(WordsInVectorOfSize(maxProtoId + 1)),
+  MaxProtoId(maxProtoId),
+  Protos(NewBitVector(maxProtoId + 1)),
+  FontinfoId(fontinfoId) {
   zero_all_bits(Protos, ProtoVectorSize);
-  FontinfoId = fontinfoId;
 }
 
 TEMP_CONFIG_STRUCT::~TEMP_CONFIG_STRUCT() {
@@ -170,7 +164,7 @@ void Classify::PrintAdaptedTemplates(FILE *File, ADAPT_TEMPLATES_STRUCT *Templat
     IClass = Templates->Templates->Class[i];
     AClass = Templates->Class[i];
     if (!IsEmptyAdaptedClass(AClass)) {
-      fprintf(File, "%5u  %s %3d %3d %3d %3zd\n", i, unicharset.id_to_unichar(i), IClass->NumConfigs,
+      fprintf(File, "%5u  %s %3d %3d %3d %3zd\n", i, unicharset_.id_to_unichar(i), IClass->NumConfigs,
               AClass->NumPermConfigs, IClass->NumProtos,
               IClass->NumProtos - AClass->TempProtos->size());
     }
@@ -353,7 +347,7 @@ void Classify::WriteAdaptedTemplates(FILE *File, ADAPT_TEMPLATES_STRUCT *Templat
   fwrite(Templates, sizeof(ADAPT_TEMPLATES_STRUCT), 1, File);
 
   /* then write out the basic integer templates */
-  WriteIntTemplates(File, Templates->Templates, unicharset);
+  WriteIntTemplates(File, Templates->Templates, unicharset_);
 
   /* then write out the adaptive info for each class */
   for (unsigned i = 0; i < (Templates->Templates)->NumClasses; i++) {

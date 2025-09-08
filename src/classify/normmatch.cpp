@@ -18,13 +18,9 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
-
-#include <tesseract/debugheap.h>
 
 #include "normmatch.h"
 
@@ -32,7 +28,7 @@
 #include "clusttool.h"
 #include "helpers.h"
 #include "normfeat.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "unicharset.h"
 
 #include <cmath>
@@ -60,17 +56,14 @@ struct NORM_PROTOS {
  * Return the new type of evidence number corresponding to this
  * normalization adjustment.  The equation that represents the transform is:
  *       1 / (1 + (NormAdj / midpoint) ^ curl)
+ *
+ * Identical to MergeNF::EvidenceOf(), but using a different parameter for the power setting.
  */
 static float NormEvidenceOf(float NormAdj) {
-  NormAdj /= static_cast<float>(classify_norm_adj_midpoint);
+  NormAdj /= classify_norm_adj_midpoint.value();
 
-  if (classify_norm_adj_curl == 3) {
-    NormAdj = NormAdj * NormAdj * NormAdj;
-  } else if (classify_norm_adj_curl == 2) {
-    NormAdj = NormAdj * NormAdj;
-  } else {
-    NormAdj = std::pow(NormAdj, static_cast<float>(classify_norm_adj_curl));
-  }
+  NormAdj = std::pow(NormAdj, classify_norm_adj_curl.value());
+
   return (1 / (1 + NormAdj));
 }
 
@@ -82,7 +75,7 @@ FZ_HEAPDBG_TRACKER_SECTION_START_MARKER(_)
 
 /** control knobs used to control the normalization adjustment process */
 DOUBLE_VAR(classify_norm_adj_midpoint, 32.0, "Norm adjust midpoint ...");
-DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl ...");
+DOUBLE_VAR(classify_norm_adj_curl, 2.0, "Norm adjust curl power ...");
 /** Weight of width variance against height and vertical position. */
 const float kWidthErrorWeighting = 0.125f;
 
@@ -118,13 +111,17 @@ float Classify::ComputeNormMatch(CLASS_ID ClassId, const FEATURE_STRUCT &feature
     return (1 - NormEvidenceOf(Match));
   }
 
-  float BestMatch = FLT_MAX;
-  LIST Protos = NormProtos->Protos[ClassId];
-
   if (DebugMatch) {
-    tprintDebug("\nChar norm for class {}\n", unicharset.id_to_unichar(ClassId));
+    tprintDebug("\nChar norm for class {}\n", unicharset_.id_to_unichar(ClassId));
   }
 
+  LIST Protos = NormProtos->Protos[ClassId];
+  if (Protos == nullptr) {
+     // Avoid FP overflow in NormEvidenceOf.
+     return 1.0f;
+  }
+
+  float BestMatch = FLT_MAX;
   iterate(Protos) {
     auto Proto = reinterpret_cast<PROTOTYPE *>(Protos->first_node());
     float Delta = feature.Params[CharNormY] - Proto->Mean[CharNormY];
@@ -187,7 +184,7 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
   int NumProtos;
 
   /* allocate and initialization data structure */
-  auto NormProtos = new NORM_PROTOS(unicharset.size());
+  auto NormProtos = new NORM_PROTOS(unicharset_.size());
 
   /* read file header and save in data structure */
   NormProtos->NumParams = ReadSampleSize(fp);
@@ -203,8 +200,8 @@ NORM_PROTOS *Classify::ReadNormProtos(TFile *fp) {
     if (stream.fail()) {
       continue;
     }
-    if (unicharset.contains_unichar(unichar)) {
-      unichar_id = unicharset.unichar_to_id(unichar);
+    if (unicharset_.contains_unichar(unichar)) {
+      unichar_id = unicharset_.unichar_to_id(unichar);
       Protos = NormProtos->Protos[unichar_id];
       for (int i = 0; i < NumProtos; i++) {
         Protos = push_last(Protos, ReadPrototype(fp, NormProtos->NumParams));

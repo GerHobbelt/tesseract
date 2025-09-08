@@ -24,7 +24,7 @@
 #include "serialis.h"
 #include "static_shape.h"
 #include "scrollview.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 #include <cmath>
 #include <cstdio>
@@ -82,10 +82,6 @@ enum NetworkType {
   NT_COUNT // Array size.
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(NetworkType);
-
-static inline auto format_as(NetworkType t) {
-  return fmt::underlying(t);
-}
 
 // Enum of Network behavior flags. Can in theory be set for each individual
 // network element.
@@ -149,9 +145,7 @@ public:
   const std::string &name() const {
     return name_;
   }
-  virtual std::string spec() const {
-    return "?";
-  }
+  virtual std::string spec() const = 0;
   bool TestFlag(NetworkFlags flag) const {
     return (network_flags_ & flag) != 0;
   }

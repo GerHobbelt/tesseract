@@ -16,6 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include "helpers.h"
 #include "indexmapbidi.h"
 #include "serialis.h"

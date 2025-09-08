@@ -15,9 +15,7 @@
  ** limitations under the License.
  ******************************************************************************/
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // DISABLED_LEGACY_ENGINE
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include <cctype>
 #include <cmath>
@@ -34,7 +32,7 @@
 #include "helpers.h"
 #include "matchdefs.h"
 #include "pageres.h"
-#include "params.h"
+#include <tesseract/params.h>
 #include "ratngs.h"
 
 /*----------------------------------------------------------------------------
@@ -58,6 +56,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
 
   bool no_dang_ambigs = !best_choice.dangerous_ambig_found();
   bool is_valid_word = valid_word_permuter(best_choice.permuter(), false);
+  // warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   bool is_case_ok = case_ok(best_choice);
 
   if (stopper_debug_level >= 1) {
@@ -73,10 +72,11 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
         xht = "INCONSISTENT";
         break;
       default:
-        ;
+        xht = "UNKNOWN";
+		break;
     }
     tprintDebug("\nStopper:  {} (word={}, case={}, xht_ok={}=[{},{}])\n",
-            best_choice.unichar_string().c_str(), (is_valid_word ? "y" : "n"),
+            mdqstr(best_choice.unichar_string()), (is_valid_word ? "y" : "n"),
             (is_case_ok ? "y" : "n"), xht, best_choice.min_x_height(), best_choice.max_x_height());
   }
   // Do not accept invalid words in PASS1.
@@ -104,7 +104,7 @@ bool Dict::AcceptableChoice(const WERD_CHOICE &best_choice,
     if (stopper_debug_level >= 1) {
       tprintDebug(
           "AcceptableChoice() returned false"
-          " (no_dang_ambig:{} cert:{} thresh:{} uniform:{})\n",
+          " (no_dang_ambig:{} certainty:{} threshold:{} uniform:{})\n",
           no_dang_ambigs, best_choice.certainty(), CertaintyThreshold,
           UniformCertainties(best_choice));
     }
@@ -124,7 +124,7 @@ bool Dict::AcceptableResult(const WERD_RES &word) const {
   int WordSize;
 
   if (stopper_debug_level >= 1) {
-    tprintDebug("\nRejecter: {} (word={}, case={}, unambig={}, multiple={})\n",
+    tprintDebug("\nRejecter: `{}` (word={}, case={}, unambig={}, multiple={})\n",
             word.best_choice->debug_string(), (valid_word(*word.best_choice) ? "y" : "n"),
             (case_ok(*word.best_choice) ? "y" : "n"),
             word.best_choice->dangerous_ambig_found() ? "n" : "y",
@@ -227,11 +227,12 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
         wrong_ngram[wrong_ngram_index + 1] = INVALID_UNICHAR_ID;
         int compare = UnicharIdArrayUtils::compare(wrong_ngram, ambig_spec->wrong_ngram);
         if (stopper_debug_level > 2) {
+          TPrintGroupLinesTillEndOfScope push;
           tprintDebug("Candidate ngram: ");
           UnicharIdArrayUtils::print(wrong_ngram, getUnicharset());
           tprintDebug("Current ngram from spec: ");
           UnicharIdArrayUtils::print(ambig_spec->wrong_ngram, getUnicharset());
-          tprintDebug("Comparison result: {}\n", compare);
+          tprintDebug("Ambiguity comparison result: {}{}\n", compare, (compare == 0 ? " (we found an ambiguity)" : ""));
         }
         if (compare == 0) {
           // Record the place where we found an ambiguity.
@@ -241,7 +242,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
                                           getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                                           leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintDebug("fixpt+=({} {} {} {} {})\n", blob_index, blob_index + num_wrong_blobs, replace,
+              tprintDebug("fixpt+=(blob_index:{} index+num_wrong_blobs:{} replace:{} isngram:{} leftmost_id:`{}`)\n", blob_index, blob_index + num_wrong_blobs, replace,
                       getUnicharset().get_isngram(ambig_spec->correct_ngram_id),
                       getUnicharset().id_to_unichar(leftmost_id));
             }
@@ -249,7 +250,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
 
           if (replace) {
             if (stopper_debug_level > 2) {
-              tprintDebug("Replace ambiguity with {} : ",
+              tprintDebug("Replace ambiguity with `{}` : ",
                       getUnicharset().id_to_unichar(ambig_spec->correct_ngram_id));
               UnicharIdArrayUtils::print(ambig_spec->correct_fragments, getUnicharset());
             }
@@ -298,7 +299,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
   // to see if an alternative dictionary word can be found.
   if (ambigs_found) {
     if (stopper_debug_level > 2) {
-      tprintDebug("\nResulting ambig_blob_choices:\n");
+      tprintDebug("\nResulting ambig_blob_choices:\n  ");
       for (unsigned i = 0; i < ambig_blob_choices.size(); ++i) {
         print_ratings_list("", ambig_blob_choices.at(i), getUnicharset());
         tprintDebug("\n");
@@ -342,7 +343,7 @@ bool Dict::NoDangerousAmbig(WERD_CHOICE *best_choice, DANGERR *fixpt, bool fix_r
             fixpt->push_back(
                 DANGERR_INFO(blob_start, blob_end, true, replacement_is_ngram, leftmost_id));
             if (stopper_debug_level > 1) {
-              tprintDebug("fixpt->dangerous+=({} {} {} {} {})\n", orig_i, end_i, true,
+              tprintDebug("fixpt->dangerous+=(orig_i:{} end_i:{} blob_start:{} blob_end:{} replacement_is_ngram:{} leftmost_id:`{}`)\n", orig_i, end_i, blob_start, blob_end, 
                       replacement_is_ngram, uchset.id_to_unichar(leftmost_id));
             }
           }
@@ -366,11 +367,11 @@ void Dict::EndDangerousAmbigs() {}
 
 #endif // !DISABLED_LEGACY_ENGINE
 
-void Dict::SettupStopperPass1() {
+void Dict::SetupStopperPass1() {
   reject_offset_ = 0.0;
 }
 
-void Dict::SettupStopperPass2() {
+void Dict::SetupStopperPass2() {
   reject_offset_ = stopper_phase2_certainty_rejection_offset;
 }
 
@@ -514,7 +515,7 @@ bool Dict::UniformCertainties(const WERD_CHOICE &word) {
     if (stopper_debug_level >= 1) {
       tprintDebug(
           "Stopper: Non-uniform certainty = {}"
-          " (m={}, s={}, t={})\n",
+          " (mean={}, stddev={}, threshold={})\n",
           word.certainty(), Mean, StdDev, CertaintyThreshold);
     }
     return false;

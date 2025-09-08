@@ -16,11 +16,15 @@
  *
  **********************************************************************/
 
+#include <tesseract/preparation.h>    // compiler config, etc.
+
 #include "errcode.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 
 namespace tesseract {
+
+#pragma optimize("", off)
 
 constexpr ERRCODE BADERRACTION("Illegal error action");
 #define MAX_MSG 1024
@@ -34,7 +38,15 @@ static void error_action(TessErrorLogCode action) {
       return; // report only
     case TESSEXIT:
     case ABORT:
+#if 01
+      // This used to trigger a segfault or abort();
+      // However, at least for library use, only exceptions should be acceptable.
+      // Even in the standalone application case, exceptions are better,
+      // because the default handler will print the message along with the stack trace.
+      throw std::runtime_error(msg.str());
+#else
       abort_application();
+#endif
     default:
       BADERRACTION.abort("error");
   }
@@ -89,7 +101,15 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
   else {
     tprintError("{}\n", message);
   }
+#if 01
+  // This used to trigger a segfault or abort();
+  // However, at least for library use, only exceptions should be acceptable.
+  // Even in the standalone application case, exceptions are better,
+  // because the default handler will print the message along with the stack trace.
+  throw std::runtime_error(msg.str());
+#else
   abort_application();
+#endif
 }
 
 [[noreturn]] void ERRCODE::vabort(const char* caller, fmt::string_view format, fmt::format_args args) const {
@@ -100,7 +120,15 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
   else {
     tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
   }
+#if 01
+  // This used to trigger a segfault or abort();
+  // However, at least for library use, only exceptions should be acceptable.
+  // Even in the standalone application case, exceptions are better,
+  // because the default handler will print the message along with the stack trace.
+  throw std::runtime_error(msg.str());
+#else
   abort_application();
+#endif
 }
 
 } // namespace tesseract

@@ -19,9 +19,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #if !DISABLED_LEGACY_ENGINE
 
@@ -32,7 +30,7 @@
 #if !GRAPHICS_DISABLED
 #include "svmnode.h"
 #endif
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 #include "trainingsample.h"
 #include "tesseractclass.h"
 
@@ -60,7 +58,7 @@ int ShapeClassifier::UnicharClassifySample(const TrainingSample &sample, int deb
 // Default implementation aborts.
 int ShapeClassifier::ClassifySample(const TrainingSample &sample, int debug,
                                     int keep_this, std::vector<ShapeRating> *results) {
-  ASSERT_HOST(!"Must implement ClassifySample!");
+  ASSERT_HOST_MSG(false, "Must implement ClassifySample!\n");
   return 0;
 }
 

@@ -17,8 +17,11 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+#include <tesseract/preparation.h> // compiler config, etc.
+
 #include <tesseract/ltrresultiterator.h>
 
+#include "helpers.h"  // for copy_string
 #include "pageres.h"
 #include "tesseractclass.h"
 
@@ -76,10 +79,7 @@ char *LTRResultIterator::GetUTF8Text(PageIteratorLevel level) const {
       }
     } while (level == RIL_BLOCK && res_it.block() == res_it.prev_block());
   }
-  int length = text.length() + 1;
-  char *result = new char[length];
-  strncpy(result, text.c_str(), length);
-  return result;
+  return copy_string(text);
 }
 
 // Set the string inserted at the end of each text line. "\n" by default.
@@ -101,13 +101,11 @@ float LTRResultIterator::Confidence(PageIteratorLevel level) const {
   float mean_certainty = 0.0f;
   int certainty_count = 0;
   PAGE_RES_IT res_it(*it_);
-  WERD_CHOICE *best_choice = res_it.word()->best_choice;
-  ASSERT_HOST(best_choice != nullptr);
+  WERD_CHOICE *best_choice;
   switch (level) {
     case RIL_BLOCK:
       do {
         best_choice = res_it.word()->best_choice;
-        ASSERT_HOST(best_choice != nullptr);
         mean_certainty += best_choice->certainty();
         ++certainty_count;
         res_it.forward();
@@ -116,7 +114,6 @@ float LTRResultIterator::Confidence(PageIteratorLevel level) const {
     case RIL_PARA:
       do {
         best_choice = res_it.word()->best_choice;
-        ASSERT_HOST(best_choice != nullptr);
         mean_certainty += best_choice->certainty();
         ++certainty_count;
         res_it.forward();
@@ -126,19 +123,24 @@ float LTRResultIterator::Confidence(PageIteratorLevel level) const {
     case RIL_TEXTLINE:
       do {
         best_choice = res_it.word()->best_choice;
-        ASSERT_HOST(best_choice != nullptr);
         mean_certainty += best_choice->certainty();
         ++certainty_count;
         res_it.forward();
       } while (res_it.row() == res_it.prev_row());
       break;
     case RIL_WORD:
-      mean_certainty += best_choice->certainty();
-      ++certainty_count;
+      best_choice = res_it.word()->best_choice;
+      mean_certainty = best_choice->certainty();
+      certainty_count = 1;
       break;
     case RIL_SYMBOL:
-      mean_certainty += best_choice->certainty(blob_index_);
-      ++certainty_count;
+      best_choice = res_it.word()->best_choice;
+      mean_certainty = best_choice->certainty(blob_index_);
+      certainty_count = 1;
+	  break;
+	default:
+	  ASSERT_HOST_MSG(false, "Should never get here.");
+	  break;
   }
   if (certainty_count > 0) {
     mean_certainty /= certainty_count;
@@ -206,7 +208,7 @@ const char *LTRResultIterator::WordRecognitionLanguage() const {
   if (it_->word() == nullptr || it_->word()->tesseract == nullptr) {
     return nullptr;
   }
-  return it_->word()->tesseract->lang.c_str();
+  return it_->word()->tesseract->lang_.c_str();
 }
 
 // Return the overall directionality of this word.
@@ -310,11 +312,7 @@ char *LTRResultIterator::WordTruthUTF8Text() const {
   if (!HasTruthString()) {
     return nullptr;
   }
-  std::string truth_text = it_->word()->blamer_bundle->TruthString();
-  int length = truth_text.length() + 1;
-  char *result = new char[length];
-  strncpy(result, truth_text.c_str(), length);
-  return result;
+  return copy_string(it_->word()->blamer_bundle->TruthString());
 }
 
 // Returns the null terminated UTF-8 encoded normalized OCR string for the
@@ -326,14 +324,10 @@ char *LTRResultIterator::WordNormedUTF8Text() const {
   std::string ocr_text;
   WERD_CHOICE *best_choice = it_->word()->best_choice;
   const UNICHARSET *unicharset = it_->word()->uch_set;
-  ASSERT_HOST(best_choice != nullptr);
   for (unsigned i = 0; i < best_choice->length(); ++i) {
     ocr_text += unicharset->get_normed_unichar(best_choice->unichar_id(i));
   }
-  auto length = ocr_text.length() + 1;
-  char *result = new char[length];
-  strncpy(result, ocr_text.c_str(), length);
-  return result;
+  return copy_string(ocr_text);
 }
 
 // Returns a pointer to serialized choice lattice.
@@ -383,7 +377,7 @@ WordChoiceIterator::WordChoiceIterator(const LTRResultIterator& result_it) {
   ASSERT_HOST(result_it.it_->word() != NULL);
   word_res_ = result_it.it_->word();
   WERD_CHOICE_LIST* choices = &word_res_->best_choices;
-  if (choices != NULL && !choices->empty()) {
+  if (/* choices != NULL && */ !choices->empty()) {
     choice_it_ = new WERD_CHOICE_IT(choices);
     choice_it_->mark_cycle_pt();
   } else {

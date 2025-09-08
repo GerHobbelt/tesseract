@@ -20,11 +20,11 @@
 // thread/process creation & synchronization and network connection.
 
 // Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h"
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "svutil.h"
+
+#include <fmt/format.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -244,25 +244,18 @@ static const char *ScrollViewProg() {
 
 // The arguments to the program to invoke to start ScrollView
 static std::string ScrollViewCommand(const std::string &scrollview_path) {
+  std::string command;
+#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+  // warning C4774: 'snprintf' : format string expected in argument 3 is not a string literal
   // Quote our paths on Windows to deal with spaces
-#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  const char cmd_template[] =
-      "-Djava.library.path=\"%s\" -jar \"%s/ScrollView.jar\"";
+  command = fmt::format("-Djava.library.path=\"{0}\" -jar \"{0}/ScrollView.jar\"", scrollview_path);
 #  else
-  const char cmd_template[] =
-      "-c \"trap 'kill %%1' 0 1 2 ; java "
-      "-Xms1024m -Xmx2048m -jar %s/ScrollView.jar"
-      " & wait\"";
+  command = fmt::format(
+      "-c \"trap 'kill %1' 0 1 2 ; java "
+      "-Xms1024m -Xmx2048m -jar {}/ScrollView.jar"
+      " & wait\"",
+      scrollview_path);
 #  endif
-  size_t cmdlen = sizeof(cmd_template) + 2 * scrollview_path.size() + 1;
-  std::vector<char> cmd(cmdlen);
-  const char *sv_path = scrollview_path.c_str();
-#  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-  snprintf(&cmd[0], cmdlen, cmd_template, sv_path, sv_path);
-#  else
-  snprintf(&cmd[0], cmdlen, cmd_template, sv_path);
-#  endif
-  std::string command(&cmd[0]);
   return command;
 }
 
@@ -273,8 +266,6 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
 
   buffer_ptr_ = nullptr;
 
-  struct addrinfo *addr_info = nullptr;
-  struct addrinfo hints = {0, PF_INET, SOCK_STREAM};
   auto port_string = std::to_string(port);
 #  if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
   // Initialize Winsock
@@ -285,6 +276,10 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
   }
 #  endif // _WIN32
 
+  struct addrinfo *addr_info = nullptr;
+  struct addrinfo hints = {};
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
   if (getaddrinfo(hostname, port_string.c_str(), &hints, &addr_info) != 0) {
     std::cerr << "Error resolving name for ScrollView host "
               << std::string(hostname) << ":" << port << std::endl;

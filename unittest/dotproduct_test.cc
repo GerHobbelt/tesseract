@@ -21,7 +21,7 @@
 #include "dotproduct.h"
 #include "matrix.h"
 #include "simddetect.h"
-#include "tprintf.h"
+#include <tesseract/tprintf.h>
 
 namespace tesseract {
 class DotProductTest : public ::testing::Test {

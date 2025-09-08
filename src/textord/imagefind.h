@@ -21,6 +21,7 @@
 #define TESSERACT_TEXTORD_IMAGEFIND_H_
 
 #include "debugpixa.h"
+#include <tesseract/params.h>
 
 #include <cstdint>
 
@@ -35,6 +36,9 @@ class FCOORD;
 class TO_BLOCK;
 class ColPartitionGridSearch;
 class TESS_API Tesseract;
+
+// globals
+extern INT_VAR_H(textord_tabfind_show_images);
 
 // The ImageFind class is a simple wrapper class that
 // exposes the FindImages function and some useful helper functions.

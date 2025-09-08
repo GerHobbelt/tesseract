@@ -30,7 +30,7 @@ class BLOCK; // forward decl
 
 ELISTIZEH(BLOCK);
 
-class TESS_API BLOCK : public ELIST_LINK
+class TESS_API BLOCK : public ELIST<BLOCK>::LINK
 // page block
 {
   friend class BLOCK_RECT_IT; // block iterator
@@ -183,6 +183,7 @@ public:
   void print(FILE *fp, bool dump);
 
   BLOCK &operator=(const BLOCK &source);
+  BLOCK(const BLOCK &source);
 
   PDBLK pdblk; ///< Page Description Block
 

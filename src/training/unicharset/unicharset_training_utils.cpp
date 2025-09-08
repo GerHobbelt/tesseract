@@ -2,7 +2,6 @@
 // File:        unicharset_training_utils.cpp
 // Description: Training utilities for UNICHARSET.
 // Author:      Ray Smith
-// Created:     Fri Oct 17 17:09:01 PDT 2014
 //
 // (C) Copyright 2014, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +16,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TESSERACT_CONFIG_H
-#  include "config_auto.h" // HAS_LIBICU
-#endif
+#include <tesseract/preparation.h> // compiler config, etc.
 
 #include "unicharset_training_utils.h"
 
@@ -33,6 +30,7 @@
 #include "icuerrorcode.h"
 #include "normstrngs.h"
 #include "statistc.h"
+#include "tesserrstream.h"   // for tesserr
 #include "unicharset.h"
 
 #if defined(HAS_LIBICU)
@@ -161,7 +159,7 @@ void SetScriptProperties(const std::string &script_dir, UNICHARSET *unicharset) 
       tprintError("Failed to load script unicharset from:{}\n", filename);
     }
   }
-  for (int c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
+  for (size_t c = SPECIAL_UNICHAR_CODES_COUNT; c < unicharset->size(); ++c) {
     if (unicharset->PropertiesIncomplete(c)) {
       tprintWarn("Properties incomplete for index {} = {}\n", c,
               unicharset->id_to_unichar(c));
