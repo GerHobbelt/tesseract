@@ -258,7 +258,7 @@ void TableFinder::InsertCleanPartitions(ColPartitionGrid *grid,
 }
 
 // High level function to perform table detection
-void TableFinder::LocateTables(ColPartitionGrid *grid,
+std::vector<StructuredTable*> TableFinder::LocateTables(ColPartitionGrid *grid,
                                ColPartitionSet **all_columns,
                                WidthCallback width_cb, const FCOORD &reskew) {
   // initialize spacing, neighbors, and columns
@@ -324,6 +324,7 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   AdjustTableBoundaries();
   GridMergeTableRegions();
 
+  std::vector<StructuredTable*> tables;
   if (textord_tablefind_recognize_tables) {
     // Remove false alarms consisting of a single column
     DeleteSingleColumnTables();
@@ -338,9 +339,14 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
 #endif // !GRAPHICS_DISABLED
 
     // Find table grid structure and reject tables that are malformed.
-    RecognizeTables();
+    std::vector<StructuredTable*> throw_away_tables = RecognizeTables();
+    for (auto table: throw_away_tables) {
+      if (table != nullptr) {
+        delete table;
+      }
+    }
     GridMergeTableRegions();
-    RecognizeTables();
+    tables = RecognizeTables();
 
 #ifndef GRAPHICS_DISABLED
     if (textord_show_tables) {
@@ -371,6 +377,8 @@ void TableFinder::LocateTables(ColPartitionGrid *grid,
   // colpartition and revert types of isolated table cells not
   // assigned to any table to their original types.
   MakeTableBlocks(grid, all_columns, width_cb);
+
+  return tables;
 }
 // All grids have the same dimensions. The clean_part_grid_ sizes are set from
 // the part_grid_ that is passed to InsertCleanPartitions, which was the same as
@@ -1878,7 +1886,7 @@ bool TableFinder::GapInXProjection(int *xprojection, int length) {
 //   -small left-aligned text areas with overlapping positioned whitespace
 //       (rejected before)
 // Overall, this just needs some more work.
-void TableFinder::RecognizeTables() {
+std::vector<StructuredTable*> TableFinder::RecognizeTables() {
 #ifndef GRAPHICS_DISABLED
   ScrollView *table_win = nullptr;
   if (textord_show_tables) {
@@ -1903,6 +1911,8 @@ void TableFinder::RecognizeTables() {
   ColSegmentGridSearch gsearch(&table_grid_);
   gsearch.StartFullSearch();
   ColSegment *found_table = nullptr;
+  std::vector<StructuredTable*> tables;
+
   while ((found_table = gsearch.NextFullSearch()) != nullptr) {
     gsearch.RemoveBBox();
 
@@ -1910,6 +1920,7 @@ void TableFinder::RecognizeTables() {
     // When that happens, this will move into the search loop.
     const TBOX &found_box = found_table->bounding_box();
     StructuredTable *table_structure = recognizer.RecognizeTable(found_box);
+    tables.push_back(table_structure);
 
     // Process a table. Good tables are inserted into the grid again later on
     // We can't change boxes in the grid while it is running a search.
@@ -1920,7 +1931,6 @@ void TableFinder::RecognizeTables() {
       }
 #endif
       found_table->set_bounding_box(table_structure->bounding_box());
-      delete table_structure;
       good_it.add_after_then_move(found_table);
     } else {
       delete found_table;
@@ -1933,6 +1943,8 @@ void TableFinder::RecognizeTables() {
   for (good_it.mark_cycle_pt(); !good_it.cycled_list(); good_it.forward()) {
     table_grid_.InsertBBox(true, true, good_it.extract());
   }
+
+  return tables;
 }
 
 #ifndef GRAPHICS_DISABLED

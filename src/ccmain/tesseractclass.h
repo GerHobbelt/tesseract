@@ -40,6 +40,7 @@
 #include "params.h"          // for BOOL_VAR_H, BoolParam, DoubleParam
 #include "points.h"          // for FCOORD
 #include "ratngs.h"          // for ScriptPos, WERD_CHOICE (ptr only)
+#include "tablerecog.h"
 #include "tessdatamanager.h" // for TessdataManager
 #include "textord.h"         // for Textord
 #include "wordrec.h"         // for Wordrec
@@ -329,10 +330,10 @@ public:
   // Tesseract ocr.
   void PrepareForTessOCR(BLOCK_LIST *block_list, Tesseract *osd_tess, OSResults *osr);
 
-  int SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess, OSResults *osr);
+  int SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess, OSResults *osr, std::vector<StructuredTable*> &tables);
   void SetupWordScripts(BLOCK_LIST *blocks);
   int AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks,
-                  BLOBNBOX_LIST *diacritic_blobs, Tesseract *osd_tess, OSResults *osr);
+                  BLOBNBOX_LIST *diacritic_blobs, Tesseract *osd_tess, OSResults *osr, std::vector<StructuredTable*> &tables);
   ColumnFinder *SetupPageSegAndDetectOrientation(PageSegMode pageseg_mode, BLOCK_LIST *blocks,
                                                  Tesseract *osd_tess, OSResults *osr,
                                                  TO_BLOCK_LIST *to_blocks, Image *photo_mask_pix,

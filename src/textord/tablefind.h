@@ -22,6 +22,7 @@
 #include "colpartitiongrid.h"
 #include "elst.h"
 #include "rect.h"
+#include "tablerecog.h"
 
 namespace tesseract {
 
@@ -144,7 +145,7 @@ public:
   // tables. The columns and width callbacks are used to merge tables.
   // The reskew argument is only used to write the tables to the out.png
   // if that feature is enabled.
-  void LocateTables(ColPartitionGrid *grid, ColPartitionSet **columns,
+  std::vector<StructuredTable*> LocateTables(ColPartitionGrid *grid, ColPartitionSet **columns,
                     WidthCallback width_cb, const FCOORD &reskew);
 
 protected:
@@ -350,7 +351,7 @@ protected:
   // bounding boxes. The structures of the tables never leave this function
   // right now. It just tries to prune and merge tables based on info it
   // has available.
-  void RecognizeTables();
+  std::vector<StructuredTable*> RecognizeTables();
 
   //////// Debugging functions. Render different structures to GUI
   //////// for visual debugging / intuition.

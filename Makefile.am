@@ -723,6 +723,7 @@ tesseract_CPPFLAGS += -I$(top_srcdir)/src/viewer
 tesseract_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 
 tesseract_LDFLAGS = $(OPENMP_CXXFLAGS)
+tesseract_LDFLAGS += -headerpad_max_install_names
 
 tesseract_LDADD = libtesseract.la
 tesseract_LDADD += $(LEPTONICA_LIBS)

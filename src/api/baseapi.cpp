@@ -169,6 +169,7 @@ TessBaseAPI::TessBaseAPI()
     thresholder_(nullptr)
     , paragraph_models_(nullptr)
     , block_list_(nullptr)
+    , tables_(nullptr)
     , page_res_(nullptr)
     , last_oem_requested_(OEM_DEFAULT)
     , recognition_done_(false)
@@ -1341,6 +1342,42 @@ static void AddBoxToTSV(const PageIterator *it, PageIteratorLevel level, std::st
   text += "\t" + std::to_string(bottom - top);
 }
 
+static BoundingBox TBOXToBoundingBox(TBOX box, int page_height) {
+  return {box.left(), page_height - box.top(), box.width(), box.height()};
+}
+
+static std::vector<BoundingBox> TBOXesToBoundingBoxes(std::vector<TBOX> boxes, int page_height) {
+  std::vector<BoundingBox> out;
+  for (auto box: boxes) {
+    out.push_back(TBOXToBoundingBox(box, page_height));
+  }
+  return out;
+}
+
+std::vector<TesseractTableInfo> TessBaseAPI::GetTables() {
+  std::vector<TesseractTableInfo> out;
+  if (tables_ == nullptr) {
+    return out;
+  }
+
+  for (auto tablePtr: *tables_) {
+    if (tablePtr == nullptr) {
+      continue;
+    }
+    auto table = *tablePtr;
+    auto cols = table.getCols();
+    auto rows = table.getRows();
+    auto box = table.bounding_box();
+    TesseractTableInfo result = {
+      TBOXToBoundingBox(box, rect_height_),
+      TBOXesToBoundingBoxes(rows, rect_height_),
+      TBOXesToBoundingBoxes(cols, rect_height_)
+    };
+    out.push_back(result);
+  }
+  return out;
+}
+
 /**
  * Make a TSV-formatted string from the internal data structures.
  * page_number is 0-based but will appear in the output as 1-based.
@@ -1862,6 +1899,8 @@ void TessBaseAPI::End() {
   page_res_ = nullptr;
   delete block_list_;
   block_list_ = nullptr;
+  delete tables_;
+  tables_ = nullptr;
   if (paragraph_models_ != nullptr) {
     for (auto model : *paragraph_models_) {
       delete model;
@@ -2129,13 +2168,14 @@ int TessBaseAPI::FindLines() {
   }
 #endif // ndef DISABLED_LEGACY_ENGINE
 
-  if (tesseract_->SegmentPage(input_file_.c_str(), block_list_, osd_tess, &osr) < 0) {
+  if (tesseract_->SegmentPage(input_file_.c_str(), block_list_, osd_tess, &osr, *tables_) < 0) {
     return -1;
   }
 
   // If Devanagari is being recognized, we use different images for page seg
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, osd_tess, &osr);
+
   return 0;
 }
 
@@ -2158,6 +2198,14 @@ void TessBaseAPI::ClearResults() {
     block_list_ = new BLOCK_LIST;
   } else {
     block_list_->clear();
+  }
+  if (tables_ == nullptr) {
+    tables_ = new std::vector<StructuredTable*>();
+  } else {
+    for (auto table: *tables_) {
+      delete table;
+    }
+    tables_->clear();
   }
   if (paragraph_models_ != nullptr) {
     for (auto model : *paragraph_models_) {

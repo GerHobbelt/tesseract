@@ -54,6 +54,7 @@ class LTRResultIterator;
 class ResultIterator;
 class MutableIterator;
 class TessResultRenderer;
+class StructuredTable;
 class Tesseract;
 
 // Function to read a std::vector<char> from a whole file.
@@ -64,6 +65,19 @@ using DictFunc = int (Dict::*)(void *, const UNICHARSET &, UNICHAR_ID,
                                bool) const;
 using ProbabilityInContextFunc = double (Dict::*)(const char *, const char *,
                                                   int, const char *, int);
+
+struct BoundingBox {
+  int32_t x;
+  int32_t y;
+  int32_t width;
+  int32_t height;
+};
+
+struct TesseractTableInfo {
+  BoundingBox box;
+  std::vector<BoundingBox> rows;
+  std::vector<BoundingBox> cols;
+};
 
 /**
  * Base class for all tesseract APIs.
@@ -525,6 +539,11 @@ public:
   char *GetUTF8Text();
 
   /**
+   * 
+   */
+  std::vector<TesseractTableInfo> GetTables();
+
+  /**
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
@@ -777,6 +796,7 @@ protected:
   ImageThresholder *thresholder_; ///< Image thresholding module.
   std::vector<ParagraphModel *> *paragraph_models_;
   BLOCK_LIST *block_list_;           ///< The page layout.
+  std::vector<StructuredTable*> *tables_;
   PAGE_RES *page_res_;               ///< The page-level data.
   std::string input_file_;           ///< Name used by training code.
   std::string output_file_;          ///< Name used by debug code.

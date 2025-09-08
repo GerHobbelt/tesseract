@@ -41,6 +41,7 @@
 #include "imagefind.h"
 #include "linefind.h"
 #include "makerow.h"
+#include "tablerecog.h"
 #include "tabvector.h"
 #include "tesseractclass.h"
 #include "tessvars.h"
@@ -99,7 +100,7 @@ static Image RemoveEnclosingCircle(Image pixs) {
  * On return the blocks list owns all the constructed page layout.
  */
 int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract *osd_tess,
-                           OSResults *osr) {
+                           OSResults *osr, std::vector<StructuredTable*> &tables) {
   ASSERT_HOST(pix_binary_ != nullptr);
   int width = pixGetWidth(pix_binary_);
   int height = pixGetHeight(pix_binary_);
@@ -138,7 +139,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
       PSM_SPARSE(pageseg_mode)) {
     auto_page_seg_ret_val =
         AutoPageSeg(pageseg_mode, blocks, &to_blocks,
-                    enable_noise_removal ? &diacritic_blobs : nullptr, osd_tess, osr);
+                    enable_noise_removal ? &diacritic_blobs : nullptr, osd_tess, osr, tables);
     if (pageseg_mode == PSM_OSD_ONLY) {
       return auto_page_seg_ret_val;
     }
@@ -199,7 +200,7 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
  * will be output into osr (orientation and script result).
  */
 int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOCK_LIST *to_blocks,
-                           BLOBNBOX_LIST *diacritic_blobs, Tesseract *osd_tess, OSResults *osr) {
+                           BLOBNBOX_LIST *diacritic_blobs, Tesseract *osd_tess, OSResults *osr, std::vector<StructuredTable*> &tables) {
   Image photomask_pix = nullptr;
   Image musicmask_pix = nullptr;
   // The blocks made by the ColumnFinder. Moved to blocks before return.
@@ -225,7 +226,7 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST *blocks, TO_BLOC
 #endif // ndef DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_, to_block,
                                 photomask_pix, pix_thresholds_, pix_grey_, &pixa_debug_,
-                                &found_blocks, diacritic_blobs, to_blocks);
+                                &found_blocks, diacritic_blobs, to_blocks, tables);
     if (result >= 0) {
       finder->GetDeskewVectors(&deskew_, &reskew_);
     }
