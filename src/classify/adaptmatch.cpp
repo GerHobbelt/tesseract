@@ -77,7 +77,7 @@ namespace tesseract {
 // TODO: The parameter classify_enable_adaptive_matcher can cause
 // a segmentation fault if it is set to false (issue #256),
 // so override it here.
-#define classify_enable_adaptive_matcher true
+#define CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE true
 #endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
@@ -466,7 +466,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
  * - #classify_enable_adaptive_matcher true if adaptive matcher is enabled
  */
 void Classify::EndAdaptiveClassifier() {
-  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
+  if (AdaptedTemplates != nullptr && CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE && classify_save_adapted_templates) {
     std::string Filename = imagefile_ + ADAPT_TEMPLATE_SUFFIX;
     FILE *File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
@@ -528,7 +528,7 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
 
 #if !DISABLED_LEGACY_ENGINE
 
-  if (!classify_enable_adaptive_matcher) {
+  if (!CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE) {
     return;
   }
 
