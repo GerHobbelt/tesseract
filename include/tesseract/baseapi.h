@@ -306,6 +306,7 @@ public:
    * (use DumpVariables instead to create config files).
    */
   void PrintVariables(FILE *fp = nullptr) const;
+  void PrintVariables(const char *filepath) const;
 
   /*
   * Report parameters' usage statistics, i.e. report which params have been

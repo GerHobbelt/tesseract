@@ -423,8 +423,9 @@ BOOL TessBaseAPIProcessPages(TessBaseAPI *handle, const char *filename,
 BOOL TessBaseAPIProcessPage(TessBaseAPI *handle, struct Pix *pix,
                             const char *filename, 
                             TessResultRenderer *renderer) {
+  const int page_number = 0;
   return static_cast<int>(
-      handle->ProcessPage(pix, filename, renderer));
+      handle->ProcessPage(pix, page_number, filename, renderer));
 }
 
 TessResultIterator *TessBaseAPIGetIterator(TessBaseAPI *handle) {

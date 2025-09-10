@@ -233,9 +233,16 @@ const char *TessBaseAPI::Version(void) {
   return TESSERACT_VERSION_STR;
 }
 
-Tesseract& TessBaseAPI::tesseract(void) const {
+const Tesseract& TessBaseAPI::tesseract(void) const {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract();
+    tesseract_ = new Tesseract(*this, nullptr);
+  }
+  return *tesseract_;
+}
+
+Tesseract &TessBaseAPI::tesseract(void) {
+  if (tesseract_ == nullptr) {
+    tesseract_ = new Tesseract(*this, nullptr);
   }
   return *tesseract_;
 }
@@ -454,7 +461,21 @@ void TessBaseAPI::PrintFontsTable(FILE *fp) const {
  */
 void TessBaseAPI::PrintVariables(FILE *fp) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  ParamUtils::PrintParams(fp, tess.params_collective(), true);
+  if (fp == nullptr)
+    fp = stdout;
+  StdioReportWriter out(fp, nullptr, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
+  ParamUtils::PrintParams(out, tess.params_collective(), ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE);
+}
+
+/**
+ * Print Tesseract parameters to the given file with descriptions of each option.
+ * Cannot be used as Tesseract configuration file due to descriptions
+ * (use DumpVariables instead to create config files).
+ */
+void TessBaseAPI::PrintVariables(const char *filepath) const {
+  Tesseract &tess = const_cast<Tesseract &>(tesseract());
+  StdioReportWriter out(filepath, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
+  ParamUtils::PrintParams(out, tess.params_collective(), ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE);
 }
 
 void TessBaseAPI::SaveParameters() {
