@@ -1034,7 +1034,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
 # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
 # Do not emit a separate memory initialization file
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
 # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
 # set(LIB_pthread pthread)
@@ -1077,7 +1077,7 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
 # Remove unneeded variables
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s AGGRESSIVE_VARIABLE_ELIMINATION=1")
 # Allow stackTrace() to emit fully proper demangled c++ names
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+#set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
 # Allow unused symbol
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
 #
