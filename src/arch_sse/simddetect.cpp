@@ -140,8 +140,12 @@ static void SetDotProduct(DotProductFunction f, const IntSimdMatrix *m = nullptr
 // __GNUC__ is also defined by compilers that include GNU extensions such as
 // clang.
 SIMDDetect::SIMDDetect() {
+#if defined(HAVE_AVX2)
+  SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixAVX2);
+#elif defined(HAVE_SSE4_1)
   // The fallback is a generic dot product calculation.
   SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+#endif
 
   const char *dotproduct_env = getenv("DOTPRODUCT");
   if (dotproduct_env != nullptr) {
@@ -153,9 +157,14 @@ SIMDDetect::SIMDDetect() {
 
 void SIMDDetect::Update() {
 
+#if defined(HAVE_AVX2)
+  SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixAVX2);
+  dotproduct_method = "avx2";
+#elif defined(HAVE_SSE4_1)
   SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
 
   dotproduct.set_value("sse");
+#endif
 }
 
 } // namespace tesseract

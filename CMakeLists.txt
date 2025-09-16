@@ -708,14 +708,18 @@ if(DISABLED_LEGACY_ENGINE)
 endif(DISABLED_LEGACY_ENGINE)
 
 if (WASM_BUILD)
-if(NOT HAVE_SSE4_1)
-  list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
-      src/arch/intsimdmatrix.cpp)
-else()
+
+if(HAVE_AVX2)
+    list(APPEND arch_files_opt src/arch_sse/dotproductavx.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixavx2.cpp src/arch_sse/dotproduct.cpp)
+    set_source_files_properties(src/arch_sse/dotproductavx.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixavx2.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-msimd128 -mavx2 -Wno-argument-outside-range")
+elseif(HAVE_SSE4_1)
     list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
     set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
-endif(NOT HAVE_SSE4_1)
-
+else()
+  list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
+      src/arch/intsimdmatrix.cpp)
+endif(HAVE_AVX2)
+    add_compile_options(-g)
 else()
 
 list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
