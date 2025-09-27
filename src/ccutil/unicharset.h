@@ -210,7 +210,7 @@ public:
 
   // Return the UNICHAR_ID of a given unichar representation within the
   // UNICHARSET.
-  UNICHAR_ID unichar_to_id(const char *const unichar_repr) const;
+  UNICHAR_ID unichar_to_id(const std::string &unichar_repr) const;
 
   // Return the UNICHAR_ID of a given unichar representation within the
   // UNICHARSET. Only the first length characters from unichar_repr are used.

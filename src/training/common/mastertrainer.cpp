@@ -764,8 +764,8 @@ void MasterTrainer::DebugCanonical(const char *unichar_str1,
 // matches in the cloud features.
 // Until the features window is destroyed, each click in the features window
 // will display the samples that have that feature in a separate window.
-void MasterTrainer::DisplaySamples(const char *unichar_str1, int cloud_font,
-                                   const char *unichar_str2,
+void MasterTrainer::DisplaySamples(const std::string &unichar_str1, int cloud_font,
+                                   const std::string &unichar_str2,
                                    int canonical_font) {
   const IntFeatureMap &feature_map = feature_map_;
   const IntFeatureSpace &feature_space = feature_map.feature_space();
@@ -940,7 +940,7 @@ void MasterTrainer::ReplaceFragmentedSamples() {
     // Mark the chars for all parts of the fragment as good in good_junk.
     for (int part = 0; part < frag->get_total(); ++part) {
       frag->set_pos(part);
-      int good_ch = frag_set.unichar_to_id(frag->to_string().c_str());
+      int good_ch = frag_set.unichar_to_id(frag->to_string());
       if (good_ch != INVALID_UNICHAR_ID)
         good_junk[good_ch] = true;  // We want this one.
     }

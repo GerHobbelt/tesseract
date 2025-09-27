@@ -100,7 +100,7 @@ int Wordrec::dict_word(const WERD_CHOICE &word) {
  * Get ready to do some pass 1 stuff.
  */
 void Wordrec::set_pass1() {
-  chop_ok_split.set_value(70.0);
+  chop_ok_split.set_raw_value(70.0);
   language_model_.setParamsModelPass(ParamsModel::PTRAIN_PASS1);
   SetupPass1();
 }
@@ -111,7 +111,7 @@ void Wordrec::set_pass1() {
  * Get ready to do some pass 2 stuff.
  */
 void Wordrec::set_pass2() {
-  chop_ok_split.set_value(pass2_ok_split_, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+  chop_ok_split.set_raw_value(pass2_ok_split_);
   language_model_.setParamsModelPass(ParamsModel::PTRAIN_PASS2);
   SetupPass2();
 }

@@ -155,12 +155,12 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     , INT_MEMBER(bidi_debug, 0, "Debug level for BiDi.", params())
     , INT_MEMBER(applybox_debug, 1, "Debug level for apply boxes.", params())
     , INT_MEMBER(applybox_page, 0, "Page number to apply boxes from.", params())
-    , STRING_MEMBER(applybox_exposure_pattern, ".exp",
-                    "Exposure value follows "
-                    "this pattern in the image filename. The name of the image "
-                    "files are expected to be in the form "
-                    "[lang].[fontname].exp[num].tif.",
-                    params())
+    //, STRING_MEMBER(applybox_exposure_pattern, ".exp",
+    //                "Exposure value follows "
+    //                "this pattern in the image filename. The name of the image "
+    //                "files are expected to be in the form "
+    //                "[lang].[fontname].exp[num].tif.",
+    //                params())
     , BOOL_MEMBER(applybox_learn_chars_and_char_frags_mode, false,
                   "Learn both character fragments (as is done in the "
                   "special low exposure mode) as well as unfragmented "

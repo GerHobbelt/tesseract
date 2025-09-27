@@ -1669,7 +1669,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
   }
 
   // Begin producing output
-  if (renderer && !renderer->BeginDocument(document_title.c_str())) {
+  if (renderer && !renderer->BeginDocument(document_title.str())) {
     return false;
   }
 
@@ -1695,7 +1695,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-    tess.applybox_page.set_value(page_number, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+    tess.applybox_page.set_raw_value(page_number);
 	bool r = ProcessPage(pix, pagename, renderer);
 
     if (two_pass || 1) {
@@ -1759,7 +1759,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
   }
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
-    tess.applybox_page.set_value(pgn, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+    tess.applybox_page.set_raw_value(pgn);
     bool r = ProcessPage(pix, filename, renderer);
     if (!r) {
       return false;
@@ -1963,7 +1963,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, renderer);
   }
   else {
-    tesseract().applybox_page.set_value(-1 /* all pages */, PARAM_VALUE_IS_SET_BY_CORE_RUN);
+    tesseract().applybox_page.set_raw_value(-1 /* all pages */);
 	  r = ProcessPage(pix, filename, renderer);
   }
 
@@ -1976,8 +1976,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
   return true;
 }
 
-bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename,
-                              TessResultRenderer *renderer) {
+bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename, TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel page_level_handle(tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tess.tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
@@ -2709,7 +2708,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char *wordstr) {
   tess.classify_enable_learning = false;
 
   const std::unique_ptr<const char[]> text(GetUTF8Text());
-  if (tess.applybox_debug) {
+  if (tess.applybox_debug > 0) {
     tprintDebug("Trying to adapt \"{}\" to \"{}\"\n", text.get(), wordstr);
   }
   if (text != nullptr) {

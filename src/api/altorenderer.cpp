@@ -33,9 +33,10 @@ namespace tesseract {
 /// Add coordinates to specified TextBlock, TextLine or String bounding box.
 /// Add word confidence if adding to a String bounding box.
 ///
-static void AddBoxToAlto(const std::unique_ptr<ResultIterator> &it, PageIteratorLevel level,
+static void AddBoxToAlto(const ResultIterator *it, PageIteratorLevel level,
                          std::stringstream &alto_str) {
   int left, top, right, bottom;
+  assert(it != nullptr);
   it->BoundingBox(level, &left, &top, &right, &bottom);
 
   int hpos = left;
@@ -177,7 +178,7 @@ char *TessBaseAPI::GetAltoText(int page_number) {
       case PT_HEADING_IMAGE:
       case PT_PULLOUT_IMAGE: {
         // Handle all kinds of images.
-		//
+		    //
         // TODO: optionally add TYPE, for example TYPE="photo".
         alto_str << "\t\t\t\t<Illustration ID=\"" << GetID("cblock", page_number, bcnt++) << "\"";
         AddBoxToAlto(res_it.get(), RIL_BLOCK, alto_str);

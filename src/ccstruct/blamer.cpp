@@ -87,10 +87,10 @@ void BlamerBundle::SetWordTruth(const UNICHARSET &unicharset, const char *truth_
 
 // Single "character" string, "character" bounding box.
 // May be called multiple times to indicate the characters in a word.
-void BlamerBundle::SetSymbolTruth(const UNICHARSET &unicharset, const char *char_str,
+void BlamerBundle::SetSymbolTruth(const UNICHARSET &unicharset, const std::string &char_str,
                                   const TBOX &char_box) {
   std::string symbol_str(char_str);
-  UNICHAR_ID id = unicharset.unichar_to_id(char_str);
+  UNICHAR_ID id = unicharset.unichar_to_id(symbol_str);
   if (id != INVALID_UNICHAR_ID) {
     std::string normed_uch(unicharset.get_normed_unichar(id));
     if (normed_uch.length() > 0) {

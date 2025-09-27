@@ -72,12 +72,12 @@ extern "C" TESS_API int tesseract_shape_clustering_main(int argc, const char** a
 
   if (shapeclustering_display_cloud_font >= 0) {
 #if !GRAPHICS_DISABLED
-    trainer->DisplaySamples(shapeclustering_canonical_class1.c_str(), shapeclustering_display_cloud_font,
-                            shapeclustering_canonical_class2.c_str(), shapeclustering_display_canonical_font);
+    trainer->DisplaySamples(shapeclustering_canonical_class1.value(), shapeclustering_display_cloud_font,
+                            shapeclustering_canonical_class2.value(), shapeclustering_display_canonical_font);
 #endif // !GRAPHICS_DISABLED
     return EXIT_SUCCESS;
   } else if (!shapeclustering_canonical_class1.empty()) {
-    trainer->DebugCanonical(shapeclustering_canonical_class1.c_str(), shapeclustering_canonical_class2.c_str());
+    trainer->DebugCanonical(shapeclustering_canonical_class1.value(), shapeclustering_canonical_class2.value());
     return EXIT_SUCCESS;
   }
   trainer->SetupMasterShapes();

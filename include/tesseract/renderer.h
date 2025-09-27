@@ -132,6 +132,7 @@ protected:
   // the output string returned by GetOutput.
   // This method will grow the output buffer if needed.
   void AppendString(const char *s);
+  void AppendString(const std::string &s);
 
   // Renderers can call this to append binary byte sequences into
   // the output string returned by GetOutput. Note that s is not necessarily

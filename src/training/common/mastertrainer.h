@@ -206,7 +206,7 @@ public:
   // matches in the cloud features.
   // Until the features window is destroyed, each click in the features window
   // will display the samples that have that feature in a separate window.
-  void DisplaySamples(const char *unichar_str1, int cloud_font, const char *unichar_str2,
+  void DisplaySamples(const std::string &unichar_str1, int cloud_font, const std::string &unichar_str2,
                       int canonical_font);
 
 #endif // !GRAPHICS_DISABLED

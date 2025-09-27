@@ -884,7 +884,7 @@ public:
   INT_VAR_H(bidi_debug);
   INT_VAR_H(applybox_debug);
   INT_VAR_H(applybox_page);
-  STRING_VAR_H(applybox_exposure_pattern);
+  //STRING_VAR_H(applybox_exposure_pattern);
   BOOL_VAR_H(applybox_learn_chars_and_char_frags_mode);
   BOOL_VAR_H(applybox_learn_ngrams_mode);
   BOOL_VAR_H(tessedit_display_outwords);

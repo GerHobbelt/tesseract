@@ -68,7 +68,7 @@ void Classify::ReadNewCutoffs(TFile *fp, uint16_t *Cutoffs) {
     if (Class.compare("NULL") == 0) {
       ClassId = unicharset_.unichar_to_id(" ");
     } else {
-      ClassId = unicharset_.unichar_to_id(Class.c_str());
+      ClassId = unicharset_.unichar_to_id(Class);
     }
     ASSERT_HOST(ClassId >= 0 && ClassId < MAX_NUM_CLASSES);
     Cutoffs[ClassId] = Cutoff;

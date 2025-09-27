@@ -296,7 +296,7 @@ namespace tesseract {
     }
   }
 
-  // expected line format is for paramters report:
+  // expected line format is for parameters report:
   //
   //    bidi_debug.................................................. (Global) .R [Integer] = 0
   //

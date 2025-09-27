@@ -76,7 +76,7 @@ public:
   }
 
   BlobSpecialTextType RunEstimateTypeForUnichar(const char *val) {
-    const UNICHARSET &unicharset = lang_tesseract_->unicharset;
+    const UNICHARSET &unicharset = lang_tesseract_->unicharset_;
     return EstimateTypeForUnichar(unicharset, unicharset.unichar_to_id(val));
   }
 

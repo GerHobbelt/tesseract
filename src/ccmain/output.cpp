@@ -259,7 +259,7 @@ UNICHAR_ID Tesseract::get_rep_char(WERD_RES *word) { // what char is repeated?
   if (i < word->reject_map.length() && word->best_choice != nullptr) {
     return word->best_choice->unichar_id(i);
   } else {
-    return word->uch_set->unichar_to_id(unrecognised_char.c_str());
+    return word->uch_set->unichar_to_id(unrecognised_char.value());
   }
 }
 

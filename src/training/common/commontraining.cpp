@@ -644,7 +644,7 @@ CLASS_STRUCT *SetUpForFloat2Int(const UNICHARSET &unicharset, LIST LabeledClassL
   iterate(LabeledClassList) {
     UnicityTable<int> font_set;
     MergeClass = reinterpret_cast<MERGE_CLASS>(LabeledClassList->first_node());
-    Class = &float_classes[unicharset.unichar_to_id(MergeClass->Label.c_str())];
+    Class = &float_classes[unicharset.unichar_to_id(MergeClass->Label)];
     NumProtos = MergeClass->Class->NumProtos;
     NumConfigs = MergeClass->Class->NumConfigs;
     font_set.move(&MergeClass->Class->font_set);

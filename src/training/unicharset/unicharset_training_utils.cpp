@@ -104,7 +104,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
         other_case[i] = unichar_islower ? u_toupper(uni_vector[i]) : u_tolower(uni_vector[i]);
       }
       std::string other_case_uch = UNICHAR::UTF32ToUTF8(other_case);
-      UNICHAR_ID other_case_id = unicharset->unichar_to_id(other_case_uch.c_str());
+      UNICHAR_ID other_case_id = unicharset->unichar_to_id(other_case_uch);
       if (other_case_id != INVALID_UNICHAR_ID) {
         unicharset->set_other_case(unichar_id, other_case_id);
       } else if (unichar_id >= SPECIAL_UNICHAR_CODES_COUNT && report_errors) {
@@ -122,7 +122,7 @@ void SetupBasicProperties(bool report_errors, bool decompose, UNICHARSET *unicha
       }
     }
     std::string mirror_uch = UNICHAR::UTF32ToUTF8(mirrors);
-    UNICHAR_ID mirror_uch_id = unicharset->unichar_to_id(mirror_uch.c_str());
+    UNICHAR_ID mirror_uch_id = unicharset->unichar_to_id(mirror_uch);
     if (mirror_uch_id != INVALID_UNICHAR_ID) {
       unicharset->set_mirror(unichar_id, mirror_uch_id);
     } else if (report_errors) {

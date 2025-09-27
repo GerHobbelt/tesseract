@@ -201,7 +201,7 @@ UNICHARSET::~UNICHARSET() {
 }
 
 UNICHAR_ID
-UNICHARSET::unichar_to_id(const char *const unichar_repr) const {
+UNICHARSET::unichar_to_id(const std::string &const unichar_repr) const {
   std::string cleaned =
       old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
   return ids.contains(cleaned.data(), cleaned.size())
@@ -209,8 +209,7 @@ UNICHARSET::unichar_to_id(const char *const unichar_repr) const {
              : INVALID_UNICHAR_ID;
 }
 
-UNICHAR_ID UNICHARSET::unichar_to_id(const char *const unichar_repr,
-                                     int length) const {
+UNICHAR_ID UNICHARSET::unichar_to_id(const char *const unichar_repr, int length) const {
   assert(length > 0 && length <= UNICHAR_LEN);
   std::string cleaned(unichar_repr, length);
   if (!old_style_included_) {
