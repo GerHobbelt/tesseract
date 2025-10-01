@@ -27,9 +27,11 @@
 #endif
 #include <climits> // for INT_MIN, INT_MAX
 #include <cstdlib> // for std::getenv
+#include <filesystem>
 #include <iostream>
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
+#include <string>
 
 #include <allheaders.h>
 #include <tesseract/baseapi.h>
@@ -258,6 +260,7 @@ static void PrintHelpMessage(const char *program) {
       "Usage:\n"
       "  %s --help | --help-extra | --version\n"
       "  %s --list-langs\n"
+      "  %s -p PATH [options...] [configfile...]\n"
       "  %s imagename outputbase [options...] [configfile...]\n"
       "\n"
       "OCR options:\n"
@@ -267,10 +270,11 @@ static void PrintHelpMessage(const char *program) {
       "Single options:\n"
       "  --help                Show this help message.\n"
       "  --help-extra          Show extra help for advanced users.\n"
+      "  -p, --path            Provide an input file or directory.\n"
       "  --version             Show version information.\n"
       "  --list-langs          List available languages for tesseract "
       "engine.\n",
-      program, program, program);
+      program, program, program, program);
 }
 
 static void PrintLangsList(tesseract::TessBaseAPI &api) {
@@ -370,6 +374,8 @@ static bool ParseArgs(int argc, char **argv, const char **lang, const char **ima
                       std::vector<std::string> *vars_vec, std::vector<std::string> *vars_values,
                       l_int32 *arg_i, tesseract::PageSegMode *pagesegmode,
                       tesseract::OcrEngineMode *enginemode) {
+  static std::string auto_image_path_storage;
+  static std::string auto_outputbase_storage;
   bool noocr = false;
   int i;
   for (i = 1; i < argc && (*outputbase == nullptr || argv[i][0] == '-'); i++) {
@@ -393,6 +399,51 @@ static bool ParseArgs(int argc, char **argv, const char **lang, const char **ima
     } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--version") == 0)) {
       PrintVersionInfo();
       noocr = true;
+    } else if ((strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--path") == 0)) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Error, missing argument for %s\n", argv[i]);
+        return false;
+      }
+      try {
+        namespace fs = std::filesystem;
+        fs::path resolved = fs::u8path(argv[i + 1]);
+        if (!fs::exists(resolved)) {
+          fprintf(stderr, "Error, path specified with -p does not exist: %s\n", argv[i + 1]);
+          return false;
+        }
+        if (fs::is_directory(resolved)) {
+          bool found_file = false;
+          for (const auto &entry : fs::directory_iterator(resolved)) {
+            if (entry.is_regular_file()) {
+              resolved = entry.path();
+              found_file = true;
+              break;
+            }
+          }
+          if (!found_file) {
+            fprintf(stderr,
+                    "Error, directory specified with -p contains no readable files: %s\n",
+                    argv[i + 1]);
+            return false;
+          }
+        } else if (!fs::is_regular_file(resolved)) {
+          fprintf(stderr, "Error, path specified with -p is not a regular file: %s\n", argv[i + 1]);
+          return false;
+        }
+
+        auto_image_path_storage = resolved.u8string();
+        *image = auto_image_path_storage.c_str();
+
+        auto_outputbase_storage = resolved.stem().u8string();
+        if (auto_outputbase_storage.empty()) {
+          auto_outputbase_storage = "out";
+        }
+        *outputbase = auto_outputbase_storage.c_str();
+      } catch (const std::filesystem::filesystem_error &e) {
+        fprintf(stderr, "Error, unable to use path specified with -p: %s\n", e.what());
+        return false;
+      }
+      ++i;
     } else if (strcmp(argv[i], "-l") == 0 && i + 1 < argc) {
       *lang = argv[i + 1];
       ++i;
