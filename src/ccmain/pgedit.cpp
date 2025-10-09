@@ -36,6 +36,9 @@
 
 #include <cctype>
 #include <cmath>
+#include <iomanip> // for std::setprecision
+#include <locale>  // for std::locale::classic
+#include <sstream> // for std::stringstream
 
 #ifndef GRAPHICS_DISABLED
 namespace tesseract {
@@ -140,32 +143,30 @@ static void show_point(PAGE_RES *page_res, float x, float y) {
   FCOORD pt(x, y);
   PAGE_RES_IT pr_it(page_res);
 
-  const int kBufsize = 512;
-  char msg[kBufsize];
-  char *msg_ptr = msg;
-
-  msg_ptr += sprintf(msg_ptr, "Pt:(%0.3f, %0.3f) ", x, y);
+  std::stringstream msg;
+  msg.imbue(std::locale::classic());
+  msg << std::fixed << std::setprecision(3) << "Pt:(" << x << ", " << y << ") ";
 
   for (WERD_RES *word = pr_it.word(); word != nullptr; word = pr_it.forward()) {
     if (pr_it.row() != pr_it.prev_row() && pr_it.row()->row->bounding_box().contains(pt)) {
-      msg_ptr += sprintf(msg_ptr, "BL(x)=%0.3f ", pr_it.row()->row->base_line(x));
+      msg << "BL(x)=" << pr_it.row()->row->base_line(x) << ' ';
     }
     if (word->word->bounding_box().contains(pt)) {
       TBOX box = word->word->bounding_box();
-      msg_ptr += sprintf(msg_ptr, "Wd(%d, %d)/(%d, %d) ", box.left(), box.bottom(), box.right(),
-                         box.top());
+      msg << "Wd(" << box.left() << ", " << box.bottom() << ")/("
+          << box.right() << ", " << box.top() << ") ";
       C_BLOB_IT cblob_it(word->word->cblob_list());
       for (cblob_it.mark_cycle_pt(); !cblob_it.cycled_list(); cblob_it.forward()) {
         C_BLOB *cblob = cblob_it.data();
         box = cblob->bounding_box();
         if (box.contains(pt)) {
-          msg_ptr += sprintf(msg_ptr, "CBlb(%d, %d)/(%d, %d) ", box.left(), box.bottom(),
-                             box.right(), box.top());
+          msg << "CBlb(" << box.left() << ", " << box.bottom() << ")/("
+              << box.right() << ", " << box.top() << ") ";
         }
       }
     }
   }
-  image_win->AddMessage(msg);
+  image_win->AddMessage(msg.str().c_str());
 }
 
 /**
@@ -622,7 +623,7 @@ void Tesseract::process_image_event( // action in image win
           break;
 
         default:
-          sprintf(msg, "Mode %d not yet implemented", mode);
+          snprintf(msg, sizeof(msg), "Mode %d not yet implemented", mode);
           image_win->AddMessage(msg);
           break;
       }
@@ -702,9 +703,7 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   WERD_RES *word_res = pr_it->word();
   WERD *word = word_res->word;
   TBOX word_bb;    // word bounding box
-  int word_height; // ht of word BB
   bool displayed_something = false;
-  float shift; // from bot left
 
   if (color_mode != CM_RAINBOW && word_res->box_word != nullptr) {
 #  ifndef DISABLED_LEGACY_ENGINE
@@ -841,13 +840,14 @@ bool Tesseract::word_display(PAGE_RES_IT *pr_it) {
   if (text.length() > 0) {
     word_bb = word->bounding_box();
     image_win->Pen(ScrollView::RED);
-    word_height = word_bb.height();
-    int text_height = 0.50 * word_height;
+    auto word_height = word_bb.height();
+    int text_height = word_height / 2;
     if (text_height > 20) {
       text_height = 20;
     }
     image_win->TextAttributes("Arial", text_height, false, false, false);
-    shift = (word_height < word_bb.width()) ? 0.25 * word_height : 0.0f;
+    // from bot left
+    float shift = (word_height < word_bb.width()) ? 0.25f * word_height : 0.0f;
     image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height, text.c_str());
     if (blame.length() > 0) {
       image_win->Text(word_bb.left() + shift, word_bb.bottom() + 0.25 * word_height - text_height,

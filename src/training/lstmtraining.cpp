@@ -16,6 +16,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 #include <cerrno>
+#include <locale> // for std::locale::classic
 #if defined(__USE_GNU)
 #  include <cfenv> // for feenableexcept
 #endif
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
   }
 
   // Check write permissions.
-  std::string test_file = FLAGS_model_output.c_str();
+  std::string test_file = FLAGS_model_output;
   test_file += "_wtest";
   FILE *f = fopen(test_file.c_str(), "wb");
   if (f != nullptr) {
@@ -106,10 +107,10 @@ int main(int argc, char **argv) {
   }
 
   // Setup the trainer.
-  std::string checkpoint_file = FLAGS_model_output.c_str();
+  std::string checkpoint_file = FLAGS_model_output;
   checkpoint_file += "_checkpoint";
   std::string checkpoint_bak = checkpoint_file + ".bak";
-  tesseract::LSTMTrainer trainer(FLAGS_model_output.c_str(), checkpoint_file.c_str(),
+  tesseract::LSTMTrainer trainer(FLAGS_model_output, checkpoint_file,
                                  FLAGS_debug_interval,
                                  static_cast<int64_t>(FLAGS_max_image_MB) * 1048576);
   if (!trainer.InitCharSet(FLAGS_traineddata.c_str())) {
@@ -222,9 +223,10 @@ int main(int argc, char **argv) {
          iteration = trainer.training_iteration()) {
       trainer.TrainOnLine(&trainer, false);
     }
-    std::string log_str;
+    std::stringstream log_str;
+    log_str.imbue(std::locale::classic());
     trainer.MaintainCheckpoints(tester_callback, log_str);
-    tprintf("%s\n", log_str.c_str());
+    tprintf("%s\n", log_str.str().c_str());
   } while (trainer.best_error_rate() > FLAGS_target_error_rate &&
            (trainer.training_iteration() < max_iterations));
   tprintf("Finished! Selected model with minimal training error rate (BCER) = %g\n",

@@ -61,8 +61,6 @@
 
 namespace tesseract {
 
-const int kMaxMsgSize = 4096;
-
 // Starts a new process.
 void SVSync::StartProcess(const char *executable, const char *args) {
   std::string proc;
@@ -244,15 +242,10 @@ static const char *ScrollViewProg() {
 
 // The arguments to the program to invoke to start ScrollView
 static std::string ScrollViewCommand(const std::string &scrollview_path) {
-  // The following ugly ifdef is to enable the output of the java runtime
-  // to be sent down a black hole on non-windows to ignore all the
-  // exceptions in piccolo. Ideally piccolo would be debugged to make
-  // this unnecessary.
-  // Also the path has to be separated by ; on windows and : otherwise.
+  // Quote our paths on Windows to deal with spaces
 #  ifdef _WIN32
   const char cmd_template[] =
       "-Djava.library.path=\"%s\" -jar \"%s/ScrollView.jar\"";
-
 #  else
   const char cmd_template[] =
       "-c \"trap 'kill %%1' 0 1 2 ; java "
@@ -278,7 +271,6 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
 
   buffer_ptr_ = nullptr;
 
-  struct addrinfo *addr_info = nullptr;
   auto port_string = std::to_string(port);
 #  ifdef _WIN32
   // Initialize Winsock
@@ -289,7 +281,11 @@ SVNetwork::SVNetwork(const char *hostname, int port) {
   }
 #  endif // _WIN32
 
-  if (getaddrinfo(hostname, port_string.c_str(), nullptr, &addr_info) != 0) {
+  struct addrinfo *addr_info = nullptr;
+  struct addrinfo hints = {};
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  if (getaddrinfo(hostname, port_string.c_str(), &hints, &addr_info) != 0) {
     std::cerr << "Error resolving name for ScrollView host "
               << std::string(hostname) << ":" << port << std::endl;
 #  ifdef _WIN32

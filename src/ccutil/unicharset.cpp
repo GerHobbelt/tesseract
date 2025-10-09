@@ -268,7 +268,7 @@ bool UNICHARSET::encode_string(const char *str, bool give_up_on_failure,
     }
   }
   if (lengths != nullptr) {
-    *lengths = best_lengths;
+    *lengths = std::move(best_lengths);
   }
   if (encoded_length != nullptr) {
     *encoded_length = str_pos;
@@ -314,10 +314,10 @@ std::string UNICHARSET::debug_utf8_str(const char *str) {
     step = UNICHAR::utf8_step(str + i);
     if (step == 0) {
       step = 1;
-      sprintf(hex, "%x", str[i]);
+      snprintf(hex, sizeof(hex), "%x", str[i]);
     } else {
       UNICHAR ch(str + i, step);
-      sprintf(hex, "%x", ch.first_uni());
+      snprintf(hex, sizeof(hex), "%x", ch.first_uni());
     }
     result += hex;
     result += " ";
@@ -824,7 +824,7 @@ bool UNICHARSET::load_via_fgets(
     stream >> std::setw(255) >> unichar >> std::hex >> properties >> std::dec;
     // stream.flags(std::ios::dec);
     if (stream.fail()) {
-      fprintf(stderr, "%s:%u failed\n", __FILE__, __LINE__);
+      fprintf(stderr, "%s:%d failed\n", __FILE__, __LINE__);
       return false;
     }
     auto position = stream.tellg();
@@ -1000,7 +1000,7 @@ bool UNICHARSET::major_right_to_left() const {
 // Set a whitelist and/or blacklist of characters to recognize.
 // An empty or nullptr whitelist enables everything (minus any blacklist).
 // An empty or nullptr blacklist disables nothing.
-// An empty or nullptr blacklist has no effect.
+// An empty or nullptr unblacklist has no effect.
 void UNICHARSET::set_black_and_whitelist(const char *blacklist,
                                          const char *whitelist,
                                          const char *unblacklist) {

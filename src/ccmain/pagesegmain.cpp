@@ -108,8 +108,10 @@ int Tesseract::SegmentPage(const char *input_file, BLOCK_LIST *blocks, Tesseract
   // If a UNLV zone file can be found, use that instead of segmentation.
   if (!PSM_COL_FIND_ENABLED(pageseg_mode) && input_file != nullptr && input_file[0] != '\0') {
     std::string name = input_file;
-    std::size_t lastdot = name.find_last_of(".");
-    name = name.substr(0, lastdot);
+    auto lastdot = name.find_last_of('.');
+    if (lastdot != std::string::npos) {
+      name.resize(lastdot);
+    }
     read_unlv_file(name, width, height, blocks);
   }
   if (blocks->empty()) {
@@ -350,7 +352,7 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
       vertical_text = finder->IsVerticallyAlignedText(textord_tabfind_vertical_text_ratio, to_block,
                                                       &osd_blobs);
     }
-    
+
   #ifndef DISABLED_LEGACY_ENGINE
     if (PSM_OSD_ENABLED(pageseg_mode) && osd_tess != nullptr && osr != nullptr) {
       std::vector<int> osd_scripts;

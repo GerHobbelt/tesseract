@@ -23,6 +23,7 @@
 
 #include "fileio.h"
 #include "normstrngs.h"
+#include "tesserrstream.h"  // for tesserr
 #include "tprintf.h"
 #include "unicharset.h"
 #include "unicode/uchar.h" // from libicu
@@ -100,7 +101,7 @@ void BoxChar::PrepareToWrite(std::vector<BoxChar *> *boxes) {
   InsertSpaces(rtl_rules, vertical_rules, boxes);
   for (size_t i = 0; i < boxes->size(); ++i) {
     if ((*boxes)[i]->box_ == nullptr) {
-      tprintf("Null box at index %zu\n", i);
+      tesserr << "Null box at index " << i << '\n';
     }
   }
   if (rtl_rules) {
@@ -278,8 +279,8 @@ bool BoxChar::MostlyVertical(const std::vector<BoxChar *> &boxes) {
       int dx = boxes[i]->box_->x - boxes[i - 1]->box_->x;
       int dy = boxes[i]->box_->y - boxes[i - 1]->box_->y;
       if (abs(dx) > abs(dy) * kMinNewlineRatio || abs(dy) > abs(dx) * kMinNewlineRatio) {
-        total_dx += dx * dx;
-        total_dy += dy * dy;
+        total_dx += static_cast<int64_t>(dx) * dx;
+        total_dy += static_cast<int64_t>(dy) * dy;
       }
     }
   }

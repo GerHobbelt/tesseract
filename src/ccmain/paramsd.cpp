@@ -32,7 +32,7 @@
 #  include "svmnode.h"        // for SVMenuNode
 #  include "tesseractclass.h" // for Tesseract
 
-#  include <cstdio>  // for fclose, fopen, fprintf, sprintf, FILE
+#  include <cstdio>  // for fclose, fopen, fprintf, FILE
 #  include <cstdlib> // for atoi
 #  include <cstring> // for strcmp, strcspn, strlen, strncpy
 #  include <locale>  // for std::locale::classic
@@ -191,9 +191,7 @@ void ParamsEditor::GetPrefixes(const char *s, std::string *level_one, std::strin
 }
 
 // Compare two VC objects by their name.
-int ParamContent::Compare(const void *v1, const void *v2) {
-  const ParamContent *one = *static_cast<const ParamContent *const *>(v1);
-  const ParamContent *two = *static_cast<const ParamContent *const *>(v2);
+int ParamContent::Compare(const ParamContent *one, const ParamContent *two) {
   return strcmp(one->GetName(), two->GetName());
 }
 
@@ -319,16 +317,12 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollView *sv) {
 // Write all (changed_) parameters to a config file.
 void ParamsEditor::WriteParams(char *filename, bool changes_only) {
   FILE *fp; // input file
-  char msg_str[255];
   // if file exists
   if ((fp = fopen(filename, "rb")) != nullptr) {
     fclose(fp);
-    sprintf(msg_str,
-            "Overwrite file "
-            "%s"
-            "? (Y/N)",
-            filename);
-    int a = sv_window_->ShowYesNoDialog(msg_str);
+    std::stringstream msg;
+    msg << "Overwrite file " << filename << "? (Y/N)";
+    int a = sv_window_->ShowYesNoDialog(msg.str().c_str());
     if (a == 'n') {
       return;
     } // don't write

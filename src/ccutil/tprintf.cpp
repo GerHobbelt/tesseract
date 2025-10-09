@@ -21,6 +21,7 @@
 #  include "config_auto.h"
 #endif
 
+#include "tesserrstream.h"
 #include "tprintf.h"
 
 #include "params.h"
@@ -31,36 +32,44 @@
 
 namespace tesseract {
 
-#define MAX_MSG_LEN 2048
-
 INT_VAR(log_level, INT_MAX, "Logging level");
 
 static STRING_VAR(debug_file, "", "File to send tprintf output to");
 
-// Trace printf
-void tprintf(const char *format, ...) {
-  const char *debug_file_name = debug_file.c_str();
-  FILE *debugfp = nullptr; // debug file
+// File for debug output.
+FILE *debugfp = nullptr;
 
-  if (debug_file_name == nullptr) {
-    // This should not happen.
-    return;
+// Set output for log messages.
+// The output is written to stderr if debug_file is empty.
+// Otherwise it is written to debug_file.
+// It is possible to switch between stderr and debug_file output:
+// tprintf("write to configured output\n");
+// debug_file = "";
+// tprintf("write to stderr\n");
+// debug_file = "/tmp/log";
+// tprintf("write to /tmp/log\n");
+// debug_file = "";
+// tprintf("write to stderr\n");
+FILE *get_debugfp() {
+  if (debug_file.empty()) {
+    // Write to stderr.
+    if (debugfp != stderr && debugfp != nullptr) {
+      fclose(debugfp);
+    }
+    debugfp = stderr;
+  } else if (debugfp == stderr || debugfp == nullptr) {
+    // Write to file.
+#ifdef _WIN32
+    if (debug_file == "/dev/null") {
+      // Replace /dev/null by nul for Windows.
+      debug_file = "nul";
+    }
+#endif
+    debugfp = fopen(debug_file.c_str(), "wb");
   }
-
-  va_list args;           // variable args
-  va_start(args, format); // variable list
-  if (debug_file_name[0] != '\0') {
-    debugfp = fopen(debug_file_name, "a+");
-    vfprintf(debugfp, format, args);
-    // Webassembly build does not always flush properly if not explicitly called for. 
-    // See https://emscripten.org/docs/getting_started/FAQ.html#what-does-exiting-the-runtime-mean-why-don-t-atexit-s-run
-    fclose(debugfp);
-  } else {
-    vfprintf(stderr, format, args);
-  }
-  va_end(args);
-
-
+  return debugfp;
 }
+
+TessErrStream tesserr;
 
 } // namespace tesseract

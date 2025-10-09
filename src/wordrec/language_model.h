@@ -77,7 +77,7 @@ public:
                    float rating_cert_scale);
 
   // Updates language model state of the given BLOB_CHOICE_LIST (from
-  // the ratings matrix) a its parent. Updates pain_points if new
+  // the ratings matrix) and its parent. Updates pain_points if new
   // problematic points are found in the segmentation graph.
   //
   // At most language_model_viterbi_list_size are kept in each
@@ -227,7 +227,7 @@ protected:
   // (used by ComputeNgramCost()).
   float ComputeDenom(BLOB_CHOICE_LIST *curr_list);
 
-  // Fills the given consistenty_info based on parent_vse.consistency_info
+  // Fills the given consistency_info based on parent_vse.consistency_info
   // and on the consistency of the given unichar_id with parent_vse.
   void FillConsistencyInfo(int curr_col, bool word_end, BLOB_CHOICE *b,
                            ViterbiStateEntry *parent_vse, WERD_RES *word_res,
