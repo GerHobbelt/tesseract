@@ -25,10 +25,10 @@
 #endif
 #include <climits> // for INT_MIN, INT_MAX
 #include <cstdlib> // for std::getenv
+#include <filesystem>
 #include <iostream>
 #include <map>    // for std::map
 #include <memory> // std::unique_ptr
-#include <sstream> // std::ostringstream
 #include <type_traits>
 
 #include <cpp/result.hpp>      // alternative for C++23 std::expected<>
@@ -311,6 +311,7 @@ static void PrintHelpMessage(const char *program) {
       "  {} help [section]\n"
       "  {} --list-langs\n"
       "  {} --print-parameters\n"
+      "  {} -p PATH [options...] [configfile...]\n"
       "  {} <imagename> <outputbase> [options...] [<configfile>...]\n"
       "\n"
       "OCR options:\n"
@@ -321,11 +322,12 @@ static void PrintHelpMessage(const char *program) {
       "Stand-alone {} options:\n"
       "  --help                Show this help message.\n"
       "  --help-extra          Show extra help for advanced users.\n"
+      "  -p, --path            Provide an input file or directory.\n"
       "  --version             Show version information.\n"
       "  --list-langs          List available languages for tesseract engine.\n"
       "  --print-parameters    Print tesseract parameters.\n"
 	  "\n",
-      program, program, program, program, program, program);
+      program, program, program, program, program, program, program);
 }
 
 static void PrintVeryShortHelpMessage(const char *program) {
@@ -638,6 +640,57 @@ static int ParseArgs(int argc, const char** argv,
     } else if ((strcmp(verb, "-v") == 0) || (strcmp(verb, "--version") == 0)) {
       cmd |= VERSION;
 	  continue;
+    } else if ((strcmp(verb, "-p") == 0) || (strcmp(verb, "--path") == 0)) {
+
+TODO: consolidate this -p option code with our own  output_base_path  code, etc.: use std::filesystem, etc.
+	
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Error, missing argument for %s\n", verb);
+        return false;
+      }
+      try {
+        namespace fs = std::filesystem;
+        fs::path resolved = fs::u8path(argv[i + 1]);
+        if (!fs::exists(resolved)) {
+          fprintf(stderr, "Error, path specified with -p does not exist: %s\n", argv[i + 1]);
+          return false;
+        }
+        if (fs::is_directory(resolved)) {
+          bool found_file = false;
+          for (const auto &entry : fs::directory_iterator(resolved)) {
+            if (entry.is_regular_file()) {
+              resolved = entry.path();
+              found_file = true;
+              break;
+            }
+          }
+          if (!found_file) {
+            fprintf(stderr,
+                    "Error, directory specified with -p contains no readable files: %s\n",
+                    argv[i + 1]);
+            return false;
+          }
+        } else if (!fs::is_regular_file(resolved)) {
+          fprintf(stderr, "Error, path specified with -p is not a regular file: %s\n", argv[i + 1]);
+          return false;
+        }
+
+static std::string auto_image_path_storage;
+static std::string auto_outputbase_storage;
+
+        auto_image_path_storage = resolved.u8string();
+        *image = auto_image_path_storage.c_str();
+
+        auto_outputbase_storage = resolved.stem().u8string();
+        if (auto_outputbase_storage.empty()) {
+          auto_outputbase_storage = "out";
+        }
+        *outputbase = auto_outputbase_storage.c_str();
+      } catch (const std::filesystem::filesystem_error &e) {
+        fprintf(stderr, "Error, unable to use path specified with -p: %s\n", e.what());
+        return false;
+      }
+      ++i;
     } else if (strcmp(argv[i], "-l") == 0) {
       vars_vec.push_back("languages");                   // [i_a] NEW
       PUSH_VALUE_OR_YAK();
