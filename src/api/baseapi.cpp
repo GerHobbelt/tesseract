@@ -738,7 +738,9 @@ int TessBaseAPI::Init_Internal(const char *path,
   }
 
   // Update datapath and language requested for the last valid initialization.
+#if 0
   datapath_ = std::move(datapath);
+#endif
   if (datapath_.empty() && !tess.datadir_.empty()) {
     datapath_ = tess.datadir_;
   }
