@@ -35,6 +35,7 @@
 #include <algorithm>    // for max, min
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
+#include <thread>       // for std::this_thread
 
 #undef min
 #undef max
@@ -381,9 +382,6 @@ DocumentData::DocumentData(const std::string &name)
       reader_(nullptr) {}
 
 DocumentData::~DocumentData() {
-  if (thread.joinable()) {
-    thread.join();
-  }
   std::lock_guard<std::mutex> lock_p(pages_mutex_);
   std::lock_guard<std::mutex> lock_g(general_mutex_);
   for (auto data : pages_) {
@@ -430,9 +428,8 @@ void DocumentData::AddPageToDocument(ImageData *page) {
   set_memory_used(memory_used() + page->MemoryUsed());
 }
 
-// If the given index is not currently loaded, loads it using a separate
-// thread.
-void DocumentData::LoadPageInBackground(int index) {
+// If the given index is not currently loaded, loads it.
+void DocumentData::LoadPage(const int index) {
   ImageData *page = nullptr;
   if (IsPageAvailable(index, &page)) {
     return;
@@ -450,9 +447,7 @@ void DocumentData::LoadPageInBackground(int index) {
     }
     pages_.clear();
   }
-  if (thread.joinable()) {
-    thread.join();
-  }
+
 
   // Don't run next statement asynchronously because that would
   // create too many threads on Linux (see issue #3111).
@@ -473,7 +468,7 @@ const ImageData *DocumentData::GetPage(int index) {
     bool needs_loading = pages_offset_ != index;
     pages_mutex_.unlock();
     if (needs_loading) {
-      LoadPageInBackground(index);
+      LoadPage(index);
     }
     // We can't directly load the page, or the background load will delete it
     // while the caller is using it, so give it a chance to work.
@@ -716,7 +711,7 @@ const ImageData *DocumentCache::GetPageRoundRobin(int serial) {
   for (int offset = 1; offset <= kMaxReadAhead && offset < num_docs; ++offset) {
     doc_index = (serial + offset) % num_docs;
     int page = (serial + offset) / num_docs;
-    documents_[doc_index]->LoadPageInBackground(page);
+    documents_[doc_index]->LoadPage(page);
   }
   return doc;
 }
@@ -773,7 +768,7 @@ const ImageData *DocumentCache::GetPageSequential(int serial) {
   }
   int next_index = (doc_index + 1) % num_docs;
   if (!documents_[next_index]->IsCached() && total_memory < max_memory_) {
-    documents_[next_index]->LoadPageInBackground(0);
+    documents_[next_index]->LoadPage(0);
   }
   return doc;
 }
