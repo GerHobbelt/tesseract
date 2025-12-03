@@ -84,7 +84,7 @@ Tesseract 4 adds a new neural network 🧠 (LSTM) based OCR engine that focuses 
 
 ### Development Team 👥
 
-The current lead developer is **Stefan Weil**. **Ray Smith** served as the lead developer until 2018. The project maintainer is **Zdenko Podobny**. For a list of contributors, please refer to the `AUTHORS` file and the contributors’ log on GitHub.
+The current lead developer is **Stefan Weil**. **Ray Smith** served as the lead developer until 2017. The project maintainer is **Zdenko Podobny**. For a list of contributors, please refer to the [`AUTHORS`](https://github.com/tesseract-ocr/tesseract/blob/main/AUTHORS) file and the contributors’ log on GitHub.
 
 ### Language and Format Support 📄 
 
@@ -119,7 +119,7 @@ For more about Optical Character Recognition, visit [Wikipedia on OCR](https://e
 
 ## ⏳Brief history
 
-Tesseract was originally developed at Hewlett-Packard Laboratories in Bristol, UK, and at Hewlett-Packard Co. in Greeley, Colorado, USA, between 1985 and 1994. Subsequent changes were made in 1996 to port it to Windows, with further enhancements in C++ occurring in 1998. In 2005, Tesseract was open-sourced by HP, and it was actively developed by Google from 2006 until November 2018.
+Tesseract was originally developed at Hewlett-Packard Laboratories in Bristol, UK, and at Hewlett-Packard Co. in Greeley, Colorado, USA, between 1985 and 1994. Subsequent changes were made in 1996 to port it to Windows, with further enhancements in C++ occurring in 1998. In 2005, Tesseract was open-sourced by HP, and it was actively developed by Google from 2006 until August 2017.
 
 The current stable version, **Major Version 5**, began with the release of 5.0.0 on November 30, 2021. Newer minor and bug fix versions are continuously made available on [GitHub](https://github.com/tesseract-ocr/tesseract).
 
