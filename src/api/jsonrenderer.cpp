@@ -65,26 +65,13 @@ static void AddBaselineCoordsToJson(const tesseract::ResultIterator* it, tessera
  * data structures.
  * page_number is 0-based but will appear in the output as 1-based.
  * Image name/input_file_ can be set by SetInputName before calling
- * GetJSONText
+ * GetJSONText.
  * STL removed from original patch submission and refactored by rays.
  * Returned string must be freed with the delete [] operator.
  */
 char *TessBaseAPI::GetJSONText(int page_number) {
-  return GetJSONText(nullptr, page_number);
-}
-
-/**
- * Make a JSON-formatted string with JSON from the internal
- * data structures.
- * page_number is 0-based but will appear in the output as 1-based.
- * Image name/input_file_ can be set by SetInputName before calling
- * GetJSONText
- * STL removed from original patch submission and refactored by rays.
- * Returned string must be freed with the delete [] operator.
- */
-char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
   if (tesseract_ == nullptr ||
-      (page_res_ == nullptr && Recognize(monitor) < 0)) {
+      (page_res_ == nullptr && Recognize() < 0)) {
     return nullptr;
   }
 
