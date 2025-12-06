@@ -171,7 +171,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
             }
           }
           if (test_pt) {
-            debug_fix_space_level.set_value(0);
+            debug_fix_space_level.set_value(int(0));
           }
         }
         fix_sp_fp_word(word_res_it_from, row_res_it.data()->row, block_res_it.data()->block);

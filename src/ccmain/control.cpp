@@ -2122,7 +2122,7 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
   }
 
   tessedit_rejection_debug.set_value(false);
-  debug_x_ht_level.set_value(0);
+  debug_x_ht_level.set_value(int(0));
 
   if (word->word->bounding_box().contains(FCOORD(test_pt_x, test_pt_y))) {
     if (location < 0) {

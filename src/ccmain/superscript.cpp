@@ -407,8 +407,8 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
   bool saved_classify_cp_dq_bad_height = classify_cp_dq_bad_height;
   if (prefix) {
     // Turn off Tesseract's y-position penalties for the leading superscript.
-    classify_class_pruner_multiplier.set_value(0);
-    classify_integer_matcher_multiplier.set_value(0);
+    classify_class_pruner_multiplier.set_value(int(0));
+    classify_integer_matcher_multiplier.set_value(int(0));
     classify_cp_dq_bad_height.set_value(false);
 
     // Adjust our expectations about the baseline for this prefix.
@@ -433,8 +433,8 @@ WERD_RES *Tesseract::TrySuperscriptSplits(int num_chopped_leading, float leading
 
   if (suffix) {
     // Turn off Tesseract's y-position penalties for the trailing superscript, disable punctuation unichars
-    classify_class_pruner_multiplier.set_value(0);
-    classify_integer_matcher_multiplier.set_value(0);
+    classify_class_pruner_multiplier.set_value(int(0));
+    classify_integer_matcher_multiplier.set_value(int(0));
     classify_cp_dq_bad_height.set_value(false);
     unicharset_.set_enable_punctuation(false);
 

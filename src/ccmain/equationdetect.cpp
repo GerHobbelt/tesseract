@@ -262,8 +262,8 @@ void EquationDetect::IdentifySpecialText() {
   const int classify_class_pruner = lang_tesseract_->classify_class_pruner_multiplier;
   const int classify_integer_matcher = lang_tesseract_->classify_integer_matcher_multiplier;
   bool saved_classify_cp_dq_bad_height = lang_tesseract_->classify_cp_dq_bad_height;
-  lang_tesseract_->classify_class_pruner_multiplier.set_value(0);
-  lang_tesseract_->classify_integer_matcher_multiplier.set_value(0);
+  lang_tesseract_->classify_class_pruner_multiplier.set_value(int(0));
+  lang_tesseract_->classify_integer_matcher_multiplier.set_value(int(0));
   lang_tesseract_->classify_cp_dq_bad_height.set_value(false);
 
   ColPartitionGridSearch gsearch(part_grid_);
