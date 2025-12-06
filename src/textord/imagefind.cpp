@@ -335,13 +335,15 @@ Image ImageFind::FindImages(Image pix) {
 
   // Get the halftone mask directly from Leptonica.
   l_int32 ht_found = 0;
-  Pixa *pixadb = textord_tabfind_show_images ? pixaCreate(0) : nullptr;
+  Pixa *pixadb = nullptr;
+  if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
+    pixadb = pixaCreate(0);
+    pixaSetDiagnosticsSpec(pixadb, pixGetDiagnosticsSpec(pix));
+  }
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {
-    if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
-      Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
-      tesseract_->AddPixDebugPage(pixdb, "Find Images -- image op: generated Halftone Mask");
-    }
+    Image pixdb = pixaDisplayTiledInColumns(pixadb, 3, 1.0, 20, 2);
+    tesseract_->AddPixDebugPage(pixdb, "Find Images -- image op: generated Halftone Mask");
     pixaDestroy(&pixadb);
   }
 
