@@ -1760,7 +1760,7 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     if (tess.tessedit_page_number > 0 && pgn != tess.tessedit_page_number) {
       continue;
     }
-    pixSetDiagnosticsSpec(pix, rp->diag_spec);
+    pixSetDiagnosticsSpec(pix);
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
     tess.applybox_page.set_raw_value(pgn);

@@ -729,9 +729,8 @@ namespace tesseract {
     , active_step_index(-1)
   {
     pixa_ = pixaCreate(100);
-    LDIAG_CTX diagspec = leptCreateDiagnoticsSpecInstance();
     // TODO: set up the diagspec instance as needed.
-    pixaSetDiagnosticsSpec(pixa_, diagspec);
+    pixaSetDiagnosticsSpec(pixa_);
 
 #if defined(HAVE_MUPDF)
     fz_ctx = fz_get_global_context();
