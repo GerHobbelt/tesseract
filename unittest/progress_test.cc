@@ -86,7 +86,7 @@ public:
 };
 
 void ClassicProgressTester(const char *imgname, const char *tessdatadir, const char *lang) {
-  using ::testing::_;
+  using ::testing::_anything_;
   using ::testing::AllOf;
   using ::testing::AtLeast;
   using ::testing::DoAll;
@@ -107,7 +107,7 @@ void ClassicProgressTester(const char *imgname, const char *tessdatadir, const c
   EXPECT_CALL(progressSink, classicProgress(AllOf(Gt<int &>(currentProgress), Le(100))))
       .Times(AtLeast(5))
       .WillRepeatedly(DoAll(SaveArg<0>(&currentProgress), Return(false)));
-  EXPECT_CALL(progressSink, cancel(_)).Times(AtLeast(5)).WillRepeatedly(Return(false));
+  EXPECT_CALL(progressSink, cancel(_anything_)).Times(AtLeast(5)).WillRepeatedly(Return(false));
 
   EXPECT_EQ(api->Recognize(&progressSink.monitor), false);
   EXPECT_GE(currentProgress, 50) << "The reported progress did not reach 50%";
@@ -117,7 +117,7 @@ void ClassicProgressTester(const char *imgname, const char *tessdatadir, const c
 }
 
 void NewProgressTester(const char *imgname, const char *tessdatadir, const char *lang) {
-  using ::testing::_;
+  using ::testing::_anything_;
   using ::testing::AllOf;
   using ::testing::AtLeast;
   using ::testing::DoAll;
@@ -135,11 +135,11 @@ void NewProgressTester(const char *imgname, const char *tessdatadir, const char 
   NewMockProgressSink progressSink;
 
   int currentProgress = -1;
-  EXPECT_CALL(progressSink, classicProgress(_)).Times(0);
+  EXPECT_CALL(progressSink, classicProgress(_anything_)).Times(0);
   EXPECT_CALL(progressSink, progress(AllOf(Gt<int &>(currentProgress), Le(100))))
       .Times(AtLeast(5))
       .WillRepeatedly(DoAll(SaveArg<0>(&currentProgress), Return(false)));
-  EXPECT_CALL(progressSink, cancel(_)).Times(AtLeast(5)).WillRepeatedly(Return(false));
+  EXPECT_CALL(progressSink, cancel(_anything_)).Times(AtLeast(5)).WillRepeatedly(Return(false));
 
   EXPECT_EQ(api->Recognize(&progressSink.monitor), false);
   EXPECT_GE(currentProgress, 50) << "The reported progress did not reach 50%";
