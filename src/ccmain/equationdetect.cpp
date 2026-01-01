@@ -52,7 +52,7 @@ static BOOL_VAR(equationdetect_save_merged_image, false, "Save the merged image"
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 ///////////////////////////////////////////////////////////////////////////
-// Utility ColParition sort functions.
+// Utility ColPartition sort functions.
 ///////////////////////////////////////////////////////////////////////////
 static int SortCPByTopReverse(const void *p1, const void *p2) {
   const ColPartition *cp1 = *static_cast<ColPartition *const *>(p1);
@@ -610,7 +610,7 @@ float EquationDetect::ComputeForegroundDensity(const TBOX &tbox) {
 bool EquationDetect::CheckSeedFgDensity(const float density_th, ColPartition *part) {
   ASSERT_HOST(part != nullptr);
 
-  // Split part horizontall, and check for each sub part.
+  // Split part horizontally, and check for each sub part.
   std::vector<TBOX> sub_boxes;
   SplitCPHorLite(part, &sub_boxes);
   float parts_passed = 0.0;
