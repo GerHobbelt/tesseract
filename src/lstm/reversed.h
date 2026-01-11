@@ -24,9 +24,8 @@
 namespace tesseract {
 
 // C++ Implementation of the Reversed class from lstm.py.
-class Reversed : public Plumbing {
+class TESS_API Reversed : public Plumbing {
 public:
-  TESS_API
   explicit Reversed(const std::string &name, NetworkType type);
   virtual ~Reversed() override = default;
 
@@ -34,7 +33,42 @@ public:
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
+    std::string spec(type_ == NT_XREVERSED ? "Rx" : (type_ == NT_YREVERSED ? "Ry" : "Txy"));
+    // For most simple cases, we will output Rx<net> or Ry<net> where <net> is
+    // the network in stack_[0], but in the special case that <net> is an
+    // LSTM, we will just output the LSTM's spec modified to take the reversal
+    // into account. This is because when the user specified Lfy64, we actually
+    // generated TxyLfx64, and if the user specified Lrx64 we actually
+    // generated RxLfx64, and we want to display what the user asked for.
+    std::string net_spec(stack_[0]->spec());
+    if (net_spec[0] == 'L') {
+      // Setup a from and to character according to the type of the reversal
+      // such that the LSTM spec gets modified to the spec that the user
+      // asked for
+      char from = 'f';
+      char to = 'r';
+      if (type_ == NT_XYTRANSPOSE) {
+        from = 'x';
+        to = 'y';
+      }
+      // Change the from char to the to char.
+      for (auto &it : net_spec) {
+        if (it == from) {
+          it = to;
+        }
+      }
+      spec += net_spec;
+      return spec;
+    }
+    spec += net_spec;
+    return spec;
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+
+    // TODO
+
     std::string spec(type_ == NT_XREVERSED ? "Rx" : (type_ == NT_YREVERSED ? "Ry" : "Txy"));
     // For most simple cases, we will output Rx<net> or Ry<net> where <net> is
     // the network in stack_[0], but in the special case that <net> is an
@@ -67,7 +101,6 @@ public:
   }
 
   // Takes ownership of the given network to make it the reversed one.
-  TESS_API
   void SetNetwork(Network *network);
 
   // Runs forward propagation of activations on the input line.

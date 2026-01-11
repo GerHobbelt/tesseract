@@ -218,7 +218,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
     }
     tprintDebug("Extracting tessdata components from {}\n", argv[2]);
     if (strcmp(argv[1], "-e") == 0) {
-      for (i = 3; i < argc; ++i) {
+      for (int i = 3; i < argc; ++i) {
         errno = 0;
         if (tm.ExtractToFile(argv[i])) {
           tprintDebug("Wrote {}\n", argv[i]);
@@ -233,7 +233,7 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         }
       }
     } else { // extract all the components
-      for (i = 0; i < tesseract::TESSDATA_NUM_ENTRIES; ++i) {
+      for (int i = 0; i < tesseract::TESSDATA_NUM_ENTRIES; ++i) {
         std::string filename = argv[3];
         const char *last = &argv[3][strlen(argv[3])-1];
         if (*last != '.') {
@@ -346,13 +346,6 @@ extern "C" int tesseract_combine_tessdata_main(int argc, const char** argv)
         "Usage for compacting LSTM component to int:\n"
         "  {} -c traineddata_file\n",
         exename);
-
-
-
-
-
-
-
 
     return EXIT_FAILURE;
   }

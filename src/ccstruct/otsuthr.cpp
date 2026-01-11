@@ -99,7 +99,7 @@ void HistogramRect(const Image &src_pix, int channel, int left, int top, int wid
   int bottom = top + height;
   memset(histogram, 0, sizeof(*histogram) * kHistogramSize);
   int src_wpl = pixGetWpl(src_pix);
-  l_uint32 *srcdata = pixGetData(src_pix);
+  const l_uint32 *srcdata = pixGetData(const_cast<Image &>(src_pix));
   for (int y = top; y < bottom; ++y) {
     const l_uint32 *linedata = srcdata + y * src_wpl;
     for (int x = 0; x < width; ++x) {

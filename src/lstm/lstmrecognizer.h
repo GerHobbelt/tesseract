@@ -49,7 +49,8 @@ enum TrainingFlags {
 };
 
 // Top-level line recognizer class for LSTM-based networks.
-// Note that a sub-class, LSTMTrainer is used for training.
+// 
+// Note that a sub-class `LSTMTrainer` is used for training.
 class TESS_API LSTMRecognizer {
 public:
   // Takes an OPTIONAL instance reference for internal diagnostics use.
@@ -384,7 +385,7 @@ protected:
 
 public:
   void SetDebug(int v) {
-	debug___ = std::max(0, v);
+    debug___ = std::max(0, v);
   }
   // because both the name and several spots where this is used suggest boolean behaviour.  warning C4800: Implicit conversion from 'int' to bool. Possible information loss
   bool HasDebug(int threshold = 0) const {

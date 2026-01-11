@@ -138,7 +138,7 @@ int ParseArguments(TessBaseAPI &api, int *argc, const char ***argv) {
   Config.Confidence = std::max(0.0, std::min(1.0, double(clusterconfig_confidence)));
   // Set additional parameters from config file if specified.
   if (!trainer_configfile.empty()) {
-    tesseract::ParamUtils::ReadParamsFile(trainer_configfile.c_str(), api.tesseract().params());
+    tesseract::ParamUtils::ReadParamsFile(trainer_configfile, api.tesseract().params());
   }
   return rv;
 }
@@ -149,18 +149,18 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
   std::string shape_table_file = file_prefix;
   shape_table_file += kShapeTableFileSuffix;
   TFile shape_fp;
-  if (shape_fp.Open(shape_table_file.c_str(), nullptr)) {
+  if (shape_fp.Open(shape_table_file, nullptr)) {
     shape_table = new ShapeTable;
     if (!shape_table->DeSerialize(&shape_fp)) {
       delete shape_table;
       shape_table = nullptr;
-      tprintError("Failed to read shape table {}\n", shape_table_file.c_str());
+      tprintError("Failed to read shape table {}\n", shape_table_file);
     } else {
       int num_shapes = shape_table->NumShapes();
-      tprintDebug("Read shape table {} of {} shapes\n", shape_table_file.c_str(), num_shapes);
+      tprintDebug("Read shape table {} of {} shapes\n", shape_table_file, num_shapes);
     }
   } else {
-    tprintWarn("No shape table file present: {}\n", shape_table_file.c_str());
+    tprintWarn("No shape table file present: {}\n", shape_table_file);
   }
   return shape_table;
 }
@@ -169,14 +169,14 @@ ShapeTable *LoadShapeTable(const std::string &file_prefix) {
 void WriteShapeTable(const std::string &file_prefix, const ShapeTable &shape_table) {
   std::string shape_table_file = file_prefix;
   shape_table_file += kShapeTableFileSuffix;
-  FILE *fp = fopen(shape_table_file.c_str(), "wb");
+  FILE *fp = fopen(shape_table_file, "wb");
   if (fp != nullptr) {
     if (!shape_table.Serialize(fp)) {
-      tprintError("Error writing shape table: {}\n", shape_table_file.c_str());
+      tprintError("Error writing shape table: {}\n", shape_table_file);
     }
     fclose(fp);
   } else {
-    tprintError("Error creating shape table: {}\n", shape_table_file.c_str());
+    tprintError("Error creating shape table: {}\n", shape_table_file);
   }
 }
 
@@ -202,7 +202,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   InitIntegerFX();
   file_prefix = "";
   if (!trainer_directory.empty()) {
-    file_prefix += trainer_directory.c_str();
+    file_prefix += trainer_directory;
     file_prefix += "/";
   }
   // If we are shape clustering (nullptr shape_table) or we successfully load
@@ -221,15 +221,15 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
   auto trainer = std::make_unique<MasterTrainer>(NM_CHAR_ANISOTROPIC, shape_analysis, replication);
   IntFeatureSpace fs;
   fs.Init(kBoostXYBuckets, kBoostXYBuckets, kBoostDirBuckets);
-  trainer->LoadUnicharset(trainer_input_unicharset_file.c_str());
+  trainer->LoadUnicharset(trainer_input_unicharset_file);
   // Get basic font information from font_properties.
   if (!trainer_font_properties.empty()) {
-    if (!trainer->LoadFontInfo(trainer_font_properties.c_str())) {
+    if (!trainer->LoadFontInfo(trainer_font_properties)) {
       return {};
     }
   }
   if (!trainer_xheights.empty()) {
-    if (!trainer->LoadXHeights(trainer_xheights.c_str())) {
+    if (!trainer->LoadXHeights(trainer_xheights)) {
       return {};
     }
   }
@@ -254,23 +254,23 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
       // Chop off the tr and replace with tif. Extension must be tif!
       image_name.resize(image_name.length() - 2);
       image_name += "tif";
-      trainer->LoadPageImages(image_name.c_str());
+      trainer->LoadPageImages(image_name);
     }
   }
   trainer->PostLoadCleanup();
   // Write the master trainer if required.
   if (!trainer_output_trainer.empty()) {
-    FILE *fp = fopen(trainer_output_trainer.c_str(), "wb");
+    FILE *fp = fopen(trainer_output_trainer.value(), "wb");
     if (fp == nullptr) {
-      tprintError("Can't create saved trainer data!\n");
+      tprintError("Can't create saved trainer data! (file: {})\n", trainer_output_trainer);
     } else {
       trainer->Serialize(fp);
       fclose(fp);
     }
   }
   trainer->PreTrainingSetup();
-  if (!trainer_output_unicharset_file.empty() && !trainer->unicharset().save_to_file(trainer_output_unicharset_file.c_str())) {
-    tprintError("Failed to save unicharset to file {}\n", trainer_output_unicharset_file.c_str());
+  if (!trainer_output_unicharset_file.empty() && !trainer->unicharset().save_to_file(trainer_output_unicharset_file)) {
+    tprintError("Failed to save unicharset to file {}\n", trainer_output_unicharset_file);
     return {};
   }
 
@@ -280,7 +280,7 @@ std::unique_ptr<MasterTrainer> LoadTrainingData(const char *const *filelist, boo
     if (*shape_table == nullptr) {
       *shape_table = new ShapeTable;
       trainer->SetupFlatShapeTable(*shape_table);
-      tprintDebug("Flat shape table summary: {}\n", (*shape_table)->SummaryStr().c_str());
+      tprintDebug("Flat shape table summary: {}\n", (*shape_table)->SummaryStr());
     }
     (*shape_table)->set_unicharset(trainer->unicharset());
   }
@@ -463,7 +463,7 @@ CLUSTERER *SetUpForClustering(const FEATURE_DEFS_STRUCT &FeatureDefs, LABELEDLIS
 void MergeInsignificantProtos(LIST ProtoList, const char *label, CLUSTERER *Clusterer,
                               CLUSTERCONFIG *clusterconfig) {
   PROTOTYPE *Prototype;
-  bool debug = strcmp(trainer_test_ch.c_str(), label) == 0;
+  bool debug = strcmp(trainer_test_ch, label) == 0;
 
   LIST pProtoList = ProtoList;
   iterate(pProtoList) {
@@ -717,7 +717,7 @@ void FreeNormProtoList(LIST CharList)
 
 /*---------------------------------------------------------------------------*/
 void AddToNormProtosList(LIST *NormProtoList, LIST ProtoList, const std::string &CharName) {
-  auto LabeledProtoList = new LABELEDLISTNODE(CharName.c_str());
+  auto LabeledProtoList = new LABELEDLISTNODE(CharName);
   iterate(ProtoList) {
     auto Proto = reinterpret_cast<PROTOTYPE *>(ProtoList->first_node());
     LabeledProtoList->List = push(LabeledProtoList->List, Proto);

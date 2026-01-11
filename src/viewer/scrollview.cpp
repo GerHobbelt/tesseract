@@ -961,7 +961,8 @@ void BackgroundScrollView::PrepCanvas(void) {
   pix = MixWithLightRedTintedBackground(wh_pix, tesseract_->pix_binary(), nullptr);
   ASSERT0(pixGetRefCount(pix) >= 1);
 
-  ASSERT0(pix.pix_ != wh_pix.pix_);
+  //ASSERT0(pix.pix_ != wh_pix.pix_);  (error: accessing protected member) -->
+  ASSERT0(pix.ptr() != wh_pix.ptr());
 }
 
 /// Sets up a ScrollView window, depending on the constructor variables.

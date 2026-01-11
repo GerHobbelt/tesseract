@@ -35,7 +35,7 @@ static bool AnyFlagExists(const char *flag_name) {
   {
     std::vector<IntParam *> empty;
     auto *p =
-        ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams()->int_params_c(), empty);
+        ParamUtils::FindParam<IntParam>(full_flag_name.c_str(), GlobalParams().int_params_c(), empty);
     if (p) {
       return true;
     }
@@ -43,7 +43,7 @@ static bool AnyFlagExists(const char *flag_name) {
   {
     std::vector<BoolParam *> empty;
     auto *p =
-        ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams()->bool_params_c(), empty);
+        ParamUtils::FindParam<BoolParam>(full_flag_name.c_str(), GlobalParams().bool_params_c(), empty);
     if (p) {
       return true;
     }
@@ -51,7 +51,7 @@ static bool AnyFlagExists(const char *flag_name) {
   {
     std::vector<DoubleParam *> empty;
     auto *p =
-        ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(), GlobalParams()->double_params_c(), empty);
+        ParamUtils::FindParam<DoubleParam>(full_flag_name.c_str(), GlobalParams().double_params_c(), empty);
     if (p) {
       return true;
     }
@@ -59,7 +59,7 @@ static bool AnyFlagExists(const char *flag_name) {
   {
     std::vector<StringParam *> empty;
     auto *p =
-        ParamUtils::FindParam<StringParam>(full_flag_name.c_str(), GlobalParams()->string_params_c(), empty);
+        ParamUtils::FindParam<StringParam>(full_flag_name.c_str(), GlobalParams().string_params_c(), empty);
     if (p) {
       return true;
     }
@@ -198,7 +198,7 @@ int ParseCommandLineFlags(const char *extra_usage, std::function<void(const char
 	      return 1;
 	    }
 
-	    p->set_value(rhs);
+	    p->parse_value(rhs);
 	    if (p->has_faulted()) {
 	      tprintError("Could not parse value '{}' for flag '{}'\n", rhs, lhs);
 	      return 1;

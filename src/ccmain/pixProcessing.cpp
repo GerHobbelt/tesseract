@@ -346,7 +346,6 @@ PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type) {
     return (PIX *)ERROR_PTR("pixd not made", __func__, NULL);
   pixCopyResolution(pixd, pixs);
   pixCopyText(pixd, pixs);
-  pixCloneDiagnosticsSpec(pixd, pixs);
   datas = pixGetData(pixs);
   datad = pixGetData(pixd);
   wpls = pixGetWpl(pixs);
@@ -475,7 +474,7 @@ PIX *pixNLNorm2(PIX *pixs, int *pthresh) {
   //  background and foreground value
   pixbox = boxCreate(w1 * 0.1, h1 * 0.1, w1 * 0.9, h1 * 0.9);
   na = pixGetGrayHistogramInRect(pixg, pixbox, 1);
-  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, &numfg, &numbg, NULL, NULL);
+  numaSplitDistribution(na, 0.1, &thresh, &avefg, &avebg, &numfg, &numbg, NULL);
   boxDestroy(&pixbox);
   numaDestroy(&na);
 
@@ -831,7 +830,6 @@ static inline int MIX(int val1, int val2, const int factor) {
     }
     // pixCopyResolution(pixd, pixs);
     // pixCopyInputFormat(pixd, pixs);
-    pixCloneDiagnosticsSpec(botlayer, toplayer);
 
     // botlayer.destroy();
     //toplayer.destroy();

@@ -110,7 +110,7 @@ void ParamContent::SetValue(const char *val) {
   // TODO (wanke) Test if the values actually are properly converted.
   // (Quickly visible impacts?)
   changed_ = true;
-  it_->set_value(val);
+  it_->parse_value(val);
 }
 
 // Gets the up to the first 3 prefixes from s (split by _).
@@ -220,7 +220,7 @@ ParamsEditor::ParamsEditor(tesseract::Tesseract *tess, ScrollViewReference &sv) 
     SVMenuNode *svMenuRoot = BuildListOfAllLeaves(tess);
 
     std::string paramfile;
-    paramfile = tess->datadir_;
+    paramfile = tess->datadir_.string();
     paramfile += VARDIR;   // parameters dir
     paramfile += "edited"; // actual name
 

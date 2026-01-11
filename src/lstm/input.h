@@ -25,19 +25,22 @@ namespace tesseract {
 class ScrollView;
 class Tesseract;
 
-class Input : public Network {
+class TESS_API Input : public Network {
 public:
-  TESS_API
   Input(const std::string &name, int ni, int no);
-  TESS_API
   Input(const std::string &name, const StaticShape &shape);
   virtual ~Input() override = default;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     return std::to_string(shape_.batch()) + "," +
            std::to_string(shape_.height()) + "," +
            std::to_string(shape_.width()) + "," +
            std::to_string(shape_.depth());
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+    return fmt::format("Input layer: (batch size: {}, height: {}, width: {}, depth: {})",
+                        shape_.batch(), shape_.height(), shape_.width(), shape_.depth());
   }
 
   // Returns the required shape input to the network.

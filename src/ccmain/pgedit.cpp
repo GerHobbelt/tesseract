@@ -350,7 +350,7 @@ static ScrollViewReference &bln_word_window_handle(Tesseract *tess) { // return 
                                               // not opened yet
   if (!bln_word_window) {
     pgeditor_msg("Creating BLN word window...");
-    bln_word_window = ScrollViewManager::MakeScrollView(tess, editor_word_name.c_str(), editor_word_xpos, editor_word_ypos,
+    bln_word_window = ScrollViewManager::MakeScrollView(tess, editor_word_name, editor_word_xpos, editor_word_ypos,
                                      editor_word_width, editor_word_height, 4000, 4000, true);
     auto *a = new BlnEventHandler();
     bln_word_window->AddEventHandler(a);
@@ -368,7 +368,7 @@ static ScrollViewReference &bln_word_window_handle(Tesseract *tess) { // return 
  */
 static void build_image_window(Tesseract *tess, int width, int height) {
   if (!image_win) {
-      image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name.c_str(), editor_image_xpos, editor_image_ypos,
+      image_win = ScrollViewManager::MakeScrollView(tess, editor_image_win_name, editor_image_xpos, editor_image_ypos,
                                  width + 1, height + editor_image_menuheight + 1, width, height, true);
       image_win->RegisterGlobalRefToMe(&image_win);
   } else {

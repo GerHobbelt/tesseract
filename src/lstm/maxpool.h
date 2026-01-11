@@ -25,15 +25,18 @@ namespace tesseract {
 // Maxpooling reduction. Independently for each input, selects the location
 // in the rectangle that contains the max value.
 // Backprop propagates only to the position that was the max.
-class Maxpool : public Reconfig {
+class TESS_API Maxpool : public Reconfig {
 public:
-  TESS_API
   Maxpool(const std::string &name, int ni, int x_scale, int y_scale);
-  ~Maxpool() override = default;
+  virtual ~Maxpool() override = default;
 
   // Accessors.
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     return "Mp" + std::to_string(y_scale_) + "," + std::to_string(x_scale_);
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+    return fmt::format("MaxPool layer: (scale = Y:{} * X:{})", y_scale_, x_scale_);
   }
 
   // Reads from the given file. Returns false in case of error.

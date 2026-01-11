@@ -59,13 +59,13 @@ void TessdataManager::LoadFileLater(const char *data_file_name) {
 }
 
 #if defined(HAVE_LIBARCHIVE)
-bool TessdataManager::LoadArchiveFile(const char *filename) {
+bool TessdataManager::LoadArchiveFile(const std::string &filename) {
   bool result = false;
   archive *a = archive_read_new();
   if (a != nullptr) {
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, filename, 8192) == ARCHIVE_OK) {
+    if (archive_read_open_filename(a, filename.c_str(), 8192) == ARCHIVE_OK) {
       archive_entry *ae;
       while (archive_read_next_header(a, &ae) == ARCHIVE_OK) {
         const char *component = archive_entry_pathname(ae);
@@ -89,13 +89,13 @@ bool TessdataManager::LoadArchiveFile(const char *filename) {
   return result;
 }
 
-bool TessdataManager::SaveArchiveFile(const char *filename) const{
+bool TessdataManager::SaveArchiveFile(const std::string &filename) const{
   bool result = false;
   archive *a = archive_write_new();
   archive_entry *ae = archive_entry_new();
   if (a != nullptr) {
     archive_write_set_format_zip(a);
-    archive_write_open_filename(a, filename);
+    archive_write_open_filename(a, filename.c_str());
     std::string filename_str = filename;
     filename_str += ".";
     archive_entry_set_filetype(ae, AE_IFREG);
@@ -116,7 +116,7 @@ bool TessdataManager::SaveArchiveFile(const char *filename) const{
 }
 #endif
 
-bool TessdataManager::Init(const char *data_file_name) {
+bool TessdataManager::Init(const std::string &data_file_name) {
   std::vector<char> data;
   if (reader_ == nullptr) {
 #if defined(HAVE_LIBARCHIVE)
@@ -136,7 +136,7 @@ bool TessdataManager::Init(const char *data_file_name) {
 }
 
 // Loads from the given memory buffer as if a file.
-bool TessdataManager::LoadMemBuffer(const char *name, const char *data, int size) {
+bool TessdataManager::LoadMemBuffer(const std::string &name, const char *data, int size) {
   // TODO: This method supports only the proprietary file format.
   Clear();
   data_file_name_ = name;
@@ -190,7 +190,7 @@ void TessdataManager::OverwriteEntry(TessdataType type, const char *data, int si
 }
 
 // Saves to the given filename.
-bool TessdataManager::SaveFile(const char *filename, FileWriter writer) const {
+bool TessdataManager::SaveFile(const std::string &filename, FileWriter writer) const {
 // TODO: This method supports only the proprietary file format.
   ASSERT_HOST(is_loaded_);
   std::vector<char> data;

@@ -324,8 +324,8 @@ int Tesseract::os_detect_blobs(const std::vector<int> *allowed_scripts, BLOBNBOX
 // Return true if estimate of orientation and script satisfies stopping
 // criteria.
 bool Tesseract::os_detect_blob(BLOBNBOX *bbox, OrientationDetector *o, ScriptDetector *s, OSResults *osr) {
-  tess_cn_matching.set_value(true); // turn it on
-  tess_bn_matching.set_value(false);
+  tess_cn_matching = true; // turn it on
+  tess_bn_matching = false;
   C_BLOB *blob = bbox->cblob();
   TBLOB *tblob = TBLOB::PolygonalCopy(poly_allow_detailed_fx, blob);
   TBOX box = tblob->bounding_box();

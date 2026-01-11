@@ -97,7 +97,7 @@ public:
 class LanguageModel : public LanguageModelSettings {
 public:
   LanguageModel() = delete;
-  LanguageModel(CCUtil *owner, const UnicityTable<FontInfo> *fontinfo_table, Dict *dict);
+  LanguageModel(CCUtil *owner, const UnicityTable<FontInfo> &fontinfo_table, Dict &dict);
   ~LanguageModel();
 
   // Fills the given floats array with features extracted from path represented
@@ -162,7 +162,7 @@ protected:
       // cert is assumed to be between 0 and -dict_->certainty_scale.
       // If you enable language_model_use_sigmoidal_certainty, you
       // need to adjust language_model_ngram_nonmatch_score as well.
-      cert = -cert / dict_->certainty_scale;
+      cert = -cert / dict_.certainty_scale;
       return 1.0f / (1.0f + exp(10.0f * cert));
     } else {
       return (-1.0f / cert);
@@ -352,12 +352,12 @@ protected:
 
   // The following variables are set at construction time.
 
-  // Pointer to fontinfo table (not owned by LanguageModel).
-  const UnicityTable<FontInfo> *fontinfo_table_ = nullptr;
+  // Reference to fontinfo table (not owned by LanguageModel).
+  const UnicityTable<FontInfo> &fontinfo_table_;
 
   // Pointer to Dict class, that is used for querying the dictionaries
-  // (the pointer is not owned by LanguageModel).
-  Dict *dict_ = nullptr;
+  // (the reference is not owned by LanguageModel).
+  Dict &dict_;
 
   // TODO(daria): the following variables should become LanguageModel params
   // when the old code in bestfirst.cpp and heuristic.cpp is deprecated.

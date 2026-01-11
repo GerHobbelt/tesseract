@@ -201,7 +201,7 @@ UNICHARSET::~UNICHARSET() {
 }
 
 UNICHAR_ID
-UNICHARSET::unichar_to_id(const std::string &const unichar_repr) const {
+UNICHARSET::unichar_to_id(const std::string &unichar_repr) const {
   std::string cleaned =
       old_style_included_ ? unichar_repr : CleanupString(unichar_repr);
   return ids.contains(cleaned.data(), cleaned.size())
@@ -250,10 +250,12 @@ bool UNICHARSET::encodable_string(const char *str,
 // the rest of the string is still encoded.
 // If lengths is not nullptr, then it is filled with the corresponding
 // byte length of each encoded UNICHAR_ID.
+// 
 // WARNING: Caller must guarantee that str has already been cleaned of codes
 // that do not belong in the unicharset, or encoding may fail.
+// 
 // Use CleanupString to perform the cleaning.
-bool UNICHARSET::encode_string(const char *str, bool give_up_on_failure,
+bool UNICHARSET::encode_string(const std::string &str, bool give_up_on_failure,
                                std::vector<UNICHAR_ID> *encoding,
                                std::vector<char> *lengths,
                                unsigned *encoded_length) const {
@@ -261,7 +263,7 @@ bool UNICHARSET::encode_string(const char *str, bool give_up_on_failure,
   std::vector<char> working_lengths;
   std::vector<char> best_lengths;
   encoding->clear(); // Just in case str is empty.
-  auto str_length = strlen(str);
+  auto str_length = str.length();
   unsigned str_pos = 0;
   bool perfect = true;
   while (str_pos < str_length) {
@@ -273,7 +275,7 @@ bool UNICHARSET::encode_string(const char *str, bool give_up_on_failure,
       if (give_up_on_failure) {
         break;
       }
-      int step = UNICHAR::utf8_step(str + str_pos);
+      int step = UNICHAR::utf8_step(str.c_str() + str_pos);
       if (step == 0) {
         step = 1;
       }
@@ -556,7 +558,7 @@ bool UNICHARSET::SizesDistinct(UNICHAR_ID id1, UNICHAR_ID id2) const {
 // maximum total length of str. It stops on a failure to encode to make
 // the overall process of encoding a partially failed string more efficient.
 // See unicharset.h for definition of the args.
-void UNICHARSET::encode_string(const char *str, int str_index, int str_length,
+void UNICHARSET::encode_string(const std::string &str, int str_index, int str_length,
                                std::vector<UNICHAR_ID> *encoding,
                                std::vector<char> *lengths,
                                unsigned *best_total_length,
@@ -575,14 +577,14 @@ void UNICHARSET::encode_string(const char *str, int str_index, int str_length,
   }
   int encoding_index = encoding->size();
   // Find the length of the first matching unicharset member.
-  int length = ids.minmatch(str + str_index);
+  int length = ids.minmatch(str.c_str() + str_index);
   if (length == 0 || str_index + length > str_length) {
     return;
   }
   do {
-    if (ids.contains(str + str_index, length)) {
+    if (ids.contains(str.c_str() + str_index, length)) {
       // Successful encoding so far.
-      UNICHAR_ID id = ids.unichar_to_id(str + str_index, length);
+      UNICHAR_ID id = ids.unichar_to_id(str.c_str() + str_index, length);
       encoding->push_back(id);
       lengths->push_back(length);
       encode_string(str, str_index + length, str_length, encoding, lengths,
@@ -594,7 +596,7 @@ void UNICHARSET::encode_string(const char *str, int str_index, int str_length,
       encoding->resize(encoding_index);
       lengths->resize(encoding_index);
     }
-    int step = UNICHAR::utf8_step(str + str_index + length);
+    int step = UNICHAR::utf8_step(str.c_str() + str_index + length);
     if (step == 0) {
       step = 1;
     }
@@ -1096,10 +1098,10 @@ bool UNICHARSET::major_right_to_left() const {
 // An empty or nullptr whitelist enables everything (minus any blacklist).
 // An empty or nullptr blacklist disables nothing.
 // An empty or nullptr unblacklist has no effect.
-void UNICHARSET::set_black_and_whitelist(const char *blacklist,
-                                         const char *whitelist,
-                                         const char *unblacklist) {
-  bool def_enabled = (whitelist == nullptr || whitelist[0] == '\0');
+void UNICHARSET::set_black_and_whitelist(const std::string &blacklist,
+                                         const std::string &whitelist,
+                                         const std::string &unblacklist) {
+  bool def_enabled = whitelist.empty();
   // Set everything to default
   for (auto &uc : unichars) {
     uc.properties.enabled = def_enabled;
@@ -1114,7 +1116,7 @@ void UNICHARSET::set_black_and_whitelist(const char *blacklist,
       }
     }
   }
-  if (blacklist != nullptr && blacklist[0] != '\0') {
+  if (!blacklist.empty()) {
     // Disable the blacklist.
     std::vector<UNICHAR_ID> encoding;
     encode_string(blacklist, false, &encoding, nullptr, nullptr);
@@ -1124,7 +1126,7 @@ void UNICHARSET::set_black_and_whitelist(const char *blacklist,
       }
     }
   }
-  if (unblacklist != nullptr && unblacklist[0] != '\0') {
+  if (!unblacklist.empty()) {
     // Re-enable the unblacklist.
     std::vector<UNICHAR_ID> encoding;
     encode_string(unblacklist, false, &encoding, nullptr, nullptr);

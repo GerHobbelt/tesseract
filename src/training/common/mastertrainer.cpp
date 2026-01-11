@@ -694,8 +694,8 @@ void MasterTrainer::WriteInttempAndPFFMTable(const UNICHARSET &unicharset,
 
 // Generate debug output relating to the canonical distance between the
 // two given UTF8 grapheme strings.
-void MasterTrainer::DebugCanonical(const char *unichar_str1,
-                                   const char *unichar_str2) {
+void MasterTrainer::DebugCanonical(const std::string &unichar_str1,
+                                   const std::string &unichar_str2) {
   int class_id1 = unicharset_.unichar_to_id(unichar_str1);
   int class_id2 = unicharset_.unichar_to_id(unichar_str2);
   if (class_id2 == INVALID_UNICHAR_ID) {

@@ -77,7 +77,7 @@ Tesseract::Tesseract(TessBaseAPI &owner, Tesseract *parent)
     ,
     // The default for pageseg_mode is the old behaviour, so as not to
     // upset anything that relies on that.
-    INT_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
+    PAGE_SEG_MEMBER(tessedit_pageseg_mode, PSM_AUTO,
                "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, "
                "4=column, "
                "5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char, "
@@ -623,25 +623,25 @@ void Tesseract::DebugAddCommandline(const std::vector<std::string>& argv) {
 
 void Tesseract::SetBlackAndWhitelist() {
   // Set the white and blacklists (if any)
-  unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
-                                     tessedit_char_whitelist.c_str(),
-                                     tessedit_char_unblacklist.c_str());
+  unicharset_.set_black_and_whitelist(tessedit_char_blacklist,
+                                     tessedit_char_whitelist,
+                                     tessedit_char_unblacklist);
   if (lstm_recognizer_) {
     UNICHARSET &lstm_unicharset = lstm_recognizer_->GetUnicharset();
-    lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
-                                            tessedit_char_whitelist.c_str(),
-                                            tessedit_char_unblacklist.c_str());
+    lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist,
+                                            tessedit_char_whitelist,
+                                            tessedit_char_unblacklist);
   }
   // Black and white lists should apply to all loaded classifiers.
   for (auto &sub_lang : sub_langs_) {
-    sub_lang->unicharset_.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
-                                                 tessedit_char_whitelist.c_str(),
-                                                 tessedit_char_unblacklist.c_str());
+    sub_lang->unicharset_.set_black_and_whitelist(tessedit_char_blacklist,
+                                                 tessedit_char_whitelist,
+                                                 tessedit_char_unblacklist);
     if (sub_lang->lstm_recognizer_) {
       UNICHARSET &lstm_unicharset = sub_lang->lstm_recognizer_->GetUnicharset();
-      lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist.c_str(),
-                                              tessedit_char_whitelist.c_str(),
-                                              tessedit_char_unblacklist.c_str());
+      lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist,
+                                              tessedit_char_whitelist,
+                                              tessedit_char_unblacklist);
     }
   }
 }

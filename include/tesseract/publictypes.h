@@ -19,6 +19,10 @@
 
 #include <tesseract/fmt-support.h>
 
+#include <parameters/parameter_classes.h>
+#include <parameters/parameter_sets.h>
+#include <parameters/parameter_globals.h>
+
 namespace tesseract {
 
 // This file contains types that are used both by the API and internally
@@ -160,7 +164,7 @@ DECL_FMT_FORMAT_TESSENUMTYPE(TextlineOrder);
  * of decreasing amount of layout analysis to be done, except for OSD_ONLY,
  * so that the inequality test macros below work.
  */
-enum PageSegMode {
+enum PageSegMode : uint8_t {
   PSM_OSD_ONLY = 0,      ///< Orientation and script detection only.
   PSM_AUTO_OSD = 1,      ///< Automatic page segmentation with orientation and
                          ///< script detection. (OSD)
@@ -182,6 +186,8 @@ enum PageSegMode {
   PSM_COUNT ///< Number of enum entries.
 };
 DECL_FMT_FORMAT_TESSENUMTYPE(PageSegMode);
+
+using PageSegModeParam = ::parameters::SmallValueTypedParam<PageSegMode, ::parameters::BasicValueParamParseAssistant, ::parameters::ParamType(0x0000 + ::parameters::ParamType::CUSTOM_INT_PARAM_1)>;
 
 /**
  * Inline functions that act on a PageSegMode to determine whether components of

@@ -338,7 +338,6 @@ Image ImageFind::FindImages(Image pix) {
   Pixa *pixadb = nullptr;
   if (textord_tabfind_show_images || tesseract_->tessedit_dump_pageseg_images) {
     pixadb = pixaCreate(0);
-    pixaSetDiagnosticsSpec(pixadb, pixGetDiagnosticsSpec(pix));
   }
   Image pixht2 = pixGenerateHalftoneMask(pixr, nullptr, &ht_found, pixadb);
   if (pixadb) {

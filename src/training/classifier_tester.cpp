@@ -59,7 +59,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &
     }
   }
   if (classifier == CN_COUNT) {
-    tprintError("Invalid classifier name:{}\n", test_classifier.c_str());
+    tprintError("Invalid classifier name:{}\n", test_classifier);
     return nullptr;
   }
 
@@ -68,7 +68,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &
   tesseract::Tesseract *tesseract = nullptr;
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
-    if (api.InitOem(test_tessdata_dir.c_str(), test_lang.c_str(), engine_mode) < 0) {
+    if (api.InitOem(test_tessdata_dir, test_lang, engine_mode) < 0) {
       tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }
@@ -128,9 +128,9 @@ extern "C" TESS_API int tesseract_classifier_tester_main(int argc, const char** 
   auto trainer = tesseract::LoadTrainingData(argv + 1, false, nullptr, file_prefix);
   // Decode the classifier string.
   tesseract::ShapeClassifier *shape_classifier =
-      InitializeClassifier(api, test_classifier.c_str(), trainer->unicharset(), argc, argv);
+      InitializeClassifier(api, test_classifier, trainer->unicharset(), argc, argv);
   if (shape_classifier == nullptr) {
-    tprintError("Classifier init failed!:{}\n", test_classifier.c_str());
+    tprintError("Classifier init failed!:{}\n", test_classifier);
     return EXIT_FAILURE;
   }
 

@@ -148,15 +148,15 @@ public:
    * Opens and reads the given data file right now.
    * @return true on success.
    */
-  bool Init(const char *data_file_name);
+  bool Init(const std::string &data_file_name);
   // Loads from the given memory buffer as if a file, remembering name as some
   // arbitrary source id for caching.
-  bool LoadMemBuffer(const char *name, const char *data, int size);
+  bool LoadMemBuffer(const std::string &name, const char *data, int size);
   // Overwrites a single entry of the given type.
   void OverwriteEntry(TessdataType type, const char *data, int size);
 
   // Saves to the given filename.
-  bool SaveFile(const char *filename, FileWriter writer) const;
+  bool SaveFile(const std::string &filename, FileWriter writer) const;
   // Serializes to the given vector.
   void Serialize(std::vector<char> *data) const;
   // Resets to the initial state, keeping the reader.
@@ -225,8 +225,8 @@ public:
 
 private:
   // Use libarchive.
-  bool LoadArchiveFile(const char *filename);
-  bool SaveArchiveFile(const char *filename) const;
+  bool LoadArchiveFile(const std::string &filename);
+  bool SaveArchiveFile(const std::string &filename) const;
 
   /**
    * Fills type with TessdataType of the tessdata component represented by the

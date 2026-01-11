@@ -243,7 +243,7 @@ public:
   // WARNING: Caller must guarantee that str has already been cleaned of codes
   // that do not belong in the unicharset, or encoding may fail.
   // Use CleanupString to perform the cleaning.
-  bool encode_string(const char *str, bool give_up_on_failure,
+  bool encode_string(const std::string &str, bool give_up_on_failure,
                      std::vector<UNICHAR_ID> *encoding,
                      std::vector<char> *lengths,
                      unsigned *encoded_length) const;
@@ -267,8 +267,8 @@ public:
 
   // Removes/replaces content that belongs in rendered text, but not in the
   // unicharset.
-  static std::string CleanupString(const char *utf8_str) {
-    return CleanupString(utf8_str, strlen(utf8_str));
+  static std::string CleanupString(const std::string &utf8_str) {
+    return CleanupString(utf8_str.c_str(), utf8_str.length());
   }
   static std::string CleanupString(const char *utf8_str, size_t length);
 
@@ -367,8 +367,8 @@ public:
 
   // Opens the file indicated by filename and saves unicharset to that file.
   // Returns true if the operation is successful.
-  bool save_to_file(const char *const filename) const {
-    FILE *file = fopen(filename, "w+b");
+  bool save_to_file(const std::string &filename) const {
+    FILE *file = fopen(filename.c_str(), "w+b");
     if (file == nullptr) {
       return false;
     }
@@ -397,8 +397,8 @@ public:
   // Opens the file indicated by filename and loads the UNICHARSET
   // from the given file. The previous data is lost.
   // Returns true if the operation is successful.
-  bool load_from_file(const char *const filename, bool skip_fragments = false) {
-    FILE *file = fopen(filename, "rb");
+  bool load_from_file(const std::string &filename, bool skip_fragments = false) {
+    FILE *file = fopen(filename.c_str(), "rb");
     if (file == nullptr) {
       return false;
     }
@@ -432,8 +432,8 @@ public:
   // Each list is a string of utf8 character strings. Boundaries between
   // unicharset units are worked out automatically, and characters not in
   // the unicharset are silently ignored.
-  void set_black_and_whitelist(const char *blacklist, const char *whitelist,
-                               const char *unblacklist);
+  void set_black_and_whitelist(const std::string &blacklist, const std::string &whitelist,
+                               const std::string &unblacklist);
 
   // Enables or disables all punctuation unichars
   void set_enable_punctuation(bool enable);
@@ -1097,7 +1097,7 @@ private:
   // On return:
   // best_encoding contains the encoding that used the longest part of str.
   // best_lengths (may be null) contains the lengths of best_encoding.
-  void encode_string(const char *str, int str_index, int str_length,
+  void encode_string(const std::string &str, int str_index, int str_length,
                      std::vector<UNICHAR_ID> *encoding,
                      std::vector<char> *lengths, unsigned *best_total_length,
                      std::vector<UNICHAR_ID> *best_encoding,

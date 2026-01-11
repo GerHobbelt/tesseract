@@ -355,9 +355,11 @@ ICOORDELT_LIST *PB_LINE_IT::get_line(TDimension y) {
   }
 
   if (!r.empty()) {
-    r.sort([](const ICOORDELT *p1, const ICOORDELT *p2) {
- 	  // https://stackoverflow.com/questions/47466358/what-is-the-spaceship-three-way-comparison-operator-in-c
-      return (p1->x() <=> p2->x());
+    r.sort([](const ICOORDELT *p1, const ICOORDELT *p2) -> int {
+ 	    // https://stackoverflow.com/questions/47466358/what-is-the-spaceship-three-way-comparison-operator-in-c
+      std::weak_ordering cmp = p1->x() <=> p2->x();
+      // https://stackoverflow.com/questions/66181029/c-safely-and-efficiently-casting-stdweak-ordering-to-int
+      return (cmp < 0) ? -1 : (cmp == 0) ? 0 : 1;
     });
 
     // TODO: remove loop after checking its history.

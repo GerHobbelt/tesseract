@@ -97,7 +97,7 @@ public:
   // false in case of failure. If old_traineddata is not null, then it is
   // assumed that the character set is to be re-mapped from old_traineddata to
   // the new, with consequent change in weight matrices etc.
-  bool TryLoadingCheckpoint(const char *filename, const char *old_traineddata);
+  bool TryLoadingCheckpoint(const std::string &filename, const std::string &old_traineddata);
 
   // Initializes the character set encode/decode mechanism directly from a
   // previously setup traineddata containing dawgs, UNICHARSET and
@@ -120,7 +120,7 @@ public:
   // are implemented.
   // For other args see NetworkBuilder::InitNetwork.
   // Note: Be sure to call InitCharSet before InitNetwork!
-  bool InitNetwork(const char *network_spec, int append_index, int net_flags,
+  bool InitNetwork(const std::string &network_spec, int append_index, int net_flags,
                    float weight_range, float learning_rate, float momentum,
                    float adam_beta);
   // Resets all the iteration counters for fine tuning or training a head,
@@ -317,7 +317,7 @@ public:
   void SetupCheckpointInfo();
 
   // Writes the full recognition traineddata to the given filename.
-  bool SaveTraineddata(const char *filename);
+  bool SaveTraineddata(const std::string &filename);
 
   // Writes the recognizer to memory, so that it can be used for testing later.
   void SaveRecognitionDump(std::vector<char> *data) const;
@@ -387,8 +387,7 @@ protected:
   double ComputeCharError(const std::vector<int> &truth_str,
                           const std::vector<int> &ocr_str);
   // Computes a very simple bag of words word recall error rate.
-  // NOTE that this is destructive on both input strings.
-  double ComputeWordError(std::string *truth_str, std::string *ocr_str);
+  double ComputeWordError(const std::string &truth_str, const std::string &ocr_str);
 
   // Updates the error buffer and corresponding mean of the given type with
   // the new_error.

@@ -165,13 +165,13 @@ public:
   Pix *GetInputImage() const;
   Image GetInputImageClone();
 
-  int GetSourceYResolution();
+  int GetSourceYResolution() const;
 
-  const char *GetDatapath();
+  const char *GetDatapath() const;
 
   void SetVisibleImageFilename(const char *name);
 
-  const char *GetVisibleImageFilename();
+  const char *GetVisibleImageFilename() const;
 
   // DOES NOT takes ownership of the input pix, but COPIES it instead.
   void SetVisibleImage(Pix *pix);
@@ -180,8 +180,8 @@ public:
   // DOES NOT takes ownership of the input pix, but CLONES it instead.
   void SetVisibleImage(const Image &pix);
 
-  Pix* GetVisibleImage();
-  Image GetVisibleImageClone();
+  const Pix* GetVisibleImage() const;
+  Image GetVisibleImageClone() const;
 
   /**
    * @}
@@ -652,7 +652,7 @@ public:
                      int **blockids, int **paraids);
   /*
    Helper method to extract from the thresholded image. (most common usage)
-*/
+  */
   Boxa *GetTextlines(Pixa **pixa, int **blockids) {
     return GetTextlines(false, 0, pixa, blockids, nullptr);
   }

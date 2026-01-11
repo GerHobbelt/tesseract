@@ -94,8 +94,8 @@ LSTMTrainer::~LSTMTrainer() {
 
 // Tries to deserialize a trainer from the given file and silently returns
 // false in case of failure.
-bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
-                                       const char *old_traineddata) {
+bool LSTMTrainer::TryLoadingCheckpoint(const std::string &filename,
+                                       const std::string &old_traineddata) {
   std::vector<char> data;
   if (!LoadDataFromFile(filename, &data)) {
     return false;
@@ -109,14 +109,14 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
             filename);
     return false;
   }
-  if (((old_traineddata == nullptr || *old_traineddata == '\0') &&
+  if ((old_traineddata.empty() &&
        network_->NumOutputs() == recoder_.code_range()) ||
       filename == old_traineddata) {
     return true; // Normal checkpoint load complete.
   }
   tprintDebug("Code range changed from {} to {}!\n", network_->NumOutputs(),
           recoder_.code_range());
-  if (old_traineddata == nullptr || *old_traineddata == '\0') {
+  if (old_traineddata.empty()) {
     tprintError("Must supply the old traineddata for code conversion!\n");
     return false;
   }
@@ -153,7 +153,7 @@ bool LSTMTrainer::TryLoadingCheckpoint(const char *filename,
 // are implemented.
 // For other args see NetworkBuilder::InitNetwork.
 // Note: Be sure to call InitCharSet before InitNetwork!
-bool LSTMTrainer::InitNetwork(const char *network_spec, int append_index,
+bool LSTMTrainer::InitNetwork(const std::string &network_spec, int append_index,
                               int net_flags, float weight_range,
                               float learning_rate, float momentum,
                               float adam_beta) {
@@ -231,7 +231,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
   base_search.ExtractBestPathAsLabels(&ocr_labels, &xcoords);
   std::string truth_text = DecodeLabels(truth_labels);
   std::string ocr_text = DecodeLabels(ocr_labels);
-  double baseline_error = ComputeWordError(&truth_text, &ocr_text);
+  double baseline_error = ComputeWordError(truth_text, ocr_text);
   results += "0,0=" + std::to_string(baseline_error);
 
   RecodeBeamSearch search(recoder_, null_char_, SimpleTextOutput(), dict_);
@@ -245,7 +245,7 @@ Trainability LSTMTrainer::GridSearchDictParams(
       truth_text = DecodeLabels(truth_labels);
       ocr_text = DecodeLabels(ocr_labels);
       // This is destructive on both strings.
-      double word_error = ComputeWordError(&truth_text, &ocr_text);
+      double word_error = ComputeWordError(truth_text, ocr_text);
       if ((r == min_dict_ratio && c == min_cert_offset) ||
           !std::isfinite(word_error)) {
         std::string t = DecodeLabels(truth_labels);
@@ -352,7 +352,7 @@ bool LSTMTrainer::MaintainCheckpoints(const TestCallback &tester,
     }
   } else {
     // Something interesting happened only if the sub_trainer_ was trained.
-    result = sub_trainer_result != STR_NONE;
+    result = (sub_trainer_result != STR_NONE);
   }
   if (checkpoint_name_.length() > 0) {
     // Write a current checkpoint.
@@ -483,6 +483,7 @@ bool LSTMTrainer::Serialize(SerializeAmount serialize_amount,
 }
 
 // Reads from the given file. Returns false in case of error.
+// 
 // NOTE: It is assumed that the trainer is never read cross-endian.
 bool LSTMTrainer::DeSerialize(const TessdataManager *mgr, TFile *fp) {
   if (!LSTMRecognizer::DeSerialize(mgr, fp)) {
@@ -701,7 +702,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
       }
       // Make a copy of *this, so we can mess about without damaging anything.
       LSTMTrainer copy_trainer(tesseract_);
-	  copy_trainer.SetDebug(samples_trainer->HasDebug());
+      copy_trainer.SetDebug(samples_trainer->HasDebug());
       samples_trainer->ReadTrainingDump(orig_trainer, copy_trainer);
       // Clear the updates, doing nothing else.
       copy_trainer.network_->Update(0.0, 0.0, 0.0, 0);
@@ -728,8 +729,8 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
           continue;
         }
         LSTMTrainer layer_trainer(tesseract_);
-		layer_trainer.SetDebug(samples_trainer->HasDebug());
-		samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
+        layer_trainer.SetDebug(samples_trainer->HasDebug());
+        samples_trainer->ReadTrainingDump(updated_trainer, layer_trainer);
         Network *layer = layer_trainer.GetLayer(layers[i]);
         // Update the weights in just the layer, using Adam if enabled.
         layer->Update(0.0, momentum_, adam_beta_,
@@ -763,7 +764,7 @@ int LSTMTrainer::ReduceLayerLearningRates(TFloat factor, int num_samples,
     TFloat total_same = bad_sums[LR_SAME][i] + ok_sums[LR_SAME][i];
     TFloat frac_down = bad_sums[LR_DOWN][i] / total_down;
     TFloat frac_same = bad_sums[LR_SAME][i] / total_same;
-    tprintDebug("Layer {}={}: lr {}->{}%%, lr {}->{}%%", i, layer->name(),
+    tprintDebug("Layer {}={}: lr {}->{}%, lr {}->{}%", i, layer->name(),
             lr * factor, 100.0 * frac_down, lr, 100.0 * frac_same);
     if (frac_down < frac_same * kImprovementFraction) {
       tprintDebug(" REDUCED\n");
@@ -906,7 +907,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
       // Apart from space and null, increment the label. This changes the
       // script-id to the same script-id but upside-down.
       // The labels need to be reversed in order, as the first is now the last.
-	  //
+      //
       // TODO: possibly wrong code, check.
       for (auto truth_label : truth_labels) {
         if (truth_label != UNICHAR_SPACE && truth_label != null_char_) {
@@ -974,7 +975,7 @@ Trainability LSTMTrainer::PrepareForBackward(const ImageData *trainingdata,
     }
   }
   double char_error = ComputeCharError(truth_labels, ocr_labels);
-  double word_error = ComputeWordError(&truth_text, &ocr_text);
+  double word_error = ComputeWordError(truth_text, ocr_text);
   double delta_error = ComputeErrorRates(*targets, char_error, word_error);
   if (debug_interval_ != 0) {
     tprintDebug("File {} line {} {}:\n", trainingdata->imagefilename(),
@@ -1014,7 +1015,7 @@ bool LSTMTrainer::ReadLocalTrainingDump(const TessdataManager *mgr,
 }
 
 // Writes the full recognition traineddata to the given filename.
-bool LSTMTrainer::SaveTraineddata(const char *filename) {
+bool LSTMTrainer::SaveTraineddata(const std::string &filename) {
   std::vector<char> recognizer_data;
   SaveRecognitionDump(&recognizer_data);
   mgr_.OverwriteEntry(TESSDATA_LSTM, &recognizer_data[0],
@@ -1328,15 +1329,14 @@ double LSTMTrainer::ComputeCharError(const std::vector<int> &truth_str,
 }
 
 // Computes word recall error rate using a very simple bag of words algorithm.
-// NOTE that this is destructive on both input strings.
-double LSTMTrainer::ComputeWordError(std::string *truth_str,
-                                     std::string *ocr_str) {
+double LSTMTrainer::ComputeWordError(const std::string &truth_str,
+                                     const std::string &ocr_str) {
   using StrMap = std::unordered_map<std::string, int, std::hash<std::string>>;
-  std::vector<std::string> truth_words = split(*truth_str, ' ');
+  std::vector<std::string> truth_words = split(truth_str, ' ');
   if (truth_words.empty()) {
     return 0.0;
   }
-  std::vector<std::string> ocr_words = split(*ocr_str, ' ');
+  std::vector<std::string> ocr_words = split(ocr_str, ' ');
   StrMap word_counts;
   for (const auto &truth_word : truth_words) {
     std::string truth_word_string(truth_word.c_str());

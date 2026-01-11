@@ -46,9 +46,9 @@ constexpr size_t countof(T const (&)[N]) noexcept {
 using FileWriter = bool (*)(const std::vector<char> &data, const char *filename);
 
 TESS_API
-bool LoadDataFromFile(const char *filename, std::vector<char> *data);
+bool LoadDataFromFile(const std::string &filename, std::vector<char> *data);
 TESS_API
-bool SaveDataToFile(const std::vector<char> &data, const char *filename);
+bool SaveDataToFile(const std::vector<char> &data, const std::string &filename);
 
 // Deserialize data from file.
 template <typename T>

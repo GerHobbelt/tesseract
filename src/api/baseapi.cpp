@@ -233,16 +233,18 @@ const char *TessBaseAPI::Version(void) {
   return TESSERACT_VERSION_STR;
 }
 
-const Tesseract& TessBaseAPI::tesseract(void) const {
+const Tesseract &TessBaseAPI::tesseract() const {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(*this, nullptr);
+    TessBaseAPI &owner = const_cast<TessBaseAPI &>(*this);
+    tesseract_ = new tesseract::Tesseract(owner, nullptr);
   }
   return *tesseract_;
 }
 
-Tesseract &TessBaseAPI::tesseract(void) {
+Tesseract &TessBaseAPI::tesseract() {
   if (tesseract_ == nullptr) {
-    tesseract_ = new Tesseract(*this, nullptr);
+    TessBaseAPI &owner = *this;
+    tesseract_ = new tesseract::Tesseract(owner, nullptr);
   }
   return *tesseract_;
 }
@@ -326,7 +328,7 @@ bool TessBaseAPI::CheckAndReportIfImageTooLarge(const Pix* pix) const {
 
 /** Set the name of the output files. Needed only for debugging. */
 void TessBaseAPI::SetOutputName(const char *name) {
-  tesseract().output_base_filename.set_value(name, PARAM_VALUE_IS_SET_BY_APPLICATION);
+  tesseract().output_base_filename = name;
 }
 
 const std::string &TessBaseAPI::GetOutputName() {
@@ -334,23 +336,23 @@ const std::string &TessBaseAPI::GetOutputName() {
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const char *value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+  return ParamUtils::SetParam(name, value, tesseract().params_collective());
 }
 
 bool TessBaseAPI::SetVariable(const char *name, int value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+  return ParamUtils::SetParam(name, value, tesseract().params_collective());
 }
 
 bool TessBaseAPI::SetVariable(const char *name, bool value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+  return ParamUtils::SetParam(name, value, tesseract().params_collective());
 }
 
 bool TessBaseAPI::SetVariable(const char *name, double value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+  return ParamUtils::SetParam(name, value, tesseract().params_collective());
 }
 
 bool TessBaseAPI::SetVariable(const char *name, const std::string &value) {
-  return ParamUtils::SetParam(name, value, tesseract().params_collective(), PARAM_VALUE_IS_SET_BY_APPLICATION);
+  return ParamUtils::SetParam(name, value, tesseract().params_collective());
 }
 
 bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
@@ -376,7 +378,8 @@ const char *TessBaseAPI::GetStringVariable(const char *name) const {
   if (!p) {
     return nullptr;
   }
-  return p->c_str();
+  auto& str = p->value();
+  return str.c_str();
 }
 
 bool TessBaseAPI::GetDoubleVariable(const char *name, double *value) const {
@@ -509,7 +512,7 @@ void TessBaseAPI::ReportParamsUsageStatistics() const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
   tesseract::ParamsVectorSet &vec = tess.params_collective();
     std::string fpath = tesseract::vars_report_file;
-    FILE *f = ParamUtils::OpenReportFile(fpath.c_str());
+    FILE *f = ParamUtils::OpenReportFile(fpath);
     int section_level = tess.GetPixDebugSectionLevel();
     ParamUtils::ReportParamsUsageStatistics(f, vec, section_level, nullptr);
     if (f) {
@@ -856,7 +859,7 @@ void TessBaseAPI::ReadConfigFile(const char *filename) {
  */
 void TessBaseAPI::SetPageSegMode(PageSegMode mode) {
   Tesseract &tess = tesseract();
-  tess.tessedit_pageseg_mode.set_value(mode);
+  tess.tessedit_pageseg_mode = mode;
 }
 
 /** Return the current page segmentation mode. */
@@ -865,7 +868,7 @@ PageSegMode TessBaseAPI::GetPageSegMode() const {
     return PSM_SINGLE_BLOCK;
   }
   const Tesseract &tess = tesseract();
-  return static_cast<PageSegMode>(tess.tessedit_pageseg_mode.value());
+  return tess.tessedit_pageseg_mode.value();
 }
 
 /**
@@ -1147,7 +1150,7 @@ Boxa *TessBaseAPI::GetComponentImages(PageIteratorLevel level, bool text_only, b
   Boxa *boxa = boxaCreate(component_count);
   if (pixa != nullptr) {
     *pixa = pixaCreate(component_count);
-    pixaCloneDiagnosticsSpec(*pixa, DebugPixa::pixa_);  // TODO
+    leptCreateDiagnoticsSpecInstance();     // TODO
   }
   if (blockids != nullptr) {
     *blockids = new int[component_count];
@@ -1376,9 +1379,8 @@ int TessBaseAPI::Recognize() {
 
   int result = 0;
   if (tess.SupportsInteractiveScrollView()) {
-    AutoPopDebugSectionLevel subsection_handle(tess, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
 #if !GRAPHICS_DISABLED
-    AutoPopDebugSectionLevel subsection_handle(&tess, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
+    AutoPopDebugSectionLevel subsection_handle(tess, tess.PushSubordinatePixDebugSection("PGEditor: Interactive Session"));
     tess.pgeditor_main(rect_width_, rect_height_, page_res_);
 
     // The page_res is invalid after an interactive session, so cleanup
@@ -1599,7 +1601,7 @@ bool TessBaseAPI::NormalizeImage(int mode) {
   return true;
 }
 
-Pix* TessBaseAPI::GetVisibleImage() {
+const Pix* TessBaseAPI::GetVisibleImage() const {
   return pix_visible_image_;
 }
 
@@ -1615,19 +1617,19 @@ const char *TessBaseAPI::GetInputName() {
   return nullptr;
 }
 
-const char * TessBaseAPI::GetVisibleImageFilename() {
+const char * TessBaseAPI::GetVisibleImageFilename() const {
   if (tesseract_ != nullptr && !tesseract_->visible_image_file_path_.empty()) {
     return tesseract_->visible_image_file_path_.c_str();
   }
   return nullptr;
 }
 
-const char *TessBaseAPI::GetDatapath() {
-  Tesseract &tess = tesseract();
-  return tess.datadir_.string().c_str();
+const char *TessBaseAPI::GetDatapath() const {
+  const Tesseract &tess = tesseract();
+  return tess.datadir_.c_str();
 }
 
-int TessBaseAPI::GetSourceYResolution() {
+int TessBaseAPI::GetSourceYResolution() const {
   if (thresholder_ == nullptr)
     return -1;
   return thresholder_->GetSourceYResolution();
@@ -1698,8 +1700,8 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
       return false;
     }
     tprintInfo("Processing page #{} : {}\n", page_number + 1, pagename);
-    tess.applybox_page.set_raw_value(page_number);
-	bool r = ProcessPage(pix, pagename, renderer);
+    tess.applybox_page = page_number;
+	  bool r = ProcessPage(pix, page_number, pagename, renderer);
 
     if (two_pass || 1) {
       Boxa *default_boxes = GetComponentImages(tesseract::RIL_BLOCK, true, nullptr, nullptr);
@@ -1760,11 +1762,10 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data, size_t size, co
     if (tess.tessedit_page_number > 0 && pgn != tess.tessedit_page_number) {
       continue;
     }
-    pixSetDiagnosticsSpec(pix);
   
     tprintInfo("Processing page #{} of multipage TIFF {}\n", pgn, filename ? filename : "(from internal storage)");
-    tess.applybox_page.set_raw_value(pgn);
-    bool r = ProcessPage(pix, filename, renderer);
+    tess.applybox_page = pgn;
+    bool r = ProcessPage(pix, pgn, filename, renderer);
     if (!r) {
       return false;
     }
@@ -1958,7 +1959,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
   }
 
   // Begin the output
-  if (renderer && !renderer->BeginDocument(document_title.c_str())) {
+  if (renderer && !renderer->BeginDocument(document_title)) {
     return false;
   }
 
@@ -1967,8 +1968,8 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
     r = ProcessPagesMultipageTiff(data, buf.size(), filename, renderer);
   }
   else {
-    tesseract().applybox_page.set_raw_value(-1 /* all pages */);
-	  r = ProcessPage(pix, filename, renderer);
+    tesseract().applybox_page = -1 /* all pages */;
+	  r = ProcessPage(pix, -1, filename, renderer);
   }
 
   Monitor().bump_progress().exec_progress_func();
@@ -1980,10 +1981,12 @@ bool TessBaseAPI::ProcessPagesInternal(const char *filename,
   return true;
 }
 
-bool TessBaseAPI::ProcessPage(Pix *pix, const char *filename, TessResultRenderer *renderer) {
+bool TessBaseAPI::ProcessPage(Pix *pix, int page_number, const char *filename, TessResultRenderer *renderer) {
   Tesseract& tess = tesseract();
   AutoPopDebugSectionLevel page_level_handle(tess, tess.PushSubordinatePixDebugSection(fmt::format("Process a single page: page #{}", 1 + tess.tessedit_page_number)));
   //page_level_handle.SetAsRootLevelForParamUsageReporting();
+
+  // TODO: handle page_number, which is/should be equiv. to tesseract::applybox_page variable value ATM; -1 == all pages in source document.
 
   SetInputName(filename);
 
@@ -3356,7 +3359,7 @@ bool TessBaseAPI::DetectOS(OSResults *osr) {
 
 void TessBaseAPI::set_min_orientation_margin(double margin) {
   Tesseract &tess = tesseract();
-  tess.min_orientation_margin.set_value(margin);
+  tess.min_orientation_margin = margin;
 }
 
 /**
@@ -3500,7 +3503,7 @@ std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std:
   for (auto spec : paths) {
     // each item in the list must exist?
     if (!fs::exists(spec)) {
-      errmsg << "Specified file does not exist. Path: " << spec << "\n";
+      errmsg << std::format("Specified file does not exist. Path: '{}'\n", spec);
       goto continue_on_error;
       //continue;
     }
@@ -3517,7 +3520,7 @@ std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std:
         if (ecode != E_OK) {
           errmsg << " due to error: " << strerror(errno);
         }
-        errmsg << ". Path: " << spec << "\n";
+        errmsg << std::format(". Path: '{}'\n", spec);
         goto continue_on_error;
         // continue;
       }
@@ -3529,7 +3532,7 @@ std::vector<ImagePageFileSpec> TessBaseAPI::ExpandImagelistFilesInSet(const std:
         if (ecode != E_OK) {
           errmsg << " due to error: " << strerror(errno);
         }
-        errmsg << ". Tried to read " << SAMPLESIZE << " bytes, received " << l << " bytes.  Path: " << spec << "\n";
+        errmsg << std::format(". Tried to read {} bytes, received {} bytes.  Path: '{}'\n", SAMPLESIZE, l, spec);
         goto continue_on_error;
         // continue;
       }
@@ -3705,6 +3708,10 @@ continue_on_error:
       // treat situation as simple as possible: `spec` is not an image list; pick this one up as a sole image file spec:
       ImagePageFileSpec sp = {spec};
       rv.push_back(sp);
+
+#if 0  // ignore all errors which occurred in here...
+      tprintError("{}", errmsg.str());
+#endif
     }
   }
   return rv;
@@ -3746,22 +3753,6 @@ std::string HOcrEscape(const char *text) {
     }
   }
   return ret;
-}
-
-const Tesseract &TessBaseAPI::tesseract() const {
-  if (tesseract_ == nullptr) {
-    TessBaseAPI &owner = const_cast<TessBaseAPI &>(*this);
-    tesseract_ = new tesseract::Tesseract(owner, nullptr);
-  }
-  return *tesseract_;
-}
-
-Tesseract &TessBaseAPI::tesseract() {
-  if (tesseract_ == nullptr) {
-    TessBaseAPI &owner = *this;
-    tesseract_ = new tesseract::Tesseract(owner, nullptr);
-  }
-  return *tesseract_;
 }
 
 std::string mkUniqueOutputFilePath(const char *basepath, int page_number, const char *label, const char *filename_extension) {

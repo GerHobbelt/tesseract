@@ -96,10 +96,11 @@ static int Main(int argc, const char** argv) {
   }
   SetupBasicProperties(/*report_errors*/ true, /*decompose*/ false, &unicharset);
   // Write unicharset file.
-  if (unicharset.save_to_file(extractor_output_unicharset.c_str())) {
-    tprintDebug("Wrote unicharset file {}\n", extractor_output_unicharset.value());
+  const auto &fpath = extractor_output_unicharset.value();
+  if (unicharset.save_to_file(fpath)) {
+    tprintDebug("Wrote unicharset file {}\n", fpath);
   } else {
-    tprintError("Cannot save unicharset file {}\n", extractor_output_unicharset.value());
+    tprintError("Cannot save unicharset file {}\n", fpath);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

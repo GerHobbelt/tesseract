@@ -23,10 +23,9 @@
 namespace tesseract {
 
 // Runs two or more networks in series (layers) on the same input.
-class Series : public Plumbing {
+class TESS_API Series : public Plumbing {
 public:
   // ni_ and no_ will be set by AddToStack.
-  TESS_API
   explicit Series(const std::string &name);
   virtual ~Series() override = default;
 
@@ -34,7 +33,19 @@ public:
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
+    std::string spec("[");
+    for (auto &it : stack_) {
+      spec += it->spec();
+    }
+    spec += "]";
+    return spec;
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+
+    // TODO
+
     std::string spec("[");
     for (auto &it : stack_) {
       spec += it->spec();
@@ -81,12 +92,10 @@ public:
   // Splits the series after the given index, returning the two parts and
   // deletes itself. The first part, up to network with index last_start, goes
   // into start, and the rest goes into end.
-  TESS_API
   void SplitAt(unsigned last_start, Series **start, Series **end);
 
   // Appends the elements of the src series to this, removing from src and
   // deleting it.
-  TESS_API
   void AppendSeries(Network *src);
 };
 

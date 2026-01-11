@@ -155,16 +155,16 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
 #if !defined(NDEEBUG)
   trainer.SetDebug(1);
 #endif
-  if (!trainer.InitCharSet(training_traineddata.c_str())) {
-    tprintError("Failed to read {}\n", training_traineddata.c_str());
+  if (!trainer.InitCharSet(training_traineddata)) {
+    tprintError("Failed to read {}\n", training_traineddata);
     return EXIT_FAILURE;
   }
 
   // Reading something from an existing model doesn't require many flags,
   // so do it now and exit.
   if (training_stop_training || training_debug_network) {
-    if (!trainer.TryLoadingCheckpoint(training_continue_from.c_str(), nullptr)) {
-      tprintError("Failed to read continue from: {}\n", training_continue_from.c_str());
+    if (!trainer.TryLoadingCheckpoint(training_continue_from, nullptr)) {
+      tprintError("Failed to read continue from: {}\n", training_continue_from);
       return EXIT_FAILURE;
     }
     if (training_debug_network) {
@@ -173,8 +173,8 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
       if (training_convert_to_int) {
         trainer.ConvertToInt();
       }
-      if (!trainer.SaveTraineddata(training_model_output.c_str())) {
-        tprintError("Failed to write recognition model : {}\n", training_model_output.c_str());
+      if (!trainer.SaveTraineddata(training_model_output)) {
+        tprintError("Failed to write recognition model : {}\n", training_model_output);
       }
     }
     return EXIT_SUCCESS;
@@ -186,25 +186,25 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
     return EXIT_FAILURE;
   }
   std::vector<std::string> filenames;
-  if (!tesseract::LoadFileLinesToStrings(training_train_listfile.c_str(), &filenames)) {
-    tprintError("Failed to load list of training filenames from {}\n", training_train_listfile.c_str());
+  if (!tesseract::LoadFileLinesToStrings(training_train_listfile, &filenames)) {
+    tprintError("Failed to load list of training filenames from {}\n", training_train_listfile);
     return EXIT_FAILURE;
   }
 
   // Checkpoints always take priority if they are available.
-  if (trainer.TryLoadingCheckpoint(checkpoint_file.c_str(), nullptr) ||
-      trainer.TryLoadingCheckpoint(checkpoint_bak.c_str(), nullptr)) {
+  if (trainer.TryLoadingCheckpoint(checkpoint_file, nullptr) ||
+      trainer.TryLoadingCheckpoint(checkpoint_bak, nullptr)) {
     tprintDebug("Successfully restored trainer from {}\n", checkpoint_file.c_str());
   } else {
     if (!training_continue_from.empty()) {
       // Load a past model file to improve upon.
-      if (!trainer.TryLoadingCheckpoint(training_continue_from.c_str(),
-                                        training_append_index >= 0 ? training_continue_from.c_str()
-                                                                : training_old_traineddata.c_str())) {
-        tprintError("Failed to continue from: {}\n", training_continue_from.c_str());
+      if (!trainer.TryLoadingCheckpoint(training_continue_from,
+                                        training_append_index >= 0 ? training_continue_from
+                                                                : training_old_traineddata)) {
+        tprintError("Failed to continue from: {}\n", training_continue_from);
         return EXIT_FAILURE;
       }
-      tprintDebug("Continuing from {}\n", training_continue_from.c_str());
+      tprintDebug("Continuing from {}\n", training_continue_from);
       if (training_reset_learning_rate) {
         trainer.SetLearningRate(training_learning_rate);
         tprintDebug("Set learning rate to {}\n", static_cast<float>(training_learning_rate));
@@ -220,10 +220,10 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
         }
       }
       // We are initializing from scratch.
-      if (!trainer.InitNetwork(training_net_spec.c_str(), training_append_index, training_net_mode,
+      if (!trainer.InitNetwork(training_net_spec, training_append_index, training_net_mode,
                                training_weight_range, training_learning_rate, training_momentum,
                                training_adam_beta)) {
-        tprintError("Failed to create network from spec: {}\n", training_net_spec.c_str());
+        tprintError("Failed to create network from spec: {}\n", training_net_spec);
         return EXIT_FAILURE;
       }
       trainer.set_perfect_delay(training_perfect_sample_delay);
@@ -241,8 +241,8 @@ extern "C" int tesseract_lstm_training_main(int argc, const char** argv)
   tesseract::TestCallback tester_callback = nullptr;
   if (!training_eval_listfile.empty()) {
     using namespace std::placeholders; // for _1, _2, _3...
-    if (!tester.LoadAllEvalData(training_eval_listfile.c_str())) {
-      tprintError("Failed to load eval data from: {}\n", training_eval_listfile.c_str());
+    if (!tester.LoadAllEvalData(training_eval_listfile)) {
+      tprintError("Failed to load eval data from: {}\n", training_eval_listfile);
       return EXIT_FAILURE;
     }
     tester_callback = std::bind(&tesseract::LSTMTester::RunEvalAsync, &tester, _1, _2, _3, _4);

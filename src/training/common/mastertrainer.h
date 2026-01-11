@@ -191,7 +191,7 @@ public:
 
   // Generates debug output relating to the canonical distance between the
   // two given UTF8 grapheme strings.
-  void DebugCanonical(const char *unichar_str1, const char *unichar_str2);
+  void DebugCanonical(const std::string &unichar_str1, const std::string &unichar_str2);
 
 #if !DISABLED_LEGACY_ENGINE
 #if !GRAPHICS_DISABLED

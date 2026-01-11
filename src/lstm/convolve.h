@@ -29,16 +29,18 @@ namespace tesseract {
 // Makes each time-step deeper by stacking inputs over its rectangle. Does not
 // affect the size of its input. Achieves this by bringing in random values in
 // out-of-input areas.
-class Convolve : public Network {
+class TESS_API Convolve : public Network {
 public:
   // The area of convolution is 2*half_x + 1 by 2*half_y + 1, forcing it to
   // always be odd, so the center is the current pixel.
-  TESS_API
   Convolve(const std::string &name, int ni, int half_x, int half_y);
-  ~Convolve() override = default;
+  virtual ~Convolve() override = default;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     return "C" + std::to_string(half_y_ * 2 + 1) + "," + std::to_string(half_x_ * 2 + 1);
+  }
+  virtual std::string elaborate_spec() const noexcept override {
+    return fmt::format("Convolve layer: (area = Y:{} * X:{})", half_y_ * 2 + 1, half_x_ * 2 + 1);
   }
 
   // Writes to the given file. Returns false in case of error.

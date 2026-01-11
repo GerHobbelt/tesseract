@@ -60,19 +60,19 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
     return EXIT_FAILURE;
   }
   tesseract::TessdataManager mgr;
-  if (!mgr.Init(lstmeval_model.c_str())) {
+  if (!mgr.Init(lstmeval_model)) {
     if (lstmeval_traineddata.empty()) {
       tprintError("Must supply --traineddata to eval a training checkpoint!\n");
       return EXIT_FAILURE;
     }
-    tprintWarn("{} is not a recognition model, trying training checkpoint...\n", lstmeval_model.c_str());
-    if (!mgr.Init(lstmeval_traineddata.c_str())) {
-      tprintError("Failed to load language model from {}!\n", lstmeval_traineddata.c_str());
+    tprintWarn("{} is not a recognition model, trying training checkpoint...\n", lstmeval_model);
+    if (!mgr.Init(lstmeval_traineddata)) {
+      tprintError("Failed to load language model from {}!\n", lstmeval_traineddata);
       return EXIT_FAILURE;
     }
     std::vector<char> model_data;
-    if (!tesseract::LoadDataFromFile(lstmeval_model.c_str(), &model_data)) {
-      tprintError("Failed to load model from: {}\n", lstmeval_model.c_str());
+    if (!tesseract::LoadDataFromFile(lstmeval_model, &model_data)) {
+      tprintError("Failed to load model from: {}\n", lstmeval_model);
       return EXIT_FAILURE;
     }
     mgr.OverwriteEntry(tesseract::TESSDATA_LSTM, &model_data[0], model_data.size());
@@ -81,8 +81,8 @@ extern "C" int tesseract_lstm_eval_main(int argc, const char** argv)
 #ifndef NDEBUG
   tester.SetDebug(1);
 #endif
-  if (!tester.LoadAllEvalData(lstmeval_eval_listfile.c_str())) {
-    tprintError("Failed to load eval data from: {}\n", lstmeval_eval_listfile.c_str());
+  if (!tester.LoadAllEvalData(lstmeval_eval_listfile)) {
+    tprintError("Failed to load eval data from: {}\n", lstmeval_eval_listfile);
     return EXIT_FAILURE;
   }
   double errs = 0.0;

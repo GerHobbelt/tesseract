@@ -863,7 +863,7 @@ public:
   BOOL_VAR_H(tessedit_train_line_recognizer);
   BOOL_VAR_H(tessedit_dump_pageseg_images);
   DOUBLE_VAR_H(invert_threshold);
-  INT_VAR_H(tessedit_pageseg_mode);
+  PAGE_SEG_VAR_H(tessedit_pageseg_mode);
   INT_VAR_H(preprocess_graynorm_mode);
   INT_VAR_H(thresholding_method);
   BOOL_VAR_H(thresholding_debug);
@@ -1170,6 +1170,10 @@ public:
 public:
   Tesseract* get_parent_instance() const {
     return parent_instance_;
+  }
+
+  TessBaseAPI &get_owner() const {
+    return owner_;
   }
 
 protected:

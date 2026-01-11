@@ -344,7 +344,7 @@ static void PrintVeryShortHelpMessage(const char *program) {
       program, program);
 }
 
-static void PrintLangsList(tesseract::TessBaseAPI &api) {
+static void PrintLangsList(const tesseract::TessBaseAPI &api) {
   std::vector<std::string> languages;
   api.GetAvailableLanguagesAsVector(&languages);
   tprintInfo("List of available languages in \"{}\" ({}):\n",

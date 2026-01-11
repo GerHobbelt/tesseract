@@ -28,18 +28,21 @@ namespace tesseract {
 // of inputs together, producing a single, deeper output per tile.
 // Note that fractional parts are truncated for efficiency, so make sure the
 // input stride is a multiple of the y_scale factor!
-class Reconfig : public Network {
+class TESS_API Reconfig : public Network {
 public:
-  TESS_API
   Reconfig(const std::string &name, int ni, int x_scale, int y_scale);
-  ~Reconfig() override = default;
+  virtual ~Reconfig() override = default;
 
   // Returns the shape output from the network given an input shape (which may
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     return "S" + std::to_string(y_scale_) + "," + std::to_string(x_scale_);
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+    return fmt::format("Reconfig/Shrink layer: (scale = Y:{} * X:{})", y_scale_, x_scale_);
   }
 
   // Returns an integer reduction factor that the network applies to the
@@ -66,9 +69,7 @@ public:
                 NetworkIO *back_deltas) override;
 
 private:
-  void DebugWeights() override {
-    tprintDebug("Must override Network::DebugWeights for type {}\n", type_);
-  }
+  virtual void DebugWeights() override = 0; // Must override Network::DebugWeights
 
 protected:
   // Non-serialized data used to store parameters between forward and back.

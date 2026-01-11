@@ -124,7 +124,7 @@ void Wordrec::set_pass2() {
 void Wordrec::cc_recog(WERD_RES *word) {
   getDict().reset_hyphen_vars(word->word->flag(W_EOL));
   chop_word_main(word);
-  word->DebugWordChoices(getDict().stopper_debug_level >= 1, getDict().word_to_debug.c_str());
+  word->DebugWordChoices(getDict().stopper_debug_level >= 1, getDict().word_to_debug.value().c_str());
   ASSERT_HOST(word->StatesAllValid());
 }
 

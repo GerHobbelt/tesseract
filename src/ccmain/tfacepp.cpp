@@ -132,7 +132,7 @@ void Tesseract::recog_word_recursive(WERD_RES *word, int call_depth) {
       //
       // what we do to also keep the userland configured value is to flip its sign: that way we can flip that value back at the end of the run if it's only this particular session's
       // deadline that's expired, not just the entire session's -- this is us anticipating tesseract core readying for batch processing in a single session.
-      recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
+      recog_word_recursion_depth_limit = -recog_word_recursion_depth_limit;
 
       tprintError("Timeout/cancel: recog_word_recursive call depth is restricted by CANCEL SIGNAL at level {} --> peak.EMA: {}, word length: {}\n", call_depth, depth_ema, word_length);
 

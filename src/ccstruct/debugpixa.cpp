@@ -729,8 +729,6 @@ namespace tesseract {
     , active_step_index(-1)
   {
     pixa_ = pixaCreate(100);
-    // TODO: set up the diagspec instance as needed.
-    pixaSetDiagnosticsSpec(pixa_);
 
 #if defined(HAVE_MUPDF)
     fz_ctx = fz_get_global_context();
@@ -1156,14 +1154,14 @@ namespace tesseract {
     //
     // Note that we ripped this chained-check approach from our Tesseract::read_config_file()
     // so there's a refactor/dedup TODO lurking in here somewhere!   ;-)
-    std::string path = datadir;
+    std::string path = datadir.string();
     path += "html-styling/";
     path += filename;
     tprintDebug("Read HTML Styling Partial: test if '{}' is a readable file: ", path);
     FILE *fp;
     if ((fp = fopen(path.c_str(), "rb")) != nullptr) {
     } else {
-      path = datadir;
+      path = datadir.string();
       path += "tessconfigs/html-styling/";
       path += filename;
       tprintDebug(
@@ -1656,19 +1654,19 @@ namespace tesseract {
 <tr><td>Main directory</td><td>{}</td></tr>\n\
 </table>\n\
 ",
-        html_styling(tesseract_.datadir_, "normalize.css").c_str(),
-        html_styling(tesseract_.datadir_, "modern-normalize.css").c_str(),
-        html_styling(tesseract_.datadir_, "diag-report.css").c_str(),
+        html_styling(tesseract_.datadir_, "normalize.css"),
+        html_styling(tesseract_.datadir_, "modern-normalize.css"),
+        html_styling(tesseract_.datadir_, "diag-report.css"),
         TESSERACT_VERSION_STR, 
-        now_str.c_str(),
-        check_unknown_and_encode(tesseract_.input_file_path_).c_str(),
-        check_unknown_and_encode(tesseract_.imagebasename_).c_str(),
-        check_unknown_and_encode(tesseract_.imagefile_).c_str(),
-        tesseract_.lang_.c_str(),
-        languages.str().c_str(),
-        check_unknown_and_encode(tesseract_.language_data_path_prefix_).c_str(),
-        check_unknown_and_encode(tesseract_.datadir_).c_str(),
-        check_unknown_and_encode(tesseract_.directory_).c_str()
+        now_str,
+        check_unknown_and_encode(tesseract_.input_file_path_),
+        check_unknown_and_encode(tesseract_.imagebasename_),
+        check_unknown_and_encode(tesseract_.imagefile_),
+        tesseract_.lang_,
+        languages.str(),
+        check_unknown_and_encode(tesseract_.language_data_path_prefix_),
+        check_unknown_and_encode(tesseract_.datadir_),
+        check_unknown_and_encode(tesseract_.directory_)
       ).c_str(), html);
 
       plf::nanotimer image_clock;

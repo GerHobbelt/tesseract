@@ -65,7 +65,7 @@ const char *BlamerBundle::IncorrectReason() const {
 
 // Functions to setup the blamer.
 // Whole word string, whole word bounding box.
-void BlamerBundle::SetWordTruth(const UNICHARSET &unicharset, const char *truth_str,
+void BlamerBundle::SetWordTruth(const UNICHARSET &unicharset, const std::string &truth_str,
                                 const TBOX &word_box) {
   truth_word_.InsertBox(0, word_box);
   truth_has_char_boxes_ = false;

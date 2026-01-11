@@ -55,7 +55,7 @@ const int kYWinFrameSize = 80;
 #endif // !GRAPHICS_DISABLED
 
 // String names corresponding to the NetworkType enum.
-// Keep in sync with NetworkType.
+// Keep in sync with NetworkType in `network.h`.
 // Names used in Serialization to allow re-ordering/addition/deletion of
 // layer types in NetworkType without invalidating existing network files.
 static char const *const kTypeNames[NT_COUNT] = {
@@ -74,6 +74,35 @@ static char const *const kTypeNames[NT_COUNT] = {
     "LSTMSoftmax", "LSTMBinarySoftmax",
     "TensorFlow",
 };
+
+static char const *const kTypeDescriptiveNames[NT_COUNT] = {
+    "Invalid",     "Input",
+    "Convolve",    "Maxpool",
+    "Parallel",    "Replicated",
+    "ParBidiLSTM", "DepParUDLSTM",
+    "Par2dLSTM",   "Series",
+    "Reconfig",    "RTLReversed",
+    "TTBReversed", "XYTranspose",
+    "LSTM",                            "SummLSTM_only_keeps_last_output",
+    "logistic_nonlinearity",           "rect_linear_version_of_logistic",
+    "rect_linear_version_of_tanh",     "tanh_nonlinearity",
+    "Relu_rectifier_nonlinearity",     "Linear_fully_connected_with_no_nonlinearity",
+    "SoftMax_with_CTC",                "SoftMax_no_CTC",
+    "1D_LSTM_with_softmax",            "1D_LSTM_with_binary_encoded_softmax",
+    "TensorFlow",
+};
+
+const char* networktype_to_string(NetworkType type) {
+  if (type < 0 || type >= NT_COUNT)
+    return "???Illegal.NetworkType???";
+  return kTypeNames[type];
+}
+
+const char* networktype_to_descriptive_string(NetworkType type) {
+  if (type < 0 || type >= NT_COUNT)
+    return "???Illegal.NetworkType???";
+  return kTypeDescriptiveNames[type];
+}
 
 Network::Network()
     : type_(NT_NONE)

@@ -73,12 +73,12 @@ extern "C" TESS_API int tesseract_combine_lang_model_main(int argc, const char**
   std::vector<std::string> numbers = split(tesseract::ReadFile(model_numbers), '\n');
   // Load the input unicharset
   UNICHARSET unicharset;
-  if (!unicharset.load_from_file(model_input_unicharset.c_str(), false)) {
-    tprintError("Failed to load unicharset from {}\n", model_input_unicharset.c_str());
+  if (!unicharset.load_from_file(model_input_unicharset, false)) {
+    tprintError("Failed to load unicharset from {}\n", model_input_unicharset);
     return EXIT_FAILURE;
   }
   tprintDebug("Loaded unicharset of size {} from file {}\n", unicharset.size(),
-          model_input_unicharset.c_str());
+          model_input_unicharset);
 
   // Set unichar properties
   tprintDebug("Setting unichar properties\n");

@@ -50,10 +50,9 @@ public:
   StaticShape InputShape() const override {
     return stack_[0]->InputShape();
   }
-  std::string spec() const override {
-    return "Sub-classes of Plumbing must implement spec()!";
-  }
-
+  virtual std::string spec() const noexcept override = 0; // Sub-classes of Plumbing must implement spec()!
+  virtual std::string elaborate_spec() const noexcept override = 0; // ditto!
+  
   // Returns true if the given type is derived from Plumbing, and thus contains
   // multiple sub-networks that can have their own learning rate.
   bool IsPlumbingType() const override {

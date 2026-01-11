@@ -183,10 +183,10 @@ struct BlamerBundle {
 
   // Functions to setup the blamer.
   // Whole word string, whole word bounding box.
-  void SetWordTruth(const UNICHARSET &unicharset, const char *truth_str, const TBOX &word_box);
+  void SetWordTruth(const UNICHARSET &unicharset, const std::string &truth_str, const TBOX &word_box);
   // Single "character" string, "character" bounding box.
   // May be called multiple times to indicate the characters in a word.
-  void SetSymbolTruth(const UNICHARSET &unicharset, const char *char_str, const TBOX &char_box);
+  void SetSymbolTruth(const UNICHARSET &unicharset, const std::string &char_str, const TBOX &char_box);
   // Marks that there is something wrong with the truth text, like it contains
   // reject characters.
   void SetRejectedTruth();
