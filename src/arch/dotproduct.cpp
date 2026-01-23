@@ -22,7 +22,7 @@ namespace tesseract {
 
 // Computes and returns the dot product of the two n-vectors u and v.
 template <class TFloat>
-TFloat DotProductNative(const TFloat *u, const TFloat *v, int n) {
+TFloat DotProductNative(const TFloat* TESS_RESTRICT u, const TFloat* TESS_RESTRICT v, int n) {
   TFloat total = 0;
 #if defined(OPENMP_SIMD) || defined(_OPENMP)
 #pragma omp simd reduction(+:total)
@@ -34,7 +34,7 @@ TFloat DotProductNative(const TFloat *u, const TFloat *v, int n) {
 }
 
 // two instantiations: float & double.
-template float DotProductNative<float>(const float *u, const float *v, int n);
-template double DotProductNative<double>(const double *u, const double *v, int n);
+template float DotProductNative<float>(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
+template double DotProductNative<double>(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
 
 } // namespace tesseract

@@ -44,7 +44,7 @@ namespace tesseract {
 
 // Computes and returns the dot product of the n-vectors u and v.
 // Uses Intel AVX intrinsics to access the SIMD instruction set.
-float DotProductAVX(const float *u, const float *v, int n) {
+float DotProductAVX(const float* TESS_RESTRICT u, const float* TESS_RESTRICT v, int n) {
   const unsigned quot = n / 8;
   const unsigned rem = n % 8;
   __m256 t0 = _mm256_setzero_ps();
@@ -65,7 +65,7 @@ float DotProductAVX(const float *u, const float *v, int n) {
   return result;
 }
 
-float DotProductAVX1(const float *u, const float *v, int n) {
+float DotProductAVX1(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n) {
   const unsigned quot = n / 16;
   const unsigned rem = n % 16;
   __m256 t0 = _mm256_setzero_ps();
@@ -94,7 +94,7 @@ float DotProductAVX1(const float *u, const float *v, int n) {
 
 // ---------------------------- HIGH-PRECISION DOUBLE section ------------------------
 
-double DotProductAVX1(const double *u, const double *v, int n) {
+double DotProductAVX1(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n) {
   __m256d t0 = _mm256_setzero_pd();
   __m256d t1 = _mm256_setzero_pd();
   for (unsigned quot = n / 8; quot > 0; quot--) {
@@ -119,7 +119,7 @@ double DotProductAVX1(const double *u, const double *v, int n) {
   return result;
 }
 
-double DotProductAVX(const double *u, const double *v, int n) {
+double DotProductAVX(const double* TESS_RESTRICT u, const double* TESS_RESTRICT v, int n) {
   const unsigned quot = n / 8;
   const unsigned rem = n % 8;
   __m256d t0 = _mm256_setzero_pd();
@@ -158,7 +158,7 @@ namespace tesseract {
 
 	// Computes and returns the dot product of the n-vectors u and v.
 	// Uses Intel FMA intrinsics to access the SIMD instruction set.
-	inline TFloat DotProductAVX(const TFloat* u, const TFloat* v, int n) {
+	inline TFloat DotProductAVX(const TFloat*  TESS_RESTRICT u, const TFloat*  TESS_RESTRICT v, int n) {
 		return DotProductFMA(u, v, n);
 	}
 

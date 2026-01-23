@@ -42,7 +42,7 @@ namespace tesseract {
 // Uses Intel AVX intrinsics to access the SIMD instruction set.
 #  if defined(FAST_FLOAT)
 
-float DotProductAVX512F(const float *u, const float *v, int n) {
+float DotProductAVX512F(const float* TESS_RESTRICT u, const float* TESS_RESTRICT v, int n) {
   const unsigned quot = n / 16;
   const unsigned rem = n % 16;
   __m512 t0 = _mm512_setzero_ps();
@@ -62,7 +62,7 @@ float DotProductAVX512F(const float *u, const float *v, int n) {
 
 #  else
 
-double DotProductAVX512F(const double *u, const double *v, int n) {
+double DotProductAVX512F(const double* TESS_RESTRICT u, const double* TESS_RESTRICT v, int n) {
   const unsigned quot = n / 8;
   const unsigned rem = n % 8;
   __m512d t0 = _mm512_setzero_pd();

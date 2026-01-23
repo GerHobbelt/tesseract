@@ -19,51 +19,60 @@
 
 #include "tesstypes.h"
 
+// Added for Issue #4393
+#if defined(_MSC_VER)
+#  define TESS_RESTRICT __restrict
+#elif defined(__GNUC__) || defined(__clang__)
+#  define TESS_RESTRICT __restrict__
+#else
+#  define TESS_RESTRICT
+#endif
+
 namespace tesseract {
 
 // Computes and returns the dot product of the n-vectors u and v.
 template <class TFloat>
-TFloat DotProductNative(const TFloat *u, const TFloat *v, int n);
+TFloat DotProductNative(const TFloat* TESS_RESTRICT u, const TFloat* TESS_RESTRICT v, int n);
 
 // ------------ FAST FLOAT specializations -----------------
 
 // Uses Intel AVX intrinsics to access the SIMD instruction set.
-float DotProductAVX(const float *u, const float *v, int n);
-float DotProductAVX1(const float *u, const float *v, int n);
-float DotProductAVX2(const float *u, const float *v, int n);
-float DotProductAVX3(const float *u, const float *v, int n);
-float DotProductAVX4(const float *u, const float *v, int n);
+float DotProductAVX(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
+float DotProductAVX1(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
+float DotProductAVX2(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
+float DotProductAVX3(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
+float DotProductAVX4(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
 
 // Uses Intel AVX512F intrinsics to access the SIMD instruction set.
-TFloat DotProductAVX512F(const TFloat *u, const TFloat *v, int n);
+TFloat DotProductAVX512F(const TFloat* TESS_RESTRICT u, const TFloat* TESS_RESTRICT v, int n);
 
 // Use Intel FMA.
-float DotProductFMA(const float *u, const float *v, int n);
+float DotProductFMA(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
 
 // Uses Intel SSE intrinsics to access the SIMD instruction set.
-float DotProductSSE(const float *u, const float *v, int n);
+float DotProductSSE(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
 
-float DotProductAccelerate(const float *u, const float *v, int n);
+float DotProductAccelerate(const float * TESS_RESTRICT u, const float * TESS_RESTRICT v, int n);
 
 // ------------ HIGH PRECISION DOUBLE specializations -----------------
 
 // Uses Intel AVX intrinsics to access the SIMD instruction set.
-double DotProductAVX(const double *u, const double *v, int n);
-double DotProductAVX1(const double *u, const double *v, int n);
-double DotProductAVX2(const double *u, const double *v, int n);
-double DotProductAVX3(const double *u, const double *v, int n);
-double DotProductAVX4(const double *u, const double *v, int n);
+double DotProductAVX(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
+double DotProductAVX1(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
+double DotProductAVX2(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
+double DotProductAVX3(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
+double DotProductAVX4(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
 
 // Use Intel FMA.
-double DotProductFMA(const double *u, const double *v, int n);
+double DotProductFMA(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
 
 // Uses Intel SSE intrinsics to access the SIMD instruction set.
-double DotProductSSE(const double *u, const double *v, int n);
+double DotProductSSE(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
 
-double DotProductAccelerate(const double *u, const double *v, int n);
+double DotProductAccelerate(const double * TESS_RESTRICT u, const double * TESS_RESTRICT v, int n);
 
 // Use NEON intrinsics.
-TFloat DotProductNEON(const TFloat *u, const TFloat *v, int n);
+TFloat DotProductNEON(const TFloat * TESS_RESTRICT u, const TFloat * TESS_RESTRICT v, int n);
 
 } // namespace tesseract.
 
