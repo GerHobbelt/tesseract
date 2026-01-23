@@ -153,7 +153,7 @@ public:
   // -----------------------------------------------------------
   
   // Writes to the given file. Returns false in case of error.
-  // Only works with bitwise-serializeable types!
+  // Only works with bitwise-serializable types!
   template <class ST>
   bool Serialize(FILE *fp) const {
     if (!SerializeSize(fp)) {
@@ -179,7 +179,7 @@ public:
   }
 
   // Reads from the given file. Returns false in case of error.
-  // Only works with bitwise-serializeable types!
+  // Only works with bitwise-serializable types!
   // If swap is true, assumes a big/little-endian swap is needed.
   template <class ST>
   bool DeSerialize(bool swap, FILE *fp) {

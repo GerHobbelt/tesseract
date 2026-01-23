@@ -157,7 +157,7 @@ struct Pixa;
 
 /* General free functions */
 
-TESS_API const char *TessVersion();
+TESS_API const char *TessVersion(void);
 TESS_API void TessDeleteText(const char *text);
 TESS_API void TessDeleteTextArray(char **arr);
 TESS_API void TessDeleteIntArray(const int *arr);
@@ -193,7 +193,7 @@ TESS_API int TessResultRendererImageNum(TessResultRenderer *renderer);
 
 /* Base API */
 
-TESS_API TessBaseAPI *TessBaseAPICreate();
+TESS_API TessBaseAPI *TessBaseAPICreate(void);
 TESS_API void TessBaseAPIDelete(TessBaseAPI *handle);
 
 TESS_API void TessBaseAPISetInputName(TessBaseAPI *handle, const char *name);
@@ -467,7 +467,7 @@ TESS_API float TessChoiceIteratorConfidence(const TessChoiceIterator *handle);
 
 /* Progress monitor */
 
-TESS_API ETEXT_DESC *TessMonitorCreate();
+TESS_API ETEXT_DESC *TessMonitorCreate(void);
 TESS_API void TessMonitorDelete(ETEXT_DESC *monitor);
 TESS_API void TessMonitorSetCancelFunc(ETEXT_DESC *monitor,
                                        TessCancelFunc cancelFunc);

@@ -35,6 +35,7 @@ std::string TestDataNameToPath(const std::string &name) {
 // can encode strings. More importantly, the test verifies that adding an extra
 // character to the unicharset does not change the encoding of strings.
 TEST(LangModelTest, AddACharacter) {
+  TessBaseAPI api;
   constexpr char kTestString[] = "Simple ASCII string to encode !@#$%&";
   constexpr char kTestStringRupees[] = "ASCII string with Rupee symbol ₹";
   // Setup the arguments.
@@ -63,7 +64,7 @@ TEST(LangModelTest, AddACharacter) {
                                 nullptr));
   // Init a trainer with it, and encode kTestString.
   std::string traineddata1 = file::JoinPath(output_dir, lang1, lang1) + ".traineddata";
-  LSTMTrainer trainer1;
+  LSTMTrainer trainer1{api};
   trainer1.InitCharSet(traineddata1);
   std::vector<int> labels1;
   EXPECT_TRUE(trainer1.EncodeString(kTestString, &labels1));
@@ -83,7 +84,7 @@ TEST(LangModelTest, AddACharacter) {
                                            nullptr, nullptr));
   // Init a trainer with it, and encode kTestString.
   std::string traineddata2 = file::JoinPath(output_dir, lang2, lang2) + ".traineddata";
-  LSTMTrainer trainer2;
+  LSTMTrainer trainer2{api};
   trainer2.InitCharSet(traineddata2);
   std::vector<int> labels2;
   EXPECT_TRUE(trainer2.EncodeString(kTestString, &labels2));
@@ -120,6 +121,7 @@ TEST(LangModelTest, AddACharacter) {
 
 // Same as above test, for hin instead of eng
 TEST(LangModelTest, AddACharacterHindi) {
+  TessBaseAPI api;
   constexpr char kTestString[] = "हिन्दी में एक लाइन लिखें";
   constexpr char kTestStringRupees[] = "हिंदी में रूपये का चिन्ह प्रयोग करें ₹१००.००";
   // Setup the arguments.
@@ -148,7 +150,7 @@ TEST(LangModelTest, AddACharacterHindi) {
                                 nullptr));
   // Init a trainer with it, and encode kTestString.
   std::string traineddata1 = file::JoinPath(output_dir, lang1, lang1) + ".traineddata";
-  LSTMTrainer trainer1;
+  LSTMTrainer trainer1{api};
   trainer1.InitCharSet(traineddata1);
   std::vector<int> labels1;
   EXPECT_TRUE(trainer1.EncodeString(kTestString, &labels1));
@@ -168,7 +170,7 @@ TEST(LangModelTest, AddACharacterHindi) {
                                            nullptr, nullptr));
   // Init a trainer with it, and encode kTestString.
   std::string traineddata2 = file::JoinPath(output_dir, lang2, lang2) + ".traineddata";
-  LSTMTrainer trainer2;
+  LSTMTrainer trainer2{api};
   trainer2.InitCharSet(traineddata2);
   std::vector<int> labels2;
   EXPECT_TRUE(trainer2.EncodeString(kTestString, &labels2));

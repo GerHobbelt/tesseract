@@ -25,9 +25,8 @@
 namespace tesseract {
 
 // C++ Implementation of the Softmax (output) class from lstm.py.
-class FullyConnected : public Network {
+class TESS_API FullyConnected : public Network {
 public:
-  TESS_API
   FullyConnected(const std::string &name, int ni, int no, NetworkType type);
   virtual ~FullyConnected() override;
 
@@ -35,7 +34,7 @@ public:
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     std::string spec;
     if (type_ == NT_TANH) {
       spec += "Ft" + std::to_string(no_);
@@ -55,6 +54,11 @@ public:
       spec += "Fm" + std::to_string(no_);
     }
     return spec;
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+    std::string s = fmt::format("Fully Connected layer: {} (size = {}, a.k.a. {})", type_, no_, spec());
+    return s;
   }
 
   // Changes the type to the given type. Used to commute a softmax to a

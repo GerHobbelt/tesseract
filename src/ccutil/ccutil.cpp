@@ -329,7 +329,7 @@ static std::filesystem::path find_data_path(const std::string &argv0) {
  */
 void CCUtil::main_setup(const std::string &argv0, const std::string &basename) {
   imagebasename_ = basename; /**< name of image */
-  datadir_ = find_data_path(argv0);
+  datadir_ = find_data_path(argv0) / "";
 }
 
 } // namespace tesseract

@@ -371,7 +371,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES> *words) {
       word->best_choice->set_certainty(corrected_word_certainty);
       if (getDict().stopper_debug_level >= 1) {
         tprintDebug("accepted={}\n  ",
-                stopper_dict->AcceptableResult(word));
+                stopper_dict->AcceptableResult(*word));
         word->best_choice->print();
       }
 #endif

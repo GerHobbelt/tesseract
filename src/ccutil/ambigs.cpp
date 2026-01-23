@@ -410,7 +410,7 @@ bool UnicharAmbigs::InsertIntoTable(UnicharAmbigsVector &table, int test_ambig_p
       std::string frag_str =
           CHAR_FRAGMENT::to_string(replacement_string, i, test_ambig_part_size, false);
       unicharset->unichar_insert(frag_str.c_str(), OldUncleanUnichars::kTrue);
-      unichar_id = unicharset->unichar_to_id(frag_str.c_str());
+      unichar_id = unicharset->unichar_to_id(frag_str);
     }
     ambig_spec->correct_fragments[i] = unichar_id;
   }

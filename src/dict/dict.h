@@ -335,7 +335,7 @@ public:
   /* dict.cpp ****************************************************************/
 
   /// Initialize Dict class - load dawgs from [lang].traineddata and
-  /// user-specified wordlist and parttern list.
+  /// user-specified wordlist and pattern list.
   static DawgCache *GlobalDawgCache();
   /// Destroy the dawgs cache, if any.
   static void CleanGlobalDawgCache();
@@ -480,7 +480,7 @@ public:
   /// For each of the character classes of the given unichar_id (and the
   /// unichar_id itself) finds the corresponding outgoing node or self-loop
   /// in the given dawg and (after checking that it is valid) records it in
-  /// dawg_args->updated_ative_dawgs. Updates current_permuter if any valid
+  /// dawg_args->updated_active_dawgs. Updates current_permuter if any valid
   /// edges were found.
   void ProcessPatternEdges(const Dawg *dawg, const DawgPosition &info, UNICHAR_ID unichar_id,
                            bool word_end, DawgArgs *dawg_args,

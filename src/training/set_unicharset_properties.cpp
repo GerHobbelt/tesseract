@@ -52,8 +52,8 @@ extern "C" TESS_API int tesseract_set_unicharset_properties_main(int argc, const
     return EXIT_FAILURE;
   }
 
-  tesseract::SetPropertiesForInputFile(unicharsets_script_dir.c_str(), trainer_input_unicharset_file.c_str(), trainer_output_unicharset_file.c_str(),
-                                       trainer_xheights.c_str());
+  tesseract::SetPropertiesForInputFile(unicharsets_script_dir, trainer_input_unicharset_file, trainer_output_unicharset_file,
+                                       trainer_xheights);
   return EXIT_SUCCESS;
 }
 

@@ -185,7 +185,7 @@ void Tesseract::PreenXHeights(BLOCK_LIST *block_list) {
       ROW *row = r_it.data();
       const double diff = fabs(row->x_height() - median_xheight);
       if (diff > max_deviation) {
-        if (applybox_debug) {
+        if (applybox_debug > 0) {
           tprintDebug("row xheight={}, but median xheight = {}\n", row->x_height(), median_xheight);
         }
         row->set_x_height(static_cast<float>(median_xheight));
@@ -772,7 +772,7 @@ void Tesseract::CorrectClassifyWords(PAGE_RES *page_res) {
       // The part before the first space is the real ground truth, and the
       // rest is the bounding box location and page number.
       std::vector<std::string> tokens = split(correct_text, ' ');
-      UNICHAR_ID char_id = unicharset_.unichar_to_id(tokens[0].c_str());
+      UNICHAR_ID char_id = unicharset_.unichar_to_id(tokens[0]);
       choice->append_unichar_id_space_allocated(char_id, word_res->best_state[&correct_text - &word_res->correct_text[0]], 0.0f, 0.0f);
     }
     word_res->ClearWordChoices();

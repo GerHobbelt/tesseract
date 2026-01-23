@@ -77,7 +77,7 @@ namespace tesseract {
 // TODO: The parameter classify_enable_adaptive_matcher can cause
 // a segmentation fault if it is set to false (issue #256),
 // so override it here.
-#define classify_enable_adaptive_matcher true
+#define CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE true
 #endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
@@ -305,7 +305,7 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
       float threshold = thresholds != nullptr ? thresholds[ch] : 0.0f;
 
       LearnPieces(fontname, start_blob, word->best_state[ch], threshold, CST_WHOLE,
-                  word->correct_text[ch].c_str(), word);
+                  word->correct_text[ch], word);
 
       if (word->best_state[ch] > 1 && !disable_character_fragments) {
         // Check that the character breaks into meaningful fragments
@@ -337,7 +337,7 @@ void Classify::LearnWord(const char *fontname, WERD_RES *word) {
                 }
               }
               LearnPieces(fontname, start_blob + frag, 1, threshold, CST_FRAGMENT,
-                          full_string.c_str(), word);
+                          full_string, word);
             }
           }
         }
@@ -366,7 +366,7 @@ if (ch + 1 < word_len && word->correct_text[ch + 1].length() > 0) {
   joined_text += word->correct_text[ch + 1];
   LearnPieces(fontname, start_blob,
               word->best_state[ch] + word->best_state[ch + 1],
-              threshold, CST_NGRAM, joined_text.c_str(), word);
+              threshold, CST_NGRAM, joined_text, word);
 }
 #endif
     }
@@ -405,7 +405,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
 
 #if !GRAPHICS_DISABLED
   // Draw debug windows showing the blob that is being learned if needed.
-  if (strcmp(classify_learn_debug_str.c_str(), correct_text) == 0) {
+  if (strcmp(classify_learn_debug_str, correct_text) == 0) {
     RefreshDebugWindow(learn_debug_win_, "LearnPieces", 600, word->chopped_word->bounding_box());
     rotated_blob->plot(learn_debug_win_, Diagnostics::GREEN, Diagnostics::BROWN);
     learn_debug_win_->UpdateWindow();
@@ -421,9 +421,9 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
 #endif // !GRAPHICS_DISABLED
 
   if (fontname != nullptr) {
-    classify_norm_method.set_value(character); // force char norm spc 30/11/93
-    tess_bn_matching.set_value(false);         // turn it off
-    tess_cn_matching.set_value(false);
+    classify_norm_method = character; // force char norm spc 30/11/93
+    tess_bn_matching = false;         // turn it off
+    tess_cn_matching = false;
     DENORM bl_denorm, cn_denorm;
     INT_FX_RESULT_STRUCT fx_info;
     SetupBLCNDenorms(*rotated_blob, classify_nonlinear_norm, &bl_denorm, &cn_denorm, &fx_info);
@@ -466,7 +466,7 @@ void Classify::LearnPieces(const char *fontname, int start, int length, float th
  * - #classify_enable_adaptive_matcher true if adaptive matcher is enabled
  */
 void Classify::EndAdaptiveClassifier() {
-  if (AdaptedTemplates != nullptr && classify_enable_adaptive_matcher && classify_save_adapted_templates) {
+  if (AdaptedTemplates != nullptr && CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE && classify_save_adapted_templates) {
     std::string Filename = imagefile_ + ADAPT_TEMPLATE_SUFFIX;
     FILE *File = fopen(Filename.c_str(), "wb");
     if (File == nullptr) {
@@ -528,7 +528,7 @@ void Classify::InitAdaptiveClassifier(TessdataManager *mgr) {
 
 #if !DISABLED_LEGACY_ENGINE
 
-  if (!classify_enable_adaptive_matcher) {
+  if (!CLASSIFY_ENABLE_ADAPTIVE_MATCHER_OVERRIDE) {
     return;
   }
 
@@ -703,7 +703,7 @@ void Classify::InitAdaptedClass(TBLOB *Blob, CLASS_ID ClassId, int FontinfoId, A
   INT_CLASS_STRUCT *IClass;
   TEMP_CONFIG_STRUCT *Config;
 
-  classify_norm_method.set_value(baseline);
+  classify_norm_method = baseline;
   Features = ExtractOutlineFeatures(Blob);
   NumFeatures = Features->NumFeatures;
   if (NumFeatures > UNLIKELY_NUM_FEAT || NumFeatures <= 0) {
@@ -790,7 +790,7 @@ int Classify::GetAdaptiveFeatures(TBLOB *Blob, INT_FEATURE_ARRAY IntFeatures,
   FEATURE_SET Features;
   int NumFeatures;
 
-  classify_norm_method.set_value(baseline);
+  classify_norm_method = baseline;
   Features = ExtractPicoFeatures(Blob);
 
   NumFeatures = Features->NumFeatures;
@@ -1882,7 +1882,7 @@ void Classify::MakePermanent(ADAPT_TEMPLATES_STRUCT *Templates, CLASS_ID ClassId
     tprintDebug(
         "Making config {} for {} (ClassId {}) permanent:"
         " fontinfo id {}, ambiguities '",
-        ConfigId, getDict().getUnicharset().debug_str(ClassId).c_str(), ClassId,
+        ConfigId, getDict().getUnicharset().debug_str(ClassId), ClassId,
         PermConfigFor(Class, ConfigId)->FontinfoId);
     for (UNICHAR_ID *AmbigsPointer = Ambigs; *AmbigsPointer >= 0; ++AmbigsPointer) {
       tprintDebug("{}", unicharset_.id_to_unichar(*AmbigsPointer));
@@ -2058,8 +2058,8 @@ void Classify::RemoveExtraPuncs(ADAPT_RESULTS *Results) {
  */
 void Classify::SetAdaptiveThreshold(float Threshold) {
   Threshold = (Threshold == matcher_good_threshold) ? 0.9f : (1 - Threshold);
-  classify_adapt_proto_threshold.set_value(ClipToRange<int>(255 * Threshold, 0, 255));
-  classify_adapt_feature_threshold.set_value(ClipToRange<int>(255 * Threshold, 0, 255));
+  classify_adapt_proto_threshold = ClipToRange<int>(255 * Threshold, 0, 255);
+  classify_adapt_feature_threshold = ClipToRange<int>(255 * Threshold, 0, 255);
 } /* SetAdaptiveThreshold */
 
 #if !GRAPHICS_DISABLED
@@ -2086,7 +2086,7 @@ void Classify::ShowBestMatchFor(int shape_id, const INT_FEATURE_STRUCT *features
     return;
   }
   UnicharRating cn_result;
-  classify_norm_method.set_value(character);
+  classify_norm_method = character;
   im_.Match(ClassForClassId(PreTrainedTemplates, shape_id), AllProtosOn, AllConfigsOn, num_features,
             features, &cn_result, classify_adapt_feature_threshold, NO_DEBUG,
             matcher_debug_separate_windows);

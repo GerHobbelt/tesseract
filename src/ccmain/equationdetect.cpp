@@ -52,7 +52,7 @@ static BOOL_VAR(equationdetect_save_merged_image, false, "Save the merged image"
 FZ_HEAPDBG_TRACKER_SECTION_END_MARKER(_)
 
 ///////////////////////////////////////////////////////////////////////////
-// Utility ColParition sort functions.
+// Utility ColPartition sort functions.
 ///////////////////////////////////////////////////////////////////////////
 static int SortCPByTopReverse(const void *p1, const void *p2) {
   const ColPartition *cp1 = *static_cast<ColPartition *const *>(p1);
@@ -255,16 +255,16 @@ BlobSpecialTextType EquationDetect::EstimateTypeForUnichar(const UNICHARSET &uni
 
 void EquationDetect::IdentifySpecialText() {
   // Set configuration for Tesseract::AdaptiveClassifier.
-  equ_tesseract_.tess_cn_matching.set_value(true); // turn it on
-  equ_tesseract_.tess_bn_matching.set_value(false);
+  equ_tesseract_.tess_cn_matching = true; // turn it on
+  equ_tesseract_.tess_bn_matching = false;
 
   // Set the multiplier to zero for lang_tesseract_ to improve the accuracy.
   const int classify_class_pruner = lang_tesseract_->classify_class_pruner_multiplier;
   const int classify_integer_matcher = lang_tesseract_->classify_integer_matcher_multiplier;
   bool saved_classify_cp_dq_bad_height = lang_tesseract_->classify_cp_dq_bad_height;
-  lang_tesseract_->classify_class_pruner_multiplier.set_value(0);
-  lang_tesseract_->classify_integer_matcher_multiplier.set_value(0);
-  lang_tesseract_->classify_cp_dq_bad_height.set_value(false);
+  lang_tesseract_->classify_class_pruner_multiplier = int(0);
+  lang_tesseract_->classify_integer_matcher_multiplier = int(0);
+  lang_tesseract_->classify_cp_dq_bad_height = false;
 
   ColPartitionGridSearch gsearch(part_grid_);
   ColPartition *part = nullptr;
@@ -292,9 +292,9 @@ void EquationDetect::IdentifySpecialText() {
   }
 
   // Set the multiplier values back.
-  lang_tesseract_->classify_class_pruner_multiplier.set_value(classify_class_pruner);
-  lang_tesseract_->classify_integer_matcher_multiplier.set_value(classify_integer_matcher);
-  lang_tesseract_->classify_cp_dq_bad_height.set_value(saved_classify_cp_dq_bad_height);
+  lang_tesseract_->classify_class_pruner_multiplier = classify_class_pruner;
+  lang_tesseract_->classify_integer_matcher_multiplier = classify_integer_matcher;
+  lang_tesseract_->classify_cp_dq_bad_height = saved_classify_cp_dq_bad_height;
 
   if (equationdetect_save_spt_image) { // For debug.
     std::string outfile;
@@ -610,7 +610,7 @@ float EquationDetect::ComputeForegroundDensity(const TBOX &tbox) {
 bool EquationDetect::CheckSeedFgDensity(const float density_th, ColPartition *part) {
   ASSERT_HOST(part != nullptr);
 
-  // Split part horizontall, and check for each sub part.
+  // Split part horizontally, and check for each sub part.
   std::vector<TBOX> sub_boxes;
   SplitCPHorLite(part, &sub_boxes);
   float parts_passed = 0.0;

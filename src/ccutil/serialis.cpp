@@ -33,9 +33,9 @@ namespace tesseract {
 
 // The default FileReader loads the whole file into the vector of char,
 // returning false on error.
-bool LoadDataFromFile(const char *filename, std::vector<char> *data) {
+bool LoadDataFromFile(const std::string &filename, std::vector<char> *data) {
   bool result = false;
-  FILE *fp = fopenUtf8(filename, "rb");
+  FILE *fp = fopenUtf8(filename.c_str(), "rb");
   if (fp != nullptr) {
     fseek(fp, 0, SEEK_END);
     auto size = std::ftell(fp);

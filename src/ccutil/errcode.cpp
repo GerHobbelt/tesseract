@@ -31,7 +31,7 @@ constexpr ERRCODE BADERRACTION("Illegal error action");
 
 [[noreturn]] static void abort_application();
 
-static void error_action(TessErrorLogCode action) {
+static void error_action(TessErrorLogCode action, const char *message) {
   switch (action) {
     case DBG:
     case TESSLOG:
@@ -43,7 +43,7 @@ static void error_action(TessErrorLogCode action) {
       // However, at least for library use, only exceptions should be acceptable.
       // Even in the standalone application case, exceptions are better,
       // because the default handler will print the message along with the stack trace.
-      throw std::runtime_error(msg.str());
+      throw std::runtime_error(message);
 #else
       abort_application();
 #endif
@@ -80,17 +80,17 @@ void ERRCODE::error(const char *caller, TessErrorLogCode action) const {
   } else {
     tprintError("{}\n", message);
   }
-  error_action(action);
+  error_action(action, message);
 }
 
 void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_view format, fmt::format_args args) const {
   if (caller != nullptr) {
     // name of caller
-    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+    tprintError("{}:{}:{}\n", caller, message, fmt::vformat(format, args));
   } else {
-    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+    tprintError("{}:{}\n", message, fmt::vformat(format, args));
   }
-  error_action(action);
+  error_action(action, message);
 }
 
 [[noreturn]] void ERRCODE::abort(const char* caller) const {
@@ -106,7 +106,7 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
   // However, at least for library use, only exceptions should be acceptable.
   // Even in the standalone application case, exceptions are better,
   // because the default handler will print the message along with the stack trace.
-  throw std::runtime_error(msg.str());
+  throw std::runtime_error(message);
 #else
   abort_application();
 #endif
@@ -115,17 +115,17 @@ void ERRCODE::verror(const char *caller, TessErrorLogCode action, fmt::string_vi
 [[noreturn]] void ERRCODE::vabort(const char* caller, fmt::string_view format, fmt::format_args args) const {
   if (caller != nullptr) {
     // name of caller
-    tprintError("{}\n", fmt::format("{}:{}:{}", caller, message, fmt::vformat(format, args)).c_str());
+    tprintError("{}:{}:{}\n", caller, message, fmt::vformat(format, args));
   }
   else {
-    tprintError("{}\n", fmt::format("{}:{}", message, fmt::vformat(format, args)).c_str());
+    tprintError("{}:{}\n", message, fmt::vformat(format, args));
   }
 #if 01
   // This used to trigger a segfault or abort();
   // However, at least for library use, only exceptions should be acceptable.
   // Even in the standalone application case, exceptions are better,
   // because the default handler will print the message along with the stack trace.
-  throw std::runtime_error(msg.str());
+  throw std::runtime_error(message);
 #else
   abort_application();
 #endif

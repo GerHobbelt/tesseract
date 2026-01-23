@@ -37,10 +37,10 @@ const int16_t kMaxBoxEdgeDiff = 2;
 // Opens and returns the pointer to the output file.
 FILE *Tesseract::init_recog_training(const char *filename) {
   if (tessedit_ambigs_training) {
-    tessedit_tess_adaption_mode.set_value(0); // turn off adaption
-    tessedit_enable_doc_dict.set_value(false); // turn off document dictionary
+    tessedit_tess_adaption_mode = int(0); // turn off adaption
+    tessedit_enable_doc_dict = false; // turn off document dictionary
     // Explore all segmentations.
-    getDict().stopper_no_acceptable_choices.set_value(true);
+    getDict().stopper_no_acceptable_choices = true;
   }
 
   std::string output_fname = filename;

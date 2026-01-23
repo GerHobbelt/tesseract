@@ -24,7 +24,7 @@
 namespace tesseract {
 
 // C++ Implementation of the LSTM class from lstm.py.
-class LSTM : public Network {
+class TESS_API LSTM : public Network {
 public:
   // Enum for the different weights in LSTM, to reduce some of the I/O and
   // setup code to loops. The elements of the enum correspond to elements of an
@@ -46,16 +46,15 @@ public:
   // 2-d and bidi softmax LSTMs are not rejected, but are impossible to build
   // in the conventional way because the output feedback both forwards and
   // backwards in time does become impossible.
-  TESS_API
   LSTM(const std::string &name, int num_inputs, int num_states, int num_outputs,
        bool two_dimensional, NetworkType type);
-  ~LSTM() override;
+  virtual ~LSTM() override;
 
   // Returns the shape output from the network given an input shape (which may
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
     std::string spec;
     if (type_ == NT_LSTM) {
       spec += "Lfx" + std::to_string(ns_);
@@ -70,6 +69,15 @@ public:
       spec += softmax_->spec();
     }
     return spec;
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+    std::string sm{};
+    if (softmax_ != nullptr) {
+      sm = fmt::format(" with {}", softmax_->elaborate_spec());
+    }
+    std::string s = fmt::format("OutputShape layer: {} (size: {}{}, a.k.a. {})", type_, ns_, sm, spec());
+    return s;
   }
 
   // Suspends/Enables training by setting the training_ flag. Serialize and

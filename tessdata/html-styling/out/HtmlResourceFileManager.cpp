@@ -75,8 +75,8 @@ namespace bin2cpp
       return false;
   #if defined(_WIN32)
     bool isDriveLetter = ((path[0] >= 'a' && path[0] <= 'z') || (path[0] >= 'A' && path[0] <= 'Z'));
-    if ((isDriveLetter && path[1] == ':' && path[2] == '\0') || // test for C:
-        (isDriveLetter && path[1] == ':' && path[2] == PATH_SEPARATOR_CHAR && path[3] == '\0')) // test for C:\ 
+    if ((isDriveLetter && path[1] == ':' && path[2] == '\0') || // test for 'C:'
+        (isDriveLetter && path[1] == ':' && path[2] == PATH_SEPARATOR_CHAR && path[3] == '\0')) // test for 'C:\' 
       return true;
   #else
     if (path[0] == PATH_SEPARATOR_CHAR)

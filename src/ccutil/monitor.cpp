@@ -41,18 +41,19 @@ bool ETEXT_DESC::kick_watchdog_and_check_for_cancel(int word_count) {
     return true;
   }
   if (cancel != nullptr && (cancel)(this, word_count)) {
-    // abort_the_action = true;;   -- don't set this flag here as we do not want the deadline signal to "stick": the cancel call can reset the deadline, resulting in temporary cancel/interuption, by design. When userland code wishes to completely abort the action, it can set the `abort_the_action` flag itself.
+    // abort_the_action = true;   -- don't set this flag here as we do not want the deadline signal to "stick": the cancel call can reset the deadline, resulting in temporary cancel/interuption, by design. When userland code wishes to completely abort the action, it can set the `abort_the_action` flag itself.
     return true;
   }
   return false;
 }
 
 ETEXT_DESC& ETEXT_DESC::bump_progress(int part_count, int whole_count) noexcept {
-  if (whole_count <= 1 || part_count < 1 || part_count >= whole_count || progress >= 70)
+  float pct = progress;
+  if (whole_count <= 1 || part_count < 1 || part_count >= whole_count || pct >= 70)
     return bump_progress();
 
   float rate = part_count * 20.0 / whole_count;
-  progress += rate;
+  progress = pct + rate;
 
   return *this;
 }
@@ -65,21 +66,25 @@ ETEXT_DESC& ETEXT_DESC::set_progress(float percentage) noexcept {
 }
 
 ETEXT_DESC &ETEXT_DESC::bump_progress() noexcept {
-  if (progress < 25)
-    progress += 0.1;
-  else if (progress < 85)
-    progress += 0.01;
-  else if (progress < 99)
-    progress += 0.001;
-  else if (progress < 99.5)
-    progress += 0.0001;
+  float pct = progress;
+  if (pct < 25)
+    pct += 0.1;
+  else if (pct < 85)
+    pct += 0.01;
+  else if (pct < 99)
+    pct += 0.001;
+  else if (pct < 99.5)
+    pct += 0.0001;
   // else: stop incrementing progress
+  progress = pct;
   return *this;
 }
 
 ETEXT_DESC &ETEXT_DESC::exec_progress_func(int left, int right, int top, int bottom) {
   // don't hammer the userland progress callback; only call it when there's "significant" progress...
-  if (std::isnan(previous_progress) || fabs(progress - previous_progress) >= 0.1) {
+  float pct = progress;
+  float prev_pct = previous_progress; 
+  if (std::isnan(prev_pct) || fabs(pct - prev_pct) >= 0.1) {
     if (progress_callback != nullptr) {
       (progress_callback)(this, left, right, top, bottom);
     }

@@ -73,8 +73,16 @@ public:
                                const std::string &output_image_basename, /// name of output/debug image(s)
                                const std::vector<std::string> &languages_to_load);
 
+  const ParamsVector &params() const {
+    return params_;
+  }
+
   ParamsVector &params() {
     return params_;
+  }
+
+  const ParamsVectorSet &params_collective() const {
+    return params_collective_;
   }
 
   ParamsVectorSet &params_collective() {
@@ -83,7 +91,11 @@ public:
 
   std::string visible_image_file_path_; // name of currently input file, used for visible overlays only
   std::string input_file_path_; // name of currently processed input file
+#if 0
   std::filesystem::path datadir_;       // dir for data files
+#else
+  std::string datadir_; // dir for data files
+#endif
   std::string imagebasename_;   // name of image
   std::string lang_;
   std::string language_data_path_prefix_;

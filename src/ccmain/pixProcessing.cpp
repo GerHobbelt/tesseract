@@ -345,6 +345,7 @@ PIX *pixMaxDynamicRange2(PIX *pixs, l_int32 type) {
   if ((pixd = pixCreate(w, h, 8)) == NULL)
     return (PIX *)ERROR_PTR("pixd not made", __func__, NULL);
   pixCopyResolution(pixd, pixs);
+  pixCopyText(pixd, pixs);
   datas = pixGetData(pixs);
   datad = pixGetData(pixd);
   wpls = pixGetWpl(pixs);

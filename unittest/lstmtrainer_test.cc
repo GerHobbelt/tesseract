@@ -30,9 +30,10 @@ TEST_F(LSTMTrainerTest, EncodesKor) {
 }
 
 TEST_F(LSTMTrainerTest, MapCoder) {
-  LSTMTrainer fra_trainer;
+  TessBaseAPI api;
+  LSTMTrainer fra_trainer{api};
   fra_trainer.InitCharSet(TestDataNameToPath("fra/fra.traineddata"));
-  LSTMTrainer deu_trainer;
+  LSTMTrainer deu_trainer{api};
   deu_trainer.InitCharSet(TestDataNameToPath("deu/deu.traineddata"));
   // A string that uses characters common to French and German.
   std::string kTestStr = "The quick brown 'fox' jumps over: the lazy dog!";
@@ -67,8 +68,9 @@ TEST_F(LSTMTrainerTest, MapCoder) {
 // Tests that the actual fra model can be converted to the deu character set
 // and still read an eng image with 100% accuracy.
 TEST_F(LSTMTrainerTest, ConvertModel) {
+  TessBaseAPI api;
   // Setup a trainer with a deu charset.
-  LSTMTrainer deu_trainer;
+  LSTMTrainer deu_trainer{api};
   deu_trainer.InitCharSet(TestDataNameToPath("deu/deu.traineddata"));
   // Load the fra traineddata, strip out the model, and save to a tmp file.
   TessdataManager mgr;
@@ -85,10 +87,11 @@ TEST_F(LSTMTrainerTest, ConvertModel) {
   std::string deu_data = file::JoinPath(FLAGS_test_tmpdir, "deu.traineddata");
   CHECK(deu_trainer.SaveTraineddata(deu_data.c_str()));
   LOG(INFO) << "Save " << deu_data << "\n";
+  api.Clear();
+
   // Now run the saved model on phototest. (See BasicTesseractTest in
   // baseapi_test.cc).
-  TessBaseAPI api;
-  api.InitOem(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
+  api.Init(FLAGS_test_tmpdir, "deu", tesseract::OEM_LSTM_ONLY);
   Image src_pix = pixRead(TestingNameToPath("phototest.tif").c_str());
   CHECK(src_pix);
   api.SetImage(src_pix);

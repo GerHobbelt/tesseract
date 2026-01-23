@@ -116,7 +116,7 @@ void Dict::go_deeper_dawg_fxn(const char *debug, const BLOB_CHOICE_LIST_VECTOR &
         if (output_ambig_words_file_ == nullptr) {
           output_ambig_words_file_ = fopen(output_ambig_words_file.c_str(), "wb+");
           if (output_ambig_words_file_ == nullptr) {
-            tprintError("Failed to open output_ambig_words_file {}\n", output_ambig_words_file.c_str());
+            tprintError("Failed to open output_ambig_words_file {}\n", output_ambig_words_file);
             throw "Failed to open output_ambig_words_file";	// GHo: analyzed code flow; this entire function seems to only be used in DISABLED_LEGACY_ENGINE but better to throw than to exit() anyway!
           }
           std::string word_str;

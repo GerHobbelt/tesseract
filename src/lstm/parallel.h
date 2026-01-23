@@ -23,10 +23,9 @@
 namespace tesseract {
 
 // Runs multiple networks in parallel, interlacing their outputs.
-class Parallel : public Plumbing {
+class TESS_API Parallel : public Plumbing {
 public:
   // ni_ and no_ will be set by AddToStack.
-  TESS_API
   Parallel(const std::string &name, NetworkType type);
   virtual ~Parallel() override = default;
 
@@ -34,7 +33,37 @@ public:
   // be partially unknown ie zero).
   StaticShape OutputShape(const StaticShape &input_shape) const override;
 
-  std::string spec() const override {
+  virtual std::string spec() const noexcept override {
+    std::string spec;
+    if (type_ == NT_PAR_2D_LSTM) {
+      // We have 4 LSTMs operating in parallel here, so the size of each is
+      // the number of outputs/4.
+      spec += "L2xy" + std::to_string(no_ / 4);
+    } else if (type_ == NT_PAR_RL_LSTM) {
+      // We have 2 LSTMs operating in parallel here, so the size of each is
+      // the number of outputs/2.
+      if (stack_[0]->type() == NT_LSTM_SUMMARY) {
+        spec += "Lbxs" + std::to_string(no_ / 2);
+      } else {
+        spec += "Lbx" + std::to_string(no_ / 2);
+      }
+    } else {
+      if (type_ == NT_REPLICATED) {
+        spec += "R" + std::to_string(stack_.size()) + "(" + stack_[0]->spec();
+      } else {
+        for (auto &it : stack_) {
+          spec += it->spec();
+        }
+      }
+      spec += ")";
+    }
+    return spec;
+  }
+
+  virtual std::string elaborate_spec() const noexcept override {
+
+    // TODO
+
     std::string spec;
     if (type_ == NT_PAR_2D_LSTM) {
       // We have 4 LSTMs operating in parallel here, so the size of each is

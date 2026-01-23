@@ -440,9 +440,9 @@ static bool MakeIndividualGlyphs(Image pix, const std::vector<BoxChar *> &vbox,
     }
     // Write out
     Image pix_glyph_sq_pad_8 = pixConvertTo8(pix_glyph_sq_pad, false);
-    char filename[1024];
-    snprintf(filename, 1024, "%s_%d.jpg", text2image_outputbase.c_str(), glyph_count++);
-    if (pixWriteJpeg(filename, pix_glyph_sq_pad_8, 100, 0)) {
+    std::string filename;
+    filename = std::format("{}_{}.jpg", text2image_outputbase, glyph_count++);
+    if (pixWriteJpeg(filename.c_str(), pix_glyph_sq_pad_8, 100, 0)) {
       tprintError("MakeIndividualGlyphs(): Failed to write JPEG to {},"
           " at i={}\n",
           filename, i);
@@ -501,12 +501,12 @@ static int Main() {
     return EXIT_FAILURE;
   }
 
-  std::string font_name = text2image_font.c_str();
+  std::string font_name = text2image_font;
   if (!text2image_find_fonts && !FontUtils::IsAvailableFont(font_name.c_str())) {
     font_name += ',';
     std::string pango_name;
     if (!FontUtils::IsAvailableFont(font_name.c_str(), &pango_name)) {
-      tprintError("Could not find font named '{}'.\n", text2image_font.c_str());
+      tprintError("Could not find font named '{}'.\n", text2image_font);
       if (!pango_name.empty()) {
         tprintDebug("  Pango suggested font '{}'.\n", pango_name.c_str());
       }
@@ -563,8 +563,8 @@ static int Main() {
 
   std::string src_utf8;
   // This c_str is NOT redundant!
-  if (!File::ReadFileToString(text2image_text.c_str(), &src_utf8)) {
-    tprintError("Failed to read file: {}\n", text2image_text.c_str());
+  if (!File::ReadFileToString(text2image_text, &src_utf8)) {
+    tprintError("Failed to read file: {}\n", text2image_text);
     return EXIT_FAILURE;
   }
 
@@ -585,8 +585,8 @@ static int Main() {
     std::string rand_utf8;
     UNICHARSET unicharset;
     if (text2image_render_ngrams && !text2image_unicharset_file.empty() &&
-        !unicharset.load_from_file(text2image_unicharset_file.c_str())) {
-      tprintError("Failed to load unicharset from file {}\n", text2image_unicharset_file.c_str());
+        !unicharset.load_from_file(text2image_unicharset_file)) {
+      tprintError("Failed to load unicharset from file {}\n", text2image_unicharset_file);
       return EXIT_FAILURE;
     }
 
@@ -635,7 +635,7 @@ static int Main() {
   }
   if (text2image_only_extract_font_properties) {
     tprintDebug("Extracting font properties only\n");
-    ExtractFontProperties(src_utf8, &render, text2image_outputbase.c_str());
+    ExtractFontProperties(src_utf8, &render, text2image_outputbase);
     tprintDebug("Done!\n");
     return EXIT_SUCCESS;
   }
@@ -679,7 +679,7 @@ static int Main() {
           // Pass 2, do mirror rotation.
           rotation = -1 * page_rotation[page_num];
         }
-        tprintDebug("rotation: %f", rotation);
+        tprintDebug("rotation: {}", rotation);
         if (text2image_degrade_image) {
           pix = DegradeImage(pix, text2image_exposure, &randomizer,
                              text2image_rotate_image ? &rotation : nullptr);
@@ -698,26 +698,26 @@ static int Main() {
 
         Image gray_pix = pixConvertTo8(pix, false);
         Image binary = pixThresholdToBinary(gray_pix, 128);
-        char img_name[1024];
+        std::string img_name;
         if (text2image_find_fonts) {
           if (text2image_render_per_font) {
             std::string fontname_for_file = tesseract::StringReplace(font_used, " ", "_");
             if (!text2image_output_png) {
-              snprintf(img_name, 1024, "%s.%s.tif", text2image_outputbase.c_str(),
-                                 fontname_for_file.c_str());
+              img_name = std::format("{}.{}.tif", text2image_outputbase,
+                                 fontname_for_file);
               if (!text2image_grayscale) {
-                  pixWriteTiff(img_name, binary, IFF_TIFF_G4, "w");
+                  pixWriteTiff(img_name.c_str(), binary, IFF_TIFF_G4, "w");
               } else {
-                  pixWriteTiff(img_name, gray_pix, IFF_TIFF, "w");
-                }
+                  pixWriteTiff(img_name.c_str(), gray_pix, IFF_TIFF, "w");
+              }
             } else {
-              snprintf(img_name, 1024, "%s.%s.%d.png", text2image_outputbase.c_str(),
-                                 fontname_for_file.c_str(), pass+page_num);
-                if (!text2image_grayscale){
-                  pixWritePng(img_name, binary, 0);
-                } else {
-                  pixWritePng(img_name, gray_pix, 0);
-                }
+              img_name = std::format("{}.{}.{}.png", text2image_outputbase,
+                                 fontname_for_file, pass+page_num);
+              if (!text2image_grayscale){
+                pixWritePng(img_name.c_str(), binary, 0);
+              } else {
+                pixWritePng(img_name.c_str(), gray_pix, 0);
+              }
             }
             tprintDebug("Rendered page {} to file {}\n", im, img_name);
           } else {
@@ -725,20 +725,20 @@ static int Main() {
           }
         } else {
           if (!text2image_output_png){
-            snprintf(img_name, 1024, "%s.tif", text2image_outputbase.c_str());
+            img_name = std::format("{}.tif", text2image_outputbase);
             if (!text2image_grayscale) {
-                pixWriteTiff(img_name, binary, IFF_TIFF_G4, im == 0 ? "w" : "a");
+              pixWriteTiff(img_name.c_str(), binary, IFF_TIFF_G4, im == 0 ? "w" : "a");
             } else {
-                pixWriteTiff(img_name, gray_pix, IFF_TIFF, im == 0 ? "w" : "a");
-              }
+              pixWriteTiff(img_name.c_str(), gray_pix, IFF_TIFF, im == 0 ? "w" : "a");
+            }
           } else {
-            snprintf(img_name, 1024, "%s.%d.png", text2image_outputbase.c_str(),
+            img_name = std::format("{}.{}.png", text2image_outputbase,
                                pass+page_num);
-              if (!text2image_grayscale){
-                pixWritePng(img_name, binary, 0);
-              } else {
-                pixWritePng(img_name, gray_pix, 0);
-              }
+            if (!text2image_grayscale){
+              pixWritePng(img_name.c_str(), binary, 0);
+            } else {
+              pixWritePng(img_name.c_str(), gray_pix, 0);
+            }
           }
           tprintDebug("Rendered page {} to file {}\n", im, img_name);
         }
@@ -757,11 +757,11 @@ static int Main() {
     }
   }
   if (!text2image_find_fonts) {
-    std::string filename = text2image_outputbase.c_str();
+    std::string filename = text2image_outputbase;
     if (text2image_create_page) text2image_multipage = false;
     render.WriteAllBoxesPagebyPage(filename, text2image_multipage, text2image_create_boxfiles, text2image_create_page);
   } else if (!text2image_render_per_font && !font_names.empty()) {
-    std::string filename = text2image_outputbase.c_str();
+    std::string filename = text2image_outputbase;
     filename += ".fontlist.txt";
     FILE *fp = fopen(filename.c_str(), "wb");
     if (fp == nullptr) {

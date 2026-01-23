@@ -81,6 +81,8 @@ enum NetworkType {
 
   NT_COUNT // Array size.
 };
+const char *networktype_to_string(NetworkType type);
+const char *networktype_to_descriptive_string(NetworkType type);
 DECL_FMT_FORMAT_TESSENUMTYPE(NetworkType);
 
 // Enum of Network behavior flags. Can in theory be set for each individual
@@ -145,7 +147,8 @@ public:
   const std::string &name() const {
     return name_;
   }
-  virtual std::string spec() const = 0;
+  virtual std::string spec() const noexcept = 0;
+  virtual std::string elaborate_spec() const noexcept = 0;
   bool TestFlag(NetworkFlags flag) const {
     return (network_flags_ & flag) != 0;
   }
@@ -179,6 +182,7 @@ public:
   // and should not be deleted by any of the networks.
   // Returns the number of weights initialized.
   virtual int InitWeights(float range, TRand *randomizer);
+
   // Changes the number of outputs to the outside world to the size of the given
   // code_map. Recursively searches the entire network for Softmax layers that
   // have exactly old_no outputs, and operates only on those, leaving all others

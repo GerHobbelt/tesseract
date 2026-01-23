@@ -105,8 +105,8 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
           }
 
           word_index++;
-          if (owner_.Monitor().bump_progress(word_index, word_count).
-            exec_progress_func()
+          if (owner_.Monitor().bump_progress(word_index, word_count)
+		    .exec_progress_func()
             .kick_watchdog_and_check_for_cancel(stats_.dict_words)) {
               tprintError("Timeout/cancel: abort the fuzzy space cleanup action. {}/{} words processed.\n", word_index, word_count);
               return;
@@ -117,7 +117,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
           word_res_it_to = word_res_it_from;
           prevent_null_wd_fixsp = word_res->word->cblob_list()->empty();
           if (check_debug_pt(word_res, 60)) {
-            debug_fix_space_level.set_value(10);
+            debug_fix_space_level = 10;
           }
           word_res_it_to.forward();
           word_index++;
@@ -138,7 +138,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
                  (word_res_it_to.data_relative(1)->word->flag(W_FUZZY_NON) ||
                   word_res_it_to.data_relative(1)->word->flag(W_FUZZY_SP))) {
             if (check_debug_pt(word_res, 60)) {
-              debug_fix_space_level.set_value(10);
+              debug_fix_space_level = 10;
             }
             if (word_res->word->cblob_list()->empty()) {
               prevent_null_wd_fixsp = true;
@@ -153,7 +153,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
             }
           }
           if (check_debug_pt(word_res, 60)) {
-            debug_fix_space_level.set_value(10);
+            debug_fix_space_level = 10;
           }
           if (word_res->word->cblob_list()->empty()) {
             prevent_null_wd_fixsp = true;
@@ -171,7 +171,7 @@ void Tesseract::fix_fuzzy_spaces(int32_t word_count, PAGE_RES *page_res) {
             }
           }
           if (test_pt) {
-            debug_fix_space_level.set_value(0);
+            debug_fix_space_level = 0;
           }
         }
         fix_sp_fp_word(word_res_it_from, row_res_it.data()->row, block_res_it.data()->block);

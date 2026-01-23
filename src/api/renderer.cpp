@@ -129,6 +129,13 @@ void TessResultRenderer::AppendString(const char *s) {
   AppendData(s, strlen(s));
 }
 
+void TessResultRenderer::AppendString(const std::string &s) {
+  if (s.empty()) {
+    return;
+  }
+  AppendData(s.data(), s.size());
+}
+
 void TessResultRenderer::AppendData(const char *s, int len) {
   if (!tesseract::Serialize(fout_, s, len)) {
     happy_ = false;

@@ -44,7 +44,7 @@ namespace tesseract {
 // net_flags control network behavior according to the NetworkFlags enum.
 // The resulting network is returned via **network.
 // Returns false if something failed.
-bool NetworkBuilder::InitNetwork(int num_outputs, const char *network_spec, int append_index,
+bool NetworkBuilder::InitNetwork(int num_outputs, const std::string &network_spec, int append_index,
                                  int net_flags, float weight_range, TRand *randomizer,
                                  Network **network) {
   NetworkBuilder builder(num_outputs);

@@ -330,7 +330,7 @@ SIMDDetect::SIMDDetect() {
     Update();
   }
 
-  dotproduct.set_value(dotproduct_method);
+  dotproduct = dotproduct_method;
 }
 
 void SIMDDetect::Update() {
@@ -402,7 +402,7 @@ void SIMDDetect::Update() {
 	  );
   }
 
-  dotproduct.set_value(dotproduct_method);
+  dotproduct = dotproduct_method;
 }
 
 } // namespace tesseract

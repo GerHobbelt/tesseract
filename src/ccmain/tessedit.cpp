@@ -70,7 +70,7 @@ void Tesseract::read_config_file(const char *filename) {
       }
   const std::filesystem::path &selected_path = *config_file;
 
-  ParamUtils::ReadParamsFile(selected_path.string().c_str(), this->params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+  ParamUtils::ReadParamsFile(selected_path.string(), this->params_collective(), nullptr);
 }
 
 bool Tesseract::InitParameters(const std::vector<std::string> &vars_vec,
@@ -83,8 +83,8 @@ bool Tesseract::InitParameters(const std::vector<std::string> &vars_vec,
   }
   bool ok = true;
   for (unsigned i = 0; i < vars_vec.size(); ++i) {
-    if (!ParamUtils::SetParam(vars_vec[i].c_str(), vars_values[i].c_str(), this->params_collective())) {
-      tprintWarn("The parameter '{}' was not found.\n", vars_vec[i].c_str());
+    if (!ParamUtils::SetParam(vars_vec[i], vars_values[i], this->params_collective())) {
+      tprintWarn("The parameter '{}' was not found.\n", vars_vec[i]);
       ok = false;
     }
   }
@@ -140,28 +140,28 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
     return false;
   }
 #if DISABLED_LEGACY_ENGINE
-  tessedit_ocr_engine_mode.set_value(OEM_LSTM_ONLY);
+  tessedit_ocr_engine_mode = OEM_LSTM_ONLY;
 #else
   // Determine which ocr engine(s) should be loaded and used for recognition.
   if (oem == OEM_DEFAULT) {
     // Set the engine mode from availability, which can then be overridden by
     // the config file when we read it below.
     if (!mgr->IsLSTMAvailable()) {
-      tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_ONLY);
+      tessedit_ocr_engine_mode = OEM_TESSERACT_ONLY;
     } else if (!mgr->IsBaseAvailable()) {
-      tessedit_ocr_engine_mode.set_value(OEM_LSTM_ONLY);
+      tessedit_ocr_engine_mode = OEM_LSTM_ONLY;
     } else {
-      tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_LSTM_COMBINED);
+      tessedit_ocr_engine_mode = OEM_TESSERACT_LSTM_COMBINED;
     }
   } else {
-    tessedit_ocr_engine_mode.set_value(oem);
+    tessedit_ocr_engine_mode = oem;
   }
 #endif // DISABLED_LEGACY_ENGINE
 
   // If a language specific config file (lang.config) exists, load it in.
   TFile fp;
   if (mgr->GetComponent(TESSDATA_LANG_CONFIG, &fp)) {
-    ParamUtils::ReadParamsFromFp(fp, this->params_collective(), PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+    ParamUtils::ReadParamsFromFp(fp, this->params_collective());
   }
 
   // Load tesseract variables from config files. This is done after loading
@@ -178,7 +178,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       ParamUtils::PrintParams(params_file, this->params_collective());
       fclose(params_file);
     } else {
-      tprintError("Failed to open {} for writing params.\n", tessedit_write_params_to_file.c_str());
+      tprintError("Failed to open {} for writing params.\n", tessedit_write_params_to_file);
     }
   }
 
@@ -209,7 +209,7 @@ bool Tesseract::init_tesseract_lang_data(const std::string &arg0,
       // TODO: ConvertToInt optional extra
     } else {
       tprintError("LSTM requested, but not present!! Loading tesseract.\n");
-      tessedit_ocr_engine_mode.set_value(OEM_TESSERACT_ONLY);
+      tessedit_ocr_engine_mode = OEM_TESSERACT_ONLY;
     }
   }
 

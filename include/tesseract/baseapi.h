@@ -96,9 +96,14 @@ class TESS_API TessBaseAPI {
 public:
   TessBaseAPI();
   virtual ~TessBaseAPI();
+
   // Copy constructor and assignment operator are currently unsupported.
   TessBaseAPI(TessBaseAPI const &) = delete;
   TessBaseAPI &operator=(TessBaseAPI const &) = delete;
+
+  // ditto for move constructor and move operator
+  TessBaseAPI(TessBaseAPI &&) = delete;
+  TessBaseAPI &operator=(TessBaseAPI &&) = delete;
 
   /**
    * Returns the version identifier as a static string. Do not delete.
@@ -120,11 +125,19 @@ public:
    * A monitor can be used to
    * - cancel the recognition
    * - receive progress callbacks
+   *
+   * When passing a nullptr argument, the currently registered monitor will
+   * be removed and the default tesseract monitor will be (re)registered
+   * instead (`default_minimal_monitor_`).
    */
   void RegisterMonitor(ETEXT_DESC *monitor);
-  
+
   ETEXT_DESC &Monitor();
   const ETEXT_DESC &Monitor() const;
+
+  ETEXT_DESC &DefaultMonitor() {
+    return default_minimal_monitor_;
+  }
 
   /// Note the given command (argv[] set as vector) for later reporting
   /// in the diagnostics output as part of the HTML log heading.
@@ -152,13 +165,13 @@ public:
   Pix *GetInputImage() const;
   Image GetInputImageClone();
 
-  int GetSourceYResolution();
+  int GetSourceYResolution() const;
 
-  const char *GetDatapath();
+  const char *GetDatapath() const;
 
   void SetVisibleImageFilename(const char *name);
 
-  const char *GetVisibleImageFilename();
+  const char *GetVisibleImageFilename() const;
 
   // DOES NOT takes ownership of the input pix, but COPIES it instead.
   void SetVisibleImage(Pix *pix);
@@ -167,8 +180,8 @@ public:
   // DOES NOT takes ownership of the input pix, but CLONES it instead.
   void SetVisibleImage(const Image &pix);
 
-  Pix* GetVisibleImage();
-  Image GetVisibleImageClone();
+  const Pix* GetVisibleImage() const;
+  Image GetVisibleImageClone() const;
 
   /**
    * @}
@@ -293,6 +306,7 @@ public:
    * (use DumpVariables instead to create config files).
    */
   void PrintVariables(FILE *fp = nullptr) const;
+  void PrintVariables(const char *filepath) const;
 
   /*
   * Report parameters' usage statistics, i.e. report which params have been
@@ -638,7 +652,7 @@ public:
                      int **blockids, int **paraids);
   /*
    Helper method to extract from the thresholded image. (most common usage)
-*/
+  */
   Boxa *GetTextlines(Pixa **pixa, int **blockids) {
     return GetTextlines(false, 0, pixa, blockids, nullptr);
   }

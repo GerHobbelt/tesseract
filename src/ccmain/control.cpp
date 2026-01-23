@@ -141,7 +141,7 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
         // in a nutty attempt to down the bugger.
         {
           StdioConfigReader reader(word_config);
-          ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+          ParamUtils::ReadParamsFile(reader, params_collective(), nullptr);
         }
       }
     } else {
@@ -149,7 +149,7 @@ bool Tesseract::ProcessTargetWord(const TBOX &word_box, const TBOX &target_word_
 
       if (backup_config_file_ != nullptr) {
         StdioConfigReader reader(backup_config_file_);
-        ParamUtils::ReadParamsFile(reader, params_collective(), nullptr, PARAM_VALUE_IS_SET_BY_CONFIGFILE);
+        ParamUtils::ReadParamsFile(reader, params_collective(), nullptr);
         backup_config_file_ = nullptr;
       }
     }
@@ -492,7 +492,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
         }
         // flip recursion setting back to a positive limit; see tface.cpp for the sign-flipping logic inside the recursive word recognizer.
         if (recog_word_recursion_depth_limit < 0) {
-          recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
+          recog_word_recursion_depth_limit = -recog_word_recursion_depth_limit;
         }
         return false;
     }
@@ -535,7 +535,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, PAGE_RES_IT *pr_it, std::vector<W
   }
   // flip recursion setting back to a positive limit; see tface.cpp for the sign-flipping logic inside the recursive word recognizer.
   if (recog_word_recursion_depth_limit < 0) {
-    recog_word_recursion_depth_limit.set_value(-recog_word_recursion_depth_limit.value());
+    recog_word_recursion_depth_limit = -recog_word_recursion_depth_limit;
   }
   return true;
 }
@@ -565,8 +565,8 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res,
   PAGE_RES_IT page_res_it(page_res);
 
   if (tessedit_minimal_rej_pass1) {
-    tessedit_test_adaption.set_value(true);
-    tessedit_minimal_rejection.set_value(true);
+    tessedit_test_adaption = true;
+    tessedit_minimal_rejection = true;
   }
 
   if (dopasses == 0 || dopasses == 1) {
@@ -626,7 +626,7 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res,
       }
 
       // Count dict words.
-      if (page_res_it.word()->best_choice->permuter() == USER_DAWG_PERM) {
+      if (page_res_it.word()->best_choice && page_res_it.word()->best_choice->permuter() == USER_DAWG_PERM) {
         ++(stats_.dict_words);
       }
 
@@ -710,13 +710,13 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res,
 #if 0
     && (monitor /* always true */ || tessedit_write_unlv)
 #endif
-    ) {
+  ) {
     output_pass(page_res_it, target_word_box);
   }
 // end jetsoft
 #endif // !DISABLED_LEGACY_ENGINE
 
-  const auto pageseg_mode = static_cast<PageSegMode>(static_cast<int>(tessedit_pageseg_mode));
+  const PageSegMode pageseg_mode = tessedit_pageseg_mode;
   textord_.CleanupSingleRowResult(pageseg_mode, page_res);
 
   // Remove empty words, as these mess up the result iterators.
@@ -2121,8 +2121,8 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     return false;
   }
 
-  tessedit_rejection_debug.set_value(false);
-  debug_x_ht_level.set_value(0);
+  tessedit_rejection_debug = false;
+  debug_x_ht_level = int(0);
 
   if (word->word->bounding_box().contains(FCOORD(test_pt_x, test_pt_y))) {
     if (location < 0) {
@@ -2131,8 +2131,8 @@ bool Tesseract::check_debug_pt(WERD_RES *word, int location) {
     TPrintGroupLinesTillEndOfScope push;
 
     bool show_map_detail = false;
-    tessedit_rejection_debug.set_value(true);
-    debug_x_ht_level.set_value(2);
+    tessedit_rejection_debug = true;
+    debug_x_ht_level = 2;
     tprintDebug("\n\nTESTWD:: ");
     switch (location) {
       default:

@@ -35,6 +35,7 @@
 #include <algorithm>    // for max, min
 #include <cinttypes>    // for PRId64
 #include <fstream>      // for std::ifstream
+#include <thread>       // for std::this_thread
 
 #undef min
 #undef max
@@ -381,9 +382,6 @@ DocumentData::DocumentData(const std::string &name)
       reader_(nullptr) {}
 
 DocumentData::~DocumentData() {
-  if (thread.joinable()) {
-    thread.join();
-  }
   std::lock_guard<std::mutex> lock_p(pages_mutex_);
   std::lock_guard<std::mutex> lock_g(general_mutex_);
   for (auto data : pages_) {
@@ -430,9 +428,8 @@ void DocumentData::AddPageToDocument(ImageData *page) {
   set_memory_used(memory_used() + page->MemoryUsed());
 }
 
-// If the given index is not currently loaded, loads it using a separate
-// thread.
-void DocumentData::LoadPageInBackground(int index) {
+// If the given index is not currently loaded, loads it.
+void DocumentData::LoadPage(const int index) {
   ImageData *page = nullptr;
   if (IsPageAvailable(index, &page)) {
     return;
@@ -450,9 +447,7 @@ void DocumentData::LoadPageInBackground(int index) {
     }
     pages_.clear();
   }
-  if (thread.joinable()) {
-    thread.join();
-  }
+
 
   // Don't run next statement asynchronously because that would
   // create too many threads on Linux (see issue #3111).
@@ -473,7 +468,7 @@ const ImageData *DocumentData::GetPage(int index) {
     bool needs_loading = pages_offset_ != index;
     pages_mutex_.unlock();
     if (needs_loading) {
-      LoadPageInBackground(index);
+      LoadPage(index);
     }
     // We can't directly load the page, or the background load will delete it
     // while the caller is using it, so give it a chance to work.
@@ -552,22 +547,34 @@ bool DocumentData::ReCachePages() {
   auto name_size = document_name_.size();
   if (document_name_.ends_with(".png")) {
     // PNG image given instead of LSTMF file.
-    std::string gt_name{document_name_.substr(0, name_size - 3) + "gt.txt"};
+    std::string gt_name{document_name_.substr(0, name_size - 4)};
+#if 0
+    tprintDebug("%s\n", gt_name.c_str());
+    tprintDebug("%s\n", gt_name.substr(name_size - 8).c_str());
+#endif
+    if (name_size > 8 && (gt_name.substr(name_size - 8) == ".bin" || gt_name.substr(name_size - 8) == ".nrm")) {
+      gt_name = gt_name.substr(0, name_size - 8);
+    }
+    gt_name += ".gt.txt";
     std::ifstream t(gt_name);
     std::string line;
     std::getline(t, line);
     t.close();
     ImageData *image_data = ImageData::Build(document_name_.c_str(), 0, "", nullptr, 0, line.c_str(), nullptr);
-    Image image = pixRead(document_name_.c_str());
-    image_data->SetPix(image);
-    pages_.push_back(image_data);
-    loaded_pages = 1;
-    pages_offset_ %= loaded_pages;
-    set_total_pages(loaded_pages);
-    set_memory_used(memory_used() + image_data->MemoryUsed());
-    tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
+    if (image_data) {
+      Image image = pixRead(document_name_.c_str());
+      image_data->SetPix(image);
+      pages_.push_back(image_data);
+      loaded_pages = 1;
+      pages_offset_ %= loaded_pages;
+      set_total_pages(loaded_pages);
+      set_memory_used(memory_used() + image_data->MemoryUsed());
+#if 0
+      tprintDebug("Loaded {}/{} lines ({}-{}) of document {}\n", pages_.size(),
           loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
-          document_name_.c_str());
+          document_name_);
+#endif
+    }
     return !pages_.empty();
   }
 //#endif
@@ -716,7 +723,7 @@ const ImageData *DocumentCache::GetPageRoundRobin(int serial) {
   for (int offset = 1; offset <= kMaxReadAhead && offset < num_docs; ++offset) {
     doc_index = (serial + offset) % num_docs;
     int page = (serial + offset) / num_docs;
-    documents_[doc_index]->LoadPageInBackground(page);
+    documents_[doc_index]->LoadPage(page);
   }
   return doc;
 }
@@ -773,7 +780,7 @@ const ImageData *DocumentCache::GetPageSequential(int serial) {
   }
   int next_index = (doc_index + 1) % num_docs;
   if (!documents_[next_index]->IsCached() && total_memory < max_memory_) {
-    documents_[next_index]->LoadPageInBackground(0);
+    documents_[next_index]->LoadPage(0);
   }
   return doc;
 }

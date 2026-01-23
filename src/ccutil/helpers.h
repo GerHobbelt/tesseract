@@ -107,7 +107,7 @@ static inline const char *basename(const char *path) {
 // Copy a std::string to a newly allocated char *.
 // TODO: Remove this function once the related code has been converted
 // to use std::string.
-inline char *copy_string(const std::string &from) {
+static inline char *copy_string(const std::string &from) {
   auto length = from.length();
   char *target_string = new char[length + 1];
   from.copy(target_string, length);

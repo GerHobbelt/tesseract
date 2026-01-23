@@ -502,7 +502,7 @@ void ImageThresholder::ThresholdRectToPix(const Image &src_pix, int num_channels
   uint32_t *pixdata = pixGetData(*pix);
   int wpl = pixGetWpl(*pix);
   int src_wpl = pixGetWpl(src_pix);
-  const uint32_t *srcdata = pixGetData(src_pix);
+  const uint32_t *srcdata = pixGetData(const_cast<Image &>(src_pix));
   pixSetXRes(*pix, pixGetXRes(src_pix));
   pixSetYRes(*pix, pixGetYRes(src_pix));
   for (int y = 0; y < rect_height_; ++y) {

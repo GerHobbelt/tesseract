@@ -103,8 +103,8 @@ static LIST ClusterOneConfig(int shape_id, const char *class_label, LIST mf_clas
   // representing almost all samples of the class/font.
   MergeInsignificantProtos(proto_list, class_label, clusterer, &Config);
 #if !GRAPHICS_DISABLED
-  if (strcmp(trainer_test_ch.c_str(), class_label) == 0) {
-    DisplayProtoList(trainer_test_ch.c_str(), proto_list);
+  if (strcmp(trainer_test_ch, class_label) == 0) {
+    DisplayProtoList(trainer_test_ch, proto_list);
   }
 #endif // !GRAPHICS_DISABLED
   // Delete the protos that will not be used in the inttemp output file.
@@ -267,7 +267,7 @@ extern "C" TESS_API int tesseract_mf_training_main(int argc, const char** argv)
   CLASS_STRUCT *float_classes = SetUpForFloat2Int(*unicharset, mf_classes);
   // Now write the inttemp and pffmtable.
   trainer->WriteInttempAndPFFMTable(trainer->unicharset(), *unicharset, *shape_table, float_classes,
-                                    inttemp_file.c_str(), pffmtable_file.c_str());
+                                    inttemp_file, pffmtable_file);
   for (size_t c = 0; c < unicharset->size(); ++c) {
     FreeClassFields(&float_classes[c]);
   }
