@@ -103,7 +103,7 @@ bool LSTMRecognizer::Load(const ParamsVectorSet &params, const std::string &lang
     return true;
   }
   // Allow it to run without a dictionary.
-  LoadDictionary(lang, mgr);
+  LoadDictionary(params, lang, mgr);
   return true;
 }
 

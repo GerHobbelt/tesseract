@@ -737,7 +737,7 @@ public:
    * Optional. The Get*Text functions below will call Recognize if needed.
    * After Recognize, the output is kept internally until the next SetImage.
    */
-  int Recognize();
+  int Recognize(void);
 
   /**
    * Methods to retrieve information after SetAndThresholdImage(),

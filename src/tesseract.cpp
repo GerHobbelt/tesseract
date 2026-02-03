@@ -194,7 +194,6 @@ static void PrintHelpForOEM() {
       "  2|tesseract_lstm_combined Legacy + LSTM engines.\n"
       "  3|default                 Default, based on what is available.\n"
       "\n");
-  );
 }
 #endif // !DISABLED_LEGACY_ENGINE
 

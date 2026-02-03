@@ -32,7 +32,7 @@ int main(int argc, const char **argv)
 
 	//report each and every score
 	api->SetVariable("save_raw_choices", "T");
-	api->Recognize(0);
+	api->Recognize();
 	tesseract::ResultIterator* ri = api->GetIterator();
 	tesseract::PageIteratorLevel level = tesseract::RIL_SYMBOL;
 	if (ri != 0) {
