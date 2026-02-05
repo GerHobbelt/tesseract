@@ -981,15 +981,16 @@ const float kInfiniteDist = 999.0f;
 void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
                                   float max_dist, ShapeTable *shapes) {
   auto num_shapes = shapes->NumShapes();
+  using step_t = decltype(num_shapes);
   int max_merges = num_shapes - min_shapes;
   // TODO: avoid new / delete.
   auto *shape_dists = new std::vector<ShapeDist>[num_shapes];
   float min_dist = kInfiniteDist;
-  unsigned int min_s1 = 0;
-  unsigned int min_s2 = 0;
+  step_t min_s1 = 0;
+  step_t min_s2 = 0;
   tprintDebug("Computing shape distances...");
-  for (unsigned int s1 = 0; s1 < num_shapes; ++s1) {
-    for (unsigned int s2 = s1 + 1; s2 < num_shapes; ++s2) {
+  for (step_t s1 = 0; s1 < num_shapes; ++s1) {
+    for (step_t s2 = s1 + 1; s2 < num_shapes; ++s2) {
       ShapeDist dist(s1, s2, ShapeDistance(*shapes, s1, s2));
       shape_dists[s1].push_back(dist);
       if (dist.distance < min_dist) {
@@ -1014,27 +1015,27 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
       shape_dists[min_s2].clear();
       ++num_merged;
 
-      for (unsigned int s = 0; s < min_s1; ++s) {
+      for (step_t s = 0; s < min_s1; ++s) {
         if (!shape_dists[s].empty()) {
           shape_dists[s][min_s1 - s - 1].distance =
               ShapeDistance(*shapes, s, min_s1);
           shape_dists[s][min_s2 - s - 1].distance = kInfiniteDist;
         }
       }
-      for (unsigned int s2 = min_s1 + 1; s2 < num_shapes; ++s2) {
+      for (step_t s2 = min_s1 + 1; s2 < num_shapes; ++s2) {
         if (shape_dists[min_s1][s2 - min_s1 - 1].distance < kInfiniteDist) {
           shape_dists[min_s1][s2 - min_s1 - 1].distance =
               ShapeDistance(*shapes, min_s1, s2);
         }
       }
-      for (unsigned int s = min_s1 + 1; s < min_s2; ++s) {
+      for (step_t s = min_s1 + 1; s < min_s2; ++s) {
         if (!shape_dists[s].empty()) {
           shape_dists[s][min_s2 - s - 1].distance = kInfiniteDist;
         }
       }
     }
     min_dist = kInfiniteDist;
-    for (unsigned int s1 = 0; s1 < num_shapes; ++s1) {
+    for (step_t s1 = 0; s1 < num_shapes; ++s1) {
       for (unsigned i = 0; i < shape_dists[s1].size(); ++i) {
         if (shape_dists[s1][i].distance < min_dist) {
           min_dist = shape_dists[s1][i].distance;
@@ -1047,7 +1048,7 @@ void MasterTrainer::ClusterShapes(int min_shapes, int max_shape_unichars,
   tprintDebug("Stopped with {} merged, min dist {}\n", num_merged, min_dist);
   delete[] shape_dists;
   if (trainer_debug_level > 1) {
-    for (unsigned int s1 = 0; s1 < num_shapes; ++s1) {
+    for (step_t s1 = 0; s1 < num_shapes; ++s1) {
       if (shapes->MasterDestinationIndex(s1) == s1) {
         tprintDebug("Master shape:{}\n", shapes->DebugStr(s1).c_str());
       }
