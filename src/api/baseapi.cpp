@@ -467,7 +467,7 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
   if (fp == nullptr)
     fp = stdout;
   StdioReportWriter out(fp, nullptr, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
-  ParamUtils::PrintParams(out, tess.params_collective(), ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE);
+  ParamUtils::PrintParams(out, tess.params_collective(), {.show_elements_style = ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE});
 }
 
 /**
@@ -478,8 +478,10 @@ void TessBaseAPI::PrintVariables(FILE *fp) const {
 void TessBaseAPI::PrintVariables(const char *filepath) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
   StdioReportWriter out(filepath, ReportWriter::PARAMREPORT_AS_CONFIGFILE);
-  ParamUtils::PrintParams(out, tess.params_collective(), ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE);
+  ParamUtils::PrintParams(out, tess.params_collective(), {.show_elements_style = ReportWriter::PARAMINFO_EXPLANATORY_CONFIGFILE_LINE});
 }
+
+#if 0
 
 void TessBaseAPI::SaveParameters() {
   // Save current config variables before switching modes.
@@ -491,6 +493,8 @@ void TessBaseAPI::SaveParameters() {
 void TessBaseAPI::RestoreParameters() {
   ReadConfigFile(kOldVarsFile);
 }
+
+#endif
 
 /** 
  * Print Tesseract parameters to the given file without descriptions. 
