@@ -68,7 +68,7 @@ static tesseract::ShapeClassifier *InitializeClassifier(tesseract::TessBaseAPI &
   tesseract::Tesseract *tesseract = nullptr;
   tesseract::Classify *classify = nullptr;
   if (classifier == CN_PRUNER || classifier == CN_FULL) {
-    if (api.InitOem(test_tessdata_dir, test_lang, engine_mode) < 0) {
+    if (api.Init(test_tessdata_dir, test_lang, engine_mode) < 0) {
       tprintError("Tesseract initialization failed!\n");
       return nullptr;
     }

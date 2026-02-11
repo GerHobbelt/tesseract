@@ -1595,7 +1595,7 @@ namespace tesseract {
 
       content_has_been_written_to_file = true;
 
-	  ReportFile html(filename);
+	    ReportFile html(filename);
       if (!html) {
         tprintError("cannot open diagnostics HTML output file {}: {}\n", filename, strerror(errno));
         return;

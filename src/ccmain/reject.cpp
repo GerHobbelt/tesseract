@@ -302,7 +302,7 @@ bool Tesseract::one_ell_conflict(WERD_RES *word_res, bool update_map) {
   If there are no occurrences of the conflict set characters then the word
   is OK.
 */
-  if (strpbrk(word, conflict_set_I_l_1.c_str()) == nullptr) {
+  if (strpbrk(word, conflict_set_I_l_1) == nullptr) {
     return false;
   }
 

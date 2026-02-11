@@ -502,7 +502,8 @@ void TessBaseAPI::RestoreParameters() {
 */
 void TessBaseAPI::DumpVariables(FILE *fp) const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
-  ParamUtils::PrintParams(fp, tess.params_collective(), false);
+  StdioReportWriter writer(fp);
+  ParamUtils::PrintParams(writer, tess.params_collective());
 }
 
 // Report parameters' usage statistics, i.e. report which params have been
@@ -515,17 +516,10 @@ void TessBaseAPI::DumpVariables(FILE *fp) const {
 void TessBaseAPI::ReportParamsUsageStatistics() const {
   Tesseract &tess = const_cast<Tesseract &>(tesseract());
   tesseract::ParamsVectorSet &vec = tess.params_collective();
-    std::string fpath = tesseract::vars_report_file;
-    FILE *f = ParamUtils::OpenReportFile(fpath);
-    int section_level = tess.GetPixDebugSectionLevel();
-    ParamUtils::ReportParamsUsageStatistics(f, vec, section_level, nullptr);
-    if (f) {
-      if (f != stdout && f != stderr) {
-        fclose(f);
-      } else {
-        fflush(f);
-      }
-    }
+  std::string fpath = tesseract::vars_report_file;
+  StdioReportWriter writer(fpath);
+  int section_level = tess.GetPixDebugSectionLevel();
+  ParamUtils::ReportParamsUsageStatistics(writer, vec, {.section_level = section_level});
 }
 
 /**
@@ -542,7 +536,7 @@ int TessBaseAPI::Init(const char* datapath,
 {
   std::vector<std::string> nil;
   //ParamsVectorSet vars;
-  FileReader nada;
+  FileReader nada{};
   Tesseract &tess = tesseract();
   //tess.tessedit_ocr_engine_mode = oem;
   //tess.languages_to_try = language;
@@ -557,25 +551,47 @@ int TessBaseAPI::Init(const char *datapath,
          ParamsVectorSet &vars,
                       const std::vector<std::string> &configs)
 {
-
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(ParamsVectorSet& vars)
 {
-
+  std::vector<std::string> nil;
+  // ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(ParamsVectorSet& vars,
                       const std::vector<std::string>& configs)
 {
-
+  // ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, configs, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath,
          ParamsVectorSet& vars,
                       FileReader reader)
 {
-
+  std::vector<std::string> nil;
+  // ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, reader, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath,
@@ -583,14 +599,32 @@ int TessBaseAPI::Init(const char* datapath,
          const std::vector<std::string>& configs,
                       FileReader reader)
 {
-
+  // ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, reader, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath,
          const std::vector<std::string>& vars_vec,
                       const std::vector<std::string>& vars_values)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath,
@@ -598,62 +632,139 @@ int TessBaseAPI::Init(const char* datapath,
          const std::vector<std::string>& vars_values,
                       const std::vector<std::string>& configs)
 {
-
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, const char **configs,
                           int configs_size, const std::vector<std::string> *vars_vec,
-                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader) {
-  return InitFullWithReader(datapath, 0, language, oem, configs, configs_size, vars_vec, vars_values,
-                            set_only_non_debug_params, reader);
+                          const std::vector<std::string> *vars_values, bool set_only_non_debug_params, FileReader reader)
+{
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, reader, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language, OcrEngineMode oem,
                       const std::vector<std::string>& configs)
 {
-
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, nada, nullptr, 0);
 }
 
-int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader) {
-  return InitFull(datapath, language, oem, nullptr, 0, nullptr, nullptr, false, reader);
+int TessBaseAPI::Init(const char *datapath, const char *language, OcrEngineMode oem, FileReader reader)
+{
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, reader, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath, const char* language,
                       const std::vector<std::string>& configs)
 {
-
+  ParamsVectorSet vars;
+  FileReader nada{};
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char *language, OcrEngineMode oem)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char *language, OcrEngineMode oem,
          const std::vector<std::string> &configs)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* language)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, nil, nada, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* language,
                       const std::vector<std::string>& configs)
 {
-
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, configs, nada, nullptr, 0);
 }
 
 // Reads the traineddata via a FileReader from path `datapath`.
@@ -662,7 +773,16 @@ int TessBaseAPI::Init(const char* datapath,
          const std::vector<std::string>& vars_values,
                       FileReader reader)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  //tess.tessedit_ocr_engine_mode = oem;
+  //tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, nil, reader, nullptr, 0);
 }
 
 int TessBaseAPI::Init(const char* datapath,
@@ -671,7 +791,15 @@ int TessBaseAPI::Init(const char* datapath,
          const std::vector<std::string>& configs,
                       FileReader reader)
 {
-
+  ParamsVectorSet vars;
+  Tesseract &tess = tesseract();
+  // tess.tessedit_ocr_engine_mode = oem;
+  // tess.languages_to_try = language;
+  if (tess.datadir_base_path.is_set() && !strempty(datapath) && tess.datadir_base_path.value() != datapath) {
+    // direct parameter overrides previous parameter set-up
+    tess.datadir_base_path = datapath;
+  }
+  return Init_Internal(datapath, vars, configs, reader, nullptr, 0);
 }
 
 // In-memory version reads the traineddata directly from the given
@@ -680,7 +808,10 @@ int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
                    const std::vector<std::string>& vars_vec,
                    const std::vector<std::string>& vars_values)
 {
-
+  std::vector<std::string> nil;
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, nil, nada, data, data_size);
 }
 
 int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
@@ -688,7 +819,9 @@ int TessBaseAPI::InitFromMemory(const char *data, size_t data_size,
                    const std::vector<std::string>& vars_values,
                    const std::vector<std::string>& configs)
 {
-
+  ParamsVectorSet vars;
+  FileReader nada{};
+  return Init_Internal(nullptr, vars, configs, nada, data, data_size);
 }
 
 int TessBaseAPI::Init_Internal(const char *path,
