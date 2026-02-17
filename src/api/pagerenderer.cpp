@@ -196,6 +196,7 @@ Pta *RecalcPolygonline(Pta *pts, bool upper) {
     }
   }
 
+  numaDestroy(&bin_line);
   ptaDestroy(&pts);
   return pts_recalc;
 }
@@ -472,6 +473,7 @@ Pta *ClipAndSimplifyBaseline(Pta *bottom_pts, Pta *baseline_pts, tesseract::Writ
     ptaAddPt(baseline_clipped_pts, x_max, y_min);
   }
 
+  ptaDestroy(&baseline_pts);
   return baseline_clipped_pts;
 }
 
@@ -597,6 +599,7 @@ Pta *FitBaselineIntoLinePolygon(Pta *bottom_pts, Pta *baseline_pts, tesseract::W
   }
   // Return recalculated baseline if this fails return the bottom line as
   // baseline
+  numaDestroy(&bin_line);
   ptaDestroy(&baseline_clipped_pts);
   if (ptaGetCount(baseline_recalc_pts) < 2) {
     ptaDestroy(&baseline_recalc_pts);
@@ -693,7 +696,7 @@ bool TessPAGERenderer::AddImageHandler(TessBaseAPI *api) {
 /// Append the PAGE XML for the end of the document
 ///
 bool TessPAGERenderer::EndDocumentHandler() {
-  AppendString("\t\t</Page>\n</PcGts>\n");
+  AppendString("</PcGts>\n");
   return true;
 }
 
@@ -858,7 +861,9 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       // writing_direction_before = writing_direction;
       line_conf = ((res_it->Confidence(RIL_TEXTLINE)) / 100.);
-      std::string textline = res_it->GetUTF8Text(RIL_TEXTLINE);
+      char *utf8text = res_it->GetUTF8Text(RIL_TEXTLINE);
+      std::string textline = utf8text;
+      delete[] utf8text;
       if (textline.back() == '\n') {
         textline.erase(textline.length() - 1);
       }
@@ -1018,8 +1023,9 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
 
         // Fit linepolygon matching the baselinepoints
         line_baseline_pts = SortBaseline(line_baseline_pts, writing_direction);
-        // Fitting baseline into polygon is currently deactivated
-        // it tends to push the baseline directly under superscritpts
+
+        // Fitting baseline into polygon is currently deactivated because
+        // it tends to push the baseline directly under superscripts,
         // but the baseline is always inside the polygon maybe it will be useful
         // for something line_baseline_pts =
         // FitBaselineIntoLinePolygon(line_bottom_ltr_pts, line_baseline_pts,
@@ -1126,6 +1132,7 @@ char *TessBaseAPI::GetPAGEText(int page_number) {
 
   reading_order_str << page_str.str();
   page_str.str("");
+  reading_order_str << "\t</Page>\n";
   const std::string &text = reading_order_str.str();
   reading_order_str.str("");
 
