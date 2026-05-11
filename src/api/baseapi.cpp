@@ -1811,7 +1811,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist, std::string *buf,
   }
 
   // Begin producing output
-  if (renderer && !renderer->BeginDocument(document_title.str())) {
+  if (renderer && !renderer->BeginDocument(document_title)) {
     return false;
   }
 
